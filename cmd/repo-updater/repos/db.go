@@ -153,3 +153,22 @@ func (nt nullTime) Value() (driver.Value, error) {
 	}
 	return *nt.Time, nil
 }
+
+// nullString represents a string that may be null. nullString implements the
+// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.NullString. When the scanned value is null, String is set to the zero value.
+type nullString struct{ s *string }
+
+// Scan implements the Scanner interface.
+func (nt *nullString) Scan(value interface{}) error {
+	*nt.s, _ = value.(string)
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (nt nullString) Value() (driver.Value, error) {
+	if nt.s == nil {
+		return nil, nil
+	}
+	return *nt.s, nil
+}

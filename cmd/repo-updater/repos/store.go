@@ -14,7 +14,7 @@ import (
 
 // A Store exposes methods to read and write persistent repositories.
 type Store interface {
-	ListRepos(ctx context.Context, sources ...string) ([]*Repo, error)
+	ListRepos(ctx context.Context) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 }
 
@@ -36,13 +36,14 @@ type TxStore interface {
 // DBStore implements the Store interface for reading and writing repos directly
 // from the Postgres database.
 type DBStore struct {
-	db     DB
-	txOpts sql.TxOptions
+	db      DB
+	sources []string
+	txOpts  sql.TxOptions
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db DB, txOpts sql.TxOptions) *DBStore {
-	return &DBStore{db: db, txOpts: txOpts}
+func NewDBStore(ctx context.Context, db DB, sources []string, txOpts sql.TxOptions) *DBStore {
+	return &DBStore{db: db, sources: sources, txOpts: txOpts}
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
@@ -89,14 +90,13 @@ func (s *DBStore) Done(errs ...*error) {
 	}
 }
 
-// ListRepos lists all stored repos that are owned by the given sources.
-// Each source is assumed to be a URN in the format "extsvc:$kind:$id" where
-// kind is the external service kind and ID its unique identifier.
-func (s DBStore) ListRepos(ctx context.Context, sources ...string) (repos []*Repo, err error) {
+// ListRepos lists all stored repos having any of the configured sources (via the constructor)
+// as captured by the external_service_type column.
+func (s DBStore) ListRepos(ctx context.Context) (repos []*Repo, err error) {
 	var cursor, next int64 = -1, 0
 	for cursor != next && err == nil {
 		cursor = next
-		if err = s.listReposPage(ctx, cursor, 500, sources, &repos); len(repos) > 0 {
+		if err = s.listReposPage(ctx, cursor, 500, s.sources, &repos); len(repos) > 0 {
 			next = int64(repos[len(repos)-1]._ID)
 		}
 	}
@@ -104,11 +104,7 @@ func (s DBStore) ListRepos(ctx context.Context, sources ...string) (repos []*Rep
 }
 
 func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, sources []string, repos *[]*Repo) (err error) {
-	q, err := listReposQuery(cursor, limit, sources)
-	if err != nil {
-		return err
-	}
-
+	q := listReposQuery(cursor, limit, sources)
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
@@ -124,24 +120,18 @@ func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, sources
 	})
 }
 
-func listReposQuery(cursor, limit int64, sources []string) (*sqlf.Query, error) {
+func listReposQuery(cursor, limit int64, sources []string) *sqlf.Query {
 	if len(sources) == 0 {
-		return sqlf.Sprintf(listReposQueryFmtstr, cursor, "TRUE", limit), nil
+		return sqlf.Sprintf(listReposQueryFmtstr, cursor, "TRUE", limit)
 	}
 
-	ids := make([]*sqlf.Query, 0, len(sources))
+	qs := make([]*sqlf.Query, 0, len(sources))
 	for _, source := range sources {
-		if _, entity, id, err := ParseURN(source); err != nil {
-			return nil, errors.Wrap(err, "DBStore.listReposQuery")
-		} else if entity != "extsvc" {
-			return nil, fmt.Errorf("DBStore.listReposQuery: unlistable source entity %q", entity)
-		} else {
-			ids = append(ids, sqlf.Sprintf("%s", id))
-		}
+		qs = append(qs, sqlf.Sprintf("%s", source))
 	}
 
-	cond := sqlf.Sprintf("external_service_id IN (%s)", sqlf.Join(ids, ","))
-	return sqlf.Sprintf(listReposQueryFmtstr, cursor, cond, limit), nil
+	cond := sqlf.Sprintf("UPPER(external_service_type) IN (%s)", sqlf.Join(qs, ","))
+	return sqlf.Sprintf(listReposQueryFmtstr, cursor, cond, limit)
 }
 
 const listReposQueryFmtstr = `
@@ -278,9 +268,9 @@ func scanRepo(r *Repo, s scanner) error {
 		&r.CreatedAt,
 		&nullTime{&r.UpdatedAt},
 		&nullTime{&r.DeletedAt},
-		&r.ExternalRepo.ID,
-		&r.ExternalRepo.ServiceType,
-		&r.ExternalRepo.ServiceID,
+		&nullString{&r.ExternalRepo.ID},
+		&nullString{&r.ExternalRepo.ServiceType},
+		&nullString{&r.ExternalRepo.ServiceID},
 		&r.Enabled,
 		&r.Archived,
 		&r.Fork,

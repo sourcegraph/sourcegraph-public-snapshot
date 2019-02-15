@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/k0kubun/pp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -12,30 +13,27 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	interval time.Duration
-	src      *Sourcerer
+	sourcer  Sourcer
 	store    Store
-	kinds    []string
-	synced   chan *SyncResult
+	diffs    chan Diff
 	now      func() time.Time
 }
 
 // NewSyncer returns a new Syncer that periodically synchronizes stored repos with
-// the repos yielded by the given kinds of sources (code hosts), retrieved by the
-// given sourcerer from the frontend API. Each completed sync results in a diff that
-// is sent to the given diffs channel.
+// the repos yielded by the configured sources, retrieved by the given sourcer.
+// Each completed sync results in a diff that is sent to the given diffs channel.
 func NewSyncer(
 	interval time.Duration,
 	store Store,
-	src *Sourcerer,
-	kinds []string,
-	synced chan *SyncResult,
+	sourcer Sourcer,
+	diffs chan Diff,
 	now func() time.Time,
 ) *Syncer {
 	return &Syncer{
 		interval: interval,
-		src:      src,
+		sourcer:  sourcer,
 		store:    store,
-		synced:   synced,
+		diffs:    diffs,
 		now:      now,
 	}
 }
@@ -43,7 +41,7 @@ func NewSyncer(
 // Run runs the Sync at its specified interval.
 func (s Syncer) Run(ctx context.Context) error {
 	for ctx.Err() == nil {
-		if _, err := s.run(ctx); err != nil {
+		if _, err := s.Sync(ctx); err != nil {
 			log15.Error("Syncer", "err", err)
 		}
 		time.Sleep(s.interval)
@@ -52,46 +50,8 @@ func (s Syncer) Run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (s Syncer) run(ctx context.Context) ([]*SyncResult, error) {
-	sources, err := s.src.ListSources(ctx, s.kinds...)
-	if err != nil {
-		return nil, err
-	}
-	return s.SyncMany(ctx, sources...), nil
-}
-
-// SyncResult is returned by Sync to indicate the results of syncing a source.
-type SyncResult struct {
-	Source Source
-	Diff   Diff
-	Err    error
-}
-
-// SyncMany synchonizes the repos yielded by all the given Sources.
-// It returns a SyncResults containing which repos were synced and which failed to.
-func (s *Syncer) SyncMany(ctx context.Context, srcs ...Source) []*SyncResult {
-	if len(srcs) == 0 {
-		return nil
-	}
-
-	ch := make(chan *SyncResult, len(srcs))
-	for _, src := range srcs {
-		go func(src Source) {
-			ch <- s.Sync(ctx, src)
-		}(src)
-	}
-
-	results := make([]*SyncResult, 0, len(srcs))
-	for i := 0; i < cap(ch); i++ {
-		res := <-ch
-		results = append(results, res)
-	}
-
-	return results
-}
-
 // Sync synchronizes the repositories of a single Source
-func (s Syncer) Sync(ctx context.Context, src Source) *SyncResult {
+func (s Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 	// TODO(tsenart): Ensure that transient failures do not remove
 	// repositories. This means we need to use the store as a fallback Source
 	// in the face of those kinds of errors, so that the diff results in Unmodified
@@ -99,45 +59,34 @@ func (s Syncer) Sync(ctx context.Context, src Source) *SyncResult {
 	// more structured so we can identify which sources failed and for what reason.
 	// See the SyncError type defined in other_external_services.go for inspiration.
 
-	var (
-		sourced Repos
-		err     error
-	)
-
-	if sourced, err = src.ListRepos(ctx); err != nil {
-		return &SyncResult{Source: src, Err: err}
+	var sourced Repos
+	if sourced, err = s.sourced(ctx); err != nil {
+		return diff, err
 	}
 
 	store := s.store
 	if tr, ok := s.store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
-			return &SyncResult{Source: src, Err: err}
+			return diff, err
 		}
 		defer txs.Done(&err)
 		store = txs
 	}
 
-	// TODO(tsenart): We want to list all stored repos of a given source / external service.
-	// This requires us to changed what we store in the external_service_id column from a
-	// URL to an ID of the corresponding row in the external_services table.
-	// This will require a migration, so it doesn't currently work.
 	var stored Repos
-	if stored, err = store.ListRepos(ctx, src.URN()); err != nil {
-		return &SyncResult{Source: src, Err: err}
+	if stored, err = store.ListRepos(ctx); err != nil {
+		return diff, err
 	}
 
-	diff := s.diff(sourced, stored)
+	diff = s.diff(sourced, stored)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return &SyncResult{Source: src, Err: err}
+		return diff, err
 	}
 
-	res := &SyncResult{Source: src, Diff: diff}
-	s.synced <- res
-
-	return res
+	return diff, nil
 }
 
 func (s Syncer) upserts(diff Diff) []*Repo {
@@ -190,4 +139,40 @@ func (Syncer) diff(sourced, stored []*Repo) Diff {
 			b.Archived != a.Archived ||
 			b.Description != a.Description
 	})
+}
+
+func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
+	sources, err := s.sourcer.ListSources(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	type result struct {
+		src   Source
+		repos []*Repo
+		err   error
+	}
+
+	ch := make(chan result, len(sources))
+	for _, src := range sources {
+		go func(src Source) {
+			if repos, err := src.ListRepos(ctx); err != nil {
+				ch <- result{src: src, err: err}
+			} else {
+				ch <- result{src: src, repos: repos}
+			}
+		}(src)
+	}
+
+	var repos []*Repo
+	var errs *multierror.Error
+	for i := 0; i < cap(ch); i++ {
+		if r := <-ch; r.err != nil {
+			errs = multierror.Append(errs, r.err)
+		} else {
+			repos = append(repos, r.repos...)
+		}
+	}
+
+	return repos, errs.ErrorOrNil()
 }

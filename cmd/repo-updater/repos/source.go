@@ -13,23 +13,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// Sourcerer converts each code host connection configured via external services
+// A Sourcer yields Sources whose Repos should be synced.
+type Sourcer interface {
+	ListSources(context.Context) ([]Source, error)
+}
+
+// ExternalServicesSourcer converts each code host connection configured via external services
 // in the frontend API to a Source that yields Repos. Each invocation of ListSources
-// may yield different Sources depending on what the user configured at a given point
-// in time.
-type Sourcerer struct {
-	api InternalAPI
+// may yield different Sources depending on what the user configured at a given point in time.
+type ExternalServicesSourcer struct {
+	api   InternalAPI
+	kinds []string
 }
 
-// NewSourcerer returns a Sourcerer of the given Frontend API.
-func NewSourcerer(api InternalAPI) *Sourcerer {
-	return &Sourcerer{api: api}
+// NewExternalServicesSourcer returns a new ExternalServicesSourcer with the given Frontend API.
+func NewExternalServicesSourcer(api InternalAPI, kinds ...string) *ExternalServicesSourcer {
+	return &ExternalServicesSourcer{api: api, kinds: kinds}
 }
 
-// ListSources lists all configured repository yielding Sources of the given kinds,
+// ListSources lists all configured repository yielding Sources of the configured kinds (via the constructor),
 // based on the code host connections configured via external services in the frontend API.
-func (s Sourcerer) ListSources(ctx context.Context, kinds ...string) ([]Source, error) {
-	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kinds: kinds})
+func (s ExternalServicesSourcer) ListSources(ctx context.Context) ([]Source, error) {
+	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kinds: s.kinds})
 	if err != nil {
 		return nil, err
 	}
@@ -81,13 +86,12 @@ func includesGitHubDotComSource(srcs []Source) bool {
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
 	ListRepos(context.Context) ([]*Repo, error)
-	URN() string
 }
 
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	*api.ExternalService
+	svc  *api.ExternalService
 	conn *githubConnection
 }
 
@@ -101,7 +105,7 @@ func NewGithubSource(svc *api.ExternalService) (*GithubSource, error) {
 }
 
 // NewGithubDotComSource returns a GithubSource for github.com, meant to be added
-// to the list of sources in Sourcerer when one isn't already configured in order to
+// to the list of sources in Sourcer when one isn't already configured in order to
 // support navigating to URL paths like /github.com/foo/bar to auto-add that repository.
 func NewGithubDotComSource() (*GithubSource, error) {
 	svc := api.ExternalService{Kind: "GITHUB"}
@@ -117,7 +121,7 @@ func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection) (*Git
 	if err != nil {
 		return nil, err
 	}
-	return &GithubSource{ExternalService: svc, conn: conn}, nil
+	return &GithubSource{svc: svc, conn: conn}, nil
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
@@ -128,15 +132,6 @@ func (s GithubSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 		repos = append(repos, githubRepoToRepo(repo, s.conn))
 	}
 	return repos, nil
-}
-
-// ParseURN parses a URN into it's three components: org, entitity and identifier.
-func ParseURN(urn string) (org, entity, id string, err error) {
-	ps := strings.SplitN(urn, ":", 3)
-	if len(ps) != 3 {
-		return "", "", "", fmt.Errorf("URN %q has invalid format", urn)
-	}
-	return ps[0], ps[1], ps[2], nil
 }
 
 func githubRepoToRepo(ghrepo *github.Repository, conn *githubConnection) *Repo {

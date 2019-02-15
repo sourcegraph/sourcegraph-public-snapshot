@@ -129,8 +129,3 @@ type ExternalService struct {
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time
 }
-
-// URN returns an unique resource name for the given external service.
-func (s ExternalService) URN() string {
-	return fmt.Sprintf("extsvc:%s:%d", s.Kind, s.ID)
-}

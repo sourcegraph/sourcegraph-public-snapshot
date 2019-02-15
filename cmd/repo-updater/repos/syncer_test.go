@@ -6,11 +6,10 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 )
 
-func TestSyncer_diff(t *testing.T) {
-	t.Skip("Tests not finished yet. TODO") // DONOTMERGE
-
+func TestIntegration_Syncer(t *testing.T) {
 	for _, tc := range []struct {
-		name            string
+		name string
+
 		sourced, stored []*Repo
 		diff            Diff
 	}{
