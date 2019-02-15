@@ -79,7 +79,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
             <>
                 <div className="query-builder__toggle">
                     <a href="" onClick={this.toggleShowQueryBuilder} data-testid="test-query-builder-toggle">
-                        {!!this.state.showQueryBuilder ? 'Hide' : 'Show'} search options
+                        {!!this.state.showQueryBuilder ? 'Hide' : 'Use'} search query builder
                     </a>
                 </div>
 
@@ -238,7 +238,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 title="Repositories"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="repo"
-                                description={`Only include results from matching repositories. Add \`@YOUR-REVISION\` to the end of the value to search a non-default branch. To exclude repositories, use the \`-repo:\` keyword in the main search input.`}
+                                description={`Only include results from matching repositories. To exclude repositories, use the \`-repo:\` keyword in the main search input.\n\nAdd \`@YOUR-REVISION\` to the end of the value to search a non-default branch.`}
                                 examples={[
                                     {
                                         description: 'Search in repos named `gorilla/mux` or `gorilla/pat`',
