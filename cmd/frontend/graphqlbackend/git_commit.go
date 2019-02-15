@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -34,7 +35,10 @@ type gitCommitResolver struct {
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
-	oid       gitObjectID
+	oid      gitObjectID
+	once     sync.Once
+	oidReady chan struct{}
+
 	author    signatureResolver
 	committer *signatureResolver
 	message   string
@@ -44,8 +48,11 @@ type gitCommitResolver struct {
 func toGitCommitResolver(repo *repositoryResolver, commit *git.Commit) *gitCommitResolver {
 	authorResolver := toSignatureResolver(&commit.Author)
 	return &gitCommitResolver{
-		repo:      repo,
-		oid:       gitObjectID(commit.ID),
+		repo: repo,
+
+		oid:      gitObjectID(commit.ID),
+		oidReady: make(chan struct{}),
+
 		author:    *authorResolver,
 		committer: toSignatureResolver(commit.Committer),
 		message:   commit.Message,
@@ -75,15 +82,24 @@ func (r *gitCommitResolver) ID() graphql.ID { return marshalGitCommitID(r.repo.I
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
 func (r *gitCommitResolver) OID() gitObjectID {
-	if r.oid == "" { // Likely came from indexed search, which uses th default branch.
+	return r.getCommitOID()
+}
+
+func (r *gitCommitResolver) getCommitOID() gitObjectID {
+	r.once.Do(func() {
+		defer func() { close(r.oidReady) }()
+
+		if r.oid != "" {
+			return
+		}
+
 		indexInfo := r.repo.TextSearchIndex()
 
 		ctx := context.Background()
 
 		refs, err := indexInfo.Refs(ctx)
 		if err != nil {
-			// Could not determine default branch OID, just continue passing the empty string
-			return ""
+			return
 		}
 
 		for _, ref := range refs {
@@ -94,10 +110,13 @@ func (r *gitCommitResolver) OID() gitObjectID {
 				break
 			}
 		}
-	}
+	})
+
+	<-r.oidReady
 
 	return r.oid
 }
+
 func (r *gitCommitResolver) AbbreviatedOID() string        { return string(r.OID())[:7] }
 func (r *gitCommitResolver) Author() *signatureResolver    { return &r.author }
 func (r *gitCommitResolver) Committer() *signatureResolver { return r.committer }
