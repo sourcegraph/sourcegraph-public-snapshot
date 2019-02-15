@@ -11,6 +11,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Added Docker-specific help text when running the Sourcegraph docker image in an environment with an sufficient open file descriptor limit.
 - Added syntax highlighting for Kotlin and Dart.
+- Added support for line numbers in file names to the search suggestions list
 
 ### Changed
 
