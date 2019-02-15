@@ -75,15 +75,24 @@ func (r *gitCommitResolver) ID() graphql.ID { return marshalGitCommitID(r.repo.I
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
 func (r *gitCommitResolver) OID() gitObjectID {
-	if r.oid == "" {
-		repo := r.repo
+	if r.oid == "" { // Likely came from indexed search, which uses th default branch.
+		indexInfo := r.repo.TextSearchIndex()
 
 		ctx := context.Background()
-		ref, _ := repo.DefaultBranch(ctx)
-		if ref != nil {
-			target := ref.Target()
-			oid, _ := target.OID(ctx)
-			r.oid = oid
+
+		refs, err := indexInfo.Refs(ctx)
+		if err != nil {
+			// Could not determine default branch OID, just continue passing the empty string
+			return ""
+		}
+
+		for _, ref := range refs {
+			current, _ := ref.Current(ctx)
+			if current {
+				r.oid = ref.indexedCommit
+
+				break
+			}
 		}
 	}
 
