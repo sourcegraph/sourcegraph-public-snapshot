@@ -29,7 +29,7 @@
     &__section {
         border: 1px solid $input-border-color;
         border-radius: 0.125rem;
-        padding: 1rem 0 1rem 1rem;
+        padding: 0.5rem;
         background-color: $color-bg-4;
         &--purple {
             box-shadow: 0 16px 36px -6px rgba(188, 39, 202, 0.14);
@@ -101,9 +101,6 @@
     &__rule {
         background-color: $input-border-color;
         color: $input-border-color;
-        &-container {
-            padding-right: 2.25rem;
-        }
     }
 }
 

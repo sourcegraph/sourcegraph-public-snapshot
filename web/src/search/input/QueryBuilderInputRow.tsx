@@ -51,7 +51,7 @@ export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
                     onChange={props.onInputChange(props.shortName)}
                 />
             </div>
-            <InfoDropdown markdown={props.description} examples={props.examples} />
+            <InfoDropdown title={props.title} markdown={props.description} examples={props.examples} />
         </div>
     )
 }

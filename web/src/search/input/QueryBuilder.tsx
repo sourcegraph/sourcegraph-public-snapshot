@@ -108,7 +108,10 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         <option value="symbol">Symbol</option>
                                     </Select>
                                 </div>
-                                <InfoDropdown markdown="Select the type of search. Choose from code, diff (the content of a commit diff), commit message, and symbol search." />
+                                <InfoDropdown
+                                    title="Type"
+                                    markdown="Select the type of search. Choose from code, diff (the content of a commit diff), commit message, and symbol search."
+                                />
                             </div>
                             {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
                                 <>
@@ -226,7 +229,10 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         <option value="yes">Yes</option>
                                     </Select>
                                 </div>
-                                <InfoDropdown markdown="Perform a case sensitive query. Matches are case insensitive by default." />
+                                <InfoDropdown
+                                    title="Case sensitive"
+                                    markdown="Perform a case sensitive query. Matches are case insensitive by default."
+                                />
                             </div>
                         </div>
                         <div className="query-builder__header">

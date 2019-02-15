@@ -9,6 +9,7 @@ import { pluralize } from '../../../../shared/src/util/strings'
 import { QueryFieldExamples } from './QueryBuilderInputRow'
 
 interface Props {
+    title: string
     markdown: string
     examples?: QueryFieldExamples[]
 }
@@ -29,10 +30,18 @@ export class InfoDropdown extends React.Component<Props, State> {
         return (
             <Dropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="info-dropdown d-flex">
                 <>
-                    <DropdownToggle tag="span" caret={false} className="px-2 btn btn-link d-flex align-items-center">
+                    <DropdownToggle
+                        tag="span"
+                        caret={false}
+                        className="pl-2 pr-0 btn btn-link d-flex align-items-center"
+                    >
                         <HelpCircleOutlineIcon className="icon-inline small" />
                     </DropdownToggle>
                     <DropdownMenu right={true} className="pb-0 info-dropdown__item">
+                        <DropdownItem header={true}>
+                            <strong>{this.props.title}</strong>
+                        </DropdownItem>
+                        <DropdownItem divider={true} />
                         <div className="info-dropdown__content">
                             <small dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.markdown) }} />
                         </div>
@@ -46,9 +55,7 @@ export class InfoDropdown extends React.Component<Props, State> {
                                 <ul className="list-unstyled mb-2">
                                     {this.props.examples.map((ex: QueryFieldExamples) => (
                                         <div key={ex.value}>
-                                            <DropdownItem divider={true} />
-
-                                            <div className="px-2">
+                                            <div className="p-2">
                                                 <span className="text-muted small">{ex.description}: </span>
                                                 <code
                                                     dangerouslySetInnerHTML={{
