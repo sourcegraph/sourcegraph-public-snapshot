@@ -689,9 +689,9 @@ type Query {
     currentUser: User
     # Looks up a user by username or email address.
     user(
-        # Query the user by username. DEPRECATED: use usernameOrEmail instead.
+        # Query the user by username.
         username: String
-        # Query the user by username or email address. Only the user and site admins can access the email address.
+        # Query the user by username or verified email address.
         usernameOrEmail: String
     ): User
     # List all users.

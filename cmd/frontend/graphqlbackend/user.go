@@ -24,7 +24,6 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 }) (*UserResolver, error) {
 	var query string
 	if args.Username != nil {
-		// Deprecated query by "UsernameOrEmail"
 		query = *args.Username
 	} else if args.UsernameOrEmail != nil {
 		query = *args.UsernameOrEmail
@@ -33,10 +32,6 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 	if strings.Contains(query, "@") {
 		user, err := db.Users.GetByVerifiedEmail(ctx, query)
 		if err != nil {
-			return nil, safeErrMsg(ctx, err)
-		}
-		// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, user.ID); err != nil {
 			return nil, safeErrMsg(ctx, err)
 		}
 		return &UserResolver{user: user}, nil
