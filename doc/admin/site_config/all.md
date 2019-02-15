@@ -23,6 +23,8 @@ For more information, see ["Configuration overview"](index.md).
 
 - [disablePublicRepoRedirects](all.md#disablepublicreporedirects-boolean)
 
+- [disableUsernameChanges](all.md#disableUsernameChanges-boolean)
+
 - [phabricator](all.md#phabricator-array)
 
 - [git.cloneURLToRepositoryName](all.md#git-cloneurltorepositoryname-array)
@@ -70,6 +72,8 @@ For more information, see ["Configuration overview"](index.md).
 - [auth.providers](all.md#auth-providers-array)
 
 - [auth.accessTokens](all.md#auth-accesstokens-object)
+
+- [auth.disableUsernameChanges](all.md#auth-disableUsernameChanges-boolean)
 
 - [auth.public](all.md#auth-public-boolean)
 
@@ -452,6 +456,14 @@ This property must be one of the following enum values:
 - `none`
 
 Default: `"all-users-create"`
+
+<br/>
+
+## auth.disableUsernameChanges (boolean)
+
+Disable users from changing their username after account creation.
+
+Default: `false`
 
 <br/>
 
