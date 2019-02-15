@@ -2120,7 +2120,7 @@ type User implements Node & SettingsSubject {
     # Whether the viewer can change the username of this user.
     #
     # The user can change their username unless auth.disableUsernameChanges is set.
-    # Site-admins can always change the username of all users.
+    # Site admins can always change the username of any user.
     viewerCanChangeUsername: Boolean!
     # The user's survey responses.
     #
