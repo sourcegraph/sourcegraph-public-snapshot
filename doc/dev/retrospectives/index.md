@@ -28,15 +28,20 @@ Be sure that everyone understands the answers to the above questions before proc
 
 Identify everyone who should participate in the retrospective: this is the retrospective group. This should include everyone who participated in the project or release.
 
-Collect written answers to the following questions from everyone in the retrospective group.
-
-1. What should we continue doing?
-
-1. What should we do differently (i.e. start, stop, change)?
-
-The medium through which you collect answers to these questions is not important (e.g. Google Docs, Google Forms, Slack messages), but it is important that participants submit their feedback independently to prevent group-think and reduce the risk of certain biases.
+Create a [Google Form](https://docs.google.com/forms) to collect written feedback. The form should be a single input with the following prompt:
+```
+What feedback or thoughts do you have about <retrospective topic>? Here are some things you might want to consider:
+- <Link to previous retrospective document for this topic>
+- What went well? What did you like?
+- What didn't go well? What didn't you like?
+- Did you learn something?
+```
 
 Allocate enough time for teammates to thoughtfully respond to the survey (aim for 100% participation), but don't let the process take an unbounded amount of time. It is useful to complete the retrospective process expediently so that information is fresh in people's minds and so we can apply learnings sooner. 3 business days is a good default.
+
+If the deadline is approaching, privately message anyone who has not submitted feedback.
+
+> Hi $NAME! I noticed that you haven't filled out the $RETROSPECTIVE_TOPIC survey yet and was wondering if you are planning to participate? If so, can you please fill out this survey in the next 24 hours: $LINK. If not, I would appreciate any feedback about why you are not interested in participating so we can adapt our retrospective process to be more inclusive in the future.
 
 ### Share feedback
 
@@ -65,7 +70,7 @@ Have the author of each feedback item read it out loud and answer any questions.
 
 After all feedback items have been organized into topics, ask each participant vote on the topics that they deem most important. Make sure that participants understand the rules for voting:
 
-- Each person has three votes (+1s).
+- Each person has five votes (+1s).
 - Each person can vote for a topic more than once (e.g. +2, +3).
 - Each person must use all of their votes.
 
