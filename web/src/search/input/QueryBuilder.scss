@@ -107,6 +107,7 @@
 .theme-light {
     .query-builder {
         &__section {
+            background-color: $white;
             &--blue {
                 box-shadow: 0 12px 25px -8px rgba(22, 155, 249, 0.08);
             }
