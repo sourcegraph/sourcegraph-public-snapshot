@@ -6,7 +6,6 @@ import H from 'history'
 import React from 'react'
 import { setLinkComponent } from '../../../../../shared/src/components/Link'
 import { getURL } from '../../browser/extension'
-import * as runtime from '../../browser/runtime'
 import storage from '../../browser/storage'
 import { StorageItems } from '../../browser/types'
 import { injectCodeIntelligence } from '../../libs/code_intelligence'
@@ -66,12 +65,7 @@ function injectApplication(): void {
         const isGitlab = checkIsGitlab()
 
         if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
-            if (window.safari) {
-                runtime.sendMessage({
-                    type: 'insertCSS',
-                    payload: { file: 'css/style.bundle.css', origin: window.location.origin },
-                })
-            } else if (isPhabricator || isGitHub || isGitHubEnterprise || isBitbucket || isGitlab) {
+            if (isPhabricator || isGitHub || isGitHubEnterprise || isBitbucket || isGitlab) {
                 const styleSheet = document.createElement('link') as HTMLLinkElement
                 styleSheet.id = 'ext-style-sheet'
                 styleSheet.rel = 'stylesheet'

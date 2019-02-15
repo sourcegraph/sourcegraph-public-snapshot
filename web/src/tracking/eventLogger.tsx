@@ -113,7 +113,7 @@ export class EventLogger implements TelemetryService {
             eventLabel,
         }
         telligent.track(eventLabel, decoratedProps)
-        serverAdmin.trackAction(eventLabel, decoratedProps)
+        serverAdmin.trackAction(eventLabel)
         this.logToConsole(eventLabel, decoratedProps)
     }
 
