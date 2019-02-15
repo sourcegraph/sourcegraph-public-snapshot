@@ -6,6 +6,18 @@
         flex: 8 4;
         min-width: 45rem;
         overflow: auto;
+        tab-size: 2;
+        .pre-wrap pre {
+            white-space: pre-wrap !important;
+        }
+        pre[style*='background-color:#fff'] {
+            // Choose a color that is visible on a white background because this selector
+            // means that this element contains syntax-highlighted code, which is
+            // hardcoded to render with a white background (even in the dark theme).
+            //
+            // TODO: Make the Markdown syntax highlighter be theme-aware.
+            color: #000000;
+        }
     }
     &__index {
         flex: 1 1 15rem;

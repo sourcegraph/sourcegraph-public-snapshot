@@ -8,10 +8,10 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [Install Sourcegraph with Docker](install/docker.md)
   - [Install Sourcegraph on a cluster](install/cluster.md)
 - Management, deployment, and configuration:
+  - [Configuration](config/index.md)
   - [Adding Git repositories](repo/add.md) (from a code host or clone URL)
   - [Repository webhooks](repo/webhooks.md)
   - [Management console](management_console.md)
-  - [Site configuration](site_config/index.md)
   - [User authentication](auth.md)
   - [Upgrading Sourcegraph](updates.md)
   - [nginx HTTP server configuration](nginx.md)

@@ -32,12 +32,13 @@ Sourcegraph docs.
 
 The documentation is organized into the following top-level directories:
 
-- [`user`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/user) for users
-- [`admin`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin) for site admins
-- [`extensions`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/extensions) for Sourcegraph extensions
-- [`integration`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/integration) for integrations with other products
-- [`api`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for the Sourcegraph GraphQL API
-- [`dev`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for contributors
+- [`user/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/user) for users
+- [`admin/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin) for site admins
+  - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin/external_service) for external service-related documentation *for site admins* (vs. `integration/` for the general audience)
+- [`extensions/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/extensions) for Sourcegraph extensions
+- [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
+- [`api/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for the Sourcegraph GraphQL API
+- [`dev/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for contributors
 
 There is no global index or nav, so all docs should be linked from their parent index page. Every new document should be cross-linked to its related documentation, and linked from its topic-related index, when it exists.
 
@@ -98,7 +99,7 @@ Currently there is no automatic linting of documentation files. In the future we
 
 We treat documentation as code, so we've implemented some testing:
 
-- `docsite check`: Check that all internal (relative) links work correctly. <!-- TODO(sqs): set this up -->
+- `docsite check`: Check that all internal (relative) links work correctly.
 
 ## Previewing the changes live
 
@@ -111,8 +112,7 @@ You can also follow the [sourcegraph/docs.sourcegraph.com README](https://github
 Every Sourcegraph instance includes the documentation at the URL path `/help`
 (`https://sourcegraph.example.com/help`), e.g., <https://sourcegraph.com/help>.
 
-The documentation available on docs.sourcegraph.com is continuously <!-- TODO(sqs): set up continuous deploy of docs -->
-deployed every hour from the `master` branch of `sourcegraph/sourcegraph`. Once a pull request gets merged, it will be available on docs.sourcegraph.com soon, and its doc changes will ship in the next release.
+The documentation available on https://docs.sourcegraph.com is continuously deployed every 5 minutes from the `master` branch of `sourcegraph/sourcegraph`.
 
 ### Linking to /help
 

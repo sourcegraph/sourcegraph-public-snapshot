@@ -1,15 +1,16 @@
 # AWS CodeCommit integration with Sourcegraph
 
-Sourcegraph integrates with [AWS CodeCommit](https://aws.amazon.com/codecommit/).
+You can use Sourcegraph with Git repositories hosted on [AWS CodeCommit](https://aws.amazon.com/codecommit/).
 
-## AWS CodeCommit configuration
+Feature | Supported?
+------- | ----------
+[Repository syncing](../admin/external_service/aws_codecommit.md) | ✅
+[Browser extension](browser_extension.md) | ❌
 
-Sourcegraph supports syncing repositories from [AWS CodeCommit](https://aws.amazon.com/codecommit/).
+## Repository syncing
 
-- Add AWS CodeCommit as an external service (in **Site admin > External services**, or in the site config JSON editor in Sourcegraph 2.x)
-
-- Read the [AWS CodeCommit configuration documentation](../admin/site_config/all.md#awscodecommitconnection-object) or press Ctrl+Space or Cmd+Space in the configuration editor.
+Site admins can [add AWS CodeCommit repositories to Sourcegraph](../admin/external_service/aws_codecommit.md).
 
 ## Browser extension
 
-The [Sourcegraph browser extension](browser_extension.md) does not yet support AWS CodeCommit.
+The [Sourcegraph browser extension](browser_extension.md) does not yet support AWS CodeCommit. This means that you won't get hovers, go-to-definition, and find-references from Sourcegraph when viewing your code on AWS CodeCommit's web interface.

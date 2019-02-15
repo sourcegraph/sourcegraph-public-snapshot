@@ -13,16 +13,19 @@ const SiteSchemaJSON = `{
   "properties": {
     "dontIncludeSymbolResultsByDefault": {
       "description": "Set to ` + "`" + `true` + "`" + ` to not include symbol results if no ` + "`" + `type:` + "`" + ` filter was given",
-      "type": "boolean"
+      "type": "boolean",
+      "group": "Search"
     },
     "disableBuiltInSearches": {
       "description": "Whether built-in searches should be hidden on the Searches page.",
-      "type": "boolean"
+      "type": "boolean",
+      "group": "Search"
     },
     "search.index.enabled": {
       "description": "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
       "type": "boolean",
-      "!go": { "pointer": true }
+      "!go": { "pointer": true },
+      "group": "Search"
     },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
@@ -41,20 +44,27 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         }
-      }
+      },
+      "group": "Experimental",
+      "hide": true
     },
     "corsOrigin": {
       "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
-      "type": "string"
+      "type": "string",
+      "default": "github.com",
+      "examples": ["github.com github-enterprise.example.com gitlab.com"],
+      "group": "Security"
     },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "group": "External services"
     },
     "disablePublicRepoRedirects": {
       "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
-      "type": "boolean"
+      "type": "boolean",
+      "group": "External services"
     },
     "git.cloneURLToRepositoryName": {
       "description": "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
@@ -75,30 +85,38 @@ const SiteSchemaJSON = `{
             "type": "string"
           }
         }
-      }
+      },
+      "group": "External services"
     },
     "githubClientID": {
       "description": "Client ID for GitHub.",
-      "type": "string"
+      "type": "string",
+      "group": "Internal",
+      "hide": true
     },
     "githubClientSecret": {
       "description": "Client secret for GitHub.",
-      "type": "string"
+      "type": "string",
+      "group": "Internal",
+      "hide": true
     },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
       "type": "integer",
-      "default": 5
+      "default": 5,
+      "group": "External services"
     },
     "repoListUpdateInterval": {
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",
-      "default": 1
+      "default": 1,
+      "group": "External services"
     },
     "maxReposToSearch": {
       "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
       "type": "integer",
-      "default": 500
+      "default": 500,
+      "group": "Search"
     },
     "parentSourcegraph": {
       "description": "URL to fetch unreachable repository details from. Defaults to \"https://sourcegraph.com\"",
@@ -109,7 +127,8 @@ const SiteSchemaJSON = `{
           "type": "string",
           "default": "https://sourcegraph.com"
         }
-      }
+      },
+      "group": "External services"
     },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
@@ -122,7 +141,17 @@ const SiteSchemaJSON = `{
           "enum": ["all-users-create", "site-admin-create", "none"],
           "default": "all-users-create"
         }
-      }
+      },
+      "default": {
+        "allow": "all-users-create"
+      },
+      "examples": [
+        {
+          "allow": "site-admin-create"
+        },
+        { "allow": "none" }
+      ],
+      "group": "Security"
     },
     "email.smtp": {
       "title": "SMTPServerConfig",
@@ -166,7 +195,8 @@ const SiteSchemaJSON = `{
           "password": "mypassword",
           "authentication": "PLAIN"
         }
-      ]
+      ],
+      "group": "Email"
     },
     "email.imap": {
       "title": "IMAPServerConfig",
@@ -200,12 +230,15 @@ const SiteSchemaJSON = `{
           "username": "alice",
           "password": "mypassword"
         }
-      ]
+      ],
+      "group": "Email",
+      "hide": true
     },
     "email.address": {
       "description": "The \"from\" address for emails sent by this server.",
       "type": "string",
       "format": "email",
+      "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
     "extensions": {
@@ -229,7 +262,17 @@ const SiteSchemaJSON = `{
             "type": "string"
           }
         }
-      }
+      },
+      "default": {
+        "remoteRegistry": "https://sourcegraph.com/.api/registry"
+      },
+      "examples": [
+        {
+          "remoteRegistry": "https://sourcegraph.com/.api/registry",
+          "allowRemoteExtensions": ["sourcegraph/java"]
+        }
+      ],
+      "group": "Extensions"
     },
     "discussions": {
       "description": "Configures Sourcegraph code discussions.",
@@ -246,7 +289,9 @@ const SiteSchemaJSON = `{
           "items": { "type": "string" },
           "default": []
         }
-      }
+      },
+      "group": "Experimental",
+      "hide": true
     }
   }
 }

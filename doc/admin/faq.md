@@ -6,38 +6,6 @@ Change the `docker` `--publish` argument to make it listen on the specific inter
 
 The other option is to deploy and run Sourcegraph on a cloud provider. For an example, see documentation to [deploy to Google Cloud](install/docker/google_cloud.md).
 
-## How do I see my site config?
-
-If you have admin web access to Sourcegraph, go to `http://YOUR_HOSTNAME_OR_IP/site-admin/configuration` in your browser.
-
-OR
-
-For single-node deployments (`sourcegraph/server`), follow these steps on the machine that is running the Sourcegraph Docker container:
-
-1.  Get the Docker container id for Sourcegraph:
-    ```
-    $ docker ps
-    CONTAINER ID        IMAGE
-    d039ec989761        sourcegraph/server:x.y.z
-    ```
-2.  Get the contents of the site config:
-    ```
-    docker exec d039ec989761 cat /etc/sourcegraph/sourcegraph-config.json
-    ```
-
-For Kubernetes cluster deployments:
-
-1.  Get the id of one sourcegraph-frontend pod:
-    ```
-    $ kubectl get pods -l app=sourcegraph-frontend
-    NAME                                    READY     STATUS    RESTARTS   AGE
-    sourcegraph-frontend-7f4847975d-4r8v9   1/1       Running   0          17h
-    ```
-2.  Get the contents of the site config:
-    ```
-    kubectl exec -it sourcegraph-frontend-7f4847975d-4r8v9 -- cat /etc/sourcegraph/config.json
-    ```
-
 ## How do I access the Sourcegraph database?
 
 For single-node deployments (`sourcegraph/server`), follow these steps on the machine that is running the Sourcegraph Docker container:
@@ -96,18 +64,3 @@ docker run -e LOGO=false ... sourcegraph/server
 ```
 
 See [sourcegraph/sourcegraph#398](https://github.com/sourcegraph/sourcegraph/issues/398) for more information.
-
-### `.sourcegraph/config` does not exist on Windows
-
-On Windows, the `.sourcegraph/config` path must exist prior to starting Sourcegraph with the `docker run ... sourcegraph/server` command, or else you will see the following error:
-
-```
-The source path "C:/Users/USER/.sourcegraph/config" does not exist and is not known to Docker.
-```
-
-To work around this issue, run the following commands before the `docker run` command:
-
-```shell
-mkdir -p ~/.sourcegraph/data
-mkdir -p ~/.sourcegraph/config
-```

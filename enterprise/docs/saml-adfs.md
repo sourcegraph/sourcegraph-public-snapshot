@@ -269,13 +269,13 @@ The ADFS SAML service should now be accessible from your computer. Confirm that,
     curl https://adfstest.sgdev.org/federationmetadata/2007-06/federationmetadata.xml
     ```
 
-## Add ADFS as a SAML auth provider to Sourcegraph site config
+## Add ADFS as a SAML auth provider to Sourcegraph critical config
 
 1.  Make your Sourcegraph instance externally accessible over HTTPS (e.g., using [ngrok](https://ngrok.com)).
 
     🎗️ From here on, substitute `https://sourcegraph.example.com` with your instance's actual URL.
 
-1.  Add the following to your Sourcegraph site configuration:
+1.  Add the following to your Sourcegraph critical configuration:
 
     ```json
     {
@@ -293,7 +293,6 @@ The ADFS SAML service should now be accessible from your computer. Confirm that,
 
     ⚠ Ensure that this SAML auth provider is the only auth provider with a `type` of `saml`.
 
-1.  If using Sourcegraph Data Center, redeploy with the new configuration. (Sourcegraph Server will automatically reload the configuration and apply this change.)
 1.  Confirm there are no error messages in the Sourcegraph logs (for Sourcegraph Data Center, the `sourcegraph-frontend` pod logs). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata.`.
 
 ## Add Sourcegraph as an ADFS Relying Party (RP)
