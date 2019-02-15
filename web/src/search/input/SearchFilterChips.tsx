@@ -26,7 +26,7 @@ interface Props extends SettingsCascadeProps {
     query: string
 }
 
-interface ISearchScope {
+export interface ISearchScope {
     name?: string
     value: string
 }

@@ -2,7 +2,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
-import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
@@ -21,8 +20,6 @@ interface Props {
     onChange: (change: GQL.IAddExternalServiceInput) => void
 }
 
-const EXTRA_SCHEMAS = [siteSchemaJSON]
-
 export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
@@ -38,6 +35,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         autoCorrect="off"
                         autoComplete="off"
                         autoFocus={true}
+                        spellCheck={false}
                         value={this.props.input.displayName}
                         onChange={this.onDisplayNameChange}
                         disabled={this.props.loading}
@@ -52,9 +50,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         disabled={this.props.loading || this.props.mode === 'edit'}
                         value={this.props.input.kind}
                     >
-                        {ALL_EXTERNAL_SERVICES.map(s => (
-                            <option key={s.kind} value={s.kind}>
-                                {s.displayName}
+                        {Object.entries(ALL_EXTERNAL_SERVICES).map(([kind, service]) => (
+                            <option key={kind} value={kind}>
+                                {service.displayName}
                             </option>
                         ))}
                     </Select>
@@ -66,8 +64,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         // so the editor is keyed on the kind.
                         key={this.props.input.kind}
                         value={this.props.input.config}
-                        jsonSchemaId={`site.schema.json#definitions/${getKindDefinitionId(this.props.input.kind)}`}
-                        extraSchemas={EXTRA_SCHEMAS}
+                        {...getJSONSchemaId(this.props.input.kind)}
                         canEdit={false}
                         loading={this.props.loading}
                         height={300}
@@ -100,21 +97,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     }
 }
 
-function getKindDefinitionId(kind: GQL.ExternalServiceKind): string {
-    switch (kind) {
-        case GQL.ExternalServiceKind.AWSCODECOMMIT:
-            return 'AWSCodeCommitConnection'
-        case GQL.ExternalServiceKind.BITBUCKETSERVER:
-            return 'BitbucketServerConnection'
-        case GQL.ExternalServiceKind.GITHUB:
-            return 'GitHubConnection'
-        case GQL.ExternalServiceKind.GITLAB:
-            return 'GitLabConnection'
-        case GQL.ExternalServiceKind.GITOLITE:
-            return 'GitoliteConnection'
-        case GQL.ExternalServiceKind.PHABRICATOR:
-            return 'PhabricatorConnection'
-        case GQL.ExternalServiceKind.OTHER:
-            return 'OtherExternalServiceConnection'
-    }
+function getJSONSchemaId(kind: GQL.ExternalServiceKind): { jsonSchemaId: string; extraSchema: any } {
+    const service = ALL_EXTERNAL_SERVICES[kind]
+    return { jsonSchemaId: service.jsonSchema.$id, extraSchema: service.jsonSchema }
 }

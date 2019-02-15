@@ -8,7 +8,7 @@ import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
-import { ALL_EXTERNAL_SERVICES, ExternalServiceMetadata, GITHUB_EXTERNAL_SERVICE } from './externalServices'
+import { ALL_EXTERNAL_SERVICES, ExternalServiceMetadata } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
 interface Props {
@@ -46,27 +46,28 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     private submits = new Subject<GQL.IAddExternalServiceInput>()
     private subscriptions = new Subscription()
 
-    private getExternalServiceMetadata(kind?: string | GQL.ExternalServiceKind): ExternalServiceMetadata {
+    private getExternalServiceKind(kind?: string | GQL.ExternalServiceKind): GQL.ExternalServiceKind {
         if (!kind) {
             const params = new URLSearchParams(this.props.history.location.search)
             kind = params.get('kind') || undefined
         }
-
         if (kind) {
-            const k = kind
-            const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === k.toUpperCase())
-            if (service) {
-                return service
-            }
+            kind = kind.toUpperCase()
         }
-        return GITHUB_EXTERNAL_SERVICE
+        const isKnownKind = (kind: string): kind is GQL.ExternalServiceKind =>
+            !!ALL_EXTERNAL_SERVICES[kind as GQL.ExternalServiceKind]
+        return kind && isKnownKind(kind) ? kind : GQL.ExternalServiceKind.GITHUB // default to GitHub
+    }
+
+    private getExternalServiceMetadata(kind?: string | GQL.ExternalServiceKind): ExternalServiceMetadata {
+        return ALL_EXTERNAL_SERVICES[this.getExternalServiceKind(kind)]
     }
 
     private getExternalServiceInput(): GQL.IAddExternalServiceInput {
         return {
             displayName: this.state.displayName,
             config: this.state.config,
-            kind: this.getExternalServiceMetadata().kind,
+            kind: this.getExternalServiceKind(),
         }
     }
 
@@ -123,7 +124,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 
     private onChange = (input: GQL.IAddExternalServiceInput) => {
-        if (input.kind.toLowerCase() === this.getExternalServiceMetadata().kind.toLowerCase()) {
+        if (input.kind.toLowerCase() === this.getExternalServiceKind().toLowerCase()) {
             this.setState({
                 displayName: input.displayName,
                 config: input.config,

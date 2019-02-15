@@ -21,9 +21,9 @@ interface Props {
     jsonSchemaId: string
 
     /**
-     * Extra schemas that are transitively referenced by jsonSchemaId.
+     * Extra schema that is transitively referenced by jsonSchemaId.
      */
-    extraSchemas?: { $id: string }[]
+    extraSchema?: { $id: string }
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -194,7 +194,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     <MonacoSettingsEditor
                         value={contents}
                         jsonSchemaId={this.props.jsonSchemaId}
-                        extraSchemas={this.props.extraSchemas}
+                        extraSchema={this.props.extraSchema}
                         onChange={this.onEditorChange}
                         readOnly={this.state.saving}
                         monacoRef={this.monacoRef}

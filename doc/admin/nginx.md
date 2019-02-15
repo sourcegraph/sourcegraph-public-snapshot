@@ -85,7 +85,7 @@ Use the dropdown menus on the Certbot site to find instructions for other setups
 
 ## Redirect to external HTTPS URL
 
-The URL that clients should use to access Sourcegraph is called the [`externalURL`](site_config/all.md#externalurl-string) in site configuration. To enforce that clients access Sourcegraph via this URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
+The URL that clients should use to access Sourcegraph is defined in the `externalURL` property in [critical configuration](config/critical_config.md). To enforce that clients access Sourcegraph via this URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
 
 ``` nginx
 # Redirect non-HTTPS traffic to HTTPS.
@@ -127,4 +127,4 @@ The pure-Docker deployment reference ([deploy-sourcegraph-docker](https://github
 
 We suggest using [the official nginx docker images](https://hub.docker.com/_/nginx) and following their instructions for [securing HTTP traffic with a proxied server](https://docs.nginx.com/nginx/admin-guide/security-controls/securing-http-traffic-upstream/).
 
-Lastly, you should configure Sourcegraph's [`externalURL`](site_config/all.md#externalurl-string) in the [management console](management_console.md) (and restart the frontend instances) so that Sourcegraph knows its URL.
+Finally, you should configure Sourcegraph's `externalURL` in the [critical configuration](config/critical_config.md) (and restart the frontend instances) so that Sourcegraph knows its URL.

@@ -10,9 +10,7 @@ feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=
 
 Prerequisite: [Add GitHub as an authentication provider.](../auth.md#github)
 
-Then, [add or edit a GitHub external
-   service](../../integration/github.md#syncing-github-repositories) and include the `authorization`
-   field:
+Then, [add or edit a GitHub external service](../external_service/github.md#repository-syncing) and include the `authorization` field:
 
 ```json
 {
@@ -24,17 +22,11 @@ Then, [add or edit a GitHub external
 }
 ```
 
-See the [GitHub connection documentation](../../admin/site_config/all.md#githubconnection-object)
-for the meaning of specific fields.
-
-
 ## GitLab
 
 Prerequisite: [Add GitLab as an authentication provider.](../auth.md#gitlab)
 
-Then, [add or edit a GitLab external
-service](../../integration/gitlab.md#syncing-gitlab-repositories) and include the `authorization`
-field:
+Then, [add or edit a GitLab external service](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
 
 ```json
 {
@@ -45,6 +37,3 @@ field:
   }
 }
 ```
-
-See the [GitLab connection documentation](../../admin/site_config/all.md#gitlabconnection-object)
-for the meaning of specific fields.

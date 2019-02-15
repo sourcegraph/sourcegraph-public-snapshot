@@ -44,7 +44,7 @@ To achieve better performance, you can do any of the following:
 
 ## Next steps
 
-- [Configuring Sourcegraph](../../site_config/index.md)
+- [Configuring Sourcegraph](../../config/index.md)
 - [Upgrading Sourcegraph](../../updates.md)
 - [Management console](../../management_console.md)
 - [Site adminstration documentation](../../index.md)

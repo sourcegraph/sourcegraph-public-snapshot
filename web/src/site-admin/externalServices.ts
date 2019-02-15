@@ -1,13 +1,20 @@
+import awsCodeCommitSchemaJSON from '../../../schema/aws_codecommit.schema.json'
+import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.json'
+import githubSchemaJSON from '../../../schema/github.schema.json'
+import gitlabSchemaJSON from '../../../schema/gitlab.schema.json'
+import gitoliteSchemaJSON from '../../../schema/gitolite.schema.json'
+import otherExternalServiceSchemaJSON from '../../../schema/other_external_service.schema.json'
+import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 
 export interface ExternalServiceMetadata {
-    kind: GQL.ExternalServiceKind
+    jsonSchema: { $id: string }
     displayName: string
     defaultConfig: string
 }
 
 export const GITHUB_EXTERNAL_SERVICE: ExternalServiceMetadata = {
-    kind: GQL.ExternalServiceKind.GITHUB,
+    jsonSchema: githubSchemaJSON,
     displayName: 'GitHub',
     defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -30,9 +37,9 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceMetadata = {
 }`,
 }
 
-export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
-    {
-        kind: GQL.ExternalServiceKind.AWSCODECOMMIT,
+export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServiceMetadata> = {
+    [GQL.ExternalServiceKind.AWSCODECOMMIT]: {
+        jsonSchema: awsCodeCommitSchemaJSON,
         displayName: 'AWS CodeCommit',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -44,8 +51,8 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   "secretAccessKey": ""
 }`,
     },
-    {
-        kind: GQL.ExternalServiceKind.BITBUCKETSERVER,
+    [GQL.ExternalServiceKind.BITBUCKETSERVER]: {
+        jsonSchema: bitbucketServerSchemaJSON,
         displayName: 'Bitbucket Server',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -59,9 +66,9 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   "token": ""
 }`,
     },
-    GITHUB_EXTERNAL_SERVICE,
-    {
-        kind: GQL.ExternalServiceKind.GITLAB,
+    [GQL.ExternalServiceKind.GITHUB]: GITHUB_EXTERNAL_SERVICE,
+    [GQL.ExternalServiceKind.GITLAB]: {
+        jsonSchema: gitlabSchemaJSON,
         displayName: 'GitLab',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -75,8 +82,8 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   "token": ""
 }`,
     },
-    {
-        kind: GQL.ExternalServiceKind.GITOLITE,
+    [GQL.ExternalServiceKind.GITOLITE]: {
+        jsonSchema: gitoliteSchemaJSON,
         displayName: 'Gitolite',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -87,8 +94,8 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   "host": "git@gitolite.example.com"
 }`,
     },
-    {
-        kind: GQL.ExternalServiceKind.PHABRICATOR,
+    [GQL.ExternalServiceKind.PHABRICATOR]: {
+        jsonSchema: phabricatorSchemaJSON,
         displayName: 'Phabricator',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -100,8 +107,8 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   "repos": []
 }`,
     },
-    {
-        kind: GQL.ExternalServiceKind.OTHER,
+    [GQL.ExternalServiceKind.OTHER]: {
+        jsonSchema: otherExternalServiceSchemaJSON,
         displayName: 'Other',
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
@@ -115,4 +122,4 @@ export const ALL_EXTERNAL_SERVICES: ExternalServiceMetadata[] = [
   "repos": []
 }`,
     },
-]
+}

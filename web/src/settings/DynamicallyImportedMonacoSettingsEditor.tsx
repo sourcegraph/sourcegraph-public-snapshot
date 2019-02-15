@@ -15,7 +15,7 @@ const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dis
 interface Props
     extends Pick<
         _monacoSettingsEditorModule.Props,
-        'id' | 'readOnly' | 'height' | 'jsonSchemaId' | 'extraSchemas' | 'isLightTheme'
+        'id' | 'readOnly' | 'height' | 'jsonSchemaId' | 'extraSchema' | 'isLightTheme'
     > {
     value: string
 

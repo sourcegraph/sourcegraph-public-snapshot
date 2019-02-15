@@ -13,6 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added syntax highlighting for Kotlin and Dart.
 - Added `auth.disableUsernameChanges` to critical configuration to prevent users from changing their usernames.
 - Site admins can query a user by email address or username from the GraphQL API.
+- Added a search query builder to the main search page. Click "Use search query builder" to open the query builder, which is a form with separate inputs for commonly used search keywords.
 
 ### Changed
 

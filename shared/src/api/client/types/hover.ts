@@ -11,48 +11,13 @@ export interface HoverMerged {
     range?: Range
 }
 
-function hoverPriority(value: Hover | PlainHover | null | undefined): number | undefined {
-    return value && 'priority' in value ? value.priority : undefined
-}
-
 export namespace HoverMerged {
     /** Create a merged hover from the given individual hovers. */
     export function from(values: (Hover | PlainHover | null | undefined)[]): HoverMerged | null {
-        // Sort by priority.
-        values = values.sort((a, b) => {
-            const ap = hoverPriority(a)
-            const bp = hoverPriority(b)
-            if (ap === undefined && bp === undefined) {
-                return 0
-            } else if (ap === undefined) {
-                return 1
-            } else if (bp === undefined) {
-                return -1
-            }
-            return bp - ap
-        })
-
-        const maxPriority = values.reduce((max: undefined | number, v: Hover | PlainHover | null | undefined) => {
-            const priority = hoverPriority(v)
-            if (typeof priority === 'number' && (max === undefined || priority > max)) {
-                return priority
-            }
-            return max
-        }, undefined)
-
         const contents: HoverMerged['contents'] = []
         let range: Range | undefined
         for (const result of values) {
             if (result) {
-                if (
-                    typeof result.priority === 'number' &&
-                    typeof maxPriority === 'number' &&
-                    result.priority < 0 &&
-                    result.priority < maxPriority
-                ) {
-                    continue
-                }
-
                 if (result.contents && result.contents.value) {
                     contents.push({
                         value: result.contents.value,

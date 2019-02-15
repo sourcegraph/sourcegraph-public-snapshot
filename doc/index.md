@@ -2,9 +2,9 @@
 
 > NOTE: Upgrading to `3.0.1+`? Read our [migration guide](admin/migration/3_0.md) for `2.x` and `3.0.0`.
 
-Sourcegraph is used by developers at Uber, Lyft, Yelp, and more to help them search, navigate and review code at enterprise scale.
+[Sourcegraph](https://sourcegraph.com) is used by developers at Uber, Lyft, Yelp, and more to help them search, navigate and review code at enterprise scale.
 
-# Quickstart guide
+## Quickstart guide
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
@@ -29,9 +29,7 @@ Access the server on port `7080`, then the below screencast will show you how to
 
 Once Sourcegraph has been configured, head to the [site administration documentation](admin/index.md) for next steps.
 
-## Learn about Sourcegraph
-
-Learn more about Sourcegraph at [Sourcegraph.com](https://sourcegraph.com/start) where you can also use it for [searching open source repositories](https://sourcegraph.com/search).
+## Documentation
 
 Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph). Need help? Use the [issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 
@@ -39,24 +37,19 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 
 - [**User documentation**](user/index.md)
 - [**Administrator documentation**](admin/index.md)
-- [Install Sourcegraph](admin/install/index.md)
-- [Update Sourcegraph](admin/updates.md)
+- [Install Sourcegraph](admin/install/index.md) or [update Sourcegraph](admin/updates.md)
 - [Sourcegraph extensions](extensions/index.md)
-- [Contributing to Sourcegraph](dev/index.md)
-- [Sourcegraph Enterprise](admin/subscriptions/index.md)
-- [Sourcegraph roadmap](dev/roadmap.md)
+- [Roadmap](dev/roadmap.md)
 
 ### Features and tutorials
 
 - [Overview](user/index.md): What is Sourcegraph?
 - [Tour](user/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
+- [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
 - [Query syntax reference](user/search/queries.md)
-- [Building a Sourcegraph extension](extensions/authoring/index.md) to add features and integrations to Sourcegraph
-- [Code search](user/search/index.md)
-- [Code intelligence](user/code_intelligence/index.md)
-- [Other integrations](integration/index.md)
 - [GraphQL API](api/graphql.md)
+- [Sourcegraph Enterprise](admin/subscriptions/index.md)
 
 <!-- TODO(sqs): Add link to ./graphbook when it has more content. -->
 
@@ -72,6 +65,7 @@ For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes clus
 ## Other links
 
 - [Sourcegraph open-source repository](https://github.com/sourcegraph/sourcegraph)
+- [Contributing to Sourcegraph](dev/index.md)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 - [about.sourcegraph.com](https://about.sourcegraph.com) (general information about Sourcegraph)
