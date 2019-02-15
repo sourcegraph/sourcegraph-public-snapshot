@@ -7,7 +7,7 @@ $body-color-dark: $white;
 
 .theme-light {
     --body-color: #{$body-color-light};
-    --body-bg: #ffffff;
+    --body-bg: #FBFDFF;
     --text-muted: #{$color-light-text-2};
     --link-color: #566e9f;
     --link-hover-color: #1d2535;
@@ -15,7 +15,7 @@ $body-color-dark: $white;
 
 .theme-dark {
     --body-color: #{$body-color-dark};
-    --body-bg: #151c28;
+    --body-bg: #04070E;
     --text-muted: #{$color-text-1};
     --link-color: #a2b0cd;
     --link-hover-color: #ffffff;
