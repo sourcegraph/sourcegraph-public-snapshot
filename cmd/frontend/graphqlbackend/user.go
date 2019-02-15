@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -170,7 +171,10 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		DisplayName: args.DisplayName,
 		AvatarURL:   args.AvatarURL,
 	}
-	if args.Username != nil && viewerCanChangeUsername(ctx, userID) {
+	if args.Username != nil {
+		if !viewerCanChangeUsername(ctx, userID) {
+			return nil, fmt.Errorf("unable to change username because auth.disableUsernameChanges is true in critical config")
+		}
 		update.Username = *args.Username
 	}
 	if err := db.Users.Update(ctx, userID, update); err != nil {
@@ -277,7 +281,7 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return false
 	}
-	if !conf.Get().AuthDisableUsernameChanges {
+	if !conf.Get().Critical.AuthDisableUsernameChanges {
 		return true
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.disableUsernameChanges == true.

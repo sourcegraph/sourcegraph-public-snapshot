@@ -105,21 +105,22 @@ type CloneURLToRepositoryName struct {
 
 // CriticalConfiguration description: Critical configuration for a Sourcegraph site.
 type CriticalConfiguration struct {
-	AuthProviders        []AuthProviders     `json:"auth.providers,omitempty"`
-	AuthPublic           bool                `json:"auth.public,omitempty"`
-	AuthSessionExpiry    string              `json:"auth.sessionExpiry,omitempty"`
-	AuthUserOrgMap       map[string][]string `json:"auth.userOrgMap,omitempty"`
-	ExternalURL          string              `json:"externalURL,omitempty"`
-	HtmlBodyBottom       string              `json:"htmlBodyBottom,omitempty"`
-	HtmlBodyTop          string              `json:"htmlBodyTop,omitempty"`
-	HtmlHeadBottom       string              `json:"htmlHeadBottom,omitempty"`
-	HtmlHeadTop          string              `json:"htmlHeadTop,omitempty"`
-	LicenseKey           string              `json:"licenseKey,omitempty"`
-	LightstepAccessToken string              `json:"lightstepAccessToken,omitempty"`
-	LightstepProject     string              `json:"lightstepProject,omitempty"`
-	Log                  *Log                `json:"log,omitempty"`
-	UpdateChannel        string              `json:"update.channel,omitempty"`
-	UseJaeger            bool                `json:"useJaeger,omitempty"`
+	AuthProviders              []AuthProviders     `json:"auth.providers,omitempty"`
+	AuthPublic                 bool                `json:"auth.public,omitempty"`
+	AuthSessionExpiry          string              `json:"auth.sessionExpiry,omitempty"`
+	AuthUserOrgMap             map[string][]string `json:"auth.userOrgMap,omitempty"`
+	AuthDisableUsernameChanges bool                `json:"auth.disableUsernameChanges,omitempty"`
+	ExternalURL                string              `json:"externalURL,omitempty"`
+	HtmlBodyBottom             string              `json:"htmlBodyBottom,omitempty"`
+	HtmlBodyTop                string              `json:"htmlBodyTop,omitempty"`
+	HtmlHeadBottom             string              `json:"htmlHeadBottom,omitempty"`
+	HtmlHeadTop                string              `json:"htmlHeadTop,omitempty"`
+	LicenseKey                 string              `json:"licenseKey,omitempty"`
+	LightstepAccessToken       string              `json:"lightstepAccessToken,omitempty"`
+	LightstepProject           string              `json:"lightstepProject,omitempty"`
+	Log                        *Log                `json:"log,omitempty"`
+	UpdateChannel              string              `json:"update.channel,omitempty"`
+	UseJaeger                  bool                `json:"useJaeger,omitempty"`
 }
 
 // Discussions description: Configures Sourcegraph code discussions.
@@ -314,7 +315,6 @@ type Settings struct {
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
-	AuthDisableUsernameChanges        bool                        `json:"auth.disableUsernameChanges,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
