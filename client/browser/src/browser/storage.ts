@@ -1,6 +1,5 @@
 import { EMPTY, Observable } from 'rxjs'
 import { shareReplay } from 'rxjs/operators'
-import SafariStorageArea, { SafariSettingsChangeMessage, stringifyStorageArea } from './safari/StorageArea'
 import { MigratableStorageArea, noopMigration, provideMigrations } from './storage_migrations'
 import { StorageChange, StorageItems } from './types'
 
@@ -35,30 +34,6 @@ const getItem = (area: chrome.storage.StorageArea) => (
 const onChanged = (listener: (changes: Partial<StorageChange>, areaName: string) => void) => {
     if (chrome && chrome.storage) {
         chrome.storage.onChanged.addListener(listener)
-    } else if (safari && safari.application) {
-        const extension = safari.extension as SafariExtension
-
-        extension.settings.addEventListener(
-            'change',
-            ({ key, newValue, oldValue }: SafariExtensionSettingsChangeEvent) => {
-                const k = key as keyof StorageItems
-
-                listener({ [k]: { newValue, oldValue } }, 'sync')
-            }
-        )
-    } else if (safari && !safari.application) {
-        const page = safari.self as SafariContentWebPage
-
-        const handleChanges = (event: SafariExtensionMessageEvent) => {
-            if (event.name === 'settings-change') {
-                const { changes, areaName } = event.message as SafariSettingsChangeMessage
-                const c = changes as { [key in keyof StorageItems]: chrome.storage.StorageChange }
-
-                listener(c, areaName)
-            }
-        }
-
-        page.addEventListener('message', handleChanges, false)
     }
 }
 
@@ -87,24 +62,10 @@ const throwNoopErr = () => {
 export default ((): Storage => {
     if (window.SG_ENV === 'EXTENSION') {
         const chrome = global.chrome
-        const safari = window.safari
 
-        const syncStorageArea = provideMigrations(
-            typeof chrome !== 'undefined'
-                ? chrome.storage.sync
-                : new SafariStorageArea((safari.extension as SafariExtension).settings, 'sync')
-        )
-
-        const localStorageArea = provideMigrations(
-            typeof chrome !== 'undefined'
-                ? chrome.storage.local
-                : new SafariStorageArea(stringifyStorageArea(window.localStorage), 'local')
-        )
-
-        const managedStorageArea: chrome.storage.StorageArea =
-            typeof chrome !== 'undefined'
-                ? chrome.storage.managed
-                : new SafariStorageArea((safari.extension as SafariExtension).settings, 'managed')
+        const syncStorageArea = provideMigrations(chrome.storage.sync)
+        const localStorageArea = provideMigrations(chrome.storage.local)
+        const managedStorageArea: chrome.storage.StorageArea = chrome.storage.managed
 
         const storage: Storage = {
             getManaged: get(managedStorageArea),

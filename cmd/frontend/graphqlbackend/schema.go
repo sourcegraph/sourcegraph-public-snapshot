@@ -2117,6 +2117,11 @@ type User implements Node & SettingsSubject {
     # Whether the viewer has admin privileges on this user. The user has admin privileges on their own user, and
     # site admins have admin privileges on all users.
     viewerCanAdminister: Boolean!
+    # Whether the viewer can change the username of this user.
+    #
+    # The user can change their username unless auth.disableUsernameChanges is set.
+    # Site admins can always change the username of any user.
+    viewerCanChangeUsername: Boolean!
     # The user's survey responses.
     #
     # Only the user and site admins can access this field.
@@ -2857,7 +2862,9 @@ enum UserEvent {
     PAGEVIEW
     SEARCHQUERY
     CODEINTEL
+    CODEINTELREFS
     CODEINTELINTEGRATION
+    CODEINTELINTEGRATIONREFS
 }
 
 # A period of time in which a set of users have been active.
