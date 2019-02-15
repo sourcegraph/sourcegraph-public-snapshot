@@ -12,6 +12,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added Docker-specific help text when running the Sourcegraph docker image in an environment with an sufficient open file descriptor limit.
 - Added syntax highlighting for Kotlin and Dart.
 - Added `auth.disableUsernameChanges` to critical configuration to prevent users from changing their usernames.
+- Added a search query builder to the main search page. Click "Use search query builder" to open the query builder, which is a form with separate inputs for commonly used search keywords.
 
 ### Changed
 
