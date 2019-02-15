@@ -1,4 +1,3 @@
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React from 'react'
 import { Dropdown } from 'reactstrap'
@@ -6,8 +5,8 @@ import DropdownItem from 'reactstrap/lib/DropdownItem'
 import DropdownMenu from 'reactstrap/lib/DropdownMenu'
 import DropdownToggle from 'reactstrap/lib/DropdownToggle'
 import { renderInlineMarkdown, renderMarkdown } from '../../../../shared/src/util/markdown'
-import { QueryFieldExamples } from './QueryBuilderInputRow'
 import { pluralize } from '../../../../shared/src/util/strings'
+import { QueryFieldExamples } from './QueryBuilderInputRow'
 
 interface Props {
     markdown: string
@@ -61,12 +60,6 @@ export class InfoDropdown extends React.Component<Props, State> {
                                     ))}
                                 </ul>
                             </>
-                        )}
-                        {window.context.sourcegraphDotComMode && (
-                            <div className="p-2 alert alert-info small rounded-0 mb-0 mt-1">
-                                On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
-                                repositories.
-                            </div>
                         )}
                     </DropdownMenu>
                 </>

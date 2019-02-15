@@ -54,7 +54,7 @@ describe('QueryBuilder', () => {
         expect(onChange.calledWith('"foo bar baz"')).toBe(true)
     })
 
-    it('checks that the "Author", "Before", "After", and "Message" fields do not exist if the search type is set to text search', () => {
+    it('checks that the "Author", "Before", "After", and "Message" fields do not exist if the search type is set to code search', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
         const toggle = getByTestId(container, 'test-query-builder-toggle')
@@ -72,7 +72,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const typeField = getBySelectText(container, 'Text (default)')!
+        const typeField = getBySelectText(container, 'Code (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-author'))
@@ -85,25 +85,13 @@ describe('QueryBuilder', () => {
         expect(queryByTestId(container, 'test-message')).toBeTruthy()
     })
 
-    it('checks that the "Message" field does not exist if type is commit', () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-        const toggle = getByTestId(container, 'test-query-builder-toggle')
-        fireEvent.click(toggle)
-
-        const typeField = getBySelectText(container, 'Text (default)')!
-        fireEvent.change(typeField, { target: { value: 'commit' } })
-
-        expect(queryByTestId(container, 'test-message')).toBeNull()
-    })
-
     it('checks that the "Author", "Before", and "After" fields exist if type is commit', async () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const typeField = getBySelectText(container, 'Text (default)')!
+        const typeField = getBySelectText(container, 'Code (default)')!
         fireEvent.change(typeField, { target: { value: 'commit' } })
 
         await wait(() => queryByTestId(container, 'test-author'))
@@ -113,6 +101,7 @@ describe('QueryBuilder', () => {
         await wait(() => queryByTestId(container, 'test-before'))
         expect(queryByTestId(container, 'test-before')).toBeTruthy()
         await wait(() => queryByTestId(container, 'test-message'))
+        expect(queryByTestId(container, 'test-message')).toBeTruthy()
     })
 
     it('fires the onFieldsQueryChange prop handler with the "author:" filter when updating the "Author" field', async () => {
@@ -121,7 +110,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const typeField = getBySelectText(container, 'Text (default)')!
+        const typeField = getBySelectText(container, 'Code (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-author'))
@@ -137,7 +126,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const typeField = getBySelectText(container, 'Text (default)')!
+        const typeField = getBySelectText(container, 'Code (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-after'))
@@ -154,7 +143,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const typeField = getBySelectText(container, 'Text (default)')!
+        const typeField = getBySelectText(container, 'Code (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-before'))
@@ -171,7 +160,7 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const typeField = getBySelectText(container, 'Text (default)')!
+        const typeField = getBySelectText(container, 'Code (default)')!
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-message'))

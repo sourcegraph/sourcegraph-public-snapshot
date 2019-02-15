@@ -35,7 +35,7 @@ export interface QueryBuilderState {
      * The query constructed from the values in the input fields.
      */
     builderQuery: string
-    typeOfSearch: 'text' | 'diff' | 'commit' | 'symbol'
+    typeOfSearch: 'code' | 'diff' | 'commit' | 'symbol'
     fields: QueryFields
 }
 
@@ -48,7 +48,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         this.state = {
             showQueryBuilder: false,
             builderQuery: '',
-            typeOfSearch: 'text',
+            typeOfSearch: 'code',
             fields: {
                 type: '',
                 repo: '',
@@ -100,15 +100,15 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         onChange={this.onTypeChange}
                                         value={this.state.typeOfSearch}
                                     >
-                                        <option value="text" defaultChecked={true}>
-                                            Text (default)
+                                        <option value="code" defaultChecked={true}>
+                                            Code (default)
                                         </option>
                                         <option value="diff">Diff</option>
                                         <option value="commit">Commit</option>
                                         <option value="symbol">Symbol</option>
                                     </Select>
                                 </div>
-                                <InfoDropdown markdown="Select the type of search. Choose from text, diff (the content of a commit diff), commit message, and symbol search." />
+                                <InfoDropdown markdown="Select the type of search. Choose from code, diff (the content of a commit diff), commit message, and symbol search." />
                             </div>
                             {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
                                 <>
@@ -318,7 +318,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
             this.setState({ typeOfSearch: searchType })
         } else {
-            this.setState({ typeOfSearch: 'text' })
+            this.setState({ typeOfSearch: 'code' })
         }
     }
 
@@ -338,8 +338,8 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                     } else if (inputField === 'exactMatch') {
                         // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
                         fieldsQueryParts.push(formatFieldForQuery('', inputValue))
-                    } else if (inputField === 'type' && inputValue === 'text') {
-                        // Text searches don't need to be specified.
+                    } else if (inputField === 'type' && inputValue === 'code') {
+                        // code searches don't need to be specified.
                         continue
                     } else {
                         fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
