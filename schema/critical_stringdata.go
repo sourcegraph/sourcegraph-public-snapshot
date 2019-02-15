@@ -19,7 +19,9 @@ const CriticalSchemaJSON = `{
         "items": {
           "type": "string"
         }
-      }
+      },
+      "examples": [{ "*": ["myorg1"] }],
+      "hide": true
     },
     "log": {
       "description": "Configuration for logging and alerting, including to external services.",
@@ -38,46 +40,58 @@ const CriticalSchemaJSON = `{
             }
           }
         }
-      }
+      },
+      "examples": [{ "sentry": { "dsn": "https://mykey@sentry.io/myproject" } }],
+      "group": "Misc."
     },
     "externalURL": {
       "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `.",
-      "type": "string"
+      "type": "string",
+      "examples": ["https://sourcegraph.example.com"]
     },
     "lightstepAccessToken": {
       "description": "Access token for sending traces to LightStep.",
-      "type": "string"
+      "type": "string",
+      "group": "Misc."
     },
     "lightstepProject": {
       "description": "The project ID on LightStep that corresponds to the ` + "`" + `lightstepAccessToken` + "`" + `, only for generating links to traces. For example, if ` + "`" + `lightstepProject` + "`" + ` is ` + "`" + `mycompany-prod` + "`" + `, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form ` + "`" + `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...` + "`" + `.",
-      "type": "string"
+      "type": "string",
+      "examples": ["myproject"],
+      "group": "Misc."
     },
     "useJaeger": {
       "description": "Use local Jaeger instance for tracing. Kubernetes cluster deployments only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, ` + "`" + `kubectl get pods` + "`" + `\nshould display pods prefixed with ` + "`" + `jaeger-cassandra` + "`" + `,\n` + "`" + `jaeger-collector` + "`" + `, and ` + "`" + `jaeger-query` + "`" + `. ` + "`" + `jaeger-collector` + "`" + ` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [` + "`" + `cqlsh` + "`" + `](https://pypi.python.org/pypi/cqlsh).\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042` + "`" + `\n1. ` + "`" + `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh` + "`" + `\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686` + "`" + `\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
-      "type": "boolean"
+      "type": "boolean",
+      "group": "Misc."
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
-      "type": "string"
+      "type": "string",
+      "group": "Misc."
     },
     "htmlHeadBottom": {
       "description": "HTML to inject at the bottom of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
-      "type": "string"
+      "type": "string",
+      "group": "Misc."
     },
     "htmlBodyTop": {
       "description": "HTML to inject at the top of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
-      "type": "string"
+      "type": "string",
+      "group": "Misc."
     },
     "htmlBodyBottom": {
       "description": "HTML to inject at the bottom of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
-      "type": "string"
+      "type": "string",
+      "group": "Misc."
     },
     "licenseKey": {
       "description": "The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription.",
-      "type": "string"
+      "type": "string",
+      "group": "Sourcegraph Enterprise license"
     },
     "auth.providers": {
-      "description": "The authentication providers to use for identifying and signing in users.",
+      "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
       "type": "array",
       "items": {
         "required": ["type"],
@@ -98,17 +112,22 @@ const CriticalSchemaJSON = `{
         "!go": {
           "taggedUnionType": true
         }
-      }
+      },
+      "group": "Authentication",
+      "default": [{ "type": "builtin", "allowSignup": true }]
     },
     "auth.public": {
       "description": "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires usage of the builtin authentication provider.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "group": "Authentication"
     },
     "auth.sessionExpiry": {
       "type": "string",
       "description": "The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.\n\nThe string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days.\n\nNote: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with \"session_\" from the Redis store:\n\n* For deployments using ` + "`" + `sourcegraph/server` + "`" + `: ` + "`" + `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del` + "`" + `\n* For cluster deployments: \n  ` + "`" + `` + "`" + `` + "`" + `\n  REDIS_POD=\"$(kubectl get pods -l app=redis-store -o jsonpath={.items[0].metadata.name})\";\n  kubectl exec \"$REDIS_POD\" -- redis-cli --raw keys 'session_*' | xargs kubectl exec \"$REDIS_POD\" -- redis-cli --raw del;\n  ` + "`" + `` + "`" + `` + "`" + `\n",
-      "default": "2160h"
+      "default": "2160h",
+      "examples": ["168h"],
+      "group": "Authentication"
     },
     "auth.disableUsernameChanges": {
       "description": "Prevent users from changing their username after account creation.",
@@ -119,7 +138,9 @@ const CriticalSchemaJSON = `{
       "description": "The channel on which to automatically check for Sourcegraph updates.",
       "type": ["string"],
       "enum": ["release", "none"],
-      "default": "release"
+      "default": "release",
+      "examples": ["none"],
+      "group": "Misc."
     }
   },
   "definitions": {
@@ -265,7 +286,8 @@ const CriticalSchemaJSON = `{
         },
         "usernameHeader": {
           "description": "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.",
-          "type": "string"
+          "type": "string",
+          "examples": ["X-Forwarded-User"]
         },
         "stripUsernameHeaderPrefix": {
           "description": "The prefix that precedes the username portion of the HTTP header specified in ` + "`" + `usernameHeader` + "`" + `. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set this value to ` + "`" + `accounts.google.com:` + "`" + `.",
