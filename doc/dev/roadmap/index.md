@@ -14,7 +14,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 Release date: 2019-02-20
 
-Backend:
+Core Services:
 
 - [Upgrade to PostgreSQL 10.6](https://github.com/sourcegraph/sourcegraph/issues/1404)
 
@@ -22,7 +22,7 @@ Distribution:
 
 - [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
 - [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
-- [Docs UX improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
+- [Better docs for setting up an instance ready for sharing](https://github.com/sourcegraph/sourcegraph/issues/2277)
 
 Code search and navigation:
 
@@ -40,7 +40,7 @@ TODO: we are not finished planning 3.2
 
 Release date: 2019-03-20
 
-Backend:
+Core Services:
 
 - [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
 

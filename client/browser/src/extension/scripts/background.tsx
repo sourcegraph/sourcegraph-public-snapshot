@@ -243,7 +243,6 @@ runtime.onMessage((message, _, cb) => {
             removeEnterpriseUrl(message.payload, cb!)
             return true
 
-        // We should only need to do this on safari
         case 'insertCSS':
             const details = message.payload as { file: string; origin: string }
             storage.getSyncItem('sourcegraphURL', ({ sourcegraphURL }) =>
@@ -319,31 +318,23 @@ runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
 runtime.onInstalled(() => {
     setDefaultBrowserAction()
     storage.getSync(items => {
-        if (window.safari) {
-            // Safari settings returns null for getters of values that don't exist so
-            // values get returned with null and we can't override then with defaults like below.
-            storage.setSync({
-                ...defaultStorageItems,
-            })
-        } else {
-            // Enterprise deployments of Sourcegraph are passed a configuration file.
-            storage.getManaged(managedItems => {
-                storage.setSync(
-                    {
-                        ...defaultStorageItems,
-                        ...items,
-                        ...managedItems,
-                    },
-                    () => {
-                        if (managedItems && managedItems.enterpriseUrls && managedItems.enterpriseUrls.length) {
-                            handleManagedPermissionRequest(managedItems.enterpriseUrls)
-                        } else {
-                            setDefaultBrowserAction()
-                        }
+        // Enterprise deployments of Sourcegraph are passed a configuration file.
+        storage.getManaged(managedItems => {
+            storage.setSync(
+                {
+                    ...defaultStorageItems,
+                    ...items,
+                    ...managedItems,
+                },
+                () => {
+                    if (managedItems && managedItems.enterpriseUrls && managedItems.enterpriseUrls.length) {
+                        handleManagedPermissionRequest(managedItems.enterpriseUrls)
+                    } else {
+                        setDefaultBrowserAction()
                     }
-                )
-            })
-        }
+                }
+            )
+        })
     })
 })
 

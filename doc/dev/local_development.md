@@ -37,7 +37,7 @@ Sourcegraph has the following dependencies:
 - [Go](https://golang.org/doc/install) (v1.11 or higher)
 - [Node JS](https://nodejs.org/en/download/) (version 8 or 10)
 - [make](https://www.gnu.org/software/make/)
-- [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
+- [Docker](https://docs.docker.com/engine/installation/) (v18 or higher)
   - For macOS we recommend using Docker for Mac instead of `docker-machine`
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.0)
 - [Redis](http://redis.io/) (v3.0.7 or higher)

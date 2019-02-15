@@ -446,9 +446,9 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
     const selectionsChanges: Observable<Selection[]> = codeHost.selectionsChanges
         ? codeHost.selectionsChanges()
         : fromEvent(window, 'hashchange').pipe(
-              startWith(),
               map(() => lprToSelectionsZeroIndexed(parseHash(window.location.hash))),
-              distinctUntilChanged(isEqual)
+              distinctUntilChanged(isEqual),
+              startWith([])
           )
 
     // Keeps track of all documents on the page since calling this function (should be once per page).

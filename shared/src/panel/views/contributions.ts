@@ -1,7 +1,9 @@
 import { Unsubscribable } from 'rxjs'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 
-export function registerPanelToolbarContributions({ extensionsController }: ExtensionsControllerProps): Unsubscribable {
+export function registerPanelToolbarContributions({
+    extensionsController,
+}: ExtensionsControllerProps<'services'>): Unsubscribable {
     const isLocationsPanelView = ['def', 'references', 'impl', 'typedef']
         .map(id => `(panel.activeView.id == "${id}")`) // must be explicit about operator precedence
         .join(' || ')

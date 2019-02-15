@@ -452,13 +452,7 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 		if err := logSearchOccurred(); err != nil {
 			return err
 		}
-	case "CODEINTEL":
-		// TODO(Dan): differentiate between go to def and find refs
-		if err := logFindRefsOccurred(); err != nil {
-			return err
-		}
-	case "CODEINTELINTEGRATION":
-		// TODO(Dan): differentiate between go to def and find refs
+	case "CODEINTELREFS", "CODEINTELINTEGRATIONREFS":
 		if err := logFindRefsOccurred(); err != nil {
 			return err
 		}
@@ -474,9 +468,9 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 		return logSearchQuery(userID)
 	case "PAGEVIEW":
 		return logPageView(userID)
-	case "CODEINTEL":
+	case "CODEINTEL", "CODEINTELREFS":
 		return logCodeIntelAction(userID)
-	case "CODEINTELINTEGRATION":
+	case "CODEINTELINTEGRATION", "CODEINTELINTEGRATIONREFS":
 		if err := logCodeHostIntegrationUsage(userID); err != nil {
 			return err
 		}

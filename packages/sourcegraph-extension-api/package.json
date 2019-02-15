@@ -1,6 +1,6 @@
 {
   "name": "sourcegraph",
-  "version": "20.1.0",
+  "version": "20.2.0",
   "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
   "author": "Sourcegraph",
   "bugs": {

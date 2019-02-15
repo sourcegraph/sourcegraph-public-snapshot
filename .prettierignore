@@ -3,8 +3,6 @@
 client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
-**/*.safariextension
-!**/*.safariextension/background.safari.html
 **/coverage
 cmd/frontend/db/schema.md
 cmd/xlang-python/python-langserver/
