@@ -241,7 +241,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                         <div className="query-builder__section query-builder__section--purple">
                             <QueryBuilderInputRow
                                 onInputChange={this.onInputChange}
-                                placeholder="my/repo"
+                                placeholder="org/repo"
                                 dotComPlaceholder="github.com/org/"
                                 title="Repositories"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
@@ -277,7 +277,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     },
                                     {
                                         description: 'Search only in JavaScript files',
-                                        value: '/.js$',
+                                        value: '\\.js$',
                                     },
                                     {
                                         description: 'Search only in files where the top-level directory is `docs`',
