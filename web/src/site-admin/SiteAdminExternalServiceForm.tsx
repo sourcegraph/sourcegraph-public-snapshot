@@ -97,7 +97,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     }
 }
 
-function getJSONSchemaId(kind: GQL.ExternalServiceKind): { jsonSchemaId: string; extraSchemas: any[] } {
+function getJSONSchemaId(kind: GQL.ExternalServiceKind): { jsonSchemaId: string; extraSchema: any } {
     const service = ALL_EXTERNAL_SERVICES[kind]
-    return { jsonSchemaId: service.jsonSchema.$id, extraSchemas: [service.jsonSchema] }
+    return { jsonSchemaId: service.jsonSchema.$id, extraSchema: service.jsonSchema }
 }

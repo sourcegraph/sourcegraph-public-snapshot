@@ -30,8 +30,6 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-const EXTRA_SCHEMAS = [siteSchemaJSON]
-
 /**
  * A page displaying the site configuration.
  */
@@ -255,7 +253,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         <DynamicallyImportedMonacoSettingsEditor
                             value={contents || ''}
                             jsonSchemaId="site.schema.json#"
-                            extraSchemas={EXTRA_SCHEMAS}
+                            extraSchema={siteSchemaJSON}
                             onDirtyChange={this.onDirtyChange}
                             canEdit={true}
                             saving={this.state.saving}

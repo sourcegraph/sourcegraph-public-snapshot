@@ -31,9 +31,9 @@ export interface Props {
     jsonSchemaId: string
 
     /**
-     * Extra schemas that are transitively referenced by jsonSchemaId.
+     * Extra schema that is transitively referenced by jsonSchemaId.
      */
-    extraSchemas?: JSONSchema[]
+    extraSchema?: JSONSchema
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -266,11 +266,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
 }
 
 function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
-    const extraSchemas = (props.extraSchemas || []).map(schema => ({
-        uri: schema.$id,
-        schema,
-    }))
-
     m.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,
@@ -292,7 +287,7 @@ function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
                 uri: 'settings.schema.json#',
                 schema: settingsSchema,
             },
-        ].concat(extraSchemas),
+        ].concat(props.extraSchema ? [{ uri: props.extraSchema.$id, schema: props.extraSchema }] : []),
     })
 }
 
