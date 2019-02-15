@@ -2,11 +2,7 @@ module github.com/sourcegraph/sourcegraph
 
 require (
 	cloud.google.com/go v0.36.0
-	dmitri.shuralyov.com/app/changes v0.0.0-20181114035150-5af16e21babb // indirect
-	dmitri.shuralyov.com/service/change v0.0.0-20190203163610-217368fe4577 // indirect
-	git.apache.org/thrift.git v0.12.0 // indirect
 	github.com/NYTimes/gziphandler v1.0.1
-	github.com/Shopify/sarama v1.20.1 // indirect
 	github.com/aws/aws-sdk-go-v2 v0.7.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
@@ -14,12 +10,9 @@ require (
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
 	github.com/coreos/go-semver v0.2.0
-	github.com/coreos/go-systemd v0.0.0-20190212144455-93d5ec2c7f76 // indirect
-	github.com/cosiner/argv v0.0.1 // indirect
 	github.com/crewjam/saml v0.0.0-20180831135026-ebc5f787b786
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v0.0.0-20190211032704-186a3d44e920
-	github.com/derekparker/delve v1.1.0 // indirect
 	github.com/dghubble/gologin v1.0.2-0.20181013174641-0e442dd5bb73
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/die-net/lrucache v0.0.0-20190123005519-19a39ef22a11
@@ -42,24 +35,19 @@ require (
 	github.com/gchaincl/sqlhooks v1.1.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-redsync/redsync v1.0.1
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-migrate/migrate/v4 v4.2.3
 	github.com/golang/gddo v0.0.0-20181116215533-9bd4a3295021
 	github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7
-	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	github.com/golangci/golangci-lint v1.12.5
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0
-	github.com/google/pprof v0.0.0-20190208070709-b421f19a5c07 // indirect
 	github.com/google/uuid v1.1.0
 	github.com/google/zoekt v0.0.0-20180530125106-8e284ca7e964
-	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.5.1
 	github.com/gorilla/handlers v1.4.0
@@ -69,7 +57,6 @@ require (
 	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
 	github.com/graph-gophers/graphql-go v0.0.0-20190204230732-e582242c92cc
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
-	github.com/grpc-ecosystem/grpc-gateway v1.7.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/honeycombio/libhoney-go v1.8.1
 	github.com/joho/godotenv v1.3.0
@@ -91,10 +78,10 @@ require (
 	github.com/mcuadros/go-version v0.0.0-20180611085657-6d5863ca60fa
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
+	github.com/onsi/ginkgo v1.7.0 // indirect
+	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190104202730-77df8e8e70b4
 	github.com/opentracing/opentracing-go v1.0.2
-	github.com/openzipkin/zipkin-go v0.1.5 // indirect
-	github.com/peterh/liner v1.1.0 // indirect
 	github.com/peterhellberg/link v1.0.0
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
@@ -104,23 +91,11 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190209105433-f8d8b3f739bd // indirect
 	github.com/russellhaering/gosaml2 v0.3.1
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
-	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/sergi/go-diff v1.0.0
 	github.com/shurcooL/go v0.0.0-20190121191506-3fef8c783dec // indirect
 	github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041
-	github.com/shurcooL/gofontwoff v0.0.0-20181114050219-180f79e6909d // indirect
-	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
-	github.com/shurcooL/highlight_go v0.0.0-20181215221002-9d8641ddf2e1 // indirect
-	github.com/shurcooL/home v0.0.0-20190204141146-5c8ae21d4240 // indirect
-	github.com/shurcooL/htmlg v0.0.0-20190120222857-1e8a37b806f3 // indirect
 	github.com/shurcooL/httpfs v0.0.0-20181222201310-74dc9339e414
-	github.com/shurcooL/issues v0.0.0-20190120000219-08d8dadf8acb // indirect
-	github.com/shurcooL/issuesapp v0.0.0-20181229001453-b8198a402c58 // indirect
-	github.com/shurcooL/notifications v0.0.0-20181111060504-bcc2b3082a7a // indirect
-	github.com/shurcooL/octicon v0.0.0-20181222203144-9ff1a4cf27f4 // indirect
-	github.com/shurcooL/reactions v0.0.0-20181222204718-145cd5e7f3d1 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
-	github.com/shurcooL/webdavfs v0.0.0-20181215192745-5988b2d638f6 // indirect
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/docsite v0.0.0-20190215213424-0f45ee5daab5
@@ -144,14 +119,9 @@ require (
 	github.com/zenazn/goji v0.9.0 // indirect
 	go.opencensus.io v0.19.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
-	go4.org v0.0.0-20181109185143-00e24f1b2599 // indirect
-	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
-	golang.org/x/build v0.0.0-20190214220220-5d2b36639e09 // indirect
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
-	golang.org/x/exp v0.0.0-20190212162250-21964bba6549 // indirect
 	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd
 	golang.org/x/oauth2 v0.0.0-20190212230446-3e8b2be13635
-	golang.org/x/perf v0.0.0-20190124201629-844a5f5b46f4 // indirect
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
 	golang.org/x/time v0.0.0-20190104202802-85acf8d2951c
@@ -164,7 +134,6 @@ require (
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.8.0
 	gopkg.in/yaml.v2 v2.2.2
-	honnef.co/go/tools v0.0.0-20190215041234-466a0476246c // indirect
 	sourcegraph.com/sourcegraph/go-diff v0.5.0
 	sourcegraph.com/sqs/pbtypes v1.0.0 // indirect
 )
