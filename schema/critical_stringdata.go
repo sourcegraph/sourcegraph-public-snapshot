@@ -111,8 +111,7 @@ const CriticalSchemaJSON = `{
       "default": "2160h"
     },
     "auth.disableUsernameChanges": {
-      "description":
-        "Prevent users from changing their username after account creation.",
+      "description": "Prevent users from changing their username after account creation.",
       "type": "boolean",
       "default": false
     },
