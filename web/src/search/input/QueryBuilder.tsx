@@ -179,7 +179,9 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     />
                                 </>
                             )}
-                            <hr className="query-builder__rule" />
+                            <div className="query-builder__rule-container">
+                                <hr className="query-builder__rule" />
+                            </div>
                             <QueryBuilderInputRow
                                 onInputChange={this.onInputChange}
                                 placeholder="(open|close) file"
