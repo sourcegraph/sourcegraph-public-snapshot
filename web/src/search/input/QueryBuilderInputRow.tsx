@@ -1,6 +1,14 @@
 import * as React from 'react'
+import { InfoDropdown } from './InfoDropdown'
 import { QueryBuilderState } from './QueryBuilder'
 
+/** An example demonstrating the capabilities of the search field. */
+export interface QueryFieldExamples {
+    /** A markdown string describing the example. */
+    description: string
+    /** The value for the example. Will be displayed as an inline code block. */
+    value: string
+}
 interface Props {
     /** The field title */
     title: string
@@ -15,6 +23,8 @@ interface Props {
      * Must be a single or hyphenated word, and unique amongst the other fields in the query builder.
      */
     shortName: keyof QueryBuilderState['fields']
+    /** A list of useful examples demonstrating valid values that can be inputted for this search field. */
+    examples: QueryFieldExamples[]
     /** Handler for when an input field changes. */
     onInputChange: (
         key: keyof QueryBuilderState['fields']
@@ -41,11 +51,7 @@ export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
                     onChange={props.onInputChange(props.shortName)}
                 />
             </div>
-            <div className="query-builder-input-row">
-                <div className="query-builder-input-row__description">
-                    <small>{props.description}</small>
-                </div>
-            </div>
+            <InfoDropdown markdown={props.description} examples={props.examples} />
         </div>
     )
 }

@@ -27,7 +27,6 @@ interface State {
     userQuery: string
     /** The query that results from combining all values in the query builder form. */
     builderQuery: string
-    showQueryBuilder: boolean
 }
 
 /**
@@ -43,7 +42,6 @@ export class SearchPage extends React.Component<Props, State> {
         this.state = {
             userQuery: query || '',
             builderQuery: '',
-            showQueryBuilder: false,
         }
     }
 

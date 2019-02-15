@@ -3,6 +3,7 @@
 @import './QueryInput';
 @import './QueryBuilder';
 @import './QueryBuilderInputRow';
+@import './InfoDropdown';
 @import '../saved-queries/SavedQueries';
 
 .search-page {
@@ -12,6 +13,7 @@
     justify-content: flex-start;
     width: 100%;
     overflow: auto;
+    padding-bottom: 4rem;
 
     &__logo {
         flex: 0 0 auto;

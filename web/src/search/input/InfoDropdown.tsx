@@ -1,0 +1,76 @@
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
+import React from 'react'
+import { Dropdown } from 'reactstrap'
+import DropdownItem from 'reactstrap/lib/DropdownItem'
+import DropdownMenu from 'reactstrap/lib/DropdownMenu'
+import DropdownToggle from 'reactstrap/lib/DropdownToggle'
+import { renderInlineMarkdown, renderMarkdown } from '../../../../shared/src/util/markdown'
+import { QueryFieldExamples } from './QueryBuilderInputRow'
+import { pluralize } from '../../../../shared/src/util/strings'
+
+interface Props {
+    markdown: string
+    examples?: QueryFieldExamples[]
+}
+
+interface State {
+    isOpen: boolean
+}
+
+export class InfoDropdown extends React.Component<Props, State> {
+    constructor(props: Props) {
+        super(props)
+        this.state = { isOpen: false }
+    }
+
+    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+
+    public render(): JSX.Element | null {
+        return (
+            <Dropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="info-dropdown d-flex">
+                <>
+                    <DropdownToggle tag="span" caret={false} className="px-2 btn btn-link d-flex align-items-center">
+                        <HelpCircleOutlineIcon className="icon-inline small" />
+                    </DropdownToggle>
+                    <DropdownMenu right={true} className="pb-0 info-dropdown__item">
+                        <div className="info-dropdown__content">
+                            <small dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.markdown) }} />
+                        </div>
+
+                        {this.props.examples && (
+                            <>
+                                <DropdownItem divider={true} />
+                                <DropdownItem header={true}>
+                                    <strong>{pluralize('Example', this.props.examples.length)}</strong>
+                                </DropdownItem>
+                                <ul className="list-unstyled mb-2">
+                                    {this.props.examples.map((ex: QueryFieldExamples) => (
+                                        <div key={ex.value}>
+                                            <DropdownItem divider={true} />
+
+                                            <div className="px-2">
+                                                <span className="text-muted small">{ex.description}: </span>
+                                                <code
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: renderInlineMarkdown(ex.value),
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                        {window.context.sourcegraphDotComMode && (
+                            <div className="p-2 alert alert-info small rounded-0 mb-0 mt-1">
+                                On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
+                                repositories.
+                            </div>
+                        )}
+                    </DropdownMenu>
+                </>
+            </Dropdown>
+        )
+    }
+}

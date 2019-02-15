@@ -4,6 +4,10 @@
     margin-top: 1rem;
     margin-bottom: 1rem;
     position: relative;
+    h3,
+    label {
+        letter-spacing: 0.015rem;
+    }
 
     &__header,
     &__row {
@@ -64,7 +68,6 @@
 
         &-input {
             flex: 1 1 auto;
-            padding-right: 1rem;
         }
 
         &-example {
@@ -91,6 +94,11 @@
 
     &__docs-link {
         padding-top: 1.5rem;
+    }
+
+    &__rule {
+        background-color: $input-border-color;
+        color: $input-border-color;
     }
 }
 
