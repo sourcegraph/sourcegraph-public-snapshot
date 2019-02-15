@@ -10,6 +10,14 @@ import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
+/**
+ * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
+ * not needed.
+ */
+interface JSONSchema {
+    $id: string
+}
+
 export interface Props {
     id?: string
     value: string | undefined
@@ -23,9 +31,9 @@ export interface Props {
     jsonSchemaId: string
 
     /**
-     * Extra schemas that are transitively referenced by jsonSchemaId.
+     * Extra schema that is transitively referenced by jsonSchemaId.
      */
-    extraSchemas?: { $id: string }[]
+    extraSchema?: JSONSchema
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -258,11 +266,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
 }
 
 function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
-    const extraSchemas = (props.extraSchemas || []).map(schema => ({
-        uri: schema.$id,
-        schema,
-    }))
-
     m.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,
@@ -278,13 +281,13 @@ function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
             // Include these schemas because they are referenced by other schemas.
             {
                 uri: 'http://json-schema.org/draft-07/schema',
-                schema: jsonSchemaMetaSchema,
+                schema: jsonSchemaMetaSchema as JSONSchema,
             },
             {
                 uri: 'settings.schema.json#',
                 schema: settingsSchema,
             },
-        ].concat(extraSchemas),
+        ].concat(props.extraSchema ? [{ uri: props.extraSchema.$id, schema: props.extraSchema }] : []),
     })
 }
 
