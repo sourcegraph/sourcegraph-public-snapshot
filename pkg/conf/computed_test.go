@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -65,6 +66,22 @@ func TestComputed(t *testing.T) {
 				t.Fatalf("got %v, want %v", got[0], test.want)
 			}
 		})
+	}
+}
+
+func TestDefaultOverride(t *testing.T) {
+	tests := []struct {
+		name      string
+		env       []string
+		wantOk    bool
+		wantError bool
+		check     func(conftypes.RawUnified, bool, error) error
+	}{
+		name: "DefaultConfigOverride no env vars",
+		env:  []string{},
+		check: func(sc conftypes.RawUnified, ok bool, err error) error {
+			return nil
+		},
 	}
 }
 

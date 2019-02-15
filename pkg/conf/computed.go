@@ -3,6 +3,7 @@ package conf
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -77,12 +78,84 @@ func init() {
 	confdefaults.Default = defaultConfig
 }
 
+func defaultConfigOverride() (conftypes.RawUnified, bool, error) {
+	defaults := conftypes.RawUnified{}
+
+	siteFile := os.Getenv("DEFAULT_SITE_CONFIG")
+
+	if siteFile == "" {
+		return defaults, false, nil
+	}
+
+	rawSite, err := ioutil.ReadFile(siteFile)
+	if err != nil {
+		return defaults, false, err
+	}
+
+	site := jsonc.Normalize(string(rawSite))
+	var decodedSite schema.SiteConfiguration
+	err = json.Unmarshal(site, &decodedSite)
+	if err != nil {
+		return defaults, false, err
+	}
+
+	site, err = json.MarshalIndent(decodedSite, "", "  ")
+	if string(site) != "{}" && err == nil {
+		defaults.Site = string(site)
+	}
+
+	criticalFile := os.Getenv("DEFAULT_CRITICAL_CONFIG")
+
+	if criticalFile == "" {
+		return defaults, false, nil
+	}
+
+	rawCritical, err := ioutil.ReadFile(criticalFile)
+	if err != nil {
+		return defaults, false, err
+	}
+
+	critical := jsonc.Normalize(string(rawCritical))
+	var criticalDecoded schema.CriticalConfiguration
+	err = json.Unmarshal(critical, &criticalDecoded)
+	if err != nil {
+		return defaults, false, err
+	}
+
+	critical, err = json.MarshalIndent(criticalDecoded, "", "  ")
+	if string(critical) != "{}" && err == nil {
+		defaults.Critical = string(critical)
+	}
+
+	return defaults, true, nil
+}
+
 func defaultConfigForDeployment() conftypes.RawUnified {
 	deployType := DeployType()
 	switch {
 	case IsDev(deployType):
+		defaultOverride, ok, err := defaultConfigOverride()
+
+		if err != nil {
+			log.Printf("recieved error when trying to decode override, err: %s", err)
+		}
+
+		if ok {
+			return defaultOverride
+		}
+
 		return confdefaults.DevAndTesting
 	case IsDeployTypeDockerContainer(deployType):
+		defaultOverride, ok, err := defaultConfigOverride()
+
+		if err != nil {
+			log.Printf("recieved error when trying to decode override, err: %s", err)
+		}
+
+		if ok {
+			return defaultOverride
+		}
+
 		return confdefaults.DockerContainer
 	case IsDeployTypeCluster(deployType):
 		return confdefaults.Cluster
