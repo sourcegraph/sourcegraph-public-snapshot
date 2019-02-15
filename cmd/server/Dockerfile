@@ -15,6 +15,7 @@ RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctag
   rm -rf /tmp/ctags-$CTAGS_VERSION && \
   apk --no-cache --purge del build-deps
 
+# TODO: Make this image use our sourcegraph/alpine:3.9 base image.
 FROM alpine:3.9
 RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
     echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \

@@ -3,10 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM alpine:3.9
-# hadolint ignore=DL3018
-RUN apk add --no-cache bind-tools ca-certificates mailcap tini
-RUN addgroup -S sourcegraph && adduser -S -G sourcegraph -h /home/sourcegraph sourcegraph
+FROM sourcegraph/alpine:3.9
 ENV CONFIGURATION_MODE=server PGDATABASE=sg PGHOST=pgsql PGPORT=5432 PGSSLMODE=disable PGUSER=sg PUBLIC_REPO_REDIRECTS=true CACHE_DIR=/mnt/cache/frontend
 USER sourcegraph
 CMD ["serve"]
