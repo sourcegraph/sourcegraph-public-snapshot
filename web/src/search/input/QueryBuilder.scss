@@ -13,6 +13,8 @@
     &__row {
         display: flex;
         width: 100%;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
 
         &-example {
             flex: 0 0 13rem;
@@ -28,7 +30,7 @@
         border: 1px solid $input-border-color;
         border-radius: 0.125rem;
         padding: 1rem;
-
+        background-color: $color-bg-4;
         &--purple {
             box-shadow: 0 16px 36px -6px rgba(188, 39, 202, 0.14);
         }
