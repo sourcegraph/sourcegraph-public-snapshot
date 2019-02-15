@@ -94,8 +94,8 @@
     },
     {
       "label": "stylelint",
-      "command": "yarn",
-      "args": ["--prefix", "web", "run", "stylelint-compact"],
+      "command": "npm",
+      "args": ["--silent", "--prefix", "web", "run", "stylelint", "--", "--formatter", "compact"],
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",

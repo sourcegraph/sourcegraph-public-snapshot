@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -170,6 +172,9 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		AvatarURL:   args.AvatarURL,
 	}
 	if args.Username != nil {
+		if !viewerCanChangeUsername(ctx, userID) {
+			return nil, fmt.Errorf("unable to change username because auth.disableUsernameChanges is true in critical config")
+		}
 		update.Username = *args.Username
 	}
 	if err := db.Users.Update(ctx, userID, update); err != nil {
@@ -265,4 +270,21 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
+}
+
+// ViewerCanChangeUsername returns if the current user can change the username of the user.
+func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
+	return viewerCanChangeUsername(ctx, r.user.ID)
+}
+
+func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return false
+	}
+	if !conf.Get().Critical.AuthDisableUsernameChanges {
+		return true
+	}
+	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.disableUsernameChanges == true.
+	isSiteAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	return isSiteAdminErr == nil
 }

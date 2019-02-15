@@ -23,16 +23,18 @@ class ServerAdminWrapper {
         logUserEvent(GQL.UserEvent.PAGEVIEW)
     }
 
-    public trackAction(eventAction: string, eventProps: any): void {
+    public trackAction(eventAction: string): void {
         if (this.isAuthenicated) {
             if (eventAction === 'SearchSubmitted') {
                 logUserEvent(GQL.UserEvent.SEARCHQUERY)
             } else if (
                 eventAction === 'goToDefinition' ||
                 eventAction === 'goToDefinition.preloaded' ||
-                eventAction === 'findReferences'
+                eventAction === 'hover'
             ) {
                 logUserEvent(GQL.UserEvent.CODEINTEL)
+            } else if (eventAction === 'findReferences') {
+                logUserEvent(GQL.UserEvent.CODEINTELREFS)
             }
         }
     }
