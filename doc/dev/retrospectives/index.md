@@ -60,7 +60,11 @@ Begin by asking one of the participants to read the [The Prime Directive](http:/
 
 This is to assure that a retrospective has the right tone to make it a positive and result oriented event. It makes a retrospective become an effective team gathering to learn and find solutions to improve the way of working together.
 
-#### Group (10-15 min)
+#### Review (5 min)
+
+Review the action items from the previous retrospective and discuss the current state. Is it complete? If not, why? Are there any followup actions?
+
+#### Group (15 min)
 
 The goal is to read through each raw feedback item and group related feedback items into topics.
 
