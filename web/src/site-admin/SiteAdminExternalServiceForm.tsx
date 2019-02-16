@@ -64,7 +64,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         // so the editor is keyed on the kind.
                         key={this.props.input.kind}
                         value={this.props.input.config}
-                        {...getJSONSchemaId(this.props.input.kind)}
+                        jsonSchema={ALL_EXTERNAL_SERVICES[this.props.input.kind].jsonSchema}
                         canEdit={false}
                         loading={this.props.loading}
                         height={300}
@@ -95,9 +95,4 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     private onConfigChange = (config: string) => {
         this.props.onChange({ ...this.props.input, config })
     }
-}
-
-function getJSONSchemaId(kind: GQL.ExternalServiceKind): { jsonSchemaId: string; extraSchema: any } {
-    const service = ALL_EXTERNAL_SERVICES[kind]
-    return { jsonSchemaId: service.jsonSchema.$id, extraSchema: service.jsonSchema }
 }

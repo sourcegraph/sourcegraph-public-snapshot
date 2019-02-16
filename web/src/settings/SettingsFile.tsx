@@ -16,14 +16,9 @@ interface Props {
     settings: GQL.ISettings | null
 
     /**
-     * The id of the JSON schema for the document.
+     * JSON Schema of the document.
      */
-    jsonSchemaId: string
-
-    /**
-     * Extra schema that is transitively referenced by jsonSchemaId.
-     */
-    extraSchema?: { $id: string }
+    jsonSchema?: { $id: string }
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -193,8 +188,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
-                        jsonSchemaId={this.props.jsonSchemaId}
-                        extraSchema={this.props.extraSchema}
+                        jsonSchema={this.props.jsonSchema}
                         onChange={this.onEditorChange}
                         readOnly={this.state.saving}
                         monacoRef={this.monacoRef}
