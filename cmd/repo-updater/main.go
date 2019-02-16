@@ -74,7 +74,7 @@ func main() {
 	}
 
 	store := repos.NewDBStore(ctx, db, kinds, sql.TxOptions{Isolation: sql.LevelSerializable})
-	diffs := make(chan *repos.Diff)
+	diffs := make(chan repos.Diff)
 	src := repos.NewExternalServicesSourcer(frontendAPI, kinds...)
 	syncer := repos.NewSyncer(10*time.Second, store, src, diffs, func() time.Time {
 		// XXX(tsenart): It seems like the current db layer in the frontend API
