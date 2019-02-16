@@ -10,6 +10,20 @@ type Diff struct {
 	Unmodified []Diffable
 }
 
+// Sort sorts all Diff elements by Diffable ID.
+func (d *Diff) Sort() {
+	for _, ds := range [][]Diffable{
+		d.Added,
+		d.Deleted,
+		d.Modified,
+		d.Unmodified,
+	} {
+		sort.Slice(ds, func(i, j int) bool {
+			return ds[i].ID() < ds[j].ID()
+		})
+	}
+}
+
 // A Diffable can be diffed by the NewDiff function.
 type Diffable interface {
 	ID() string
@@ -44,17 +58,6 @@ func NewDiff(before, after []Diffable, modified func(before, after Diffable) boo
 		if _, ok := bs[id]; !ok {
 			diff.Added = append(diff.Added, a)
 		}
-	}
-
-	for _, ds := range [][]Diffable{
-		diff.Added,
-		diff.Deleted,
-		diff.Modified,
-		diff.Unmodified,
-	} {
-		sort.Slice(ds, func(i, j int) bool {
-			return ds[i].ID() < ds[j].ID()
-		})
 	}
 
 	return diff

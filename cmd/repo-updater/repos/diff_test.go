@@ -93,6 +93,9 @@ func TestDiff(t *testing.T) {
 				return !reflect.DeepEqual(b, a)
 			})
 
+			diff.Sort()
+			tc.diff.Sort()
+
 			if have, want := diff, tc.diff; !reflect.DeepEqual(have, want) {
 				t.Errorf("Diff unexpected:\nhave %+v\nwant %+v", have, want)
 			}
