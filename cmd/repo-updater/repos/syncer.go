@@ -137,7 +137,8 @@ func (Syncer) diff(sourced, stored []*Repo) Diff {
 			b.Language != a.Language ||
 			b.Fork != a.Fork ||
 			b.Archived != a.Archived ||
-			b.Description != a.Description
+			b.Description != a.Description ||
+			b.ExternalRepo != a.ExternalRepo
 	})
 }
 

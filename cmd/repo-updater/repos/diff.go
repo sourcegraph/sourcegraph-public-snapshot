@@ -19,14 +19,15 @@ func (d *Diff) Sort() {
 		d.Unmodified,
 	} {
 		sort.Slice(ds, func(i, j int) bool {
-			return ds[i].ID() < ds[j].ID()
+			l, r := ds[i].IDs(), ds[j].IDs()
+			return l[0] < r[0]
 		})
 	}
 }
 
 // A Diffable can be diffed by the NewDiff function.
 type Diffable interface {
-	ID() string
+	IDs() []string
 }
 
 // NewDiff returns a Diff between the set of `before` and `after` Diffables
@@ -35,12 +36,16 @@ type Diffable interface {
 func NewDiff(before, after []Diffable, modified func(before, after Diffable) bool) (diff Diff) {
 	bs := make(map[string]Diffable, len(before))
 	for _, b := range before {
-		bs[b.ID()] = b
+		for _, id := range b.IDs() {
+			bs[id] = b
+		}
 	}
 
 	as := make(map[string]Diffable, len(after))
 	for _, a := range after {
-		as[a.ID()] = a
+		for _, id := range a.IDs() {
+			as[id] = a
+		}
 	}
 
 	for id, b := range bs {

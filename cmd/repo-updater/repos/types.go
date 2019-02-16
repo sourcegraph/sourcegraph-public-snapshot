@@ -38,10 +38,13 @@ type Repo struct {
 	ExternalRepo api.ExternalRepoSpec
 }
 
-// ID returns a globally unique identifier of the repository
-// based on its external service metadata.
-func (r *Repo) ID() string {
-	return r.ExternalRepo.ServiceType + ":" + r.ExternalRepo.ServiceID + ":" + r.ExternalRepo.ID
+// IDs returns the globally unique identifiers of a repository.
+func (r *Repo) IDs() (ids []string) {
+	ids = append(ids, r.Name)
+	if extID := r.ExternalRepo.ServiceID + r.ExternalRepo.ID; extID != "" {
+		ids = append(ids, extID)
+	}
+	return ids
 }
 
 // Clone returns a clone of the given repo.
@@ -73,9 +76,9 @@ type Repos []*Repo
 
 // IDs returns the list of IDs from all Repos.
 func (rs Repos) IDs() []string {
-	ids := make([]string, len(rs))
-	for i := range rs {
-		ids[i] = rs[i].ID()
+	ids := make([]string, 0, len(rs)*2)
+	for _, r := range rs {
+		ids = append(ids, r.IDs()...)
 	}
 	return ids
 }

@@ -134,7 +134,9 @@ func TestDiff(t *testing.T) {
 			diff.Unmodified,
 		} {
 			for _, d := range diffables {
-				hist[d.ID()]++
+				for _, id := range d.IDs() {
+					hist[id]++
+				}
 			}
 		}
 
@@ -143,10 +145,11 @@ func TestDiff(t *testing.T) {
 		in = append(in, after...)
 
 		for _, d := range in {
-			id := d.ID()
-			if count := hist[id]; count != 1 {
-				t.Errorf("%+v found %d times in %+v", id, count, diff)
-				return false
+			for _, id := range d.IDs() {
+				if count := hist[id]; count != 1 {
+					t.Errorf("%+v found %d times in %+v", id, count, diff)
+					return false
+				}
 			}
 		}
 
@@ -163,6 +166,6 @@ type diffable struct {
 	V string
 }
 
-func (d diffable) ID() string {
-	return strconv.FormatUint(uint64(d.K), 10)
+func (d diffable) IDs() []string {
+	return []string{strconv.FormatUint(uint64(d.K), 10)}
 }
