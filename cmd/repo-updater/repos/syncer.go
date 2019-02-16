@@ -97,7 +97,7 @@ func (s Syncer) upserts(diff Diff) []*Repo {
 
 	for _, add := range diff.Added {
 		repo := add.(*Repo)
-		repo.CreatedAt, repo.UpdatedAt = now, now
+		repo.CreatedAt, repo.DeletedAt = now, time.Time{}
 		upserts = append(upserts, repo)
 	}
 

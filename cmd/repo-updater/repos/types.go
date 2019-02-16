@@ -36,6 +36,10 @@ type Repo struct {
 	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
 	// service itself).
 	ExternalRepo api.ExternalRepoSpec
+	// Sources identifies all the source IDs this Repo belongs to.
+	Sources []string
+	// Metadata contains the raw source code host JSON metadata.
+	Metadata []byte
 }
 
 // IDs returns the globally unique identifiers of a repository.

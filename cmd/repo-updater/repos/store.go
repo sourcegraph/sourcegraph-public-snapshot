@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -36,14 +35,14 @@ type TxStore interface {
 // DBStore implements the Store interface for reading and writing repos directly
 // from the Postgres database.
 type DBStore struct {
-	db      DB
-	sources []string
-	txOpts  sql.TxOptions
+	db     DB
+	kinds  []string // which source kinds to list
+	txOpts sql.TxOptions
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db DB, sources []string, txOpts sql.TxOptions) *DBStore {
-	return &DBStore{db: db, sources: sources, txOpts: txOpts}
+func NewDBStore(ctx context.Context, db DB, kinds []string, txOpts sql.TxOptions) *DBStore {
+	return &DBStore{db: db, kinds: kinds, txOpts: txOpts}
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
@@ -90,26 +89,38 @@ func (s *DBStore) Done(errs ...*error) {
 	}
 }
 
-// ListRepos lists all stored repos having any of the configured sources (via the constructor)
-// as captured by the external_service_type column.
+// ListRepos lists all stored repos having any of the configured source kinds (via the constructor)
+// as captured by the external_service_type column AND repos belonging to some source.
 func (s DBStore) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+	return repos, s.paginate(ctx, &repos, listReposQuery(s.kinds))
+}
+
+const listReposQueryFmtstr = `
+SELECT id, name, description, language, created_at, updated_at, deleted_at,
+  external_id, external_service_type, external_service_id, enabled, archived, fork
+FROM repo WHERE id > %s AND %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %s`
+
+// a paginatedQuery returns a query with the given pagination
+// parameters
+type paginatedQuery func(cursor, limit int64) *sqlf.Query
+
+func (s DBStore) paginate(ctx context.Context, repos *[]*Repo, q paginatedQuery) (err error) {
 	var cursor, next int64 = -1, 0
 	for cursor != next && err == nil {
 		cursor = next
-		if err = s.listReposPage(ctx, cursor, 500, s.sources, &repos); len(repos) > 0 {
-			next = int64(repos[len(repos)-1]._ID)
+		if err = s.page(ctx, q(cursor, 500), repos); len(*repos) > 0 {
+			next = int64((*repos)[len(*repos)-1]._ID)
 		}
 	}
-	return repos, err
+	return err
+
 }
 
-func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, sources []string, repos *[]*Repo) (err error) {
-	q := listReposQuery(cursor, limit, sources)
+func (s DBStore) page(ctx context.Context, q *sqlf.Query, repos *[]*Repo) (err error) {
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
-
 	return scanAll(rows, func(sc scanner) error {
 		var r Repo
 		if err = scanRepo(&r, sc); err != nil {
@@ -120,78 +131,56 @@ func (s DBStore) listReposPage(ctx context.Context, cursor, limit int64, sources
 	})
 }
 
-func listReposQuery(cursor, limit int64, sources []string) *sqlf.Query {
-	if len(sources) == 0 {
-		return sqlf.Sprintf(listReposQueryFmtstr, cursor, "TRUE", limit)
+func listReposQuery(kinds []string) paginatedQuery {
+	qs := make([]*sqlf.Query, 0, len(kinds))
+	for _, kind := range kinds {
+		qs = append(qs, sqlf.Sprintf("%s", strings.ToUpper(kind)))
 	}
+	q := sqlf.Join(qs, ",")
 
-	qs := make([]*sqlf.Query, 0, len(sources))
-	for _, source := range sources {
-		qs = append(qs, sqlf.Sprintf("%s", source))
+	return func(cursor, limit int64) *sqlf.Query {
+		return sqlf.Sprintf(
+			listReposQueryFmtstr,
+			cursor,
+			q,
+			limit,
+		)
 	}
-
-	cond := sqlf.Sprintf("UPPER(external_service_type) IN (%s)", sqlf.Join(qs, ","))
-	return sqlf.Sprintf(listReposQueryFmtstr, cursor, cond, limit)
 }
 
-const listReposQueryFmtstr = `
-SELECT id, name, description, language, created_at, updated_at, deleted_at,
-  external_id, external_service_type, external_service_id, enabled, archived, fork
-FROM repo WHERE id > %s AND %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %s
+const updateReposQueryFmtstr = `
+WITH updated (
+	UPDATE repo r
+	SET
+	  name        = updated.name,
+	  description = updated.description,
+	  language    = updated.language,
+	  updated_at  = updated.updated_at,
+	  deleted_at  = updated.deleted_at,
+	  archived    = updated.archived,
+	  fork        = updated.fork,
+	  sources     = updated.sources,
+	  metadata    = updated.metadata,
+	FROM
+)
+FROM updated
+WHERE id = %s
+OR name = %s
+OR (external_service_id = %s AND external_id = %s)
 `
 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
 // The _ID field of each given Repo is set on inserts.
-//
-// TODO(tsenart) Store upstream external service metadata in JSONB column in Postgres.
-// Conditionally index based on the external service type.
-func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) error {
+func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	if len(repos) == 0 {
 		return nil
 	}
 
-	q := upsertReposQuery(repos)
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-
-	i := -1
-	return scanAll(rows, func(sc scanner) error {
-		i++
-		return scanRepo(repos[i], sc)
-	})
+	// TODO: Figure out how to do batch update and / or insert in a single query.
+	// UPSERT doesn't work with multiple constraints (e.g. unique name AND unique external_id)
+	// https://tapoueh.org/blog/2013/03/batch-update/
+	panic("not implemented")
 }
-
-func upsertReposQuery(repos []*Repo) *sqlf.Query {
-	values := make([]*sqlf.Query, 0, len(repos))
-	for _, r := range repos {
-		values = append(values, sqlf.Sprintf(
-			upsertRepoValuesFmtstr,
-			upsertRepoColumns(r)...,
-		))
-	}
-	return sqlf.Sprintf(upsertReposQueryFmtstr, sqlf.Join(values, ",\n"))
-}
-
-var upsertReposQueryFmtstr = strings.TrimSpace(fmt.Sprintf(`
-INSERT INTO repo
-(%s)
-VALUES
-%%s
-ON CONFLICT ON CONSTRAINT repo_external_service_unique
-DO UPDATE SET
-  name        = excluded.name,
-  description = excluded.description,
-  language    = excluded.language,
-  updated_at  = excluded.updated_at,
-  deleted_at  = excluded.deleted_at,
-  archived    = excluded.archived,
-  fork        = excluded.fork
-RETURNING id, name, description, language, created_at, updated_at,
-  deleted_at, external_id, external_service_type, external_service_id,
-  enabled, archived, fork
-`, strings.Join(upsertRepoColumnNames, ", ")))
 
 var upsertRepoColumnNames = []string{
 	"name",
@@ -208,8 +197,6 @@ var upsertRepoColumnNames = []string{
 	"archived",
 	"fork",
 }
-
-var upsertRepoValuesFmtstr = "(" + strings.TrimSuffix(strings.Repeat("%s, ", len(upsertRepoColumnNames)), ", ") + ")"
 
 func upsertRepoColumns(r *Repo) []interface{} {
 	return []interface{}{
