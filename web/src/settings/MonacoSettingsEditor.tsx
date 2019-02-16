@@ -10,6 +10,14 @@ import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
+/**
+ * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
+ * not needed.
+ */
+interface JSONSchema {
+    $id: string
+}
+
 export interface Props {
     id?: string
     value: string | undefined
@@ -18,14 +26,9 @@ export interface Props {
     height?: number
 
     /**
-     * The id of the JSON schema for the document.
+     * JSON Schema of the document.
      */
-    jsonSchemaId: string
-
-    /**
-     * Extra schemas that are transitively referenced by jsonSchemaId.
-     */
-    extraSchemas?: { $id: string }[]
+    jsonSchema?: JSONSchema
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -82,9 +85,9 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            componentUpdates.pipe(distinctUntilKeyChanged('jsonSchemaId')).subscribe(props => {
+            componentUpdates.pipe(distinctUntilKeyChanged('jsonSchema')).subscribe(props => {
                 if (this.monaco) {
-                    setDiagnosticsOptions(this.monaco, props)
+                    setDiagnosticsOptions(this.monaco, props.jsonSchema)
                 }
             })
         )
@@ -257,34 +260,27 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
-    const extraSchemas = (props.extraSchemas || []).map(schema => ({
-        uri: schema.$id,
-        schema,
-    }))
-
+function setDiagnosticsOptions(m: typeof monaco, jsonSchema: any): void {
     m.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,
         schemas: [
             {
                 uri: 'root#', // doesn't matter as long as it doesn't collide
-                schema: {
-                    $ref: props.jsonSchemaId,
-                },
+                schema: jsonSchema,
                 fileMatch: ['*'],
             },
 
             // Include these schemas because they are referenced by other schemas.
             {
                 uri: 'http://json-schema.org/draft-07/schema',
-                schema: jsonSchemaMetaSchema,
+                schema: jsonSchemaMetaSchema as JSONSchema,
             },
             {
                 uri: 'settings.schema.json#',
                 schema: settingsSchema,
             },
-        ].concat(extraSchemas),
+        ],
     })
 }
 

@@ -22,6 +22,7 @@ If you're using the default `--volume $HOME/.sourcegraph/data:/var/opt/sourcegra
     git clone --mirror --reference PATH-TO-YOUR-EXISTING-LOCAL-CLONE --dissociate YOUR-REPOSITORY-CLONE-URL $HOME/.sourcegraph/data/repos/github.com/my/repo/.git
     ```
 
-1.  Ensure your site configuration contains entries for the code host of the added repository and then enable the repository in the admin UI.
+1.  Ensure that the code host of the added repository is configured as an [external service](../external_service/index.md).
+1.  Enable the repository on the site admin repositories page.
 
-    If this repository exists on a code host that Sourcegraph directly integrates with, then use that code host's configuration (as described in the other section on this page). After updating the site configuration, if you used the correct repository path, Sourcegraph will detect and reuse the existing clone. (For example, if you're working with a repository on GitHub.com, ensure that the repository path name you used is of the form `github.com/my/repo`.)
+If this repository exists on a code host that Sourcegraph directly integrates with, then use that code host's configuration (as described in the [external service documentation](../external_service/index.md)). After updating the external service configuration, if you used the correct repository path, Sourcegraph will detect and reuse the existing clone. (For example, if you're working with a repository on GitHub.com, ensure that the repository path name you used is of the form `github.com/my/repo`.)

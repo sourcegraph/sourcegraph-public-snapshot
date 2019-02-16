@@ -1,6 +1,7 @@
 package markdown
 
 import (
+	"context"
 	"regexp"
 
 	"github.com/microcosm-cc/bluemonday"
@@ -22,7 +23,7 @@ func Render(content string, options *Options) (string, error) {
 	if options == nil {
 		options = &DefaultOptions
 	}
-	doc, err := markdown.Run([]byte(content), markdown.Options{})
+	doc, err := markdown.Run(context.Background(), []byte(content), markdown.Options{})
 	if err != nil {
 		return "", err
 	}

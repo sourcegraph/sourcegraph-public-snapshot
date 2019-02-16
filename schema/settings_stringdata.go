@@ -53,8 +53,7 @@ const SettingsSchemaJSON = `{
       }
     },
     "search.repositoryGroups": {
-      "description":
-        "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
+      "description": "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -65,14 +64,12 @@ const SettingsSchemaJSON = `{
       "$ref": "#/definitions/SlackNotificationsConfig"
     },
     "motd": {
-      "description":
-        "An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
+      "description": "An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
       "type": "array",
       "items": { "type": "string" }
     },
     "extensions": {
-      "description":
-        "The Sourcegraph extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",
+      "description": "The Sourcegraph extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -93,8 +90,7 @@ const SettingsSchemaJSON = `{
       "properties": {
         "id": {
           "type": "string",
-          "description":
-            "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
+          "description": "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
         },
         "name": {
           "type": "string",
@@ -118,8 +114,7 @@ const SettingsSchemaJSON = `{
       "properties": {
         "webhookURL": {
           "type": "string",
-          "description":
-            "The Slack webhook URL used to post notification messages to a Slack channel. To obtain this URL, go to: https://YOUR-WORKSPACE-NAME.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks",
+          "description": "The Slack webhook URL used to post notification messages to a Slack channel. To obtain this URL, go to: https://YOUR-WORKSPACE-NAME.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks",
           "format": "uri"
         }
       }

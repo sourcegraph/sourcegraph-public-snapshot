@@ -33,9 +33,10 @@ import (
 const port = "2633"
 
 var (
-	tlsCert   = env.Get("TLS_CERT", "/etc/sourcegraph/management/cert.pem", "TLS certificate (automatically generated if file does not exist)")
-	tlsKey    = env.Get("TLS_KEY", "/etc/sourcegraph/management/key.pem", "TLS key (automatically generated if file does not exist)")
-	customTLS = env.Get("CUSTOM_TLS", "false", "When true, disable TLS cert/key generation to prevent accidents.")
+	tlsCert       = env.Get("TLS_CERT", "/etc/sourcegraph/management/cert.pem", "TLS certificate (automatically generated if file does not exist)")
+	tlsKey        = env.Get("TLS_KEY", "/etc/sourcegraph/management/key.pem", "TLS key (automatically generated if file does not exist)")
+	customTLS     = env.Get("CUSTOM_TLS", "false", "When true, disables TLS cert/key generation to prevent accidents.")
+	unsafeNoHTTPS = env.Get("UNSAFE_NO_HTTPS", "false", "(unsafe) When true, disables HTTPS entirely. Anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf!")
 )
 
 func configureTLS() error {
@@ -139,17 +140,23 @@ func Main() {
 	addr := net.JoinHostPort(host, port)
 	log15.Info("management-console: listening", "addr", addr)
 
-	if err := configureTLS(); err != nil {
-		log.Fatal("failed to configure TLS: error:", err)
-	}
-
 	s := &http.Server{
 		Addr:           addr,
-		Handler:        HSTSMiddleware(unprotectedRoutes),
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	unsafeNoHTTPS, _ := strconv.ParseBool(unsafeNoHTTPS)
+	if unsafeNoHTTPS {
+		s.Handler = unprotectedRoutes
+		log.Fatalf("Fatal error serving: %s", s.ListenAndServe())
+	}
+
+	if err := configureTLS(); err != nil {
+		log.Fatal("failed to configure TLS: error:", err)
+	}
+	s.Handler = HSTSMiddleware(unprotectedRoutes)
 	log.Fatalf("Fatal error serving: %s", s.ListenAndServeTLS(tlsCert, tlsKey))
 }
 

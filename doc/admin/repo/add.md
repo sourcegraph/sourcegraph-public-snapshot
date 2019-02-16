@@ -1,11 +1,7 @@
 # Add repositories (from code hosts) to Sourcegraph
 
-- [Add repositories from GitHub or GitHub Enterprise](../../integration/github.md)
-- [Add repositories from GitLab](../../integration/gitlab.md)
-- [Add repositories from Bitbucket Server](../../integration/bitbucket_server.md)
-- [Add repositories from AWS CodeCommit](../../integration/aws_codecommit.md)
-- [Add repositories from Phabricator](../../integration/phabricator.md)
-- [Add repositories from other external services](add_from_other_external_services.md)
+- [Add repositories from a code host](../external_service/index.md) (GitHub, GitLab, Bitbucket Server, AWS CodeCommit, Phabricator, or Gitolite)
+- [Add repositories by Git clone URLs](../external_service/other.md)
 - [Add repositories from the local disk](add_from_local_disk.md)
 
 ## Troubleshooting

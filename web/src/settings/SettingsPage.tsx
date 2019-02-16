@@ -21,14 +21,11 @@ interface State {
 export class SettingsPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
-    private extraSchemas = [this.props.data.settingsJSONSchema]
-
     public render(): JSX.Element | null {
         return (
             <SettingsFile
                 settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
-                jsonSchemaId="settings.schema.json#"
-                extraSchemas={this.extraSchemas}
+                jsonSchema={this.props.data.settingsJSONSchema}
                 commitError={this.state.commitError}
                 onDidCommit={this.onDidCommit}
                 onDidDiscard={this.onDidDiscard}

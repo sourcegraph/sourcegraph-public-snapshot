@@ -8,6 +8,7 @@ import (
 	"fmt"
 )
 
+// AWSCodeCommitConnection description: Configuration for a connection to AWS CodeCommit.
 type AWSCodeCommitConnection struct {
 	AccessKeyID                 string `json:"accessKeyID"`
 	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
@@ -79,6 +80,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
 type BitbucketServerConnection struct {
 	Certificate                 string `json:"certificate,omitempty"`
 	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
@@ -156,6 +158,8 @@ type GitHubAuthProvider struct {
 type GitHubAuthorization struct {
 	Ttl string `json:"ttl,omitempty"`
 }
+
+// GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
 type GitHubConnection struct {
 	Authorization               *GitHubAuthorization `json:"authorization,omitempty"`
 	Certificate                 string               `json:"certificate,omitempty"`
@@ -181,6 +185,8 @@ type GitLabAuthProvider struct {
 type GitLabAuthorization struct {
 	Ttl string `json:"ttl,omitempty"`
 }
+
+// GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
 type GitLabConnection struct {
 	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
 	Certificate                 string               `json:"certificate,omitempty"`
@@ -191,6 +197,8 @@ type GitLabConnection struct {
 	Token                       string               `json:"token"`
 	Url                         string               `json:"url"`
 }
+
+// GitoliteConnection description: Configuration for a connection to Gitolite.
 type GitoliteConnection struct {
 	Blacklist                  string       `json:"blacklist,omitempty"`
 	Host                       string       `json:"host"`
@@ -230,7 +238,7 @@ type OpenIDConnectAuthProvider struct {
 	Type               string `json:"type"`
 }
 
-// OtherExternalServiceConnection description: Connection to Git repositories for which an external service integration isn't yet available.
+// OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
 	Repos []string `json:"repos"`
 	Url   string   `json:"url,omitempty"`
@@ -246,6 +254,8 @@ type Phabricator struct {
 	CallsignCommand string `json:"callsignCommand"`
 	Url             string `json:"url"`
 }
+
+// PhabricatorConnection description: Configuration for a connection to Phabricator.
 type PhabricatorConnection struct {
 	Repos []*Repos `json:"repos,omitempty"`
 	Token string   `json:"token,omitempty"`

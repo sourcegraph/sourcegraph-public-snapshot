@@ -66,6 +66,7 @@ yarn-error.log
 eb-bundle.zip
 
 /cmd/frontend/internal/app/assets/assets_vfsdata.go
+/cmd/frontend/internal/app/templates/data_vfsdata.go
 
 /release/
 
