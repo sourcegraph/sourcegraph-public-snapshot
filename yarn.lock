@@ -1505,8 +1505,9 @@
     sourcegraph "*"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "1.1.0"
+  dependencies:
+    sourcegraph "*"
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -2408,7 +2409,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-icon-base@^2.1.3":
+"@types/react-icon-base@2.1.3":
   version "2.1.3"
   resolved "https://registry.npmjs.org/@types/react-icon-base/-/react-icon-base-2.1.3.tgz#0faf840b854a9dbc3fa6fe1935c7c40eb4153114"
   integrity sha512-OtZn25vQn7A9sJIDE33iUMDTnK83mnzs9bxDUhZ7timyBPXbxMBOHx/L9rf2rOU3B1xavOjag4RWqX4wzZNriQ==
@@ -2700,7 +2701,7 @@
     "@types/uglify-js" "*"
     source-map "^0.6.0"
 
-"@types/whatwg-url@^6.4.0":
+"@types/whatwg-url@6.4.0":
   version "6.4.0"
   resolved "https://registry.npmjs.org/@types/whatwg-url/-/whatwg-url-6.4.0.tgz#1e59b8c64bc0dbdf66d037cf8449d1c3d5270237"
   integrity sha512-tonhlcbQ2eho09am6RHnHOgvtDfDYINd5rgxD+2YSkKENooVCFsWizJz139MQW/PV8FfClyKrNe9ZbdHrSCxGg==
@@ -13694,8 +13695,7 @@ sourcegraph@*:
   integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "21.0.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
