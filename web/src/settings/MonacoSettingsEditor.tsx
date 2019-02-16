@@ -26,14 +26,9 @@ export interface Props {
     height?: number
 
     /**
-     * The id of the JSON schema for the document.
+     * JSON Schema of the document.
      */
-    jsonSchemaId: string
-
-    /**
-     * Extra schema that is transitively referenced by jsonSchemaId.
-     */
-    extraSchema?: JSONSchema
+    jsonSchema?: JSONSchema
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -90,9 +85,9 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            componentUpdates.pipe(distinctUntilKeyChanged('jsonSchemaId')).subscribe(props => {
+            componentUpdates.pipe(distinctUntilKeyChanged('jsonSchema')).subscribe(props => {
                 if (this.monaco) {
-                    setDiagnosticsOptions(this.monaco, props)
+                    setDiagnosticsOptions(this.monaco, props.jsonSchema)
                 }
             })
         )
@@ -265,16 +260,14 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
+function setDiagnosticsOptions(m: typeof monaco, jsonSchema: any): void {
     m.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,
         schemas: [
             {
                 uri: 'root#', // doesn't matter as long as it doesn't collide
-                schema: {
-                    $ref: props.jsonSchemaId,
-                },
+                schema: jsonSchema,
                 fileMatch: ['*'],
             },
 
@@ -287,7 +280,7 @@ function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
                 uri: 'settings.schema.json#',
                 schema: settingsSchema,
             },
-        ].concat(props.extraSchema ? [{ uri: props.extraSchema.$id, schema: props.extraSchema }] : []),
+        ],
     })
 }
 
