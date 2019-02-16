@@ -9,6 +9,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.1
+
+### Added
+
 - Added Docker-specific help text when running the Sourcegraph docker image in an environment with an sufficient open file descriptor limit.
 - Added syntax highlighting for Kotlin and Dart.
 - Added a management console environment variable to disable HTTPS, see [the docs](doc/admin/management_console.md#can-i-disable-https-on-the-management-console) for more information.
@@ -23,8 +33,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where the management console would improperly regenerate the TLS cert/key unless `CUSTOM_TLS=true` was set. See the documentation for [how to use your own TLS certificate with the management console](doc/admin/management_console.md#how-can-i-use-my-own-tls-certificates-with-the-management-console).
-
-### Removed
 
 ## 3.0.1
 
