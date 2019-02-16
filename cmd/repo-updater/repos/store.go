@@ -178,7 +178,8 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 
 	// TODO: Figure out how to do batch update and / or insert in a single query.
 	// UPSERT doesn't work with multiple constraints (e.g. unique name AND unique external_id)
-	// https://tapoueh.org/blog/2013/03/batch-update/
+	// - https://tapoueh.org/blog/2013/03/batch-update/
+	// - https://tapoueh.org/blog/2018/07/batch-updates-and-concurrency/
 	panic("not implemented")
 }
 
