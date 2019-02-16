@@ -63,13 +63,13 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             : renderMarkdown({ markdown: props.item.body.text })
                     ),
                     switchMap(markdownHTML => {
-                        if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
+                        if (this.bodyIsCode() && markdownHTML.includes('<pre') && markdownHTML.includes('</pre>')) {
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
                             // Get content between the outermost code tags.
                             const codeContent = parser
                                 .parseFromString(markdownHTML, 'text/html')
-                                .querySelector('code')!
+                                .querySelector('pre')!
                                 .innerHTML.toString()
                             if (codeContent) {
                                 return highlightCode({
@@ -164,13 +164,21 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 <>
                     {this.state.HTML && (
                         <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
-                            <Markdown
-                                refFn={this.setTableContainerElement}
-                                className={`search-result-match__markdown ${
-                                    this.bodyIsCode() ? 'search-result-match__code-excerpt' : ''
-                                }`}
-                                dangerousInnerHTML={this.state.HTML}
-                            />
+                            {this.bodyIsCode ? (
+                                <code>
+                                    <Markdown
+                                        refFn={this.setTableContainerElement}
+                                        className={`search-result-match__markdown ${'search-result-match__code-excerpt'}`}
+                                        dangerousInnerHTML={this.state.HTML}
+                                    />
+                                </code>
+                            ) : (
+                                <Markdown
+                                    refFn={this.setTableContainerElement}
+                                    className={`search-result-match__markdown`}
+                                    dangerousInnerHTML={this.state.HTML}
+                                />
+                            )}
                         </Link>
                     )}
                     {!this.state.HTML && (
