@@ -8,13 +8,18 @@ It is not used for patch releases.
 ## No later than 5 working days before release (YYYY-MM-DD)
 
 - [ ] Choose dates/times for the steps in this release process and update this issue template accordingly. Note that this template references _working days_, which do not include weekends or holidays observed by Sourcegraph.
+- [ ] Add events to the shared Release Schedule calendar in Google and invite team@sourcegraph.com.
+    - [ ] Creating the release branch.
+    - [ ] Tagging the final release.
+    - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
 - [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done three working days before the release.
 
 ## 3 working days before release (YYYY-MM-DD)
 
-- [ ] **HH:MM AM/PM PT** Create the branch for this release off of master (e.g. `3.0`) and tag the first release candidate (e.g. `v3.0.0-rc.1`).
-- [ ] Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading. <!-- TODO(nick): link to example change --> Commit and `git push` this change directly to upstream `master`.
+- [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` (e.g. [#2323](https://github.com/sourcegraph/sourcegraph/pull/2323)).
+- [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
+- [ ] Tag the first release candidate `MAJOR.MINOR.0-rc.1`.
 - [ ] Send a message to #dev-announce to announce the release candidate.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] `CLEAN=true IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh`
@@ -63,7 +68,7 @@ It is not used for patch releases.
 
 ## As necessary
 
-- `git cherry-pick` commits from `master` into the release branch.
+- `git cherry-pick` bugfix (not feature!) commits from `master` into the release branch.
 - Re-test any flows that might have been impacted by commits that have been cherry picked into the release branch.
 - Tag additional release candidates.
 
@@ -79,8 +84,11 @@ It is not used for patch releases.
 
 ## On or before release day (YYYY-MM-DD)
 
-- [ ] **HH:MM AM/PM PT** Merge the blog post. <!-- TODO(nick): example >
-- [ ] Update the documented version of Sourcegraph in `master` (e.g. `find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +`) (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files <!-- TODO(nick): example that doesn't include latestReleaseDockerServerImageBuild -->).
+- [ ] **HH:MM AM/PM PT** Merge the blog post. <!-- TODO(nick): example -->
+- [ ] Update the documented version of Sourcegraph in `master` (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files <!-- TODO(nick): example that doesn't include latestReleaseDockerServerImageBuild -->).
+    ```
+    find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +
+    ```
 - [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/commit/d445c460c2da54fba4f56f647d656ca3311decf5))
 - [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` in `master`. <!-- TODO(nick): example -->
 - [ ] Review all issues in the release milestone. Backlog things that didn't make it into the release and ping issues that still need to be done for the release (e.g. Tweets, marketing).
