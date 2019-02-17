@@ -93,7 +93,9 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             for (const highlight of this.props.highlightRanges) {
                 const code = visibleRows[highlight.line - this.getFirstLine()].lastChild as HTMLTableDataCellElement
-                highlightNode(code, highlight.character, highlight.highlightLength)
+                // a highlight length of -1 means highlight the entire line
+                const highlightLength = highlight.highlightLength === -1 ? code.textContent.length : highlight.highlightLength
+                highlightNode(code, highlight.character, highlightLength)
             }
         }
     }

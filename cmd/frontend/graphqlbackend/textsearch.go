@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"regexp/syntax"
 	"sort"
 	"strconv"
@@ -46,6 +47,8 @@ var (
 			},
 		},
 	}
+
+	lineNumberRe = regexp.MustCompile(":(\\d*)$")
 )
 
 // A light wrapper around the search service. We implement the service here so
@@ -782,6 +785,10 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		fetchTimeout = 500 * time.Millisecond
 	}
 
+	// Extract line number from filename before searching
+	lineNumberMatches := lineNumberRe.FindStringSubmatch(args.Pattern.Pattern)
+	args.Pattern.Pattern = lineNumberRe.ReplaceAllString(args.Pattern.Pattern, "")
+
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.Revs) == 0 {
 			continue
@@ -821,6 +828,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				tr.LazyPrintf("cancel due to error: %v", err)
 				cancel()
 			}
+			if len(lineNumberMatches) > 1 {
+				matchFileAtLine(lineNumberMatches[1], matches)
+			}
 			addMatches(matches)
 		}(*repoRev)
 	}
@@ -853,6 +863,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			tr.LazyPrintf("cancel indexed search due to error: %v", err)
 			cancel()
 		}
+		if len(lineNumberMatches) > 1 {
+			matchFileAtLine(lineNumberMatches[1], matches)
+		}
 		addMatches(matches)
 	}()
 
@@ -863,6 +876,27 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
 	return flattened, common, nil
+}
+
+func matchFileAtLine(lineDigits string, matches []*fileMatchResolver) {
+	// Given a line number and a unique file match, create a line match to show a
+	// preview of the file at that line.
+	if len(matches) == 1 && (len(matches[0].JLineMatches) == 0) {
+		lineMatches := make([]*lineMatch, 1)
+		lineNumber, err := strconv.ParseInt(lineDigits, 0, 32)
+
+		if err == nil {
+			offsetAndLengths := [][2]int32{{0, -1}}
+			lineMatch := &lineMatch{
+				JPreview:          "",
+				JOffsetAndLengths: offsetAndLengths,
+				JLineNumber:       int32(lineNumber) - 1,
+				JLimitHit:         false,
+			}
+			lineMatches[0] = lineMatch
+			matches[0].JLineMatches = lineMatches
+		}
+	}
 }
 
 func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) []*fileMatchResolver {

@@ -96,12 +96,22 @@ export class FileMatch extends React.PureComponent<Props> {
             line: m.lineNumber,
         }))
 
+        let filePath = result.file.path
+        let fileUrl = result.file.url
+
+        // when there is only one line match, link directly to that line
+        if (result.lineMatches.length === 1) {
+            const lineNumber = result.lineMatches[0].lineNumber + 1
+            filePath = `${filePath}:${lineNumber}`
+            fileUrl = `${fileUrl}#L${lineNumber}`
+        }
+
         const title = (
             <RepoFileLink
                 repoName={result.repository.name}
                 repoURL={result.repository.url}
-                filePath={result.file.path}
-                fileURL={result.file.url}
+                filePath={filePath}
+                fileURL={fileUrl}
                 repoDisplayName={this.props.repoDisplayName}
             />
         )
