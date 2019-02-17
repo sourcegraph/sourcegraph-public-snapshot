@@ -1,8 +1,8 @@
 # Management console
 
-The management console is a separate service used to edit critical Sourcegraph configuration.
+The management console is a separate service used to edit Sourcegraph's [critical configuration](config/critical_config.md).
 
-Critical configuration includes things like authentication providers, the application URL, and the license key. This configuration is separate from the regular site configuration, because an error here could make Sourcegraph inaccessible, except through the management console.
+Critical configuration includes things like authentication providers, the external URL, and the license key. This configuration is separate from the regular [site configuration](config/site_config.md), because an error here could make Sourcegraph inaccessible, except through the management console.
 
 # Accessing the management console
 
@@ -106,3 +106,9 @@ If you are using `sourcegraph/server` and the regular Docker flag:
 This means you can simply place them in `~/.sourcegraph/config/management/`  on the host.
 
 Restart the container once you have copied the files there for the changes to take effect.
+
+### Can I disable HTTPS on the management console?
+
+It is **unsafe** to do so as anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf.
+
+If you understand the risks and still wish to, you can set the environment variable `UNSAFE_NO_HTTPS` to `true` on the Docker container. This will entirely disable HTTPS (the port will remain the same).

@@ -114,13 +114,6 @@ interface SourcegraphContext {
     updateScheduler2Enabled: boolean
 }
 
-// We cannot use resolveJsonModule because of https://github.com/Microsoft/TypeScript/issues/25755
-// I tried updating to 3.1-rc.1 but it crashed
-declare module '*.json' {
-    const value: any
-    export = value
-}
-
 /**
  * For Web Worker entrypoints using Webpack's worker-loader.
  *

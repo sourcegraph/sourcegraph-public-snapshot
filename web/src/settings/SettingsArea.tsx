@@ -5,7 +5,6 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import { extensionIDsFromSettings } from '../../../shared/src/extensions/extension'
 import { queryConfiguredRegistryExtensions } from '../../../shared/src/extensions/helpers'
 import { gql } from '../../../shared/src/graphql/graphql'
@@ -13,10 +12,11 @@ import { ISettingsCascade } from '../../../shared/src/graphql/schema'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { gqlToCascade, SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
 import { eventLogger } from '../tracking/eventLogger'
+import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -82,14 +82,11 @@ export class SettingsArea extends React.Component<Props, State> {
                         fetchSettingsCascade(id).pipe(
                             switchMap(cascade =>
                                 this.getMergedSettingsJSONSchema(cascade).pipe(
-                                    map(
-                                        settingsJSONSchema =>
-                                            ({ subjects: cascade.subjects, settingsJSONSchema } as SettingsData)
-                                    )
+                                    map(settingsJSONSchema => ({ subjects: cascade.subjects, settingsJSONSchema }))
                                 )
                             ),
-                            catchError(error => [error]),
-                            map(c => ({ dataOrError: c } as Pick<State, 'dataOrError'>))
+                            catchError(error => [asError(error)]),
+                            map(c => ({ dataOrError: c }))
                         )
                     )
                 )
@@ -178,23 +175,8 @@ export class SettingsArea extends React.Component<Props, State> {
                 return [null]
             }),
             map(configuredExtensions => ({
-                $id: 'settings.schema.json',
-                allOf: [
-                    settingsSchemaJSON,
-                    ...(configuredExtensions || [])
-                        .map(ce => {
-                            if (
-                                ce.manifest &&
-                                !isErrorLike(ce.manifest) &&
-                                ce.manifest.contributes &&
-                                ce.manifest.contributes.configuration
-                            ) {
-                                return ce.manifest.contributes.configuration
-                            }
-                            return true // JSON Schema that matches everything
-                        })
-                        .filter(schema => schema !== true), // omit trivial JSON Schemas
-                ],
+                $id: 'mergedSettings.schema.json#',
+                ...(configuredExtensions ? mergeSettingsSchemas(configuredExtensions) : null),
             }))
         )
     }
