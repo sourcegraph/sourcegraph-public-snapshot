@@ -5,7 +5,7 @@ import (
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/k0kubun/pp"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -13,8 +13,8 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	interval time.Duration
-	sourcer  Sourcer
 	store    Store
+	sourcer  Sourcer
 	diffs    chan Diff
 	now      func() time.Time
 }
@@ -31,8 +31,8 @@ func NewSyncer(
 ) *Syncer {
 	return &Syncer{
 		interval: interval,
-		sourcer:  sourcer,
 		store:    store,
+		sourcer:  sourcer,
 		diffs:    diffs,
 		now:      now,
 	}
@@ -51,7 +51,7 @@ func (s Syncer) Run(ctx context.Context) error {
 }
 
 // Sync synchronizes the repositories of a single Source
-func (s Syncer) Sync(ctx context.Context) (diff Diff, err error) {
+func (s Syncer) Sync(ctx context.Context) (_ Diff, err error) {
 	// TODO(tsenart): Ensure that transient failures do not remove
 	// repositories. This means we need to use the store as a fallback Source
 	// in the face of those kinds of errors, so that the diff results in Unmodified
@@ -61,14 +61,14 @@ func (s Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 
 	var sourced Repos
 	if sourced, err = s.sourced(ctx); err != nil {
-		return diff, err
+		return Diff{}, err
 	}
 
 	store := s.store
 	if tr, ok := s.store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
-			return diff, err
+			return Diff{}, err
 		}
 		defer txs.Done(&err)
 		store = txs
@@ -76,14 +76,18 @@ func (s Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 
 	var stored Repos
 	if stored, err = store.ListRepos(ctx); err != nil {
-		return diff, err
+		return Diff{}, err
 	}
 
-	diff = s.diff(sourced, stored)
+	diff := s.diff(sourced, stored)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return diff, err
+		return Diff{}, err
+	}
+
+	if s.diffs != nil {
+		s.diffs <- diff
 	}
 
 	return diff, nil
@@ -92,8 +96,6 @@ func (s Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 func (s Syncer) upserts(diff Diff) []*Repo {
 	now := s.now()
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
-
-	pp.Printf("diff: %s", diff)
 
 	for _, add := range diff.Added {
 		repo := add.(*Repo)
@@ -112,8 +114,6 @@ func (s Syncer) upserts(diff Diff) []*Repo {
 		repo.UpdatedAt, repo.DeletedAt = now, now
 		upserts = append(upserts, repo)
 	}
-
-	pp.Printf("\nupserts: %s", upserts)
 
 	return upserts
 }
@@ -138,7 +138,8 @@ func (Syncer) diff(sourced, stored []*Repo) Diff {
 			b.Fork != a.Fork ||
 			b.Archived != a.Archived ||
 			b.Description != a.Description ||
-			b.ExternalRepo != a.ExternalRepo
+			(b.ExternalRepo == api.ExternalRepoSpec{} &&
+				b.ExternalRepo != a.ExternalRepo)
 	})
 }
 
