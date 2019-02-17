@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -129,7 +130,9 @@ func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection) (*Git
 func (s GithubSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 	var repos []*Repo
 	for repo := range s.conn.listAllRepositories(ctx) {
-		repos = append(repos, githubRepoToRepo(repo, s.conn))
+		r := githubRepoToRepo(repo, s.conn)
+		r.Sources = append(r.Sources, externalServiceURN(s.svc))
+		repos = append(repos, r)
 	}
 	return repos, nil
 }
@@ -143,4 +146,8 @@ func githubRepoToRepo(ghrepo *github.Repository, conn *githubConnection) *Repo {
 		Fork:         ghrepo.IsFork,
 		Archived:     ghrepo.IsArchived,
 	}
+}
+
+func externalServiceURN(svc *api.ExternalService) string {
+	return "extsvc:" + strconv.FormatInt(svc.ID, 10)
 }

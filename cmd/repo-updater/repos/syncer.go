@@ -1,7 +1,9 @@
 package repos
 
 import (
+	"bytes"
 	"context"
+	"sort"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -112,6 +114,7 @@ func (s Syncer) upserts(diff Diff) []*Repo {
 	for _, del := range diff.Deleted {
 		repo := del.(*Repo)
 		repo.UpdatedAt, repo.DeletedAt = now, now
+		repo.Sources = []string{}
 		upserts = append(upserts, repo)
 	}
 
@@ -138,8 +141,11 @@ func (Syncer) diff(sourced, stored []*Repo) Diff {
 			b.Fork != a.Fork ||
 			b.Archived != a.Archived ||
 			b.Description != a.Description ||
+			// Only update the external id once. It should not change after it's set.
 			(b.ExternalRepo == api.ExternalRepoSpec{} &&
-				b.ExternalRepo != a.ExternalRepo)
+				b.ExternalRepo != a.ExternalRepo) ||
+			!equal(b.Sources, a.Sources) ||
+			!bytes.Equal(b.Metadata, a.Metadata)
 	})
 }
 
@@ -166,15 +172,66 @@ func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 		}(src)
 	}
 
+	set := make(map[string]*Repo)
 	var repos []*Repo
 	var errs *multierror.Error
+
 	for i := 0; i < cap(ch); i++ {
-		if r := <-ch; r.err != nil {
+		r := <-ch
+
+		if r.err != nil {
 			errs = multierror.Append(errs, r.err)
-		} else {
-			repos = append(repos, r.repos...)
+			continue
+		}
+
+		for _, repo := range r.repos {
+			for _, id := range repo.IDs() {
+				if existing, ok := set[id]; ok {
+					merge(existing, repo)
+				} else {
+					set[id] = repo
+					repos = append(repos, repo)
+				}
+			}
 		}
 	}
 
 	return repos, errs.ErrorOrNil()
+}
+
+func merge(a, b *Repo) {
+	if a.ExternalRepo == (api.ExternalRepoSpec{}) {
+		*a = *b
+	}
+	srcs := make([]string, 0, len(a.Sources)+len(b.Sources))
+	srcs = append(srcs, a.Sources...)
+	srcs = append(srcs, b.Sources...)
+	a.Sources = dedup(srcs...)
+	sort.Strings(a.Sources)
+}
+
+func dedup(ss ...string) []string {
+	uniq := make([]string, 0, len(ss))
+	set := make(map[string]struct{}, len(ss))
+	for _, s := range ss {
+		if _, ok := set[s]; !ok {
+			set[s] = struct{}{}
+			uniq = append(uniq, s)
+		}
+	}
+	return uniq
+}
+
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
 }

@@ -24,18 +24,17 @@ func TestSyncer_Sync(t *testing.T) {
 		},
 	}
 
-	clock := fakeClock{epoch: time.Now(), step: time.Second}
-
-	for _, tc := range []struct {
+	type testCase struct {
 		name    string
 		sourcer repos.Sourcer
 		store   repos.Store
 		ctx     context.Context
 		now     func() time.Time
 		diff    repos.Diff
-		stored  repos.Store
 		err     string
-	}{
+	}
+
+	testCases := []testCase{
 		{
 			name:    "sourcer error aborts sync",
 			sourcer: sourcer(errors.New("boom")),
@@ -44,36 +43,36 @@ func TestSyncer_Sync(t *testing.T) {
 		{
 			name: "sources partial errors aborts sync",
 			sourcer: sourcer(nil,
-				source(nil, foo.Clone()),
-				source(errors.New("boom")),
+				source("a", nil, foo.Clone()),
+				source("b", errors.New("boom")),
 			),
 			err: "1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name: "sources partial errors aborts sync",
 			sourcer: sourcer(nil,
-				source(nil, foo.Clone()),
-				source(errors.New("boom")),
+				source("a", nil, foo.Clone()),
+				source("b", errors.New("boom")),
 			),
 			err: "1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name: "sources partial errors aborts sync",
 			sourcer: sourcer(nil,
-				source(nil, foo.Clone()),
-				source(errors.New("boom")),
+				source("a", nil, foo.Clone()),
+				source("b", errors.New("boom")),
 			),
 			err: "1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name:    "store list error aborts sync",
-			sourcer: sourcer(nil, source(nil, foo.Clone())),
+			sourcer: sourcer(nil, source("a", nil, foo.Clone())),
 			store:   &fakeStore{list: errors.New("boom")},
 			err:     "boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
-			sourcer: sourcer(nil, source(nil, foo.Clone())),
+			sourcer: sourcer(nil, source("a", nil, foo.Clone())),
 			store:   &fakeStore{upsert: errors.New("booya")},
 			err:     "booya",
 		},
@@ -81,28 +80,99 @@ func TestSyncer_Sync(t *testing.T) {
 			// here we test that if a repo previously had the external id set and one
 			// of its sources gets rate limited, we preserve the external id
 			name: "had name and external id, got name only from rate-limited source",
-			sourcer: sourcer(nil, source(nil, foo.With(func(r *repos.Repo) {
+			sourcer: sourcer(nil, source("a", nil, foo.With(func(r *repos.Repo) {
 				r.ExternalRepo = api.ExternalRepoSpec{}
 			}))),
-			store:  store(foo.Clone()),
-			diff:   repos.Diff{Unmodified: []repos.Diffable{foo.Clone()}},
-			stored: store(foo.Clone()),
-			err:    "<nil>",
+			store: store(foo.With(sources("a"))),
+			diff:  repos.Diff{Unmodified: []repos.Diffable{foo.With(sources("a"))}},
+			err:   "<nil>",
 		},
-		{
+	}
+
+	{
+		clock := fakeClock{epoch: time.Now(), step: time.Second}
+		testCases = append(testCases, testCase{
 			name:    "had name and got external_id",
-			sourcer: sourcer(nil, source(nil, foo.Clone())),
-			store: store(foo.With(func(r *repos.Repo) {
+			sourcer: sourcer(nil, source("a", nil, foo.Clone())),
+			store: store(foo.With(sources("a"), func(r *repos.Repo) {
 				r.ExternalRepo = api.ExternalRepoSpec{}
 			})),
 			now: clock.Now,
 			diff: repos.Diff{Modified: []repos.Diffable{
-				foo.With(modifiedAt(clock.Time(1))),
+				foo.With(modifiedAt(clock.Time(1)), sources("a")),
 			}},
-			stored: store(foo.With(modifiedAt(clock.Time(1)))),
-			err:    "<nil>",
-		},
-	} {
+			err: "<nil>",
+		})
+	}
+
+	{
+		clock := fakeClock{epoch: time.Now(), step: time.Second}
+		testCases = append(testCases, testCase{
+			name: "new repo sources",
+			sourcer: sourcer(nil,
+				source("a", nil, foo.Clone()),
+				source("b", nil, foo.Clone()),
+			),
+			store: store(foo.With(sources("a"))),
+			now:   clock.Now,
+			diff: repos.Diff{Modified: []repos.Diffable{
+				foo.With(modifiedAt(clock.Time(1)), sources("a", "b")),
+			}},
+			err: "<nil>",
+		})
+	}
+
+	{
+		clock := fakeClock{epoch: time.Now(), step: time.Second}
+		testCases = append(testCases, testCase{
+			name: "deleted repo source",
+			sourcer: sourcer(nil,
+				source("a", nil, foo.Clone()),
+			),
+			store: store(foo.With(sources("a", "b"))),
+			now:   clock.Now,
+			diff: repos.Diff{Modified: []repos.Diffable{
+				foo.With(modifiedAt(clock.Time(1)), sources("a")),
+			}},
+			err: "<nil>",
+		})
+	}
+
+	{
+		clock := fakeClock{epoch: time.Now(), step: time.Second}
+		testCases = append(testCases, testCase{
+			name:    "deleted ALL repo sources",
+			sourcer: sourcer(nil),
+			store:   store(foo.With(sources("a", "b"))),
+			now:     clock.Now,
+			diff: repos.Diff{Deleted: []repos.Diffable{
+				foo.With(deletedAt(clock.Time(1))),
+			}},
+			err: "<nil>",
+		})
+	}
+
+	{
+		clock := fakeClock{epoch: time.Now(), step: time.Second}
+		testCases = append(testCases, testCase{
+			name: "metadata update",
+			sourcer: sourcer(nil, source("a", nil,
+				foo.With(modifiedAt(clock.Time(1)),
+					sources("a"),
+					metadata([]byte(`{"metadata": true}`))),
+			)),
+			store: store(foo.With(sources("a"))),
+			now:   clock.Now,
+			diff: repos.Diff{Modified: []repos.Diffable{
+				foo.With(modifiedAt(clock.Time(1)),
+					sources("a"),
+					metadata([]byte(`{"metadata": true}`))),
+			}},
+			err: "<nil>",
+		})
+	}
+
+	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -123,9 +193,21 @@ func TestSyncer_Sync(t *testing.T) {
 				t.Fatalf("unexpected diff:\n%s", pretty.Compare(have, want))
 			}
 
-			if tc.stored != nil {
+			if tc.store != nil {
 				have, _ := tc.store.ListRepos(tc.ctx)
-				want, _ := tc.stored.ListRepos(tc.ctx)
+
+				var want []*repos.Repo
+				for _, ds := range [][]repos.Diffable{
+					diff.Added,
+					diff.Modified,
+					diff.Unmodified,
+					diff.Deleted,
+				} {
+					for _, d := range ds {
+						want = append(want, d.(*repos.Repo))
+					}
+				}
+
 				if !reflect.DeepEqual(have, want) {
 					t.Logf("unexpected stored repos:\n%s", pretty.Compare(have, want))
 				}
@@ -152,16 +234,21 @@ func (s fakeSourcer) ListSources(context.Context) ([]repos.Source, error) {
 }
 
 type fakeSource struct {
+	urn   string
 	repos []*repos.Repo
 	err   error
 }
 
-func source(err error, rs ...*repos.Repo) fakeSource {
-	return fakeSource{err: err, repos: rs}
+func source(urn string, err error, rs ...*repos.Repo) fakeSource {
+	return fakeSource{urn: urn, err: err, repos: rs}
 }
 
 func (s fakeSource) ListRepos(context.Context) ([]*repos.Repo, error) {
-	return s.repos, s.err
+	repos := make([]*repos.Repo, len(s.repos))
+	for i, r := range s.repos {
+		repos[i] = r.With(sources(s.urn))
+	}
+	return repos, s.err
 }
 
 type fakeStore struct {
@@ -242,10 +329,34 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 	return nil
 }
 
+//
+// Repo functional options
+//
+
 func modifiedAt(ts time.Time) func(*repos.Repo) {
 	return func(r *repos.Repo) {
 		r.UpdatedAt = ts
 		r.DeletedAt = time.Time{}
+	}
+}
+
+func deletedAt(ts time.Time) func(*repos.Repo) {
+	return func(r *repos.Repo) {
+		r.UpdatedAt = ts
+		r.DeletedAt = ts
+		r.Sources = []string{}
+	}
+}
+
+func sources(srcs ...string) func(*repos.Repo) {
+	return func(r *repos.Repo) {
+		r.Sources = srcs
+	}
+}
+
+func metadata(md []byte) func(*repos.Repo) {
+	return func(r *repos.Repo) {
+		r.Metadata = md
 	}
 }
 
