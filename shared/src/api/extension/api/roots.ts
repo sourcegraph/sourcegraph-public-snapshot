@@ -5,7 +5,7 @@ import * as sourcegraph from 'sourcegraph'
 import { URI } from '../types/uri'
 
 /** @internal */
-export interface ExtRootsAPI {
+export interface ExtRootsAPI extends ProxyValue {
     $acceptRoots(roots: clientType.WorkspaceRoot[]): void
 }
 
@@ -27,9 +27,7 @@ export class ExtRoots implements ExtRootsAPI, ProxyValue {
     public readonly changes = new Subject<void>()
 
     public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
-        this.roots = Object.freeze(
-            roots.map(plain => ({ ...plain, uri: new URI(plain.uri) } as sourcegraph.WorkspaceRoot))
-        )
+        this.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URI(plain.uri) })))
         this.changes.next()
     }
 }

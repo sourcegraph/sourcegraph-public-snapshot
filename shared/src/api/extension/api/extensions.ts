@@ -4,7 +4,7 @@ import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'
 
 /** @internal */
-export interface ExtExtensionsAPI {
+export interface ExtExtensionsAPI extends ProxyValue {
     $activateExtension(extensionID: string, bundleURL: string): Promise<void>
     $deactivateExtension(extensionID: string): Promise<void>
 }

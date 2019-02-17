@@ -1,4 +1,5 @@
 import * as clientType from '@sourcegraph/extension-api-types'
+import { ProxyResult } from 'comlink'
 import { of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
@@ -15,7 +16,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         private resource: string,
         public _selections: clientType.Selection[],
         public readonly isActive: boolean,
-        private proxy: ClientCodeEditorAPI,
+        private proxy: ProxyResult<ClientCodeEditorAPI>,
         private documents: ExtDocuments
     ) {}
 
@@ -42,6 +43,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         // Backcompat: extensions developed against an older version of the API
         // may not supply a decorationType
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
+        // tslint:disable-next-line: no-floating-promises
         this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
     }
 

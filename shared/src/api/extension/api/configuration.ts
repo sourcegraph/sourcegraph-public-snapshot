@@ -35,8 +35,8 @@ class ExtConfigurationSection<C extends object> implements sourcegraph.Configura
  * @internal
  * @template C - The configuration schema.
  */
-export interface ExtConfigurationAPI<C> {
-    $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): Promise<void>
+export interface ExtConfigurationAPI<C> extends ProxyValue {
+    $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void
 }
 
 /**
@@ -52,9 +52,9 @@ export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C
      */
     private data?: BehaviorSubject<Readonly<SettingsCascade<C>>>
 
-    constructor(private proxy: ClientConfigurationAPI) {}
+    constructor(private proxy: ProxyResult<ClientConfigurationAPI>) {}
 
-    public async $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): Promise<void> {
+    public $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void {
         if (!this.data) {
             this.data = new BehaviorSubject(data)
         } else {

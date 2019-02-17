@@ -1,4 +1,4 @@
-import { ProxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from 'comlink'
 import { from, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { isSettingsValid } from '../../../settings/settings'
@@ -6,8 +6,8 @@ import { ExtConfigurationAPI } from '../../extension/api/configuration'
 import { SettingsEdit, SettingsService } from '../services/settings'
 
 /** @internal */
-export interface ClientConfigurationAPI {
-    $acceptConfigurationUpdate(edit: SettingsEdit): Promise<void>
+export interface ClientConfigurationAPI extends ProxyValue {
+    $acceptConfigurationUpdate(edit: SettingsEdit): void
 }
 
 /**
@@ -19,7 +19,7 @@ export class ClientConfiguration<C> implements ClientConfigurationAPI, ProxyValu
 
     private subscriptions = new Subscription()
 
-    constructor(private proxy: ExtConfigurationAPI<C>, private settingsService: SettingsService<C>) {
+    constructor(private proxy: ProxyResult<ExtConfigurationAPI<C>>, private settingsService: SettingsService<C>) {
         this.subscriptions.add(
             from(settingsService.data)
                 .pipe(

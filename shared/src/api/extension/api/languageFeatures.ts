@@ -1,5 +1,5 @@
 import * as clientType from '@sourcegraph/extension-api-types'
-import { ProxyInput, ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyInput, ProxyResult, proxyValue } from 'comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import {
     DefinitionProvider,
@@ -18,12 +18,7 @@ import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
 
 /** @internal */
-export interface ExtLanguageFeaturesAPI {}
-
-/** @internal */
-export class ExtLanguageFeatures implements ExtLanguageFeaturesAPI, ProxyValue {
-    public readonly [proxyValueSymbol] = true
-
+export class ExtLanguageFeatures {
     constructor(private proxy: ProxyResult<ClientLanguageFeaturesAPI>, private documents: ExtDocuments) {}
 
     public registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable {

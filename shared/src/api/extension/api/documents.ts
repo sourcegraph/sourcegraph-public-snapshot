@@ -4,7 +4,7 @@ import { TextDocument } from 'sourcegraph'
 import { TextDocumentItem } from '../../client/types/textDocument'
 
 /** @internal */
-export interface ExtDocumentsAPI {
+export interface ExtDocumentsAPI extends ProxyValue {
     $acceptDocumentData(doc: TextDocumentItem[]): void
 }
 

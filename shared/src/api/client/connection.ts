@@ -70,42 +70,40 @@ export function createExtensionHostClientConnection(
     const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
     subscription.add(clientConfiguration)
 
-    subscription.add(
-        new ClientContext(connection, (updates: ContextValues) =>
-            services.context.data.next(applyContextUpdate(services.context.data.value, updates))
-        )
+    const clientContext = new ClientContext((updates: ContextValues) =>
+        services.context.data.next(applyContextUpdate(services.context.data.value, updates))
     )
-    subscription.add(
-        new ClientWindows(
-            connection,
-            from(services.model.model).pipe(
-                map(({ visibleViewComponents }) => visibleViewComponents),
-                distinctUntilChanged()
-            ),
-            (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
-            (params: ShowMessageRequestParams) =>
-                new Promise<MessageActionItem | null>(resolve => {
-                    services.notifications.showMessageRequests.next({ ...params, resolve })
-                }),
-            (params: ShowInputParams) =>
-                new Promise<string | null>(resolve => {
-                    services.notifications.showInputs.next({ ...params, resolve })
-                }),
-            ({ title }: ProgressOptions) => {
-                const reporter = new Subject<Progress>()
-                services.notifications.progresses.next({ title, progress: reporter.asObservable() })
-                return reporter
-            }
-        )
+    subscription.add(clientContext)
+    const clientWindows = new ClientWindows(
+        proxy.windows,
+        from(services.model.model).pipe(
+            map(({ visibleViewComponents }) => visibleViewComponents),
+            distinctUntilChanged()
+        ),
+        (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
+        (params: ShowMessageRequestParams) =>
+            new Promise<MessageActionItem | null>(resolve => {
+                services.notifications.showMessageRequests.next({ ...params, resolve })
+            }),
+        (params: ShowInputParams) =>
+            new Promise<string | null>(resolve => {
+                services.notifications.showInputs.next({ ...params, resolve })
+            }),
+        ({ title }: ProgressOptions) => {
+            const reporter = new Subject<Progress>()
+            services.notifications.progresses.next({ title, progress: reporter.asObservable() })
+            return reporter
+        }
     )
+    subscription.add(clientWindows)
 
-    const clientViews = new ClientViews(connection, services.views, services.textDocumentLocations)
-    subscription.add(clientViews)
+    const clientViews = new ClientViews(services.views, services.textDocumentLocations)
 
-    subscription.add(new ClientCodeEditor(connection, services.textDocumentDecoration))
+    const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
+    subscription.add(clientCodeEditor)
     subscription.add(
         new ClientDocuments(
-            connection,
+            proxy.documents,
             from(services.model.model).pipe(
                 map(
                     ({ visibleViewComponents }) =>
@@ -123,27 +121,29 @@ export function createExtensionHostClientConnection(
         services.textDocumentReferences,
         services.textDocumentLocations
     )
-
     const clientSearch = new ClientSearch(services.queryTransformer)
-    subscription.add(clientSearch)
-
-    subscription.add(new ClientCommands(connection, services.commands))
+    const clientCommands = new ClientCommands(services.commands)
     subscription.add(
         new ClientRoots(
-            connection,
+            proxy.roots,
             from(services.model.model).pipe(
                 map(({ roots }) => roots),
                 distinctUntilChanged()
             )
         )
     )
-    subscription.add(new ClientExtensions(connection, services.extensions))
+    subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
+        context: clientContext,
         search: clientSearch,
         configuration: clientConfiguration,
         languageFeatures: clientLanguageFeatures,
+        commands: clientCommands,
+        windows: clientWindows,
+        codeEditor: clientCodeEditor,
+        views: clientViews,
     }
     comlink.expose(clientAPI, self)
 

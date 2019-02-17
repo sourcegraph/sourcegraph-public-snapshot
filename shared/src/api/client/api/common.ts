@@ -1,53 +1,34 @@
-import { Unsubscribable } from 'sourcegraph'
+import { ProxyResult, proxyValue } from 'comlink'
+import { from, Observable, observable, Subscription } from 'rxjs'
+import { mergeMap } from 'rxjs/operators'
+import { Subscribable } from 'sourcegraph'
+import { ProxySubscribable } from '../../extension/api/common'
 
 /**
- * Manages a map of subscriptions keyed on a numeric ID.
+ * When a Subscribable is returned from the other thread (wrapped with `proxySubscribable()`),
+ * this thread gets a `Promise` for a `Subscribable` _proxy_ where `subscribe()` returns a `Promise<Unsubscribable>`.
+ * This function wraps that proxy in a real Rx Observable where `subscribe()` returns an `Unsubscribable` directly as expected.
  *
- * @internal
+ * @param proxyPromise The proxy to the `ProxyObservable` in the other thread
  */
-export class SubscriptionMap {
-    private map = new Map<number, Unsubscribable>()
-
-    /**
-     * Adds a new subscription with the given {@link id}.
-     *
-     * @param id - A unique identifier for this subscription among all other entries in this map.
-     * @param subscription - The subscription, unsubscribed when {@link SubscriptionMap#remove} is called.
-     * @throws If there already exists an entry with the given {@link id}.
-     */
-    public add(id: number, subscription: Unsubscribable): void {
-        if (this.map.has(id)) {
-            throw new Error(`subscription already exists with ID ${id}`)
-        }
-        this.map.set(id, subscription)
-    }
-
-    /**
-     * Unsubscribes the subscription that was previously added with the given {@link id}, and removes it from the
-     * map.
-     */
-    public remove(id: number): void {
-        const subscription = this.map.get(id)
-        if (!subscription) {
-            throw new Error(`no subscription with ID ${id}`)
-        }
-        try {
-            subscription.unsubscribe()
-        } finally {
-            this.map.delete(id)
-        }
-    }
-
-    /**
-     * Unsubscribes all subscriptions in this map and clears it.
-     */
-    public unsubscribe(): void {
-        try {
-            for (const subscription of this.map.values()) {
-                subscription.unsubscribe()
-            }
-        } finally {
-            this.map.clear()
-        }
-    }
-}
+export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxySubscribable<T>>>): Observable<T> =>
+    from(proxyPromise).pipe(
+        mergeMap(
+            proxy =>
+                // tslint:disable-next-line: no-object-literal-type-assertion
+                ({
+                    // Needed for Rx type check
+                    [observable](): Subscribable<T> {
+                        return this
+                    },
+                    subscribe(...args: any): Subscription {
+                        const subscription = new Subscription()
+                        // tslint:disable-next-line: no-floating-promises
+                        proxy.subscribe(...proxyValue(args)).then(s => {
+                            subscription.add(s)
+                        })
+                        return subscription
+                    },
+                } as Subscribable<T>)
+        )
+    )

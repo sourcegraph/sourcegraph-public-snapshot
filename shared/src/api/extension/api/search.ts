@@ -1,11 +1,9 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, proxyValue } from 'comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { QueryTransformer } from 'sourcegraph'
 import { ClientSearchAPI } from '../../client/api/search'
 
-export class ExtSearch implements ProxyValue {
-    public readonly [proxyValueSymbol] = true
-
+export class ExtSearch {
     constructor(private proxy: ProxyResult<ClientSearchAPI>) {}
 
     public registerQueryTransformer(provider: QueryTransformer): Unsubscribable {

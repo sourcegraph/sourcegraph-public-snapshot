@@ -1,7 +1,7 @@
 import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
 import { DocumentSelector, Unsubscribable } from 'sourcegraph'
-import { ProxySubscribable, wrapRemoteObservable } from '../../extension/api/common'
+import { ProxySubscribable } from '../../extension/api/common'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import {
@@ -10,9 +10,10 @@ import {
     TextDocumentReferencesProviderRegistry,
 } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
+import { wrapRemoteObservable } from './common'
 
 /** @internal */
-export interface ClientLanguageFeaturesAPI {
+export interface ClientLanguageFeaturesAPI extends ProxyValue {
     $registerHoverProvider(
         selector: DocumentSelector,
         providerFunction: ProxyResult<

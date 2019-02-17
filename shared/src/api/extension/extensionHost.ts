@@ -2,7 +2,6 @@ import * as comlink from 'comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientAPI } from '../client/api/api'
-import { createProxy } from '../common/proxy'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
 import { ExtensionHostAPI } from './api/api'
 import { ExtCommands } from './api/commands'
@@ -125,39 +124,29 @@ function createExtensionAPI(
     const proxy = comlink.proxy<ClientAPI>(self)
 
     // For debugging/tests.
-    const sync = () => connection.sendRequest<void>('ping')
-    connection.onRequest('ping', () => 'pong')
-
-    const context = new ExtContext(createProxy(connection, 'context'))
-
+    const sync = async () => {
+        await proxy.ping()
+    }
+    const context = new ExtContext(proxy.context)
     const documents = new ExtDocuments(sync)
 
     const extensions = new ExtExtensions()
     subscriptions.add(extensions)
 
     const roots = new ExtRoots()
-
-    const windows = new ExtWindows(createProxy(connection, 'windows'), createProxy(connection, 'codeEditor'), documents)
-
-    const views = new ExtViews(createProxy(connection, 'views'))
-    subscriptions.add(views)
-
-    const configuration = new ExtConfiguration<any>(createProxy(connection, 'configuration'))
-
+    const windows = new ExtWindows(proxy, documents)
+    const views = new ExtViews(proxy.views)
+    const configuration = new ExtConfiguration<any>(proxy.configuration)
     const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
-
     const search = new ExtSearch(proxy.search)
-
-    const commands = new ExtCommands(createProxy(connection, 'commands'))
-    subscriptions.add(commands)
+    const commands = new ExtCommands(proxy.commands)
 
     // Expose the extension host API to the client (main thread)
     const extHostAPI: ExtensionHostAPI = {
-        commands,
+        ping: () => 'pong',
         configuration,
         documents,
         extensions,
-        languageFeatures,
         roots,
         windows,
     }
