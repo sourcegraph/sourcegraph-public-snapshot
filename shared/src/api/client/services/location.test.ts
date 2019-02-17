@@ -60,7 +60,7 @@ describe('getLocations', () => {
             expectObservable(
                 getLocations(
                     cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                        a: [() => of(FIXTURE_LOCATION), () => throwError('x')],
+                        a: [() => of([FIXTURE_LOCATION]), () => throwError('x')],
                     }),
                     FIXTURE.TextDocumentPositionParams,
                     false
@@ -106,15 +106,19 @@ describe('getLocations', () => {
                         cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
                             a: [
                                 () =>
-                                    of({
-                                        uri: 'file:///f1',
-                                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                                    }),
+                                    of([
+                                        {
+                                            uri: 'file:///f1',
+                                            range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                                        },
+                                    ]),
                                 () =>
-                                    of({
-                                        uri: 'file:///f2',
-                                        range: { start: { line: 5, character: 6 }, end: { line: 7, character: 8 } },
-                                    }),
+                                    of([
+                                        {
+                                            uri: 'file:///f2',
+                                            range: { start: { line: 5, character: 6 }, end: { line: 7, character: 8 } },
+                                        },
+                                    ]),
                             ],
                         }),
                         FIXTURE.TextDocumentPositionParams

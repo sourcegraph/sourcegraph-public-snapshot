@@ -15,7 +15,7 @@ import { flattenAndCompact } from './util'
 export type ProvideTextDocumentLocationSignature<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
     L extends Location = Location
-> = (params: P) => Observable<L | L[] | null>
+> = (params: P) => Observable<L[] | null>
 
 /**
  * Provides location results from matching registered providers for definition, implementation, and type definition

@@ -203,6 +203,6 @@ function testLocationProvider<P>({
     })
 }
 
-function labeledDefinitionResults(labels: string[]): Location | Location[] {
+function labeledDefinitionResults(labels: string[]): Location[] {
     return labels.map(label => ({ uri: `file:///${label}`, range: undefined }))
 }
