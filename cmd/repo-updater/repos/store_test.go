@@ -66,7 +66,7 @@ func TestIntegration_DBStore(t *testing.T) {
 		}
 
 		sort.Slice(want, func(i, j int) bool {
-			return want[i]._ID < want[j]._ID
+			return want[i].ID < want[j].ID
 		})
 
 		have, err := txstore.ListRepos(ctx)
@@ -93,7 +93,7 @@ func TestIntegration_DBStore(t *testing.T) {
 
 				// Not updateable fields. Check that that UpsertRepos
 				// restores their original value.
-				r._ID += 10000
+				r.ID += 10000
 				r.Enabled = !r.Enabled
 				r.CreatedAt = r.CreatedAt.Add(time.Minute)
 			}

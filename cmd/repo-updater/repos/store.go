@@ -109,7 +109,7 @@ func (s DBStore) paginate(ctx context.Context, repos *[]*Repo, q paginatedQuery)
 	for cursor != next && err == nil {
 		cursor = next
 		if err = s.page(ctx, q(cursor, 500), repos); len(*repos) > 0 {
-			next = int64((*repos)[len(*repos)-1]._ID)
+			next = int64((*repos)[len(*repos)-1].ID)
 		}
 	}
 	return err
@@ -249,7 +249,7 @@ func closeErr(c io.Closer, err *error) {
 
 func scanRepo(r *Repo, s scanner) error {
 	return s.Scan(
-		&r._ID,
+		&r.ID,
 		&r.Name,
 		&r.Description,
 		&r.Language,

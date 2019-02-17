@@ -8,8 +8,8 @@ import (
 
 // Repo represents a source code repository stored in Sourcegraph.
 type Repo struct {
-	// The internal Sourcegraph repo ID. Prefixed with _ to not conflict with the ID method.
-	_ID uint32
+	// The internal Sourcegraph repo ID.
+	ID uint32
 	// Name is the name for this repository (e.g., "github.com/user/repo").
 	//
 	// Previously, this was called RepoURI.
