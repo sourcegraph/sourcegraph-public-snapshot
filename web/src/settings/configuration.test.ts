@@ -2,12 +2,12 @@ import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import { mergeSettingsSchemas } from './configuration'
 
 describe('mergeSettingsSchemas', () => {
-    it('handles empty', () =>
+    test('handles empty', () =>
         expect(mergeSettingsSchemas([])).toEqual({
             allOf: [{ $ref: settingsSchemaJSON.$id }],
         }))
 
-    it('overwrites additionalProperties and required', () =>
+    test('overwrites additionalProperties and required', () =>
         expect(
             mergeSettingsSchemas([
                 {
@@ -37,7 +37,7 @@ describe('mergeSettingsSchemas', () => {
             ],
         }))
 
-    it('handles error and null configuration', () =>
+    test('handles error and null configuration', () =>
         expect(
             mergeSettingsSchemas([
                 {
