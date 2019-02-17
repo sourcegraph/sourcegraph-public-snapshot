@@ -25,8 +25,12 @@ export class TextDocumentLocationProviderRegistry<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
     L extends Location = Location
 > extends DocumentFeatureProviderRegistry<ProvideTextDocumentLocationSignature<P, L>> {
+    /**
+     * Returns an observable that emits the registered providers' location results whenever any of
+     * the last-emitted set of providers emits hovers.
+     */
     public getLocations(params: P): Observable<L[] | null> {
-        return getLocations<P, L>(this.providersForDocument(params.textDocument), params)
+        return getLocationsFromProviders(this.providersForDocument(params.textDocument), params)
     }
 
     public getLocationsAndProviders(
@@ -46,7 +50,7 @@ export class TextDocumentLocationProviderRegistry<
                     )
                     .map(({ provider }) => provider)
                 return {
-                    locations: getLocations<P, L>(of(providers), {
+                    locations: getLocationsFromProviders<P, L>(of(providers), {
                         ...(params as Pick<P, keyof TextDocumentPositionParams>),
                         ...(extraParams as Pick<P, Exclude<keyof P, 'textDocument' | 'position'>>),
                     } as P),
@@ -55,40 +59,6 @@ export class TextDocumentLocationProviderRegistry<
             })
         )
     }
-}
-
-/**
- * Returns an observable that emits the providers' location results whenever any of the last-emitted set of
- * providers emits hovers.
- *
- * Most callers should use the TextDocumentLocationProviderRegistry class, which uses the registered providers
- * (instead of this function, which requires the caller to specify the providers to get locations from).
- */
-export function getLocations<
-    P extends TextDocumentPositionParams = TextDocumentPositionParams,
-    L extends Location = Location
->(
-    providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>,
-    params: P,
-    logErrors = true
-): Observable<L[] | null> {
-    return providers.pipe(
-        switchMap(providers =>
-            combineLatestOrDefault(
-                providers.map(provider =>
-                    from(provider(params)).pipe(
-                        catchError(err => {
-                            if (logErrors) {
-                                console.error(err)
-                            }
-                            return [null]
-                        })
-                    )
-                )
-            )
-        ),
-        map(flattenAndCompact)
-    )
 }
 
 /**
@@ -131,6 +101,39 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
      * @param id The provider ID.
      */
     public getLocations(id: string, params: TextDocumentPositionParams): Observable<Location[] | null> {
-        return getLocations(this.providersForDocumentWithID(id, params.textDocument), params)
+        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params)
     }
+}
+
+/**
+ * Returns the combined results of invoking multiple location providers.
+ *
+ * @internal Callers should instead use the the getLocations or similarly named methods on classes
+ * defined in this module.
+ */
+export function getLocationsFromProviders<
+    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    L extends Location = Location
+>(
+    providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>,
+    params: P,
+    logErrors = true
+): Observable<L[] | null> {
+    return providers.pipe(
+        switchMap(providers =>
+            combineLatestOrDefault(
+                providers.map(provider =>
+                    from(provider(params)).pipe(
+                        catchError(err => {
+                            if (logErrors) {
+                                console.error(err)
+                            }
+                            return [null]
+                        })
+                    )
+                )
+            )
+        ),
+        map(flattenAndCompact)
+    )
 }
