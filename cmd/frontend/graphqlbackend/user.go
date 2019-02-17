@@ -19,20 +19,20 @@ import (
 )
 
 func (r *schemaResolver) User(ctx context.Context, args struct {
-	Username        *string
-	UsernameOrEmail *string
+	Username *string
+	Email    *string
 }) (*UserResolver, error) {
 	var query string
 	if args.Username != nil {
 		query = *args.Username
-	} else if args.UsernameOrEmail != nil {
-		query = *args.UsernameOrEmail
+	} else if args.Email != nil {
+		query = *args.Email
 	}
 	// Check if querying for email address.
 	if strings.Contains(query, "@") {
 		user, err := db.Users.GetByVerifiedEmail(ctx, query)
 		if err != nil {
-			return nil, safeErrMsg(ctx, err)
+			return nil, err
 		}
 		return &UserResolver{user: user}, nil
 	}
@@ -42,15 +42,6 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 		return nil, err
 	}
 	return &UserResolver{user: user}, nil
-}
-
-// 🚨 SECURITY: safeErrMsg is an error message that can be shown to any user.
-// If the user is a site admin, the passed in error is returned.
-func safeErrMsg(ctx context.Context, err error) error {
-	if isSiteAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx); isSiteAdminErr != nil {
-		return isSiteAdminErr
-	}
-	return err
 }
 
 // UserResolver implements the GraphQL User type.

@@ -691,8 +691,8 @@ type Query {
     user(
         # Query the user by username.
         username: String
-        # Query the user by username or verified email address.
-        usernameOrEmail: String
+        # Query the user by verified email address.
+        email: String
     ): User
     # List all users.
     users(
