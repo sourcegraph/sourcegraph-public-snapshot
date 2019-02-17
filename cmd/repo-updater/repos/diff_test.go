@@ -43,9 +43,9 @@ func TestDiff(t *testing.T) {
 			diff:   Diff{Unmodified: []Diffable{diffable{K: 1, V: "foo"}}},
 		},
 		{
-			name:   "duplicates in before", // last duplicate wins
+			name:   "duplicates in before", // first duplicate wins
 			before: []Diffable{diffable{K: 1, V: "foo"}, diffable{K: 1, V: "bar"}},
-			diff:   Diff{Deleted: []Diffable{diffable{K: 1, V: "bar"}}},
+			diff:   Diff{Deleted: []Diffable{diffable{K: 1, V: "foo"}}},
 		},
 		{
 			name:  "duplicates in after", // last duplicate wins
@@ -53,36 +53,13 @@ func TestDiff(t *testing.T) {
 			diff:  Diff{Added: []Diffable{diffable{K: 1, V: "bar"}}},
 		},
 		{
-			name: "sorting",
-			before: []Diffable{
-				diffable{K: 1, V: "foo"}, // deleted
-				diffable{K: 2, V: "baz"}, // modified
-				diffable{K: 1, V: "bar"}, // duplicate, deleted
-				diffable{K: 3, V: "moo"}, // unmodified
-				diffable{K: 0, V: "poo"}, // deleted
-			},
-			after: []Diffable{
-				diffable{K: 5, V: "too"}, // added
-				diffable{K: 4, V: "goo"}, // added
-				diffable{K: 2, V: "boo"}, // modified
-				diffable{K: 3, V: "moo"}, // unmodified
-			},
-			diff: Diff{
-				Added: []Diffable{
-					diffable{K: 4, V: "goo"},
-					diffable{K: 5, V: "too"},
-				},
-				Deleted: []Diffable{
-					diffable{K: 0, V: "poo"},
-					diffable{K: 1, V: "bar"},
-				},
-				Modified: []Diffable{
-					diffable{K: 2, V: "boo"},
-				},
-				Unmodified: []Diffable{
-					diffable{K: 3, V: "moo"},
-				},
-			},
+			// This test case is covering the scenario when a repo had a name and got
+			// an external_id with the latest sync. In this case, we want to merge those
+			// two repos into one with the external_id set.
+			name:   "duplicates with different IDs are merged correctly",
+			before: []Diffable{diffable{K: 1, V: "foo"}},
+			after:  []Diffable{diffable{K: 1, K2: "second id", V: "foo"}},
+			diff:   Diff{Modified: []Diffable{diffable{K: 1, K2: "second id", V: "foo"}}},
 		},
 	} {
 		tc := tc
@@ -162,10 +139,15 @@ func TestDiff(t *testing.T) {
 }
 
 type diffable struct {
-	K uint32
-	V string
+	K  uint32
+	K2 string
+	V  string
 }
 
-func (d diffable) IDs() []string {
-	return []string{strconv.FormatUint(uint64(d.K), 10)}
+func (d diffable) IDs() (ids []string) {
+	ids = append(ids, strconv.FormatUint(uint64(d.K), 10))
+	if d.K2 != "" {
+		ids = append(ids, d.K2)
+	}
+	return ids
 }

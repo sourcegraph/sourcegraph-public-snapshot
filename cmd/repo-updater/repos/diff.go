@@ -34,13 +34,6 @@ type Diffable interface {
 // using the provided function to decide if a Diffable that appears in both
 // sets is modified or not.
 func NewDiff(before, after []Diffable, modified func(before, after Diffable) bool) (diff Diff) {
-	bs := make(map[string]Diffable, len(before))
-	for _, b := range before {
-		for _, id := range b.IDs() {
-			bs[id] = b
-		}
-	}
-
 	as := make(map[string]Diffable, len(after))
 	for _, a := range after {
 		for _, id := range a.IDs() {
@@ -48,20 +41,42 @@ func NewDiff(before, after []Diffable, modified func(before, after Diffable) boo
 		}
 	}
 
-	for id, b := range bs {
-		switch a, ok := as[id]; {
+	bs := make(map[string]Diffable, len(before))
+	for _, b := range before {
+		var a Diffable
+		var ok, dup bool
+
+		for _, id := range b.IDs() {
+			if _, dup = bs[id]; dup {
+				break
+			} else if bs[id] = b; !ok {
+				a, ok = as[id]
+			}
+		}
+
+		switch {
+		case dup:
+			continue
 		case !ok:
 			diff.Deleted = append(diff.Deleted, b)
+			continue
 		case modified(b, a):
 			diff.Modified = append(diff.Modified, a)
 		default:
 			diff.Unmodified = append(diff.Unmodified, a)
+		}
+
+		for _, id := range a.IDs() {
+			bs[id] = b
 		}
 	}
 
 	for id, a := range as {
 		if _, ok := bs[id]; !ok {
 			diff.Added = append(diff.Added, a)
+			for _, id := range a.IDs() {
+				delete(as, id)
+			}
 		}
 	}
 
