@@ -3,7 +3,6 @@ package repos_test
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 	"testing"
 	"time"
@@ -16,13 +15,15 @@ import (
 
 func TestSyncer_Sync(t *testing.T) {
 	foo := repos.Repo{
-		Name: "bar",
+		Name: "foo",
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "bar12345",
+			ID:          "foo-external-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: "github",
 		},
 	}
+
+	bar := repos.Repo{Name: "bar"}
 
 	type testCase struct {
 		name    string
@@ -171,6 +172,25 @@ func TestSyncer_Sync(t *testing.T) {
 	{
 		clock := fakeClock{epoch: time.Now(), step: time.Second}
 		testCases = append(testCases, testCase{
+			name:    "renamed repo without external_id is re-created",
+			sourcer: sourcer(nil, source("a", nil, bar.Clone())),
+			store:   store(foo.With(sources("a"))),
+			now:     clock.Now,
+			diff: repos.Diff{
+				Added: []repos.Diffable{
+					bar.With(sources("a"), createdAt(clock.Time(1))),
+				},
+				Deleted: []repos.Diffable{
+					foo.With(sources("a"), deletedAt(clock.Time(1))),
+				},
+			},
+			err: "<nil>",
+		})
+	}
+
+	{
+		clock := fakeClock{epoch: time.Now(), step: time.Second}
+		testCases = append(testCases, testCase{
 			name: "metadata update",
 			sourcer: sourcer(nil, source("a", nil,
 				foo.With(modifiedAt(clock.Time(1)),
@@ -205,8 +225,9 @@ func TestSyncer_Sync(t *testing.T) {
 				t.Errorf("have error %q, want %q", have, want)
 			}
 
-			if have, want := diff, tc.diff; !reflect.DeepEqual(have, want) {
-				t.Fatalf("unexpected diff:\n%s", pretty.Compare(have, want))
+			if cmp := pretty.Compare(diff, tc.diff); cmp != "" {
+				// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
+				t.Fatalf("unexpected diff:\n%s", cmp)
 			}
 
 			if tc.store != nil {
@@ -224,8 +245,9 @@ func TestSyncer_Sync(t *testing.T) {
 					}
 				}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Logf("unexpected stored repos:\n%s", pretty.Compare(have, want))
+				if cmp := pretty.Compare(have, want); cmp != "" {
+					// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
+					t.Fatalf("unexpected stored repos:\n%s", cmp)
 				}
 			}
 		})
@@ -301,7 +323,7 @@ func (s fakeStore) ListRepos(_ context.Context) ([]*repos.Repo, error) {
 	}
 
 	sort.Slice(repos, func(i, j int) bool {
-		return repos[i].ID < repos[j].ID
+		return repos[i].Name < repos[j].Name
 	})
 
 	return repos, nil
@@ -317,22 +339,29 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 	}
 
 	for _, upsert := range upserts {
+		var repo *repos.Repo
 		for _, id := range upsert.IDs() {
-			if repo, ok := s.repos[id]; !ok {
-				s.repos[id] = upsert
-			} else {
-				repo.Name = upsert.Name
-				repo.Description = upsert.Description
-				repo.Language = upsert.Language
-				repo.UpdatedAt = upsert.UpdatedAt
-				repo.DeletedAt = upsert.DeletedAt
-				repo.Archived = upsert.Archived
-				repo.Fork = upsert.Fork
-				repo.Sources = upsert.Sources
-				repo.Metadata = upsert.Metadata
-				repo.ExternalRepo = upsert.ExternalRepo
+			if repo = s.repos[id]; repo != nil {
 				break
 			}
+		}
+
+		if repo != nil {
+			repo.Name = upsert.Name
+			repo.Description = upsert.Description
+			repo.Language = upsert.Language
+			repo.UpdatedAt = upsert.UpdatedAt
+			repo.DeletedAt = upsert.DeletedAt
+			repo.Archived = upsert.Archived
+			repo.Fork = upsert.Fork
+			repo.Sources = upsert.Sources
+			repo.Metadata = upsert.Metadata
+			repo.ExternalRepo = upsert.ExternalRepo
+			continue
+		}
+
+		for _, id := range upsert.IDs() {
+			s.repos[id] = upsert
 		}
 	}
 
@@ -342,6 +371,13 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 //
 // Repo functional options
 //
+
+func createdAt(ts time.Time) func(*repos.Repo) {
+	return func(r *repos.Repo) {
+		r.CreatedAt = ts
+		r.DeletedAt = time.Time{}
+	}
+}
 
 func modifiedAt(ts time.Time) func(*repos.Repo) {
 	return func(r *repos.Repo) {
