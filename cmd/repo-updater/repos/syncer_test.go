@@ -3,6 +3,7 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"testing"
 	"time"
@@ -23,11 +24,14 @@ func TestSyncer_Sync(t *testing.T) {
 		},
 	}
 
+	clock := fakeClock{epoch: time.Now(), step: time.Second}
+
 	for _, tc := range []struct {
 		name    string
 		sourcer repos.Sourcer
 		store   repos.Store
 		ctx     context.Context
+		now     func() time.Time
 		diff    repos.Diff
 		stored  repos.Store
 		err     string
@@ -85,30 +89,54 @@ func TestSyncer_Sync(t *testing.T) {
 			stored: store(foo.Clone()),
 			err:    "<nil>",
 		},
+		{
+			name:    "had name and got external_id",
+			sourcer: sourcer(nil, source(nil, foo.Clone())),
+			store: store(foo.With(func(r *repos.Repo) {
+				r.ExternalRepo = api.ExternalRepoSpec{}
+			})),
+			now: clock.Now,
+			diff: repos.Diff{Modified: []repos.Diffable{
+				foo.With(modifiedAt(clock.Time(1))),
+			}},
+			stored: store(foo.With(modifiedAt(clock.Time(1)))),
+			err:    "<nil>",
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			syncer := repos.NewSyncer(0, tc.store, tc.sourcer, nil, time.Now)
+			now := tc.now
+			if now == nil {
+				now = time.Now
+			}
+
+			syncer := repos.NewSyncer(0, tc.store, tc.sourcer, nil, now)
 			diff, err := syncer.Sync(tc.ctx)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have error %q, want %q", have, want)
 			}
 
-			if cmp := pretty.Compare(diff, tc.diff); cmp != "" {
-				t.Fatalf("diff:\n%s", cmp)
+			if have, want := diff, tc.diff; !reflect.DeepEqual(have, want) {
+				t.Fatalf("unexpected diff:\n%s", pretty.Compare(have, want))
 			}
 
 			if tc.stored != nil {
-				if cmp := pretty.Compare(tc.store, tc.stored); cmp != "" {
-					t.Fatalf("stored:\n%s", cmp)
+				have, _ := tc.store.ListRepos(tc.ctx)
+				want, _ := tc.stored.ListRepos(tc.ctx)
+				if !reflect.DeepEqual(have, want) {
+					t.Logf("unexpected stored repos:\n%s", pretty.Compare(have, want))
 				}
 			}
 		})
 	}
 }
+
+//
+// Test utilities
+//
 
 type fakeSourcer struct {
 	err  error
@@ -154,8 +182,19 @@ func store(rs ...*repos.Repo) *fakeStore {
 }
 
 func (s fakeStore) ListRepos(_ context.Context) ([]*repos.Repo, error) {
-	repos := make([]*repos.Repo, 0, len(s.repos))
+	if s.list != nil {
+		return nil, s.list
+	}
+
+	set := make(map[*repos.Repo]struct{}, len(s.repos))
 	for _, r := range s.repos {
+		if _, ok := set[r]; !ok {
+			set[r] = struct{}{}
+		}
+	}
+
+	repos := make([]*repos.Repo, 0, len(set))
+	for r := range set {
 		repos = append(repos, r)
 	}
 
@@ -163,7 +202,7 @@ func (s fakeStore) ListRepos(_ context.Context) ([]*repos.Repo, error) {
 		return repos[i].ID < repos[j].ID
 	})
 
-	return repos, s.list
+	return repos, nil
 }
 
 func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error {
@@ -187,6 +226,7 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 				repo.Fork = upsert.Fork
 				repo.Sources = upsert.Sources
 				repo.Metadata = upsert.Metadata
+				repo.ExternalRepo = upsert.ExternalRepo
 				break
 			}
 
@@ -200,4 +240,26 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 	}
 
 	return nil
+}
+
+func modifiedAt(ts time.Time) func(*repos.Repo) {
+	return func(r *repos.Repo) {
+		r.UpdatedAt = ts
+		r.DeletedAt = time.Time{}
+	}
+}
+
+type fakeClock struct {
+	epoch time.Time
+	step  time.Duration
+	steps int
+}
+
+func (c *fakeClock) Now() time.Time {
+	c.steps++
+	return c.Time(c.steps)
+}
+
+func (c fakeClock) Time(steps int) time.Time {
+	return c.epoch.Add(time.Duration(steps) * c.step).UTC()
 }
