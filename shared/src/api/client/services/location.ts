@@ -2,7 +2,7 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { combineLatest, from, Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Model, modelToTextDocumentPositionParams } from '../model'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
@@ -89,21 +89,6 @@ export function getLocations<
         ),
         map(flattenAndCompact)
     )
-}
-
-/**
- * Provides reference results from all providers.
- *
- * Reference results are always an array or null, unlike results from other location providers (e.g., from
- * textDocument/definition), which can be a single item, an array, or null.
- */
-export class TextDocumentReferencesProviderRegistry extends TextDocumentLocationProviderRegistry<ReferenceParams> {
-    /** Gets reference locations from all matching providers. */
-    public getLocations(params: ReferenceParams): Observable<Location[] | null> {
-        // References are always an array (unlike other locations, which can be returned as L | L[] |
-        // null).
-        return getLocations(this.providersForDocument(params.textDocument), params)
-    }
 }
 
 /**
