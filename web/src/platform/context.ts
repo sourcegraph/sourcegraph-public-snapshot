@@ -1,10 +1,9 @@
 import { concat, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
 import ExtensionHostWorker from 'worker-loader!../../../shared/src/api/extension/main.worker.ts'
-import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../shared/src/platform/context'
+import { EndpointPair, PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import { gqlToCascade } from '../../../shared/src/settings/settings'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
@@ -61,14 +60,23 @@ export function createPlatformContext(): PlatformContext {
                 variables
             ),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createExtensionHost: () => {
-            const worker = new ExtensionHostWorker()
-            const messageTransports = createWebWorkerMessageTransports(worker)
-            return new Observable(sub => {
-                sub.next(messageTransports)
+        createExtensionHost: () =>
+            new Observable(subscriber => {
+                const worker = new ExtensionHostWorker()
+                const clientAPIChannel = new MessageChannel()
+                const extensionHostAPIChannel = new MessageChannel()
+                const workerEndpoints: EndpointPair = {
+                    proxy: clientAPIChannel.port2,
+                    expose: extensionHostAPIChannel.port2,
+                }
+                worker.postMessage(workerEndpoints, Object.values(workerEndpoints))
+                const clientEndpoints: EndpointPair = {
+                    proxy: extensionHostAPIChannel.port1,
+                    expose: clientAPIChannel.port1,
+                }
+                subscriber.next(clientEndpoints)
                 return () => worker.terminate()
-            })
-        },
+            }),
         urlToFile: toPrettyBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,

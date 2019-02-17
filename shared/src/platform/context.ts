@@ -1,10 +1,20 @@
+import { Endpoint, isEndpoint } from 'comlink'
 import { NextObserver, Observable, Subscribable } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
-import { MessageTransports } from '../api/protocol/jsonrpc2/connection'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { FileSpec, PositionSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+
+export interface EndpointPair {
+    /** The endpoint to proxy the API of the other thread from */
+    proxy: Endpoint
+
+    /** The endpoint to expose the API of this thread to */
+    expose: Endpoint
+}
+export const isEndpointPair = (val: any): val is EndpointPair =>
+    typeof val === 'object' && val !== null && isEndpoint(val.proxy) && isEndpoint(val.expose)
 
 /**
  * Platform-specific data and methods shared by multiple Sourcegraph components.
@@ -68,7 +78,7 @@ export interface PlatformContext {
      * @returns An observable that emits at most once with the message transports for communicating
      * with the execution context (using, e.g., postMessage/onmessage) when it is ready.
      */
-    createExtensionHost(): Observable<MessageTransports>
+    createExtensionHost(): Observable<EndpointPair>
 
     /**
      * Returns the script URL suitable for passing to importScripts for an extension's bundle.

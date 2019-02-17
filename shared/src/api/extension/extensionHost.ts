@@ -1,9 +1,9 @@
 import * as comlink from 'comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
+import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
-import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
-import { ExtensionHostAPI } from './api/api'
+import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
 import { ExtContext } from './api/context'
@@ -20,8 +20,6 @@ import { Position } from './types/position'
 import { Range } from './types/range'
 import { Selection } from './types/selection'
 import { URI } from './types/uri'
-
-const consoleLogger: Logger = console
 
 /**
  * Required information when initializing an extension host.
@@ -46,30 +44,31 @@ export interface InitData {
  * @return An unsubscribable to terminate the extension host.
  */
 export function startExtensionHost(
-    transports: MessageTransports
-): Unsubscribable & { __testAPI: Promise<typeof sourcegraph> } {
-    const connection = createConnection(transports, consoleLogger)
-    connection.listen()
-
+    endpoints: EndpointPair
+): Unsubscribable & { extensionAPI: Promise<typeof sourcegraph> } {
     const subscription = new Subscription()
-    subscription.add(connection)
 
     // Wait for "initialize" message from client application before proceeding to create the
     // extension host.
     let initialized = false
-    const __testAPI = new Promise<typeof sourcegraph>(resolve => {
-        connection.onRequest('initialize', ([initData]: [InitData]) => {
+    const extensionAPI = new Promise<typeof sourcegraph>(resolve => {
+        const factory: ExtensionHostAPIFactory = initData => {
             if (initialized) {
                 throw new Error('extension host is already initialized')
             }
             initialized = true
-            const { unsubscribe, __testAPI } = initializeExtensionHost(connection, initData)
-            subscription.add(unsubscribe)
-            resolve(__testAPI)
-        })
+            const { subscription: extHostSubscription, extensionAPI, extensionHostAPI } = initializeExtensionHost(
+                endpoints,
+                initData
+            )
+            subscription.add(extHostSubscription)
+            resolve(extensionAPI)
+            return extensionHostAPI
+        }
+        comlink.expose(factory, endpoints.expose)
     })
 
-    return { unsubscribe: () => subscription.unsubscribe(), __testAPI }
+    return { unsubscribe: () => subscription.unsubscribe(), extensionAPI }
 }
 
 /**
@@ -84,24 +83,24 @@ export function startExtensionHost(
  * @return An unsubscribable to terminate the extension host.
  */
 function initializeExtensionHost(
-    connection: Connection,
+    endpoints: EndpointPair,
     initData: InitData
-): Unsubscribable & { __testAPI: typeof sourcegraph } {
-    const subscriptions = new Subscription()
+): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
+    const subscription = new Subscription()
 
-    const { api, subscription: apiSubscription } = createExtensionAPI(initData, connection)
-    subscriptions.add(apiSubscription)
+    const { extensionAPI, extensionHostAPI, subscription: apiSubscription } = createExtensionAPI(initData, endpoints)
+    subscription.add(apiSubscription)
 
     // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
     ;(global as any).require = (modulePath: string): any => {
         if (modulePath === 'sourcegraph') {
-            return api
+            return extensionAPI
         }
         // All other requires/imports in the extension's code should not reach here because their JS
         // bundler should have resolved them locally.
         throw new Error(`require: module not found: ${modulePath}`)
     }
-    subscriptions.add(() => {
+    subscription.add(() => {
         ;(global as any).require = () => {
             // Prevent callers from attempting to access the extension API after it was
             // unsubscribed.
@@ -109,19 +108,19 @@ function initializeExtensionHost(
         }
     })
 
-    return { unsubscribe: () => subscriptions.unsubscribe(), __testAPI: api }
+    return { subscription, extensionAPI, extensionHostAPI }
 }
 
 function createExtensionAPI(
     initData: InitData,
-    connection: Connection
-): { api: typeof sourcegraph; subscription: Subscription } {
-    const subscriptions = new Subscription()
+    endpoints: EndpointPair
+): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
+    const subscription = new Subscription()
 
     // EXTENSION HOST WORKER
 
     /** Proxy to main thread */
-    const proxy = comlink.proxy<ClientAPI>(self)
+    const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)
 
     // For debugging/tests.
     const sync = async () => {
@@ -131,7 +130,7 @@ function createExtensionAPI(
     const documents = new ExtDocuments(sync)
 
     const extensions = new ExtExtensions()
-    subscriptions.add(extensions)
+    subscription.add(extensions)
 
     const roots = new ExtRoots()
     const windows = new ExtWindows(proxy, documents)
@@ -142,7 +141,9 @@ function createExtensionAPI(
     const commands = new ExtCommands(proxy.commands)
 
     // Expose the extension host API to the client (main thread)
-    const extHostAPI: ExtensionHostAPI = {
+    const extensionHostAPI: ExtensionHostAPI = {
+        [comlink.proxyValueSymbol]: true,
+
         ping: () => 'pong',
         configuration,
         documents,
@@ -150,10 +151,9 @@ function createExtensionAPI(
         roots,
         windows,
     }
-    comlink.expose(extHostAPI, self)
 
     // Expose the extension API to extensions
-    const api: typeof sourcegraph = {
+    const extensionAPI: typeof sourcegraph = {
         URI,
         Position,
         Range,
@@ -249,5 +249,5 @@ function createExtensionAPI(
             clientApplication: initData.clientApplication,
         },
     }
-    return { api, subscription: subscriptions }
+    return { extensionHostAPI, extensionAPI, subscription }
 }

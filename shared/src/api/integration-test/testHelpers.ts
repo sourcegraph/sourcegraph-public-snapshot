@@ -90,10 +90,10 @@ export async function integrationTestContext(
 
     services.model.model.next(initModel)
 
-    await (await extensionHost.__testAPI).internal.sync()
+    await (await extensionHost.extensionAPI).internal.sync()
     return {
         client,
-        extensionHost: await extensionHost.__testAPI,
+        extensionHost: await extensionHost.extensionAPI,
         services,
         model: services.model.model,
     }

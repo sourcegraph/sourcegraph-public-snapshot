@@ -3,8 +3,10 @@
 // https://github.com/sourcegraph/sourcegraph/issues/1243
 // Importing symbol-observable when starting the web worker fixes this by
 // ensuring that `Symbol.observable` is mutated happens before any extensions are loaded.
+import { fromEvent } from 'rxjs'
+import { take } from 'rxjs/operators'
 import 'symbol-observable'
-import { createWebWorkerMessageTransports } from '../protocol/jsonrpc2/transports/webWorker'
+import { isEndpointPair } from '../../platform/context'
 import { startExtensionHost } from './extensionHost'
 
 /**
@@ -13,14 +15,22 @@ import { startExtensionHost } from './extensionHost'
  * To initialize the extension host, the parent sends it an "initialize" message with
  * {@link InitData}.
  */
-function extensionHostMain(): void {
+async function extensionHostMain(): Promise<void> {
     try {
-        const { unsubscribe } = startExtensionHost(createWebWorkerMessageTransports())
-        self.addEventListener('unload', () => unsubscribe())
+        const event = await fromEvent<MessageEvent>(self, 'message')
+            .pipe(take(1))
+            .toPromise()
+        if (!isEndpointPair(event.data)) {
+            throw new Error('First message event in extension host worker did not contain MessagePort')
+        }
+        const endpoints = event.data
+        const extensionHost = startExtensionHost(endpoints)
+        self.addEventListener('unload', () => extensionHost.unsubscribe())
     } catch (err) {
         console.error('Error starting the extension host:', err)
         self.close()
     }
 }
 
+// tslint:disable-next-line: no-floating-promises
 extensionHostMain()

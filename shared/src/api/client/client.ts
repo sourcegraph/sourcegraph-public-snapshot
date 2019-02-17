@@ -1,7 +1,8 @@
-import { Observable, Subscription, Unsubscribable } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
-import { Connection } from '../protocol/jsonrpc2/connection'
-import { createExtensionHostClientConnection, ExtensionHostClientConnection } from './connection'
+import { switchMap } from 'abortable-rx'
+import { Observable, Unsubscribable } from 'rxjs'
+import { EndpointPair } from '../../platform/context'
+import { InitData } from '../extension/extensionHost'
+import { createExtensionHostClientConnection } from './connection'
 import { Services } from './services'
 
 export interface ExtensionHostClient extends Unsubscribable {
@@ -15,27 +16,19 @@ export interface ExtensionHostClient extends Unsubscribable {
 /**
  * Creates a client to communicate with an extension host.
  *
- * @param extensionHostConnection An observable that emits the connection to the extension host each time a new
+ * @param extensionHostEndpoint An observable that emits the connection to the extension host each time a new
  * connection is established.
  */
 export function createExtensionHostClient(
     services: Services,
-    extensionHostConnection: Observable<Connection>
+    extensionHostEndpoint: Observable<EndpointPair>,
+    initData: InitData
 ): ExtensionHostClient {
-    const subscriptions = new Subscription()
-
-    const client = extensionHostConnection.pipe(
-        switchMap(connection => {
-            const client = createExtensionHostClientConnection(connection, services)
-            return new Observable<ExtensionHostClientConnection>(sub => {
-                sub.next(client)
-                return () => client.unsubscribe()
-            })
+    const client = extensionHostEndpoint.pipe(
+        switchMap(async (endpoints, _, signal) => {
+            const client = await createExtensionHostClientConnection(endpoints, services, initData)
+            signal.addEventListener('abort', () => client.unsubscribe(), { once: true })
         })
     )
-    subscriptions.add(client.subscribe())
-
-    return {
-        unsubscribe: () => subscriptions.unsubscribe(),
-    }
+    return client.subscribe()
 }

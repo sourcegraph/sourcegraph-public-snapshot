@@ -1,10 +1,10 @@
 import * as comlink from 'comlink'
 import { from, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { ContextValues, Progress, ProgressOptions } from 'sourcegraph'
-import { ExtensionHostAPI } from '../extension/api/api'
-import { Connection } from '../protocol/jsonrpc2/connection'
-import { Tracer } from '../protocol/jsonrpc2/trace'
+import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
+import { EndpointPair } from '../../platform/context'
+import { ExtensionHostAPIFactory } from '../extension/api/api'
+import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
 import { ClientCommands } from './api/commands'
@@ -28,12 +28,6 @@ import {
 
 export interface ExtensionHostClientConnection {
     /**
-     * Sets or unsets the tracer to use for logging all of this client's messages to/from the
-     * extension host.
-     */
-    setTracer(tracer: Tracer | null): void
-
-    /**
      * Closes the connection to and terminates the extension host.
      */
     unsubscribe(): void
@@ -54,18 +48,21 @@ export interface ActivatedExtension {
     deactivate(): void | Promise<void>
 }
 
-export function createExtensionHostClientConnection(
-    connection: Connection,
-    services: Services
-): ExtensionHostClientConnection {
+/**
+ * @param endpoint The Worker object to communicate with
+ */
+export async function createExtensionHostClientConnection(
+    endpoints: EndpointPair,
+    services: Services,
+    initData: InitData
+): Promise<Unsubscribable> {
     const subscription = new Subscription()
 
     // MAIN THREAD
 
     /** Proxy to the exposed extension host API */
-    const proxy = comlink.proxy<ExtensionHostAPI>(self)
-
-    connection.onRequest('ping', () => 'pong')
+    const initializeExtensionHost = comlink.proxy<ExtensionHostAPIFactory>(endpoints.proxy)
+    const proxy = await initializeExtensionHost(initData)
 
     const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
     subscription.add(clientConfiguration)
@@ -145,12 +142,7 @@ export function createExtensionHostClientConnection(
         codeEditor: clientCodeEditor,
         views: clientViews,
     }
-    comlink.expose(clientAPI, self)
+    comlink.expose(clientAPI, endpoints.expose)
 
-    return {
-        setTracer: tracer => {
-            connection.trace(tracer)
-        },
-        unsubscribe: () => subscription.unsubscribe(),
-    }
+    return subscription
 }
