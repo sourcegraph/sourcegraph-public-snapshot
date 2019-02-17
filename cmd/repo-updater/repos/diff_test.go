@@ -61,13 +61,23 @@ func TestDiff(t *testing.T) {
 			after:  []Diffable{diffable{K: 1, K2: "second id", V: "foo"}},
 			diff:   Diff{Modified: []Diffable{diffable{K: 1, K2: "second id", V: "foo"}}},
 		},
+		{
+			name:   "unmodified preserves before diffable",
+			before: []Diffable{diffable{K: 1, V: "foo", V2: "bar"}},
+			after:  []Diffable{diffable{K: 1, V: "foo"}},
+			diff:   Diff{Unmodified: []Diffable{diffable{K: 1, V: "foo", V2: "bar"}}},
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			diff := NewDiff(tc.before, tc.after, func(b, a Diffable) bool {
-				return !reflect.DeepEqual(b, a)
+				before := b.(diffable)
+				after := a.(diffable)
+				return before.K != after.K ||
+					before.V != after.V ||
+					before.K2 != after.K2
 			})
 
 			diff.Sort()
@@ -78,7 +88,9 @@ func TestDiff(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestDiffPropIsomorphism(t *testing.T) {
 	isomorphism := func(bs, as []diffable) bool {
 		before := make([]Diffable, len(bs))
 		after := make([]Diffable, len(as))
@@ -142,6 +154,7 @@ type diffable struct {
 	K  uint32
 	K2 string
 	V  string
+	V2 string
 }
 
 func (d diffable) IDs() (ids []string) {

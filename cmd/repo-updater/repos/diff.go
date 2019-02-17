@@ -1,6 +1,8 @@
 package repos
 
-import "sort"
+import (
+	"sort"
+)
 
 // A Diff of two sets of Diffables.
 type Diff struct {
@@ -63,7 +65,7 @@ func NewDiff(before, after []Diffable, modified func(before, after Diffable) boo
 		case modified(b, a):
 			diff.Modified = append(diff.Modified, a)
 		default:
-			diff.Unmodified = append(diff.Unmodified, a)
+			diff.Unmodified = append(diff.Unmodified, b)
 		}
 
 		for _, id := range a.IDs() {
