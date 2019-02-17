@@ -3,7 +3,7 @@
 // Order is important here
 // Don't remove the empty lines between these imports
 
-import '../polyfills'
+import '../../../shared/src/polyfills'
 
 import '../sentry'
 

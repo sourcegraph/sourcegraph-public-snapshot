@@ -1,7 +1,7 @@
 import * as comlink from 'comlink'
 import { isEqual } from 'lodash'
 import { from, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, tap } from 'rxjs/operators'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
