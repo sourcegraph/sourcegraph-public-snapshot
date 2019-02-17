@@ -1,5 +1,5 @@
-import { switchMap } from 'abortable-rx'
-import { Observable, Unsubscribable } from 'rxjs'
+import { from, merge, Observable, Unsubscribable } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
 import { EndpointPair } from '../../platform/context'
 import { InitData } from '../extension/extensionHost'
 import { createExtensionHostClientConnection } from './connection'
@@ -25,10 +25,11 @@ export function createExtensionHostClient(
     initData: InitData
 ): ExtensionHostClient {
     const client = extensionHostEndpoint.pipe(
-        switchMap(async (endpoints, _, signal) => {
-            const client = await createExtensionHostClientConnection(endpoints, services, initData)
-            signal.addEventListener('abort', () => client.unsubscribe(), { once: true })
-        })
+        switchMap(endpoints =>
+            from(createExtensionHostClientConnection(endpoints, services, initData)).pipe(
+                switchMap(client => merge([client], new Observable<never>(() => client)))
+            )
+        )
     )
     return client.subscribe()
 }
