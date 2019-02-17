@@ -175,6 +175,7 @@ export function getDefinitionURL(
     params: TextDocumentPositionParams
 ): Observable<{ url: string; multiple: boolean } | null> {
     return textDocumentDefinition.getLocations(params).pipe(
+        switchMap(locations => locations),
         map(definitions => {
             if (definitions === null || definitions.length === 0) {
                 return null

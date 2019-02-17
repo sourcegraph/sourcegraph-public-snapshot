@@ -19,9 +19,9 @@ import { groupLocations } from './locations'
 
 export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
     /**
-     * The observable that emits the locations.
+     * The higher-order observable that emits the locations.
      */
-    locations: Observable<Location[] | null>
+    locations: Observable<Observable<Location[] | null>>
 
     /**
      * In the grouping (i.e., by repository and, optionally, then by file), this is the URI of the first group.
@@ -63,37 +63,40 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const locationsChanges = this.componentUpdates.pipe(
+        const locationProvidersChanges = this.componentUpdates.pipe(
             map(({ locations }) => locations),
             distinctUntilChanged()
         )
 
         this.subscriptions.add(
-            locationsChanges
+            locationProvidersChanges
                 .pipe(
-                    switchMap(locations =>
-                        locations.pipe(
-                            catchError(error => [asError(error) as ErrorLike]),
-                            map(result => ({
-                                locationsOrError: isErrorLike(result)
-                                    ? result
-                                    : { results: result || [], loading: true },
-                            })),
-                            startWith<Pick<State, 'locationsOrError'>>({
-                                locationsOrError: { loading: true },
-                            }),
-                            tap(({ locationsOrError }) => {
-                                this.props.extensionsController.services.context.data.next({
-                                    ...this.props.extensionsController.services.context.data.value,
-                                    'panel.locations.hasResults':
-                                        locationsOrError &&
-                                        !isErrorLike(locationsOrError) &&
-                                        !locationsOrError.loading &&
-                                        (locationsOrError.results || false) &&
-                                        locationsOrError.results.length > 0,
-                                })
-                            }),
-                            endWith({ locationsOrError: { loading: false } })
+                    switchMap(locationProviderResults =>
+                        locationProviderResults.pipe(
+                            switchMap(locations =>
+                                locations.pipe(
+                                    catchError((error): [ErrorLike] => [asError(error)]),
+                                    map(result => ({
+                                        locationsOrError: isErrorLike(result)
+                                            ? result
+                                            : { results: result || [], loading: true },
+                                    })),
+                                    startWith<Pick<State, 'locationsOrError'>>({
+                                        locationsOrError: { loading: true },
+                                    }),
+                                    tap(({ locationsOrError }) => {
+                                        this.props.extensionsController.services.context.data.next({
+                                            ...this.props.extensionsController.services.context.data.value,
+                                            'panel.locations.hasResults':
+                                                locationsOrError &&
+                                                !isErrorLike(locationsOrError) &&
+                                                !!locationsOrError.results &&
+                                                locationsOrError.results.length > 0,
+                                        })
+                                    }),
+                                    endWith({ locationsOrError: { loading: false } })
+                                )
+                            )
                         )
                     )
                 )
@@ -120,7 +123,10 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         if (isErrorLike(this.state.locationsOrError)) {
             return <FileLocationsError error={this.state.locationsOrError} />
         }
-        if (this.state.locationsOrError.loading) {
+        if (
+            this.state.locationsOrError.loading &&
+            (!this.state.locationsOrError.results || this.state.locationsOrError.results.length === 0)
+        ) {
             return <LoadingSpinner className="icon-inline m-1" />
         }
         if (this.state.locationsOrError.results && this.state.locationsOrError.results.length === 0) {
