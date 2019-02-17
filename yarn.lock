@@ -1505,9 +1505,8 @@
     sourcegraph "*"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "1.1.0"
-  dependencies:
-    sourcegraph "*"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -13695,12 +13694,13 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.0, source-map@~0.6.1:
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
 sourcegraph@*:
-  version "19.4.0"
-  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-19.4.0.tgz#5e02146ef06a5a3b0e37d1f09375bbfa011ddee8"
-  integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
+  version "21.0.0"
+  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-21.0.0.tgz#b84ef37a0655574759d5f4a7ee5c1da388111580"
+  integrity sha512-PcsvCepo3vORtzKgcjeaXMQcL+BQj2OO/Lkq7S0/k5bexefn6Wf5WrFD3SXJFqPVOWJM1hPG1tw1ME9Z5Gne3Q==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "21.0.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

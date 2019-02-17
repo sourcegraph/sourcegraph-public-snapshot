@@ -1,5 +1,5 @@
 import { ProxyValue, proxyValueSymbol } from 'comlink'
-import { Observable, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextDocumentItem } from '../../client/types/textDocument'
 

@@ -144,8 +144,7 @@ function createExtensionAPI(
 
     const configuration = new ExtConfiguration<any>(createProxy(connection, 'configuration'))
 
-    const languageFeatures = new ExtLanguageFeatures(createProxy(connection, 'languageFeatures'), documents)
-    subscriptions.add(languageFeatures)
+    const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
 
     const search = new ExtSearch(proxy.search)
 

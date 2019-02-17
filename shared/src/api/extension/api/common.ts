@@ -1,6 +1,15 @@
-import { from, isObservable, Observable, of, Subscribable as RxJSSubscribable } from 'rxjs'
-import { map } from 'rxjs/operators'
-import { Subscribable, Unsubscribable } from 'sourcegraph'
+import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { from, isObservable, Observable, observable, of, Subscription } from 'rxjs'
+import { map, mergeMap } from 'rxjs/operators'
+import {
+    CompletionObserver,
+    ErrorObserver,
+    NextObserver,
+    PartialObserver,
+    ProviderResult,
+    Subscribable,
+    Unsubscribable,
+} from 'sourcegraph'
 import { isPromise, isSubscribable } from '../../util'
 
 /**
@@ -76,24 +85,102 @@ export class ProviderMap<B> {
     }
 }
 
+type SubscribeArgs<T> =
+    | [PartialObserver<T> | undefined]
+    | [
+          ((value: T) => void) | undefined | null,
+          ((error: any) => void) | undefined | null,
+          (() => void) | undefined | null
+      ]
+
 /**
- * Returns an Observable that emits the provider result.
+ * An alternative definition of Subscribable that uses tuples and rest args instead of overloads,
+ * because overloads are not persisted through comlink's mapped and conditional types.
+ *
+ * See https://github.com/Microsoft/TypeScript/issues/29732
  */
-export function toProviderResultObservable<T, R>(
-    result: Promise<T | undefined | null | Subscribable<T | undefined | null>>,
-    mapFunc: (value: T | undefined | null) => R | undefined | null
-): Observable<R | undefined | null> {
-    return new Observable<R | undefined | null>(observer => {
-        result
-            .then(result => {
-                let observable: Observable<R | undefined | null>
-                if (result && (isPromise(result) || isObservable(result) || isSubscribable(result))) {
-                    observable = from(result as Promise<any> | RxJSSubscribable<any>).pipe(map(mapFunc))
-                } else {
-                    observable = of(mapFunc(result))
-                }
-                observable.subscribe(observer)
-            })
-            .catch(err => observer.error(err))
-    })
+export interface SubscribableNoOverloads<T> {
+    subscribe(...observer: SubscribeArgs<T>): Unsubscribable
 }
+
+/**
+ * A Subscribable that can be exposed by comlink to the other thread.
+ */
+export interface ProxySubscribable<T> extends ProxyValue {
+    subscribe(
+        ...observer:
+            | [
+
+                      | ProxyResult<NextObserver<T> & ProxyValue>
+                      | ProxyResult<ErrorObserver<T> & ProxyValue>
+                      | ProxyResult<CompletionObserver<T> & ProxyValue>
+                      | undefined
+              ]
+            | [
+                  (ProxyResult<((value: T) => void) & ProxyValue> | undefined | null),
+                  (ProxyResult<((error: any) => void) & ProxyValue> | undefined | null),
+                  (ProxyResult<(() => void) & ProxyValue> | undefined | null)
+              ]
+    ): Unsubscribable
+}
+
+/**
+ * Wraps a given Subscribable so that it is exposed by comlink to the other thread.
+ *
+ * @param subscribable A normal Subscribable (from this thread)
+ */
+export const proxySubscribable = <T>(subscribable: SubscribableNoOverloads<T>): ProxySubscribable<T> => ({
+    [proxyValueSymbol]: true,
+    subscribe(...args): Unsubscribable & ProxyValue {
+        // cast is needed because of Observer.closed
+        return proxyValue(subscribable.subscribe(...(args as SubscribeArgs<T>)))
+    },
+})
+
+/**
+ * Returns a Subscribable that can be proxied by comlink.
+ *
+ * @param result The result returned by the provider
+ * @param mapFunc A function to map the result into a value to be transmitted to the other thread
+ */
+export function toProxyableSubscribable<T, R>(
+    result: ProviderResult<T>,
+    mapFunc: (value: T | undefined | null) => R
+): ProxySubscribable<R> {
+    let observable: Observable<R>
+    if (result && (isPromise(result) || isObservable<T>(result) || isSubscribable(result))) {
+        observable = from(result).pipe(map(mapFunc))
+    } else {
+        observable = of(mapFunc(result))
+    }
+    return proxySubscribable(observable)
+}
+
+/**
+ * When a Subscribable is returned from the other thread (wrapped with `proxySubscribable()`),
+ * this thread gets a `Promise` for a `Subscribable` _proxy_ where `subscribe()` returns a `Promise<Unsubscribable>`.
+ * This function wraps that proxy in a real Rx Observable where `subscribe()` returns an `Unsubscribable` directly as expected.
+ *
+ * @param proxyPromise
+ */
+export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxySubscribable<T>>>): Observable<T> =>
+    from(proxyPromise).pipe(
+        mergeMap(
+            proxy =>
+                // tslint:disable-next-line: no-object-literal-type-assertion
+                ({
+                    // Needed for Rx type check
+                    [observable](): Subscribable<T> {
+                        return this
+                    },
+                    subscribe(...args: any): Subscription {
+                        const subscription = new Subscription()
+                        // tslint:disable-next-line: no-floating-promises
+                        proxy.subscribe(...proxyValue(args)).then(s => {
+                            subscription.add(s)
+                        })
+                        return subscription
+                    },
+                } as Subscribable<T>)
+        )
+    )

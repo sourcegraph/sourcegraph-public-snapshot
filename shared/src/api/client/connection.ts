@@ -116,7 +116,6 @@ export function createExtensionHostClientConnection(
         )
     )
     const clientLanguageFeatures = new ClientLanguageFeatures(
-        connection,
         services.textDocumentHover,
         services.textDocumentDefinition,
         services.textDocumentTypeDefinition,
@@ -124,7 +123,6 @@ export function createExtensionHostClientConnection(
         services.textDocumentReferences,
         services.textDocumentLocations
     )
-    subscription.add(clientLanguageFeatures)
 
     const clientSearch = new ClientSearch(services.queryTransformer)
     subscription.add(clientSearch)

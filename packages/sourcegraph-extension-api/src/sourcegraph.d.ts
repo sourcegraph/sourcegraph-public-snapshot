@@ -1228,10 +1228,14 @@ declare module 'sourcegraph' {
         /** @deprecated Use an observer instead of a complete callback */
         subscribe(next: null | undefined, error: null | undefined, complete: () => void): Unsubscribable
         /** @deprecated Use an observer instead of an error callback */
-        subscribe(next: null | undefined, error: (error: any) => void, complete?: () => void): Unsubscribable
+        subscribe(next: null | undefined, error: (error: any) => void, complete?: (() => void) | null): Unsubscribable
         /** @deprecated Use an observer instead of a complete callback */
         subscribe(next: (value: T) => void, error: null | undefined, complete: () => void): Unsubscribable
-        subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
+        subscribe(
+            next?: ((value: T) => void) | null,
+            error?: ((error: any) => void) | null,
+            complete?: (() => void) | null
+        ): Unsubscribable
     }
 
     /**
