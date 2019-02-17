@@ -1,53 +1,15 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
-import { from, isObservable, Observable, of } from 'rxjs'
+import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol, UnproxyOrClone } from 'comlink'
+import { from, isObservable, Observable, Observer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
-import {
-    CompletionObserver,
-    ErrorObserver,
-    NextObserver,
-    PartialObserver,
-    ProviderResult,
-    Unsubscribable,
-} from 'sourcegraph'
+import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'
 import { isPromise, isSubscribable } from '../../util'
-
-type SubscribeArgs<T> =
-    | [PartialObserver<T> | undefined]
-    | [
-          ((value: T) => void) | undefined | null,
-          ((error: any) => void) | undefined | null,
-          (() => void) | undefined | null
-      ]
-
-/**
- * An alternative definition of Subscribable that uses tuples and rest args instead of overloads,
- * because overloads are not persisted through comlink's mapped and conditional types.
- *
- * See https://github.com/Microsoft/TypeScript/issues/29732
- */
-export interface SubscribableNoOverloads<T> {
-    subscribe(...observer: SubscribeArgs<T>): Unsubscribable
-}
 
 /**
  * A Subscribable that can be exposed by comlink to the other thread.
+ * Only allows full object Observers to avoid complex type checking against proxies.
  */
 export interface ProxySubscribable<T> extends ProxyValue {
-    subscribe(
-        ...observer:
-            | [
-
-                      | ProxyResult<NextObserver<T> & ProxyValue>
-                      | ProxyResult<ErrorObserver<T> & ProxyValue>
-                      | ProxyResult<CompletionObserver<T> & ProxyValue>
-                      | undefined
-              ]
-            | [
-                  (ProxyResult<((value: T) => void) & ProxyValue> | undefined | null),
-                  (ProxyResult<((error: any) => void) & ProxyValue> | undefined | null),
-                  (ProxyResult<(() => void) & ProxyValue> | undefined | null)
-              ]
-    ): Unsubscribable
+    subscribe(observer: ProxyResult<Observer<T> & ProxyValue>): Unsubscribable
 }
 
 /**
@@ -55,11 +17,27 @@ export interface ProxySubscribable<T> extends ProxyValue {
  *
  * @param subscribable A normal Subscribable (from this thread)
  */
-export const proxySubscribable = <T>(subscribable: SubscribableNoOverloads<T>): ProxySubscribable<T> => ({
+export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
     [proxyValueSymbol]: true,
-    subscribe(...args): Unsubscribable & ProxyValue {
-        // cast is needed because of Observer.closed
-        return proxyValue(subscribable.subscribe(...(args as SubscribeArgs<T>)))
+    subscribe(observer): Unsubscribable & ProxyValue {
+        return proxyValue(
+            // Don't pass the proxy to Rx directly because it will try to
+            // access Symbol properties that cannot be proxied
+            subscribable.subscribe({
+                next: val => {
+                    // tslint:disable-next-line: no-floating-promises
+                    observer.next(val as UnproxyOrClone<T>)
+                },
+                error: err => {
+                    // tslint:disable-next-line: no-floating-promises
+                    observer.error(err)
+                },
+                complete: () => {
+                    // tslint:disable-next-line: no-floating-promises
+                    observer.complete()
+                },
+            })
+        )
     },
 })
 

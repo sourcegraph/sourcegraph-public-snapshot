@@ -1,4 +1,5 @@
-import { ProxyResult, proxyValue } from 'comlink'
+import { ProxyResult, proxyValueSymbol } from 'comlink'
+import { noop } from 'lodash'
 import { from, Observable, observable, Subscription } from 'rxjs'
 import { mergeMap } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
@@ -21,10 +22,30 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                     [observable](): Subscribable<T> {
                         return this
                     },
-                    subscribe(...args: any): Subscription {
+                    subscribe(...args: any[]): Subscription {
+                        // Always subscribe with an object because the other side
+                        // is unable to tell if a Proxy is a function or an observer object
+                        // (they always appear as functions)
+                        let observer: Parameters<(typeof proxy)['subscribe']>[0]
+                        if (typeof args[0] === 'function') {
+                            observer = {
+                                [proxyValueSymbol]: true,
+                                next: args[0] || noop,
+                                error: args[1] || noop,
+                                complete: args[2] || noop,
+                            }
+                        } else {
+                            const partialObserver = args[0] || {}
+                            observer = {
+                                [proxyValueSymbol]: true,
+                                next: partialObserver.next ? val => partialObserver.next(val) : noop,
+                                error: partialObserver.error ? err => partialObserver.error(err) : noop,
+                                complete: partialObserver.complete ? () => partialObserver.complete() : noop,
+                            }
+                        }
                         const subscription = new Subscription()
                         // tslint:disable-next-line: no-floating-promises
-                        proxy.subscribe(...proxyValue(args)).then(s => {
+                        proxy.subscribe(observer).then(s => {
                             subscription.add(s)
                         })
                         return subscription

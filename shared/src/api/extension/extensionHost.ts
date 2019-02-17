@@ -113,7 +113,7 @@ function initializeExtensionHost(
 
 function createExtensionAPI(
     initData: InitData,
-    endpoints: EndpointPair
+    endpoints: Pick<EndpointPair, 'proxy'>
 ): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
     const subscription = new Subscription()
 

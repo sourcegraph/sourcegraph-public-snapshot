@@ -5,7 +5,7 @@ import { EMPTY_MODEL, Model } from '../model'
  * The model service manages the model of documents and roots.
  */
 export interface ModelService {
-    model: Subscribable<Model> & { value: Model } & NextObserver<Model>
+    readonly model: Subscribable<Model> & { readonly value: Model } & NextObserver<Model>
 }
 
 /**
