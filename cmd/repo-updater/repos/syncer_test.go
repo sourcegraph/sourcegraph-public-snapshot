@@ -155,6 +155,22 @@ func TestSyncer_Sync(t *testing.T) {
 	{
 		clock := fakeClock{epoch: time.Now(), step: time.Second}
 		testCases = append(testCases, testCase{
+			name:    "renamed repo is detected via external_id",
+			sourcer: sourcer(nil, source("a", nil, foo.Clone())),
+			store: store(foo.With(sources("a"), func(r *repos.Repo) {
+				r.Name = "old-name"
+			})),
+			now: clock.Now,
+			diff: repos.Diff{Modified: []repos.Diffable{
+				foo.With(sources("a"), modifiedAt(clock.Time(1))),
+			}},
+			err: "<nil>",
+		})
+	}
+
+	{
+		clock := fakeClock{epoch: time.Now(), step: time.Second}
+		testCases = append(testCases, testCase{
 			name: "metadata update",
 			sourcer: sourcer(nil, source("a", nil,
 				foo.With(modifiedAt(clock.Time(1)),
@@ -252,7 +268,6 @@ func (s fakeSource) ListRepos(context.Context) ([]*repos.Repo, error) {
 }
 
 type fakeStore struct {
-	id     uint32
 	repos  map[string]*repos.Repo
 	list   error
 	upsert error
@@ -303,8 +318,10 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 
 	for _, upsert := range upserts {
 		for _, id := range upsert.IDs() {
-			repo, ok := s.repos[id]
-			if ok {
+			if repo, ok := s.repos[id]; !ok {
+				s.repos[id] = upsert
+			} else {
+				repo.Name = upsert.Name
 				repo.Description = upsert.Description
 				repo.Language = upsert.Language
 				repo.UpdatedAt = upsert.UpdatedAt
@@ -316,13 +333,6 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 				repo.ExternalRepo = upsert.ExternalRepo
 				break
 			}
-
-			if upsert.ID == 0 {
-				s.id++
-				upsert.ID = s.id
-			}
-
-			s.repos[id] = upsert
 		}
 	}
 
