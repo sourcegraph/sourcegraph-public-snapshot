@@ -2,7 +2,7 @@
 
 /** @type {jest.InitialOptions} */
 const config = {
-  collectCoverage: false,
+  collectCoverage: true,
   coverageDirectory: '<rootDir>/coverage',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   preset: 'ts-jest/presets/js-with-ts',
