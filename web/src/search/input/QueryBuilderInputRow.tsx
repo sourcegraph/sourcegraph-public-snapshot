@@ -50,7 +50,6 @@ export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
                     autoCapitalize="off"
                     autoComplete="off"
                     placeholder={placeholder}
-                    // tslint:disable-next-line:jsx-no-lambda
                     onChange={props.onInputChange[props.shortName]}
                 />
             </div>
