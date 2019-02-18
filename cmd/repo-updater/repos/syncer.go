@@ -199,10 +199,18 @@ func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	return repos, errs.ErrorOrNil()
 }
 
+// Merge two instances of the same Repo that were yielded
+// by different Sources.
 func merge(a, b *Repo) {
+	// If we got rate limited, let's preserve the previous external id
+	// which should be stable and never change.
 	if a.ExternalRepo == (api.ExternalRepoSpec{}) {
-		*a = *b
+		a.ExternalRepo = b.ExternalRepo
 	}
+
+	// TODO(tsenart): Extract an updated_at timestamp from the metadata
+	// and use it to decide which repo has the most up-to-date information.
+
 	srcs := make([]string, 0, len(a.Sources)+len(b.Sources))
 	srcs = append(srcs, a.Sources...)
 	srcs = append(srcs, b.Sources...)
