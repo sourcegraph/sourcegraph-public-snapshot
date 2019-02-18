@@ -129,9 +129,10 @@ func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection) (*Git
 // in Sourcegraph via the external services configuration.
 func (s GithubSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 	var repos []*Repo
+	sourceID := externalServiceURN(s.svc)
 	for repo := range s.conn.listAllRepositories(ctx) {
 		r := githubRepoToRepo(repo, s.conn)
-		r.Sources = append(r.Sources, externalServiceURN(s.svc))
+		r.Sources = append(r.Sources, sourceID)
 		repos = append(repos, r)
 	}
 	return repos, nil
