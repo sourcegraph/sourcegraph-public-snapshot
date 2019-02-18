@@ -28,10 +28,7 @@ interface Props {
     /** Handler for when an input field changes. */
     onInputChange: Record<
         keyof QueryBuilderState['fields'],
-        (
-            changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-            key: keyof QueryBuilderState['fields']
-        ) => void
+        React.ChangeEventHandler<HTMLInputElement | HTMLSelectElement>
     >
 
     isSourcegraphDotCom: boolean
@@ -54,7 +51,7 @@ export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
                     autoComplete="off"
                     placeholder={placeholder}
                     // tslint:disable-next-line:jsx-no-lambda
-                    onChange={e => props.onInputChange[props.shortName](e, props.shortName)}
+                    onChange={props.onInputChange[props.shortName]}
                 />
             </div>
             <InfoDropdown title={props.title} markdown={props.description} examples={props.examples} />
