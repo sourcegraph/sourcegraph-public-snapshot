@@ -37,7 +37,7 @@ func (s *Service) startParsers() error {
 	return nil
 }
 
-func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
+func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, callback func(symbol protocol.Symbol) error) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -52,8 +52,9 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	tr := trace.New("parseUncached", string(repo))
 	tr.LazyPrintf("commitID: %s", commitID)
 
+	totalSymbols := 0
 	defer func() {
-		tr.LazyPrintf("symbols=%d", len(symbols))
+		tr.LazyPrintf("symbols=%d", totalSymbols)
 		if err != nil {
 			tr.LazyPrintf("error: %s", err)
 			tr.SetError()
@@ -65,7 +66,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	parseRequests, errChan, err := s.fetchRepositoryArchive(ctx, repo, commitID)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -86,7 +87,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 				for range parseRequests {
 				}
 			}()
-			return nil, ctx.Err()
+			return ctx.Err()
 		}
 		sem <- struct{}{}
 		wg.Add(1)
@@ -112,18 +113,16 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 					if e.Name == "" || strings.HasPrefix(e.Name, "__anon") || strings.HasPrefix(e.Parent, "__anon") || strings.HasPrefix(e.Name, "AnonymousFunction") || strings.HasPrefix(e.Parent, "AnonymousFunction") {
 						continue
 					}
-					symbols = append(symbols, entryToSymbol(e))
+					totalSymbols++
+					callback(entryToSymbol(e))
 				}
 			}
 		}(req)
 	}
 	wg.Wait()
-	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, len(symbols))
+	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, totalSymbols)
 
-	if err := <-errChan; err != nil {
-		return nil, err
-	}
-	return symbols, nil
+	return <-errChan
 }
 
 // parse gets a parser from the pool and uses it to satisfy the parse request.

@@ -1,13 +1,14 @@
 package symbols
 
 import (
+	"io"
+	"io/ioutil"
+	"os"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -95,30 +96,26 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 }
 
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.cache.Open(ctx, fmt.Sprintf("%d-%s@%s", symbolsDbVersion, args.Repo, args.CommitID), func(context.Context) (io.ReadCloser, error) {
+	diskcacheFile, err := s.cache.Open(ctx, fmt.Sprintf("%d-%s@%s", symbolsDbVersion, args.Repo, args.CommitID), func(fetcherCtx context.Context) (io.ReadCloser, error) {
 		tempDBFile, err := ioutil.TempFile("", "")
 		if err != nil {
 			return nil, err
 		}
 		defer os.Remove(tempDBFile.Name())
 
-		db, err := sqlx.Open("sqlite3_with_pcre", tempDBFile.Name())
+		err = s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile.Name(), args.Repo, args.CommitID)
 		if err != nil {
-			return nil, err
-		}
-		defer db.Close()
-
-		symbols, err := s.parseUncached(ctx, args.Repo, args.CommitID)
-		if err != nil {
-			return nil, err
-		}
-		err = s.writeSymbols(db, symbols)
-		if err != nil {
+			if err == context.Canceled {
+				log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
+			}
 			return nil, err
 		}
 
 		return tempDBFile, nil
 	})
+	if err != nil {
+		return "", err
+	}
 	defer diskcacheFile.File.Close()
 
 	return diskcacheFile.File.Name(), err
@@ -267,8 +264,12 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) protocol.Symbol {
 	}
 }
 
-func (s *Service) writeSymbols(db *sqlx.DB, symbols []protocol.Symbol) error {
-	var err error
+func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) error {
+	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 
     // Writing a bunch of rows into sqlite3 is much faster in a transaction.
     transaction, err := db.Beginx()
@@ -319,7 +320,7 @@ func (s *Service) writeSymbols(db *sqlx.DB, symbols []protocol.Symbol) error {
 		return err
 	}
 
-	for _, symbol := range symbols {
+	err = s.parseUncached(ctx, repoName, commitID, func(symbol protocol.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := transaction.NamedExec(
 			fmt.Sprintf(
@@ -327,9 +328,10 @@ func (s *Service) writeSymbols(db *sqlx.DB, symbols []protocol.Symbol) error {
 				"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
 				"(:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)"),
 			&symbolInDBValue)
-		if err != nil {
-			return err
-		}
+		return err
+	})
+	if err != nil {
+		return err
 	}
 
 	err = transaction.Commit()
