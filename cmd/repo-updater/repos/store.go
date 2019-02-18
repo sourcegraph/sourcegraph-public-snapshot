@@ -100,6 +100,23 @@ SELECT id, name, description, language, created_at, updated_at, deleted_at,
   external_id, external_service_type, external_service_id, enabled, archived, fork
 FROM repo WHERE id > %s AND %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %s`
 
+func listReposQuery(kinds []string) paginatedQuery {
+	qs := make([]*sqlf.Query, 0, len(kinds))
+	for _, kind := range kinds {
+		qs = append(qs, sqlf.Sprintf("%s", strings.ToUpper(kind)))
+	}
+	q := sqlf.Join(qs, ",")
+
+	return func(cursor, limit int64) *sqlf.Query {
+		return sqlf.Sprintf(
+			listReposQueryFmtstr,
+			cursor,
+			q,
+			limit,
+		)
+	}
+}
+
 // a paginatedQuery returns a query with the given pagination
 // parameters
 type paginatedQuery func(cursor, limit int64) *sqlf.Query
@@ -129,23 +146,6 @@ func (s DBStore) page(ctx context.Context, q *sqlf.Query, repos *[]*Repo) (err e
 		*repos = append(*repos, &r)
 		return nil
 	})
-}
-
-func listReposQuery(kinds []string) paginatedQuery {
-	qs := make([]*sqlf.Query, 0, len(kinds))
-	for _, kind := range kinds {
-		qs = append(qs, sqlf.Sprintf("%s", strings.ToUpper(kind)))
-	}
-	q := sqlf.Join(qs, ",")
-
-	return func(cursor, limit int64) *sqlf.Query {
-		return sqlf.Sprintf(
-			listReposQueryFmtstr,
-			cursor,
-			q,
-			limit,
-		)
-	}
 }
 
 const updateReposQueryFmtstr = `
