@@ -1,5 +1,5 @@
-import * as clientType from '@sourcegraph/extension-api-types'
 import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import * as clientType from '@sourcegraph/extension-api-types'
 import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { URI } from '../types/uri'
