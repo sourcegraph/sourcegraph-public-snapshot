@@ -22,18 +22,27 @@ It is not used for patch releases.
 - [ ] Tag the first release candidate `MAJOR.MINOR.0-rc.1`.
 - [ ] Send a message to #dev-announce to announce the release candidate.
 - [ ] Run Sourcegraph Docker image with no previous data.
-    - [ ] `CLEAN=true IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh`
+    - [ ] Run the new version of Sourcegraph.
+        ```
+        CLEAN=true IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh
+        ```
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Upgrade Sourcegraph Docker image from previous released version.
-    - [ ] `CLEAN=true IMAGE=sourcegraph/server:$OLDVERSION ./dev/run-server-image.sh`
+    - [ ] Run the previous version of Sourcegraph.
+        ```
+        CLEAN=true IMAGE=sourcegraph/server:$OLDVERSION ./dev/run-server-image.sh
+        ```
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
-    - [ ] `CLEAN=false IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh`
+    - [ ] Stop the previous version of Sourcegraph and run the new version of Sourcegraph with the same data.
+        ```
+        CLEAN=false IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh
+        ```
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Run Sourcegraph on a clean Kubernetes cluster with no previous data.
