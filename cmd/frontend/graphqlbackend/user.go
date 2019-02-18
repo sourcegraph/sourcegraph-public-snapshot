@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -22,22 +21,14 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 	Username *string
 	Email    *string
 }) (*UserResolver, error) {
-	var query string
-	if args.Username != nil {
-		query = *args.Username
-	} else if args.Email != nil {
-		query = *args.Email
-	}
-	// Check if querying for email address.
-	if strings.Contains(query, "@") {
-		user, err := db.Users.GetByVerifiedEmail(ctx, query)
+	if args.Email != nil {
+		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
 			return nil, err
 		}
 		return &UserResolver{user: user}, nil
 	}
-
-	user, err := db.Users.GetByUsername(ctx, query)
+	user, err := db.Users.GetByUsername(ctx, *args.Username)
 	if err != nil {
 		return nil, err
 	}
