@@ -279,9 +279,16 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) protocol.Symbol {
 func (s *Service) writeSymbols(db *sqlx.DB, symbols <-chan protocol.Symbol) error {
 	var err error
 
-	// sqlx lowercases struct fields by default.
+    // Writing a bunch of rows into sqlite3 is much faster in a transaction.
+    transaction, err := db.Beginx()
+    if err != nil {
+        return err
+    }
+
+	// The column names are the lowercase version of fields in `symbolInDb`
+	// because sqlx lowercases struct fields by default. See
 	// http://jmoiron.github.io/sqlx/#query
-	_, err = db.Exec(
+	_, err = transaction.Exec(
 		`CREATE TABLE IF NOT EXISTS symbols (
 			name VARCHAR(256) NOT NULL,
 			namelowercase VARCHAR(256) NOT NULL,
@@ -300,30 +307,30 @@ func (s *Service) writeSymbols(db *sqlx.DB, symbols <-chan protocol.Symbol) erro
 		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX name_index ON symbols(name);`)
+	_, err = transaction.Exec(`CREATE INDEX name_index ON symbols(name);`)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX path_index ON symbols(path);`)
+	_, err = transaction.Exec(`CREATE INDEX path_index ON symbols(path);`)
 	if err != nil {
 		return err
 	}
 
 	// `*lowercase_index` enables indexed case insensitive queries.
-	_, err = db.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
+	_, err = transaction.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
+	_, err = transaction.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
 	if err != nil {
 		return err
 	}
 
 	for symbol := range symbols {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
-		_, err := db.NamedExec(
+		_, err := transaction.NamedExec(
 			fmt.Sprintf(
 				"INSERT INTO symbols %s VALUES %s",
 				"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
@@ -333,6 +340,11 @@ func (s *Service) writeSymbols(db *sqlx.DB, symbols <-chan protocol.Symbol) erro
 			return err
 		}
 	}
+
+	err = transaction.Commit()
+    if err != nil {
+        return err
+    }
 
 	return nil
 }
