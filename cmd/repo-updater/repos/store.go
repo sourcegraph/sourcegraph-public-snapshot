@@ -3,11 +3,13 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -177,29 +179,24 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		return nil
 	}
 
-	// TODO: Figure out how to do batch update and / or insert in a single query.
-	// UPSERT doesn't work with multiple constraints (e.g. unique name AND unique external_id)
-	// - https://tapoueh.org/blog/2013/03/batch-update/
-	// - https://tapoueh.org/blog/2018/07/batch-updates-and-concurrency/
-	panic("not implemented")
+	q := upsertReposQuery(repos)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+
+	i := -1
+	return scanAll(rows, func(sc scanner) error {
+		i++
+		return scanRepo(repos[i], sc)
+	})
 }
 
-const repoIDConditional = `
-repo.id = batch.id OR repo.name = batch.name OR (
-  repo.external_id IS NOT NULL
-  AND repo.external_service_id IS NOT NULL
-  AND batch.external_id IS NOT NULL
-  AND batch.external_service_id IS NOT NULL
-  AND repo.external_service_id = batch.external_service_id
-  AND repo.external_id = batch.external_id
-)
-`
-
-const upsertReposQueryFmtstr = `
+var upsertReposQueryFmtstr = fmt.Sprintf(`
 -- cmd/repo-updater/repos/store.go:DBStore.UpsertRepos
 WITH batch AS (
   SELECT %s
-  FROM (VALUES %s) AS batch(%s)
+  FROM (VALUES %%s) AS batch(%s)
 ),
 
 updated AS (
@@ -218,8 +215,29 @@ inserted AS (
   RETURNING repo.id
 )
 
-SELECT (SELECT COUNT(*) FROM updated) AS updates,
-       (SELECT COUNT(*) FROM inserted) AS inserts
+SELECT %s FROM batch INNER JOIN repo ON repo.name = batch.name`,
+
+	upsertColumnNamesQuery,
+	upsertColumnNamesQuery,
+	upsertColumnNamesQuery,
+	upsertBatchColumnNamesQuery,
+	repoIDConditional,
+	upsertBatchColumnNamesQuery,
+	upsertRepoColumnNamesQuery,
+	upsertColumnNamesQuery,
+	repoIDConditional,
+	upsertColumnNamesQuery,
+)
+
+const repoIDConditional = `
+repo.id == batch.id OR repo.name = batch.name OR (
+  repo.external_id IS NOT NULL
+  AND repo.external_service_id IS NOT NULL
+  AND batch.external_id IS NOT NULL
+  AND batch.external_service_id IS NOT NULL
+  AND repo.external_service_id = batch.external_service_id
+  AND repo.external_id = batch.external_id
+)
 `
 
 func upsertReposQuery(repos []*Repo) *sqlf.Query {
@@ -227,12 +245,9 @@ func upsertReposQuery(repos []*Repo) *sqlf.Query {
 	for _, repo := range repos {
 		values = append(values, upsertRepoColumnValues(repo))
 	}
-
 	return sqlf.Sprintf(
 		upsertReposQueryFmtstr,
-		upsertRepoColumnNamesQuery,
 		sqlf.Join(values, ",\n"),
-		upsertRepoColumnNamesQuery,
 	)
 }
 
@@ -254,17 +269,15 @@ var upsertRepoColumnNames = []string{
 	"metadata",
 }
 
-var upsertRepoColumnNamesQuery = func() *sqlf.Query {
-	columns := make([]*sqlf.Query, len(upsertRepoColumnNames))
-	for _, column := range upsertRepoColumnNames {
-		columns = append(columns, sqlf.Sprintf("%s", column))
-	}
-	return sqlf.Join(columns, ", ")
-}()
+var (
+	upsertColumnNamesQuery      = columnNames("", upsertRepoColumnNames)
+	upsertBatchColumnNamesQuery = columnNames("batch", upsertRepoColumnNames)
+	upsertRepoColumnNamesQuery  = columnNames("repo", upsertRepoColumnNames)
+)
 
 func upsertRepoColumnValues(r *Repo) *sqlf.Query {
 	return sqlf.Sprintf(
-		strings.Repeat("%s ", len(upsertRepoColumnNames)),
+		"("+strings.Repeat("%s ", len(upsertRepoColumnNames))+")",
 		r.Name,
 		r.Description,
 		r.Language,
@@ -281,6 +294,18 @@ func upsertRepoColumnValues(r *Repo) *sqlf.Query {
 		sourcesColumn(r.Sources),
 		r.Metadata,
 	)
+}
+
+func columnNames(table string, names []string) string {
+	columns := make([]string, 0, len(names))
+	for _, name := range names {
+		column := pq.QuoteIdentifier(name)
+		if table != "" {
+			column = pq.QuoteIdentifier(table) + "." + column
+		}
+		columns = append(columns, column)
+	}
+	return strings.Join(columns, ", ")
 }
 
 func timeColumn(t time.Time) interface{} {
