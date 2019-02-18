@@ -1,5 +1,5 @@
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { ProxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { flatten, values } from 'lodash'
 import { BehaviorSubject, Observable, Subscription } from 'rxjs'
 import { ProvideTextDocumentDecorationSignature } from '../services/decoration'

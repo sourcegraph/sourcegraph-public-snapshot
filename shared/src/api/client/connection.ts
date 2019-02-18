@@ -1,4 +1,4 @@
-import * as comlink from 'comlink'
+import * as comlink from '@sourcegraph/comlink'
 import { isEqual } from 'lodash'
 import { from, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'

@@ -1,4 +1,4 @@
-import { ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { ReplaySubject, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'

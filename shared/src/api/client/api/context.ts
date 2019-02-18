@@ -1,4 +1,4 @@
-import { ProxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { ContextValues, Unsubscribable } from 'sourcegraph'
 
 /** @internal */

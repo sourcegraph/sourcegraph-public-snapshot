@@ -1,4 +1,4 @@
-import { ProxyResult } from 'comlink'
+import { ProxyResult } from '@sourcegraph/comlink'
 import { Observable, Subscription } from 'rxjs'
 import { ExtDocumentsAPI } from '../../extension/api/documents'
 import { TextDocumentItem } from '../types/textDocument'

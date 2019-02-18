@@ -1,5 +1,5 @@
 import { Hover, Location } from '@sourcegraph/extension-api-types'
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'

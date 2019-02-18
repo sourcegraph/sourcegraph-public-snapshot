@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { from, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { isSettingsValid } from '../../../settings/settings'

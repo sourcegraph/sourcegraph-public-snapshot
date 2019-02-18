@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { BehaviorSubject, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'

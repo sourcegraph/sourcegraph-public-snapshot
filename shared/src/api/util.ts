@@ -1,4 +1,4 @@
-import { ProxiedObject, ProxyValue } from 'comlink'
+import { ProxiedObject, ProxyValue } from '@sourcegraph/comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 

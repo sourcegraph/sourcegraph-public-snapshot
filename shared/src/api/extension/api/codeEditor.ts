@@ -1,5 +1,5 @@
 import * as clientType from '@sourcegraph/extension-api-types'
-import { ProxyResult } from 'comlink'
+import { ProxyResult } from '@sourcegraph/comlink'
 import { of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'

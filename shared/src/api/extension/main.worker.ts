@@ -20,6 +20,12 @@ async function extensionHostMain(): Promise<void> {
             throw new Error('First message event in extension host worker did not contain MessagePort')
         }
         const endpoints = event.data
+        endpoints.proxy.addEventListener('message', event =>
+            console.log('Extension host received message on proxy port', event.data)
+        )
+        endpoints.expose.addEventListener('message', event =>
+            console.log('Extension host received message on expose port', event.data)
+        )
         const extensionHost = startExtensionHost(endpoints)
         self.addEventListener('unload', () => extensionHost.unsubscribe())
     } catch (err) {

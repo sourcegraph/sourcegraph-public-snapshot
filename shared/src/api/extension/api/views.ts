@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
 

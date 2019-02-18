@@ -1,4 +1,4 @@
-import { ProxyResult } from 'comlink'
+import { ProxyResult } from '@sourcegraph/comlink'
 import { isEqual } from 'lodash'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'

@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { BehaviorSubject, PartialObserver, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'

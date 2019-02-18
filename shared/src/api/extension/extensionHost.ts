@@ -1,4 +1,4 @@
-import * as comlink from 'comlink'
+import * as comlink from '@sourcegraph/comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'

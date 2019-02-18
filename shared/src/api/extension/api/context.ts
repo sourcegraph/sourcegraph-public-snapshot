@@ -1,4 +1,4 @@
-import { ProxyResult } from 'comlink'
+import { ProxyResult } from '@sourcegraph/comlink'
 import { ContextValues } from 'sourcegraph'
 import { ClientContextAPI } from '../../client/api/context'
 

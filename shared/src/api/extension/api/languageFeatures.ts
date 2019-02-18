@@ -1,5 +1,5 @@
 import * as clientType from '@sourcegraph/extension-api-types'
-import { ProxyInput, ProxyResult, proxyValue } from 'comlink'
+import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import { Unsubscribable } from 'rxjs'
 import {
     DefinitionProvider,

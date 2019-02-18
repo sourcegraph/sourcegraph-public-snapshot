@@ -1,4 +1,4 @@
-import { ProxyResult, proxyValue } from 'comlink'
+import { ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import { Unsubscribable } from 'rxjs'
 import { QueryTransformer } from 'sourcegraph'
 import { ClientSearchAPI } from '../../client/api/search'

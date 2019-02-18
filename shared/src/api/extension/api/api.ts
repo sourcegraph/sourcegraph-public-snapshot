@@ -1,4 +1,4 @@
-import { ProxyValue } from 'comlink'
+import { ProxyValue } from '@sourcegraph/comlink'
 import { InitData } from '../extensionHost'
 import { ExtConfigurationAPI } from './configuration'
 import { ExtDocumentsAPI } from './documents'

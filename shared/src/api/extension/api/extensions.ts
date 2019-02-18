@@ -1,4 +1,4 @@
-import { ProxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'

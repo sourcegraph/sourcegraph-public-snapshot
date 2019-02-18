@@ -1,5 +1,5 @@
 import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
-import { ProxyResult } from 'comlink'
+import { ProxyResult } from '@sourcegraph/comlink'
 import { Observable, Subscription } from 'rxjs'
 import { ExtRootsAPI } from '../../extension/api/roots'
 

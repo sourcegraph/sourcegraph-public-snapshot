@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Observable, Subject, Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ExtWindowsAPI } from '../../extension/api/windows'

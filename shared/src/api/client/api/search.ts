@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from 'comlink'
+import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { from } from 'rxjs'
 import { QueryTransformer, Unsubscribable } from 'sourcegraph'
 import { TransformQuerySignature } from '../services/queryTransformer'
