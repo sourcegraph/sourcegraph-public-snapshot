@@ -36,10 +36,10 @@ describe('QueryBuilder', () => {
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
 
-        const fileField = container.querySelector('#query-builder-file')!
-        fireEvent.change(fileField, { target: { value: 'web' } })
+        const caseField = container.querySelector('#query-builder-case')!
+        fireEvent.change(caseField, { target: { value: 'yes' } })
         expect(onChange.calledOnce).toBe(true)
-        expect(onChange.calledWith('file:web')).toBe(true)
+        expect(onChange.calledWith('case:yes')).toBe(true)
     })
 
     it('fires the onFieldsQueryChange prop handler with the patterns left untransformed when updating the "Patterns" field', () => {

@@ -270,12 +270,12 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 examples={[{ description: 'Search for "security risk"', value: 'security risk' }]}
                             />
                             <div className="query-builder__row">
-                                <label className="query-builder__row-label" htmlFor="query-builder__case">
+                                <label className="query-builder__row-label" htmlFor="query-builder-case">
                                     Case sensitive:
                                 </label>
                                 <div className="query-builder__row-input">
                                     <Select
-                                        id="query-builder__case"
+                                        id="query-builder-case"
                                         className="form-control query-builder__input"
                                         onChange={this.onCaseChange}
                                     >
@@ -374,8 +374,6 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
     private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault()
         this.setState(prevState => ({ showQueryBuilder: !prevState.showQueryBuilder }))
-            showQueryBuilder: !prevState.showQueryBuilder,
-        }))
     }
 
     private onCaseChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
