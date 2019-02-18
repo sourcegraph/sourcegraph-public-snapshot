@@ -2,7 +2,7 @@
 
 /** @type {jest.InitialOptions} */
 const config = {
-  collectCoverage: true,
+  collectCoverage: false,
   coverageDirectory: '<rootDir>/coverage',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   preset: 'ts-jest/presets/js-with-ts',
@@ -15,7 +15,7 @@ const config = {
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
   transformIgnorePatterns: [
-    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify)',
+    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify|@sourcegraph/comlink)',
   ],
 
   moduleNameMapper: { '\\.s?css$': 'identity-obj-proxy' },
