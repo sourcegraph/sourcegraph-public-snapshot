@@ -95,7 +95,7 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 }
 
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.cache.Open(ctx, fmt.Sprintf("%d-%s@%s", symbolsDbVersion, args.Repo, args.CommitID), func(context.Context) (io.ReadCloser, error) {
+	diskcacheFile, err := s.cache.Open(ctx, fmt.Sprintf("%d-%s@%s", symbolsDbVersion, args.Repo, args.CommitID), func(ctx context.Context) (io.ReadCloser, error) {
 		tempDBFile, err := ioutil.TempFile("", "")
 		if err != nil {
 			return nil, err
@@ -108,7 +108,7 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 		}
 		defer db.Close()
 
-		symbols, err := s.parseUncached(ctx, args.Repo, args.CommitID)
+		symbols, errChan, err := s.parseUncached(ctx, args.Repo, args.CommitID)
 		if err != nil {
 			return nil, err
 		}
@@ -116,9 +116,18 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 		if err != nil {
 			return nil, err
 		}
+		if err := <-errChan; err != nil {
+			// Drain the rest of the errors, only return the first one.
+			for range errChan {
+			}
+			return nil, err
+		}
 
 		return tempDBFile, nil
 	})
+	if err != nil {
+		return "", err
+	}
 	defer diskcacheFile.File.Close()
 
 	return diskcacheFile.File.Name(), err
@@ -267,7 +276,7 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) protocol.Symbol {
 	}
 }
 
-func (s *Service) writeSymbols(db *sqlx.DB, symbols []protocol.Symbol) error {
+func (s *Service) writeSymbols(db *sqlx.DB, symbols <-chan protocol.Symbol) error {
 	var err error
 
 	// sqlx lowercases struct fields by default.
@@ -312,7 +321,7 @@ func (s *Service) writeSymbols(db *sqlx.DB, symbols []protocol.Symbol) error {
 		return err
 	}
 
-	for _, symbol := range symbols {
+	for symbol := range symbols {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := db.NamedExec(
 			fmt.Sprintf(
