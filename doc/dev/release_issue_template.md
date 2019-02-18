@@ -27,11 +27,7 @@ It is not used for patch releases.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
-    - [ ] Verify that code intelligence works as you expect.
-        - [ ] Go to definition works in Go.
-        - [ ] Go to definition works in TypeScript.
-        - [ ] Find references works in Go.
-        - [ ] Find references works in TypeScript.
+    - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Upgrade Sourcegraph Docker image from previous released version.
     - [ ] `CLEAN=true IMAGE=sourcegraph/server:$OLDVERSION ./dev/run-server-image.sh`
     - [ ] Initialize the site by creating an admin account.
@@ -39,31 +35,19 @@ It is not used for patch releases.
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] `CLEAN=false IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh`
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
-    - [ ] Verify that code intelligence works as you expect.
-        - [ ] Go to definition works in Go.
-        - [ ] Go to definition works in TypeScript.
-        - [ ] Find references works in Go.
-        - [ ] Find references works in TypeScript.
+    - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Run Sourcegraph on a clean Kubernetes cluster with no previous data.
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
-    - [ ] Verify that code intelligence works as you expect.
-        - [ ] Go to definition works in Go.
-        - [ ] Go to definition works in TypeScript.
-        - [ ] Find references works in Go.
-        - [ ] Find references works in TypeScript.
+    - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Upgrade Sourcegraph on a Kubernetes cluster.
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
-    - [ ] Verify that code intelligence works as you expect.
-        - [ ] Go to definition works in Go.
-        - [ ] Go to definition works in TypeScript.
-        - [ ] Find references works in Go.
-        - [ ] Find references works in TypeScript.
+    - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Add any [release blocking](releases.md#blocking) issues as checklist items and start working to resolve them.
 
 ## As necessary
