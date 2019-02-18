@@ -26,9 +26,14 @@ interface Props {
     /** A list of useful examples demonstrating valid values that can be inputted for this search field. */
     examples: QueryFieldExamples[]
     /** Handler for when an input field changes. */
-    onInputChange: (
-        key: keyof QueryBuilderState['fields']
-    ) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+    onInputChange: Record<
+        keyof QueryBuilderState['fields'],
+        (
+            changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+            key: keyof QueryBuilderState['fields']
+        ) => void
+    >
+
     isSourcegraphDotCom: boolean
 }
 
@@ -48,7 +53,8 @@ export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
                     autoCapitalize="off"
                     autoComplete="off"
                     placeholder={placeholder}
-                    onChange={props.onInputChange(props.shortName)}
+                    // tslint:disable-next-line:jsx-no-lambda
+                    onChange={e => props.onInputChange[props.shortName](e, props.shortName)}
                 />
             </div>
             <InfoDropdown title={props.title} markdown={props.description} examples={props.examples} />
