@@ -305,21 +305,18 @@ func store(rs ...*repos.Repo) *fakeStore {
 	return &s
 }
 
-func (s fakeStore) ListRepos(_ context.Context) ([]*repos.Repo, error) {
+func (s fakeStore) ListRepos(context.Context, ...string) ([]*repos.Repo, error) {
 	if s.list != nil {
 		return nil, s.list
 	}
 
-	set := make(map[*repos.Repo]struct{}, len(s.repos))
+	set := make(map[*repos.Repo]bool, len(s.repos))
+	repos := make([]*repos.Repo, 0, len(s.repos))
 	for _, r := range s.repos {
-		if _, ok := set[r]; !ok {
-			set[r] = struct{}{}
+		if !set[r] {
+			repos = append(repos, r)
+			set[r] = true
 		}
-	}
-
-	repos := make([]*repos.Repo, 0, len(set))
-	for r := range set {
-		repos = append(repos, r)
 	}
 
 	sort.Slice(repos, func(i, j int) bool {
