@@ -373,7 +373,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
 
     private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault()
-        this.setState((prevState: QueryBuilderState, props: Props) => ({
+        this.setState(prevState => ({ showQueryBuilder: !prevState.showQueryBuilder }))
             showQueryBuilder: !prevState.showQueryBuilder,
         }))
     }
