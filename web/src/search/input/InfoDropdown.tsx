@@ -57,11 +57,7 @@ export class InfoDropdown extends React.Component<Props, State> {
                                         <div key={ex.value}>
                                             <div className="p-2">
                                                 <span className="text-muted small">{ex.description}: </span>
-                                                <code
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: ex.value,
-                                                    }}
-                                                />
+                                                <code>{ex.value}</code>
                                             </div>
                                         </div>
                                     ))}
