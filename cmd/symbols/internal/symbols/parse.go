@@ -7,11 +7,15 @@ import (
 	"strings"
 	"sync"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -33,86 +37,93 @@ func (s *Service) startParsers() error {
 	return nil
 }
 
-func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID) (<-chan protocol.Symbol, <-chan error, error) {
-	errChan := make(chan error, 1)
-	parseRequests, fetchErrChan, err := s.fetchRepositoryArchive(ctx, repo, commitID)
+func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "parseUncached")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("repo", string(repo))
+	span.SetTag("commit", string(commitID))
+
+	tr := trace.New("parseUncached", string(repo))
+	tr.LazyPrintf("commitID: %s", commitID)
+
+	defer func() {
+		tr.LazyPrintf("symbols=%d", len(symbols))
+		if err != nil {
+			tr.LazyPrintf("error: %s", err)
+			tr.SetError()
+		}
+		tr.Finish()
+	}()
+
+	tr.LazyPrintf("fetch")
+	parseRequests, errChan, err := s.fetchRepositoryArchive(ctx, repo, commitID)
+	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	var (
-		mu  sync.Mutex // protects err
+		mu  sync.Mutex // protects symbols and err
 		wg  sync.WaitGroup
 		sem = make(chan struct{}, runtime.NumCPU())
-		symbols = make(chan protocol.Symbol, runtime.NumCPU())
 	)
+	tr.LazyPrintf("parse")
 	totalParseRequests := 0
-	go func() {
-		for req := range parseRequests {
-			totalParseRequests++
-			if ctx.Err() != nil {
-				// Drain parseRequests
-				go func() {
-					for range parseRequests {
-					}
-				}()
-				errChan <- ctx.Err()
-				break
-			}
-			sem <- struct{}{}
-			wg.Add(1)
-			go func(req parseRequest) {
-				defer func() {
-					wg.Done()
-					<-sem
-				}()
-				entries, parseErr := s.parse(ctx, req)
-				if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
-					if err == nil {
-						mu.Lock()
-						err = errors.Wrap(parseErr, fmt.Sprintf("parse repo %s commit %s path %s", repo, commitID, req.path))
-						mu.Unlock()
-					}
-					cancel()
-					log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
+	for req := range parseRequests {
+		totalParseRequests++
+		if ctx.Err() != nil {
+			// Drain parseRequests
+			go func() {
+				for range parseRequests {
 				}
-				if len(entries) > 0 {
-					for _, e := range entries {
-						if e.Name == "" || strings.HasPrefix(e.Name, "__anon") || strings.HasPrefix(e.Parent, "__anon") || strings.HasPrefix(e.Name, "AnonymousFunction") || strings.HasPrefix(e.Parent, "AnonymousFunction") {
-							continue
-						}
-						symbols <- entryToSymbol(e)
-					}
-				}
-			}(req)
+			}()
+			return nil, ctx.Err()
 		}
-		wg.Wait()
-		close(symbols)
-		close(errChan)
-	}()
-
-	return symbols, merge(fetchErrChan, errChan), nil
-}
-
-func merge(cs ...<-chan error) <-chan error {
-	out := make(chan error)
-	var wg sync.WaitGroup
-	wg.Add(len(cs))
-	for _, c := range cs {
-		go func(c <-chan error) {
-			for v := range c {
-				out <- v
+		sem <- struct{}{}
+		wg.Add(1)
+		go func(req parseRequest) {
+			defer func() {
+				wg.Done()
+				<-sem
+			}()
+			entries, parseErr := s.parse(ctx, req)
+			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
+				if err == nil {
+					mu.Lock()
+					err = errors.Wrap(parseErr, fmt.Sprintf("parse repo %s commit %s path %s", repo, commitID, req.path))
+					mu.Unlock()
+				}
+				cancel()
+				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
 			}
-			wg.Done()
-		}(c)
+			if len(entries) > 0 {
+				mu.Lock()
+				defer mu.Unlock()
+				for _, e := range entries {
+					if e.Name == "" || strings.HasPrefix(e.Name, "__anon") || strings.HasPrefix(e.Parent, "__anon") || strings.HasPrefix(e.Name, "AnonymousFunction") || strings.HasPrefix(e.Parent, "AnonymousFunction") {
+						continue
+					}
+					symbols = append(symbols, entryToSymbol(e))
+				}
+			}
+		}(req)
 	}
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-	return out
+	wg.Wait()
+	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, len(symbols))
+
+	if err := <-errChan; err != nil {
+		return nil, err
+	}
+	return symbols, nil
 }
 
 // parse gets a parser from the pool and uses it to satisfy the parse request.
