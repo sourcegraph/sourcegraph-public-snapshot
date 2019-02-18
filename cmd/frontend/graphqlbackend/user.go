@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -23,13 +22,13 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 	Email    *string
 }) (*UserResolver, error) {
 	if args.Email != nil {
-		user, err := db.Users.GetByVerifiedEmail(ctx, args.Email)
+		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
 			return nil, err
 		}
 		return &UserResolver{user: user}, nil
 	}
-	user, err := db.Users.GetByUsername(ctx, args.Username)
+	user, err := db.Users.GetByUsername(ctx, *args.Username)
 	if err != nil {
 		return nil, err
 	}
