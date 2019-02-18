@@ -176,7 +176,8 @@ function runExecutable({ buildType }: { buildType: BuildType }): void {
     // buildDockerImage({ dockerImageName: 'dev-symbols', buildType: 'dev' })
     shell.env['LIBSQLITE3_REGEXP'] = libsqlite3PcrePath
     shell.env['CTAGS_COMMAND'] = shell.env['CTAGS_COMMAND'] || 'cmd/symbols/universal-ctags-dev'
-    shell.env['CTAGS_PROCESSES'] = shell.env['CTAGS_PROCESSES'] || '1'
+    // shell.env['CTAGS_PROCESSES'] = shell.env['CTAGS_PROCESSES'] || '1'
+    shell.env['CTAGS_PROCESSES'] = os.cpus().length.toString()
     shell.exec(outputPath)
 }
 
