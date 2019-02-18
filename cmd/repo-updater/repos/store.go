@@ -170,27 +170,6 @@ func (s DBStore) page(ctx context.Context, q *sqlf.Query, repos *[]*Repo) (err e
 	})
 }
 
-const updateReposQueryFmtstr = `
-WITH updated (
-	UPDATE repo r
-	SET
-	  name        = updated.name,
-	  description = updated.description,
-	  language    = updated.language,
-	  updated_at  = updated.updated_at,
-	  deleted_at  = updated.deleted_at,
-	  archived    = updated.archived,
-	  fork        = updated.fork,
-	  sources     = updated.sources,
-	  metadata    = updated.metadata,
-	FROM
-)
-FROM updated
-WHERE id = %s
-OR name = %s
-OR (external_service_id = %s AND external_id = %s)
-`
-
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
 // The _ID field of each given Repo is set on inserts.
 func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
@@ -205,6 +184,58 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	panic("not implemented")
 }
 
+const repoIDConditional = `
+repo.id = batch.id OR repo.name = batch.name OR (
+  repo.external_id IS NOT NULL
+  AND repo.external_service_id IS NOT NULL
+  AND batch.external_id IS NOT NULL
+  AND batch.external_service_id IS NOT NULL
+  AND repo.external_service_id = batch.external_service_id
+  AND repo.external_id = batch.external_id
+)
+`
+
+const upsertReposQueryFmtstr = `
+-- cmd/repo-updater/repos/store.go:DBStore.UpsertRepos
+WITH batch AS (
+  SELECT %s
+  FROM (VALUES %s) AS batch(%s)
+),
+
+updated AS (
+  UPDATE repo
+  SET (%s) = (%s)
+  FROM batch
+  WHERE %s
+  AND (%s) <> (%s)
+  RETURNING repo.id
+),
+
+inserted AS (
+  INSERT INTO repo
+  SELECT %s FROM batch
+  WHERE NOT EXISTS (SELECT 1 FROM repo WHERE %s)
+  RETURNING repo.id
+)
+
+SELECT (SELECT COUNT(*) FROM updated) AS updates,
+       (SELECT COUNT(*) FROM inserted) AS inserts
+`
+
+func upsertReposQuery(repos []*Repo) *sqlf.Query {
+	values := make([]*sqlf.Query, 0, len(repos))
+	for _, repo := range repos {
+		values = append(values, upsertRepoColumnValues(repo))
+	}
+
+	return sqlf.Sprintf(
+		upsertReposQueryFmtstr,
+		upsertRepoColumnNamesQuery,
+		sqlf.Join(values, ",\n"),
+		upsertRepoColumnNamesQuery,
+	)
+}
+
 var upsertRepoColumnNames = []string{
 	"name",
 	"description",
@@ -213,16 +244,27 @@ var upsertRepoColumnNames = []string{
 	"created_at",
 	"updated_at",
 	"deleted_at",
-	"external_id",
 	"external_service_type",
 	"external_service_id",
+	"external_id",
 	"enabled",
 	"archived",
 	"fork",
+	"sources",
+	"metadata",
 }
 
-func upsertRepoColumns(r *Repo) []interface{} {
-	return []interface{}{
+var upsertRepoColumnNamesQuery = func() *sqlf.Query {
+	columns := make([]*sqlf.Query, len(upsertRepoColumnNames))
+	for _, column := range upsertRepoColumnNames {
+		columns = append(columns, sqlf.Sprintf("%s", column))
+	}
+	return sqlf.Join(columns, ", ")
+}()
+
+func upsertRepoColumnValues(r *Repo) *sqlf.Query {
+	return sqlf.Sprintf(
+		strings.Repeat("%s ", len(upsertRepoColumnNames)),
 		r.Name,
 		r.Description,
 		r.Language,
@@ -230,13 +272,15 @@ func upsertRepoColumns(r *Repo) []interface{} {
 		timeColumn(r.CreatedAt),
 		timeColumn(r.UpdatedAt),
 		timeColumn(r.DeletedAt),
-		r.ExternalRepo.ID,
-		r.ExternalRepo.ServiceType,
-		r.ExternalRepo.ServiceID,
+		nullStringColumn(r.ExternalRepo.ServiceType),
+		nullStringColumn(r.ExternalRepo.ServiceID),
+		nullStringColumn(r.ExternalRepo.ID),
 		r.Enabled,
 		r.Archived,
 		r.Fork,
-	}
+		sourcesColumn(r.Sources),
+		r.Metadata,
+	)
 }
 
 func timeColumn(t time.Time) interface{} {
@@ -244,6 +288,29 @@ func timeColumn(t time.Time) interface{} {
 		return nil
 	}
 	return t.UTC()
+}
+
+func nullStringColumn(s string) interface{} {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+func sourcesColumn(sources []string) *sqlf.Query {
+	args := make([]*sqlf.Query, 0, len(sources)*2)
+
+	for _, s := range sources {
+		args = append(args,
+			sqlf.Sprintf("%s", s),
+			sqlf.Sprintf("NULL"),
+		)
+	}
+
+	return sqlf.Sprintf(
+		"jsonb_build_object(%s)",
+		sqlf.Join(args, ","),
+	)
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
