@@ -3,8 +3,10 @@
 import '../../config/polyfill'
 
 import { without } from 'lodash'
-import { noop } from 'rxjs'
+import { fromEventPattern, noop, Observable } from 'rxjs'
+import { bufferCount, filter, groupBy, mergeMap, reduce } from 'rxjs/operators'
 import DPT from 'webext-domain-permission-toggle'
+import { EndpointPair } from '../../../../../shared/src/platform/context'
 import * as browserAction from '../../browser/browserAction'
 import * as omnibox from '../../browser/omnibox'
 import * as permissions from '../../browser/permissions'
@@ -366,17 +368,64 @@ function setDefaultBrowserAction(): void {
 browserAction.onClicked(noop)
 setDefaultBrowserAction()
 
-// This is the entrypoint for the extension host.
-chrome.runtime.onConnect.addListener(port => {
-    const worker = createExtensionHostWorker()
-    worker.addEventListener('message', m => {
-        port.postMessage(m.data)
-    })
-    port.onMessage.addListener(m => {
-        worker.postMessage(m)
-    })
-    port.onDisconnect.addListener(() => worker.terminate())
-})
-
 // Add "Enable Sourcegraph on this domain" context menu item
 DPT.addContextMenu()
+
+const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
+
+/**
+ * A stream of EndpointPair created from Port objects emitted by chrome.runtime.onConnect.
+ *
+ * Each EndpointPair represents a connection with an instance of the content script.
+ */
+const endpointPairs: Observable<{ proxy: chrome.runtime.Port; expose: chrome.runtime.Port }> = fromEventPattern(
+    handler => chrome.runtime.onConnect.addListener(handler),
+    handler => chrome.runtime.onConnect.removeListener(handler)
+).pipe(
+    groupBy(
+        (port: any): string => (port.name || 'other').replace(ENDPOINT_KIND_REGEX, ''),
+        (port: any) => {
+            const endpointKind = (port.name || '').match(ENDPOINT_KIND_REGEX)
+            if (endpointKind) {
+                return {
+                    [endpointKind[1]]: port,
+                }
+            }
+            return {}
+        },
+        group => group.pipe(bufferCount(2))
+    ),
+    filter(group => group.key !== 'other'),
+    mergeMap(group => group.pipe(reduce((acc, cur) => ({ ...acc, ...cur }), {})))
+) as any
+
+// Create one extension host worker per endpoint pair
+endpointPairs.subscribe(({ proxy, expose }) => {
+    const worker = createExtensionHostWorker()
+    const clientAPIChannel = new MessageChannel()
+    const extensionHostAPIChannel = new MessageChannel()
+    const workerEndpoints: EndpointPair = {
+        proxy: clientAPIChannel.port2,
+        expose: extensionHostAPIChannel.port2,
+    }
+    worker.postMessage(workerEndpoints, Object.values(workerEndpoints))
+    // Connect proxy client endpoint
+    extensionHostAPIChannel.port1.start()
+    proxy.onMessage.addListener(message => {
+        extensionHostAPIChannel.port1.postMessage(message)
+    })
+    extensionHostAPIChannel.port1.addEventListener('message', message => {
+        proxy.postMessage(message)
+    })
+    // Connect expose client endpoint
+    clientAPIChannel.port1.start()
+    expose.onMessage.addListener(message => {
+        clientAPIChannel.port1.postMessage(message)
+    })
+    clientAPIChannel.port1.addEventListener('message', message => {
+        expose.postMessage(message)
+    })
+    // Kill worker when either port disconnects
+    proxy.onDisconnect.addListener(() => worker.terminate())
+    expose.onDisconnect.addListener(() => worker.terminate())
+})
