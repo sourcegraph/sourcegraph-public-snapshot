@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -292,7 +293,7 @@ func upsertRepoColumnValues(r *Repo) *sqlf.Query {
 		r.Archived,
 		r.Fork,
 		sourcesColumn(r.Sources),
-		r.Metadata,
+		metadataColumn(r.Metadata),
 	)
 }
 
@@ -336,6 +337,20 @@ func sourcesColumn(sources []string) *sqlf.Query {
 		"jsonb_build_object(%s)",
 		sqlf.Join(args, ","),
 	)
+}
+
+func metadataColumn(metadata interface{}) *sqlf.Query {
+	if metadata == nil {
+		return sqlf.Sprintf("'{}'::jsonb")
+	}
+
+	// TODO What to do in the rare case this doesn't serialize?
+	b, err := json.Marshal(metadata)
+	if err != nil {
+		return sqlf.Sprintf("'{}'::jsonb")
+	}
+
+	return sqlf.Sprintf("jsonb_object(%s)", string(b))
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
