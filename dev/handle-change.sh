@@ -3,10 +3,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 generate_graphql=false
 generate_schema=false
-rebuild_symbols=false
 cmdlist=""
 all_cmds=false
 failed=false
+onlyBuildDevSymbols=false
 
 for i; do
 	case $i in
@@ -16,6 +16,12 @@ for i; do
 	schema/*.json)
 		generate_schema=true
 		;;
+    cmd/symbols/.ctags.d/*)
+        onlyBuildDevSymbols=true
+        ;;
+    cmd/symbols/Dockerfile)
+        onlyBuildDevSymbols=true
+        ;;
 	cmd/*)
 		cmd=${i#cmd/}
 		cmd=${cmd%%/*}
@@ -31,17 +37,17 @@ for i; do
 		all_cmds=true
 		;;
 	esac
-
-	case $i in
-	cmd/symbols/*)
-		rebuild_symbols=true
-		;;
-    esac
 done
 
 $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
-$rebuild_symbols && { rm -rf /tmp/symbols-cache; env IMAGE=dev-symbols cmd/symbols/build.sh; }
+$onlyBuildDevSymbols && {
+    set -e
+    ./dev/ts-script cmd/symbols/build.ts buildDockerImage --dockerImageName dev-symbols
+    [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
+    exit
+}
+
 if $all_cmds; then
 	rebuilt=$(./dev/go-install.sh -v | tr '\012' ' ')
 	[ $? == 0 ] || failed=true
