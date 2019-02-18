@@ -50,22 +50,6 @@ func TestSyncer_Sync(t *testing.T) {
 			err: "1 error occurred:\n\t* boom\n\n",
 		},
 		{
-			name: "sources partial errors aborts sync",
-			sourcer: sourcer(nil,
-				source("a", nil, foo.Clone()),
-				source("b", errors.New("boom")),
-			),
-			err: "1 error occurred:\n\t* boom\n\n",
-		},
-		{
-			name: "sources partial errors aborts sync",
-			sourcer: sourcer(nil,
-				source("a", nil, foo.Clone()),
-				source("b", errors.New("boom")),
-			),
-			err: "1 error occurred:\n\t* boom\n\n",
-		},
-		{
 			name:    "store list error aborts sync",
 			sourcer: sourcer(nil, source("a", nil, foo.Clone())),
 			store:   &fakeStore{list: errors.New("boom")},
