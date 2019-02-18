@@ -130,7 +130,6 @@ type BuildType = 'dev' | 'dist'
  */
 function buildExecutable({ outputPath, buildType }: { outputPath: string; buildType: BuildType }): void {
     const symbolsPackage = 'github.com/sourcegraph/sourcegraph/cmd/symbols'
-    console.log('Building the symbols executable...')
     const gcFlagsByBuildType: { [buildType in BuildType]: string } = {
         dev: 'all=-N -l',
         dist: '',
@@ -141,7 +140,8 @@ function buildExecutable({ outputPath, buildType }: { outputPath: string; buildT
     }
     const gcFlags = gcFlagsByBuildType[buildType]
     const tags = tagsByBuildType[buildType]
-    shell.go('build', '-buildmode', 'exe', '-gcflags', gcFlags, '-tags', tags, '-o', outputPath, symbolsPackage)
+    console.log('Building the symbols executable...')
+    run('go', 'build', '-buildmode', 'exe', '-gcflags', gcFlags, '-tags', tags, '-o', outputPath, symbolsPackage)
     console.log('Building the symbols executable... done')
 }
 
@@ -205,9 +205,9 @@ function buildDockerImage({ dockerImageName, buildType }: { dockerImageName: str
     const symbolsOut = path.join(dockerBuildContext, 'symbols')
     buildExecutable({ outputPath: symbolsOut, buildType })
 
-    shell.cp('-R', 'cmd/symbols/.ctags.d', dockerBuildContext)
+    shelljs.cp('-R', 'cmd/symbols/.ctags.d', dockerBuildContext)
 
     console.log(`Building the ${dockerImageName} Docker image...`)
-    shell.docker('build', '--quiet', '-f', 'cmd/symbols/Dockerfile', '-t', dockerImageName, dockerBuildContext)
+    run('docker', 'build', '--quiet', '-f', 'cmd/symbols/Dockerfile', '-t', dockerImageName, dockerBuildContext)
     console.log(`Building the ${dockerImageName} Docker image... done`)
 }

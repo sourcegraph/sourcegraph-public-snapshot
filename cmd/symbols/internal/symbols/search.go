@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
-	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -17,7 +16,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -77,7 +75,11 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 		tr.Finish()
 	}()
 
-	db, err := s.getDB(ctx, args)
+	dbFile, err := s.getDBFile(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
 	if err != nil {
 		return nil, err
 	}
@@ -92,50 +94,34 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 	return result, nil
 }
 
-func (s *Service) getDB(ctx context.Context, args protocol.SearchArgs) (*sqlx.DB, error) {
-	var err error
-
-	repoAtCommit := repoAtCommit{
-		RepoName: args.Repo,
-		CommitID: args.CommitID,
-	}
-
-	err = os.MkdirAll(filepath.Dir(s.dbFilename(repoAtCommit)), os.ModePerm)
-	if err != nil {
-		return nil, err
-	}
-	db, err := sqlx.Open("sqlite3_with_pcre", s.dbFilename(repoAtCommit))
-	if err != nil {
-		return nil, err
-	}
-
-	inFlightMutex.Lock()
-	if _, ok := inFlight[repoAtCommit]; !ok {
-		inFlight[repoAtCommit] = &indexingState{
-			Mutex: &sync.Mutex{},
-			Error: nil,
-		}
-	}
-	inFlight[repoAtCommit].Mutex.Lock()
-	inFlightMutex.Unlock()
-
-	if _, err := db.Exec(`SELECT 1 FROM symbols LIMIT 1;`); err != nil {
-		bgCtx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
-		symbols, err := s.parseUncached(bgCtx, args.Repo, args.CommitID)
+func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
+	diskcacheFile, err := s.cache.Open(ctx, fmt.Sprintf("%d-%s@%s", symbolsDbVersion, args.Repo, args.CommitID), func(context.Context) (io.ReadCloser, error) {
+		tempDBFile, err := ioutil.TempFile("", "")
 		if err != nil {
-			cancel()
 			return nil, err
 		}
-		inFlight[repoAtCommit].Error = s.writeSymbols(db, symbols)
-		cancel()
-	}
-	inFlight[repoAtCommit].Mutex.Unlock()
+		defer os.Remove(tempDBFile.Name())
 
-	if inFlight[repoAtCommit].Error != nil {
-		return nil, inFlight[repoAtCommit].Error
-	}
+		db, err := sqlx.Open("sqlite3_with_pcre", tempDBFile.Name())
+		if err != nil {
+			return nil, err
+		}
+		defer db.Close()
 
-	return db, nil
+		symbols, err := s.parseUncached(ctx, args.Repo, args.CommitID)
+		if err != nil {
+			return nil, err
+		}
+		err = s.writeSymbols(db, symbols)
+		if err != nil {
+			return nil, err
+		}
+
+		return tempDBFile, nil
+	})
+	defer diskcacheFile.File.Close()
+
+	return diskcacheFile.File.Name(), err
 }
 
 func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (res []protocol.Symbol, err error) {
@@ -228,27 +214,6 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 // service. Increment this when you change the database schema.
 const symbolsDbVersion = 1
 
-// Returns the filename of the database corresponding to the given repo@commit.
-// There is a 1-1 correspondence between database files and repo@commits.
-func (s *Service) dbFilename(repoAtCommit repoAtCommit) string {
-	return path.Join(s.Path, fmt.Sprintf("v%d-%s@%s.sqlite", symbolsDbVersion, strings.Replace(string(repoAtCommit.RepoName), "/", "-", -1), repoAtCommit.CommitID))
-}
-
-// A repo@commit.
-type repoAtCommit struct {
-	RepoName api.RepoName
-	CommitID api.CommitID
-}
-
-// The state of indexing a particular repo@commit into sqlite.
-type indexingState struct {
-	Mutex *sync.Mutex
-	Error error
-}
-
-var inFlightMutex = &sync.Mutex{}
-var inFlight = map[repoAtCommit]*indexingState{}
-
 // symbolInDB is a code symbol as represented in the sqlite database. It's the
 // same as `Symbol`, but with namelowercase and pathlowercase, which enable
 // indexed case insensitive queries.
@@ -303,19 +268,11 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) protocol.Symbol {
 }
 
 func (s *Service) writeSymbols(db *sqlx.DB, symbols []protocol.Symbol) error {
-	// Wrapping all database modifications in a transaction ensures that if the
-	// `symbols` table exists, then it contains all symbols for the repo@commit.
-	// This allows a goroutine servicing a query to determine whether or not a
-	// repo@commit has already been indexed by checking for the existence of the
-	// `symbols` table.
-	tx, err := db.Beginx()
-	if err != nil {
-		return err
-	}
+	var err error
 
 	// sqlx lowercases struct fields by default.
 	// http://jmoiron.github.io/sqlx/#query
-	_, err = tx.Exec(
+	_, err = db.Exec(
 		`CREATE TABLE IF NOT EXISTS symbols (
 			name VARCHAR(256) NOT NULL,
 			namelowercase VARCHAR(256) NOT NULL,
@@ -334,30 +291,30 @@ func (s *Service) writeSymbols(db *sqlx.DB, symbols []protocol.Symbol) error {
 		return err
 	}
 
-	_, err = tx.Exec(`CREATE INDEX name_index ON symbols(name);`)
+	_, err = db.Exec(`CREATE INDEX name_index ON symbols(name);`)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`CREATE INDEX path_index ON symbols(path);`)
+	_, err = db.Exec(`CREATE INDEX path_index ON symbols(path);`)
 	if err != nil {
 		return err
 	}
 
 	// `*lowercase_index` enables indexed case insensitive queries.
-	_, err = tx.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
+	_, err = db.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
+	_, err = db.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
 	if err != nil {
 		return err
 	}
 
 	for _, symbol := range symbols {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
-		_, err := tx.NamedExec(
+		_, err := db.NamedExec(
 			fmt.Sprintf(
 				"INSERT INTO symbols %s VALUES %s",
 				"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
@@ -366,11 +323,6 @@ func (s *Service) writeSymbols(db *sqlx.DB, symbols []protocol.Symbol) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
 	}
 
 	return nil
