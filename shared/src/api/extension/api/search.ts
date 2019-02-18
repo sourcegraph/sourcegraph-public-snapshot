@@ -1,15 +1,13 @@
 import { ProxyResult, proxyValue } from 'comlink'
-import { Subscription, Unsubscribable } from 'rxjs'
+import { Unsubscribable } from 'rxjs'
 import { QueryTransformer } from 'sourcegraph'
 import { ClientSearchAPI } from '../../client/api/search'
+import { syncSubscription } from '../../util'
 
 export class ExtSearch {
     constructor(private proxy: ProxyResult<ClientSearchAPI>) {}
 
     public registerQueryTransformer(provider: QueryTransformer): Unsubscribable {
-        const subscription = new Subscription()
-        // tslint:disable:no-floating-promises
-        this.proxy.$registerQueryTransformer(proxyValue(provider)).then(s => subscription.add(s))
-        return subscription
+        return syncSubscription(this.proxy.$registerQueryTransformer(proxyValue(provider)))
     }
 }

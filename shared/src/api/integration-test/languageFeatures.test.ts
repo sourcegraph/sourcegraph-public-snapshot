@@ -1,6 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import { Observable } from 'rxjs'
-import { bufferCount, take } from 'rxjs/operators'
+import { asyncScheduler, Observable, of } from 'rxjs'
+import { observeOn, take, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
@@ -9,86 +9,84 @@ import { URI } from '../extension/types/uri'
 import { createBarrier, integrationTestContext } from './testHelpers'
 
 describe('LanguageFeatures (integration)', () => {
-    testLocationProvider<sourcegraph.HoverProvider>(
-        'registerHoverProvider',
-        extensionHost => extensionHost.languages.registerHoverProvider,
-        label => ({
-            provideHover: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => ({
-                contents: { value: label, kind: sourcegraph.MarkupKind.PlainText },
-            }),
+    testLocationProvider<sourcegraph.HoverProvider>({
+        name: 'registerHoverProvider',
+        registerProvider: extensionAPI => (s, p) => extensionAPI.languages.registerHoverProvider(s, p),
+        labeledProvider: label => ({
+            provideHover: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
+                of({
+                    contents: { value: label, kind: sourcegraph.MarkupKind.PlainText },
+                }).pipe(observeOn(asyncScheduler)),
         }),
-        labels => ({
+        labeledProviderResults: labels => ({
             contents: labels.map(label => ({ value: label, kind: sourcegraph.MarkupKind.PlainText })),
         }),
-        run => ({ provideHover: run } as sourcegraph.HoverProvider),
-        services =>
+        providerWithImplementation: run => ({ provideHover: run } as sourcegraph.HoverProvider),
+        getResult: services =>
             services.textDocumentHover.getHover({
                 textDocument: { uri: 'file:///f' },
                 position: { line: 1, character: 2 },
-            })
-    )
-    testLocationProvider<sourcegraph.DefinitionProvider>(
-        'registerDefinitionProvider',
-        extensionHost => extensionHost.languages.registerDefinitionProvider,
-        label => ({
-            provideDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
-                { uri: new URI(`file:///${label}`) },
-            ],
+            }),
+    })
+    testLocationProvider<sourcegraph.DefinitionProvider>({
+        name: 'registerDefinitionProvider',
+        registerProvider: extensionAPI => extensionAPI.languages.registerDefinitionProvider,
+        labeledProvider: label => ({
+            provideDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
+                of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
-        labeledDefinitionResults,
-        run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
-        services =>
+        labeledProviderResults: labeledDefinitionResults,
+        providerWithImplementation: run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
+        getResult: services =>
             services.textDocumentDefinition.getLocations({
                 textDocument: { uri: 'file:///f' },
                 position: { line: 1, character: 2 },
-            })
-    )
+            }),
+    })
     // tslint:disable deprecation The tests must remain until they are removed.
-    testLocationProvider(
-        'registerTypeDefinitionProvider',
-        extensionHost => extensionHost.languages.registerTypeDefinitionProvider,
-        label => ({
-            provideTypeDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
-                { uri: new URI(`file:///${label}`) },
-            ],
+    testLocationProvider({
+        name: 'registerTypeDefinitionProvider',
+        registerProvider: extensionAPI => extensionAPI.languages.registerTypeDefinitionProvider,
+        labeledProvider: label => ({
+            provideTypeDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
+                of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
-        labeledDefinitionResults,
-        run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
-        services =>
+        labeledProviderResults: labeledDefinitionResults,
+        providerWithImplementation: run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
+        getResult: services =>
             services.textDocumentTypeDefinition.getLocations({
                 textDocument: { uri: 'file:///f' },
                 position: { line: 1, character: 2 },
-            })
-    )
-    testLocationProvider<sourcegraph.ImplementationProvider>(
-        'registerImplementationProvider',
-        extensionHost => extensionHost.languages.registerImplementationProvider,
-        label => ({
-            provideImplementation: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
-                { uri: new URI(`file:///${label}`) },
-            ],
+            }),
+    })
+    testLocationProvider<sourcegraph.ImplementationProvider>({
+        name: 'registerImplementationProvider',
+        registerProvider: extensionAPI => extensionAPI.languages.registerImplementationProvider,
+        labeledProvider: label => ({
+            provideImplementation: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
+                of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
-        labeledDefinitionResults,
-        run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
-        services =>
+        labeledProviderResults: labeledDefinitionResults,
+        providerWithImplementation: run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
+        getResult: services =>
             services.textDocumentImplementation.getLocations({
                 textDocument: { uri: 'file:///f' },
                 position: { line: 1, character: 2 },
-            })
-    )
+            }),
+    })
     // tslint:enable deprecation
-    testLocationProvider<sourcegraph.ReferenceProvider>(
-        'registerReferenceProvider',
-        extensionHost => extensionHost.languages.registerReferenceProvider,
-        label => ({
+    testLocationProvider<sourcegraph.ReferenceProvider>({
+        name: 'registerReferenceProvider',
+        registerProvider: extensionAPI => extensionAPI.languages.registerReferenceProvider,
+        labeledProvider: label => ({
             provideReferences: (
                 doc: sourcegraph.TextDocument,
                 pos: sourcegraph.Position,
                 context: sourcegraph.ReferenceContext
-            ) => [{ uri: new URI(`file:///${label}`) }],
+            ) => of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
-        labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
-        run =>
+        labeledProviderResults: labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
+        providerWithImplementation: run =>
             ({
                 provideReferences: (
                     doc: sourcegraph.TextDocument,
@@ -96,56 +94,62 @@ describe('LanguageFeatures (integration)', () => {
                     _context: sourcegraph.ReferenceContext
                 ) => run(doc, pos),
             } as sourcegraph.ReferenceProvider),
-        services =>
+        getResult: services =>
             services.textDocumentReferences.getLocations({
                 textDocument: { uri: 'file:///f' },
                 position: { line: 1, character: 2 },
                 context: { includeDeclaration: true },
-            })
-    )
-    testLocationProvider<sourcegraph.LocationProvider>(
-        'registerLocationProvider',
-        extensionHost => (selector, provider) =>
-            extensionHost.languages.registerLocationProvider('x', selector, provider),
-        label => ({
-            provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => [
-                { uri: new URI(`file:///${label}`) },
-            ],
+            }),
+    })
+    testLocationProvider<sourcegraph.LocationProvider>({
+        name: 'registerLocationProvider',
+        registerProvider: extensionAPI => (selector, provider) =>
+            extensionAPI.languages.registerLocationProvider('x', selector, provider),
+        labeledProvider: label => ({
+            provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
+                of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
-        labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
-        run =>
+        labeledProviderResults: labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
+        providerWithImplementation: run =>
             ({
                 provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => run(doc, pos),
             } as sourcegraph.LocationProvider),
-        services =>
+        getResult: services =>
             services.textDocumentLocations.getLocations('x', {
                 textDocument: { uri: 'file:///f' },
                 position: { line: 1, character: 2 },
-            })
-    )
+            }),
+    })
 })
 
 /**
  * Generates test cases for sourcegraph.languages.registerXyzProvider functions and their associated
  * XyzProviders, for providers that return a list of locations.
  */
-function testLocationProvider<P>(
-    name: keyof typeof sourcegraphLanguages,
+function testLocationProvider<P>({
+    name,
+    registerProvider,
+    labeledProvider,
+    labeledProviderResults,
+    providerWithImplementation,
+    getResult,
+}: {
+    name: keyof typeof sourcegraphLanguages
     registerProvider: (
-        extensionHost: typeof sourcegraph
-    ) => (selector: sourcegraph.DocumentSelector, provider: P) => sourcegraph.Unsubscribable,
-    labeledProvider: (label: string) => P,
-    labeledProviderResults: (labels: string[]) => any,
-    providerWithImpl: (run: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => void) => P,
+        extensionAPI: typeof sourcegraph
+    ) => (selector: sourcegraph.DocumentSelector, provider: P) => sourcegraph.Unsubscribable
+    labeledProvider: (label: string) => P
+    labeledProviderResults: (labels: string[]) => any
+    providerWithImplementation: (run: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => void) => P
     getResult: (services: Services) => Observable<any>
-): void {
+}): void {
     describe(`languages.${name}`, () => {
         test('registers and unregisters a single provider', async () => {
-            const { services, extensionHost } = await integrationTestContext()
+            const { services, extensionAPI } = await integrationTestContext()
 
             // Register the provider and call it.
-            const unsubscribe = registerProvider(extensionHost)(['*'], labeledProvider('a'))
-            await extensionHost.internal.sync()
+            const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
+            await extensionAPI.internal.sync()
             expect(
                 await getResult(services)
                     .pipe(take(1))
@@ -153,7 +157,7 @@ function testLocationProvider<P>(
             ).toEqual(labeledProviderResults(['a']))
 
             // Unregister the provider and ensure it's removed.
-            unsubscribe.unsubscribe()
+            subscription.unsubscribe()
             expect(
                 await getResult(services)
                     .pipe(take(1))
@@ -162,17 +166,17 @@ function testLocationProvider<P>(
         })
 
         test('supplies params to the provideXyz method', async () => {
-            const { services, extensionHost } = await integrationTestContext()
+            const { services, extensionAPI } = await integrationTestContext()
             const { wait, done } = createBarrier()
-            registerProvider(extensionHost)(
+            registerProvider(extensionAPI)(
                 ['*'],
-                providerWithImpl((doc, pos) => {
+                providerWithImplementation((doc, pos) => {
                     assertToJSON(doc, { uri: 'file:///f', languageId: 'l', text: 't' })
                     assertToJSON(pos, { line: 1, character: 2 })
                     done()
                 })
             )
-            await extensionHost.internal.sync()
+            await extensionAPI.internal.sync()
             await getResult(services)
                 .pipe(take(1))
                 .toPromise()
@@ -180,19 +184,19 @@ function testLocationProvider<P>(
         })
 
         test('supports multiple providers', async () => {
-            const { services, extensionHost } = await integrationTestContext()
+            const { services, extensionAPI } = await integrationTestContext()
 
             // Register 2 providers with different results.
-            registerProvider(extensionHost)(['*'], labeledProvider('a'))
-            registerProvider(extensionHost)(['*'], labeledProvider('b'))
-            await extensionHost.internal.sync()
+            registerProvider(extensionAPI)(['*'], labeledProvider('a'))
+            registerProvider(extensionAPI)(['*'], labeledProvider('b'))
+            await extensionAPI.internal.sync()
 
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
             expect(
                 await getResult(services)
                     .pipe(
                         take(2),
-                        bufferCount(2)
+                        toArray()
                     )
                     .toPromise()
             ).toEqual([labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])])

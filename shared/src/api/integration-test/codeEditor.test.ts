@@ -6,18 +6,18 @@ import { integrationTestContext } from './testHelpers'
 describe('CodeEditor (integration)', () => {
     describe('setDecorations', () => {
         test('adds decorations', async () => {
-            const { services, extensionHost } = await integrationTestContext()
-            const dt = extensionHost.app.createDecorationType()
+            const { services, extensionAPI } = await integrationTestContext()
+            const dt = extensionAPI.app.createDecorationType()
 
             // Set some decorations and check they are present on the client.
-            const codeEditor = extensionHost.app.windows[0].visibleViewComponents[0]
+            const codeEditor = extensionAPI.app.windows[0].visibleViewComponents[0]
             codeEditor.setDecorations(dt, [
                 {
                     range: new Range(1, 2, 3, 4),
                     backgroundColor: 'red',
                 },
             ])
-            await extensionHost.internal.sync()
+            await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
@@ -32,7 +32,7 @@ describe('CodeEditor (integration)', () => {
 
             // Clear the decorations and ensure they are removed.
             codeEditor.setDecorations(dt, [])
-            await extensionHost.internal.sync()
+            await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
@@ -42,10 +42,10 @@ describe('CodeEditor (integration)', () => {
         })
 
         it('merges decorations from several types', async () => {
-            const { services, extensionHost } = await integrationTestContext()
-            const [dt1, dt2] = [extensionHost.app.createDecorationType(), extensionHost.app.createDecorationType()]
+            const { services, extensionAPI } = await integrationTestContext()
+            const [dt1, dt2] = [extensionAPI.app.createDecorationType(), extensionAPI.app.createDecorationType()]
 
-            const codeEditor = extensionHost.app.windows[0].visibleViewComponents[0]
+            const codeEditor = extensionAPI.app.windows[0].visibleViewComponents[0]
             codeEditor.setDecorations(dt1, [
                 {
                     range: new Range(1, 2, 3, 4),
@@ -62,7 +62,7 @@ describe('CodeEditor (integration)', () => {
                     },
                 },
             ])
-            await extensionHost.internal.sync()
+            await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
@@ -92,7 +92,7 @@ describe('CodeEditor (integration)', () => {
                     },
                 },
             ])
-            await extensionHost.internal.sync()
+            await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
@@ -115,7 +115,7 @@ describe('CodeEditor (integration)', () => {
 
             // remove decorations for dt2, and verify that decorations for dt1 are still present
             codeEditor.setDecorations(dt2, [])
-            await extensionHost.internal.sync()
+            await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })
@@ -132,11 +132,11 @@ describe('CodeEditor (integration)', () => {
         })
 
         it('is backwards compatible with extensions that do not provide a decoration type', async () => {
-            const { services, extensionHost } = await integrationTestContext()
-            const dt = extensionHost.app.createDecorationType()
+            const { services, extensionAPI } = await integrationTestContext()
+            const dt = extensionAPI.app.createDecorationType()
 
             // Set some decorations and check they are present on the client.
-            const codeEditor = extensionHost.app.windows[0].visibleViewComponents[0]
+            const codeEditor = extensionAPI.app.windows[0].visibleViewComponents[0]
             codeEditor.setDecorations(dt, [
                 {
                     range: new Range(1, 2, 3, 4),
@@ -156,7 +156,7 @@ describe('CodeEditor (integration)', () => {
             ])
 
             // Both sets of decorations should be displayed
-            await extensionHost.internal.sync()
+            await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration
                     .getDecorations({ uri: 'file:///f' })

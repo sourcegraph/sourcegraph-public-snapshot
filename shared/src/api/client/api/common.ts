@@ -4,6 +4,7 @@ import { from, Observable, observable, Subscription } from 'rxjs'
 import { mergeMap } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
+import { syncSubscription } from '../../util'
 
 /**
  * When a Subscribable is returned from the other thread (wrapped with `proxySubscribable()`),
@@ -15,7 +16,7 @@ import { ProxySubscribable } from '../../extension/api/common'
 export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxySubscribable<T>>>): Observable<T> =>
     from(proxyPromise).pipe(
         mergeMap(
-            proxy =>
+            proxySubscribable =>
                 // tslint:disable-next-line: no-object-literal-type-assertion
                 ({
                     // Needed for Rx type check
@@ -26,9 +27,9 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                         // Always subscribe with an object because the other side
                         // is unable to tell if a Proxy is a function or an observer object
                         // (they always appear as functions)
-                        let observer: Parameters<(typeof proxy)['subscribe']>[0]
+                        let proxyObserver: Parameters<(typeof proxySubscribable)['subscribe']>[0]
                         if (typeof args[0] === 'function') {
-                            observer = {
+                            proxyObserver = {
                                 [proxyValueSymbol]: true,
                                 next: args[0] || noop,
                                 error: args[1] || noop,
@@ -36,19 +37,14 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                             }
                         } else {
                             const partialObserver = args[0] || {}
-                            observer = {
+                            proxyObserver = {
                                 [proxyValueSymbol]: true,
                                 next: partialObserver.next ? val => partialObserver.next(val) : noop,
                                 error: partialObserver.error ? err => partialObserver.error(err) : noop,
                                 complete: partialObserver.complete ? () => partialObserver.complete() : noop,
                             }
                         }
-                        const subscription = new Subscription()
-                        // tslint:disable-next-line: no-floating-promises
-                        proxy.subscribe(observer).then(s => {
-                            subscription.add(s)
-                        })
-                        return subscription
+                        return syncSubscription(proxySubscribable.subscribe(proxyObserver))
                     },
                 } as Subscribable<T>)
         )

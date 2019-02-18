@@ -1,6 +1,6 @@
 import * as clientType from '@sourcegraph/extension-api-types'
 import { ProxyInput, ProxyResult, proxyValue } from 'comlink'
-import { Subscription, Unsubscribable } from 'rxjs'
+import { Unsubscribable } from 'rxjs'
 import {
     DefinitionProvider,
     DocumentSelector,
@@ -13,6 +13,7 @@ import {
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
+import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
@@ -30,10 +31,7 @@ export class ExtLanguageFeatures {
                 hover => (hover ? fromHover(hover) : hover)
             )
         )
-        const subscription = new Subscription()
-        // tslint:disable-next-line:no-floating-promises
-        this.proxy.$registerHoverProvider(selector, providerFunction).then(s => subscription.add(s))
-        return subscription
+        return syncSubscription(this.proxy.$registerHoverProvider(selector, providerFunction))
     }
 
     public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
@@ -45,10 +43,7 @@ export class ExtLanguageFeatures {
                 toLocations
             )
         )
-        const subscription = new Subscription()
-        // tslint:disable-next-line:no-floating-promises
-        this.proxy.$registerDefinitionProvider(selector, providerFunction).then(s => subscription.add(s))
-        return subscription
+        return syncSubscription(this.proxy.$registerDefinitionProvider(selector, providerFunction))
     }
 
     public registerTypeDefinitionProvider(
@@ -63,20 +58,15 @@ export class ExtLanguageFeatures {
                 toLocations
             )
         )
-        const subscription = new Subscription()
-        // tslint:disable-next-line:no-floating-promises
-        this.proxy.$registerTypeDefinitionProvider(selector, providerFunction).then(s => subscription.add(s))
-        return subscription
+        return syncSubscription(this.proxy.$registerTypeDefinitionProvider(selector, providerFunction))
     }
 
     public registerImplementationProvider(
         selector: DocumentSelector,
         provider: ImplementationProvider
     ): Unsubscribable {
-        const subscription = new Subscription()
-        // tslint:disable-next-line:no-floating-promises
-        this.proxy
-            .$registerImplementationProvider(
+        return syncSubscription(
+            this.proxy.$registerImplementationProvider(
                 selector,
                 proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
                     toProxyableSubscribable(
@@ -88,8 +78,7 @@ export class ExtLanguageFeatures {
                     )
                 )
             )
-            .then(s => subscription.add(s))
-        return subscription
+        )
     }
 
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
@@ -105,10 +94,7 @@ export class ExtLanguageFeatures {
                 toLocations
             )
         )
-        const subscription = new Subscription()
-        // tslint:disable-next-line:no-floating-promises
-        this.proxy.$registerReferenceProvider(selector, providerFunction).then(s => subscription.add(s))
-        return subscription
+        return syncSubscription(this.proxy.$registerReferenceProvider(selector, providerFunction))
     }
 
     public registerLocationProvider(
@@ -124,12 +110,7 @@ export class ExtLanguageFeatures {
                 toLocations
             )
         )
-        const subscription = new Subscription()
-        // tslint:disable-next-line:no-floating-promises
-        this.proxy
-            .$registerLocationProvider(idStr, selector, proxyValue(providerFunction))
-            .then(s => subscription.add(s))
-        return subscription
+        return syncSubscription(this.proxy.$registerLocationProvider(idStr, selector, proxyValue(providerFunction)))
     }
 }
 

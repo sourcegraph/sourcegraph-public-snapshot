@@ -9,7 +9,7 @@ import { isPromise, isSubscribable } from '../../util'
  * Only allows full object Observers to avoid complex type checking against proxies.
  */
 export interface ProxySubscribable<T> extends ProxyValue {
-    subscribe(observer: ProxyResult<Observer<T> & ProxyValue>): Unsubscribable
+    subscribe(observer: ProxyResult<Observer<T> & ProxyValue>): Unsubscribable & ProxyValue
 }
 
 /**

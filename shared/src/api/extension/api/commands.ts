@@ -1,6 +1,7 @@
 import { ProxyResult, proxyValue } from 'comlink'
-import { Subscription, Unsubscribable } from 'rxjs'
+import { Unsubscribable } from 'rxjs'
 import { ClientCommandsAPI } from '../../client/api/commands'
+import { syncSubscription } from '../../util'
 
 interface CommandEntry {
     command: string
@@ -21,9 +22,6 @@ export class ExtCommands {
     }
 
     public registerCommand(entry: CommandEntry): Unsubscribable {
-        const subscription = new Subscription()
-        // tslint:disable-next-line: no-floating-promises
-        this.proxy.$registerCommand(entry.command, proxyValue(entry.callback)).then(s => subscription.add(s))
-        return subscription
+        return syncSubscription(this.proxy.$registerCommand(entry.command, proxyValue(entry.callback)))
     }
 }

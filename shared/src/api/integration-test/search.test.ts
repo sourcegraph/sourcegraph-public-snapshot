@@ -3,20 +3,32 @@ import { integrationTestContext } from './testHelpers'
 
 describe('search (integration)', () => {
     test('registers a query transformer', async () => {
-        const { services, extensionHost } = await integrationTestContext()
+        const { services, extensionAPI } = await integrationTestContext()
 
         // Register the provider and call it
-        const unsubscribe = extensionHost.search.registerQueryTransformer({ transformQuery: () => 'bar' })
-        await extensionHost.internal.sync()
+        extensionAPI.search.registerQueryTransformer({
+            transformQuery: () => 'bar',
+        })
+        await extensionAPI.internal.sync()
         expect(
             await services.queryTransformer
                 .transformQuery('foo')
                 .pipe(take(1))
                 .toPromise()
         ).toEqual('bar')
+    })
 
+    test('unregisters a query transformer', async () => {
+        const { services, extensionAPI } = await integrationTestContext()
+
+        // Register the provider and call it
+        const subscription = extensionAPI.search.registerQueryTransformer({
+            transformQuery: () => 'bar',
+        })
+        await extensionAPI.internal.sync()
         // Unregister the provider and ensure it's removed.
-        unsubscribe.unsubscribe()
+        subscription.unsubscribe()
+        await extensionAPI.internal.sync()
         expect(
             await services.queryTransformer
                 .transformQuery('foo')
@@ -26,12 +38,12 @@ describe('search (integration)', () => {
     })
 
     test('supports multiple query transformers', async () => {
-        const { services, extensionHost } = await integrationTestContext()
+        const { services, extensionAPI } = await integrationTestContext()
 
         // Register the provider and call it
-        extensionHost.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} bar` })
-        extensionHost.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} qux` })
-        await extensionHost.internal.sync()
+        extensionAPI.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} bar` })
+        extensionAPI.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} qux` })
+        await extensionAPI.internal.sync()
         expect(
             await services.queryTransformer
                 .transformQuery('foo')

@@ -10122,6 +10122,11 @@ mermaid@^8.0.0:
     moment "^2.23.0"
     scope-css "^1.2.1"
 
+message-port-polyfill@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/message-port-polyfill/-/message-port-polyfill-0.1.0.tgz#0d6c9201e5e15301f36930c4b7fe0a56c17bc7a7"
+  integrity sha512-CKP0YTyLUnGZU+1SCqIm/QFE/oqo0oA4mLTb6BWSx5/YPlvlut32dpmYSr8u55xqAzy89Tc9X7bMdSwXtZJ2Ew==
+
 methods@~1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/methods/-/methods-1.1.2.tgz#5529a4d67654134edcc5266656835b0f851afcee"
