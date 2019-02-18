@@ -278,7 +278,7 @@ var (
 
 func upsertRepoColumnValues(r *Repo) *sqlf.Query {
 	return sqlf.Sprintf(
-		"("+strings.Repeat("%s ", len(upsertRepoColumnNames))+")",
+		"("+strings.Repeat("%s, ", len(upsertRepoColumnNames)-1)+"%s)",
 		r.Name,
 		r.Description,
 		r.Language,
