@@ -13,7 +13,7 @@ import (
 
 // A Store exposes methods to read and write persistent repositories.
 type Store interface {
-	ListRepos(ctx context.Context) ([]*Repo, error)
+	ListRepos(ctx context.Context, names ...string) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 }
 
@@ -89,29 +89,51 @@ func (s *DBStore) Done(errs ...*error) {
 	}
 }
 
-// ListRepos lists all stored repos having any of the configured source kinds (via the constructor)
-// as captured by the external_service_type column AND repos belonging to some source.
-func (s DBStore) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	return repos, s.paginate(ctx, &repos, listReposQuery(s.kinds))
+// ListRepos lists all stored repos that are not deleted, have one of the configured
+// external service kind and have any sources defined OR their name is one of the given
+// names.
+func (s DBStore) ListRepos(ctx context.Context, names ...string) (repos []*Repo, err error) {
+	return repos, s.paginate(ctx, &repos, listReposQuery(s.kinds, names))
 }
 
 const listReposQueryFmtstr = `
+-- cmd/repo-updater/repos/store.go:DBStore.ListRepos
 SELECT id, name, description, language, created_at, updated_at, deleted_at,
   external_id, external_service_type, external_service_id, enabled, archived, fork
-FROM repo WHERE id > %s AND %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %s`
+  ARRAY(SELECT jsonb_object_keys(sources)) as sources, metadata
+FROM repo
+WHERE id > %s
+AND deleted_at IS NULL
+AND %s
+AND external_service_type IN (%s)
+AND (sources != '{}' OR %s)
+ORDER BY id ASC LIMIT %s`
 
-func listReposQuery(kinds []string) paginatedQuery {
-	qs := make([]*sqlf.Query, 0, len(kinds))
-	for _, kind := range kinds {
-		qs = append(qs, sqlf.Sprintf("%s", strings.ToUpper(kind)))
+func listReposQuery(kinds, names []string) paginatedQuery {
+	kq := sqlf.Sprintf("TRUE")
+	if len(kinds) > 0 {
+		ks := make([]*sqlf.Query, 0, len(kinds))
+		for _, kind := range kinds {
+			ks = append(ks, sqlf.Sprintf("%s", strings.ToUpper(kind)))
+		}
+		kq = sqlf.Sprintf("external_service_type IN (%s)", sqlf.Join(ks, ","))
 	}
-	q := sqlf.Join(qs, ",")
+
+	nq := sqlf.Sprintf("FALSE")
+	if len(names) > 0 {
+		ns := make([]*sqlf.Query, 0, len(names))
+		for _, name := range names {
+			ns = append(ns, sqlf.Sprintf("%s", name))
+		}
+		nq = sqlf.Sprintf("name IN (%s)", sqlf.Join(ns, ",\n"))
+	}
 
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listReposQueryFmtstr,
 			cursor,
-			q,
+			kq,
+			nq,
 			limit,
 		)
 	}
