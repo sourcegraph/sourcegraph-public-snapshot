@@ -39,7 +39,7 @@ type Repo struct {
 	// Sources identifies all the source IDs this Repo belongs to.
 	Sources []string
 	// Metadata contains the raw source code host JSON metadata.
-	Metadata []byte
+	Metadata interface{}
 }
 
 // IDs returns the globally unique identifiers of a repository.

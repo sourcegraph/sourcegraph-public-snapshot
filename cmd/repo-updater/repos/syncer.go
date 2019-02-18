@@ -1,8 +1,8 @@
 package repos
 
 import (
-	"bytes"
 	"context"
+	"reflect"
 	"sort"
 	"time"
 
@@ -145,7 +145,7 @@ func (Syncer) diff(sourced, stored []*Repo) Diff {
 			(b.ExternalRepo == api.ExternalRepoSpec{} &&
 				b.ExternalRepo != a.ExternalRepo) ||
 			!equal(b.Sources, a.Sources) ||
-			!bytes.Equal(b.Metadata, a.Metadata)
+			!reflect.DeepEqual(b.Metadata, a.Metadata)
 	})
 }
 
