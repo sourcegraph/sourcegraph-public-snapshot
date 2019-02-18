@@ -351,11 +351,11 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 examples={[
                                     {
                                         description: 'Search in JavaScript files',
-                                        value: '`javascript`',
+                                        value: 'javascript',
                                     },
                                     {
                                         description: 'Search in Go files',
-                                        value: '`go`',
+                                        value: 'go',
                                     },
                                 ]}
                             />

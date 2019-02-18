@@ -40,22 +40,14 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
- *
- * @param inlineCode whether to use inlineCode mode, which suppresses the default behavior of wrapping elements in <p> tags,
- * and does not use GitHub flavored markdown or code highlighting.
  */
-export const renderMarkdown = (markdown: string, inlineCode?: boolean): string => {
-    const rendered = !!inlineCode
-        ? marked.inlineLexer(markdown, [], {
-              breaks: true,
-              sanitize: false,
-          })
-        : marked(markdown, {
-              gfm: true,
-              breaks: true,
-              sanitize: false,
-              highlight: (code, language) => highlightCodeSafe(code, language),
-          })
+export const renderMarkdown = (markdown: string): string => {
+    const rendered = marked(markdown, {
+        gfm: true,
+        breaks: true,
+        sanitize: false,
+        highlight: (code, language) => highlightCodeSafe(code, language),
+    })
     return sanitize(rendered, {
         // Defaults: https://sourcegraph.com/github.com/punkave/sanitize-html@90aac2665011be6fa21a8864d21c604ee984294f/-/blob/src/index.js#L571-589
 

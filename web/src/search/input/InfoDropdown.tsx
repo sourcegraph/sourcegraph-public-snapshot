@@ -59,7 +59,7 @@ export class InfoDropdown extends React.Component<Props, State> {
                                                 <span className="text-muted small">{ex.description}: </span>
                                                 <code
                                                     dangerouslySetInnerHTML={{
-                                                        __html: renderMarkdown(ex.value, true),
+                                                        __html: ex.value,
                                                     }}
                                                 />
                                             </div>
