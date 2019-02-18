@@ -77,7 +77,7 @@ func (s Syncer) Sync(ctx context.Context) (_ Diff, err error) {
 	}
 
 	var stored Repos
-	if stored, err = store.ListRepos(ctx); err != nil {
+	if stored, err = store.ListRepos(ctx, sourced.Names()...); err != nil {
 		return Diff{}, err
 	}
 
