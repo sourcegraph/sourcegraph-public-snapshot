@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+const path = require('path')
+
+const tsNode = require('ts-node')
+tsNode.register()
+
+const scriptPath = process.argv[2]
+const script = require(path.join(process.cwd(), scriptPath))
+script.main(process.argv.slice(3))
