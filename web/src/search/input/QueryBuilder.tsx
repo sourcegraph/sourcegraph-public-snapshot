@@ -67,6 +67,62 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         }
     }
 
+    private onInputChange = (key: keyof QueryBuilderState['fields']) => (
+        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        event.persist()
+        this.setState(({ fields }) => {
+            const newFields = { ...fields, [key]: event.target.value }
+
+            const fieldsQueryParts: string[] = []
+            for (const [inputField, inputValue] of Object.entries(newFields)) {
+                if (inputValue !== '') {
+                    if (inputField === 'patterns') {
+                        // Patterns should be added to the query as-is.
+                        fieldsQueryParts.push(inputValue)
+                    } else if (inputField === 'exactMatch') {
+                        // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
+                        fieldsQueryParts.push(formatFieldForQuery('', inputValue))
+                    } else if (inputField === 'type' && inputValue === 'code') {
+                        // code searches don't need to be specified.
+                        continue
+                    } else {
+                        fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+                    }
+                }
+            }
+
+            return { fields: newFields, builderQuery: fieldsQueryParts.join(' ') }
+        })
+    }
+
+    private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        this.onInputChange('type')(event)
+
+        const searchType = event.target.value
+        if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
+            this.setState({ typeOfSearch: searchType })
+        } else {
+            this.setState({ typeOfSearch: 'code' })
+        }
+    }
+
+    private fieldsChanged = {
+        type: this.onTypeChange,
+        repo: this.onInputChange('repo'),
+        file: this.onInputChange('file'),
+        language: this.onInputChange('language'),
+        patterns: this.onInputChange('patterns'),
+        exactMatch: this.onInputChange('exactMatch'),
+        case: this.onInputChange('case'),
+        author: this.onInputChange('author'),
+        after: this.onInputChange('after'),
+        before: this.onInputChange('before'),
+        message: this.onInputChange('message'),
+        count: this.onInputChange('count'),
+        timeout: this.onInputChange('timeout'),
+    }
+
     public componentDidUpdate(prevProps: Props, prevState: QueryBuilderState): void {
         if (prevState.builderQuery !== this.state.builderQuery) {
             this.props.onFieldsQueryChange(this.state.builderQuery)
@@ -116,7 +172,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                             {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
                                 <>
                                     <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
+                                        onInputChange={this.fieldsChanged}
                                         placeholder="alice"
                                         title="Author"
                                         description="Only include results from diffs or commits authored by a user."
@@ -135,7 +191,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         ]}
                                     />
                                     <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
+                                        onInputChange={this.fieldsChanged}
                                         placeholder="1 year ago"
                                         title="Before"
                                         description="Only include results from diffs or commits before a specified time."
@@ -149,7 +205,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         ]}
                                     />
                                     <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
+                                        onInputChange={this.fieldsChanged}
                                         placeholder="6 months ago"
                                         title="After"
                                         description="Only include results from diffs or commits after a specified time."
@@ -163,7 +219,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         ]}
                                     />
                                     <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
+                                        onInputChange={this.fieldsChanged}
                                         placeholder="fix: typo"
                                         title="Message"
                                         description="Only include results from diffs which have commit messages containing the string."
@@ -186,7 +242,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 <hr className="query-builder__rule" />
                             </div>
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
+                                onInputChange={this.fieldsChanged}
                                 placeholder="(open|close) file"
                                 title="Patterns"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
@@ -205,7 +261,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 ]}
                             />
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
+                                onInputChange={this.fieldsChanged}
                                 placeholder="system error 123"
                                 title="Exact string"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
@@ -214,14 +270,14 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 examples={[{ description: 'Search for "security risk"', value: 'security risk' }]}
                             />
                             <div className="query-builder__row">
-                                <label className="query-builder__row-label" htmlFor="query-builder__case">
+                                <label className="query-builder__row-label" htmlFor="query-builder-case">
                                     Case sensitive:
                                 </label>
                                 <div className="query-builder__row-input">
                                     <Select
-                                        id="query-builder__case"
+                                        id="query-builder-case"
                                         className="form-control query-builder__input"
-                                        onChange={this.onTypeChange}
+                                        onChange={this.onCaseChange}
                                     >
                                         <option value="no" defaultChecked={true}>
                                             No
@@ -240,7 +296,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                         </div>
                         <div className="query-builder__section query-builder__section--purple">
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
+                                onInputChange={this.fieldsChanged}
                                 placeholder="org/repo"
                                 dotComPlaceholder="github.com/org/"
                                 title="Repositories"
@@ -264,7 +320,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 ]}
                             />
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
+                                onInputChange={this.fieldsChanged}
                                 placeholder="\.js$"
                                 title="File paths"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
@@ -286,7 +342,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 ]}
                             />
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
+                                onInputChange={this.fieldsChanged}
                                 placeholder="typescript"
                                 title="Language"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
@@ -295,11 +351,11 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 examples={[
                                     {
                                         description: 'Search in JavaScript files',
-                                        value: '`javascript`',
+                                        value: 'javascript',
                                     },
                                     {
                                         description: 'Search in Go files',
-                                        value: '`go`',
+                                        value: 'go',
                                     },
                                 ]}
                             />
@@ -317,46 +373,11 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
 
     private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault()
-        this.setState({ showQueryBuilder: !this.state.showQueryBuilder })
-    }
-    private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        this.onInputChange('type')(event)
-
-        const searchType = event.target.value
-        if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
-            this.setState({ typeOfSearch: searchType })
-        } else {
-            this.setState({ typeOfSearch: 'code' })
-        }
+        this.setState(prevState => ({ showQueryBuilder: !prevState.showQueryBuilder }))
     }
 
-    private onInputChange = (key: keyof QueryBuilderState['fields']) => (
-        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        event.persist()
-        this.setState(({ fields }) => {
-            const newFields = { ...fields, [key]: event.target.value }
-
-            const fieldsQueryParts: string[] = []
-            for (const [inputField, inputValue] of Object.entries(newFields)) {
-                if (inputValue !== '') {
-                    if (inputField === 'patterns') {
-                        // Patterns should be added to the query as-is.
-                        fieldsQueryParts.push(inputValue)
-                    } else if (inputField === 'exactMatch') {
-                        // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
-                        fieldsQueryParts.push(formatFieldForQuery('', inputValue))
-                    } else if (inputField === 'type' && inputValue === 'code') {
-                        // code searches don't need to be specified.
-                        continue
-                    } else {
-                        fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
-                    }
-                }
-            }
-
-            return { fields: newFields, builderQuery: fieldsQueryParts.join(' ') }
-        })
+    private onCaseChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        this.onInputChange('case')(event)
     }
 }
 

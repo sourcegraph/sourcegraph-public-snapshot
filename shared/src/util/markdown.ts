@@ -68,35 +68,3 @@ export const renderMarkdown = (markdown: string): string => {
         },
     })
 }
-
-/**
- * Renders the given markdown to HTML, while sanitizing dangerous HTML.
- * This function suppresses the default behavior of wrapping elements in <p> tags,
- * and does not include GitHub flavored markdown or code highlighting.
- * Can throw an exception on parse errors.
- */
-export const renderInlineMarkdown = (markdown: string): string => {
-    const rendered = marked.inlineLexer(markdown, [], {
-        breaks: true,
-        sanitize: false,
-    })
-    return sanitize(rendered, {
-        // Defaults: https://sourcegraph.com/github.com/punkave/sanitize-html@90aac2665011be6fa21a8864d21c604ee984294f/-/blob/src/index.js#L571-589
-
-        // Allow highligh.js styles, e.g.
-        // <span class="hljs-keyword">
-        // <code class="language-javascript">
-        allowedTags: [...without(sanitize.defaults.allowedTags, 'iframe'), 'h1', 'h2', 'span', 'img'],
-        allowedAttributes: {
-            ...sanitize.defaults.allowedAttributes,
-            span: ['class'],
-            code: ['class'],
-            h1: ['id'],
-            h2: ['id'],
-            h3: ['id'],
-            h4: ['id'],
-            h5: ['id'],
-            h6: ['id'],
-        },
-    })
-}
