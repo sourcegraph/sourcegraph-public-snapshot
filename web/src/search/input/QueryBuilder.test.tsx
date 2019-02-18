@@ -30,6 +30,18 @@ describe('QueryBuilder', () => {
         expect(onChange.calledWith('file:web')).toBe(true)
     })
 
+    it('fires the onFieldsQueryChange prop handler with the `case:` filter when updating the "Case" field', () => {
+        const onChange = sinon.spy()
+        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+
+        const fileField = container.querySelector('#query-builder-file')!
+        fireEvent.change(fileField, { target: { value: 'web' } })
+        expect(onChange.calledOnce).toBe(true)
+        expect(onChange.calledWith('file:web')).toBe(true)
+    })
+
     it('fires the onFieldsQueryChange prop handler with the patterns left untransformed when updating the "Patterns" field', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
