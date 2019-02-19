@@ -56,10 +56,16 @@ func TestDiff(t *testing.T) {
 			// This test case is covering the scenario when a repo had a name and got
 			// an external_id with the latest sync. In this case, we want to merge those
 			// two repos into one with the external_id set.
-			name:   "duplicates with different IDs are merged correctly",
+			name:   "duplicate with a second ID is merged correctly",
 			before: []Diffable{diffable{K: 1, V: "foo"}},
 			after:  []Diffable{diffable{K: 1, K2: "second id", V: "foo"}},
 			diff:   Diff{Modified: []Diffable{diffable{K: 1, K2: "second id", V: "foo"}}},
+		},
+		{
+			name:   "duplicate with a single common ID is merged correctly",
+			before: []Diffable{diffable{K: 1, V: "foo", V2: "bar"}},
+			after:  []Diffable{diffable{K: 2, V: "foo"}},
+			diff:   Diff{Modified: []Diffable{diffable{K: 2, V: "foo"}}},
 		},
 		{
 			name:   "unmodified preserves before diffable",
