@@ -43,7 +43,7 @@ $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/fronte
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
 $onlyBuildDevSymbols && {
     set -e
-    ./dev/ts-script cmd/symbols/build.ts buildDockerImage --dockerImageName dev-symbols
+    ./dev/ts-script cmd/symbols/build.ts buildSymbolsDockerImage --dockerImageName dev-symbols
     [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
     exit
 }

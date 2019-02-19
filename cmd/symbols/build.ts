@@ -22,13 +22,13 @@ export function main(argv: string[]): void {
             args: { buildType: string }
         ) => void)
         .command(
-            'buildDockerImage',
+            'buildSymbolsDockerImage',
             'Builds the symbols Docker image.',
             {
                 dockerImageName: { type: 'string', demand: true },
                 buildType,
             },
-            buildDockerImage as (args: { dockerImageName: string; buildType: string }) => void
+            buildSymbolsDockerImage as (args: { dockerImageName: string; buildType: string }) => void
         )
         .command('buildLibsqlite3Pcre', 'Builds libsqlite3-pcre at the repository root.', {}, buildLibsqlite3Pcre)
         .demandCommand(1, 'You have to specify a command.')
@@ -191,7 +191,7 @@ function runExecutable({ buildType }: { buildType: BuildType }): void {
     const libsqlite3PcrePath = buildLibsqlite3Pcre()
     const outputPath = path.join(repositoryRoot, '.bin/symbols')
     buildExecutable({ outputPath, buildType })
-    buildDockerImage({ dockerImageName: 'dev-symbols', buildType: 'dev' })
+    buildSymbolsDockerImage({ dockerImageName: 'dev-symbols', buildType: 'dev' })
     shell.env['LIBSQLITE3_PCRE'] = libsqlite3PcrePath
     shell.env['CTAGS_COMMAND'] = shell.env['CTAGS_COMMAND'] || 'cmd/symbols/universal-ctags-dev'
     shell.env['CTAGS_PROCESSES'] = shell.env['CTAGS_PROCESSES'] || '1'
@@ -201,7 +201,13 @@ function runExecutable({ buildType }: { buildType: BuildType }): void {
 /**
  * Builds the symbols Docker image.
  */
-function buildDockerImage({ dockerImageName, buildType }: { dockerImageName: string; buildType: BuildType }): void {
+function buildSymbolsDockerImage({
+    dockerImageName,
+    buildType,
+}: {
+    dockerImageName: string
+    buildType: BuildType
+}): void {
     const muslGcc = muslGccByPlatform[os.platform()]
     if (!muslGcc) {
         console.log(`Unsupported OS platform ${os.platform()}`)

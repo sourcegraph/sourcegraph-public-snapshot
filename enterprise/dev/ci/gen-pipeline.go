@@ -136,7 +136,7 @@ func main() {
 
 		getBuildScript := func() string {
 			buildScriptByApp := map[string]string{
-				"symbols": fmt.Sprintf("./dev/ts-script cmd/symbols/build.ts buildDockerImage --buildType dist --dockerImageName %s", image+":"+version),
+				"symbols": fmt.Sprintf("./dev/ts-script cmd/symbols/build.ts buildSymbolsDockerImage --buildType dist --dockerImageName %s", image+":"+version),
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript
