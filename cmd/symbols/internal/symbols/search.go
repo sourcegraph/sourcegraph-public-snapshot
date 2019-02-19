@@ -4,10 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -101,22 +98,15 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.cache.Open(ctx, fmt.Sprintf("%d-%s@%s", symbolsDBVersion, args.Repo, args.CommitID), func(fetcherCtx context.Context) (io.ReadCloser, error) {
-		tempDBFile, err := ioutil.TempFile("", "")
-		if err != nil {
-			return nil, err
-		}
-		defer os.Remove(tempDBFile.Name())
-
-		err = s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile.Name(), args.Repo, args.CommitID)
+	diskcacheFile, err := s.cache.OpenWithPath(ctx, fmt.Sprintf("%d-%s@%s", symbolsDBVersion, args.Repo, args.CommitID), func(fetcherCtx context.Context, tempDBFile string) error {
+		err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
 		if err != nil {
 			if err == context.Canceled {
 				log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
 			}
-			return nil, err
+			return err
 		}
-
-		return tempDBFile, nil
+		return nil
 	})
 	if err != nil {
 		return "", err
