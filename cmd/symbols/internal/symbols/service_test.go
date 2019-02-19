@@ -1,10 +1,6 @@
 package symbols
 
 import (
-	"path"
-	"strings"
-	"os/exec"
-	"path/filepath"
 	"archive/tar"
 	"bytes"
 	"context"
@@ -12,7 +8,11 @@ import (
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"database/sql"
