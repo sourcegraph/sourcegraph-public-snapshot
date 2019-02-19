@@ -63,7 +63,7 @@ This is a streamlined setup for Mac machines.
 3.  Install Go, Node, PostgreSQL 9.6, Redis, Git, nginx, and a musl C compiler with musl with the following command:
 
     ```
-    brew install go node redis postgresql@11 git gnu-sed nginx musl-cross
+    brew install go node redis postgresql@11 git gnu-sed nginx FiloSottile/musl-cross/musl-cross
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically

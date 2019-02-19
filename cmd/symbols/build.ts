@@ -43,7 +43,7 @@ interface MuslGcc {
 const muslGccByPlatform: { [platform in NodeJS.Platform]?: MuslGcc } = {
     darwin: {
         command: 'x86_64-linux-musl-gcc',
-        installationHelp: 'Run `brew install musl-cross`.',
+        installationHelp: 'Run `brew install FiloSottile/musl-cross/musl-cross`.',
     },
     linux: {
         command: 'musl-gcc',
