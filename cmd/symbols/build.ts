@@ -178,6 +178,7 @@ function buildLibsqlite3Pcre(): string {
     run('git', 'checkout', 'c98da412b431edb4db22d3245c99e6c198d49f7a')
     runShell(buildCommand)
     shelljs.popd('-q')
+    shelljs.rm('-rf', sqlite3PcreRepositoryDirectory)
     console.log(`Building ${libsqlite3PcrePath}... done`)
 
     return libsqlite3PcrePath
@@ -188,7 +189,7 @@ function buildLibsqlite3Pcre(): string {
  */
 function runExecutable({ buildType }: { buildType: BuildType }): void {
     const libsqlite3PcrePath = buildLibsqlite3Pcre()
-    const outputPath = tmp.tmpNameSync({ prefix: 'symbols' })
+    const outputPath = path.join(repositoryRoot, '.bin/symbols')
     buildExecutable({ outputPath, buildType })
     buildDockerImage({ dockerImageName: 'dev-symbols', buildType: 'dev' })
     shell.env['LIBSQLITE3_PCRE'] = libsqlite3PcrePath
@@ -227,5 +228,6 @@ function buildDockerImage({ dockerImageName, buildType }: { dockerImageName: str
 
     console.log(`Building the ${dockerImageName} Docker image...`)
     run('docker', 'build', '--quiet', '-f', 'cmd/symbols/Dockerfile', '-t', dockerImageName, dockerBuildContext)
+    shelljs.rm('-rf', dockerBuildContext)
     console.log(`Building the ${dockerImageName} Docker image... done`)
 }
