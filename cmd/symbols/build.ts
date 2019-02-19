@@ -31,6 +31,12 @@ export function main(argv: string[]): void {
             buildSymbolsDockerImage as (args: { dockerImageName: string; buildType: string }) => void
         )
         .command('buildLibsqlite3Pcre', 'Builds libsqlite3-pcre at the repository root.', {}, buildLibsqlite3Pcre)
+        .command(
+            'buildCtagsDockerImage',
+            'Builds the ctags Docker image.',
+            { dockerImageName: { type: 'string', demand: true } },
+            buildCtagsDockerImage
+        )
         .demandCommand(1, 'You have to specify a command.')
         .strict()
         .usage('./dev/ts-script cmd/symbols/build.ts <command>')
@@ -191,7 +197,7 @@ function runExecutable({ buildType }: { buildType: BuildType }): void {
     const libsqlite3PcrePath = buildLibsqlite3Pcre()
     const outputPath = path.join(repositoryRoot, '.bin/symbols')
     buildExecutable({ outputPath, buildType })
-    buildSymbolsDockerImage({ dockerImageName: 'dev-symbols', buildType: 'dev' })
+    buildCtagsDockerImage({ dockerImageName: 'ctags' })
     shell.env['LIBSQLITE3_PCRE'] = libsqlite3PcrePath
     shell.env['CTAGS_COMMAND'] = shell.env['CTAGS_COMMAND'] || 'cmd/symbols/universal-ctags-dev'
     shell.env['CTAGS_PROCESSES'] = shell.env['CTAGS_PROCESSES'] || '1'
@@ -230,10 +236,35 @@ function buildSymbolsDockerImage({
     const symbolsOut = path.join(dockerBuildContext, 'symbols')
     buildExecutable({ outputPath: symbolsOut, buildType })
 
+    buildCtagsDockerImage({ dockerImageName: 'ctags' })
+
     shelljs.cp('-R', 'cmd/symbols/.ctags.d', dockerBuildContext)
 
     console.log(`Building the ${dockerImageName} Docker image...`)
     run('docker', 'build', '--quiet', '-f', 'cmd/symbols/Dockerfile', '-t', dockerImageName, dockerBuildContext)
+    shelljs.rm('-rf', dockerBuildContext)
+    console.log(`Building the ${dockerImageName} Docker image... done`)
+}
+
+/**
+ * Builds the ctags Docker image.
+ */
+function buildCtagsDockerImage({ dockerImageName }: { dockerImageName: string }): void {
+    const dockerBuildContext = tmp.dirSync().name
+
+    shelljs.cp('-R', 'cmd/symbols/.ctags.d', dockerBuildContext)
+
+    console.log(`Building the ${dockerImageName} Docker image...`)
+    run(
+        'docker',
+        'build',
+        '--quiet',
+        '-f',
+        'cmd/symbols/internal/pkg/ctags/Dockerfile',
+        '-t',
+        dockerImageName,
+        dockerBuildContext
+    )
     shelljs.rm('-rf', dockerBuildContext)
     console.log(`Building the ${dockerImageName} Docker image... done`)
 }

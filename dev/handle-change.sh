@@ -6,7 +6,6 @@ generate_schema=false
 cmdlist=""
 all_cmds=false
 failed=false
-onlyBuildDevSymbols=false
 
 for i; do
 	case $i in
@@ -16,11 +15,9 @@ for i; do
 	schema/*.json)
 		generate_schema=true
 		;;
-    cmd/symbols/.ctags.d/*)
-        onlyBuildDevSymbols=true
-        ;;
-    cmd/symbols/Dockerfile)
-        onlyBuildDevSymbols=true
+    cmd/symbols/*)
+        [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
+        exit
         ;;
 	cmd/*)
 		cmd=${i#cmd/}
@@ -41,12 +38,6 @@ done
 
 $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
-$onlyBuildDevSymbols && {
-    set -e
-    ./dev/ts-script cmd/symbols/build.ts buildSymbolsDockerImage --dockerImageName dev-symbols
-    [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
-    exit
-}
 
 if $all_cmds; then
 	rebuilt=$(./dev/go-install.sh -v | tr '\012' ' ')
