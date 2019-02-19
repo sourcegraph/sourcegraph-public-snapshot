@@ -70,7 +70,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText
                             if (codeContent) {
                                 return highlightCode({
-                                    code: decode(codeContent),
+                                    code: codeContent,
                                     fuzzyLanguage: lang,
                                     disableTimeout: false,
                                     isLightTheme: this.props.isLightTheme,
