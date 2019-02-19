@@ -117,7 +117,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 					err = callback(entryToSymbol(e))
 					if err != nil {
 						cancel()
-						log15.Error(err.Error())
+						log15.Error("Failed to add symbol", "symbol", e, "error", err)
 						return
 					}
 				}
