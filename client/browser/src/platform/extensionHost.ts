@@ -28,13 +28,30 @@ export function createExtensionHost(): Observable<EndpointPair> {
 }
 
 function endpointFromPort(port: chrome.runtime.Port): MessagePort {
+    const listeners = new Map<(event: MessageEvent) => any, (message: object, port: chrome.runtime.Port) => void>()
     return MessageChannelAdapter.wrap({
-        send: data => port.postMessage(data),
-        addEventListener: (event, listener) => {
-            port.onMessage.addListener(listener as any)
+        send(data): void {
+            port.postMessage(data)
         },
-        removeEventListener: (event, listener) => {
-            port.onMessage.removeListener(listener as any)
+        addEventListener(event, messageListener): void {
+            if (event !== 'message') {
+                return
+            }
+            const chromePortListener = (data: object) => {
+                messageListener.call(this, new MessageEvent('message', { data }))
+            }
+            listeners.set(messageListener, chromePortListener)
+            port.onMessage.addListener(chromePortListener)
+        },
+        removeEventListener(event, messageListener): void {
+            if (event !== 'message') {
+                return
+            }
+            const chromePortListener = listeners.get(messageListener)
+            if (!chromePortListener) {
+                return
+            }
+            port.onMessage.removeListener(chromePortListener)
         },
     })
 }
