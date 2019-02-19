@@ -408,22 +408,22 @@ endpointPairs.subscribe(({ proxy, expose }) => {
         proxy: clientAPIChannel.port2,
         expose: extensionHostAPIChannel.port2,
     }
-    worker.postMessage(workerEndpoints, Object.values(workerEndpoints))
+    worker.postMessage({ endpoints: workerEndpoints, wrapEndpoints: true }, Object.values(workerEndpoints))
     // Connect proxy client endpoint
     extensionHostAPIChannel.port1.start()
     proxy.onMessage.addListener(message => {
         extensionHostAPIChannel.port1.postMessage(message)
     })
-    extensionHostAPIChannel.port1.addEventListener('message', message => {
-        proxy.postMessage(message)
+    extensionHostAPIChannel.port1.addEventListener('message', ({ data }) => {
+        proxy.postMessage({ data })
     })
     // Connect expose client endpoint
     clientAPIChannel.port1.start()
     expose.onMessage.addListener(message => {
         clientAPIChannel.port1.postMessage(message)
     })
-    clientAPIChannel.port1.addEventListener('message', message => {
-        expose.postMessage(message)
+    clientAPIChannel.port1.addEventListener('message', ({ data }) => {
+        expose.postMessage({ data })
     })
     // Kill worker when either port disconnects
     proxy.onDisconnect.addListener(() => worker.terminate())

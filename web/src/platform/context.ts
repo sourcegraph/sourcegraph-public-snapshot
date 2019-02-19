@@ -69,7 +69,7 @@ export function createPlatformContext(): PlatformContext {
                     proxy: clientAPIChannel.port2,
                     expose: extensionHostAPIChannel.port2,
                 }
-                worker.postMessage(workerEndpoints, Object.values(workerEndpoints))
+                worker.postMessage({ endpoints: workerEndpoints, wrapEndpoints: false }, Object.values(workerEndpoints))
                 const clientEndpoints: EndpointPair = {
                     proxy: extensionHostAPIChannel.port1,
                     expose: clientAPIChannel.port1,

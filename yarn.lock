@@ -1488,10 +1488,10 @@
     rxjs "^6.3.3"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/comlink@^3.1.1-fork.1":
-  version "3.1.1-fork.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.1.tgz#f25038679879b8dc52f226e9239d39be52035255"
-  integrity sha512-XY8N5UU9FMdDRk5O8x4q5RsGOg8ZtPuii1u9d47+Xs5xMlRFePT2e1ixqOjtHUcGZUTzY+eta5vCDJZrMKxyLw==
+"@sourcegraph/comlink@^3.1.1-fork.2":
+  version "3.1.1-fork.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.2.tgz#e43da5b82569833dc86f5f0b0ea57bf479e201cf"
+  integrity sha512-osFwZuneOC6VK8dGf0ucQTg7/e+P4nijHAB5uu0X+3wDpo4qcVlP5l2bdLkORWNqASW3GR/bdfXcMfsXxNyj4A==
 
 "@sourcegraph/event-positions@^1.0.1":
   version "1.0.1"
