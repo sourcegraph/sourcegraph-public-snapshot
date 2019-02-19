@@ -82,15 +82,18 @@ It is not used for patch releases.
     - [ ] Wait for Renovate to open a PR to update the image tags and merge that PR ([example](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)).
     - [ ] Create the `MAJOR.MINOR` release branch from this commit.
     - [ ] Tag the `vMAJOR.MINOR.0` release at this commit.
-
-## On or before release day (YYYY-MM-DD)
-
-- [ ] **HH:MM AM/PM PT** Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
-- [ ] Update the documented version of Sourcegraph ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/701780fefa5809abb16669c9fb29738ec3bb2039)).
+- [ ] Open (but do not merge) PRs that do the following:
+    - [ ] Update the documented version of Sourcegraph ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/701780fefa5809abb16669c9fb29738ec3bb2039)).
     ```
     find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +
     ```
-- [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
-- [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/pull/8))
+    - [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
+    - [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/pull/8))
 - [ ] Review all issues in the release milestone. Backlog things that didn't make it into the release and ping issues that still need to be done for the release (e.g. Tweets, marketing).
+
+## On or before release day (YYYY-MM-DD)
+
+- [ ] Merge the docs PRs created in the previous step.
+- [ ] **HH:MM AM/PM PT** Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
 - [ ] Close this issue.
+- [ ] Close the milestone.
