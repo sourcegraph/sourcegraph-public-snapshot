@@ -152,11 +152,21 @@ function buildExecutable({ outputPath, buildType }: { outputPath: string; buildT
 function buildLibsqlite3Pcre({ outputPath }: { outputPath: string }): void {
     const sqlite3PcreRepositoryDirectory = tmp.dirSync().name
 
+    const buildCommandByPlatform: { [platform in NodeJS.Platform]?: string } = {
+        darwin: `gcc -fno-common -dynamiclib pcre.c -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre)`,
+        linux: `gcc -shared -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs`,
+    }
+    const buildCommand = buildCommandByPlatform[os.platform()]
+    if (!buildCommand) {
+        console.log(`Unsupported OS platform ${os.platform()}`)
+        process.exit(1)
+        return
+    }
+
     run('git', 'clone', 'https://github.com/ralight/sqlite3-pcre', sqlite3PcreRepositoryDirectory)
     shelljs.pushd('-q', sqlite3PcreRepositoryDirectory)
-    runShell(
-        `gcc -fno-common -dynamiclib pcre.c -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre)`
-    )
+    run('git', 'checkout', 'c98da412b431edb4db22d3245c99e6c198d49f7a')
+    runShell(buildCommand)
     shelljs.popd('-q')
 }
 
