@@ -8,10 +8,10 @@ import { FileSpec, PositionSpec, RepoSpec, RevSpec, ViewStateSpec } from '../uti
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
-    proxy: Endpoint
+    proxy: Endpoint & Pick<MessagePort, 'start'>
 
     /** The endpoint to expose the API of this thread to */
-    expose: Endpoint
+    expose: Endpoint & Pick<MessagePort, 'start'>
 }
 export const isEndpointPair = (val: any): val is EndpointPair =>
     typeof val === 'object' && val !== null && isEndpoint(val.proxy) && isEndpoint(val.expose)

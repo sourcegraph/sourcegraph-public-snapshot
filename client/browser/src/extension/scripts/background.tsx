@@ -6,7 +6,7 @@ import { without } from 'lodash'
 import { fromEventPattern, noop, Observable } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
 import DPT from 'webext-domain-permission-toggle'
-import { EndpointPair } from '../../../../../shared/src/platform/context'
+import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
 import * as browserAction from '../../browser/browserAction'
 import * as omnibox from '../../browser/omnibox'
 import * as permissions from '../../browser/permissions'
@@ -16,7 +16,7 @@ import * as tabs from '../../browser/tabs'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import initializeCli from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
-import { createBlobURLForBundle, createExtensionHostWorker } from '../../platform/worker'
+import { createBlobURLForBundle } from '../../platform/worker'
 import { requestGraphQL } from '../../shared/backend/graphql'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
@@ -418,28 +418,21 @@ const endpointPairs: Observable<{ proxy: chrome.runtime.Port; expose: chrome.run
 
 // Create one extension host worker per endpoint pair
 endpointPairs.subscribe(({ proxy, expose }) => {
-    const worker = createExtensionHostWorker()
-    const clientAPIChannel = new MessageChannel()
-    const extensionHostAPIChannel = new MessageChannel()
-    const workerEndpoints: EndpointPair = {
-        proxy: clientAPIChannel.port2,
-        expose: extensionHostAPIChannel.port2,
-    }
-    worker.postMessage({ endpoints: workerEndpoints, wrapEndpoints: true }, Object.values(workerEndpoints))
+    const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
     // Connect proxy client endpoint
-    extensionHostAPIChannel.port1.start()
+    clientEndpoints.proxy.start()
     proxy.onMessage.addListener(message => {
-        extensionHostAPIChannel.port1.postMessage(message)
+        clientEndpoints.proxy.postMessage(message)
     })
-    extensionHostAPIChannel.port1.addEventListener('message', ({ data }) => {
+    clientEndpoints.proxy.addEventListener('message', ({ data }) => {
         proxy.postMessage({ data })
     })
     // Connect expose client endpoint
-    clientAPIChannel.port1.start()
+    clientEndpoints.expose.start()
     expose.onMessage.addListener(message => {
-        clientAPIChannel.port1.postMessage(message)
+        clientEndpoints.expose.postMessage(message)
     })
-    clientAPIChannel.port1.addEventListener('message', ({ data }) => {
+    clientEndpoints.expose.addEventListener('message', ({ data }) => {
         expose.postMessage({ data })
     })
     // Kill worker when either port disconnects

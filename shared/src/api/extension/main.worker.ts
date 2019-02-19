@@ -1,6 +1,5 @@
 import '../../polyfills'
 
-import { Endpoint } from '@sourcegraph/comlink'
 import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -13,17 +12,17 @@ export interface InitMessage {
         expose: MessagePort
     }
     /**
-     * Whether the endpoints should be wrapped with a {@link MessageChannelAdapter}.
+     * Whether the endpoints should be wrapped with a comlink {@link MessageChannelAdapter}.
      *
      * This is true when the messages passed on the endpoints are forwarded to/from
-     * other wrapped endpoints, like in the browser extension
+     * other wrapped endpoints, like in the browser extension.
      */
     wrapEndpoints: boolean
 }
 
 const isInitMessage = (value: any): value is InitMessage => value.endpoints && isEndpointPair(value.endpoints)
 
-const wrapMessagePort = (port: MessagePort): Endpoint =>
+const wrapMessagePort = (port: MessagePort) =>
     MessageChannelAdapter.wrap({
         send: data => port.postMessage(data),
         addEventListener: (event, listener) => port.addEventListener(event, listener),
