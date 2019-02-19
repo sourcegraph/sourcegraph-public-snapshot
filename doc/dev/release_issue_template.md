@@ -21,6 +21,7 @@ It is not used for patch releases.
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
 - [ ] Tag the first release candidate `MAJOR.MINOR.0-rc.1`.
 - [ ] Send a message to #dev-announce to announce the release candidate.
+- [ ] Ensure that `master` is deployed to dogfood.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] Run the new version of Sourcegraph.
         ```
@@ -63,6 +64,7 @@ It is not used for patch releases.
     - [ ] Tear down this Kubernetes cluster.
 - [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
 - [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
+- [ ] Review all open issues in the release milestone that aren't blocking and ask assignees to traige them to a different milestone (backlog preferred).
 
 ## As necessary
 
