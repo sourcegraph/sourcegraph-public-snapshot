@@ -153,8 +153,8 @@ function buildLibsqlite3Pcre({ outputPath }: { outputPath: string }): void {
     const sqlite3PcreRepositoryDirectory = tmp.dirSync().name
 
     const buildCommandByPlatform: { [platform in NodeJS.Platform]?: string } = {
-        darwin: `gcc -fno-common -dynamiclib pcre.c -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre)`,
-        linux: `gcc -shared -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs`,
+        darwin: `gcc -fno-common -dynamiclib pcre.c -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC`,
+        linux: `gcc -shared -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs`,
     }
     const buildCommand = buildCommandByPlatform[os.platform()]
     if (!buildCommand) {
