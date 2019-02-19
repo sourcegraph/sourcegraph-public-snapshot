@@ -19,7 +19,7 @@ It is not used for patch releases.
 
 - [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` (e.g. [#2323](https://github.com/sourcegraph/sourcegraph/pull/2323)).
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
-- [ ] Tag the first release candidate `MAJOR.MINOR.0-rc.1`.
+- [ ] Tag the first release candidate `vMAJOR.MINOR.0-rc.1`.
 - [ ] Send a message to #dev-announce to announce the release candidate.
 - [ ] Ensure that `master` is deployed to dogfood.
 - [ ] Run Sourcegraph Docker image with no previous data.
@@ -78,9 +78,10 @@ It is not used for patch releases.
 - [ ] Send a message to #dev-announce to announce the final release.
 - [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
-- [ ] [Update the image tags](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#updating-docker-image-tags) in [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) (e.g. [d0bb80](https://github.com/sourcegraph/deploy-sourcegraph/commit/d0bb80f559e7e9ef3b1915ddba72f4beff32276c))
-- [ ] Wait for Renovate to pin the hashes in deploy-sourcegraph (e.g. [#190](https://github.com/sourcegraph/deploy-sourcegraph/pull/190/files)), or pin them yourself.
-- [ ] In deploy-sourcegraph, tag the release (e.g. `v3.0.0`) and create the release branch off of master at this commit (e.g. `v3.0`).
+- [ ] In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
+    - [ ] Wait for Renovate to open a PR to update the image tags (e.g. [#199](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)) and merge that PR.
+    - [ ] Create the `MAJOR.MINOR` release branch from this commit.
+    - [ ] Tag the `vMAJOR.MINOR.0` release at this commit.
 
 ## On or before release day (YYYY-MM-DD)
 
