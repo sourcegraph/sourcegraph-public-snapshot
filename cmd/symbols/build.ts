@@ -32,6 +32,7 @@ export function main(argv: string[]): void {
         )
         .demandCommand(1, 'You have to specify a command.')
         .strict()
+        .usage('./dev/ts-script cmd/symbols/build.ts <command>')
         .parse(argv)
 }
 
