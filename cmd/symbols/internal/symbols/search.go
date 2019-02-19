@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -125,6 +126,16 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 	return diskcacheFile.File.Name(), err
 }
 
+// isRegexExact checks if the given regex matches literal strings exactly (i.e.
+// it's of the form `^...$` with no meta characters inside). Returns whether or not the regex is exact, along with the literal string if so.
+func isRegexExact(regex string) (string, bool) {
+	unanchoredRegex := strings.TrimSuffix(strings.TrimPrefix(regex, "^"), "$")
+	if strings.HasPrefix(regex, "^") && strings.HasSuffix(regex, "$") && regexp.QuoteMeta(unanchoredRegex) == unanchoredRegex {
+		return unanchoredRegex, true
+	}
+	return "", false
+}
+
 func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (res []protocol.Symbol, err error) {
 	span, _ := opentracing.StartSpanFromContext(ctx, "filterSymbols")
 	defer func() {
@@ -147,16 +158,14 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 			return conditions
 		}
 
-		if strings.HasPrefix(regex, "^") && strings.HasSuffix(regex, "$") {
-			// It looks like the user is asking for exact matches, so use `=`
-			// for speed. Checking for `^...$` isn't 100% accurate, but it
-			// covers 99.9% of cases.
-			symbolName := strings.TrimSuffix(strings.TrimPrefix(regex, "^"), "$")
-			if !args.IsCaseSensitive {
-				symbolName = strings.ToLower(symbolName)
-				column = column + "lowercase"
+		if symbolName, isExact := isRegexExact(regex); isExact {
+			// It looks like the user is asking for exact matches, so use `=` to
+			// get the speed boost from the index on the column.
+			if args.IsCaseSensitive {
+				conditions = append(conditions, sqlf.Sprintf(column+" = %s", symbolName))
+			} else {
+				conditions = append(conditions, sqlf.Sprintf(column+"lowercase = %s", strings.ToLower(symbolName)))
 			}
-			conditions = append(conditions, sqlf.Sprintf(column+" = %s", symbolName))
 		} else {
 			if !args.IsCaseSensitive {
 				regex = "(?i:" + regex + ")"
