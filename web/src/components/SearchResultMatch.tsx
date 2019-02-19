@@ -63,14 +63,11 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             : renderMarkdown({ markdown: props.item.body.text })
                     ),
                     switchMap(markdownHTML => {
-                        if (this.bodyIsCode() && markdownHTML.includes('<pre') && markdownHTML.includes('</pre>')) {
+                        if (this.bodyIsCode()) {
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
-                            // Get content between the outermost code tags.
-                            const codeContent = parser
-                                .parseFromString(markdownHTML, 'text/html')
-                                .querySelector('pre')!
-                                .innerHTML.toString()
+                            // Extract the text content of the result.
+                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText
                             if (codeContent) {
                                 return highlightCode({
                                     code: decode(codeContent),
@@ -79,7 +76,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     isLightTheme: this.props.isLightTheme,
                                 }).pipe(
                                     switchMap(highlightedStr => {
-                                        const highlightedMarkdown = markdownHTML.replace(codeContent, highlightedStr)
+                                        const highlightedMarkdown = decode(markdownHTML).replace(
+                                            codeContent,
+                                            highlightedStr
+                                        )
                                         return of(highlightedMarkdown)
                                     }),
                                     // Return the rendered markdown if highlighting fails.
