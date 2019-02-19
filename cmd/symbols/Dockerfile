@@ -7,7 +7,9 @@ FROM alpine:3.9 AS libsqlite3-pcre
 
 # hadolint ignore=DL3003,DL3018,DL4006
 RUN apk --no-cache add --virtual build-deps git gcc make libc-dev pcre-dev sqlite-dev && \
-  git clone https://github.com/ralight/sqlite3-pcre /sqlite3-pcre && cd /sqlite3-pcre && make && \
+  git clone https://github.com/ralight/sqlite3-pcre /sqlite3-pcre && cd /sqlite3-pcre && \
+  git checkout c98da412b431edb4db22d3245c99e6c198d49f7a && rm -rf .git && \
+  make && \
   apk --no-cache --purge del build-deps
 
 FROM alpine:3.9
