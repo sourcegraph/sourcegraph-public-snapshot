@@ -321,14 +321,18 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
+	insertStatement, err := transaction.PrepareNamed(
+		fmt.Sprintf(
+			"INSERT INTO symbols %s VALUES %s",
+			"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
+			"(:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)"))
+	if err != nil {
+		return err
+	}
+
 	err = s.parseUncached(ctx, repoName, commitID, func(symbol protocol.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
-		_, err := transaction.NamedExec(
-			fmt.Sprintf(
-				"INSERT INTO symbols %s VALUES %s",
-				"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
-				"(:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)"),
-			&symbolInDBValue)
+		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
 	})
 	if err != nil {
