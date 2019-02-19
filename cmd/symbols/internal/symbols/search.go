@@ -123,10 +123,6 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 }
 
 func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (res []protocol.Symbol, err error) {
-	start := time.Now()
-	defer func() {
-		fmt.Printf("filterSymbolsSqlite %.3f %s\n", time.Now().Sub(start).Seconds(), args.Query)
-	}()
 	span, _ := opentracing.StartSpanFromContext(ctx, "filterSymbols")
 	defer func() {
 		if err != nil {
