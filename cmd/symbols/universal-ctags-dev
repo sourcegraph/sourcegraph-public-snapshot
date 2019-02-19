@@ -12,7 +12,4 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 IMAGE=dev-symbols
 NAME=universal-ctags-$$
 
-# if docker inspect -f '' /$NAME > /dev/null 2>&1; then
-#     docker rm -f /$NAME
-# fi
 exec docker run -a stdin -a stdout -a stderr -i --user guest --name=$NAME --entrypoint /usr/local/bin/universal-ctags --rm "$IMAGE" "$@"
