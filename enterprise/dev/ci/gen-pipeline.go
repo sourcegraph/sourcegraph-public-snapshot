@@ -92,7 +92,6 @@ func main() {
 			bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
 		pipeline.AddStep(":go:",
-			bk.Cmd("go generate ./..."),
 			bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
 			bk.ArtifactPaths("coverage.txt"))
 
