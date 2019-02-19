@@ -80,7 +80,7 @@ To avoid confusion between tags and branches:
 - Tags are always the full semantic version with a leading `v` (e.g. `v2.10.0`)
 - Branches are always the dot-separated major/minor versions with no leading `v` (e.g. `2.10`).
 
-Development always happens on `master` and changes are cherry picked onto release branch as necessary with the approval of the release captain.
+Development always happens on `master` and changes are cherry picked onto release branch as necessary **with the approval of the release captain**.
 
 #### Example
 
