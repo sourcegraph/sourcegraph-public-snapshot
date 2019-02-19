@@ -114,7 +114,12 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 						continue
 					}
 					totalSymbols++
-					callback(entryToSymbol(e))
+					err = callback(entryToSymbol(e))
+					if err != nil {
+						cancel()
+						log15.Error(err.Error())
+						return
+					}
 				}
 			}
 		}(req)
