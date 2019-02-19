@@ -76,6 +76,8 @@ func TestService(t *testing.T) {
 	server := httptest.NewServer(service.Handler())
 	defer server.Close()
 	client := symbolsclient.Client{URL: server.URL}
+	x := protocol.Symbol{Name: "x", Path: "a.js"}
+	y := protocol.Symbol{Name: "y", Path: "a.js"}
 
 	tests := map[string]struct {
 		args protocol.SearchArgs
@@ -83,14 +85,42 @@ func TestService(t *testing.T) {
 	}{
 		"simple": {
 			args: protocol.SearchArgs{First: 10},
-			want: protocol.SearchResult{Symbols: []protocol.Symbol{{Name: "x"}, {Name: "y"}}},
+			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
 		},
 		"onematch": {
 			args: protocol.SearchArgs{Query: "x", First: 10},
-			want: protocol.SearchResult{Symbols: []protocol.Symbol{{Name: "x"}}},
+			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
 		},
 		"nomatches": {
 			args: protocol.SearchArgs{Query: "foo", First: 10},
+			want: protocol.SearchResult{},
+		},
+		"caseinsensitiveexactmatch": {
+			args: protocol.SearchArgs{Query: "^X$", First: 10},
+			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
+		},
+		"casesensitiveexactmatch": {
+			args: protocol.SearchArgs{Query: "^x$", IsCaseSensitive: true, First: 10},
+			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
+		},
+		"casesensitivenoexactmatch": {
+			args: protocol.SearchArgs{Query: "^X$", IsCaseSensitive: true, First: 10},
+			want: protocol.SearchResult{},
+		},
+		"caseinsensitiveexactpathmatch": {
+			args: protocol.SearchArgs{IncludePatterns: []string{"^A.js$"}, First: 10},
+			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
+		},
+		"casesensitiveexactpathmatch": {
+			args: protocol.SearchArgs{IncludePatterns: []string{"^a.js$"}, IsCaseSensitive: true, First: 10},
+			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
+		},
+		"casesensitivenoexactpathmatch": {
+			args: protocol.SearchArgs{IncludePatterns: []string{"^A.js$"}, IsCaseSensitive: true, First: 10},
+			want: protocol.SearchResult{},
+		},
+		"exclude": {
+			args: protocol.SearchArgs{ExcludePattern: "a.js", IsCaseSensitive: true, First: 10},
 			want: protocol.SearchResult{},
 		},
 	}
@@ -136,7 +166,7 @@ type mockParser []string
 func (m mockParser) Parse(name string, content []byte) ([]ctags.Entry, error) {
 	entries := make([]ctags.Entry, len(m))
 	for i, name := range m {
-		entries[i] = ctags.Entry{Name: name}
+		entries[i] = ctags.Entry{Name: name, Path: "a.js"}
 	}
 	return entries, nil
 }
