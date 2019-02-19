@@ -148,12 +148,12 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 			// It looks like the user is asking for exact matches, so use `=`
 			// for speed. Checking for `^...$` isn't 100% accurate, but it
 			// covers 99.9% of cases.
-			rhs := strings.TrimSuffix(strings.TrimPrefix(regex, "^"), "$")
+			symbolName := strings.TrimSuffix(strings.TrimPrefix(regex, "^"), "$")
 			if !args.IsCaseSensitive {
-				rhs = strings.ToLower(rhs)
+				symbolName = strings.ToLower(symbolName)
 				column = column + "lowercase"
 			}
-			conditions = append(conditions, sqlf.Sprintf(column+" = %s", rhs))
+			conditions = append(conditions, sqlf.Sprintf(column+" = %s", symbolName))
 		} else {
 			if !args.IsCaseSensitive {
 				regex = "(?i:" + regex + ")"
