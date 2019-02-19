@@ -45,19 +45,24 @@ It is not used for patch releases.
         ```
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
-- [ ] Run Sourcegraph on a clean Kubernetes cluster with no previous data.
+- [ ] Run the new version of Sourcegraph on a clean Kubernetes cluster with no previous data.
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
+    - [ ] Tear down this Kubernetes cluster.
 - [ ] Upgrade Sourcegraph on a Kubernetes cluster.
+    - [ ] Setup a Kubernetes cluster that is running the previous release.
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
+    - [ ] Upgrade the cluster to the new release.
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
-- [ ] Add any [release blocking](releases.md#blocking) issues as checklist items and start working to resolve them.
+    - [ ] Tear down this Kubernetes cluster.
+- [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
+- [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
 
 ## As necessary
 
