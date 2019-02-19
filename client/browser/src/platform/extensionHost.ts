@@ -26,15 +26,9 @@ export function endpointFromPort(name: string): Endpoint {
     return MessageChannelAdapter.wrap({
         send: data => port.postMessage(data),
         addEventListener: (event, listener) => {
-            if (event !== 'message') {
-                throw new Error(`Unhandled event: ${event}`)
-            }
             port.onMessage.addListener(listener as any)
         },
         removeEventListener: (event, listener) => {
-            if (event !== 'message') {
-                throw new Error(`Unhandled event: ${event}`)
-            }
             port.onMessage.removeListener(listener as any)
         },
     })

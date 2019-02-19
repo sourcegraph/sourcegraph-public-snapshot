@@ -21,7 +21,7 @@ export interface InitMessage {
     wrapEndpoints: boolean
 }
 
-const isInitMessage = (m: any): m is InitMessage => m.endpoints && isEndpointPair(m.endpoints)
+const isInitMessage = (value: any): value is InitMessage => value.endpoints && isEndpointPair(value.endpoints)
 
 const wrapMessagePort = (port: MessagePort): Endpoint =>
     MessageChannelAdapter.wrap({
@@ -30,7 +30,7 @@ const wrapMessagePort = (port: MessagePort): Endpoint =>
         removeEventListener: (event, listener) => port.removeEventListener(event, listener),
     })
 
-const wrappedEndpoints = ({ proxy, expose }: InitMessage['endpoints']): EndpointPair => {
+const wrapEndpoints = ({ proxy, expose }: InitMessage['endpoints']): EndpointPair => {
     proxy.start()
     expose.start()
     return {
@@ -52,7 +52,7 @@ async function extensionHostMain(): Promise<void> {
         if (!isInitMessage(event.data)) {
             throw new Error('First message event in extension host worker was not a well-formed InitMessage')
         }
-        const { endpoints, wrapEndpoints } = event.data
+        const { endpoints } = event.data
         // TODO support traceExtensionHostCommunication
         endpoints.proxy.addEventListener('message', event =>
             console.log('Extension host received message on proxy port', event.data)
@@ -60,7 +60,7 @@ async function extensionHostMain(): Promise<void> {
         endpoints.expose.addEventListener('message', event =>
             console.log('Extension host received message on expose port', event.data)
         )
-        const extensionHost = startExtensionHost(wrapEndpoints ? wrappedEndpoints(endpoints) : endpoints)
+        const extensionHost = startExtensionHost(event.data.wrapEndpoints ? wrapEndpoints(endpoints) : endpoints)
         self.addEventListener('unload', () => extensionHost.unsubscribe())
     } catch (err) {
         console.error('Error starting the extension host:', err)

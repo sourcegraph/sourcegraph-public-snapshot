@@ -4,7 +4,7 @@ import '../../config/polyfill'
 
 import { without } from 'lodash'
 import { fromEventPattern, noop, Observable } from 'rxjs'
-import { bufferCount, filter, groupBy, mergeMap, reduce } from 'rxjs/operators'
+import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
 import DPT from 'webext-domain-permission-toggle'
 import { EndpointPair } from '../../../../../shared/src/platform/context'
 import * as browserAction from '../../browser/browserAction'
@@ -373,31 +373,48 @@ DPT.addContextMenu()
 
 const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
 
+const portKind = (port: chrome.runtime.Port) => {
+    const match = port.name.match(ENDPOINT_KIND_REGEX)
+    return match && match[1]
+}
+
 /**
  * A stream of EndpointPair created from Port objects emitted by chrome.runtime.onConnect.
  *
  * Each EndpointPair represents a connection with an instance of the content script.
  */
-const endpointPairs: Observable<{ proxy: chrome.runtime.Port; expose: chrome.runtime.Port }> = fromEventPattern(
+const endpointPairs: Observable<{ proxy: chrome.runtime.Port; expose: chrome.runtime.Port }> = fromEventPattern<
+    chrome.runtime.Port
+>(
     handler => chrome.runtime.onConnect.addListener(handler),
     handler => chrome.runtime.onConnect.removeListener(handler)
 ).pipe(
     groupBy(
-        (port: any): string => (port.name || 'other').replace(ENDPOINT_KIND_REGEX, ''),
-        (port: any) => {
-            const endpointKind = (port.name || '').match(ENDPOINT_KIND_REGEX)
-            if (endpointKind) {
-                return {
-                    [endpointKind[1]]: port,
-                }
-            }
-            return {}
-        },
+        port => (port.name || 'other').replace(ENDPOINT_KIND_REGEX, ''),
+        port => port,
         group => group.pipe(bufferCount(2))
     ),
     filter(group => group.key !== 'other'),
-    mergeMap(group => group.pipe(reduce((acc, cur) => ({ ...acc, ...cur }), {})))
-) as any
+    mergeMap(group =>
+        group.pipe(
+            bufferCount(2),
+            map(ports => {
+                const proxyPort = ports.find(port => portKind(port) === 'proxy')
+                if (!proxyPort) {
+                    throw new Error('No proxy port')
+                }
+                const exposePort = ports.find(port => portKind(port) === 'expose')
+                if (!exposePort) {
+                    throw new Error('No expose port')
+                }
+                return {
+                    proxy: proxyPort,
+                    expose: exposePort,
+                }
+            })
+        )
+    )
+)
 
 // Create one extension host worker per endpoint pair
 endpointPairs.subscribe(({ proxy, expose }) => {
