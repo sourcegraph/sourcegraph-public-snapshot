@@ -137,7 +137,7 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 		args.First = maxFirst
 	}
 
-	mkConds := func(column string, regex string) []*sqlf.Query {
+	makeCondition := func(column string, regex string) []*sqlf.Query {
 		conditions := []*sqlf.Query{}
 
 		if regex == "" {
@@ -174,18 +174,18 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 		return newConditions
 	}
 
-	var conds []*sqlf.Query
-	conds = append(conds, mkConds("name", args.Query)...)
-	for _, i := range args.IncludePatterns {
-		conds = append(conds, mkConds("path", i)...)
+	var conditions []*sqlf.Query
+	conditions = append(conditions, makeCondition("name", args.Query)...)
+	for _, includePattern := range args.IncludePatterns {
+		conditions = append(conditions, makeCondition("path", includePattern)...)
 	}
-	conds = append(conds, negateAll(mkConds("path", args.ExcludePattern))...)
+	conditions = append(conditions, negateAll(makeCondition("path", args.ExcludePattern))...)
 
 	var sqlQuery *sqlf.Query
-	if len(conds) == 0 {
+	if len(conditions) == 0 {
 		sqlQuery = sqlf.Sprintf("SELECT * FROM symbols LIMIT %s", args.First)
 	} else {
-		sqlQuery = sqlf.Sprintf("SELECT * FROM symbols WHERE %s LIMIT %s", sqlf.Join(conds, "AND"), args.First)
+		sqlQuery = sqlf.Sprintf("SELECT * FROM symbols WHERE %s LIMIT %s", sqlf.Join(conditions, "AND"), args.First)
 	}
 
 	var symbolsInDB []symbolInDB
