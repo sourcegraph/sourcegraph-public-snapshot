@@ -96,8 +96,11 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 	return result, nil
 }
 
+// getDBFile returns the path to the sqlite3 database for the repo@commit
+// specified in `args`. If the database doesn't already exist in the disk cache,
+// it will create a new one and write all the symbols into it.
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.cache.Open(ctx, fmt.Sprintf("%d-%s@%s", symbolsDbVersion, args.Repo, args.CommitID), func(fetcherCtx context.Context) (io.ReadCloser, error) {
+	diskcacheFile, err := s.cache.Open(ctx, fmt.Sprintf("%d-%s@%s", symbolsDBVersion, args.Repo, args.CommitID), func(fetcherCtx context.Context) (io.ReadCloser, error) {
 		tempDBFile, err := ioutil.TempFile("", "")
 		if err != nil {
 			return nil, err
@@ -202,20 +205,20 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 	return res, nil
 }
 
-// The version of the schema symbols databases. This is included in the database
+// The version of the symbols database schema. This is included in the database
 // filenames to prevent a newer version of the symbols service attempting to
 // read from a database created by an older (and likely incompatible) symbols
 // service. Increment this when you change the database schema.
-const symbolsDbVersion = 1
+const symbolsDBVersion = 1
 
-// symbolInDB is a code symbol as represented in the sqlite database. It's the
-// same as `Symbol`, but with namelowercase and pathlowercase, which enable
-// indexed case insensitive queries.
+// symbolInDB is the same as `protocol.Symbol`, but with two additional columns:
+// namelowercase and pathlowercase, which enable indexed case insensitive
+// queries.
 type symbolInDB struct {
 	Name          string
-	NameLowercase string
+	NameLowercase string // derived from `Name`
 	Path          string
-	PathLowercase string
+	PathLowercase string // derived from `Path`
 	Line          int
 	Kind          string
 	Language      string
@@ -261,6 +264,8 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) protocol.Symbol {
 	}
 }
 
+// writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
+// symbols, and writes them to the blank database file `dbFile`.
 func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) error {
 	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
 	if err != nil {
@@ -274,7 +279,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	// The column names are the lowercase version of fields in `symbolInDb`
+	// The column names are the lowercase version of fields in `symbolInDB`
 	// because sqlx lowercases struct fields by default. See
 	// http://jmoiron.github.io/sqlx/#query
 	_, err = transaction.Exec(
