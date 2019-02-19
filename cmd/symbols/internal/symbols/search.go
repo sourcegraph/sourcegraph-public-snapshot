@@ -1,16 +1,17 @@
 package symbols
 
 import (
-	"io"
-	"io/ioutil"
-	"os"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
@@ -271,11 +272,11 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 	}
 	defer db.Close()
 
-    // Writing a bunch of rows into sqlite3 is much faster in a transaction.
-    transaction, err := db.Beginx()
-    if err != nil {
-        return err
-    }
+	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
+	transaction, err := db.Beginx()
+	if err != nil {
+		return err
+	}
 
 	// The column names are the lowercase version of fields in `symbolInDb`
 	// because sqlx lowercases struct fields by default. See
@@ -335,9 +336,9 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 	}
 
 	err = transaction.Commit()
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
