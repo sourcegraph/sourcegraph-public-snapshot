@@ -132,11 +132,21 @@ func main() {
 		}
 
 		image := "sourcegraph/" + app
-		buildScript := cmdDir + "/build.sh"
+
+		getBuildScript := func() string {
+			buildScriptByApp := map[string]string{
+				"symbols": fmt.Sprintf("./dev/ts-script cmd/symbols/build.ts buildDockerImage --buildType dist --dockerImageName %s", image+":"+version),
+			}
+			if buildScript, ok := buildScriptByApp[app]; ok {
+				return buildScript
+			}
+			return cmdDir + "/build.sh"
+		}
+
 		cmds = append(cmds,
 			bk.Env("IMAGE", image+":"+version),
 			bk.Env("VERSION", version),
-			bk.Cmd(buildScript),
+			bk.Cmd(getBuildScript()),
 		)
 
 		if app != "server" || taggedRelease {
