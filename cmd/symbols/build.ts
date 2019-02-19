@@ -30,6 +30,7 @@ export function main(argv: string[]): void {
             },
             buildDockerImage as (args: { dockerImageName: string; buildType: string }) => void
         )
+        .command('buildLibsqlite3Pcre', 'Builds libsqlite3-pcre at the repository root.', {}, buildLibsqlite3Pcre)
         .demandCommand(1, 'You have to specify a command.')
         .strict()
         .usage('./dev/ts-script cmd/symbols/build.ts <command>')
@@ -147,44 +148,50 @@ function buildExecutable({ outputPath, buildType }: { outputPath: string; buildT
 }
 
 /**
- * Builds the PCRE extension to sqlite3.
+ * Builds the PCRE extension to sqlite3. Returns the path to the built library.
  */
-function buildLibsqlite3Pcre({ outputPath }: { outputPath: string }): void {
+function buildLibsqlite3Pcre(): string {
+    const libsqlite3PcrePath = path.join(
+        repositoryRoot,
+        libsqlite3PcreFilenameByPlatform[os.platform()] || 'libsqlite3-pcre.so'
+    )
+    if (fs.existsSync(libsqlite3PcrePath)) {
+        return libsqlite3PcrePath
+    }
+
     const sqlite3PcreRepositoryDirectory = tmp.dirSync().name
 
     const buildCommandByPlatform: { [platform in NodeJS.Platform]?: string } = {
-        darwin: `gcc -fno-common -dynamiclib pcre.c -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC`,
-        linux: `gcc -shared -o ${outputPath} $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs`,
+        darwin: `gcc -fno-common -dynamiclib pcre.c -o ${libsqlite3PcrePath} $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC`,
+        linux: `gcc -shared -o ${libsqlite3PcrePath} $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs`,
     }
     const buildCommand = buildCommandByPlatform[os.platform()]
     if (!buildCommand) {
         console.log(`Unsupported OS platform ${os.platform()}`)
         process.exit(1)
-        return
+        return ''
     }
 
+    console.log(`Building ${libsqlite3PcrePath}...`)
     run('git', 'clone', 'https://github.com/ralight/sqlite3-pcre', sqlite3PcreRepositoryDirectory)
     shelljs.pushd('-q', sqlite3PcreRepositoryDirectory)
     run('git', 'checkout', 'c98da412b431edb4db22d3245c99e6c198d49f7a')
     runShell(buildCommand)
     shelljs.popd('-q')
+    console.log(`Building ${libsqlite3PcrePath}... done`)
+
+    return libsqlite3PcrePath
 }
 
 /**
  * Builds and runs the symbols executable.
  */
 function runExecutable({ buildType }: { buildType: BuildType }): void {
-    const libsqlite3PcrePath = path.join(
-        repositoryRoot,
-        libsqlite3PcreFilenameByPlatform[os.platform()] || 'libsqlite3-pcre.so'
-    )
-    if (!fs.existsSync(libsqlite3PcrePath)) {
-        buildLibsqlite3Pcre({ outputPath: libsqlite3PcrePath })
-    }
+    const libsqlite3PcrePath = buildLibsqlite3Pcre()
     const outputPath = tmp.tmpNameSync({ prefix: 'symbols' })
     buildExecutable({ outputPath, buildType })
     buildDockerImage({ dockerImageName: 'dev-symbols', buildType: 'dev' })
-    shell.env['LIBSQLITE3_REGEXP'] = libsqlite3PcrePath
+    shell.env['LIBSQLITE3_PCRE'] = libsqlite3PcrePath
     shell.env['CTAGS_COMMAND'] = shell.env['CTAGS_COMMAND'] || 'cmd/symbols/universal-ctags-dev'
     shell.env['CTAGS_PROCESSES'] = shell.env['CTAGS_PROCESSES'] || '1'
     shell.exec(outputPath)

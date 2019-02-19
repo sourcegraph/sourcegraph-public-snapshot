@@ -37,7 +37,7 @@ var (
 	cacheSizeMB      = env.Get("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache in megabytes")
 	ctagsProcesses   = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.NumCPU()), "number of ctags child processes to run")
 	ctagsCommand     = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)")
-	libSqlite3Regexp = env.Get("LIBSQLITE3_REGEXP", "", "path to the libsqlite3-regexp library")
+	libSqlite3Pcre = env.Get("LIBSQLITE3_PCRE", "", "path to the libsqlite3-pcre library")
 )
 
 const port = "3184"
@@ -48,11 +48,11 @@ func main() {
 	log.SetFlags(0)
 	tracer.Init()
 
-	if libSqlite3Regexp == "" {
+	if libSqlite3Pcre == "" {
 		env.PrintHelp()
-		panic("You have to set the LIBSQLITE3_REGEXP environment variable.")
+		panic("Can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set.")
 	}
-	sql.Register("sqlite3_with_pcre", &sqlite3.SQLiteDriver{Extensions: []string{libSqlite3Regexp}})
+	sql.Register("sqlite3_with_pcre", &sqlite3.SQLiteDriver{Extensions: []string{libSqlite3Pcre}})
 
 	go debugserver.Start()
 

@@ -18,8 +18,8 @@ RUN apk add --no-cache bind-tools ca-certificates mailcap tini
 
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
-COPY --from=sqlite3regexp /sqlite3-pcre/pcre.so /pcre.so
-ENV LIBSQLITE3_REGEXP /pcre.so
+COPY --from=sqlite3regexp /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
+ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 # hadolint ignore=DL3018
 RUN apk --no-cache add pcre-dev
 

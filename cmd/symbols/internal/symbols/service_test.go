@@ -1,6 +1,10 @@
 package symbols
 
 import (
+	"path"
+	"strings"
+	"os/exec"
+	"path/filepath"
 	"archive/tar"
 	"bytes"
 	"context"
@@ -11,6 +15,9 @@ import (
 	"reflect"
 	"testing"
 
+	"database/sql"
+
+	sqlite3 "github.com/mattn/go-sqlite3"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -19,6 +26,23 @@ import (
 )
 
 func TestService(t *testing.T) {
+	libSqlite3Pcre, found := os.LookupEnv("LIBSQLITE3_PCRE")
+	if !found {
+		rootPathOutput, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+		if err != nil {
+			panic(err)
+		}
+		libs, err := filepath.Glob(path.Join(strings.TrimSpace(string(rootPathOutput)), "libsqlite3-pcre.*"))
+		if err != nil {
+			panic(err)
+		}
+		if len(libs) == 0 {
+			panic("Can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and libsqlite3-pcre.* doesn't exist at the root of the repository. Try building it with `./dev/ts-script cmd/symbols/build.ts buildLibsqlite3Pcre`.")
+		}
+		libSqlite3Pcre = libs[0]
+	}
+	sql.Register("sqlite3_with_pcre", &sqlite3.SQLiteDriver{Extensions: []string{libSqlite3Pcre}})
+
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)
@@ -48,15 +72,15 @@ func TestService(t *testing.T) {
 		want protocol.SearchResult
 	}{
 		"simple": {
-			args: protocol.SearchArgs{},
+			args: protocol.SearchArgs{First: 10},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{{Name: "x"}, {Name: "y"}}},
 		},
 		"onematch": {
-			args: protocol.SearchArgs{Query: "x"},
+			args: protocol.SearchArgs{Query: "x", First: 10},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{{Name: "x"}}},
 		},
 		"nomatches": {
-			args: protocol.SearchArgs{Query: "foo"},
+			args: protocol.SearchArgs{Query: "foo", First: 10},
 			want: protocol.SearchResult{},
 		},
 	}
