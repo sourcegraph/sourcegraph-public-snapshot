@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http/httptest"
@@ -26,18 +27,27 @@ import (
 )
 
 func TestService(t *testing.T) {
+	panicInCI := func(err error) {
+		_, isInCI := os.LookupEnv("CI")
+		if isInCI {
+			panic(err)
+		}
+	}
 	libSqlite3Pcre, found := os.LookupEnv("LIBSQLITE3_PCRE")
 	if !found {
 		rootPathOutput, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 		if err != nil {
-			panic(err)
+			panicInCI(err)
+			return
 		}
 		libs, err := filepath.Glob(path.Join(strings.TrimSpace(string(rootPathOutput)), "libsqlite3-pcre.*"))
 		if err != nil {
-			panic(err)
+			panicInCI(err)
+			return
 		}
 		if len(libs) == 0 {
-			panic("Can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and libsqlite3-pcre.* doesn't exist at the root of the repository. Try building it with `./dev/ts-script cmd/symbols/build.ts buildLibsqlite3Pcre`.")
+			panicInCI(errors.New("Can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and libsqlite3-pcre.* doesn't exist at the root of the repository. Try building it with `./dev/ts-script cmd/symbols/build.ts buildLibsqlite3Pcre`."))
+			return
 		}
 		libSqlite3Pcre = libs[0]
 	}
