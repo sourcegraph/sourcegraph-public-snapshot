@@ -17,7 +17,7 @@ It is not used for patch releases.
 
 ## 3 working days before release (YYYY-MM-DD)
 
-- [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` (e.g. [#2323](https://github.com/sourcegraph/sourcegraph/pull/2323)).
+- [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` ([example](https://github.com/sourcegraph/sourcegraph/pull/2323)).
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
 - [ ] Tag the first release candidate `vMAJOR.MINOR.0-rc.1`.
 - [ ] Send a message to #dev-announce to announce the release candidate.
@@ -79,18 +79,18 @@ It is not used for patch releases.
 - [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
 - [ ] In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
-    - [ ] Wait for Renovate to open a PR to update the image tags (e.g. [#199](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)) and merge that PR.
+    - [ ] Wait for Renovate to open a PR to update the image tags and merge that PR ([example](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)).
     - [ ] Create the `MAJOR.MINOR` release branch from this commit.
     - [ ] Tag the `vMAJOR.MINOR.0` release at this commit.
 
 ## On or before release day (YYYY-MM-DD)
 
-- [ ] **HH:MM AM/PM PT** Merge the blog post. <!-- TODO(nick): example -->
-- [ ] Update the documented version of Sourcegraph in `master` (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files <!-- TODO(nick): example that doesn't include latestReleaseDockerServerImageBuild -->).
+- [ ] **HH:MM AM/PM PT** Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
+- [ ] Update the documented version of Sourcegraph ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/701780fefa5809abb16669c9fb29738ec3bb2039)).
     ```
     find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +
     ```
-- [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/commit/d445c460c2da54fba4f56f647d656ca3311decf5))
-- [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` in `master`. <!-- TODO(nick): example -->
+- [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
+- [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/pull/8))
 - [ ] Review all issues in the release milestone. Backlog things that didn't make it into the release and ping issues that still need to be done for the release (e.g. Tweets, marketing).
 - [ ] Close this issue.
