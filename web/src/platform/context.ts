@@ -65,7 +65,6 @@ export function createPlatformContext(): PlatformContext {
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
         sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
     }
     return context
