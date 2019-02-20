@@ -3,7 +3,7 @@
 package main
 
 import (
-	_ "github.com/derekparker/delve"
+	_ "github.com/go-delve/delve"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/zoekt/cmd/zoekt-archive-index"
 	_ "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
