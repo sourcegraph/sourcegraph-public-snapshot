@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	permgl "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
@@ -52,43 +53,81 @@ func gitlabProvider(cfg *conf.Unified, gl *schema.GitLabConnection) (authz.Provi
 		return nil, fmt.Errorf("Could not parse URL for GitLab instance %q: %s", gl.Url, err)
 	}
 
-	// Check that there is a GitLab authn provider corresponding to this GitLab instance
-	foundAuthProvider := false
-	for _, authnProvider := range cfg.Critical.AuthProviders {
-		if authnProvider.Gitlab == nil {
-			continue
-		}
-		authnURL := authnProvider.Gitlab.Url
-		if authnURL == "" {
-			authnURL = "https://gitlab.com"
-		}
-		authProviderURL, err := url.Parse(authnURL)
-		if err != nil {
-			// Ignore the error here, because the authn provider is responsible for its own validation
-			continue
-		}
-		if authProviderURL.Hostname() == glURL.Hostname() {
-			foundAuthProvider = true
-			break
-		}
-	}
-	if !foundAuthProvider {
-		return nil, fmt.Errorf("Did not find authentication provider matching %q", gl.Url)
-	}
-
 	ttl, err := parseTTL(gl.Authorization.Ttl)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewGitLabProvider(permgl.GitLabOAuthAuthzProviderOp{
-		BaseURL:   glURL,
-		CacheTTL:  ttl,
-		MockCache: nil,
-	}), nil
+	switch idp := gl.Authorization.IdentityProvider; {
+	case idp.Oauth != nil:
+		// Check that there is a GitLab authn provider corresponding to this GitLab instance
+		foundAuthProvider := false
+		for _, authnProvider := range cfg.Critical.AuthProviders {
+			if authnProvider.Gitlab == nil {
+				continue
+			}
+			authnURL := authnProvider.Gitlab.Url
+			if authnURL == "" {
+				authnURL = "https://gitlab.com"
+			}
+			authProviderURL, err := url.Parse(authnURL)
+			if err != nil {
+				// Ignore the error here, because the authn provider is responsible for its own validation
+				continue
+			}
+			if authProviderURL.Hostname() == glURL.Hostname() {
+				foundAuthProvider = true
+				break
+			}
+		}
+		if !foundAuthProvider {
+			return nil, fmt.Errorf("Did not find authentication provider matching %q", gl.Url)
+		}
+
+		return NewGitLabOAuthProvider(permgl.GitLabOAuthAuthzProviderOp{
+			BaseURL:  glURL,
+			CacheTTL: ttl,
+		}), nil
+	case idp.Username != nil:
+		return NewGitLabSudoProvider(permgl.SudoProviderOp{
+			BaseURL:           glURL,
+			SudoToken:         gl.Token,
+			CacheTTL:          ttl,
+			UseNativeUsername: true,
+		}), nil
+	case idp.External != nil:
+		ext := idp.External
+		for _, authProvider := range cfg.Critical.AuthProviders {
+			saml := authProvider.Saml
+			foundMatchingSAML := (saml != nil && saml.ConfigID == ext.AuthProviderID && ext.AuthProviderType == saml.Type)
+			oidc := authProvider.Openidconnect
+			foundMatchingOIDC := (oidc != nil && oidc.ConfigID == ext.AuthProviderID && ext.AuthProviderType == oidc.Type)
+			if foundMatchingSAML || foundMatchingOIDC {
+				return NewGitLabSudoProvider(permgl.SudoProviderOp{
+					BaseURL: glURL,
+					AuthnConfigID: auth.ProviderConfigID{
+						Type: ext.AuthProviderType,
+						ID:   ext.AuthProviderID,
+					},
+					GitLabProvider:    ext.GitlabProvider,
+					SudoToken:         gl.Token,
+					CacheTTL:          ttl,
+					UseNativeUsername: false,
+				}), nil
+			}
+		}
+		return nil, fmt.Errorf("Did not find authentication provider matching type %s and configID %s", ext.AuthProviderType, ext.AuthProviderID)
+	default:
+		return nil, fmt.Errorf("No identityProvider was specified")
+	}
 }
 
-// NewGitLabProvider is a mockable constructor for new GitLabAuthzProvider instances.
-var NewGitLabProvider = func(op permgl.GitLabOAuthAuthzProviderOp) authz.Provider {
-	return permgl.NewProvider(op)
+// NewGitLabOAuthProvider is a mockable constructor for new gitlab.GitLabOAuthAuthzProvider instances.
+var NewGitLabOAuthProvider = func(op permgl.GitLabOAuthAuthzProviderOp) authz.Provider {
+	return permgl.NewOAuthProvider(op)
+}
+
+// NewGitLabSudoProvider is a mockable constructor for new gitlab.SudoProvider instances
+var NewGitLabSudoProvider = func(op permgl.SudoProviderOp) authz.Provider {
+	return permgl.NewSudoProvider(op)
 }

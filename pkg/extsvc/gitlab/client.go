@@ -40,6 +40,7 @@ type ClientProvider struct {
 }
 
 type CommonOp struct {
+	// NoCache, if true, will bypass any caching done in this package
 	NoCache bool
 }
 
@@ -66,45 +67,72 @@ func NewClientProvider(baseURL *url.URL, transport http.RoundTripper) *ClientPro
 }
 
 // GetPATClient returns a client authenticated by the personal access token.
-func (p *ClientProvider) GetPATClient(personalAccessToken string) *Client {
+func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client {
 	if personalAccessToken == "" {
-		return p.getClient("", "", "")
+		return p.getClient(getClientOp{})
 	}
-	return p.getClient(fmt.Sprintf("pat::%s", personalAccessToken), personalAccessToken, "")
+	return p.getClient(getClientOp{personalAccessToken: personalAccessToken, sudo: sudo})
 }
 
 // GetOAuthClient returns a client authenticated by the OAuth token.
 func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	if oauthToken == "" {
-		return p.getClient("", "", "")
+		return p.getClient(getClientOp{})
 	}
-	return p.getClient(fmt.Sprintf("oauth::%s", oauthToken), "", oauthToken)
+	return p.getClient(getClientOp{oauthToken: oauthToken})
 }
 
 // GetClient returns an unauthenticated client.
 func (p *ClientProvider) GetClient() *Client {
-	return p.getClient("", "", "")
+	return p.getClient(getClientOp{})
 }
 
-func (p *ClientProvider) getClient(key, personalAccessToken, oauthToken string) *Client {
+type getClientOp struct {
+	personalAccessToken string
+	oauthToken          string
+	sudo                string
+}
+
+func (p *ClientProvider) getClient(op getClientOp) *Client {
+	if op.personalAccessToken != "" && op.oauthToken != "" {
+		panic("op.personalAccessToken and op.oauthToken should never both be set")
+	}
 	p.gitlabClientsMu.Lock()
 	defer p.gitlabClientsMu.Unlock()
 
+	var key string
+	if op.personalAccessToken != "" {
+		key = fmt.Sprintf("pat::sudo:%s::%s", op.sudo, op.personalAccessToken)
+	} else if op.oauthToken != "" {
+		key = fmt.Sprintf("oauth::%s", op.oauthToken)
+	}
 	if c, ok := p.gitlabClients[key]; ok {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, personalAccessToken, oauthToken, p.httpClient, p.RateLimit)
+	c := p.newClient(p.baseURL, op, p.httpClient, p.RateLimit)
 	p.gitlabClients[key] = c
 	return c
 }
 
+// Client is a GitLab API client. Clients are associated with a particular user identity, which is
+// defined by some combination of the following fields: OAuthToken, PersonalAccessToken, Sudo. If
+// Sudo is non-empty, then either PersonalAccessToken or OAuthToken must contain a sudo-level token
+// and the user identity will be the user ID specified by Sudo (rather than the user that owns the
+// token).
+//
+// The Client's cache is keyed by the union of OAuthToken, PersonalAccessToken, and Sudo. It is NOT
+// keyed by the actual user ID that is defined by these. So if an OAuth token and personal access
+// token belong to the same user and there are two corresponding Client instances, those Client
+// instances will NOT share the same cache. However, two Client instances sharing the exact same
+// values for those fields WILL share a cache.
 type Client struct {
 	baseURL             *url.URL
 	httpClient          *http.Client
 	projCache           *rcache.Cache
-	personalAccessToken string // a personal access token to authenticate requests, if set
+	PersonalAccessToken string // a personal access token to authenticate requests, if set
 	OAuthToken          string // an OAuth bearer token, if set
+	Sudo                string // Sudo user value, if set
 	RateLimit           *ratelimit.Monitor
 }
 
@@ -112,23 +140,26 @@ type Client struct {
 //
 // The URL must point to the base URL of the GitLab instance. This is https://gitlab.com for GitLab.com and
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
-func (p *ClientProvider) newClient(baseURL *url.URL, personalAccessToken, oauthToken string, httpClient *http.Client, rateLimit *ratelimit.Monitor) *Client {
+//
+// See the docstring of Client for the meaning of the parameters.
+func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient *http.Client, rateLimit *ratelimit.Monitor) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
-	if isGitLabDotComURL(baseURL) && personalAccessToken == "" && oauthToken == "" {
+	if isGitLabDotComURL(baseURL) && op.personalAccessToken == "" && op.oauthToken == "" {
 		cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
 	} else {
 		cacheTTL = 30 * time.Second
 	}
-	key := sha256.Sum256([]byte(personalAccessToken + ":" + oauthToken + ":" + baseURL.String()))
+	key := sha256.Sum256([]byte(op.personalAccessToken + ":" + op.oauthToken + ":" + baseURL.String()))
 	projCache := rcache.NewWithTTL("gl_proj:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
 	return &Client{
 		baseURL:             baseURL,
 		httpClient:          httpClient,
 		projCache:           projCache,
-		personalAccessToken: personalAccessToken,
-		OAuthToken:          oauthToken,
+		PersonalAccessToken: op.personalAccessToken,
+		OAuthToken:          op.oauthToken,
+		Sudo:                op.sudo,
 		RateLimit:           rateLimit,
 	}
 }
@@ -141,11 +172,14 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.personalAccessToken != "" {
-		req.Header.Set("Private-Token", c.personalAccessToken) // https://docs.gitlab.com/ee/api/README.html#personal-access-tokens
+	if c.PersonalAccessToken != "" {
+		req.Header.Set("Private-Token", c.PersonalAccessToken) // https://docs.gitlab.com/ee/api/README.html#personal-access-tokens
 	}
 	if c.OAuthToken != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OAuthToken))
+	}
+	if c.Sudo != "" {
+		req.Header.Set("Sudo", c.Sudo)
 	}
 
 	var resp *http.Response
