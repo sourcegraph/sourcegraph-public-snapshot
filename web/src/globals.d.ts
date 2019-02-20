@@ -113,3 +113,15 @@ interface SourcegraphContext {
     /** Whether the new update scheduler is enabled */
     updateScheduler2Enabled: boolean
 }
+
+/**
+ * For Web Worker entrypoints using Webpack's worker-loader.
+ *
+ * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
+ */
+declare module 'worker-loader?inline!*' {
+    class WebpackWorker extends Worker {
+        constructor()
+    }
+    export default WebpackWorker
+}
