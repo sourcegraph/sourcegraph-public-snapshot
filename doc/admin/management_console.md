@@ -4,7 +4,7 @@ The management console is a separate service used to edit Sourcegraph's [critica
 
 Critical configuration includes things like authentication providers, the external URL, and the license key. This configuration is separate from the regular [site configuration](config/site_config.md), because an error here could make Sourcegraph inaccessible, except through the management console.
 
-# Accessing the management console
+## Accessing the management console
 
 ### When running Sourcegraph in a single Docker container
 
@@ -28,7 +28,7 @@ $ kubectl port-forward svc/management-console 2633:2633
 
 Then visit https://localhost:2633 to access the management console.
 
-# Troubleshooting
+## Troubleshooting
 
 ### I am getting "The server sent an invalid response" errors from my browser, why?
 
