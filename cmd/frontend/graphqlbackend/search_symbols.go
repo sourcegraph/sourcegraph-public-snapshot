@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"os"
 	"context"
 	"fmt"
 	"log"
@@ -217,11 +218,11 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKModule
 	case "namespace":
 		return lsp.SKNamespace
-	case "package", "subprogspec":
+	case "package", "packageName", "subprogspec":
 		return lsp.SKPackage
 	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
 		return lsp.SKClass
-	case "method":
+	case "method", "methodSpec":
 		return lsp.SKMethod
 	case "property":
 		return lsp.SKProperty
@@ -264,6 +265,8 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
 	}
-	log.Printf("Unknown ctags kind: %q", kind)
+	if os.Getenv("DEPLOY_TYPE") == "dev" {
+		log.Printf("Unknown ctags kind: %q", kind)
+	}
 	return 0
 }
