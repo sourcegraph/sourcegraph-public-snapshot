@@ -159,10 +159,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                         />
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
-                        <div
-                            className="alert alert-danger "
-                            dangerouslySetInnerHTML={{ __html: this.state.blobLinesOrError.message }}
-                        />
+                        <div className="alert alert-danger">{this.state.blobLinesOrError.message}</div>
                     )}
                     {!this.state.blobLinesOrError && (
                         <table>
