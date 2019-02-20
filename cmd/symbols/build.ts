@@ -64,6 +64,11 @@ const libsqlite3PcreFilenameByPlatform: { [platform in NodeJS.Platform]?: string
     linux: 'libsqlite3-pcre.so',
 }
 
+const installDependenciesByPlatform: { [platform in NodeJS.Platform]?: string } = {
+    darwin: 'brew install pkg-config sqlite pcre FiloSottile/musl-cross/musl-cross',
+    linux: 'apt-get install libpcre3-dev libsqlite3-dev pkg-config musl-tools',
+}
+
 const repositoryRoot: string = process.cwd()
 
 /**
@@ -157,6 +162,19 @@ function buildExecutable({ outputPath, buildType }: { outputPath: string; buildT
  * Builds the PCRE extension to sqlite3. Returns the path to the built library.
  */
 function buildLibsqlite3Pcre(): string {
+    if (!testSilently('command', '-v', 'pkg-config') || !testSilently('pkg-config', '--cflags', 'sqlite3', 'libpcre')) {
+        const installCommand = installDependenciesByPlatform[os.platform()]
+        console.log(chalk.red('Missing sqlite dependencies.'))
+        if (installCommand) {
+            console.log(`Install them by running \`${chalk.cyan(installCommand)}\``)
+        } else {
+            console.log(
+                'See the local development documentation: https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-2-install-dependencies'
+            )
+        }
+        process.exit(1)
+    }
+
     const libsqlite3PcrePath = path.join(
         repositoryRoot,
         libsqlite3PcreFilenameByPlatform[os.platform()] || 'libsqlite3-pcre.so'
@@ -222,7 +240,8 @@ function buildSymbolsDockerImage({
     }
 
     if (!testSilently('command', '-v', muslGcc.command)) {
-        console.log(`Couldn't find musl C compiler (needed by sqlite3) ${muslGcc.command}. ${muslGcc.installationHelp}`)
+        console.log(chalk.red(`Couldn't find musl C compiler ${muslGcc.command}.`))
+        console.log(muslGcc.installationHelp)
         process.exit(1)
     }
 
