@@ -3,23 +3,25 @@ package symbols
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+
 	"database/sql"
+
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
+	sqlite3 "github.com/mattn/go-sqlite3"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	sqlite3 "github.com/mattn/go-sqlite3"
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

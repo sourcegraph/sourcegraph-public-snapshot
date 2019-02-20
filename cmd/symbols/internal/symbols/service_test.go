@@ -1,19 +1,19 @@
 package symbols
 
 import (
-	"errors"
-	"strings"
-	"path"
-	"path/filepath"
-	"os/exec"
 	"archive/tar"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
