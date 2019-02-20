@@ -50,7 +50,7 @@ describe('QueryBuilder', () => {
         expect(onChange.calledWith('(open|close) file')).toBe(true)
     })
 
-    it('field fires the onFieldsQueryChange prop handler with the term wrapped in double quotes when updating the "Exact match"', () => {
+    it('field fires the onFieldsQueryChange prop handler with a multi-word term wrapped in double quotes when updating the "Exact match"', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
 
@@ -58,6 +58,16 @@ describe('QueryBuilder', () => {
         fireEvent.change(exactMatchField, { target: { value: 'foo bar baz' } })
         expect(onChange.calledOnce).toBe(true)
         expect(onChange.calledWith('"foo bar baz"')).toBe(true)
+    })
+
+    it('field fires the onFieldsQueryChange prop handler with a single-word term wrapped in double quotes when updating the "Exact match"', () => {
+        const onChange = sinon.spy()
+        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
+
+        const exactMatchField = container.querySelector('#query-builder-exactMatch')!
+        fireEvent.change(exactMatchField, { target: { value: 'open(' } })
+        expect(onChange.calledOnce).toBe(true)
+        expect(onChange.calledWith('"open("')).toBe(true)
     })
 
     it('checks that the "Author", "Before", "After", and "Message" fields do not exist if the search type is set to code search', () => {
