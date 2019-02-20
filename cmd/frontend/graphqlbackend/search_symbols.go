@@ -3,13 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 	"sync"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -27,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
@@ -267,8 +264,6 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
 	}
-	if conf.IsDev(conf.DeployType()) || envvar.SourcegraphDotComMode() {
-		log.Printf("Unknown ctags kind: %q", kind)
-	}
+	log15.Debug("Unknown ctags kind", "kind", kind)
 	return 0
 }
