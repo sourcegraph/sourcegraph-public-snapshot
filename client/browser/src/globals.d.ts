@@ -13,15 +13,3 @@ interface Window {
     // Bitbucket has a global require function on the DOM that we rely on to get the current Bitbucket state.
     require: any
 }
-
-/**
- * For Web Worker entrypoints using Webpack's worker-loader.
- *
- * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
- */
-declare module 'worker-loader?inline!*' {
-    class WebpackWorker extends Worker {
-        constructor()
-    }
-    export default WebpackWorker
-}
