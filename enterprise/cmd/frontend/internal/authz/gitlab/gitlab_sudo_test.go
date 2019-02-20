@@ -363,6 +363,8 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			for _, c := range test.calls {
+				t.Logf("Call %q", c.description)
+
 				// Recreate the authz provider cache every time, before running twice (once uncached, once cached)
 				ctx := context.Background()
 				op := test.op
