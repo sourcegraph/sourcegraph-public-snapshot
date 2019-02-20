@@ -10,6 +10,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -22,6 +23,12 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 	Email    *string
 }) (*UserResolver, error) {
 	if args.Email != nil {
+		// 🚨 SECURITY: Only admins are allowed to access the email address on Sourcegraph.com.
+		if envvar.SourcegraphDotComMode() {
+			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+				return nil, err
+			}
+		}
 		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
 			return nil, err
