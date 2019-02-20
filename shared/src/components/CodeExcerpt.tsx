@@ -148,8 +148,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                 offset={this.visibilitySensorOffset}
             >
                 <code
-                    className={`code-excerpt ${this.props.className || ''} ${
-                        isErrorLike(this.state.blobLinesOrError) ? 'code-excerpt-error' : ''
+                    className={`code-excerpt ${this.props.className || ''}${
+                        isErrorLike(this.state.blobLinesOrError) ? ' code-excerpt-error' : ''
                     }`}
                 >
                     {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
