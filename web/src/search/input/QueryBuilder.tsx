@@ -39,6 +39,7 @@ export interface QueryBuilderState {
     fields: QueryFields
 }
 
+const QUERY_BUILDER_KEY = 'query-builder-open'
 /**
  * The individual input fields for the various elements of the search query syntax.
  */
@@ -46,7 +47,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            showQueryBuilder: false,
+            showQueryBuilder: localStorage.getItem(QUERY_BUILDER_KEY) === 'true',
             builderQuery: '',
             typeOfSearch: 'code',
             fields: {
@@ -383,6 +384,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
 
     private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault()
+        localStorage.setItem(QUERY_BUILDER_KEY, (!this.state.showQueryBuilder).toString())
         this.setState(prevState => ({ showQueryBuilder: !prevState.showQueryBuilder }))
     }
 
