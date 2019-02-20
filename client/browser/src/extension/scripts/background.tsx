@@ -425,7 +425,7 @@ endpointPairs.subscribe(({ proxy, expose }) => {
         clientEndpoints.proxy.postMessage(message)
     })
     clientEndpoints.proxy.addEventListener('message', ({ data }) => {
-        proxy.postMessage({ data })
+        proxy.postMessage(data)
     })
     // Connect expose client endpoint
     clientEndpoints.expose.start()
@@ -433,7 +433,7 @@ endpointPairs.subscribe(({ proxy, expose }) => {
         clientEndpoints.expose.postMessage(message)
     })
     clientEndpoints.expose.addEventListener('message', ({ data }) => {
-        expose.postMessage({ data })
+        expose.postMessage(data)
     })
     // Kill worker when either port disconnects
     proxy.onDisconnect.addListener(() => worker.terminate())
