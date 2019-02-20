@@ -12,6 +12,7 @@ FROM alpine:3.9
 # hadolint ignore=DL3018
 RUN apk add --no-cache bind-tools ca-certificates mailcap tini
 
+# hadolint ignore=DL3022
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
