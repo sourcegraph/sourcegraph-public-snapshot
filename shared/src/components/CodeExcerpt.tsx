@@ -2,8 +2,9 @@ import { range } from 'lodash'
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
-import { filter, switchMap } from 'rxjs/operators'
+import { catchError, filter, switchMap } from 'rxjs/operators'
 import { highlightNode } from '../util/dom'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
 
 export interface FetchFileCtx {
@@ -41,7 +42,7 @@ interface HighlightRange {
 }
 
 interface State {
-    blobLines?: string[]
+    blobLinesOrError?: string[] | ErrorLike
 }
 
 export class CodeExcerpt extends React.PureComponent<Props, State> {
@@ -66,17 +67,12 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                             isLightTheme,
                             disableTimeout: true,
                         })
-                    )
+                    ),
+                    catchError(error => [asError(error)])
                 )
-                .subscribe(
-                    blobLines => {
-                        this.setState({ blobLines })
-                    },
-                    err => {
-                        this.setState({ blobLines: [] })
-                        console.error('failed to fetch blob content', err)
-                    }
-                )
+                .subscribe(blobLinesOrError => {
+                    this.setState({ blobLinesOrError })
+                })
         )
     }
 
@@ -151,14 +147,24 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                 partialVisibility={true}
                 offset={this.visibilitySensorOffset}
             >
-                <code className={`code-excerpt ${this.props.className || ''}`}>
-                    {this.state.blobLines && (
+                <code
+                    className={`code-excerpt ${this.props.className || ''} ${
+                        isErrorLike(this.state.blobLinesOrError) ? 'code-excerpt-error' : ''
+                    }`}
+                >
+                    {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
                         <div
                             ref={this.setTableContainerElement}
-                            dangerouslySetInnerHTML={{ __html: this.makeTableHTML() }}
+                            dangerouslySetInnerHTML={{ __html: this.makeTableHTML(this.state.blobLinesOrError) }}
                         />
                     )}
-                    {!this.state.blobLines && (
+                    {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
+                        <div
+                            className="alert alert-danger "
+                            dangerouslySetInnerHTML={{ __html: this.state.blobLinesOrError.message }}
+                        />
+                    )}
+                    {!this.state.blobLinesOrError && (
                         <table>
                             <tbody>
                                 {range(this.getFirstLine(), this.getLastLine() + additionalLine).map(i => (
@@ -180,9 +186,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         this.tableContainerElement = ref
     }
 
-    private makeTableHTML(): string {
-        return (
-            '<table>' + this.state.blobLines!.slice(this.getFirstLine(), this.getLastLine() + 1).join('') + '</table>'
-        )
+    private makeTableHTML(blobLines: string[]): string {
+        return '<table>' + blobLines.slice(this.getFirstLine(), this.getLastLine(blobLines) + 1).join('') + '</table>'
     }
 }
