@@ -83,7 +83,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                         fieldsQueryParts.push(inputValue)
                     } else if (inputField === 'exactMatch') {
                         // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
-                        fieldsQueryParts.push(formatFieldForQuery('', inputValue))
+                        fieldsQueryParts.push(formatFieldForQuery('', inputValue, true))
                     } else if (inputField === 'type' && inputValue === 'code') {
                         // code searches don't need to be specified.
                         continue
@@ -393,7 +393,11 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
     }
 }
 
-function formatFieldForQuery(field: string, value: string): string {
+/**
+ *
+ * @param alwaysQuote if true, the value will always be wrapped in quotes. Used for fields like exactMatch.
+ */
+function formatFieldForQuery(field: string, value: string, alwaysQuote?: boolean): string {
     // The user shouldn't include the 'repo:' (or other field name) in the value, but
     // if they do, then be helpful and remove it for them to avoid double fields like
     // 'repo:repo:foo'.
@@ -403,7 +407,7 @@ function formatFieldForQuery(field: string, value: string): string {
 
     // See if we need to double-quote value.
     const jsonValue = JSON.stringify(value)
-    if (value.includes(' ') || jsonValue.slice(1, jsonValue.length - 1) !== value) {
+    if (value.includes(' ') || jsonValue.slice(1, jsonValue.length - 1) !== value || !!alwaysQuote) {
         value = jsonValue
     }
 
