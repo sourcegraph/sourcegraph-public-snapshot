@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -265,7 +267,7 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
 	}
-	if os.Getenv("DEPLOY_TYPE") == "dev" {
+	if conf.IsDev(conf.DeployType()) || envvar.SourcegraphDotComMode() {
 		log.Printf("Unknown ctags kind: %q", kind)
 	}
 	return 0
