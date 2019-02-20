@@ -28,8 +28,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- File match search results now show full repo name if there are results from mirrors on different code hosts (e.g. github.com/sourcegraph/sourcegraph and gitlab.com/sourcegraph/sourcegraph)
-- Search queries now use "smart case" by default. Searches are case insensitive unless you use uppercase letters. To explicitely set the case, you can still use the `case` field (e.g. `case:yes`, `case:no`). To explicitely set smart case, use `case:auto`.
+- File match search results now show full repository name if there are results from mirrors on different code hosts (e.g. github.com/sourcegraph/sourcegraph and gitlab.com/sourcegraph/sourcegraph)
+- Search queries now use "smart case" by default. Searches are case insensitive unless you use uppercase letters. To explicitly set the case, you can still use the `case` field (e.g. `case:yes`, `case:no`). To explicitly set smart case, use `case:auto`.
 
 ### Fixed
 
