@@ -32,6 +32,7 @@ func BenchmarkSearch(b *testing.B) {
 	tests := []protocol.SearchArgs{
 		{Repo: "github.com/sourcegraph/go-langserver", CommitID: "391a062a7d9977510e7e883e412769b07fed8b5e"},
 		{Repo: "github.com/moby/moby", CommitID: "6e5c2d639f67ae70f54d9f2285f3261440b074aa"},
+		{Repo: "github.com/moby/moby", CommitID: "6e5c2d639f67ae70f54d9f2285f3261440b074aa", Query: "^container$"},
 	}
 
 	for _, test := range tests {
