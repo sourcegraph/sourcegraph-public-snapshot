@@ -197,9 +197,10 @@ function buildLibsqlite3Pcre(): string {
     }
 
     console.log(`Building ${libsqlite3PcrePath}...`)
-    run('git', 'clone', 'https://github.com/ralight/sqlite3-pcre', sqlite3PcreRepositoryDirectory)
+    runShell(
+        `curl -fsSL https://codeload.github.com/ralight/sqlite3-pcre/tar.gz/c98da412b431edb4db22d3245c99e6c198d49f7a | tar -C ${sqlite3PcreRepositoryDirectory} -xvf - --strip 1`
+    )
     shelljs.pushd('-q', sqlite3PcreRepositoryDirectory)
-    run('git', 'checkout', 'c98da412b431edb4db22d3245c99e6c198d49f7a')
     runShell(buildCommand)
     shelljs.popd('-q')
     shelljs.rm('-rf', sqlite3PcreRepositoryDirectory)
