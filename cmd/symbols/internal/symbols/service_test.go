@@ -41,6 +41,8 @@ func init() {
 }
 
 func TestService(t *testing.T) {
+	MustRegisterSqlite3WithPcre()
+
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)
