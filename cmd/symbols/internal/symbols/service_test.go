@@ -1,24 +1,21 @@
 package symbols
 
 import (
+	"errors"
+	"strings"
+	"path"
+	"path/filepath"
+	"os/exec"
 	"archive/tar"
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
-	"database/sql"
-
-	sqlite3 "github.com/mattn/go-sqlite3"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -26,33 +23,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 )
 
-func TestService(t *testing.T) {
-	panicInCI := func(err error) {
-		_, isInCI := os.LookupEnv("CI")
-		if isInCI {
-			panic(err)
-		}
-	}
-	libSqlite3Pcre, found := os.LookupEnv("LIBSQLITE3_PCRE")
-	if !found {
+func init() {
+	if libSqlite3Pcre == "" {
 		rootPathOutput, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 		if err != nil {
-			panicInCI(err)
-			return
+			panic(err)
 		}
 		libs, err := filepath.Glob(path.Join(strings.TrimSpace(string(rootPathOutput)), "libsqlite3-pcre.*"))
 		if err != nil {
-			panicInCI(err)
-			return
+			panic(err)
 		}
 		if len(libs) == 0 {
-			panicInCI(errors.New("Can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and libsqlite3-pcre.* doesn't exist at the root of the repository. Try building it with `./dev/ts-script cmd/symbols/build.ts buildLibsqlite3Pcre`."))
-			return
+			panic(errors.New("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and libsqlite3-pcre.* doesn't exist at the root of the repository - try building it with `./dev/ts-script cmd/symbols/build.ts buildLibsqlite3Pcre`"))
 		}
 		libSqlite3Pcre = libs[0]
 	}
-	sql.Register("sqlite3_with_pcre", &sqlite3.SQLiteDriver{Extensions: []string{libSqlite3Pcre}})
+}
 
+func TestService(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)

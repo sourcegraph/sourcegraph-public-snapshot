@@ -12,10 +12,13 @@ import (
 )
 
 func BenchmarkSearch(b *testing.B) {
+	MustRegisterSqlite3WithPcre()
+	ctagsCommand := ctags.GetCommand()
+
 	service := Service{
 		FetchTar: testutil.FetchTarFromGithub,
 		NewParser: func() (ctags.Parser, error) {
-			return ctags.NewParser("universal-ctags")
+			return ctags.NewParser(ctagsCommand)
 		},
 		Path: "/tmp/symbols-cache",
 	}

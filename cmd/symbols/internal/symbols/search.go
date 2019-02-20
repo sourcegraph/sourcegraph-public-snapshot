@@ -3,6 +3,7 @@ package symbols
 import (
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"database/sql"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
@@ -17,12 +19,25 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	sqlite3 "github.com/mattn/go-sqlite3"
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
 const maxFileSize = 1 << 19 // 512KB
+
+var libSqlite3Pcre = env.Get("LIBSQLITE3_PCRE", "", "path to the libsqlite3-pcre library")
+
+// MustRegisterSqlite3WithPcre registers a sqlite3 driver with PCRE support and
+// panics if it can't.
+func MustRegisterSqlite3WithPcre() {
+	if libSqlite3Pcre == "" {
+		env.PrintHelp()
+		panic("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set")
+	}
+	sql.Register("sqlite3_with_pcre", &sqlite3.SQLiteDriver{Extensions: []string{libSqlite3Pcre}})
+}
 
 func (s *Service) handleSearch(w http.ResponseWriter, r *http.Request) {
 	var args protocol.SearchArgs

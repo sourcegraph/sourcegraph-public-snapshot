@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -16,7 +15,6 @@ import (
 	"strconv"
 	"time"
 
-	sqlite3 "github.com/mattn/go-sqlite3"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -36,8 +34,6 @@ var (
 	cacheDir       = env.Get("CACHE_DIR", "/tmp/symbols-cache", "directory to store cached symbols")
 	cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache in megabytes")
 	ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.NumCPU()), "number of ctags child processes to run")
-	ctagsCommand   = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)")
-	libSqlite3Pcre = env.Get("LIBSQLITE3_PCRE", "", "path to the libsqlite3-pcre library")
 )
 
 const port = "3184"
@@ -48,11 +44,7 @@ func main() {
 	log.SetFlags(0)
 	tracer.Init()
 
-	if libSqlite3Pcre == "" {
-		env.PrintHelp()
-		panic("Can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set.")
-	}
-	sql.Register("sqlite3_with_pcre", &sqlite3.SQLiteDriver{Extensions: []string{libSqlite3Pcre}})
+	symbols.MustRegisterSqlite3WithPcre()
 
 	go debugserver.Start()
 
@@ -61,9 +53,9 @@ func main() {
 			return git.Archive(ctx, repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
 		NewParser: func() (ctags.Parser, error) {
-			parser, err := ctags.NewParser(ctagsCommand)
+			parser, err := ctags.NewParser(ctags.GetCommand())
 			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("command: %s", ctagsCommand))
+				return nil, errors.Wrap(err, fmt.Sprintf("command: %s", ctags.GetCommand()))
 			}
 			return parser, nil
 		},
