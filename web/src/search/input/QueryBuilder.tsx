@@ -407,7 +407,7 @@ function formatFieldForQuery(field: string, value: string, alwaysQuote?: boolean
 
     // See if we need to double-quote value.
     const jsonValue = JSON.stringify(value)
-    if (value.includes(' ') || jsonValue.slice(1, jsonValue.length - 1) !== value || !!alwaysQuote) {
+    if (value.includes(' ') || jsonValue.slice(1, jsonValue.length - 1) !== value || alwaysQuote) {
         value = jsonValue
     }
 
