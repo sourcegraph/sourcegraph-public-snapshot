@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 )
@@ -42,7 +43,11 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 
 	usr, err := db.Users.GetByVerifiedEmail(ctx, formData.Email)
 	if err != nil {
-		httpLogAndError(w, "No user found with a matching verified email address", http.StatusBadRequest, "email", formData.Email)
+		// 🚨 SECURITY: We don't show an error message when the user is not found
+		// as to not leak the existence of a given e-mail address in the database.
+		if !errcode.IsNotFound(err) {
+			httpLogAndError(w, "Failed to lookup user", http.StatusInternalServerError)
+		}
 		return
 	}
 

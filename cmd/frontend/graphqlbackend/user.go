@@ -22,13 +22,14 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 	Username *string
 	Email    *string
 }) (*UserResolver, error) {
-	if args.Email != nil {
-		// 🚨 SECURITY: Only admins are allowed to access the email address on Sourcegraph.com.
-		if envvar.SourcegraphDotComMode() {
-			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-				return nil, err
-			}
+	// 🚨 SECURITY: Only admins are allowed to access the email address or username on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
 		}
+	}
+
+	if args.Email != nil {
 		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
 			return nil, err
