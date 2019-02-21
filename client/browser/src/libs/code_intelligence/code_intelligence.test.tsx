@@ -7,10 +7,12 @@ jest.mock('react-dom', () => ({
 
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { from, of, Subscription } from 'rxjs'
+import { from, NEVER, of, Subscription } from 'rxjs'
 import { filter, map, skip, switchMap, take } from 'rxjs/operators'
+import { Services } from '../../../../../shared/src/api/client/services'
 import { Range } from '../../../../../shared/src/api/extension/types/range'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
+import { Controller } from '../../../../../shared/src/extensions/controller'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { FileInfo, handleCodeHost } from './code_intelligence'
 
@@ -22,6 +24,13 @@ const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON 
 jest.mock('uuid', () => ({
     v4: () => 'uuid',
 }))
+
+const createMockController = (services: Services): Controller => ({
+    services,
+    notifications: NEVER,
+    executeCommand: jest.fn(),
+    unsubscribe: jest.fn(),
+})
 
 describe('handleCodeHost()', () => {
     const MOCK_PLATFORM_CONTEXT: any = {}
@@ -71,9 +80,7 @@ describe('handleCodeHost()', () => {
                     check: () => true,
                 },
                 platformContext: MOCK_PLATFORM_CONTEXT,
-                extensionsController: {
-                    services,
-                } as any,
+                extensionsController: createMockController(services),
                 showGlobalDebug: false,
             })
         )
@@ -94,9 +101,7 @@ describe('handleCodeHost()', () => {
                     getCommandPaletteMount: () => commandPaletteMount,
                 },
                 platformContext: MOCK_PLATFORM_CONTEXT,
-                extensionsController: {
-                    services,
-                } as any,
+                extensionsController: createMockController(services),
                 showGlobalDebug: false,
             })
         )
@@ -113,9 +118,7 @@ describe('handleCodeHost()', () => {
                     check: () => true,
                 },
                 platformContext: MOCK_PLATFORM_CONTEXT,
-                extensionsController: {
-                    services,
-                } as any,
+                extensionsController: createMockController(services),
                 showGlobalDebug: true,
             })
         )
@@ -136,9 +139,7 @@ describe('handleCodeHost()', () => {
                     getGlobalDebugMount: () => globalDebugMount,
                 },
                 platformContext: MOCK_PLATFORM_CONTEXT,
-                extensionsController: {
-                    services,
-                } as any,
+                extensionsController: createMockController(services),
                 showGlobalDebug: true,
             })
         )
@@ -177,9 +178,7 @@ describe('handleCodeHost()', () => {
                     selectionsChanges: () => of([]),
                 },
                 platformContext: MOCK_PLATFORM_CONTEXT,
-                extensionsController: {
-                    services,
-                } as any,
+                extensionsController: createMockController(services),
                 showGlobalDebug: true,
             })
         )
@@ -240,9 +239,7 @@ describe('handleCodeHost()', () => {
                     selectionsChanges: () => of([]),
                 },
                 platformContext: MOCK_PLATFORM_CONTEXT,
-                extensionsController: {
-                    services,
-                } as any,
+                extensionsController: createMockController(services),
                 showGlobalDebug: true,
             })
         )
