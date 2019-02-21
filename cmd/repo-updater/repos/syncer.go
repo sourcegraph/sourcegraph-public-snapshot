@@ -99,43 +99,53 @@ func (s Syncer) upserts(diff Diff) []*Repo {
 	now := s.now()
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
 
-	for _, add := range diff.Added {
-		repo := add.(*Repo)
-		repo.CreatedAt, repo.DeletedAt = now, time.Time{}
+	for _, repo := range diff.Deleted {
+		repo.UpdatedAt, repo.DeletedAt = now, now
+		repo.Sources = []string{}
 		upserts = append(upserts, repo)
 	}
 
-	for _, mod := range diff.Modified {
-		repo := mod.(*Repo)
+	for _, repo := range diff.Modified {
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}
 		upserts = append(upserts, repo)
 	}
 
-	for _, del := range diff.Deleted {
-		repo := del.(*Repo)
-		repo.UpdatedAt, repo.DeletedAt = now, now
-		repo.Sources = []string{}
+	for _, repo := range diff.Added {
+		repo.CreatedAt, repo.DeletedAt = now, time.Time{}
 		upserts = append(upserts, repo)
 	}
 
 	return upserts
 }
 
-func (Syncer) diff(sourced, stored []*Repo) Diff {
-	before := make([]Diffable, len(stored))
-	for i := range stored {
-		before[i] = stored[i]
-	}
+// A Diff of two sets of Diffables.
+type Diff struct {
+	Added      []*Repo
+	Deleted    []*Repo
+	Modified   []*Repo
+	Unmodified []*Repo
+}
 
-	after := make([]Diffable, len(sourced))
-	for i := range sourced {
-		after[i] = sourced[i]
+// Sort sorts all Diff elements by Repo.IDs.
+func (d *Diff) Sort() {
+	for _, ds := range [][]*Repo{
+		d.Added,
+		d.Deleted,
+		d.Modified,
+		d.Unmodified,
+	} {
+		sort.Slice(ds, func(i, j int) bool {
+			l, r := ds[i].IDs(), ds[j].IDs()
+			return l[0] < r[0]
+		})
 	}
+}
 
-	return NewDiff(before, after, func(before, after Diffable) bool {
+func (Syncer) diff(sourced, stored []*Repo) (diff Diff) {
+	modified := func(before, after *Repo) bool {
 		// This modified function returns true iff any fields in `after` changed
 		// in comparison to `before` for which the `Source` is authoritative.
-		b, a := before.(*Repo), after.(*Repo)
+		b, a := before, after
 		return b.Name != a.Name ||
 			b.Language != a.Language ||
 			b.Fork != a.Fork ||
@@ -146,7 +156,40 @@ func (Syncer) diff(sourced, stored []*Repo) Diff {
 				b.ExternalRepo != a.ExternalRepo) ||
 			!equal(b.Sources, a.Sources) ||
 			!reflect.DeepEqual(b.Metadata, a.Metadata)
-	})
+	}
+
+	aset := make(map[string]*Repo, len(sourced))
+	for _, a := range sourced {
+		set(aset, a)
+	}
+
+	bset := make(map[string]*Repo, len(stored))
+	for _, b := range stored {
+		set(bset, b)
+	}
+
+	for _, b := range stored {
+		ids := b.IDs()
+		switch as := elems(aset, ids); {
+		case len(as) == 0:
+			diff.Deleted = append(diff.Deleted, b)
+		case modified(b, as[len(as)-1]):
+			diff.Modified = append(diff.Modified, as[len(as)-1])
+		default:
+			diff.Unmodified = append(diff.Unmodified, b)
+		}
+		del(aset, ids)
+	}
+
+	for _, a := range sourced {
+		ids := a.IDs()
+		if bs := elems(bset, ids); len(bs) == 0 {
+			diff.Added = append(diff.Added, a)
+			del(bset, ids)
+		}
+	}
+
+	return
 }
 
 func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
@@ -242,4 +285,26 @@ func equal(a, b []string) bool {
 	}
 
 	return true
+}
+
+func set(s map[string]*Repo, d *Repo) {
+	for _, id := range d.IDs() {
+		s[id] = d
+	}
+}
+
+func del(set map[string]*Repo, ids []string) {
+	for _, id := range ids {
+		delete(set, id)
+	}
+}
+
+func elems(set map[string]*Repo, ids []string) []*Repo {
+	ds := make([]*Repo, 0, len(ids))
+	for _, id := range ids {
+		if d, ok := set[id]; ok {
+			ds = append(ds, d)
+		}
+	}
+	return ds
 }

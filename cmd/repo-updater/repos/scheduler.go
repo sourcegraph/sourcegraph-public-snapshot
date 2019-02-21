@@ -188,20 +188,20 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	log15.Debug("updating configured repos with diff", pp.Sprint(diff))
 
 	for _, del := range diff.Deleted {
-		repo := configuredRepo2FromRepo(del.(*Repo))
+		repo := configuredRepo2FromRepo(del)
 		s.schedule.remove(repo)
 		updating := false
 		s.updateQueue.remove(repo, updating)
 	}
 
 	for _, add := range diff.Added {
-		repo := configuredRepo2FromRepo(add.(*Repo))
+		repo := configuredRepo2FromRepo(add)
 		s.schedule.add(repo)
 		s.updateQueue.enqueue(repo, priorityLow)
 	}
 
 	for _, mod := range diff.Modified {
-		if repo := configuredRepo2FromRepo(mod.(*Repo)); repo.Enabled {
+		if repo := configuredRepo2FromRepo(mod); repo.Enabled {
 			s.schedule.update(repo)
 			s.updateQueue.update(repo)
 		} else {
