@@ -231,7 +231,12 @@ func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
 
 	records := make([]record, 0, len(repos))
 	for _, r := range repos {
-		rec := record{
+		metadata, err := metadataColumn(r.Metadata)
+		if err != nil {
+			return nil, errors.Wrap(err, "metadataColumn: ")
+		}
+
+		records = append(records, record{
 			ID:                  r.ID,
 			Name:                r.Name,
 			Description:         r.Description,
@@ -246,23 +251,8 @@ func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
 			Archived:            r.Archived,
 			Fork:                r.Fork,
 			Sources:             sourcesColumn(r.Sources),
-		}
-
-		switch metadata := r.Metadata.(type) {
-		case []byte:
-			rec.Metadata = json.RawMessage(metadata)
-		case string:
-			rec.Metadata = json.RawMessage(metadata)
-		case json.RawMessage:
-			rec.Metadata = json.RawMessage(metadata)
-		default:
-			rec.Metadata, err = json.MarshalIndent(r.Metadata, "        ", "    ")
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		records = append(records, rec)
+			Metadata:            metadata,
+		})
 	}
 
 	batch, err := json.MarshalIndent(records, "    ", "    ")
@@ -310,7 +300,6 @@ WITH batch AS (
     )
   )
   WITH ORDINALITY
-  ORDER BY ordinality
 ),
 
 --
@@ -456,6 +445,22 @@ func sourcesColumn(sources []string) json.RawMessage {
 		panic(err)
 	}
 	return data
+}
+
+func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
+	switch m := metadata.(type) {
+	case nil:
+		msg = json.RawMessage("{}")
+	case string:
+		msg = json.RawMessage(m)
+	case []byte:
+		msg = m
+	case json.RawMessage:
+		msg = m
+	default:
+		msg, err = json.MarshalIndent(m, "        ", "    ")
+	}
+	return
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
