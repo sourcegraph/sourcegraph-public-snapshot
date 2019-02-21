@@ -278,7 +278,7 @@ var upsertReposQueryFmtstr = `
 
 --
 -- The "batch" Common Table Expression (CTE) produces the records to be upserted,
--- leveraging the "jsonb_to_recordset" Postgres function to parse the JSON
+-- leveraging the "json_to_recordset" Postgres function to parse the JSON
 -- serialised repos array being passed from the application code.
 --
 -- This is done for two reasons:
@@ -290,7 +290,7 @@ var upsertReposQueryFmtstr = `
 --
 WITH batch AS (
   SELECT * FROM ROWS FROM (
-  jsonb_to_recordset(%s)
+  json_to_recordset(%s)
   AS (
       id                    integer,
       name                  citext,
@@ -321,12 +321,10 @@ WITH batch AS (
 updated AS (
   UPDATE repo
   SET
-    id                    = GREATEST(batch.id, repo.id),
-    name                  = COALESCE(batch.name, repo.name),
+    name                  = batch.name,
     description           = batch.description,
     language              = batch.language,
-    created_at            = batch.created_at,
-    updated_at            = batch.updated_at,
+    updated_at            = COALESCE(batch.updated_at, repo.updated_at),
     deleted_at            = batch.deleted_at,
     external_service_type = COALESCE(batch.external_service_type, repo.external_service_type),
     external_service_id   = COALESCE(batch.external_service_id, repo.external_service_id),
@@ -337,8 +335,8 @@ updated AS (
     sources               = batch.sources,
     metadata              = batch.metadata
   FROM batch
-  WHERE repo.id = batch.id OR repo.name = batch.name OR (
-  repo.external_id IS NOT NULL
+  WHERE repo.name = batch.name OR (
+    repo.external_id IS NOT NULL
     AND repo.external_service_id IS NOT NULL
     AND repo.external_service_type IS NOT NULL
     AND batch.external_id IS NOT NULL
@@ -390,8 +388,7 @@ inserted AS (
     sources,
     metadata
   FROM batch
-  WHERE NOT EXISTS (SELECT 1 FROM repo WHERE repo.id = batch.id)
-  AND NOT EXISTS (SELECT 1 FROM repo WHERE repo.name = batch.name)
+  WHERE NOT EXISTS (SELECT 1 FROM repo WHERE repo.name = batch.name)
   AND NOT EXISTS (
     SELECT 1
     FROM repo

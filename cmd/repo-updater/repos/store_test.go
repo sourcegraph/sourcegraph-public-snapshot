@@ -37,7 +37,7 @@ func TestIntegration_DBStore(t *testing.T) {
 			id := strconv.Itoa(i)
 			want = append(want, &Repo{
 				Name:        "github.com/foo/bar" + id,
-				Description: "It's a foo's bar",
+				Description: "The description",
 				Language:    "barlang",
 				Enabled:     true,
 				Archived:    false,
@@ -82,31 +82,23 @@ func TestIntegration_DBStore(t *testing.T) {
 			return
 		}
 
-		for i := 1; i <= 5; i++ {
-			suffix := " " + strconv.Itoa(i)
-			now := time.Now()
-			for _, r := range want {
-				r.Name += suffix
-				r.Description += suffix
-				r.Language += suffix
-				r.UpdatedAt = now
-				r.Archived = !r.Archived
-				r.Fork = !r.Fork
+		suffix := "-updated"
+		now := time.Now()
+		for _, r := range want {
+			r.Name += suffix
+			r.Description += suffix
+			r.Language += suffix
+			r.UpdatedAt = now
+			r.Archived = !r.Archived
+			r.Fork = !r.Fork
+		}
 
-				// Not updateable fields. Check that that UpsertRepos
-				// restores their original value.
-				r.ID += 10000
-				r.Enabled = !r.Enabled
-				r.CreatedAt = r.CreatedAt.Add(time.Minute)
-			}
-
-			if err = txstore.UpsertRepos(ctx, want...); err != nil {
-				t.Errorf("UpsertRepos error: %s", err)
-			} else if have, err = txstore.ListRepos(ctx); err != nil {
-				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, want); diff != "" {
-				t.Errorf("ListRepos:\n%s", diff)
-			}
+		if err = txstore.UpsertRepos(ctx, want...); err != nil {
+			t.Errorf("UpsertRepos error: %s", err)
+		} else if have, err = txstore.ListRepos(ctx); err != nil {
+			t.Errorf("ListRepos error: %s", err)
+		} else if diff := pretty.Compare(have, want); diff != "" {
+			t.Errorf("ListRepos:\n%s", diff)
 		}
 
 		for _, repo := range want {
