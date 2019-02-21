@@ -133,6 +133,7 @@ func (s GithubSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 	for repo := range s.conn.listAllRepositories(ctx) {
 		r := githubRepoToRepo(repo, s.conn)
 		r.Sources = append(r.Sources, sourceID)
+		r.Metadata = repo
 		repos = append(repos, r)
 	}
 	return repos, nil
