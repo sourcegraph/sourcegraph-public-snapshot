@@ -281,14 +281,9 @@ func TestDiff(t *testing.T) {
 			diff:   repos.Diff{Unmodified: repos.Repos{{Name: "1", Description: "foo"}}},
 		},
 		{
-			name:  "duplicates in before", // last duplicate wins
-			store: repos.Repos{{Name: "1", Description: "foo"}, {Name: "1", Description: "bar"}},
-			diff:  repos.Diff{Deleted: repos.Repos{{Name: "1", Description: "bar"}}},
-		},
-		{
-			name:   "duplicates in after", // last duplicate wins
+			name:   "duplicates in source", // first duplicate wins
 			source: repos.Repos{{Name: "1", Description: "foo"}, {Name: "1", Description: "bar"}},
-			diff:   repos.Diff{Added: repos.Repos{{Name: "1", Description: "bar"}}},
+			diff:   repos.Diff{Added: repos.Repos{{Name: "1", Description: "foo"}}},
 		},
 		{
 			// This test case is covering the scenario when a repo had a name and got
@@ -336,7 +331,7 @@ func TestDiff(t *testing.T) {
 				tc.diff.Added,
 				tc.diff.Modified,
 				tc.diff.Unmodified,
-				tc.diff.Deleted,
+				// Exclude Deleted since it will have no source set
 			} {
 				for i := range ds {
 					ds[i].Sources = []string{"a"}
