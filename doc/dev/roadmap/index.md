@@ -18,14 +18,9 @@ Core Services:
 
 - [Upgrade to PostgreSQL 10.6](https://github.com/sourcegraph/sourcegraph/issues/1404)
 
-Distribution:
-
-- [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
-- [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
-- [Better docs for setting up an instance ready for sharing](https://github.com/sourcegraph/sourcegraph/issues/2277)
-
 Code search and navigation:
 
+- Non-precise code intelligence improvements 
 - [Code navigation UX and robustness](https://github.com/sourcegraph/sourcegraph/issues/2070)
 - [Search UX](https://github.com/sourcegraph/sourcegraph/issues/2081)
 
@@ -36,13 +31,30 @@ Code search and navigation:
 
 ### 3.2
 
-TODO: we are not finished planning 3.2
+TODO: We are currently planning 3.2.
 
 Release date: 2019-03-20
 
-Core Services:
+Core services:
 
 - [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+
+Distribution:
+
+- Automate cloud provider deployment process
+- [Improve scaling documentation](https://github.com/sourcegraph/sourcegraph/issues/2019)
+- [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
+- Docs UX (TBD)
+- [Better docs for setting up an instance ready for sharing](https://github.com/sourcegraph/sourcegraph/issues/2277) (TBD)
+
+Code search:
+
+- TBD
+
+Code navigation:
+
+- Integrations foundation (details TBD)
+- Code intelligence (details TBD)
 
 ---
 
@@ -76,7 +88,6 @@ Sourcegraph extensions
 
 Other
 
-- [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
 - [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
 - [Checklist-based repository reviews](https://github.com/sourcegraph/sourcegraph/issues/1526)
 - [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)

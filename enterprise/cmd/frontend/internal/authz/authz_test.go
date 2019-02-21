@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -18,31 +19,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type newGitLabAuthzProviderParams struct {
-	Op gitlab.GitLabOAuthAuthzProviderOp
+type gitlabAuthzProviderParams struct {
+	OAuthOp gitlab.GitLabOAuthAuthzProviderOp
+	SudoOp  gitlab.SudoProviderOp
 }
 
-func (m newGitLabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
+func (m gitlabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
 	panic("should never be called")
 }
-func (m newGitLabAuthzProviderParams) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
+func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
 	panic("should never be called")
 }
-func (m newGitLabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
+func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
 	panic("should never be called")
 }
-func (m newGitLabAuthzProviderParams) ServiceID() string {
+func (m gitlabAuthzProviderParams) ServiceID() string {
 	panic("should never be called")
 }
-func (m newGitLabAuthzProviderParams) ServiceType() string {
+func (m gitlabAuthzProviderParams) ServiceType() string {
 	panic("should never be called")
 }
-func (m newGitLabAuthzProviderParams) Validate() []string { return nil }
+func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
 func Test_providersFromConfig(t *testing.T) {
-	NewGitLabProvider = func(op gitlab.GitLabOAuthAuthzProviderOp) authz.Provider {
+	NewGitLabOAuthProvider = func(op gitlab.GitLabOAuthAuthzProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
-		return newGitLabAuthzProviderParams{op}
+		return gitlabAuthzProviderParams{OAuthOp: op}
+	}
+	NewGitLabSudoProvider = func(op gitlab.SudoProviderOp) authz.Provider {
+		op.MockCache = nil // ignore cache value
+		return gitlabAuthzProviderParams{SudoOp: op}
 	}
 
 	db.Mocks = db.MockStores{}
@@ -74,7 +80,8 @@ func Test_providersFromConfig(t *testing.T) {
 			gitlabConnections: []*schema.GitLabConnection{
 				{
 					Authorization: &schema.GitLabAuthorization{
-						Ttl: "48h",
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -82,8 +89,8 @@ func Test_providersFromConfig(t *testing.T) {
 			},
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: []authz.Provider{
-				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabOAuthAuthzProviderOp{
+				gitlabAuthzProviderParams{
+					OAuthOp: gitlab.GitLabOAuthAuthzProviderOp{
 						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
 						CacheTTL: 48 * time.Hour,
 					},
@@ -108,7 +115,8 @@ func Test_providersFromConfig(t *testing.T) {
 			gitlabConnections: []*schema.GitLabConnection{
 				{
 					Authorization: &schema.GitLabAuthorization{
-						Ttl: "48h",
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -129,7 +137,8 @@ func Test_providersFromConfig(t *testing.T) {
 			gitlabConnections: []*schema.GitLabConnection{
 				{
 					Authorization: &schema.GitLabAuthorization{
-						Ttl: "48h",
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+						Ttl:              "48h",
 					},
 					Url:   "https://gitlab.mine",
 					Token: "asdf",
@@ -165,26 +174,30 @@ func Test_providersFromConfig(t *testing.T) {
 			},
 			gitlabConnections: []*schema.GitLabConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{},
-					Url:           "https://gitlab.mine",
-					Token:         "asdf",
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
 				},
 				{
-					Authorization: &schema.GitLabAuthorization{},
-					Url:           "https://gitlab.com",
-					Token:         "asdf",
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					},
+					Url:   "https://gitlab.com",
+					Token: "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: []authz.Provider{
-				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabOAuthAuthzProviderOp{
+				gitlabAuthzProviderParams{
+					OAuthOp: gitlab.GitLabOAuthAuthzProviderOp{
 						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
 						CacheTTL: 3 * time.Hour,
 					},
 				},
-				newGitLabAuthzProviderParams{
-					Op: gitlab.GitLabOAuthAuthzProviderOp{
+				gitlabAuthzProviderParams{
+					OAuthOp: gitlab.GitLabOAuthAuthzProviderOp{
 						BaseURL:  mustURLParse(t, "https://gitlab.com"),
 						CacheTTL: 3 * time.Hour,
 					},
@@ -233,13 +246,87 @@ func Test_providersFromConfig(t *testing.T) {
 			},
 			gitlabConnections: []*schema.GitLabConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{Ttl: "invalid"},
-					Url:           "https://gitlab.mine",
-					Token:         "asdf",
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+						Ttl:              "invalid",
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
 			expSeriousProblems:           []string{"Could not parse time duration \"invalid\"."},
+		},
+		{
+			description: "external auth provider",
+			cfg: conf.Unified{
+				Critical: schema.CriticalConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						Saml: &schema.SAMLAuthProvider{
+							ConfigID: "okta",
+							Type:     "saml",
+						},
+					}},
+				},
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{External: &schema.ExternalIdentity{
+							Type:             "external",
+							AuthProviderID:   "okta",
+							AuthProviderType: "saml",
+							GitlabProvider:   "my-external",
+						}},
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
+				},
+			},
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders: []authz.Provider{
+				gitlabAuthzProviderParams{
+					SudoOp: gitlab.SudoProviderOp{
+						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+						AuthnConfigID: auth.ProviderConfigID{
+							Type: "saml",
+							ID:   "okta",
+						},
+						GitLabProvider:    "my-external",
+						SudoToken:         "asdf",
+						CacheTTL:          3 * time.Hour,
+						UseNativeUsername: false,
+					},
+				},
+			},
+		},
+		{
+			description: "exact username matching",
+			cfg: conf.Unified{
+				Critical: schema.CriticalConfiguration{
+					AuthProviders: []schema.AuthProviders{},
+				},
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{Username: &schema.UsernameIdentity{Type: "username"}},
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
+				},
+			},
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders: []authz.Provider{
+				gitlabAuthzProviderParams{
+					SudoOp: gitlab.SudoProviderOp{
+						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						SudoToken:         "asdf",
+						CacheTTL:          3 * time.Hour,
+						UseNativeUsername: true,
+					},
+				},
+			},
 		},
 	}
 

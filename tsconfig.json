@@ -1,5 +1,5 @@
 {
-  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "extends": "@sourcegraph/tsconfig",
   "compilerOptions": {
     "target": "esnext",
     "module": "commonjs",

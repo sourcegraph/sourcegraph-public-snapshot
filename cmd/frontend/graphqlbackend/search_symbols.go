@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 	"sync"
@@ -24,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
@@ -217,11 +217,11 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKModule
 	case "namespace":
 		return lsp.SKNamespace
-	case "package", "subprogspec":
+	case "package", "packageName", "subprogspec":
 		return lsp.SKPackage
 	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
 		return lsp.SKClass
-	case "method":
+	case "method", "methodSpec":
 		return lsp.SKMethod
 	case "property":
 		return lsp.SKProperty
@@ -264,6 +264,6 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
 	}
-	log.Printf("Unknown ctags kind: %q", kind)
+	log15.Debug("Unknown ctags kind", "kind", kind)
 	return 0
 }

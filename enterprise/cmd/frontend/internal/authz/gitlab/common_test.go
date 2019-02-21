@@ -4,14 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"strconv"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
+
+func init() {
+	spew.Config.DisablePointerAddresses = true
+	spew.Config.SortKeys = true
+	spew.Config.SpewKeys = true
+}
 
 // mockGitLab is a mock for the GitLab client that can be used by tests. Instantiating a mockGitLab
 // instance itself does nothing, but its methods can be used to replace the mock functions (e.g.,
@@ -25,38 +35,69 @@ type mockGitLab struct {
 	// projs is a map of all projects on the instance, keyed by project ID
 	projs map[int]*gitlab.Project
 
+	// users is a list of all users
+	users []*gitlab.User
+
 	// privateGuest is a map from GitLab user ID to list of metadata-accessible private project IDs on GitLab
-	privateGuest map[string][]int
+	privateGuest map[int32][]int
 
 	// privateRepo is a map from GitLab user ID to list of repo-content-accessible private project IDs on GitLab.
 	// Projects in each list are also metadata-accessible.
-	privateRepo map[string][]int
+	privateRepo map[int32][]int
 
 	// oauthToks is a map from OAuth token to GitLab user account ID
-	oauthToks map[string]string
+	oauthToks map[string]int32
+
+	// sudoTok is the sudo token, if there is one
+	sudoTok string
 
 	// madeGetProject records what GetProject calls have been made. It's a map from oauth token -> GetProjectOp -> count.
 	madeGetProject map[string]map[gitlab.GetProjectOp]int
 
-	// madeListTree recores what ListTree calls have been made. It's a map from oauth token -> ListTreeOp -> count.
+	// madeListTree records what ListTree calls have been made. It's a map from oauth token -> ListTreeOp -> count.
 	madeListTree map[string]map[gitlab.ListTreeOp]int
+
+	// madeUsers records what ListUsers calls have been made. It's a map from oauth token -> URL string -> count
+	madeUsers map[string]map[string]int
+}
+
+type mockGitLabOp struct {
+	t *testing.T
+
+	// users is a list of users on the GitLab instance
+	users []*gitlab.User
+
+	// publicProjs is the list of public project IDs
+	publicProjs []int
+
+	// internalProjs is the list of internal project IDs
+	internalProjs []int
+
+	// privateProjs is a map from { privateProjectID -> [ guestUserIDs, contentUserIDs ] } It
+	// determines the structure of private project permissions. A "guest" user can access private
+	// project metadata, but not project repository contents. A "content" user can access both.
+	privateProjs map[int][2][]int32
+
+	// oauthToks is a map from OAuth tokens to the corresponding GitLab user ID
+	oauthToks map[string]int32
+
+	// sudoTok, if non-empty, is the personal access token accepted with sudo permissions on this
+	// instance. The mock implementation only supports having one such token value.
+	sudoTok string
 }
 
 // newMockGitLab returns a new mockGitLab instance
-func newMockGitLab(
-	t *testing.T, publicProjs []int, internalProjs []int, privateProjs map[int][2][]string, // privateProjs maps from { projID -> [ guestUserIDs, contentUserIDs ] }
-	oauthToks map[string]string,
-) mockGitLab {
+func newMockGitLab(op mockGitLabOp) mockGitLab {
 	projs := make(map[int]*gitlab.Project)
-	privateGuest := make(map[string][]int)
-	privateRepo := make(map[string][]int)
-	for _, p := range publicProjs {
+	privateGuest := make(map[int32][]int)
+	privateRepo := make(map[int32][]int)
+	for _, p := range op.publicProjs {
 		projs[p] = &gitlab.Project{Visibility: gitlab.Public, ProjectCommon: gitlab.ProjectCommon{ID: p}}
 	}
-	for _, p := range internalProjs {
+	for _, p := range op.internalProjs {
 		projs[p] = &gitlab.Project{Visibility: gitlab.Internal, ProjectCommon: gitlab.ProjectCommon{ID: p}}
 	}
-	for p, userAccess := range privateProjs {
+	for p, userAccess := range op.privateProjs {
 		projs[p] = &gitlab.Project{Visibility: gitlab.Private, ProjectCommon: gitlab.ProjectCommon{ID: p}}
 
 		guestUsers, contentUsers := userAccess[0], userAccess[1]
@@ -68,13 +109,16 @@ func newMockGitLab(
 		}
 	}
 	return mockGitLab{
-		t:              t,
+		t:              op.t,
 		projs:          projs,
+		users:          op.users,
 		privateGuest:   privateGuest,
 		privateRepo:    privateRepo,
-		oauthToks:      oauthToks,
+		oauthToks:      op.oauthToks,
+		sudoTok:        op.sudoTok,
 		madeGetProject: map[string]map[gitlab.GetProjectOp]int{},
 		madeListTree:   map[string]map[gitlab.ListTreeOp]int{},
+		madeUsers:      map[string]map[string]int{},
 	}
 }
 
@@ -91,11 +135,11 @@ func (m *mockGitLab) GetProject(c *gitlab.Client, ctx context.Context, op gitlab
 	if proj.Visibility == gitlab.Public {
 		return proj, nil
 	}
-	if c.OAuthToken != "" && proj.Visibility == gitlab.Internal {
+	if proj.Visibility == gitlab.Internal && m.isClientAuthenticated(c) {
 		return proj, nil
 	}
 
-	acctID := m.oauthToks[c.OAuthToken]
+	acctID := m.getAcctID(c)
 	for _, accessibleProjID := range append(m.privateGuest[acctID], m.privateRepo[acctID]...) {
 		if accessibleProjID == op.ID {
 			return proj, nil
@@ -128,11 +172,11 @@ func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.L
 	if proj.Visibility == gitlab.Public {
 		return ret, nil
 	}
-	if c.OAuthToken != "" && proj.Visibility == gitlab.Internal {
+	if proj.Visibility == gitlab.Internal && m.isClientAuthenticated(c) {
 		return ret, nil
 	}
 
-	acctID := m.oauthToks[c.OAuthToken]
+	acctID := m.getAcctID(c)
 	for _, accessibleProjID := range m.privateRepo[acctID] {
 		if accessibleProjID == op.ProjID {
 			return ret, nil
@@ -140,6 +184,97 @@ func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.L
 	}
 
 	return nil, gitlab.ErrNotFound
+}
+
+// isClientAuthenticated returns true if the client is authenticated. User is authenticated if OAuth
+// token is non-empty (note: this mock impl doesn't verify validity of the OAuth token) or if the
+// personal access token is non-empty (note: this mock impl requires that the PAT be equivalent to
+// the mock GitLab sudo token).
+func (m *mockGitLab) isClientAuthenticated(c *gitlab.Client) bool {
+	return c.OAuthToken != "" || (m.sudoTok != "" && c.PersonalAccessToken == m.sudoTok)
+}
+
+func (m *mockGitLab) getAcctID(c *gitlab.Client) int32 {
+	if c.OAuthToken != "" {
+		return m.oauthToks[c.OAuthToken]
+	}
+	if m.sudoTok != "" && m.sudoTok == c.PersonalAccessToken && c.Sudo != "" {
+		sudo, err := strconv.Atoi(c.Sudo)
+		if err != nil {
+			m.t.Fatalf("mockGitLab requires all Sudo params to be numerical: %s", err)
+		}
+		return int32(sudo)
+	}
+	return 0
+}
+
+func (m *mockGitLab) ListUsers(c *gitlab.Client, ctx context.Context, urlStr string) (users []*gitlab.User, nextPageURL *string, err error) {
+	if _, ok := m.madeUsers[c.OAuthToken]; !ok {
+		m.madeUsers[c.OAuthToken] = map[string]int{}
+	}
+	m.madeUsers[c.OAuthToken][urlStr]++
+
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		m.t.Fatalf("could not parse ListUsers urlStr %q: %s", urlStr, err)
+	}
+
+	var matchingUsers []*gitlab.User
+	for _, user := range m.users {
+		userMatches := true
+		if qExternUID := u.Query().Get("extern_uid"); qExternUID != "" {
+			qProvider := u.Query().Get("provider")
+
+			match := false
+			for _, identity := range user.Identities {
+				if identity.ExternUID == qExternUID && identity.Provider == qProvider {
+					match = true
+					break
+				}
+			}
+			if !match {
+				userMatches = false
+			}
+		}
+		if qUsername := u.Query().Get("username"); qUsername != "" {
+			if user.Username != qUsername {
+				userMatches = false
+			}
+		}
+		if userMatches {
+			matchingUsers = append(matchingUsers, user)
+		}
+	}
+
+	// pagination
+	perPage, err := getIntOrDefault(u.Query().Get("per_page"), 10)
+	if err != nil {
+		return nil, nil, err
+	}
+	page, err := getIntOrDefault(u.Query().Get("page"), 1)
+	if err != nil {
+		return nil, nil, err
+	}
+	p := page - 1
+	var (
+		pagedUsers []*gitlab.User
+	)
+	if perPage*p > len(matchingUsers)-1 {
+		pagedUsers = nil
+	} else if perPage*(p+1) > len(matchingUsers)-1 {
+		pagedUsers = matchingUsers[perPage*p:]
+	} else {
+		pagedUsers = matchingUsers[perPage*p : perPage*(p+1)]
+		if perPage*(p+1) <= len(matchingUsers)-1 {
+			newU := *u
+			q := u.Query()
+			q.Set("page", strconv.Itoa(page+1))
+			newU.RawQuery = q.Encode()
+			s := newU.String()
+			nextPageURL = &s
+		}
+	}
+	return pagedUsers, nextPageURL, nil
 }
 
 type mockCache map[string]string
@@ -155,13 +290,51 @@ func (m mockCache) Delete(key string) {
 	delete(m, key)
 }
 
-func acct(userID int32, serviceType, serviceID, accountID, oauthTok string) *extsvc.ExternalAccount {
+type mockAuthnProvider struct {
+	configID  auth.ProviderConfigID
+	serviceID string
+}
+
+func (m mockAuthnProvider) ConfigID() auth.ProviderConfigID {
+	return m.configID
+}
+
+func (m mockAuthnProvider) Config() schema.AuthProviders {
+	return schema.AuthProviders{
+		Gitlab: &schema.GitLabAuthProvider{
+			Type: m.configID.Type,
+			Url:  m.configID.ID,
+		},
+	}
+}
+
+func (m mockAuthnProvider) CachedInfo() *auth.ProviderInfo {
+	return &auth.ProviderInfo{ServiceID: m.serviceID}
+}
+
+func (m mockAuthnProvider) Refresh(ctx context.Context) error {
+	panic("should not be called")
+}
+
+func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTok string) *extsvc.ExternalAccount {
 	var data extsvc.ExternalAccountData
-	gitlab.SetExternalAccountData(&data, &gitlab.User{
-		ID: userID,
-	}, &oauth2.Token{
-		AccessToken: oauthTok,
-	})
+
+	var authData *oauth2.Token
+	if oauthTok != "" {
+		authData = &oauth2.Token{AccessToken: oauthTok}
+	}
+
+	if serviceType == gitlab.ServiceType {
+		gitlabAcctID, err := strconv.Atoi(accountID)
+		if err != nil {
+			t.Fatalf("Could not convert accountID to number: %s", err)
+		}
+
+		gitlab.SetExternalAccountData(&data, &gitlab.User{
+			ID: int32(gitlabAcctID),
+		}, authData)
+	}
+
 	return &extsvc.ExternalAccount{
 		UserID: userID,
 		ExternalAccountSpec: extsvc.ExternalAccountSpec{
@@ -198,4 +371,11 @@ func asJSON(t *testing.T, v interface{}) string {
 		t.Fatal(err)
 	}
 	return string(b)
+}
+
+func getIntOrDefault(str string, def int) (int, error) {
+	if str == "" {
+		return def, nil
+	}
+	return strconv.Atoi(str)
 }

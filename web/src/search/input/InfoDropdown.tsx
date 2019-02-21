@@ -4,7 +4,7 @@ import { Dropdown } from 'reactstrap'
 import DropdownItem from 'reactstrap/lib/DropdownItem'
 import DropdownMenu from 'reactstrap/lib/DropdownMenu'
 import DropdownToggle from 'reactstrap/lib/DropdownToggle'
-import { renderInlineMarkdown, renderMarkdown } from '../../../../shared/src/util/markdown'
+import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { QueryFieldExamples } from './QueryBuilderInputRow'
 
@@ -57,11 +57,7 @@ export class InfoDropdown extends React.Component<Props, State> {
                                         <div key={ex.value}>
                                             <div className="p-2">
                                                 <span className="text-muted small">{ex.description}: </span>
-                                                <code
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: renderInlineMarkdown(ex.value),
-                                                    }}
-                                                />
+                                                <code>{ex.value}</code>
                                             </div>
                                         </div>
                                     ))}

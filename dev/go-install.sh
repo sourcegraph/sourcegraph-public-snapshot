@@ -70,7 +70,7 @@ github.com/google/zoekt/cmd/zoekt-webserver \
 "
 
 if [ ! -n "${OFFLINE-}" ]; then
-    INSTALL_GO_PKGS="$INSTALL_GO_PKGS github.com/derekparker/delve/cmd/dlv"
+    INSTALL_GO_PKGS="$INSTALL_GO_PKGS github.com/go-delve/delve/cmd/dlv"
 fi
 
 if ! go install $INSTALL_GO_PKGS; then

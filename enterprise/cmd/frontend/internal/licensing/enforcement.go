@@ -98,7 +98,7 @@ h1 {
 // noLicenseMaximumAllowedUserCount is the maximum number of user accounts that may exist on Sourcegraph Core
 // (i.e., when running without a license). Exceeding this number of user accounts requires a
 // license.
-var noLicenseMaximumAllowedUserCount int32 = 200
+var noLicenseMaximumAllowedUserCount int32 = 100
 
 // Enforce the license's max user count by preventing the creation of new users when the max is
 // reached.

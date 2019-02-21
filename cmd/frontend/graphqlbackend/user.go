@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -22,22 +22,21 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 	Username *string
 	Email    *string
 }) (*UserResolver, error) {
-	var query string
-	if args.Username != nil {
-		query = *args.Username
-	} else if args.Email != nil {
-		query = *args.Email
+	// 🚨 SECURITY: Only admins are allowed to access the email address or username on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
 	}
-	// Check if querying for email address.
-	if strings.Contains(query, "@") {
-		user, err := db.Users.GetByVerifiedEmail(ctx, query)
+
+	if args.Email != nil {
+		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
 			return nil, err
 		}
 		return &UserResolver{user: user}, nil
 	}
-
-	user, err := db.Users.GetByUsername(ctx, query)
+	user, err := db.Users.GetByUsername(ctx, *args.Username)
 	if err != nil {
 		return nil, err
 	}
