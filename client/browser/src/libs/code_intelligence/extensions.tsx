@@ -36,7 +36,9 @@ export function initializeExtensions({
     return { platformContext, extensionsController }
 }
 
-interface InjectProps extends PlatformContextProps, ExtensionsControllerProps {
+interface InjectProps
+    extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL'>,
+        ExtensionsControllerProps {
     getMount?: () => HTMLElement
     history: H.History
 }

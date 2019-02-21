@@ -8,12 +8,13 @@ jest.mock('react-dom', () => ({
 import { uniqueId } from 'lodash'
 import MutationObserver from 'mutation-observer'
 import renderer from 'react-test-renderer'
-import { from, NEVER, of, Subscription } from 'rxjs'
+import { from, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, map, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../../shared/src/api/client/services'
 import { Range } from '../../../../../shared/src/api/extension/types/range'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { FileInfo, handleCodeHost } from './code_intelligence'
 
@@ -33,9 +34,18 @@ const createMockController = (services: Services): Controller => ({
     unsubscribe: jest.fn(),
 })
 
-describe('handleCodeHost()', () => {
-    const MOCK_PLATFORM_CONTEXT: any = {}
+const createMockPlatformContext = (
+    partialMocks?: Partial<PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'>>
+): PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'> => ({
+    platformContext: {
+        forceUpdateTooltip: jest.fn(),
+        urlToFile: jest.fn(),
+        sideloadedExtensionURL: new Subject<string | null>(),
+        ...partialMocks,
+    },
+})
 
+describe('handleCodeHost()', () => {
     beforeAll(() => {
         // jsdom doesn't support MutationObserver or IntersectionObserver, so we need to mock them
         ;(window as any).MutationObserver = MutationObserver
@@ -78,9 +88,9 @@ describe('handleCodeHost()', () => {
                     name: 'test',
                     check: () => true,
                 },
-                platformContext: MOCK_PLATFORM_CONTEXT,
                 extensionsController: createMockController(services),
                 showGlobalDebug: false,
+                ...createMockPlatformContext(),
             })
         )
         const overlayMount = document.body.firstChild! as HTMLElement
@@ -99,9 +109,9 @@ describe('handleCodeHost()', () => {
                     check: () => true,
                     getCommandPaletteMount: () => commandPaletteMount,
                 },
-                platformContext: MOCK_PLATFORM_CONTEXT,
                 extensionsController: createMockController(services),
                 showGlobalDebug: false,
+                ...createMockPlatformContext(),
             })
         )
         const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -116,9 +126,9 @@ describe('handleCodeHost()', () => {
                     name: 'test',
                     check: () => true,
                 },
-                platformContext: MOCK_PLATFORM_CONTEXT,
                 extensionsController: createMockController(services),
                 showGlobalDebug: true,
+                ...createMockPlatformContext(),
             })
         )
         const globalDebugMount = document.querySelector('.global-debug')
@@ -137,9 +147,9 @@ describe('handleCodeHost()', () => {
                     check: () => true,
                     getGlobalDebugMount: () => globalDebugMount,
                 },
-                platformContext: MOCK_PLATFORM_CONTEXT,
                 extensionsController: createMockController(services),
                 showGlobalDebug: true,
+                ...createMockPlatformContext(),
             })
         )
         const renderedDebugElement = elementRenderedAtMount(globalDebugMount)
@@ -176,9 +186,9 @@ describe('handleCodeHost()', () => {
                     ],
                     selectionsChanges: () => of([]),
                 },
-                platformContext: MOCK_PLATFORM_CONTEXT,
                 extensionsController: createMockController(services),
                 showGlobalDebug: true,
+                ...createMockPlatformContext(),
             })
         )
         const viewComponents = await from(services.model.model)
@@ -237,9 +247,9 @@ describe('handleCodeHost()', () => {
                     ],
                     selectionsChanges: () => of([]),
                 },
-                platformContext: MOCK_PLATFORM_CONTEXT,
                 extensionsController: createMockController(services),
                 showGlobalDebug: true,
+                ...createMockPlatformContext(),
             })
         )
         const activeEditor = await from(extensionAPI.app.activeWindowChanges)

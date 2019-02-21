@@ -35,7 +35,7 @@ import { Controller } from '../../../../../shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
 import { HoverContext, HoverOverlay } from '../../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../../shared/src/languages'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
 import {
     FileSpec,
@@ -239,10 +239,10 @@ export interface FileInfo {
     baseContent?: string
 }
 
-interface CodeIntelligenceProps {
+interface CodeIntelligenceProps
+    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL'> {
     codeHost: CodeHost
     extensionsController: Controller
-    platformContext: PlatformContext
     showGlobalDebug?: boolean
 }
 

@@ -6,7 +6,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { sourcegraphUrl } from '../util/context'
 import { ShortcutProvider } from './ShortcutProvider'
 
-interface Props extends PlatformContextProps {
+interface Props extends PlatformContextProps<'sideloadedExtensionURL'> {
     location: H.Location
     extensionsController: ClientController
 }
