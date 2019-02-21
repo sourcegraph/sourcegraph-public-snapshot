@@ -4,13 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -100,17 +99,30 @@ func (s DBStore) ListRepos(ctx context.Context, names ...string) (repos []*Repo,
 }
 
 const listReposQueryFmtstr = `
--- cmd/repo-updater/repos/store.go:DBStore.ListRepos
-SELECT id, name, description, language, created_at, updated_at, deleted_at,
-  external_id, external_service_type, external_service_id, enabled, archived, fork
-  ARRAY(SELECT jsonb_object_keys(sources)) as sources, metadata
+-- source: cmd/repo-updater/repos/store.go:DBStore.ListRepos
+SELECT
+  id,
+  name,
+  description,
+  language,
+  created_at,
+  updated_at,
+  deleted_at,
+  external_service_type,
+  external_service_id,
+  external_id,
+  enabled,
+  archived,
+  fork,
+  sources,
+  metadata
 FROM repo
 WHERE id > %s
 AND deleted_at IS NULL
 AND %s
-AND external_service_type IN (%s)
 AND (sources != '{}' OR %s)
-ORDER BY id ASC LIMIT %s`
+ORDER BY id ASC LIMIT %s
+`
 
 func listReposQuery(kinds, names []string) paginatedQuery {
 	kq := sqlf.Sprintf("TRUE")
@@ -174,13 +186,18 @@ func (s DBStore) page(ctx context.Context, q *sqlf.Query, repos *[]*Repo) (err e
 }
 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
-// The _ID field of each given Repo is set on inserts.
+// The ID field is used to distinguish between Repos that need to be updated and Repos
+// that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
 func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	if len(repos) == 0 {
 		return nil
 	}
 
-	q := upsertReposQuery(repos)
+	q, err := upsertReposQuery(repos)
+	if err != nil {
+		return err
+	}
+
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
@@ -193,164 +210,255 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	})
 }
 
-var upsertReposQueryFmtstr = fmt.Sprintf(`
--- cmd/repo-updater/repos/store.go:DBStore.UpsertRepos
+func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
+	type record struct {
+		ID                  uint32          `json:"id"`
+		Name                string          `json:"name"`
+		Description         string          `json:"description"`
+		Language            string          `json:"language"`
+		CreatedAt           time.Time       `json:"created_at"`
+		UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
+		DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
+		ExternalServiceType *string         `json:"external_service_type,omitempty"`
+		ExternalServiceID   *string         `json:"external_service_id,omitempty"`
+		ExternalID          *string         `json:"external_id,omitempty"`
+		Enabled             bool            `json:"enabled"`
+		Archived            bool            `json:"archived"`
+		Fork                bool            `json:"fork"`
+		Sources             json.RawMessage `json:"sources"`
+		Metadata            json.RawMessage `json:"metadata"`
+	}
+
+	records := make([]record, 0, len(repos))
+	for _, r := range repos {
+		rec := record{
+			ID:                  r.ID,
+			Name:                r.Name,
+			Description:         "", //r.Description,
+			Language:            r.Language,
+			CreatedAt:           r.CreatedAt.UTC(),
+			UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
+			DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
+			ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
+			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
+			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+			Enabled:             r.Enabled,
+			Archived:            r.Archived,
+			Fork:                r.Fork,
+			Sources:             sourcesColumn(r.Sources),
+		}
+
+		switch metadata := r.Metadata.(type) {
+		case []byte:
+			rec.Metadata = json.RawMessage(metadata)
+		case string:
+			rec.Metadata = json.RawMessage(metadata)
+		case json.RawMessage:
+			rec.Metadata = json.RawMessage(metadata)
+		default:
+			rec.Metadata, err = json.MarshalIndent(r.Metadata, "        ", "    ")
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		records = append(records, rec)
+	}
+
+	batch, err := json.MarshalIndent(records, "    ", "    ")
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(upsertReposQueryFmtstr, string(batch)), nil
+}
+
+var upsertReposQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.UpsertRepos
+
+--
+-- The "batch" Common Table Expression (CTE) produces the records to be upserted,
+-- leveraging the "jsonb_to_recordset" Postgres function to parse the JSON
+-- serialised repos array being passed from the application code.
+--
+-- This is done for two reasons:
+--
+--     1. To circumvent Postgres' limit of 32767 bind parameters per statement.
+--     2. To use the WITH ORDINALITY table function feature which gives us
+--        an auto-generated ordering column we rely on to maintain the order of
+--        the final result set produced (see the last SELECT statement).
+--
 WITH batch AS (
-  SELECT %s
-  FROM (VALUES %%s) AS batch(%s)
+  SELECT * FROM ROWS FROM (
+  jsonb_to_recordset(%s)
+  AS (
+      id                    integer,
+      name                  citext,
+      description           text,
+      language              text,
+      created_at            timestamptz,
+      updated_at            timestamptz,
+      deleted_at            timestamptz,
+      external_service_type text,
+      external_service_id   text,
+      external_id           text,
+      enabled               boolean,
+      archived              boolean,
+      fork                  boolean,
+      sources               jsonb,
+      metadata              jsonb
+    )
+  )
+  WITH ORDINALITY
+  ORDER BY ordinality
 ),
 
+--
+-- The "updated" Common Table Expression (CTE) updates all records from our "batch"
+-- that already exist in the repos table as informed by their unique contraints.
+-- It returns the set of updated records.
+--
 updated AS (
   UPDATE repo
-  SET (%s) = (%s)
+  SET
+    id                    = GREATEST(batch.id, repo.id),
+    name                  = COALESCE(batch.name, repo.name),
+    description           = batch.description,
+    language              = batch.language,
+    created_at            = batch.created_at,
+    updated_at            = batch.updated_at,
+    deleted_at            = batch.deleted_at,
+    external_service_type = COALESCE(batch.external_service_type, repo.external_service_type),
+    external_service_id   = COALESCE(batch.external_service_id, repo.external_service_id),
+    external_id           = COALESCE(batch.external_id, repo.external_service_id),
+    enabled               = batch.enabled,
+    archived              = batch.archived,
+    fork                  = batch.fork,
+    sources               = batch.sources,
+    metadata              = batch.metadata
   FROM batch
-  WHERE %s
-  AND (%s) <> (%s)
-  RETURNING repo.id
+  WHERE repo.id = batch.id OR repo.name = batch.name OR (
+  repo.external_id IS NOT NULL
+    AND repo.external_service_id IS NOT NULL
+    AND repo.external_service_type IS NOT NULL
+    AND batch.external_id IS NOT NULL
+    AND batch.external_service_id IS NOT NULL
+    AND batch.external_service_type IS NOT NULL
+    AND repo.external_service_id = batch.external_service_id
+    AND repo.external_id = batch.external_id
+    AND repo.external_service_type = batch.external_service_type
+  )
+  RETURNING repo.*
 ),
 
+--
+-- The "inserted" Common Table Expression (CTE) inserts all records from our "batch"
+-- that don't already exist in the repos table as informed by their unique constraints.
+-- It returns the set of new records with their "id" column set as well as other columns
+-- with default values that had no value set in the batch.
+--
 inserted AS (
-  INSERT INTO repo
-  SELECT %s FROM batch
-  WHERE NOT EXISTS (SELECT 1 FROM repo WHERE %s)
-  RETURNING repo.id
+  INSERT INTO repo (
+    name,
+    description,
+    language,
+    created_at,
+    updated_at,
+    deleted_at,
+    external_service_type,
+    external_service_id,
+    external_id,
+    enabled,
+    archived,
+    fork,
+    sources,
+    metadata
+  )
+  SELECT
+    name,
+    description,
+    language,
+    created_at,
+    updated_at,
+    deleted_at,
+    external_service_type,
+    external_service_id,
+    external_id,
+    enabled,
+    archived,
+    fork,
+    sources,
+    metadata
+  FROM batch
+  WHERE NOT EXISTS (SELECT 1 FROM repo WHERE repo.id = batch.id)
+  AND NOT EXISTS (SELECT 1 FROM repo WHERE repo.name = batch.name)
+  AND NOT EXISTS (
+    SELECT 1
+    FROM repo
+    WHERE repo.external_id IS NOT NULL
+      AND repo.external_service_type IS NOT NULL
+      AND repo.external_service_id IS NOT NULL
+      AND batch.external_id IS NOT NULL
+      AND batch.external_service_type IS NOT NULL
+      AND batch.external_service_id IS NOT NULL
+      AND repo.external_service_id = batch.external_service_id
+      AND repo.external_id = batch.external_id
+      AND repo.external_service_type = batch.external_service_type
+    )
+  RETURNING repo.*
 )
 
-SELECT %s FROM batch INNER JOIN repo ON repo.name = batch.name`,
-
-	upsertColumnNamesQuery,
-	upsertColumnNamesQuery,
-	upsertColumnNamesQuery,
-	upsertBatchColumnNamesQuery,
-	repoIDConditional,
-	upsertBatchColumnNamesQuery,
-	upsertRepoColumnNamesQuery,
-	upsertColumnNamesQuery,
-	repoIDConditional,
-	upsertColumnNamesQuery,
-)
-
-const repoIDConditional = `
-repo.id == batch.id OR repo.name = batch.name OR (
-  repo.external_id IS NOT NULL
-  AND repo.external_service_id IS NOT NULL
-  AND batch.external_id IS NOT NULL
-  AND batch.external_service_id IS NOT NULL
-  AND repo.external_service_id = batch.external_service_id
-  AND repo.external_id = batch.external_id
-)
+--
+-- This select statement produces rows of the "batch" CTE hydrated with the
+-- column values returned by the "updated" and "inserted" CTEs, in the same
+-- order as the original batch.
+--
+SELECT
+  GREATEST(updated.id, inserted.id, batch.id) AS id,
+  COALESCE(updated.name, inserted.name, batch.name) AS name,
+  COALESCE(updated.description, inserted.description, batch.description) AS description,
+  COALESCE(updated.language, inserted.language, batch.language) AS language,
+  COALESCE(updated.created_at, inserted.created_at, batch.created_at) AS created_at,
+  COALESCE(updated.updated_at, inserted.updated_at, batch.updated_at) AS updated_at,
+  COALESCE(updated.deleted_at, inserted.deleted_at, batch.deleted_at) AS deleted_at,
+  COALESCE(updated.external_service_type, inserted.external_service_type, batch.external_service_type) AS external_service_type,
+  COALESCE(updated.external_service_id, inserted.external_service_id, batch.external_service_id) AS external_service_id,
+  COALESCE(updated.external_id, inserted.external_id, batch.external_id) AS external_id,
+  COALESCE(updated.enabled, inserted.enabled, batch.enabled) AS enabled,
+  COALESCE(updated.archived, inserted.archived, batch.archived) AS archived,
+  COALESCE(updated.fork, inserted.fork, batch.fork) AS fork,
+  COALESCE(updated.sources, inserted.sources, batch.sources) AS sources,
+  COALESCE(updated.metadata, inserted.metadata, batch.metadata) AS metadata
+FROM batch
+LEFT JOIN updated  ON batch.name = updated.name
+LEFT JOIN inserted ON batch.name = inserted.name
+ORDER BY batch.ordinality
 `
 
-func upsertReposQuery(repos []*Repo) *sqlf.Query {
-	values := make([]*sqlf.Query, 0, len(repos))
-	for _, repo := range repos {
-		values = append(values, upsertRepoColumnValues(repo))
-	}
-	return sqlf.Sprintf(
-		upsertReposQueryFmtstr,
-		sqlf.Join(values, ",\n"),
-	)
-}
-
-var upsertRepoColumnNames = []string{
-	"name",
-	"description",
-	"language",
-	"uri",
-	"created_at",
-	"updated_at",
-	"deleted_at",
-	"external_service_type",
-	"external_service_id",
-	"external_id",
-	"enabled",
-	"archived",
-	"fork",
-	"sources",
-	"metadata",
-}
-
-var (
-	upsertColumnNamesQuery      = columnNames("", upsertRepoColumnNames)
-	upsertBatchColumnNamesQuery = columnNames("batch", upsertRepoColumnNames)
-	upsertRepoColumnNamesQuery  = columnNames("repo", upsertRepoColumnNames)
-)
-
-func upsertRepoColumnValues(r *Repo) *sqlf.Query {
-	return sqlf.Sprintf(
-		"("+strings.Repeat("%s, ", len(upsertRepoColumnNames)-1)+"%s)",
-		r.Name,
-		r.Description,
-		r.Language,
-		"", // URI
-		timeColumn(r.CreatedAt),
-		timeColumn(r.UpdatedAt),
-		timeColumn(r.DeletedAt),
-		nullStringColumn(r.ExternalRepo.ServiceType),
-		nullStringColumn(r.ExternalRepo.ServiceID),
-		nullStringColumn(r.ExternalRepo.ID),
-		r.Enabled,
-		r.Archived,
-		r.Fork,
-		sourcesColumn(r.Sources),
-		metadataColumn(r.Metadata),
-	)
-}
-
-func columnNames(table string, names []string) string {
-	columns := make([]string, 0, len(names))
-	for _, name := range names {
-		column := pq.QuoteIdentifier(name)
-		if table != "" {
-			column = pq.QuoteIdentifier(table) + "." + column
-		}
-		columns = append(columns, column)
-	}
-	return strings.Join(columns, ", ")
-}
-
-func timeColumn(t time.Time) interface{} {
+func nullTimeColumn(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil
 	}
-	return t.UTC()
+	return &t
 }
 
-func nullStringColumn(s string) interface{} {
+func nullStringColumn(s string) *string {
 	if s == "" {
 		return nil
 	}
-	return s
+	return &s
 }
 
-func sourcesColumn(sources []string) *sqlf.Query {
-	args := make([]*sqlf.Query, 0, len(sources)*2)
-
-	for _, s := range sources {
-		args = append(args,
-			sqlf.Sprintf("%s", s),
-			sqlf.Sprintf("NULL"),
-		)
+func sourcesColumn(sources []string) json.RawMessage {
+	m := make(map[string]interface{}, len(sources))
+	for _, src := range sources {
+		m[src] = nil
 	}
-
-	return sqlf.Sprintf(
-		"jsonb_build_object(%s)",
-		sqlf.Join(args, ","),
-	)
-}
-
-func metadataColumn(metadata interface{}) *sqlf.Query {
-	if metadata == nil {
-		return sqlf.Sprintf("'{}'::jsonb")
-	}
-
-	// TODO What to do in the rare case this doesn't serialize?
-	b, err := json.Marshal(metadata)
+	data, err := json.Marshal(m)
 	if err != nil {
-		return sqlf.Sprintf("'{}'::jsonb")
+		panic(err)
 	}
-
-	return sqlf.Sprintf("jsonb_object(%s)", string(b))
+	return data
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
@@ -377,7 +485,8 @@ func closeErr(c io.Closer, err *error) {
 }
 
 func scanRepo(r *Repo, s scanner) error {
-	return s.Scan(
+	var sources, metadata json.RawMessage
+	err := s.Scan(
 		&r.ID,
 		&r.Name,
 		&r.Description,
@@ -385,11 +494,37 @@ func scanRepo(r *Repo, s scanner) error {
 		&r.CreatedAt,
 		&nullTime{&r.UpdatedAt},
 		&nullTime{&r.DeletedAt},
-		&nullString{&r.ExternalRepo.ID},
 		&nullString{&r.ExternalRepo.ServiceType},
 		&nullString{&r.ExternalRepo.ServiceID},
+		&nullString{&r.ExternalRepo.ID},
 		&r.Enabled,
 		&r.Archived,
 		&r.Fork,
+		&sources,
+		&metadata,
 	)
+
+	if err != nil {
+		return err
+	}
+
+	r.Metadata = metadata
+
+	var set map[string]interface{}
+	if err = json.Unmarshal(sources, &set); err != nil {
+		return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
+	}
+
+	if r.Sources == nil {
+		r.Sources = make([]string, 0, len(set))
+	}
+
+	r.Sources = r.Sources[:0]
+	for src := range set {
+		r.Sources = append(r.Sources, src)
+	}
+
+	sort.Strings(r.Sources)
+
+	return nil
 }

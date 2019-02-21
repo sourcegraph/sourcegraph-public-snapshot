@@ -48,6 +48,8 @@ func TestIntegration_DBStore(t *testing.T) {
 					ServiceType: "github",
 					ServiceID:   "http://github.com",
 				},
+				Sources:  []string{"extsvc:123"},
+				Metadata: []byte("{}"),
 			})
 		}
 
