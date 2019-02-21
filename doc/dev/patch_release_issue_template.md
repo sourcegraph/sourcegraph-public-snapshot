@@ -3,7 +3,7 @@ This template is used for patch releases.
 It is not used for our monthly major/minor releases of Sourcegraph.
 -->
 
-# MAJOR.MINOR.PATCH Release (YYYY-MM-DD)
+# MAJOR.MINOR.PATCH Release
 
 - [ ] Merge your fix into master.
 
@@ -16,12 +16,15 @@ It is not used for our monthly major/minor releases of Sourcegraph.
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
 
 ## Cut a new Sourcegraph cluster deployment release
-- [ ] [Update the image tags](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#updating-docker-image-tags) in [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#updating-docker-image-tags) (e.g. [d0bb80](https://github.com/sourcegraph/deploy-sourcegraph/commit/d0bb80f559e7e9ef3b1915ddba72f4beff32276c))
-- [ ] Wait for Renovate to pin the hashes in deploy-sourcegraph (e.g. [#190](https://github.com/sourcegraph/deploy-sourcegraph/pull/190/files)), or pin them yourself.
-- [ ] Tag the release. See the [dev README in `deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#tag-the-release) for more info.
+- [ ] In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
+    - [ ] Wait for Renovate to open a PR to update the image tags and merge that PR ([example](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)).
+    - [ ] Tag the `vMAJOR.MINOR.PATCH` release at this commit.
 
 ## Update the docs
-- [ ] Update the documented version of Sourcegraph in `master` (e.g. `find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +`) (e.g. https://github.com/sourcegraph/sourcegraph/pull/2210/files <!-- TODO(nick): example that doesn't include latestReleaseDockerServerImageBuild -->).
+- [ ] Update the documented version of Sourcegraph ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/701780fefa5809abb16669c9fb29738ec3bb2039)).
+  ```
+  find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +
+  ```
 - [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/commit/d445c460c2da54fba4f56f647d656ca3311decf5))
-- [ ] Update [`latestReleaseKubernetesBuild`](https://sourcegraph.sgdev.org/github.com/sourcegraph/enterprise@093a16521df58e6c49cf70e6a4832137e740265a/-/blob/cmd/frontend/internal/app/pkg/updatecheck/handler.go#L31:2) and [`latestReleaseDockerServerImageBuild`](https://sourcegraph.sgdev.org/github.com/sourcegraph/enterprise@093a16521df58e6c49cf70e6a4832137e740265a/-/blob/cmd/frontend/internal/app/pkg/updatecheck/handler.go#L26:2) in `master`.
+- [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
 - [ ] Create a new section for the patch version in the changelog. Verify that all changes that have been cherry picked onto the release branch have been moved to this section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
