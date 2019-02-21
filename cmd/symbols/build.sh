@@ -48,7 +48,7 @@ function buildLibsqlite3Pcre() {
     trap "rm -rf $sqlite3PcreRepositoryDirectory" EXIT
 
     echo "Building $libsqlite3PcrePath..."
-    curl -fsSL https://codeload.github.com/ralight/sqlite3-pcre/tar.gz/c98da412b431edb4db22d3245c99e6c198d49f7a | tar -C "$sqlite3PcreRepositoryDirectory" -xvf - --strip 1
+    curl -fsSL https://codeload.github.com/ralight/sqlite3-pcre/tar.gz/c98da412b431edb4db22d3245c99e6c198d49f7a | tar -C "$sqlite3PcreRepositoryDirectory" -xzvf - --strip 1
     pushd -q $sqlite3PcreRepositoryDirectory
     case "$OSTYPE" in
         darwin*)
