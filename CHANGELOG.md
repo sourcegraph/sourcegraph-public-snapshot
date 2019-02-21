@@ -15,7 +15,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-## 3.1
+## 3.1.1
+
+### Added
+
+- Query builder toggle (open/closed) state is now retained.
+
+### Fixed
+
+- Fixed an issue where single-term values entered into the "Exact match" field in the query builder were not getting wrapped in quotes.
+
+## 3.1.0
 
 ### Added
 
