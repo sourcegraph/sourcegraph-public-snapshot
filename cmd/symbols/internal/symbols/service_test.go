@@ -4,15 +4,15 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
-	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -25,18 +25,18 @@ import (
 
 func init() {
 	if libSqlite3Pcre == "" {
-		rootPathOutput, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+        repositoryRoot, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 		if err != nil {
-			panic(err)
+			panic("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and you're not in the git repository, which is where the library is expected to be.")
 		}
-		libs, err := filepath.Glob(path.Join(strings.TrimSpace(string(rootPathOutput)), "libsqlite3-pcre.*"))
-		if err != nil {
-			panic(err)
+		if runtime.GOOS == "darwin" {
+			libSqlite3Pcre = path.Join(strings.TrimSpace(string(repositoryRoot)), "libsqlite3-pcre.dylib")
+		} else {
+			libSqlite3Pcre = path.Join(strings.TrimSpace(string(repositoryRoot)), "libsqlite3-pcre.so")
 		}
-		if len(libs) == 0 {
-			panic(errors.New("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and libsqlite3-pcre.* doesn't exist at the root of the repository - try building it with `./dev/ts-script cmd/symbols/build.ts buildLibsqlite3Pcre`"))
+		if _, err := os.Stat(libSqlite3Pcre); os.IsNotExist(err) {
+			panic(fmt.Errorf("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and %s doesn't exist at the root of the repository - try building it with `./dev/ts-script cmd/symbols/build.ts buildLibsqlite3Pcre`", libSqlite3Pcre))
 		}
-		libSqlite3Pcre = libs[0]
 	}
 }
 
