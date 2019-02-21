@@ -25,3 +25,10 @@ declare module 'worker-loader?inline!*' {
     }
     export default WebpackWorker
 }
+
+/**
+ * A MutationObserver polyfill
+ */
+declare module 'mutation-observer' {
+    const MutationObserver: MutationObserver
+}
