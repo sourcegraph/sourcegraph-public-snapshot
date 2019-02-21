@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"time"
@@ -142,54 +143,94 @@ func (d *Diff) Sort() {
 }
 
 func (Syncer) diff(sourced, stored []*Repo) (diff Diff) {
-	aset := make(map[string]*Repo, len(sourced))
-	for _, a := range sourced {
-		set(aset, a)
-	}
+	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
+	byName := make(map[string]*Repo, len(sourced))
 
-	bset := make(map[string]*Repo, len(stored))
-	for _, b := range stored {
-		set(bset, b)
-	}
-
-	for _, b := range stored {
-		ids := b.IDs()
-		switch as := elems(aset, ids); {
-		case len(as) == 0:
-			diff.Deleted = append(diff.Deleted, b)
-		case modified(b, as[len(as)-1]):
-			diff.Modified = append(diff.Modified, as[len(as)-1])
-		default:
-			diff.Unmodified = append(diff.Unmodified, b)
-		}
-		del(aset, ids)
-	}
-
-	for _, a := range sourced {
-		ids := a.IDs()
-		if bs := elems(bset, ids); len(bs) == 0 {
-			diff.Added = append(diff.Added, a)
-			del(bset, ids)
+	for _, r := range stored {
+		byName[r.Name] = r
+		if r.ExternalRepo != (api.ExternalRepoSpec{}) {
+			byID[r.ExternalRepo] = r
 		}
 	}
 
-	return
+	seen := make(map[string]*Repo, len(stored))
+	for _, r := range sourced {
+		if other := seen[r.Name]; other != nil {
+			merge(other, r)
+			continue
+		}
+
+		var old *Repo
+		if r.ExternalRepo != (api.ExternalRepoSpec{}) {
+			old = byID[r.ExternalRepo]
+		}
+
+		if old == nil {
+			old = byName[r.Name]
+		}
+
+		if old == nil {
+			seen[r.Name], diff.Added = r, append(diff.Added, r)
+		} else if merge(old, r) {
+			seen[r.Name], diff.Modified = old, append(diff.Modified, old)
+		} else {
+			seen[r.Name], diff.Unmodified = old, append(diff.Unmodified, old)
+		}
+
+	}
+
+	for _, r := range stored {
+		if seen[r.Name] == nil {
+			diff.Deleted = append(diff.Deleted, r)
+		}
+	}
+
+	return diff
 }
 
-func modified(before, after *Repo) bool {
-	// This modified function returns true iff any fields in `after` changed
-	// in comparison to `before` for which the `Source` is authoritative.
-	b, a := before, after
-	return b.Name != a.Name ||
-		b.Language != a.Language ||
-		b.Fork != a.Fork ||
-		b.Archived != a.Archived ||
-		b.Description != a.Description ||
-		// Only update the external id once. It should not change after it's set.
-		(b.ExternalRepo == api.ExternalRepoSpec{} &&
-			b.ExternalRepo != a.ExternalRepo) ||
-		!equal(b.Sources, a.Sources) ||
-		!reflect.DeepEqual(b.Metadata, a.Metadata)
+// merge merges the newer Repo "n" into the older one "o", returning true if anything was modified.
+func merge(o, n *Repo) (modified bool) {
+	if !o.ExternalRepo.Equal(&n.ExternalRepo) && o.Name != n.Name {
+		panic(fmt.Errorf("merge called with distinct repos: older: %+v, newer: %+v", o, n))
+	}
+
+	if o.Name != n.Name {
+		o.Name, modified = n.Name, true
+	}
+
+	if o.Description != n.Description {
+		o.Description, modified = n.Description, true
+	}
+
+	if o.Language != n.Language {
+		o.Language, modified = n.Language, true
+	}
+
+	if !o.ExternalRepo.Equal(&n.ExternalRepo) {
+		o.ExternalRepo, modified = n.ExternalRepo, true
+	}
+
+	if o.Enabled != n.Enabled {
+		o.Enabled, modified = n.Enabled, true
+	}
+
+	if o.Archived != n.Archived {
+		o.Archived, modified = n.Archived, true
+	}
+
+	if o.Fork != n.Fork {
+		o.Fork, modified = n.Fork, true
+	}
+
+	if !equal(o.Sources, n.Sources) {
+		o.Sources, modified = dedup(n.Sources...), true
+	}
+
+	if !reflect.DeepEqual(o.Metadata, n.Metadata) {
+		o.Metadata, modified = n.Metadata, true
+	}
+
+	return modified
 }
 
 func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
@@ -215,50 +256,18 @@ func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 		}(src)
 	}
 
-	set := make(map[string]*Repo)
 	var repos []*Repo
 	var errs *multierror.Error
 
 	for i := 0; i < cap(ch); i++ {
-		r := <-ch
-
-		if r.err != nil {
+		if r := <-ch; r.err != nil {
 			errs = multierror.Append(errs, r.err)
-			continue
-		}
-
-		for _, repo := range r.repos {
-			for _, id := range repo.IDs() {
-				if existing, ok := set[id]; ok {
-					merge(existing, repo)
-				} else {
-					set[id] = repo
-					repos = append(repos, repo)
-				}
-			}
+		} else {
+			repos = append(repos, r.repos...)
 		}
 	}
 
 	return repos, errs.ErrorOrNil()
-}
-
-// Merge two instances of the same Repo that were yielded
-// by different Sources.
-func merge(a, b *Repo) {
-	// If we got rate limited, let's preserve the previous external id
-	// which should be stable and never change.
-	if a.ExternalRepo == (api.ExternalRepoSpec{}) {
-		a.ExternalRepo = b.ExternalRepo
-	}
-
-	// TODO(tsenart): Extract an updated_at timestamp from the metadata
-	// and use it to decide which repo has the most up-to-date information.
-
-	srcs := make([]string, 0, len(a.Sources)+len(b.Sources))
-	srcs = append(srcs, a.Sources...)
-	srcs = append(srcs, b.Sources...)
-	a.Sources = dedup(srcs...)
-	sort.Strings(a.Sources)
 }
 
 func dedup(ss ...string) []string {
@@ -277,6 +286,9 @@ func equal(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
+	sort.Strings(a)
+	sort.Strings(b)
 
 	for i := range a {
 		if a[i] != b[i] {
