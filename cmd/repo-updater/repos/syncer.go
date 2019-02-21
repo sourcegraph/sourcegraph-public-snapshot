@@ -142,22 +142,6 @@ func (d *Diff) Sort() {
 }
 
 func (Syncer) diff(sourced, stored []*Repo) (diff Diff) {
-	modified := func(before, after *Repo) bool {
-		// This modified function returns true iff any fields in `after` changed
-		// in comparison to `before` for which the `Source` is authoritative.
-		b, a := before, after
-		return b.Name != a.Name ||
-			b.Language != a.Language ||
-			b.Fork != a.Fork ||
-			b.Archived != a.Archived ||
-			b.Description != a.Description ||
-			// Only update the external id once. It should not change after it's set.
-			(b.ExternalRepo == api.ExternalRepoSpec{} &&
-				b.ExternalRepo != a.ExternalRepo) ||
-			!equal(b.Sources, a.Sources) ||
-			!reflect.DeepEqual(b.Metadata, a.Metadata)
-	}
-
 	aset := make(map[string]*Repo, len(sourced))
 	for _, a := range sourced {
 		set(aset, a)
@@ -190,6 +174,22 @@ func (Syncer) diff(sourced, stored []*Repo) (diff Diff) {
 	}
 
 	return
+}
+
+func modified(before, after *Repo) bool {
+	// This modified function returns true iff any fields in `after` changed
+	// in comparison to `before` for which the `Source` is authoritative.
+	b, a := before, after
+	return b.Name != a.Name ||
+		b.Language != a.Language ||
+		b.Fork != a.Fork ||
+		b.Archived != a.Archived ||
+		b.Description != a.Description ||
+		// Only update the external id once. It should not change after it's set.
+		(b.ExternalRepo == api.ExternalRepoSpec{} &&
+			b.ExternalRepo != a.ExternalRepo) ||
+		!equal(b.Sources, a.Sources) ||
+		!reflect.DeepEqual(b.Metadata, a.Metadata)
 }
 
 func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
