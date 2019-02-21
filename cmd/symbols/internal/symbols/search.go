@@ -290,7 +290,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 	defer db.Close()
 
 	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
-	transaction, err := db.Beginx()
+	tx, err := db.Beginx()
 	if err != nil {
 		return err
 	}
@@ -298,7 +298,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 	// The column names are the lowercase version of fields in `symbolInDB`
 	// because sqlx lowercases struct fields by default. See
 	// http://jmoiron.github.io/sqlx/#query
-	_, err = transaction.Exec(
+	_, err = tx.Exec(
 		`CREATE TABLE IF NOT EXISTS symbols (
 			name VARCHAR(256) NOT NULL,
 			namelowercase VARCHAR(256) NOT NULL,
@@ -317,28 +317,28 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	_, err = transaction.Exec(`CREATE INDEX name_index ON symbols(name);`)
+	_, err = tx.Exec(`CREATE INDEX name_index ON symbols(name);`)
 	if err != nil {
 		return err
 	}
 
-	_, err = transaction.Exec(`CREATE INDEX path_index ON symbols(path);`)
+	_, err = tx.Exec(`CREATE INDEX path_index ON symbols(path);`)
 	if err != nil {
 		return err
 	}
 
 	// `*lowercase_index` enables indexed case insensitive queries.
-	_, err = transaction.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
+	_, err = tx.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
 	if err != nil {
 		return err
 	}
 
-	_, err = transaction.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
+	_, err = tx.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
 	if err != nil {
 		return err
 	}
 
-	insertStatement, err := transaction.PrepareNamed(
+	insertStatement, err := tx.PrepareNamed(
 		fmt.Sprintf(
 			"INSERT INTO symbols %s VALUES %s",
 			"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
@@ -356,7 +356,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	err = transaction.Commit()
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}
