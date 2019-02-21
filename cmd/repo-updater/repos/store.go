@@ -234,7 +234,7 @@ func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
 		rec := record{
 			ID:                  r.ID,
 			Name:                r.Name,
-			Description:         "", //r.Description,
+			Description:         r.Description,
 			Language:            r.Language,
 			CreatedAt:           r.CreatedAt.UTC(),
 			UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
