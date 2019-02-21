@@ -25,7 +25,7 @@ import (
 
 func init() {
 	if libSqlite3Pcre == "" {
-        repositoryRoot, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+		repositoryRoot, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 		if err != nil {
 			panic("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and you're not in the git repository, which is where the library is expected to be.")
 		}
