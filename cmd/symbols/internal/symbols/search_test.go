@@ -9,11 +9,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/testutil"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func BenchmarkSearch(b *testing.B) {
 	MustRegisterSqlite3WithPcre()
 	ctagsCommand := ctags.GetCommand()
+
+	log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 
 	service := Service{
 		FetchTar: testutil.FetchTarFromGithub,
