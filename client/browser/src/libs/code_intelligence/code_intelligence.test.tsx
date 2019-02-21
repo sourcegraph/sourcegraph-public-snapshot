@@ -14,8 +14,6 @@ import { integrationTestContext } from '../../../../../shared/src/api/integratio
 import { isDefined } from '../../../../../shared/src/util/types'
 import { FileInfo, handleCodeHost } from './code_intelligence'
 
-declare var global: any
-
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
     return call && call[0]
@@ -30,10 +28,10 @@ describe('handleCodeHost()', () => {
 
     beforeAll(() => {
         // jsdom doesn't support MutationObserver or IntersectionObserver, so we need to mock them
-        global.MutationObserver = class {
+        ;(window as any).MutationObserver = class {
             public observe = jest.fn()
         }
-        global.IntersectionObserver = class {
+        ;(window as any).IntersectionObserver = class {
             constructor(
                 private callback: (entries: Pick<IntersectionObserverEntry, 'target' | 'isIntersecting'>[]) => void
             ) {}
@@ -42,8 +40,8 @@ describe('handleCodeHost()', () => {
     })
 
     afterAll(() => {
-        delete global.MutationObserver
-        delete global.IntersectionObserver
+        delete (window as any).MutationObserver
+        delete (window as any).IntersectionObserver
     })
 
     let subscriptions = new Subscription()
