@@ -3,7 +3,7 @@ gitserver: gitserver
 query-runner: query-runner
 repo-updater: repo-updater
 searcher: searcher
-symbols: ./dev/ts-script cmd/symbols/build.ts execute
+symbols: ./cmd/symbols/build.sh execute
 github-proxy: github-proxy
 frontend: env CONFIGURATION_MODE=server frontend
 watch: ./enterprise/dev/changewatch.sh

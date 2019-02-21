@@ -93,7 +93,7 @@ func main() {
 
 		pipeline.AddStep(":go:",
 			bk.Cmd("yarn"),
-			bk.Cmd("./dev/ts-script cmd/symbols/build.ts buildLibsqlite3Pcre"), // for symbols tests
+			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 			bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
 			bk.ArtifactPaths("coverage.txt"))
 
@@ -137,7 +137,7 @@ func main() {
 
 		getBuildScript := func() string {
 			buildScriptByApp := map[string]string{
-				"symbols": fmt.Sprintf("./dev/ts-script cmd/symbols/build.ts buildSymbolsDockerImage --buildType dist --dockerImageName %s", image+":"+version),
+				"symbols": fmt.Sprintf("./cmd/symbols/build.sh buildSymbolsDockerImage --buildType dist --dockerImageName %s", image+":"+version),
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript
