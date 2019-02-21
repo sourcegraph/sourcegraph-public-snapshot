@@ -163,22 +163,16 @@ func preprocessRegexpQuery(value string) string {
 func escapeDollarSigns(value string) string {
 	out := ""
 
-	parts := strings.Split(value, "$")
-	for i, part := range parts {
-		s := ""
-		if i == len(parts)-1 && part == "" {
-			s = "$"
-		} else if i > 0 {
-			prev := parts[i-1]
-			if l := len(prev); l > 0 && prev[l-1:] == `\` {
-				s = "$" + part
-			} else {
-				s = `\$` + part
+	for i, r := range value {
+		fmt.Println(r, r == '$', i == len(value)-1)
+
+		if r == '$' && i != len(value)-1 {
+			if i == 0 || (i != 0 && value[i-1] != '\\') {
+				out += string('\\')
 			}
-		} else {
-			s = part
 		}
-		out += s
+
+		out += string(r)
 	}
 
 	return out

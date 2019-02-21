@@ -145,6 +145,27 @@ func TestUnquoteString(t *testing.T) {
 	}
 }
 
+func TestEscapeDollarSigns(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{input: "$foo", want: `\$foo`},
+		{input: `foo\s=\s$bar`, want: `foo\s=\s\$bar`},
+		// Valid regexps
+		{input: `\$foo`, want: `\$foo`},
+		{input: `foo\s=\s\$bar`, want: `foo\s=\s\$bar`},
+	}
+
+	for _, test := range tests {
+		got := escapeDollarSigns(test.input)
+
+		if got != test.want {
+			t.Errorf("input wasn't correctly fixed:\ngot: %v\nwant: %v\n", got, test.want)
+		}
+	}
+}
+
 func TestCompileRegexp(t *testing.T) {
 	tests := []struct {
 		query string
