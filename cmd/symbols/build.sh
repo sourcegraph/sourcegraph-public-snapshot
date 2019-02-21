@@ -52,10 +52,12 @@ function buildLibsqlite3Pcre() {
     pushd "$sqlite3PcreRepositoryDirectory"
     case "$OSTYPE" in
         darwin*)
-            libsqlite3PcrePath="$repositoryRoot/libsqlite3-pcre.dylib"
+            # pkg-config spits out multiple arguments and must not be quoted.
+            gcc -fno-common -dynamiclib pcre.c -o "$libsqlite3PcrePath" $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC
             ;;
         linux*)
-            libsqlite3PcrePath="$repositoryRoot/libsqlite3-pcre.so"
+            # pkg-config spits out multiple arguments and must not be quoted.
+            gcc -shared -o "$libsqlite3PcrePath" $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs
             ;;
         *)
             echo "Unknown platform $OSTYPE"
