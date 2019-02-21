@@ -1,6 +1,7 @@
 <!--
 This template is used for our monthly major/minor releases of Sourcegraph.
-It is not used for patch releases.
+It is not used for patch releases. See [patch_release_issue_template.md](patch_release_issue_template.md)
+for the patch release checklist.
 -->
 
 # MAJOR.MINOR Release (YYYY-MM-DD)
