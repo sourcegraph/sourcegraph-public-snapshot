@@ -49,7 +49,7 @@ function buildLibsqlite3Pcre() {
 
     echo "Building $libsqlite3PcrePath..."
     curl -fsSL https://codeload.github.com/ralight/sqlite3-pcre/tar.gz/c98da412b431edb4db22d3245c99e6c198d49f7a | tar -C "$sqlite3PcreRepositoryDirectory" -xzvf - --strip 1
-    pushd -q $sqlite3PcreRepositoryDirectory
+    pushd $sqlite3PcreRepositoryDirectory
     case "$OSTYPE" in
         darwin*)
             libsqlite3PcrePath="$repositoryRoot/libsqlite3-pcre.dylib"
@@ -62,7 +62,7 @@ function buildLibsqlite3Pcre() {
             exit 1
             ;;
     esac
-    popd -q
+    popd
     echo "Building $libsqlite3PcrePath... done"
 }
 
