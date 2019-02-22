@@ -131,15 +131,14 @@ dev/phabricator/stop.sh
 
 3. Click URIs in the side bar
 
-4. Click Add New URI on the right side of the page
+4. Click on each URI that's already there, click edit, and set it to no I/O and hidden.
 
-    For I/O type, select `Observe`. For Display type, select `Visible`
+5. Go to the URIs list again and click Add New URI on the right side of the page, click edit, then set it to Observe and Visible.
 
-5. Once created, click "Set Credential" on the right
+6. Once created, click "Set Credential" on the right
 
     Click "Add New Credential". Fill out the form. Give it a private key from a public/private key pair that has access to your gitolite. To add it to Gitolite, checkout the `gitolite-admin` repo and add the public key to `keydir/` under the name `$USER.pub`. Then open `conf/gitolite.conf` and give $USER read and write permissions to the repository.
 
-6. Go back to the list of URIs and click through to the other two URIs and disable them by editing and setting to hidden and no I/O.
 
 7. Now go back to the "manage repository" page and click activate repository on the right.
 
