@@ -192,14 +192,14 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
     return { baseCommitID, headCommitID }
 }
 
-function getResolvedDiffForCompare(): DiffResolvedRevSpec | null {
+function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
     const branchElements = document.querySelectorAll('.commitish-suggester span.js-select-button') as NodeListOf<
         HTMLSpanElement
     >
     if (branchElements && branchElements.length === 2) {
         return { baseCommitID: branchElements[0].innerText, headCommitID: branchElements[1].innerText }
     }
-    return null
+    return undefined
 }
 
 function getDiffResolvedRevFromPageSource(pageSource: string): DiffResolvedRevSpec | null {
