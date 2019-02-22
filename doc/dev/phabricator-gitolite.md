@@ -35,20 +35,10 @@ getting your gitolite docker container to talk to your
 Phabricator docker container.
 
 ```shell
-docker run -p 2222:22 -e SSH_KEY="$(cat ~/.ssh/id_rsa.pub)" elsdoerfer/gitolite
+docker run -p 22:22 -e SSH_KEY="$(cat ~/.ssh/id_rsa.pub)" elsdoerfer/gitolite
 
 # Print info from gitolite
-ssh -p2222 git@localhost info
-```
-
-To clone repositories from here, add the following to your `~/.ssh/config`
-
-```shell
-Host localhost
-  User git
-  Port 2222
-  IdentityFile ~/.ssh/id_rsa
-  IdentitiesOnly yes
+ssh -p22 git@localhost info
 ```
 
 #### Managing repositories
