@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 
-	"github.com/sourcegraph/httpcache"
+	"github.com/gregjones/httpcache"
 )
 
 var (
