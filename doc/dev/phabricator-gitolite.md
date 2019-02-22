@@ -35,7 +35,7 @@ getting your gitolite docker container to talk to your
 Phabricator docker container.
 
 ```shell
-docker run -p 2222:22 -e SSH_KEY="$(cat ~/.ssh/id<sub>rsa</sub>.pub)" elsdoerfer/gitolite
+docker run -p 2222:22 -e SSH_KEY="$(cat ~/.ssh/id_rsa.pub)" elsdoerfer/gitolite
 
 # Print info from gitolite
 ssh -p2222 git@localhost info
@@ -109,12 +109,14 @@ Create the phabricator pods by navigating to the
 *infrastructure* repository and applying the Phabricator
 config.
 
-`=` cd sourcegraph/infrastructure/kubernetes/tooling kubectl
-apply -f ./phabricator `=`
+```
+cd sourcegraph/infrastructure/kubernetes/tooling kubectl
+apply -f ./phabricator
+```
 
 ##### Docker (local)
 
-You can run locally via docker. We have some
+You can run locally via docker. We have 
 [<https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator>](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator)
 for this using
 [Bitnami.](https://docs.bitnami.com/installer/apps/phabricator/)
