@@ -173,7 +173,7 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 			return conditions
 		}
 
-		if isExact, symbolName, err := isLiteralEquality(regex); isExact || err != nil {
+		if isExact, symbolName, err := isLiteralEquality(regex); isExact && err == nil {
 			// It looks like the user is asking for exact matches, so use `=` to
 			// get the speed boost from the index on the column.
 			if args.IsCaseSensitive {
