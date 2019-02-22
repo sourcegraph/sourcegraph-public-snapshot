@@ -1,7 +1,6 @@
 import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
@@ -26,32 +25,53 @@ interface State {
 export class UserNavItem extends React.PureComponent<Props, State> {
     public state: State = { isOpen: false }
 
-    public componentDidUpdate(prevProps: Props): void {
-        // Close dropdown after clicking on a dropdown item.
-        if (this.state.isOpen && this.props.location !== prevProps.location) {
-            this.setState({ isOpen: false })
-        }
+    private onWindowClick = (event: MouseEvent) => {
+        this.setState({ isOpen: false })
+    }
+
+    public componentDidMount(): void {
+        window.addEventListener('click', this.onWindowClick)
+    }
+
+    public componentWillUnmount(): void {
+        window.removeEventListener('click', this.onWindowClick)
+    }
+
+    private onDropdownMenuClick: React.MouseEventHandler = event => {
+        event.preventDefault()
+        event.stopPropagation()
+        this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    }
+
+    private onThemeChange = () => {
+        eventLogger.log(this.props.isLightTheme ? 'DarkThemeClicked' : 'LightThemeClicked')
+        this.setState(prevState => ({ isOpen: !prevState.isOpen }), this.props.onThemeChange)
     }
 
     public render(): JSX.Element | null {
         return (
-            <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav-link py-0">
-                <DropdownToggle
-                    caret={true}
-                    className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle"
-                    nav={true}
+            <div className="dropdown">
+                <a
+                    className="nav-link dropdown-toggle bg-transparent d-flex align-items-center"
+                    href=""
+                    aria-haspopup="true"
+                    onClick={this.onDropdownMenuClick}
                 >
                     {this.props.authenticatedUser.avatarURL ? (
                         <UserAvatar user={this.props.authenticatedUser} size={48} className="icon-inline" />
                     ) : (
                         <strong>{this.props.authenticatedUser.username}</strong>
                     )}
-                </DropdownToggle>
-                <DropdownMenu right={true}>
-                    <DropdownItem header={true} className="py-1">
+                </a>
+                <div
+                    className="dropdown-menu dropdown-menu-right"
+                    /* tslint:disable-next-line: jsx-ban-props */
+                    style={{ display: this.state.isOpen ? 'block' : 'none' }}
+                >
+                    <h6 className="dropdown-header py-1">
                         Signed in as <strong>@{this.props.authenticatedUser.username}</strong>
-                    </DropdownItem>
-                    <DropdownItem divider={true} />
+                    </h6>
+                    <div className="dropdown-divider" />
                     <Link to={`${this.props.authenticatedUser.url}/account`} className="dropdown-item">
                         Account
                     </Link>
@@ -69,11 +89,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/search/searches" className="dropdown-item">
                         Saved searches
                     </Link>
-                    <button
-                        type="button"
-                        className="dropdown-item e2e-user-nav-item__theme"
-                        onClick={this.onThemeChange}
-                    >
+                    <button type="button" className="dropdown-item theme-switcher" onClick={this.onThemeChange}>
                         Use {this.props.isLightTheme ? 'dark' : 'light'} theme
                     </button>
                     {window.context.sourcegraphDotComMode ? (
@@ -87,7 +103,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     )}
                     {this.props.authenticatedUser.siteAdmin && (
                         <>
-                            <DropdownItem divider={true} />
+                            <div className="dropdown-divider" />
                             <Link to="/site-admin" className="dropdown-item">
                                 Site admin
                             </Link>
@@ -95,7 +111,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     )}
                     {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
                         <>
-                            <DropdownItem divider={true} />
+                            <div className="dropdown-divider" />
                             <a href="/-/sign-out" className="dropdown-item">
                                 Sign out
                             </a>
@@ -103,21 +119,14 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     )}
                     {this.props.showAbout && (
                         <>
-                            <DropdownItem divider={true} />
+                            <div className="dropdown-divider" />
                             <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
                                 About Sourcegraph
                             </a>
                         </>
                     )}
-                </DropdownMenu>
-            </ButtonDropdown>
+                </div>
+            </div>
         )
-    }
-
-    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
-
-    private onThemeChange = () => {
-        eventLogger.log(this.props.isLightTheme ? 'DarkThemeClicked' : 'LightThemeClicked')
-        this.setState(prevState => ({ isOpen: !prevState.isOpen }), this.props.onThemeChange)
     }
 }

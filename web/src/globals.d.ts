@@ -125,3 +125,14 @@ declare module 'worker-loader!*' {
     }
     export default WebpackWorker
 }
+
+declare module '*.scss' {
+    interface ImportedCSS {
+        /**
+         * Returns the CSS source
+         */
+        toString(): string
+    }
+    const importedCss: ImportedCSS
+    export default importedCss
+}

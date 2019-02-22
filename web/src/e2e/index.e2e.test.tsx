@@ -1,5 +1,5 @@
 import * as path from 'path'
-import puppeteer from 'puppeteer'
+import puppeteer, { ElementHandle } from 'puppeteer'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { retry } from '../util/e2e-test-utils'
 
@@ -193,8 +193,14 @@ describe('e2e test suite', function(this: any): void {
             )
             expect(currentThemes.length).toEqual(1)
             const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
-            await page.click('.e2e-user-nav-item-toggle')
-            await page.click('.e2e-user-nav-item__theme')
+            const dropDown = (await page.evaluateHandle(
+                () => document.querySelector('.nav-links')!.shadowRoot!.querySelector('.dropdown-toggle')!
+            )) as ElementHandle
+            await dropDown.click()
+            const themeSwitcher = (await page.evaluateHandle(
+                () => document.querySelector('.nav-links')!.shadowRoot!.querySelector('.theme-switcher')!
+            )) as ElementHandle
+            await themeSwitcher.click()
             expect(
                 await page.evaluate(() =>
                     Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))

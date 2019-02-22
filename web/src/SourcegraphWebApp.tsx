@@ -36,6 +36,7 @@ import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import sourcegraphWebAppStyles from './SourcegraphWebApp.scss'
 import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
@@ -194,6 +195,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         return (
             <ErrorBoundary location={null}>
+                <style>{sourcegraphWebAppStyles}</style>
                 <ShortcutProvider>
                     <TelemetryContext.Provider value={eventLogger}>
                         <BrowserRouter key={0}>
