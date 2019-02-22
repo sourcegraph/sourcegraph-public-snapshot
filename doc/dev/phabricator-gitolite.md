@@ -158,11 +158,9 @@ dev/phabricator/stop.sh
 
 #### Install the Sourcegraph Phabricator extension.
 
-    SSH into your Phabricator instance and follow [the installation
-    steps in the
-    README.](https://github.com/sourcegraph/phabricator-extension/blob/master/README.md#installation)
-    If you used the helper scripts, the root Phabricator directory
-    will be `/opt/bitnami/phabricator`.
+SSH into your Phabricator instance and follow [the installation steps in the README.](https://github.com/sourcegraph/phabricator-extension/blob/master/README.md#installation)
+If you used the helper scripts, the root Phabricator directory
+will be `/opt/bitnami/phabricator`.
 
 #### Work flow for creating diffs
 
