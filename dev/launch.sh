@@ -51,8 +51,6 @@ export REPO_UPDATER_URL=http://127.0.0.1:3182
 export REDIS_ENDPOINT=127.0.0.1:6379
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
-export CTAGS_COMMAND=${CTAGS_COMMAND-cmd/symbols/universal-ctags-dev}
-export CTAGS_PROCESSES=1
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
@@ -82,10 +80,6 @@ yarn_pid=''
     yarn --no-progress &
     yarn_pid="$!"
 }
-
-# Build the symbols image
-IMAGE=dev-symbols ./cmd/symbols/build.sh
-rm -rf /tmp/symbols-cache
 
 if ! ./dev/go-install.sh; then
 	# let Yarn finish, otherwise we get Yarn diagnostics AFTER the
