@@ -5,8 +5,9 @@ import storage from '../../browser/storage'
 
 interface Props {
     onClose: () => void
-    alertKey: string
 }
+
+export const SERVER_CONFIGURATION_KEY = 'NeedsServerConfigurationAlertDismissed'
 
 /**
  * A global alert telling the user that they need to configure Sourcegraph
@@ -14,7 +15,7 @@ interface Props {
  */
 export class NeedsServerConfigurationAlert extends React.Component<Props, {}> {
     private sync(): void {
-        storage.setSync({ [this.props.alertKey]: true }, () => {
+        storage.setSync({ [SERVER_CONFIGURATION_KEY]: true }, () => {
             this.props.onClose()
         })
     }
