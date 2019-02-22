@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/testutil"
@@ -64,24 +62,11 @@ func BenchmarkSearch(b *testing.B) {
 	}
 
 	runQueryTest := func(test protocol.SearchArgs) {
-		dbFile, err := ioutil.TempFile("", "")
-		if err != nil {
-			b.Fatal(err)
-		}
-		defer dbFile.Close()
-		defer os.Remove(dbFile.Name())
-		err = service.writeAllSymbolsToNewDB(ctx, dbFile.Name(), test.Repo, test.CommitID)
-		if err != nil {
-			b.Fatal(err)
-		}
-		db, err := sqlx.Open("sqlite3_with_pcre", dbFile.Name())
-		if err != nil {
-			b.Fatal(err)
-		}
-		defer db.Close()
+		service.search(ctx, test)
+		b.ResetTimer()
 		b.Run(fmt.Sprintf("searching %s@%s %s", path.Base(string(test.Repo)), test.CommitID[:3], test.Query), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				_, err := filterSymbols(ctx, db, test)
+				_, err := service.search(ctx, test)
 				if err != nil {
 					b.Fatal(err)
 				}
