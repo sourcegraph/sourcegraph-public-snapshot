@@ -26,7 +26,6 @@ const SignUpPage = React.lazy(async () => ({ default: (await import('./auth/Sign
 const DiscussionsPage = React.lazy(async () => ({
     default: (await import('./discussions/DiscussionsPage')).DiscussionsPage,
 }))
-const DocSitePage = React.lazy(async () => ({ default: (await import('./docSite/DocSitePage')).DocSitePage }))
 const ExploreArea = React.lazy(async () => ({ default: (await import('./explore/ExploreArea')).ExploreArea }))
 const ExtensionsArea = React.lazy(async () => ({
     default: (await import('./extensions/ExtensionsArea')).ExtensionsArea,
@@ -186,7 +185,18 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/help',
-        render: props => <DocSitePage {...props} path={props.location.pathname.slice(props.match.path.length + 1)} />,
+        render: () => {
+            // Force a hard reload so that we delegate to the HTTP handler for /help, which handles
+            // redirecting /help to https://docs.sourcegraph.com. That logic is not duplicated in
+            // the web app because that would add complexity with no user benefit.
+            //
+            // TODO(sqs): This currently has a bug in dev mode where you can't go back to the app
+            // after following the redirect. This will be fixed when we run docsite on
+            // http://localhost:5080 in Procfile because then the redirect will be cross-domain and
+            // won't reuse the same history stack.
+            window.location.reload()
+            return null
+        },
     },
     repoRevRoute,
 ]

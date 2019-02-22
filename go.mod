@@ -93,6 +93,7 @@ require (
 	github.com/russellhaering/gosaml2 v0.3.1
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/sergi/go-diff v1.0.0
+	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/go v0.0.0-20190121191506-3fef8c783dec // indirect
 	github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041
 	github.com/shurcooL/httpfs v0.0.0-20181222201310-74dc9339e414

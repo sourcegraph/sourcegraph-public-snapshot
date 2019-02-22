@@ -3,8 +3,7 @@ This template is used only for `docsite check` (broken link checking), not for a
 docs. It should emit roughly the same Markdown and links as the actual templates, to ensure that the
 broken link checker checks the links that are produced by the actual templates.
 
-- https://docs.sourcegraph.com is rendered using https://github.com/sourcegraph/docs.sourcegraph.com.
-- The /help pages on a Sourcegraph instance are rendered by DocSitePage.tsx.
+https://docs.sourcegraph.com is rendered using https://github.com/sourcegraph/docs.sourcegraph.com.
 */}}
 {{define "root"}}
 {{with .Content}}{{template "index" .}}{{end}}
