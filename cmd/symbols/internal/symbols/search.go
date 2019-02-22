@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp/syntax"
 	"strings"
@@ -36,7 +37,7 @@ var libSqlite3Pcre = env.Get("LIBSQLITE3_PCRE", "", "path to the libsqlite3-pcre
 func MustRegisterSqlite3WithPcre() {
 	if libSqlite3Pcre == "" {
 		env.PrintHelp()
-		panic("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set")
+		log.Fatal("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set")
 	}
 	sql.Register("sqlite3_with_pcre", &sqlite3.SQLiteDriver{Extensions: []string{libSqlite3Pcre}})
 }
