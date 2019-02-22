@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -19,8 +19,8 @@ import (
 )
 
 func init() {
-	// Enable SourcegraphDotComMode
-	globals.ExternalURL = &url.URL{Scheme: "https", Host: "sourcegraph.com"}
+	// Enable SourcegraphDotComMode for all tests in this package.
+	envvar.MockSourcegraphDotComMode(true)
 
 	// Reinit router
 	initRouter()
