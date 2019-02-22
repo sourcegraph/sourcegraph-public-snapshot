@@ -11,6 +11,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Symbols search is much faster now. After the initial indexing, you can expect code intelligence to be nearly instant no matter the size of your repository.
+
 ### Fixed
 
 ### Removed
