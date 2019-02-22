@@ -142,77 +142,45 @@ func (d *Diff) Sort() {
 	}
 }
 
-type index struct {
-	id   map[api.ExternalRepoSpec]*Repo
-	name map[string]*Repo
-}
-
-func newIndex(sz int) *index {
-	return &index{
-		id:   make(map[api.ExternalRepoSpec]*Repo, sz),
-		name: make(map[string]*Repo, sz),
-	}
-}
-
-func (idx *index) add(rs ...*Repo) {
-	for _, r := range rs {
-		idx.set(r)
-	}
-}
-
-func (idx *index) set(r *Repo) {
-	idx.name[r.Name] = r
-	if r.ExternalRepo != (api.ExternalRepoSpec{}) {
-		idx.id[r.ExternalRepo] = r
-	}
-}
-
-func (idx *index) get(r *Repo) *Repo {
-	var existing *Repo
-	if r.ExternalRepo != (api.ExternalRepoSpec{}) {
-		existing = idx.id[r.ExternalRepo]
-	}
-
-	if existing == nil {
-		existing = idx.name[r.Name]
-	}
-
-	return existing
-}
-
-func (idx *index) update(old, updated *Repo) {
-	delete(idx.name, old.Name)
-	delete(idx.id, old.ExternalRepo)
-	idx.name[updated.Name] = updated
-	idx.id[updated.ExternalRepo] = updated
-}
-
 func (Syncer) diff(sourced, stored []*Repo) (diff Diff) {
-	storedIndex := newIndex(len(stored))
-	storedIndex.add(stored...)
+	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
+	byName := make(map[string]*Repo, len(sourced))
 
-	sourcedIndex := newIndex(len(sourced))
+	for _, r := range stored {
+		byName[r.Name] = r
+		if r.ExternalRepo != (api.ExternalRepoSpec{}) {
+			byID[r.ExternalRepo] = r
+		}
+	}
+
+	seen := make(map[string]*Repo, len(stored))
 	for _, r := range sourced {
-		if other := sourcedIndex.get(r); other != nil {
-			if old := other.Clone(); merge(other, r) {
-				sourcedIndex.update(old, other)
-			}
+		if other := seen[r.Name]; other != nil {
+			merge(other, r)
 			continue
 		}
 
-		if old := storedIndex.get(r); old == nil {
-			sourcedIndex.set(r)
-			diff.Added = append(diff.Added, r)
-		} else if o := old.Clone(); merge(old, r) {
-			sourcedIndex.update(o, old)
-			diff.Modified = append(diff.Modified, old)
-		} else {
-			diff.Unmodified = append(diff.Unmodified, old)
+		var old *Repo
+		if r.ExternalRepo != (api.ExternalRepoSpec{}) {
+			old = byID[r.ExternalRepo]
 		}
+
+		if old == nil {
+			old = byName[r.Name]
+		}
+
+		if old == nil {
+			seen[r.Name], diff.Added = r, append(diff.Added, r)
+		} else if merge(old, r) {
+			seen[r.Name], diff.Modified = old, append(diff.Modified, old)
+		} else {
+			seen[r.Name], diff.Unmodified = old, append(diff.Unmodified, old)
+		}
+
 	}
 
 	for _, r := range stored {
-		if sourcedIndex.get(r) == nil {
+		if seen[r.Name] == nil {
 			diff.Deleted = append(diff.Deleted, r)
 		}
 	}
