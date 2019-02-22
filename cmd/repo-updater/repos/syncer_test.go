@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -22,8 +23,6 @@ func TestSyncer_Sync(t *testing.T) {
 			ServiceType: "github",
 		},
 	}
-
-	bar := repos.Repo{Name: "bar"}
 
 	type testCase struct {
 		name    string
@@ -60,17 +59,6 @@ func TestSyncer_Sync(t *testing.T) {
 			sourcer: sourcer(nil, source("a", nil, foo.Clone())),
 			store:   &fakeStore{upsert: errors.New("booya")},
 			err:     "booya",
-		},
-		{
-			// here we test that if a repo previously had the external id set and one
-			// of its sources gets rate limited, we preserve the external id
-			name: "had name and external id, got name only from rate-limited source",
-			sourcer: sourcer(nil, source("a", nil, foo.With(func(r *repos.Repo) {
-				r.ExternalRepo = api.ExternalRepoSpec{}
-			}))),
-			store: store(foo.With(sources("a"))),
-			diff:  repos.Diff{Unmodified: repos.Repos{foo.With(sources("a"))}},
-			err:   "<nil>",
 		},
 	}
 
@@ -149,25 +137,6 @@ func TestSyncer_Sync(t *testing.T) {
 			diff: repos.Diff{Modified: repos.Repos{
 				foo.With(sources("a"), modifiedAt(clock.Time(1))),
 			}},
-			err: "<nil>",
-		})
-	}
-
-	{
-		clock := fakeClock{epoch: time.Now(), step: time.Second}
-		testCases = append(testCases, testCase{
-			name:    "renamed repo without external_id is re-created",
-			sourcer: sourcer(nil, source("a", nil, bar.Clone())),
-			store:   store(foo.With(sources("a"))),
-			now:     clock.Now,
-			diff: repos.Diff{
-				Added: repos.Repos{
-					bar.With(sources("a"), createdAt(clock.Time(1))),
-				},
-				Deleted: repos.Repos{
-					foo.With(sources("a"), deletedAt(clock.Time(1))),
-				},
-			},
 			err: "<nil>",
 		})
 	}
@@ -260,64 +229,127 @@ func TestDiff(t *testing.T) {
 		},
 		{
 			name:   "added",
-			source: repos.Repos{{Name: "1"}},
-			diff:   repos.Diff{Added: repos.Repos{{Name: "1"}}},
+			source: repos.Repos{{ExternalRepo: eid("1")}},
+			diff:   repos.Diff{Added: repos.Repos{{ExternalRepo: eid("1")}}},
 		},
 		{
 			name:  "deleted",
-			store: repos.Repos{{Name: "1"}},
-			diff:  repos.Diff{Deleted: repos.Repos{{Name: "1"}}},
+			store: repos.Repos{{ExternalRepo: eid("1")}},
+			diff:  repos.Diff{Deleted: repos.Repos{{ExternalRepo: eid("1")}}},
 		},
 		{
 			name:   "modified",
-			store:  repos.Repos{{Name: "1", Description: "foo"}},
-			source: repos.Repos{{Name: "1", Description: "bar"}},
-			diff:   repos.Diff{Modified: repos.Repos{{Name: "1", Description: "bar"}}},
+			store:  repos.Repos{{ExternalRepo: eid("1"), Description: "foo"}},
+			source: repos.Repos{{ExternalRepo: eid("1"), Description: "bar"}},
+			diff: repos.Diff{Modified: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "bar"},
+			}},
 		},
 		{
 			name:   "unmodified",
-			store:  repos.Repos{{Name: "1", Description: "foo"}},
-			source: repos.Repos{{Name: "1", Description: "foo"}},
-			diff:   repos.Diff{Unmodified: repos.Repos{{Name: "1", Description: "foo"}}},
+			store:  repos.Repos{{ExternalRepo: eid("1"), Description: "foo"}},
+			source: repos.Repos{{ExternalRepo: eid("1"), Description: "foo"}},
+			diff: repos.Diff{Unmodified: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "foo"},
+			}},
 		},
 		{
-			name:   "duplicates in source", // first duplicate wins
-			source: repos.Repos{{Name: "1", Description: "foo"}, {Name: "1", Description: "bar"}},
-			diff:   repos.Diff{Added: repos.Repos{{Name: "1", Description: "foo"}}},
+			name: "duplicates in source are merged",
+			source: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "foo", Sources: []string{"a"}},
+				{ExternalRepo: eid("1"), Description: "bar", Sources: []string{"b"}},
+			},
+			diff: repos.Diff{Added: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "bar", Sources: []string{"a", "b"}},
+			}},
 		},
 		{
-			// This test case is covering the scenario when a repo had a name and got
-			// an external_id with the latest sync. In this case, we want to merge those
-			// two repos into one with the external_id set.
-			name: "duplicate with a second ID is merged correctly",
+			name: "duplicate with a changed name is merged correctly",
+			store: repos.Repos{
+				{Name: "1", ExternalRepo: eid("1"), Description: "foo"},
+			},
+			source: repos.Repos{
+				{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
+			},
+			diff: repos.Diff{Modified: repos.Repos{
+				{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
+			}},
+		},
+		{
+			name: "duplicate with added external id is merged correctly",
 			store: repos.Repos{
 				{Name: "1", Description: "foo"},
 			},
 			source: repos.Repos{
-				{Name: "1", ExternalRepo: eid("second id"), Description: "foo"},
+				{Name: "1", ExternalRepo: eid("1"), Description: "foo"},
 			},
-			diff: repos.Diff{Modified: repos.Repos{{Name: "1", ExternalRepo: eid("second id"), Description: "foo"}}},
+			diff: repos.Diff{Modified: repos.Repos{
+				{Name: "1", ExternalRepo: eid("1"), Description: "foo"},
+			}},
 		},
 		{
-			name:   "duplicate with a single common ID is merged correctly",
-			store:  repos.Repos{{Name: "1", ExternalRepo: eid("second id"), Description: "foo", CreatedAt: now}},
-			source: repos.Repos{{Name: "2", ExternalRepo: eid("second id"), Description: "foo"}},
-			diff:   repos.Diff{Modified: repos.Repos{{Name: "2", ExternalRepo: eid("second id"), Description: "foo"}}},
+			name: "no duplicate with added external id and changed name",
+			store: repos.Repos{
+				{Name: "1", Description: "foo"},
+			},
+			source: repos.Repos{
+				{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
+			},
+			diff: repos.Diff{
+				Deleted: repos.Repos{
+					{Name: "1", Description: "foo"},
+				},
+				Added: repos.Repos{
+					{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
+				},
+			},
 		},
 		{
-			name:   "unmodified preserves before ",
-			store:  repos.Repos{{Name: "1", Description: "foo", CreatedAt: now}},
-			source: repos.Repos{{Name: "1", Description: "foo"}},
-			diff:   repos.Diff{Unmodified: repos.Repos{{Name: "1", Description: "foo", CreatedAt: now}}},
+			name: "unmodified preserves stored repo",
+			store: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
+			},
+			source: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "foo"},
+			},
+			diff: repos.Diff{Unmodified: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
+			}},
 		},
 		{
 			// Repo renamed and repo created with old name
-			name:   "renamed repo",
-			store:  repos.Repos{{Name: "1", ExternalRepo: eid("old"), Description: "foo"}},
-			source: repos.Repos{{Name: "1", ExternalRepo: eid("new"), Description: "bar"}, {Name: "2", ExternalRepo: eid("old"), Description: "foo"}},
+			name: "renamed repo",
+			store: repos.Repos{
+				{Name: "1", ExternalRepo: eid("old"), Description: "foo"},
+			},
+			source: repos.Repos{
+				{Name: "2", ExternalRepo: eid("old"), Description: "foo"},
+				{Name: "1", ExternalRepo: eid("new"), Description: "bar"},
+			},
 			diff: repos.Diff{
-				Modified: repos.Repos{{Name: "2", ExternalRepo: eid("old"), Description: "foo"}},
-				Added:    repos.Repos{{Name: "1", ExternalRepo: eid("new"), Description: "bar"}},
+				Modified: repos.Repos{
+					{Name: "2", ExternalRepo: eid("old"), Description: "foo"},
+				},
+				Added: repos.Repos{
+					{Name: "1", ExternalRepo: eid("new"), Description: "bar"},
+				},
+			},
+		},
+		{
+			name: "swapped repo",
+			store: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1"), Description: "foo"},
+				{Name: "bar", ExternalRepo: eid("2"), Description: "bar"},
+			},
+			source: repos.Repos{
+				{Name: "bar", ExternalRepo: eid("1"), Description: "bar"},
+				{Name: "foo", ExternalRepo: eid("2"), Description: "foo"},
+			},
+			diff: repos.Diff{
+				Modified: repos.Repos{
+					{Name: "bar", ExternalRepo: eid("1"), Description: "bar"},
+					{Name: "foo", ExternalRepo: eid("2"), Description: "foo"},
+				},
 			},
 		},
 	} {
@@ -325,27 +357,9 @@ func TestDiff(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			for _, ds := range []repos.Repos{
-				tc.store,
-				tc.source,
-				tc.diff.Added,
-				tc.diff.Modified,
-				tc.diff.Unmodified,
-				// Exclude Deleted since it will have no source set
-			} {
-				for i := range ds {
-					ds[i].Sources = []string{"a"}
-				}
-			}
-
-			syncer := repos.NewSyncer(0, store(tc.store...), sourcer(nil, source("a", nil, tc.source...)), nil, func() time.Time { return time.Time{} })
-			diff, err := syncer.Sync(context.Background())
-			if err != nil {
-				t.Fatal(err)
-			}
-
+			diff := repos.NewDiff(tc.source, tc.store)
 			if cmp := pretty.Compare(diff, tc.diff); cmp != "" {
-				// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
+				t.Logf("have: %s\nwant: %s\n", pp.Sprint(diff), pp.Sprint(tc.diff))
 				t.Fatalf("unexpected diff:\n%s", cmp)
 			}
 		})

@@ -82,7 +82,7 @@ func (s Syncer) Sync(ctx context.Context) (_ Diff, err error) {
 		return Diff{}, err
 	}
 
-	diff := s.diff(sourced, stored)
+	diff := NewDiff(sourced, stored)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
@@ -142,54 +142,57 @@ func (d *Diff) Sort() {
 	}
 }
 
-func (Syncer) diff(sourced, stored []*Repo) (diff Diff) {
+// NewDiff returns a diff from the given sourced and stored repos.
+func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
 	byName := make(map[string]*Repo, len(sourced))
 
-	for _, r := range stored {
-		byName[r.Name] = r
-		if r.ExternalRepo != (api.ExternalRepoSpec{}) {
-			byID[r.ExternalRepo] = r
-		}
-	}
-
-	seen := make(map[string]*Repo, len(stored))
 	for _, r := range sourced {
-		if other := seen[r.Name]; other != nil {
-			merge(other, r)
-			continue
-		}
-
-		var old *Repo
-		if r.ExternalRepo != (api.ExternalRepoSpec{}) {
-			old = byID[r.ExternalRepo]
-		}
-
-		if old == nil {
-			old = byName[r.Name]
-		}
-
-		if old == nil {
-			seen[r.Name], diff.Added = r, append(diff.Added, r)
-		} else if merge(old, r) {
-			seen[r.Name], diff.Modified = old, append(diff.Modified, old)
+		if r.ExternalRepo == (api.ExternalRepoSpec{}) {
+			panic(fmt.Errorf("%s has no external repo spec", r.Name))
+		} else if old := byID[r.ExternalRepo]; old != nil {
+			merge(old, r)
 		} else {
-			seen[r.Name], diff.Unmodified = old, append(diff.Unmodified, old)
+			byID[r.ExternalRepo], byName[r.Name] = r, r
 		}
-
 	}
 
-	for _, r := range stored {
-		if seen[r.Name] == nil {
-			diff.Deleted = append(diff.Deleted, r)
+	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
+	seenName := make(map[string]bool, len(stored))
+
+	for _, old := range stored {
+		src := byID[old.ExternalRepo]
+		if src == nil {
+			src = byName[old.Name]
+		}
+
+		if src == nil {
+			diff.Deleted = append(diff.Deleted, old)
+		} else if upsert(old, src) {
+			diff.Modified = append(diff.Modified, old)
+		} else {
+			diff.Unmodified = append(diff.Unmodified, old)
+		}
+
+		seenID[old.ExternalRepo] = true
+		seenName[old.Name] = true
+	}
+
+	for _, r := range byID {
+		if !seenID[r.ExternalRepo] && !seenName[r.Name] {
+			diff.Added = append(diff.Added, r)
 		}
 	}
 
 	return diff
 }
 
-// merge merges the newer Repo "n" into the older one "o", returning true if anything was modified.
-func merge(o, n *Repo) (modified bool) {
+func merge(o, n *Repo) {
+	n.Sources = dedup(append(n.Sources, o.Sources...)...)
+	upsert(o, n)
+}
+
+func upsert(o, n *Repo) (modified bool) {
 	if !o.ExternalRepo.Equal(&n.ExternalRepo) && o.Name != n.Name {
 		panic(fmt.Errorf("merge called with distinct repos: older: %+v, newer: %+v", o, n))
 	}
@@ -223,7 +226,7 @@ func merge(o, n *Repo) (modified bool) {
 	}
 
 	if !equal(o.Sources, n.Sources) {
-		o.Sources, modified = dedup(n.Sources...), true
+		o.Sources, modified = n.Sources, true
 	}
 
 	if !reflect.DeepEqual(o.Metadata, n.Metadata) {
@@ -279,6 +282,7 @@ func dedup(ss ...string) []string {
 			uniq = append(uniq, s)
 		}
 	}
+	sort.Strings(uniq)
 	return uniq
 }
 
@@ -297,26 +301,4 @@ func equal(a, b []string) bool {
 	}
 
 	return true
-}
-
-func set(s map[string]*Repo, d *Repo) {
-	for _, id := range d.IDs() {
-		s[id] = d
-	}
-}
-
-func del(set map[string]*Repo, ids []string) {
-	for _, id := range ids {
-		delete(set, id)
-	}
-}
-
-func elems(set map[string]*Repo, ids []string) []*Repo {
-	ds := make([]*Repo, 0, len(ids))
-	for _, id := range ids {
-		if d, ok := set[id]; ok {
-			ds = append(ds, d)
-		}
-	}
-	return ds
 }
