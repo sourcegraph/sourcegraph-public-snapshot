@@ -103,7 +103,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
         )
 }
 
-const trimRepoName = ({ repoName, ...rest }: { repoName: string }) => ({
+const trimRepoName = <T extends { repoName: string }>({ repoName, ...rest }: T): T => ({
     ...rest,
     repoName: repoName.replace(/.git$/, ''),
 })
