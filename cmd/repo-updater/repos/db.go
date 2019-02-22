@@ -74,6 +74,9 @@ func NewDB(dsn string) (*sql.DB, error) {
 	// Force PostgreSQL session timezone to UTC.
 	qry.Set("timezone", "UTC")
 
+	// Force application name.
+	qry.Set("application_name", "repo-updater")
+
 	// Set max open and idle connections
 	maxOpen, _ := strconv.Atoi(qry.Get("max_conns"))
 	if maxOpen == 0 {
