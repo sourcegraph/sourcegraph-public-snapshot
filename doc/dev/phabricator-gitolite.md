@@ -1,4 +1,4 @@
-Phabricator/Gitolite documentation
+kubPhabricator/Gitolite documentation
 ==================================
 
 Gitolite
@@ -110,8 +110,8 @@ Create the phabricator pods by navigating to the
 config.
 
 ```
-cd sourcegraph/infrastructure/kubernetes/tooling kubectl
-apply -f ./phabricator
+cd sourcegraph/infrastructure/kubernetes/tooling
+kubectl apply -f ./phabricator
 ```
 
 ##### Docker (local)
