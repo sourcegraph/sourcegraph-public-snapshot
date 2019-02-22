@@ -48,16 +48,16 @@ func TestIsLiteralEquality(t *testing.T) {
 	}
 
 	for _, test := range []TestCase{
-		TestCase{Regex: `^foo$`, WantLiteral: "foo", WantOk: true},
-		TestCase{Regex: `^[f]oo$`, WantLiteral: `foo`, WantOk: true},
-		TestCase{Regex: `^\\$`, WantLiteral: `\`, WantOk: true},
-		TestCase{Regex: `^\$`, WantLiteral: ``, WantOk: false},
-		TestCase{Regex: `^\($`, WantLiteral: `(`, WantOk: true},
-		TestCase{Regex: `\\`, WantLiteral: ``, WantOk: false},
-		TestCase{Regex: `\$`, WantLiteral: ``, WantOk: false},
-		TestCase{Regex: `\(`, WantLiteral: ``, WantOk: false},
-		TestCase{Regex: `foo$`, WantLiteral: ``, WantOk: false},
-		TestCase{Regex: `(^foo$|^bar$)`, WantLiteral: ``, WantOk: false},
+		{Regex: `^foo$`, WantLiteral: "foo", WantOk: true},
+		{Regex: `^[f]oo$`, WantLiteral: `foo`, WantOk: true},
+		{Regex: `^\\$`, WantLiteral: `\`, WantOk: true},
+		{Regex: `^\$`, WantLiteral: ``, WantOk: false},
+		{Regex: `^\($`, WantLiteral: `(`, WantOk: true},
+		{Regex: `\\`, WantLiteral: ``, WantOk: false},
+		{Regex: `\$`, WantLiteral: ``, WantOk: false},
+		{Regex: `\(`, WantLiteral: ``, WantOk: false},
+		{Regex: `foo$`, WantLiteral: ``, WantOk: false},
+		{Regex: `(^foo$|^bar$)`, WantLiteral: ``, WantOk: false},
 	} {
 		gotOk, gotLiteral, err := isLiteralEquality(test.Regex)
 		if err != nil {
