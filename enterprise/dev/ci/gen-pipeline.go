@@ -92,8 +92,6 @@ func main() {
 			bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
 		pipeline.AddStep(":go:",
-			bk.Cmd("yarn"),
-			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 			bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
 			bk.ArtifactPaths("coverage.txt"))
 
@@ -134,21 +132,11 @@ func main() {
 		}
 
 		image := "sourcegraph/" + app
-
-		getBuildScript := func() string {
-			buildScriptByApp := map[string]string{
-				"symbols": fmt.Sprintf("./cmd/symbols/build.sh buildSymbolsDockerImage --buildType dist --dockerImageName %s", image+":"+version),
-			}
-			if buildScript, ok := buildScriptByApp[app]; ok {
-				return buildScript
-			}
-			return cmdDir + "/build.sh"
-		}
-
+		buildScript := cmdDir + "/build.sh"
 		cmds = append(cmds,
 			bk.Env("IMAGE", image+":"+version),
 			bk.Env("VERSION", version),
-			bk.Cmd(getBuildScript()),
+			bk.Cmd(buildScript),
 		)
 
 		if app != "server" || taggedRelease {

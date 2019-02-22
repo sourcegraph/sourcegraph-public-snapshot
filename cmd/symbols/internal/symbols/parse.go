@@ -37,7 +37,7 @@ func (s *Service) startParsers() error {
 	return nil
 }
 
-func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, callback func(symbol protocol.Symbol) error) (err error) {
+func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -52,9 +52,8 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	tr := trace.New("parseUncached", string(repo))
 	tr.LazyPrintf("commitID: %s", commitID)
 
-	totalSymbols := 0
 	defer func() {
-		tr.LazyPrintf("symbols=%d", totalSymbols)
+		tr.LazyPrintf("symbols=%d", len(symbols))
 		if err != nil {
 			tr.LazyPrintf("error: %s", err)
 			tr.SetError()
@@ -66,7 +65,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	parseRequests, errChan, err := s.fetchRepositoryArchive(ctx, repo, commitID)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -87,7 +86,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 				for range parseRequests {
 				}
 			}()
-			return ctx.Err()
+			return nil, ctx.Err()
 		}
 		sem <- struct{}{}
 		wg.Add(1)
@@ -113,20 +112,18 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 					if e.Name == "" || strings.HasPrefix(e.Name, "__anon") || strings.HasPrefix(e.Parent, "__anon") || strings.HasPrefix(e.Name, "AnonymousFunction") || strings.HasPrefix(e.Parent, "AnonymousFunction") {
 						continue
 					}
-					totalSymbols++
-					err = callback(entryToSymbol(e))
-					if err != nil {
-						log15.Error("Failed to add symbol", "symbol", e, "error", err)
-						return
-					}
+					symbols = append(symbols, entryToSymbol(e))
 				}
 			}
 		}(req)
 	}
 	wg.Wait()
-	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, totalSymbols)
+	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, len(symbols))
 
-	return <-errChan
+	if err := <-errChan; err != nil {
+		return nil, err
+	}
+	return symbols, nil
 }
 
 // parse gets a parser from the pool and uses it to satisfy the parse request.

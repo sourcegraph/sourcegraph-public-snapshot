@@ -49,33 +49,9 @@ type File struct {
 // cache.
 type Fetcher func(context.Context) (io.ReadCloser, error)
 
-// FetcherWithPath writes a cache entry to the given file. It is used by Open if the key
-// is not in the cache.
-type FetcherWithPath func(context.Context, string) error
-
 // Open will open a file from the local cache with key. If missing, fetcher
 // will fill the cache first. Open also performs single-flighting for fetcher.
 func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *File, err error) {
-	return s.OpenWithPath(ctx, key, func(ctx context.Context, path string) error {
-		readCloser, err := fetcher(ctx)
-		if err != nil {
-			return err
-		}
-		file, err := os.OpenFile(path, os.O_WRONLY, 0600)
-		if err != nil {
-			return errors.Wrap(err, "failed to open temporary archive cache item")
-		}
-		err = copyAndClose(file, readCloser)
-		if err != nil {
-			return errors.Wrap(err, "failed to copy and close missing archive cache item")
-		}
-		return nil
-	})
-}
-
-// OpenWithPath will open a file from the local cache with key. If missing, fetcher
-// will fill the cache first. Open also performs single-flighting for fetcher.
-func (s *Store) OpenWithPath(ctx context.Context, key string, fetcher FetcherWithPath) (file *File, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Cached Fetch")
 	if s.Component != "" {
 		ext.Component.Set(span, s.Component)
@@ -145,7 +121,7 @@ func (s *Store) path(key string) string {
 	return filepath.Join(s.Dir, hex.EncodeToString(h[:])) + ".zip"
 }
 
-func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *File, err error) {
+func doFetch(ctx context.Context, path string, fetcher Fetcher) (file *File, err error) {
 	// We have to grab the lock for this key, so we can fetch or wait for
 	// someone else to finish fetching.
 	urlMu := urlMu(path)
@@ -180,11 +156,16 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *F
 	}
 	defer os.Remove(tmpPath)
 
-	// We are now ready to actually fetch the file.
-	err = fetcher(ctx, tmpPath)
+	// We are now ready to actually fetch the file. Write it to the
+	// partial file and cleanup.
+	r, err := fetcher(ctx)
 	if err != nil {
 		f.Close()
 		return nil, errors.Wrap(err, "failed to fetch missing archive cache item")
+	}
+	err = copyAndClose(f, r)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to copy and close missing archive cache item")
 	}
 
 	// Put the partially written file in the correct place and open
