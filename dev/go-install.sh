@@ -41,6 +41,20 @@ case $# in
 	done
 	;;
 esac
+if [ ! -z "$ENTERPRISE_COMMANDS" ]; then
+    for entCmd in $ENTERPRISE_COMMANDS; do
+        exists=false
+        for cmd in $commands; do
+            if [ "$cmd" = "$entCmd" ]; then
+                exists=true
+                break
+            fi
+        done
+        if [ "$exists" = false ]; then
+            commands="$commands $entCmd "
+        fi
+    done
+fi
 
 $ok || exit 1
 

@@ -10,8 +10,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 type Entry struct {
@@ -33,26 +31,6 @@ const debug = false
 type Parser interface {
 	Parse(path string, content []byte) ([]Entry, error)
 	Close()
-}
-
-func isCommandAvailable(name string) bool {
-	cmd := exec.Command("/bin/sh", "-c", "command -v "+name)
-	if err := cmd.Run(); err != nil {
-		return false
-	}
-	return true
-}
-
-var ctagsCommand = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)")
-
-// GetCommand returns the ctags command from the CTAGS_COMMAND environment
-// variable, falling back to `universal-ctags`. Panics if the command doesn't
-// exist.
-func GetCommand() string {
-	if !isCommandAvailable(ctagsCommand) {
-		panic(fmt.Errorf("ctags command %s not found", ctagsCommand))
-	}
-	return ctagsCommand
 }
 
 func NewParser(ctagsCommand string) (Parser, error) {
