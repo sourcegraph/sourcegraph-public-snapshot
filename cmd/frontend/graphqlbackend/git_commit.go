@@ -35,9 +35,8 @@ type gitCommitResolver struct {
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
-	oid      gitObjectID
-	once     sync.Once
-	oidReady chan struct{}
+	oid  gitObjectID
+	once sync.Once
 
 	author    signatureResolver
 	committer *signatureResolver
@@ -87,11 +86,13 @@ func (r *gitCommitResolver) OID() gitObjectID {
 
 func (r *gitCommitResolver) getCommitOID() gitObjectID {
 	r.once.Do(func() {
-		defer func() { close(r.oidReady) }()
-
+		// If we already have the commit, no need to try to compute it.
 		if r.oid != "" {
 			return
 		}
+
+		// Commit OID is the empty string denoting the default branch. Find out
+		// what is the latest commit indexed by zoekt.
 
 		indexInfo := r.repo.TextSearchIndex()
 
@@ -111,8 +112,6 @@ func (r *gitCommitResolver) getCommitOID() gitObjectID {
 			}
 		}
 	})
-
-	<-r.oidReady
 
 	return r.oid
 }
