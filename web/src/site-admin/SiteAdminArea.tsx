@@ -1,6 +1,7 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { ActivationStatus } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
@@ -26,6 +27,7 @@ export interface SiteAdminAreaRouteContext extends PlatformContextProps, Setting
     site: Pick<GQL.ISite, '__typename' | 'id'>
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
+    activation?: ActivationStatus
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: ReadonlyArray<React.ComponentType>
@@ -39,6 +41,7 @@ interface SiteAdminAreaProps extends RouteComponentProps<{}>, PlatformContextPro
     overviewComponents: ReadonlyArray<React.ComponentType>
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
+    activation?: ActivationStatus
 }
 
 /**
@@ -57,6 +60,7 @@ export const SiteAdminArea = withAuthenticatedUser(
                 platformContext: this.props.platformContext,
                 settingsCascade: this.props.settingsCascade,
                 isLightTheme: this.props.isLightTheme,
+                activation: this.props.activation,
                 site: { __typename: 'Site' as 'Site', id: window.context.siteGQLID },
                 overviewComponents: this.props.overviewComponents,
             }

@@ -6,6 +6,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { globalActivationStatus } from '../../../../web/src/tracking/activation'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
 import { VirtualList } from '../../components/VirtualList'
@@ -97,6 +98,20 @@ export class FileLocations extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        // TODO(PROTOTYPE)
+        // - clean up
+        // - make "saw references" a separate action (logged completely separate from code-intel actions)
+        const locsOrErr = this.state.locationsOrError as any
+        if (
+            window.location.href.endsWith('tab=references') &&
+            locsOrErr &&
+            locsOrErr.length !== undefined &&
+            (locsOrErr.length as number) > 0
+        ) {
+            globalActivationStatus.update({ 'action:findReferences': true })
+        }
+        // END:PROTOTYPE
+
         if (isErrorLike(this.state.locationsOrError)) {
             return <FileLocationsError error={this.state.locationsOrError} />
         }

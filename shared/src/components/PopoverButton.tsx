@@ -34,7 +34,7 @@ interface Props {
     hideOnChange?: any
 
     /**
-     * A keybinding  that toggles the visibility of this element.
+     * A keybinding that toggles the visibility of this element.
      */
     toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
 
@@ -43,6 +43,9 @@ interface Props {
 
     /** Force open, if true. */
     open?: boolean
+
+    /** Hide caret. This only has an effect if the `link` property is empty. */
+    hideCaret?: boolean
 }
 
 interface State {
@@ -111,7 +114,9 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                     onClick={this.props.link ? this.hide : this.toggleVisibility}
                 >
                     {this.props.children}{' '}
-                    {!this.props.link && <MenuDownIcon className="icon-inline popover-button2__icon" />}
+                    {!this.props.hideCaret && !this.props.link && (
+                        <MenuDownIcon className="icon-inline popover-button2__icon" />
+                    )}
                 </LinkOrSpan>
                 {this.props.link ? (
                     <div className="popover-button2__anchor">

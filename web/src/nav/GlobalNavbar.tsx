@@ -2,6 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import { ActivationStatus } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -18,6 +19,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsCo
     location: H.Location
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
+    activation?: ActivationStatus
     onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void

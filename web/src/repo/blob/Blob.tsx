@@ -9,6 +9,7 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLa
 import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
+import { ActivationStatus } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
 import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
@@ -58,6 +59,8 @@ interface BlobProps
     wrapCode: boolean
     renderMode: RenderMode
     isLightTheme: boolean
+
+    activation?: ActivationStatus
 }
 
 interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
@@ -469,6 +472,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         extensionsController={this.props.extensionsController}
                         platformContext={this.props.platformContext}
                         location={this.props.location}
+                        activation={this.props.activation}
                     />
                 )}
                 {this.state.decorationsOrError &&

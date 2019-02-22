@@ -11,15 +11,20 @@ exports[`ActionItem actionItem variant 1`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
+    <div
+      className="action-item__content"
+    >
+      <img
+        className="icon-inline"
+        src="u"
+      />
+       
+      g: 
+      t
+    </div>
   </div>
 </a>
 `;
@@ -35,15 +40,20 @@ exports[`ActionItem non-actionItem variant 1`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
+    <div
+      className="action-item__content"
+    >
+      <img
+        className="icon-inline"
+        src="u"
+      />
+       
+      g: 
+      t
+    </div>
   </div>
 </a>
 `;
@@ -72,11 +82,16 @@ exports[`ActionItem render as link for "open" command 1`] = `
   to="https://example.com"
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-     
-    
-    t
+    <div
+      className="action-item__content"
+    >
+       
+      
+      t
+    </div>
   </div>
 </a>
 `;
@@ -92,15 +107,20 @@ exports[`ActionItem run command 1`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
+    <div
+      className="action-item__content"
+    >
+      <img
+        className="icon-inline"
+        src="u"
+      />
+       
+      g: 
+      t
+    </div>
   </div>
 </a>
 `;
@@ -116,15 +136,20 @@ exports[`ActionItem run command 2`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
+    <div
+      className="action-item__content"
+    >
+      <img
+        className="icon-inline"
+        src="u"
+      />
+       
+      g: 
+      t
+    </div>
   </div>
 </a>
 `;
@@ -140,15 +165,20 @@ exports[`ActionItem run command with error 1`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
+    <div
+      className="action-item__content"
+    >
+      <img
+        className="icon-inline"
+        src="u"
+      />
+       
+      g: 
+      t
+    </div>
   </div>
 </a>
 `;
@@ -164,15 +194,20 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
+    <div
+      className="action-item__content"
+    >
+      <img
+        className="icon-inline"
+        src="u"
+      />
+       
+      g: 
+      t
+    </div>
   </div>
 </a>
 `;
@@ -188,22 +223,27 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
-  <div
-    className="action-item__loader"
+    className="first-use-button "
+    onClick={[Function]}
   >
     <div
-      className="loading-spinner icon-inline"
-    />
+      className="action-item__content"
+    >
+      <img
+        className="icon-inline"
+        src="u"
+      />
+       
+      g: 
+      t
+    </div>
+    <div
+      className="action-item__loader"
+    >
+      <div
+        className="loading-spinner icon-inline"
+      />
+    </div>
   </div>
 </a>
 `;
@@ -219,15 +259,20 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
+    <div
+      className="action-item__content"
+    >
+      <img
+        className="icon-inline"
+        src="u"
+      />
+       
+      g: 
+      t
+    </div>
   </div>
 </a>
 `;
@@ -243,11 +288,16 @@ exports[`ActionItem title element 1`] = `
   tabIndex={0}
 >
   <div
-    className="action-item__content"
+    className="first-use-button "
+    onClick={[Function]}
   >
-    <span>
-      t2
-    </span>
+    <div
+      className="action-item__content"
+    >
+      <span>
+        t2
+      </span>
+    </div>
   </div>
 </a>
 `;

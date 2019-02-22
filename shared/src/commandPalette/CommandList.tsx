@@ -14,7 +14,7 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 
-interface Props
+export interface Props
     extends ExtensionsControllerProps<'services' | 'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip'> {
     /** The menu whose commands to display. */
@@ -273,8 +273,8 @@ export class CommandListPopoverButton extends React.PureComponent<
             <PopoverButton
                 popoverClassName="rounded"
                 placement="auto-end"
-                toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 hideOnChange={this.state.hideOnChange}
+                toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 popoverElement={<CommandList {...this.props} onSelect={this.dismissPopover} />}
             >
                 <MenuIcon className="icon-inline" />

@@ -14,6 +14,7 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { ActivationStatus } from '../../../shared/src/components/activation/Activation'
 import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -128,6 +129,7 @@ interface Props extends SettingsCascadeProps, ExtensionsControllerProps, Platfor
     commitID: string
     rev: string
     isLightTheme: boolean
+    activation?: ActivationStatus
 
     location: H.Location
     history: H.History
@@ -281,7 +283,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         history={this.props.history}
                                         placeholder=""
                                     />
-                                    <SearchButton />
+                                    <SearchButton activation={this.props.activation} />
                                 </Form>
                             </section>
                             <TreeEntriesSection

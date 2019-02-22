@@ -1,0 +1,127 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActivationPopoverButton render 0/2 1`] = `
+<div>
+  <div
+    className="popover-button2  activation-status-dropdown-button popover-button2__btn popover-button2__anchor"
+  >
+    <span
+      className="popover-button2__container"
+      onClick={[Function]}
+    >
+      <span
+        className="link-like"
+      >
+        Setup
+      </span>
+      <div
+        className="activation-status-dropdown-button__progress-bar-container "
+      >
+        <svg
+          className="CircularProgressbar "
+          viewBox="0 0 100 100"
+        >
+          <path
+            className="CircularProgressbar-trail"
+            d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+            fillOpacity={0}
+            strokeWidth={12}
+            style={
+              Object {
+                "stroke": "#ff8787",
+              }
+            }
+          />
+          <path
+            className="CircularProgressbar-path"
+            d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+            fillOpacity={0}
+            strokeWidth={12}
+            style={
+              Object {
+                "stroke": "#69db7c",
+                "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+                "strokeDashoffset": "276.46015351590177px",
+              }
+            }
+          />
+        </svg>
+      </div>
+       
+    </span>
+  </div>
+</div>
+`;
+
+exports[`ActivationPopoverButton render 1/2 1`] = `
+<div>
+  <div
+    className="popover-button2  activation-status-dropdown-button popover-button2__btn popover-button2__anchor"
+  >
+    <span
+      className="popover-button2__container"
+      onClick={[Function]}
+    >
+      <span
+        className="link-like"
+      >
+        Setup
+      </span>
+      <div
+        className="activation-status-dropdown-button__progress-bar-container "
+      >
+        <svg
+          className="CircularProgressbar "
+          viewBox="0 0 100 100"
+        >
+          <path
+            className="CircularProgressbar-trail"
+            d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+            fillOpacity={0}
+            strokeWidth={12}
+            style={
+              Object {
+                "stroke": "#ff8787",
+              }
+            }
+          />
+          <path
+            className="CircularProgressbar-path"
+            d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+            fillOpacity={0}
+            strokeWidth={12}
+            style={
+              Object {
+                "stroke": "#69db7c",
+                "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+                "strokeDashoffset": "138.23007675795088px",
+              }
+            }
+          />
+        </svg>
+      </div>
+       
+    </span>
+  </div>
+</div>
+`;

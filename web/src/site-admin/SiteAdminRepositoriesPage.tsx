@@ -117,8 +117,13 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
         )
     }
 
-    private enableRepository = () => this.setRepositoryEnabled(true)
-    private disableRepository = () => this.setRepositoryEnabled(false)
+    private enableRepository = () => {
+        this.setRepositoryEnabled(true)
+    }
+
+    private disableRepository = () => {
+        this.setRepositoryEnabled(false)
+    }
 
     private setRepositoryEnabled(enabled: boolean): void {
         this.setState({

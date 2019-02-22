@@ -5,6 +5,7 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
+import { ActivationStatus } from '../../shared/src/components/activation/Activation'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     createController as createExtensionsController,
@@ -36,6 +37,7 @@ import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { newActivationStatus } from './tracking/activation'
 import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
@@ -77,6 +79,11 @@ interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadePr
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
+
+    /**
+     * The user activation status
+     */
+    activation?: ActivationStatus
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -114,8 +121,15 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         document.body.classList.add('theme')
         this.subscriptions.add(
             authenticatedUser.subscribe(
-                authenticatedUser => this.setState({ authenticatedUser }),
-                () => this.setState({ authenticatedUser: null })
+                authenticatedUser =>
+                    this.setState({
+                        authenticatedUser,
+                        activation:
+                            !window.context.sourcegraphDotComMode && authenticatedUser
+                                ? newActivationStatus(authenticatedUser.siteAdmin)
+                                : undefined,
+                    }),
+                () => this.setState({ authenticatedUser: null, activation: undefined })
             )
         )
 
@@ -216,6 +230,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         // Extensions
                                         platformContext={this.state.platformContext}
                                         extensionsController={this.state.extensionsController}
+                                        activation={this.state.activation}
                                     />
                                 )}
                             />

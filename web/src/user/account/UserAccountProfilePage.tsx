@@ -5,6 +5,8 @@ import { RouteComponentProps } from 'react-router'
 import { combineLatest, concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '..'
+import { percentageDone } from '../../../../shared/src/components/activation/Activation'
+import { ActivationChecklist } from '../../../../shared/src/components/activation/ActivationChecklist'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -58,6 +60,8 @@ interface State {
     username?: string
     displayName?: string
     avatarURL?: string
+
+    activationCompleted?: { [key: string]: boolean }
 }
 
 export class UserAccountProfilePage extends React.Component<Props, State> {
@@ -139,6 +143,13 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                 )
                 .subscribe(undefined, this.handleError)
         )
+        if (this.props.activation) {
+            this.subscriptions.add(
+                this.props.activation.completed.subscribe(
+                    completed => completed && this.setState({ activationCompleted: completed })
+                )
+            )
+        }
 
         this.componentUpdates.next(this.props)
     }
@@ -156,6 +167,23 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
             <div className="user-settings-profile-page">
                 <PageTitle title="Profile" />
                 <h2>Profile</h2>
+
+                {this.props.activation &&
+                    this.state.activationCompleted &&
+                    percentageDone(this.state.activationCompleted) < 100 && (
+                        <div className="user-settings-profile-page__activation-container">
+                            <h3>Almost there...</h3>
+                            <p>Complete the steps below to finish onboarding to Sourcegraph.</p>
+                            <div className="user-settings-profile-page__checklist-container">
+                                <ActivationChecklist
+                                    history={this.props.history}
+                                    steps={this.props.activation.steps}
+                                    completed={this.state.activationCompleted}
+                                />
+                            </div>
+                        </div>
+                    )}
+
                 {isErrorLike(this.state.userOrError) && (
                     <p className="alert alert-danger">Error: {upperFirst(this.state.userOrError.message)}</p>
                 )}

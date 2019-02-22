@@ -96,6 +96,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     location={context.location}
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
+                                    activation={context.activation}
                                     authenticatedUser={context.authenticatedUser}
                                 />
                             ) : (
@@ -112,6 +113,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     location={context.location}
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
+                                    activation={context.activation}
                                 />
                             )}
                         </div>

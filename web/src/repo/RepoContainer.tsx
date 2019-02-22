@@ -6,6 +6,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import { WorkspaceRootWithMetadata } from '../../../shared/src/api/client/model'
+import { ActivationStatus } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -44,6 +45,7 @@ export interface RepoContainerProps
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
+    activation?: ActivationStatus
 }
 
 interface RepoRevContainerState extends ParsedRepoRev {
@@ -223,6 +225,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repo: this.state.repoOrError,
             authenticatedUser: this.props.authenticatedUser,
             isLightTheme: this.props.isLightTheme,
+            activation: this.props.activation,
             repoMatchURL,
             settingsCascade: this.props.settingsCascade,
             platformContext: this.props.platformContext,

@@ -1,5 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
+import { ActivationStatus } from '../../../../shared/src/components/activation/Activation'
 import { Form } from '../../components/Form'
 import { submitSearch } from '../helpers'
 import { QueryInput } from './QueryInput'
@@ -9,6 +10,7 @@ interface Props {
     location: H.Location
     history: H.History
     navbarSearchQuery: string
+    activation?: ActivationStatus
     onChange: (newValue: string) => void
 }
 /**
@@ -30,7 +32,7 @@ export class SearchNavbarItem extends React.Component<Props> {
                     autoFocus={autoFocus ? 'cursor-at-end' : undefined}
                     hasGlobalQueryBehavior={true}
                 />
-                <SearchButton />
+                <SearchButton activation={this.props.activation} />
             </Form>
         )
     }

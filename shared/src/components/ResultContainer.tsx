@@ -2,6 +2,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
+import { globalActivationStatus } from '../../../web/src/tracking/activation'
 
 export interface Props {
     /**

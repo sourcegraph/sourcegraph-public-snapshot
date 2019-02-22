@@ -40,6 +40,15 @@ export function dataOrThrowErrors<T extends GQL.IQuery | GQL.IMutation>(result: 
     return result.data
 }
 
+export function dataAndErrors<T extends GQL.IQuery | GQL.IMutation>(
+    result: GraphQLResult<T>
+): {
+    data?: T
+    errors?: GQL.IGraphQLResponseError[]
+} {
+    return { data: result.data, errors: result.errors }
+}
+
 export interface GraphQLError extends Error {
     queryName: string
 }

@@ -6,6 +6,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { ActivationStatus } from '../../../../shared/src/components/activation/Activation'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -77,6 +78,7 @@ interface UserAreaProps extends RouteComponentProps<{ username: string }>, Platf
     authenticatedUser: GQL.IUser | null
 
     isLightTheme: boolean
+    activation?: ActivationStatus
 }
 
 interface UserAreaState {
@@ -111,6 +113,7 @@ export interface UserAreaRouteContext extends PlatformContextProps, SettingsCasc
     authenticatedUser: GQL.IUser | null
 
     isLightTheme: boolean
+    activation?: ActivationStatus
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
 }
@@ -182,6 +185,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
+            activation: this.props.activation,
             userAccountAreaRoutes: this.props.userAccountAreaRoutes,
             userAccountSideBarItems: this.props.userAccountSideBarItems,
         }

@@ -7,6 +7,7 @@ import * as React from 'react'
 import { MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemComponentProps, ActionItemProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
+import { ActivationStatus } from '../components/activation/Activation'
 import { TelemetryContext } from '../telemetry/telemetryContext'
 import { TelemetryService } from '../telemetry/telemetryService'
 import { isErrorLike } from '../util/errors'
@@ -34,6 +35,8 @@ export interface HoverOverlayProps
 
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
+
+    activation?: ActivationStatus
 }
 
 const isEmptyHover = ({
@@ -177,6 +180,7 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
                                     extensionsController={extensionsController}
                                     platformContext={platformContext}
                                     location={location}
+                                    activation={this.props.activation}
                                 />
                             ))}
                         </div>
