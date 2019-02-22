@@ -7,7 +7,7 @@ CTAGS_IMAGE="${CTAGS_IMAGE:=ctags}"
 BUILD_TYPE="${BUILD_TYPE:=dev}"
 
 repositoryRoot="$PWD"
-symbolsExecutablePath="$repositoryRoot/.bin/symbols"
+SYMBOLS_EXECUTABLE_OUTPUT_PATH="${SYMBOLS_EXECUTABLE_OUTPUT_PATH:=$repositoryRoot/.bin/symbols}"
 case "$OSTYPE" in
     darwin*)
         libsqlite3PcrePath="$repositoryRoot/libsqlite3-pcre.dylib"
@@ -83,9 +83,35 @@ function buildExecutable() {
             ;;
     esac
 
-    echo "Building the $symbolsExecutablePath executable..."
-    go build -buildmode exe -gcflags "$gcFlags" -tags "$tags" -o "$symbolsExecutablePath" "$symbolsPackage"
-    echo "Building the $symbolsExecutablePath executable... done"
+    if [ "$GOOS" = "linux" ]; then
+        case "$OSTYPE" in
+            darwin*)
+                muslGcc="x86_64-linux-musl-gcc"
+                if ! command -v "$muslGcc" >/dev/null 2>&1; then
+                    echo "Couldn't find musl C compiler $muslGcc. Run `brew install FiloSottile/musl-cross/musl-cross`."
+                    exit 1
+                fi
+                ;;
+            linux*)
+                muslGcc="musl-gcc"
+                if ! command -v "$muslGcc" >/dev/null 2>&1; then
+                    echo "Couldn't find musl C compiler $muslGcc. Install the musl-tools package (e.g. on Ubuntu, run `apt-get install musl-tools`)."
+                    exit 1
+                fi
+                ;;
+            *)
+                echo "Unknown platform $OSTYPE"
+                exit 1
+                ;;
+        esac
+
+        export CC="$muslGcc"
+        export CGO_ENABLED=1 # to build the sqlite3 library
+    fi
+
+    echo "Building the $SYMBOLS_EXECUTABLE_OUTPUT_PATH executable..."
+    go build -buildmode exe -gcflags "$gcFlags" -tags "$tags" -o "$SYMBOLS_EXECUTABLE_OUTPUT_PATH" "$symbolsPackage"
+    echo "Building the $SYMBOLS_EXECUTABLE_OUTPUT_PATH executable... done"
 }
 
 # Builds and runs the symbols executable.
@@ -96,41 +122,18 @@ function execute() {
     export LIBSQLITE3_PCRE="$libsqlite3PcrePath"
     export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
     export CTAGS_PROCESSES="${CTAGS_PROCESSES:=1}"
-    "$symbolsExecutablePath"
+    "$SYMBOLS_EXECUTABLE_OUTPUT_PATH"
 }
 
 # Builds the symbols Docker image.
 function buildSymbolsDockerImage() {
-    case "$OSTYPE" in
-        darwin*)
-            muslGcc="x86_64-linux-musl-gcc"
-            if ! command -v "$muslGcc" >/dev/null 2>&1; then
-                echo "Couldn't find musl C compiler $muslGcc. Run `brew install FiloSottile/musl-cross/musl-cross`."
-                exit 1
-            fi
-            ;;
-        linux*)
-            muslGcc="musl-gcc"
-            if ! command -v "$muslGcc" >/dev/null 2>&1; then
-                echo "Couldn't find musl C compiler $muslGcc. Install the musl-tools package (e.g. on Ubuntu, run `apt-get install musl-tools`)."
-                exit 1
-            fi
-            ;;
-        *)
-            echo "Unknown platform $OSTYPE"
-            exit 1
-            ;;
-    esac
-
     symbolsDockerBuildContext="$(mktemp -d)"
     trap "rm -rf $symbolsDockerBuildContext" EXIT
 
-    export CC="$muslGcc"
     export GO111MODULE=on
     export GOARCH=amd64
     export GOOS=linux
-    export CGO_ENABLED=1 # to build the sqlite3 library
-    symbolsExecutablePath="$symbolsDockerBuildContext/symbols"
+    SYMBOLS_EXECUTABLE_OUTPUT_PATH="$symbolsDockerBuildContext/symbols"
     buildExecutable
 
     buildCtagsDockerImage
