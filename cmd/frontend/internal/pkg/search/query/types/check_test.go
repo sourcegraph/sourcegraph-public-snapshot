@@ -155,6 +155,7 @@ func TestEscapeDollarSigns(t *testing.T) {
 		// Valid regexps
 		{input: `\$foo`, want: `\$foo`},
 		{input: `foo\s=\s\$bar`, want: `foo\s=\s\$bar`},
+		{input: `[$]`, want: `[$]`},
 	}
 
 	for _, test := range tests {

@@ -164,8 +164,6 @@ func escapeDollarSigns(value string) string {
 	out := ""
 
 	for i, r := range value {
-		fmt.Println(r, r == '$', i == len(value)-1)
-
 		if r == '$' && i != len(value)-1 {
 			if i == 0 || (i != 0 && value[i-1] != '\\') {
 				out += string('\\')
