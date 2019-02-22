@@ -103,7 +103,10 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
         )
 }
 
-const trimRepoName = ({ repoName, ...rest }) => ({ ...rest, repoName: repoName.replace(/.git$/, '') })
+const trimRepoName = ({ repoName, ...rest }: { repoName: string }) => ({
+    ...rest,
+    repoName: repoName.replace(/.git$/, ''),
+})
 
 export const fetchBlobContentLines = memoizeObservable(
     (ctx: RepoSpec & ResolvedRevSpec & FileSpec): Observable<string[]> =>

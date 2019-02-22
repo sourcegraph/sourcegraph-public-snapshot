@@ -177,7 +177,7 @@ storage.setSyncMigration(items => {
     const keysToRemove: string[] = []
 
     // Ensure all feature flags are in storage.
-    for (const key of Object.keys(featureFlagDefaults)) {
+    for (const key of Object.keys(featureFlagDefaults) as (keyof FeatureFlags)[]) {
         if (typeof featureFlags[key] === 'undefined') {
             keysToRemove.push(key)
             featureFlags = {
