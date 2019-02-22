@@ -1,4 +1,4 @@
-kubPhabricator/Gitolite documentation
+Phabricator/Gitolite documentation
 ==================================
 
 Gitolite
