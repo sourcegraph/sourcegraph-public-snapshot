@@ -51,13 +51,13 @@ func TestIsLiteralEquality(t *testing.T) {
 		{Regex: `^foo$`, WantLiteral: "foo", WantOk: true},
 		{Regex: `^[f]oo$`, WantLiteral: `foo`, WantOk: true},
 		{Regex: `^\\$`, WantLiteral: `\`, WantOk: true},
-		{Regex: `^\$`, WantLiteral: ``, WantOk: false},
+		{Regex: `^\$`, WantOk: false},
 		{Regex: `^\($`, WantLiteral: `(`, WantOk: true},
-		{Regex: `\\`, WantLiteral: ``, WantOk: false},
-		{Regex: `\$`, WantLiteral: ``, WantOk: false},
-		{Regex: `\(`, WantLiteral: ``, WantOk: false},
-		{Regex: `foo$`, WantLiteral: ``, WantOk: false},
-		{Regex: `(^foo$|^bar$)`, WantLiteral: ``, WantOk: false},
+		{Regex: `\\`, WantOk: false},
+		{Regex: `\$`, WantOk: false},
+		{Regex: `\(`, WantOk: false},
+		{Regex: `foo$`, WantOk: false},
+		{Regex: `(^foo$|^bar$)`, WantOk: false},
 	} {
 		gotOk, gotLiteral, err := isLiteralEquality(test.Regex)
 		if err != nil {
