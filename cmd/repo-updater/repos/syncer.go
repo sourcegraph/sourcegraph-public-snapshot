@@ -42,7 +42,7 @@ func NewSyncer(
 }
 
 // Run runs the Sync at its specified interval.
-func (s Syncer) Run(ctx context.Context) error {
+func (s *Syncer) Run(ctx context.Context) error {
 	for ctx.Err() == nil {
 		if _, err := s.Sync(ctx); err != nil {
 			log15.Error("Syncer", "err", err)
@@ -54,7 +54,7 @@ func (s Syncer) Run(ctx context.Context) error {
 }
 
 // Sync synchronizes the repositories of a single Source
-func (s Syncer) Sync(ctx context.Context) (_ Diff, err error) {
+func (s *Syncer) Sync(ctx context.Context) (_ Diff, err error) {
 	// TODO(tsenart): Ensure that transient failures do not remove
 	// repositories. This means we need to use the store as a fallback Source
 	// in the face of those kinds of errors, so that the diff results in Unmodified
@@ -96,7 +96,7 @@ func (s Syncer) Sync(ctx context.Context) (_ Diff, err error) {
 	return diff, nil
 }
 
-func (s Syncer) upserts(diff Diff) []*Repo {
+func (s *Syncer) upserts(diff Diff) []*Repo {
 	now := s.now()
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
 
@@ -236,7 +236,7 @@ func upsert(o, n *Repo) (modified bool) {
 	return modified
 }
 
-func (s Syncer) sourced(ctx context.Context) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	sources, err := s.sourcer.ListSources(ctx)
 	if err != nil {
 		return nil, err

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -21,6 +22,8 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
+	repos.Store
+	*repos.Syncer
 	*repos.OtherReposSyncer
 }
 
@@ -101,6 +104,12 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	switch req.ExternalService.Kind {
+	case "GITHUB":
+		_, err := s.Syncer.Sync(r.Context())
+		if err != nil {
+			log15.Error("server.external-service-sync", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	case "OTHER":
 		res := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService)
 		if len(res.Errors) > 0 {
@@ -143,6 +152,18 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
 			r := s.OtherReposSyncer.GetRepoInfoByName(ctx, string(args.Repo))
 			return r, r != nil, nil
+		},
+		func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
+			repos, err := s.Store.ListRepos(ctx, string(args.Repo))
+			if err != nil {
+				return nil, false, err
+			}
+
+			if len(repos) != 1 {
+				return nil, false, nil
+			}
+
+			return newRepoInfo(repos[0]), true, nil
 		},
 		// Slower, *potentially* I/O bound lookups, unless there's an HTTP client cache hit.
 		repos.GetGitHubRepository,
@@ -188,6 +209,31 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	// No configured code hosts are authoritative for this repository.
 	result.ErrorNotFound = true
 	return &result, nil
+}
+
+func newRepoInfo(r *repos.Repo) *protocol.RepoInfo {
+	info := protocol.RepoInfo{
+		Name:        api.RepoName(r.Name),
+		Description: r.Description,
+		Fork:        r.Fork,
+		Archived:    r.Archived,
+		// TODO(tsenart): Should we store the clone URL in the database?
+		VCS:          protocol.VCSInfo{},
+		ExternalRepo: &r.ExternalRepo,
+	}
+
+	switch strings.ToLower(r.ExternalRepo.ServiceType) {
+	case "github":
+		baseURL := r.ExternalRepo.ServiceID
+		info.Links = &protocol.RepoLinks{
+			Root:   baseURL,
+			Tree:   baseURL + "/tree/{rev}/{path}",
+			Blob:   baseURL + "/blob/{rev}/{path}",
+			Commit: baseURL + "/commit/{commit}",
+		}
+	}
+
+	return &info
 }
 
 func isNotFound(err error) bool {

@@ -99,7 +99,11 @@ func main() {
 	}()
 
 	// Start up handler that frontend relies on
-	repoupdater := repoupdater.Server{OtherReposSyncer: otherSyncer}
+	repoupdater := repoupdater.Server{
+		Store:            store,
+		Syncer:           syncer,
+		OtherReposSyncer: otherSyncer,
+	}
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	host := ""
 	if env.InsecureDev {
