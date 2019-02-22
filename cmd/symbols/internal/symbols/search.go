@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
+	"regexp/syntax"
 	"strings"
 	"time"
 
@@ -133,14 +133,22 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 	return diskcacheFile.File.Name(), err
 }
 
-// isRegexExact checks if the given regex matches literal strings exactly (i.e.
-// it's of the form `^...$` with no meta characters inside). Returns whether or not the regex is exact, along with the literal string if so.
-func isRegexExact(regex string) (string, bool) {
-	unanchoredRegex := strings.TrimSuffix(strings.TrimPrefix(regex, "^"), "$")
-	if strings.HasPrefix(regex, "^") && strings.HasSuffix(regex, "$") && regexp.QuoteMeta(unanchoredRegex) == unanchoredRegex {
-		return unanchoredRegex, true
+// isLiteralEquality checks if the given regex matches literal strings exactly.
+// Returns whether or not the regex is exact, along with the literal string if
+// so.
+func isLiteralEquality(expr string) (ok bool, lit string, err error) {
+	r, err := syntax.Parse(expr, syntax.Perl)
+	if err != nil {
+		return false, "", err
 	}
-	return "", false
+	// Want a Concat of size 3 which is [Begin, Literal, End]
+	if r.Op != syntax.OpConcat || len(r.Sub) != 3 || // size 3 concat
+		!(r.Sub[0].Op == syntax.OpBeginLine || r.Sub[0].Op == syntax.OpBeginText) || // Starts with ^
+		!(r.Sub[2].Op == syntax.OpEndLine || r.Sub[2].Op == syntax.OpEndText) || // Ends with $
+		r.Sub[1].Op != syntax.OpLiteral { // is a literal
+		return false, "", nil
+	}
+	return true, string(r.Sub[1].Rune), nil
 }
 
 func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (res []protocol.Symbol, err error) {
@@ -165,7 +173,7 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 			return conditions
 		}
 
-		if symbolName, isExact := isRegexExact(regex); isExact {
+		if isExact, symbolName, err := isLiteralEquality(regex); isExact || err != nil {
 			// It looks like the user is asking for exact matches, so use `=` to
 			// get the speed boost from the index on the column.
 			if args.IsCaseSensitive {
