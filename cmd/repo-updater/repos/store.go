@@ -15,9 +15,13 @@ import (
 
 // A Store exposes methods to read and write persistent repositories.
 type Store interface {
+	GetRepoByName(ctx context.Context, name string) (*Repo, error)
 	ListRepos(ctx context.Context, names ...string) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 }
+
+// ErrNoResults is returned by Store method invocations that yield no result set.
+var ErrNoResults = errors.New("store: no results")
 
 // A Transactor can initialise and return a TxStore which operates
 // within the context of a transaction.
@@ -92,6 +96,44 @@ func (s *DBStore) Done(errs ...*error) {
 	}
 }
 
+// GetRepoByName looks up the repo with the given name.
+func (s DBStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) {
+	repos := make([]*Repo, 0, 1)
+	if err := s.list(ctx, getRepoByNameQuery(name), &repos); err != nil {
+		return nil, err
+	} else if len(repos) == 0 {
+		return nil, ErrNoResults
+	}
+	return repos[0], nil
+}
+
+const getRepoByNameQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.GetRepoByName
+SELECT
+  id,
+  name,
+  description,
+  language,
+  created_at,
+  updated_at,
+  deleted_at,
+  external_service_type,
+  external_service_id,
+  external_id,
+  enabled,
+  archived,
+  fork,
+  sources,
+  metadata
+FROM repo
+WHERE name = %s
+AND deleted_at IS NULL
+`
+
+func getRepoByNameQuery(name string) *sqlf.Query {
+	return sqlf.Sprintf(getRepoByNameQueryFmtstr, name)
+}
+
 // ListRepos lists all stored repos that are not deleted, have one of the configured
 // external service kind and have any sources defined OR their name is one of the given
 // names.
@@ -163,7 +205,7 @@ func (s DBStore) paginate(ctx context.Context, repos *[]*Repo, q paginatedQuery)
 	var cursor, next int64 = -1, 0
 	for cursor != next && err == nil {
 		cursor = next
-		if err = s.page(ctx, q(cursor, 500), repos); len(*repos) > 0 {
+		if err = s.list(ctx, q(cursor, 500), repos); len(*repos) > 0 {
 			next = int64((*repos)[len(*repos)-1].ID)
 		}
 	}
@@ -171,7 +213,7 @@ func (s DBStore) paginate(ctx context.Context, repos *[]*Repo, q paginatedQuery)
 
 }
 
-func (s DBStore) page(ctx context.Context, q *sqlf.Query, repos *[]*Repo) (err error) {
+func (s DBStore) list(ctx context.Context, q *sqlf.Query, repos *[]*Repo) (err error) {
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err

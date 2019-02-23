@@ -424,6 +424,7 @@ func (s fakeSource) ListRepos(context.Context) ([]*repos.Repo, error) {
 
 type fakeStore struct {
 	repos  map[string]*repos.Repo
+	get    error
 	list   error
 	upsert error
 }
@@ -434,6 +435,19 @@ func store(rs ...*repos.Repo) *fakeStore {
 		s.repos[r.Name] = r
 	}
 	return &s
+}
+
+func (s fakeStore) GetRepoByName(ctx context.Context, name string) (*repos.Repo, error) {
+	if s.get != nil {
+		return nil, s.get
+	}
+
+	r := s.repos[name]
+	if r == nil {
+		return nil, repos.ErrNoResults
+	}
+
+	return r, nil
 }
 
 func (s fakeStore) ListRepos(context.Context, ...string) ([]*repos.Repo, error) {

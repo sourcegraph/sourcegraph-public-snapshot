@@ -32,6 +32,7 @@ func TestIntegration_DBStore(t *testing.T) {
 		name string
 		test func(*testing.T)
 	}{
+		{"GetRepoByName", testDBStoreGetRepoByName(db)},
 		{"UpsertRepos", testDBStoreUpsertRepos(db)},
 		{"ListRepos", testDBStoreListRepos(db)},
 	} {
@@ -54,7 +55,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 			}
 		})
 
-		t.Run("many repos", func(t *testing.T) {
+		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx TxStore) {
 			want := make([]*Repo, 0, 512) // Test more than one page load
 			for i := 0; i < cap(want); i++ {
 				id := strconv.Itoa(i)
@@ -81,16 +82,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				})
 			}
 
-			txstore, err := store.Transact(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer txstore.Done(&errRollback)
-
-			// NOTE(tsenart): We use t.Errorf followed by a return statement instead
-			// of t.Fatalf so that the defered txstore.Done is executed.
-
-			if err = txstore.UpsertRepos(ctx, want...); err != nil {
+			if err := tx.UpsertRepos(ctx, want...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
 				return
 			}
@@ -99,7 +91,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				return want[i].ID < want[j].ID
 			})
 
-			have, err := txstore.ListRepos(ctx)
+			have, err := tx.ListRepos(ctx)
 			if err != nil {
 				t.Errorf("ListRepos error: %s", err)
 				return
@@ -121,9 +113,9 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				r.Fork = !r.Fork
 			}
 
-			if err = txstore.UpsertRepos(ctx, want...); err != nil {
+			if err = tx.UpsertRepos(ctx, want...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
-			} else if have, err = txstore.ListRepos(ctx); err != nil {
+			} else if have, err = tx.ListRepos(ctx); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
@@ -133,15 +125,15 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				repo.DeletedAt = time.Now().UTC()
 			}
 
-			if err = txstore.UpsertRepos(ctx, want...); err != nil {
+			if err = tx.UpsertRepos(ctx, want...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
-			} else if have, err = txstore.ListRepos(ctx); err != nil {
+			} else if have, err = tx.ListRepos(ctx); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := pretty.Compare(have, []*Repo{}); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
-		})
+		}))
 	}
 }
 
@@ -164,65 +156,127 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 
 	return func(t *testing.T) {
 		for _, tc := range []struct {
-			name    string
-			kinds   []string
-			ctx     context.Context
-			names   []string
-			in, out []*Repo
-			err     error
+			name   string
+			kinds  []string
+			ctx    context.Context
+			names  []string
+			stored []*Repo
+			repos  []*Repo
+			err    error
 		}{
 			{
 				name:  "case-insensitive kinds",
 				kinds: []string{"GiThUb"},
-				in: Repos{foo.With(func(r *Repo) {
+				stored: Repos{foo.With(func(r *Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
 				})},
-				out: Repos{foo.With(func(r *Repo) {
+				repos: Repos{foo.With(func(r *Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
 				})},
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+			store := NewDBStore(ctx, db, tc.kinds, sql.TxOptions{Isolation: sql.LevelDefault})
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx TxStore) {
+				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
+					t.Errorf("failed to setup store: %v", err)
+					return
+				}
+
+				repos, err := tx.ListRepos(ctx, tc.names...)
+				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				for _, r := range repos {
+					r.ID = 0 // Exclude auto-generated IDs from equality tests
+				}
+
+				if have, want := repos, tc.repos; !reflect.DeepEqual(have, want) {
+					t.Errorf("repos: %s", cmp.Diff(have, want))
+				}
+			}))
+		}
+	}
+}
+
+func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
+	foo := Repo{
+		Name: "github.com/foo/bar",
+		Sources: map[string]*SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+		Metadata: new(github.Repository),
+		ExternalRepo: api.ExternalRepoSpec{
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+			ID:          "bar",
+		},
+	}
+
+	return func(t *testing.T) {
+		for _, tc := range []struct {
+			test   string
+			name   string
+			stored []*Repo
+			repo   *Repo
+			err    error
+		}{
+			{
+				test: "no results error",
+				name: "intergalatical repo lost in spaaaaaace",
+				err:  ErrNoResults,
+			},
+			{
+				test:   "success",
+				stored: Repos{foo.Clone()},
+				name:   foo.Name,
+				repo:   foo.Clone(),
 			},
 		} {
 			// NOTE: We use t.Errorf instead of t.Fatalf in order to run defers.
 
 			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				ctx := tc.ctx
-				if ctx == nil {
-					ctx = context.Background()
-				}
+			ctx := context.Background()
+			store := NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
 
-				txstore, err := NewDBStore(
-					ctx,
-					db,
-					tc.kinds,
-					sql.TxOptions{Isolation: sql.LevelDefault},
-				).Transact(ctx)
-
-				if err != nil {
-					t.Errorf("failed to start transaction: %v", err)
-					return
-				}
-
-				defer txstore.Done(&errRollback)
-
-				if err := txstore.UpsertRepos(ctx, tc.in...); err != nil {
+			t.Run(tc.test, transact(ctx, store, func(t testing.TB, tx TxStore) {
+				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
 					t.Errorf("failed to setup store: %v", err)
 					return
 				}
 
-				out, err := txstore.ListRepos(ctx, tc.names...)
+				repo, err := tx.GetRepoByName(ctx, tc.name)
 				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				for _, r := range out {
-					r.ID = 0 // Exclude auto-generated IDs from equality tests
+				if repo != nil {
+					repo.ID = 0 // Exclude auto-generated IDs from equality tests
 				}
 
-				if have, want := out, tc.out; !reflect.DeepEqual(have, want) {
+				if have, want := repo, tc.repo; !reflect.DeepEqual(have, want) {
 					t.Errorf("repos: %s", cmp.Diff(have, want))
 				}
-			})
+			}))
 		}
+	}
+}
+
+func transact(ctx context.Context, store *DBStore, test func(testing.TB, TxStore)) func(*testing.T) {
+	// NOTE: We use t.Errorf instead of t.Fatalf in order to run defers.
+	return func(t *testing.T) {
+		txstore, err := store.Transact(ctx)
+		if err != nil {
+			t.Errorf("failed to start transaction: %v", err)
+			return
+		}
+		defer txstore.Done(&errRollback)
+		test(t, txstore)
 	}
 }

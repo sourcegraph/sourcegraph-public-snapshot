@@ -155,16 +155,11 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return r, r != nil, nil
 		},
 		func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			repos, err := s.Store.ListRepos(ctx, string(args.Repo))
+			repo, err := s.Store.GetRepoByName(ctx, string(args.Repo))
 			if err != nil {
 				return nil, false, err
 			}
-
-			if len(repos) != 1 {
-				return nil, false, nil
-			}
-
-			return newRepoInfo(repos[0]), true, nil
+			return newRepoInfo(repo), true, nil
 		},
 		// Slower, *potentially* I/O bound lookups, unless there's an HTTP client cache hit.
 		repos.GetGitHubRepository,
