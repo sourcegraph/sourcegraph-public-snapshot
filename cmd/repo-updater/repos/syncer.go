@@ -213,10 +213,6 @@ func upsert(o, n *Repo) (modified bool) {
 		o.ExternalRepo, modified = n.ExternalRepo, true
 	}
 
-	if o.Enabled != n.Enabled {
-		o.Enabled, modified = n.Enabled, true
-	}
-
 	if o.Archived != n.Archived {
 		o.Archived, modified = n.Archived, true
 	}

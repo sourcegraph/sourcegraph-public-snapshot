@@ -98,6 +98,20 @@ func TestSyncer_Sync(t *testing.T) {
 	{
 		clock := fakeClock{epoch: time.Now(), step: time.Second}
 		testCases = append(testCases, testCase{
+			name: "enabled field is not updateable",
+			sourcer: sourcer(nil, source("a", nil, foo.With(func(r *repos.Repo) {
+				r.Enabled = !r.Enabled
+			}))),
+			store: store(foo.With(sources("a"))),
+			now:   clock.Now,
+			diff:  repos.Diff{Unmodified: repos.Repos{foo.With(sources("a"))}},
+			err:   "<nil>",
+		})
+	}
+
+	{
+		clock := fakeClock{epoch: time.Now(), step: time.Second}
+		testCases = append(testCases, testCase{
 			name: "deleted repo source",
 			sourcer: sourcer(nil,
 				source("a", nil, foo.Clone()),
