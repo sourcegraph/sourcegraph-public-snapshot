@@ -11,6 +11,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
 // A Store exposes methods to read and write persistent repositories.
@@ -67,6 +68,7 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 
 	return &DBStore{
 		db:     tx,
+		kinds:  s.kinds,
 		txOpts: s.txOpts,
 	}, nil
 }
@@ -129,9 +131,9 @@ func listReposQuery(kinds, names []string) paginatedQuery {
 	if len(kinds) > 0 {
 		ks := make([]*sqlf.Query, 0, len(kinds))
 		for _, kind := range kinds {
-			ks = append(ks, sqlf.Sprintf("%s", strings.ToUpper(kind)))
+			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(kind)))
 		}
-		kq = sqlf.Sprintf("external_service_type IN (%s)", sqlf.Join(ks, ","))
+		kq = sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ","))
 	}
 
 	nq := sqlf.Sprintf("FALSE")
@@ -510,7 +512,19 @@ func scanRepo(r *Repo, s scanner) error {
 		return err
 	}
 
-	r.Metadata = metadata
+	typ := strings.ToLower(r.ExternalRepo.ServiceType)
+	switch typ {
+	case "github":
+		r.Metadata = new(github.Repository)
+	}
+
+	if err = json.Unmarshal(metadata, &r.Metadata); err != nil {
+		return errors.Wrapf(
+			err,
+			"scanRepo: failed to unmarshal %q metadata",
+			typ,
+		)
+	}
 
 	var set map[string]interface{}
 	if err = json.Unmarshal(sources, &set); err != nil {
