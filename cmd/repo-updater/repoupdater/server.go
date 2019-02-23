@@ -159,7 +159,13 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			if err != nil {
 				return nil, false, err
 			}
-			return newRepoInfo(repo), true, nil
+
+			info, err := newRepoInfo(repo)
+			if err != nil {
+				return nil, false, err
+			}
+
+			return info, true, nil
 		},
 		// Slower, *potentially* I/O bound lookups, unless there's an HTTP client cache hit.
 		repos.GetGitHubRepository,
@@ -207,10 +213,10 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	return &result, nil
 }
 
-func newRepoInfo(r *repos.Repo) *protocol.RepoInfo {
+func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
-		panic(fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name))
+		return nil, fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)
 	}
 
 	info := protocol.RepoInfo{
@@ -233,7 +239,7 @@ func newRepoInfo(r *repos.Repo) *protocol.RepoInfo {
 		}
 	}
 
-	return &info
+	return &info, nil
 }
 
 func isNotFound(err error) bool {
