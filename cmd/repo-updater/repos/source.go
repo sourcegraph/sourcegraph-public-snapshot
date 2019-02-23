@@ -129,24 +129,31 @@ func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection) (*Git
 // in Sourcegraph via the external services configuration.
 func (s GithubSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 	var repos []*Repo
-	sourceID := externalServiceURN(s.svc)
 	for repo := range s.conn.listAllRepositories(ctx) {
-		r := githubRepoToRepo(repo, s.conn)
-		r.Sources = append(r.Sources, sourceID)
-		r.Metadata = repo
-		repos = append(repos, r)
+		repos = append(repos, githubRepoToRepo(s.svc, repo, s.conn))
 	}
 	return repos, nil
 }
 
-func githubRepoToRepo(ghrepo *github.Repository, conn *githubConnection) *Repo {
+func githubRepoToRepo(
+	svc *api.ExternalService,
+	ghrepo *github.Repository,
+	conn *githubConnection,
+) *Repo {
+	urn := externalServiceURN(svc)
 	return &Repo{
 		Name:         string(githubRepositoryToRepoPath(conn, ghrepo)),
-		CloneURL:     conn.authenticatedRemoteURL(ghrepo),
 		ExternalRepo: *github.ExternalRepoSpec(ghrepo, *conn.baseURL),
 		Description:  ghrepo.Description,
 		Fork:         ghrepo.IsFork,
 		Archived:     ghrepo.IsArchived,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: conn.authenticatedRemoteURL(ghrepo),
+			},
+		},
+		Metadata: ghrepo,
 	}
 }
 

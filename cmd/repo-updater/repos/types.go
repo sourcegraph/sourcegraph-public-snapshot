@@ -14,8 +14,6 @@ type Repo struct {
 	//
 	// Previously, this was called RepoURI.
 	Name string
-	// CloneURL is the clone URL of the repo.
-	CloneURL string
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.
@@ -36,19 +34,27 @@ type Repo struct {
 	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
 	// service itself).
 	ExternalRepo api.ExternalRepoSpec
-	// Sources identifies all the source IDs this Repo belongs to.
-	Sources []string
+	// Sources identifies all the repo sources this Repo belongs to.
+	Sources map[string]*SourceInfo
 	// Metadata contains the raw source code host JSON metadata.
 	Metadata interface{}
 }
 
-// IDs returns the globally unique identifiers of a repository.
-func (r *Repo) IDs() (ids []string) {
-	ids = append(ids, r.Name)
-	if extID := r.ExternalRepo.ServiceID + r.ExternalRepo.ID; extID != "" {
-		ids = append(ids, extID)
+// A SourceInfo represents a source a Repo belongs to (such as an external service).
+type SourceInfo struct {
+	ID       string
+	CloneURL string
+}
+
+// CloneURLs returns all the clone URLs this repo is clonable from.
+func (r *Repo) CloneURLs() []string {
+	urls := make([]string, 0, len(r.Sources))
+	for _, src := range r.Sources {
+		if src != nil && src.CloneURL != "" {
+			urls = append(urls, src.CloneURL)
+		}
 	}
-	return ids
+	return urls
 }
 
 // Clone returns a clone of the given repo.
@@ -77,15 +83,6 @@ func (r *Repo) With(opts ...func(*Repo)) *Repo {
 
 // Repos is an utility type with convenience methods for operating on lists of Repos.
 type Repos []*Repo
-
-// IDs returns the list of IDs from all Repos.
-func (rs Repos) IDs() []string {
-	ids := make([]string, 0, len(rs)*2)
-	for _, r := range rs {
-		ids = append(ids, r.IDs()...)
-	}
-	return ids
-}
 
 // Names returns the list of names from all Repos.
 func (rs Repos) Names() []string {

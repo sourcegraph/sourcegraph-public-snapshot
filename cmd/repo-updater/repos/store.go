@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
-	"sort"
 	"strings"
 	"time"
 
@@ -233,9 +232,14 @@ func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
 
 	records := make([]record, 0, len(repos))
 	for _, r := range repos {
+		sources, err := json.Marshal(r.Sources)
+		if err != nil {
+			return nil, errors.Wrapf(err, "upsertReposQuery: sources marshalling failed")
+		}
+
 		metadata, err := metadataColumn(r.Metadata)
 		if err != nil {
-			return nil, errors.Wrap(err, "metadataColumn: ")
+			return nil, errors.Wrapf(err, "upsertReposQuery: metadata marshalling failed")
 		}
 
 		records = append(records, record{
@@ -252,7 +256,7 @@ func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
 			Enabled:             r.Enabled,
 			Archived:            r.Archived,
 			Fork:                r.Fork,
-			Sources:             sourcesColumn(r.Sources),
+			Sources:             sources,
 			Metadata:            metadata,
 		})
 	}
@@ -437,18 +441,6 @@ func nullStringColumn(s string) *string {
 	return &s
 }
 
-func sourcesColumn(sources []string) json.RawMessage {
-	m := make(map[string]interface{}, len(sources))
-	for _, src := range sources {
-		m[src] = nil
-	}
-	data, err := json.Marshal(m)
-	if err != nil {
-		panic(err)
-	}
-	return data
-}
-
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -512,35 +504,21 @@ func scanRepo(r *Repo, s scanner) error {
 		return err
 	}
 
+	if err = json.Unmarshal(sources, &r.Sources); err != nil {
+		return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
+	}
+
 	typ := strings.ToLower(r.ExternalRepo.ServiceType)
 	switch typ {
 	case "github":
 		r.Metadata = new(github.Repository)
+	default:
+		return nil
 	}
 
 	if err = json.Unmarshal(metadata, &r.Metadata); err != nil {
-		return errors.Wrapf(
-			err,
-			"scanRepo: failed to unmarshal %q metadata",
-			typ,
-		)
+		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
 	}
-
-	var set map[string]interface{}
-	if err = json.Unmarshal(sources, &set); err != nil {
-		return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
-	}
-
-	if r.Sources == nil {
-		r.Sources = make([]string, 0, len(set))
-	}
-
-	r.Sources = r.Sources[:0]
-	for src := range set {
-		r.Sources = append(r.Sources, src)
-	}
-
-	sort.Strings(r.Sources)
 
 	return nil
 }

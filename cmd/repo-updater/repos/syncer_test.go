@@ -270,11 +270,18 @@ func TestDiff(t *testing.T) {
 		{
 			name: "duplicates in source are merged",
 			source: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "foo", Sources: []string{"a"}},
-				{ExternalRepo: eid("1"), Description: "bar", Sources: []string{"b"}},
+				{ExternalRepo: eid("1"), Description: "foo", Sources: map[string]*repos.SourceInfo{
+					"a": {ID: "a"},
+				}},
+				{ExternalRepo: eid("1"), Description: "bar", Sources: map[string]*repos.SourceInfo{
+					"b": {ID: "b"},
+				}},
 			},
 			diff: repos.Diff{Added: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "bar", Sources: []string{"a", "b"}},
+				{ExternalRepo: eid("1"), Description: "bar", Sources: map[string]*repos.SourceInfo{
+					"a": {ID: "a"},
+					"b": {ID: "b"},
+				}},
 			}},
 		},
 		{
@@ -424,9 +431,7 @@ type fakeStore struct {
 func store(rs ...*repos.Repo) *fakeStore {
 	s := fakeStore{repos: make(map[string]*repos.Repo, len(rs))}
 	for _, r := range rs {
-		for _, id := range r.IDs() {
-			s.repos[id] = r
-		}
+		s.repos[r.Name] = r
 	}
 	return &s
 }
@@ -462,13 +467,7 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 	}
 
 	for _, upsert := range upserts {
-		var repo *repos.Repo
-		for _, id := range upsert.IDs() {
-			if repo = s.repos[id]; repo != nil {
-				break
-			}
-		}
-
+		repo := s.repos[upsert.Name]
 		if repo != nil {
 			repo.Name = upsert.Name
 			repo.Description = upsert.Description
@@ -483,9 +482,7 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*repos.Repo) error
 			continue
 		}
 
-		for _, id := range upsert.IDs() {
-			s.repos[id] = upsert
-		}
+		s.repos[upsert.Name] = upsert
 	}
 
 	return nil
@@ -513,13 +510,16 @@ func deletedAt(ts time.Time) func(*repos.Repo) {
 	return func(r *repos.Repo) {
 		r.UpdatedAt = ts
 		r.DeletedAt = ts
-		r.Sources = []string{}
+		r.Sources = map[string]*repos.SourceInfo{}
 	}
 }
 
 func sources(srcs ...string) func(*repos.Repo) {
 	return func(r *repos.Repo) {
-		r.Sources = srcs
+		r.Sources = map[string]*repos.SourceInfo{}
+		for _, src := range srcs {
+			r.Sources[src] = &repos.SourceInfo{ID: src}
+		}
 	}
 }
 

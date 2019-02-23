@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -212,13 +213,17 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 }
 
 func newRepoInfo(r *repos.Repo) *protocol.RepoInfo {
+	urls := r.CloneURLs()
+	if len(urls) == 0 {
+		panic(fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name))
+	}
+
 	info := protocol.RepoInfo{
-		Name:        api.RepoName(r.Name),
-		Description: r.Description,
-		Fork:        r.Fork,
-		Archived:    r.Archived,
-		// TODO(tsenart): Should we store the clone URL in the database?
-		VCS:          protocol.VCSInfo{},
+		Name:         api.RepoName(r.Name),
+		Description:  r.Description,
+		Fork:         r.Fork,
+		Archived:     r.Archived,
+		VCS:          protocol.VCSInfo{URL: urls[0]},
 		ExternalRepo: &r.ExternalRepo,
 	}
 

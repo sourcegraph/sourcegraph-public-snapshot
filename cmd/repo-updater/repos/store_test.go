@@ -71,7 +71,12 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 						ServiceType: "github",
 						ServiceID:   "http://github.com",
 					},
-					Sources:  []string{"extsvc:123"},
+					Sources: map[string]*SourceInfo{
+						"extsvc:123": {
+							ID:       "extsvc:123",
+							CloneURL: "git@github.com:foo/bar.git",
+						},
+					},
 					Metadata: []byte("{}"),
 				})
 			}
@@ -142,8 +147,13 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 
 func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 	foo := Repo{
-		Name:     "foo",
-		Sources:  []string{"extsvc:1"},
+		Name: "foo",
+		Sources: map[string]*SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "git@github.com:bar/foo.git",
+			},
+		},
 		Metadata: new(github.Repository),
 		ExternalRepo: api.ExternalRepoSpec{
 			ServiceType: "github",

@@ -102,7 +102,7 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 
 	for _, repo := range diff.Deleted {
 		repo.UpdatedAt, repo.DeletedAt = now, now
-		repo.Sources = []string{}
+		repo.Sources = map[string]*SourceInfo{}
 		upserts = append(upserts, repo)
 	}
 
@@ -136,8 +136,7 @@ func (d *Diff) Sort() {
 		d.Unmodified,
 	} {
 		sort.Slice(ds, func(i, j int) bool {
-			l, r := ds[i].IDs(), ds[j].IDs()
-			return l[0] < r[0]
+			return ds[i].ID < ds[j].ID
 		})
 	}
 }
@@ -188,7 +187,9 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 }
 
 func merge(o, n *Repo) {
-	n.Sources = dedup(append(n.Sources, o.Sources...)...)
+	for id, src := range o.Sources {
+		n.Sources[id] = src
+	}
 	upsert(o, n)
 }
 
@@ -221,7 +222,7 @@ func upsert(o, n *Repo) (modified bool) {
 		o.Fork, modified = n.Fork, true
 	}
 
-	if !equal(o.Sources, n.Sources) {
+	if !reflect.DeepEqual(o.Sources, n.Sources) {
 		o.Sources, modified = n.Sources, true
 	}
 
@@ -267,34 +268,4 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	}
 
 	return repos, errs.ErrorOrNil()
-}
-
-func dedup(ss ...string) []string {
-	uniq := make([]string, 0, len(ss))
-	set := make(map[string]struct{}, len(ss))
-	for _, s := range ss {
-		if _, ok := set[s]; !ok {
-			set[s] = struct{}{}
-			uniq = append(uniq, s)
-		}
-	}
-	sort.Strings(uniq)
-	return uniq
-}
-
-func equal(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	sort.Strings(a)
-	sort.Strings(b)
-
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
 }
