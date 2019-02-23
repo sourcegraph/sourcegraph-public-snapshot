@@ -63,20 +63,18 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	wantCommit := gitCommitResolver{
-		repo:     &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
-		oid:      "c1",
-		oidReady: make(chan struct{}),
-		author:   *toSignatureResolver(&gitSignatureWithDate),
+		repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+		oid:    "c1",
+		author: *toSignatureResolver(&gitSignatureWithDate),
 	}
-	_ = wantCommit.OID()
+	_, _ = wantCommit.OID()
 
 	wantResults := []*commitSearchResultResolver{
 		{
 			commit: &gitCommitResolver{
-				repo:     &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
-				oid:      "c1",
-				oidReady: make(chan struct{}),
-				author:   *toSignatureResolver(&gitSignatureWithDate),
+				repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+				oid:    "c1",
+				author: *toSignatureResolver(&gitSignatureWithDate),
 			},
 			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
 			icon:        "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=",

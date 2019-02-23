@@ -57,14 +57,14 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 		}
 	}()
 	searchArgs := protocol.SearchArgs{
-		CommitID: api.CommitID(commit.OID()),
+		CommitID: api.CommitID(commit.oid),
 		First:    limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
 		Repo:     commit.repo.repo.Name,
 	}
 	if query != nil {
 		searchArgs.Query = *query
 	}
-	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.OID()))
+	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
 	if err != nil {
 		return nil, err
 	}

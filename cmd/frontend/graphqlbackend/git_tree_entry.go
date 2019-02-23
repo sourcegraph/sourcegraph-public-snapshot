@@ -182,7 +182,11 @@ func (r *gitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if err != nil {
 		return false, err
 	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), filepath.Dir(r.path), false)
+	oid, err := r.commit.OID()
+	if err != nil {
+		return false, err
+	}
+	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(oid), filepath.Dir(r.path), false)
 	if err != nil {
 		return false, err
 	}
