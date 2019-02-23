@@ -49,7 +49,7 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return Mocks.Repos.Get(ctx, id)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d LIMIT 1", id))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("id=%d LIMIT 1", id))
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, 
 		return Mocks.Repos.GetByName(ctx, name)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE name=%s LIMIT 1", name))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", name))
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +99,14 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	return count, nil
 }
 
+const getRepoByQueryFmtstr = `
+SELECT id, name, description, language, enabled, created_at,
+  updated_at, external_id, external_service_type, external_service_id
+FROM repo
+WHERE deleted_at IS NULL AND %s`
+
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	q := sqlf.Sprintf("SELECT id, name, description, language, enabled, created_at, updated_at, external_id, external_service_type, external_service_id FROM repo %s", querySuffix)
+	q := sqlf.Sprintf(getRepoByQueryFmtstr, querySuffix)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -244,7 +250,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	}
 
 	// fetch matching repos
-	fetchSQL := sqlf.Sprintf("WHERE %s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
 	rawRepos, err := s.getBySQL(ctx, fetchSQL)
 	if err != nil {
@@ -258,7 +264,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // indexed-search). We special case just returning enabled names so that we
 // read much less data into memory.
 func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
-	q := sqlf.Sprintf("SELECT name FROM repo WHERE enabled = true")
+	q := sqlf.Sprintf("SELECT name FROM repo WHERE enabled = true AND deleted_at IS NULL")
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -557,7 +563,7 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 		}
 	}
 
-	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
+	q := sqlf.Sprintf("UPDATE repo SET deleted_at = NOW() WHERE id=%d", repo)
 	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
