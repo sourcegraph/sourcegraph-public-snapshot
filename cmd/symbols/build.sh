@@ -2,7 +2,7 @@
 
 set -e
 
-SYMBOLS_IMAGE="${SYMBOLS_IMAGE:=dev-symbols}"
+IMAGE="${IMAGE:=dev-symbols}"
 CTAGS_IMAGE="${CTAGS_IMAGE:=ctags}"
 BUILD_TYPE="${BUILD_TYPE:=dev}"
 
@@ -140,9 +140,9 @@ function buildSymbolsDockerImage() {
 
     cp -R cmd/symbols/.ctags.d "$symbolsDockerBuildContext"
 
-    echo "Building the $SYMBOLS_IMAGE Docker image..."
-    docker build --quiet -f cmd/symbols/Dockerfile -t "$SYMBOLS_IMAGE" "$symbolsDockerBuildContext"
-    echo "Building the $SYMBOLS_IMAGE Docker image... done"
+    echo "Building the $IMAGE Docker image..."
+    docker build --quiet -f cmd/symbols/Dockerfile -t "$IMAGE" "$symbolsDockerBuildContext"
+    echo "Building the $IMAGE Docker image... done"
 }
 
 # Builds the ctags docker image, used by universal-ctags-dev and the symbols Docker image.
