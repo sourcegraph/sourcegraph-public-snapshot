@@ -48,7 +48,7 @@ var (
 		},
 	}
 
-	lineNumberRe = regexp.MustCompile(":(\\d*)$")
+	lineNumberRe = regexp.MustCompile(":(\\d+)$")
 )
 
 // A light wrapper around the search service. We implement the service here so
@@ -155,7 +155,6 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 	if p.IncludePattern != "" {
 		includePatterns = append(includePatterns, p.IncludePattern)
 	}
-	includePatterns = append(includePatterns, p.IncludePatterns...)
 
 	q := url.Values{
 		"Repo":            []string{string(repo.Name)},
@@ -785,9 +784,18 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		fetchTimeout = 500 * time.Millisecond
 	}
 
-	// Extract line number from filename before searching
-	lineNumberMatches := lineNumberRe.FindStringSubmatch(args.Pattern.Pattern)
-	args.Pattern.Pattern = lineNumberRe.ReplaceAllString(args.Pattern.Pattern, "")
+	fileFields, ok := args.Query.Fields["file"]
+	lineNumberMatches := []string{}
+
+	if ok && len(fileFields) == 1 {
+		value := fileFields[0].SyntaxValue()
+		for i, pattern := range args.Pattern.IncludePatterns {
+			if value == pattern {
+				lineNumberMatches = lineNumberRe.FindStringSubmatch(value)
+				args.Pattern.IncludePatterns[i] = lineNumberRe.ReplaceAllString(pattern, "")
+			}
+		}
+	}
 
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.Revs) == 0 {

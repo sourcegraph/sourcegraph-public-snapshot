@@ -31,6 +31,11 @@ type Value struct {
 	Bool   *bool          // if a bool value, the bool value
 }
 
+func (v *Value) SyntaxValue() string {
+	return v.syntax.Value
+}
+
+
 // Not returns whether the value is negated in the query (e.g., -value or -field:value).
 func (v *Value) Not() bool {
 	return v.syntax.Not
