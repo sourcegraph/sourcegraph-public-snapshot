@@ -8,6 +8,7 @@ const { plugins, ...base } = baseConfig
 const config: webpack.Configuration = {
     ...base,
     mode: 'production',
+    devtool: 'source-map',
     optimization: {
         minimize: true,
         minimizer: [
