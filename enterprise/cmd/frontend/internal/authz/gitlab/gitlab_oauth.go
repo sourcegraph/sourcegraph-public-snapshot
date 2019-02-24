@@ -43,7 +43,7 @@ type GitLabOAuthAuthzProviderOp struct {
 	MockCache cache
 }
 
-func NewProvider(op GitLabOAuthAuthzProviderOp) *GitLabOAuthAuthzProvider {
+func NewOAuthProvider(op GitLabOAuthAuthzProviderOp) *GitLabOAuthAuthzProvider {
 	p := &GitLabOAuthAuthzProvider{
 		clientProvider: gitlab.NewClientProvider(op.BaseURL, nil),
 		clientURL:      op.BaseURL,
@@ -70,6 +70,8 @@ func (p *GitLabOAuthAuthzProvider) ServiceType() string {
 }
 
 func (p *GitLabOAuthAuthzProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine, others map[authz.Repo]struct{}) {
+	// Note(beyang): this is identical to SudoProvider.Repos, which is not explicitly
+	// unit-tested. If this impl ever changes, unit tests should be added for SudoProvider.Repos.
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
 
@@ -137,20 +139,20 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 
 	// Populate perms for the remaining repos (nextRemaining) by fetching directly from the GitLab
 	// API (and update the user repo-visibility and user-can-access-repo permissions, as well)
-	var accessToken string
+	var oauthToken string
 	if account != nil {
 		_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
 		if err != nil {
 			return nil, err
 		}
-		accessToken = tok.AccessToken
+		oauthToken = tok.AccessToken
 	}
 	for repo := range remaining {
 		projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
 		}
-		isAccessible, vis, isContentAccessible, err := p.fetchProjVis(ctx, accessToken, projID)
+		isAccessible, vis, isContentAccessible, err := p.fetchProjVis(ctx, oauthToken, projID)
 		if err != nil {
 			log15.Error("Failed to fetch visibility for GitLab project", "projectID", projID, "gitlabHost", p.codeHost.BaseURL().String(), "error", err)
 			continue
@@ -187,16 +189,16 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 	return perms, nil
 }
 
-// fetchRepoVisibility fetches a repository's visibility with usr's credentials. It returns:
+// fetchProjVis fetches a repository's visibility with usr's credentials. It returns:
 // - whether the project is accessible to the user,
 // - the visibility if the repo is accessible (otherwise this is empty),
 // - whether the repository contents are accessible to usr, and
 // - any error encountered in fetching (not including an error due to the repository not being visible);
 //   if the error is non-nil, all other return values should be disregraded
-func (p *GitLabOAuthAuthzProvider) fetchProjVis(ctx context.Context, accessToken string, projID int) (
+func (p *GitLabOAuthAuthzProvider) fetchProjVis(ctx context.Context, oauthToken string, projID int) (
 	isAccessible bool, vis gitlab.Visibility, isContentAccessible bool, err error,
 ) {
-	proj, err := p.clientProvider.GetOAuthClient(accessToken).GetProject(ctx, gitlab.GetProjectOp{
+	proj, err := p.clientProvider.GetOAuthClient(oauthToken).GetProject(ctx, gitlab.GetProjectOp{
 		ID:       projID,
 		CommonOp: gitlab.CommonOp{NoCache: true},
 	})
@@ -219,7 +221,7 @@ func (p *GitLabOAuthAuthzProvider) fetchProjVis(ctx context.Context, accessToken
 	// If project visibility is private and its accessible to user, we still need to check if the user
 	// can read the repository contents (i.e., does not merely have "Guest" permissions).
 
-	if _, err := p.clientProvider.GetOAuthClient(accessToken).ListTree(ctx, gitlab.ListTreeOp{
+	if _, err := p.clientProvider.GetOAuthClient(oauthToken).ListTree(ctx, gitlab.ListTreeOp{
 		ProjID:   projID,
 		CommonOp: gitlab.CommonOp{NoCache: true},
 	}); err != nil {

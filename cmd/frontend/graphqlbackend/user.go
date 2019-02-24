@@ -10,6 +10,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -17,8 +18,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-func (r *schemaResolver) User(ctx context.Context, args struct{ Username string }) (*UserResolver, error) {
-	user, err := db.Users.GetByUsername(ctx, args.Username)
+func (r *schemaResolver) User(ctx context.Context, args struct {
+	Username *string
+	Email    *string
+}) (*UserResolver, error) {
+	// 🚨 SECURITY: Only admins are allowed to access the email address or username on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	if args.Email != nil {
+		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
+		if err != nil {
+			return nil, err
+		}
+		return &UserResolver{user: user}, nil
+	}
+	user, err := db.Users.GetByUsername(ctx, *args.Username)
 	if err != nil {
 		return nil, err
 	}

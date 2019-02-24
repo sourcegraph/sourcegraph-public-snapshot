@@ -2,14 +2,13 @@
 # Each line is a file pattern followed by one or more owners.
 # https://help.github.com/articles/about-codeowners/
 
-*git*/* @keegancsmith
+*git*/* @sourcegraph/core-services
 /cmd/searcher/ @keegancsmith
 /web/src/ @felixfbecker
-/client/vscode/ @chrismwendt
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
-/cmd/gitserver/ @tsenart
-/cmd/repo-updater/ @tsenart
+/cmd/gitserver/ @sourcegraph/core-services
+/cmd/repo-updater/ @sourcegraph/core-services
 /cmd/frontend/authz/ @beyang
 /cmd/frontend/auth/ @beyang
 /cmd/frontend/internal/auth/ @beyang
@@ -20,15 +19,23 @@
 /enterprise/cmd/frontend/internal/authz @beyang
 /enterprise/cmd/frontend/auth @beyang
 
+# Search
+/cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
+*/search/**/* @sourcegraph/code-search
+
+# Deployment
+Dockerfile @ggilmore
+
+# Documentation and homepage
+README.md @sqs
+/doc/ @sqs
+/web/src/enterprise/dotcom/welcome/ @sqs
+
 # Browser extensions
-/client/browser/ @ijsnow
-# Adding permissions to the manifest will disable the extension for all users
-# upon update!
-/client/browser/src/extension/manifest.spec.json @chrismwendt @ijsnow
+/client/browser/ @felixfbecker @lguychard
 
 # Sourcegraph extension API
-/packages/sourcegraph-extension-api/ @chrismwendt @lguychard
-/shared/ @chrismwendt @lguychard
+/packages/sourcegraph-extension-api/ @lguychard
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)

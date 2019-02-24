@@ -39,6 +39,7 @@ export interface QueryBuilderState {
     fields: QueryFields
 }
 
+const QUERY_BUILDER_KEY = 'query-builder-open'
 /**
  * The individual input fields for the various elements of the search query syntax.
  */
@@ -46,7 +47,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            showQueryBuilder: false,
+            showQueryBuilder: localStorage.getItem(QUERY_BUILDER_KEY) === 'true',
             builderQuery: '',
             typeOfSearch: 'code',
             fields: {
@@ -65,6 +66,62 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                 timeout: '',
             },
         }
+    }
+
+    private onInputChange = (key: keyof QueryBuilderState['fields']) => (
+        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        event.persist()
+        this.setState(({ fields }) => {
+            const newFields = { ...fields, [key]: event.target.value }
+
+            const fieldsQueryParts: string[] = []
+            for (const [inputField, inputValue] of Object.entries(newFields)) {
+                if (inputValue !== '') {
+                    if (inputField === 'patterns') {
+                        // Patterns should be added to the query as-is.
+                        fieldsQueryParts.push(inputValue)
+                    } else if (inputField === 'exactMatch') {
+                        // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
+                        fieldsQueryParts.push(formatFieldForQuery('', inputValue, true))
+                    } else if (inputField === 'type' && inputValue === 'code') {
+                        // code searches don't need to be specified.
+                        continue
+                    } else {
+                        fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+                    }
+                }
+            }
+
+            return { fields: newFields, builderQuery: fieldsQueryParts.join(' ') }
+        })
+    }
+
+    private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        this.onInputChange('type')(event)
+
+        const searchType = event.target.value
+        if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
+            this.setState({ typeOfSearch: searchType })
+        } else {
+            this.setState({ typeOfSearch: 'code' })
+        }
+    }
+
+    private fieldsChanged = {
+        type: this.onTypeChange,
+        repo: this.onInputChange('repo'),
+        file: this.onInputChange('file'),
+        language: this.onInputChange('language'),
+        patterns: this.onInputChange('patterns'),
+        exactMatch: this.onInputChange('exactMatch'),
+        case: this.onInputChange('case'),
+        author: this.onInputChange('author'),
+        after: this.onInputChange('after'),
+        before: this.onInputChange('before'),
+        message: this.onInputChange('message'),
+        count: this.onInputChange('count'),
+        timeout: this.onInputChange('timeout'),
     }
 
     public componentDidUpdate(prevProps: Props, prevState: QueryBuilderState): void {
@@ -103,42 +160,38 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         <option value="code" defaultChecked={true}>
                                             Code (default)
                                         </option>
-                                        <option value="diff">Diff</option>
-                                        <option value="commit">Commit</option>
-                                        <option value="symbol">Symbol</option>
+                                        <option value="diff">Commit diffs</option>
+                                        <option value="commit">Commit messages</option>
+                                        <option value="symbol">Symbols</option>
                                     </Select>
                                 </div>
                                 <InfoDropdown
                                     title="Type"
-                                    markdown="Select the type of search. Choose from code, diff (the content of a commit diff), commit message, and symbol search."
+                                    markdown="Search code (file contents), diffs (added/changed/removed lines in commits), commit messages, or symbols."
                                 />
                             </div>
                             {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
                                 <>
                                     <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
+                                        onInputChange={this.fieldsChanged}
                                         placeholder="alice"
                                         title="Author"
-                                        description="Only include results from diffs or commits authored by a user."
+                                        description='Only include commits whose author matches. Your query is matched against a string of the form "Author Name <name@example.com>".'
                                         isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                         shortName="author"
                                         examples={[
                                             { description: 'Search for commits authored by alice', value: 'alice' },
                                             {
-                                                description: 'Search for commits authored by John Doe',
-                                                value: 'John Doe',
-                                            },
-                                            {
-                                                description: 'Search for commits authored by alice or bob',
-                                                value: 'alice|bob',
+                                                description: 'Search for commits by author email domain',
+                                                value: '@example.com',
                                             },
                                         ]}
                                     />
                                     <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
+                                        onInputChange={this.fieldsChanged}
                                         placeholder="1 year ago"
                                         title="Before"
-                                        description="Only include results from diffs or commits before a specified time."
+                                        description="Only include commits made before a specified date."
                                         isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                         shortName="before"
                                         examples={[
@@ -146,13 +199,17 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                                 description: 'Search for commits older than 3 months',
                                                 value: '3 months ago',
                                             },
+                                            {
+                                                description: 'Search for commits before a specific date',
+                                                value: '2019 Feb 20',
+                                            },
                                         ]}
                                     />
                                     <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
+                                        onInputChange={this.fieldsChanged}
                                         placeholder="6 months ago"
                                         title="After"
-                                        description="Only include results from diffs or commits after a specified time."
+                                        description="Only include commits made after a specified date."
                                         isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                         shortName="after"
                                         examples={[
@@ -160,22 +217,26 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                                 description: 'Search for commits less than 5 days old',
                                                 value: '5 days ago',
                                             },
+                                            {
+                                                description: 'Search for commits after a specific date',
+                                                value: '2019 Feb 20',
+                                            },
                                         ]}
                                     />
                                     <QueryBuilderInputRow
-                                        onInputChange={this.onInputChange}
+                                        onInputChange={this.fieldsChanged}
                                         placeholder="fix: typo"
                                         title="Message"
-                                        description="Only include results from diffs which have commit messages containing the string."
+                                        description="Only include commits whose commit message matches."
                                         isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                         shortName="message"
                                         examples={[
                                             {
-                                                description: 'Search for commit messages that include "fix: typo"',
+                                                description: 'Search for commits whose message includes "fix: typo"',
                                                 value: 'fix: typo',
                                             },
                                             {
-                                                description: 'Search for commit messages that include "middleware"',
+                                                description: 'Search for commits whose message includes "middleware"',
                                                 value: 'middleware',
                                             },
                                         ]}
@@ -186,42 +247,46 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 <hr className="query-builder__rule" />
                             </div>
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
-                                placeholder="(open|close) file"
+                                onInputChange={this.fieldsChanged}
+                                placeholder="(read|write)File"
                                 title="Patterns"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="patterns"
-                                description="Same as typing into the search box. Lines matching these regexp patterns (in order) will be included in the search results."
+                                description="Match lines against this regexp. Supports full regular expressions (using the standard [RE2 syntax](https://github.com/google/re2/wiki/Syntax)). A space matches anything until the next query term; use `\s` to match only whitespace."
                                 examples={[
                                     {
-                                        description: 'Search for lines matching `readFile` or `writeFile`',
+                                        description: 'Search for `readFile` or `writeFile`',
                                         value: '(read|write)File',
                                     },
-                                    { description: 'Search for lines matching `func set`', value: '`func\\sset`' },
                                     {
                                         description: 'Search for lines that start with `package` and end with `test`',
                                         value: '^package test$',
                                     },
+                                    {
+                                        description:
+                                            'Search for the standalone word `set` (using the regexp special character \\b for word boundary)',
+                                        value: '\\bset\\b',
+                                    },
                                 ]}
                             />
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
-                                placeholder="system error 123"
+                                onInputChange={this.fieldsChanged}
+                                placeholder="open("
                                 title="Exact string"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="exactMatch"
-                                description="Lines matching an exact string will be included in search results."
-                                examples={[{ description: 'Search for "security risk"', value: 'security risk' }]}
+                                description="Match lines containing this exact string. Punctuation and special characters will be matched literally."
+                                examples={[{ description: 'Search for `open(`', value: 'open(' }]}
                             />
                             <div className="query-builder__row">
-                                <label className="query-builder__row-label" htmlFor="query-builder__case">
+                                <label className="query-builder__row-label" htmlFor="query-builder-case">
                                     Case sensitive:
                                 </label>
                                 <div className="query-builder__row-input">
                                     <Select
-                                        id="query-builder__case"
+                                        id="query-builder-case"
                                         className="form-control query-builder__input"
-                                        onChange={this.onTypeChange}
+                                        onChange={this.onCaseChange}
                                     >
                                         <option value="no" defaultChecked={true}>
                                             No
@@ -240,66 +305,68 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                         </div>
                         <div className="query-builder__section query-builder__section--purple">
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
-                                placeholder="org/repo"
-                                dotComPlaceholder="github.com/org/"
+                                onInputChange={this.fieldsChanged}
+                                placeholder="myorg/myrepo"
+                                dotComPlaceholder="github.com/myorg/"
                                 title="Repositories"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="repo"
-                                description={`Only include results from matching repositories. To exclude repositories, use the \`-repo:\` keyword in the main search input.\n\nAdd \`@YOUR-REVISION\` to the end of the value to search a non-default branch.`}
+                                description={`Specify the repositories to search in. ${
+                                    this.props.isSourcegraphDotCom ? '' : 'By default, all repositories are searched.'
+                                } Supports regexp. To exclude repositories, use the \`-repo:\` keyword in the main search bar.\n\nAdd \`@mybranch\` to the end to search a non-default branch (or any other Git revspec).`}
                                 examples={[
                                     {
-                                        description: 'Search in repos named `gorilla/mux` or `gorilla/pat`',
+                                        description: 'Search in repositories named `gorilla/mux` or `gorilla/pat`',
                                         value: 'gorilla/(mux|pat)$',
                                     },
                                     {
-                                        description: 'Search in all repos in the Kubernetes organization',
+                                        description: 'Search in all repositories in a GitHub organization',
                                         value: 'github.com/kubernetes/',
                                     },
                                     {
                                         description:
-                                            'Search in the kubernetes GitHub repo, on the `release-0.4` branch',
+                                            'Search in a GitHub repository on a specific branch (other than master)',
                                         value: 'github.com/kubernetes/kubernetes@release-0.4',
                                     },
                                 ]}
                             />
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
-                                placeholder="\.js$"
+                                onInputChange={this.fieldsChanged}
+                                placeholder="docs/"
                                 title="File paths"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="file"
-                                description={`Only include results from matching file paths. To exclude files, use the \`-file:\` keyword in the main search input.`}
+                                description={`Only include results from matching file paths. Supports regexp. To exclude files, use the \`-file:\` keyword in the main search bar.`}
                                 examples={[
                                     {
-                                        description: 'Search in files in directories named `internal`',
-                                        value: 'internal/',
+                                        description: 'Search in files whose full path contains `internal`',
+                                        value: 'internal',
                                     },
                                     {
-                                        description: 'Search only in JavaScript files',
-                                        value: '\\.js$',
-                                    },
-                                    {
-                                        description: 'Search only in files where the top-level directory is `docs`',
+                                        description: 'Search in the top-level directory `docs`',
                                         value: '^docs/',
                                     },
                                 ]}
                             />
                             <QueryBuilderInputRow
-                                onInputChange={this.onInputChange}
+                                onInputChange={this.fieldsChanged}
                                 placeholder="typescript"
                                 title="Language"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="language"
-                                description="Only include results from files in the specified programming language. To exclude repositories, use the \`-lang:\` keyword in the main search input."
+                                description="Only include results from files in the specified programming language. To exclude languages, use the \`-lang:\` keyword in the main search bar."
                                 examples={[
                                     {
                                         description: 'Search in JavaScript files',
-                                        value: '`javascript`',
+                                        value: 'javascript',
                                     },
                                     {
                                         description: 'Search in Go files',
-                                        value: '`go`',
+                                        value: 'go',
+                                    },
+                                    {
+                                        description: 'Search in Markdown documents',
+                                        value: 'markdown',
                                     },
                                 ]}
                             />
@@ -317,50 +384,20 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
 
     private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault()
-        this.setState({ showQueryBuilder: !this.state.showQueryBuilder })
-    }
-    private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        this.onInputChange('type')(event)
-
-        const searchType = event.target.value
-        if (searchType === 'commit' || searchType === 'diff' || searchType === 'symbol') {
-            this.setState({ typeOfSearch: searchType })
-        } else {
-            this.setState({ typeOfSearch: 'code' })
-        }
+        localStorage.setItem(QUERY_BUILDER_KEY, (!this.state.showQueryBuilder).toString())
+        this.setState(prevState => ({ showQueryBuilder: !prevState.showQueryBuilder }))
     }
 
-    private onInputChange = (key: keyof QueryBuilderState['fields']) => (
-        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        event.persist()
-        this.setState(({ fields }) => {
-            const newFields = { ...fields, [key]: event.target.value }
-
-            const fieldsQueryParts: string[] = []
-            for (const [inputField, inputValue] of Object.entries(newFields)) {
-                if (inputValue !== '') {
-                    if (inputField === 'patterns') {
-                        // Patterns should be added to the query as-is.
-                        fieldsQueryParts.push(inputValue)
-                    } else if (inputField === 'exactMatch') {
-                        // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
-                        fieldsQueryParts.push(formatFieldForQuery('', inputValue))
-                    } else if (inputField === 'type' && inputValue === 'code') {
-                        // code searches don't need to be specified.
-                        continue
-                    } else {
-                        fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
-                    }
-                }
-            }
-
-            return { fields: newFields, builderQuery: fieldsQueryParts.join(' ') }
-        })
+    private onCaseChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        this.onInputChange('case')(event)
     }
 }
 
-function formatFieldForQuery(field: string, value: string): string {
+/**
+ *
+ * @param alwaysQuote if true, the value will always be wrapped in quotes. Used for fields like exactMatch.
+ */
+function formatFieldForQuery(field: string, value: string, alwaysQuote?: boolean): string {
     // The user shouldn't include the 'repo:' (or other field name) in the value, but
     // if they do, then be helpful and remove it for them to avoid double fields like
     // 'repo:repo:foo'.
@@ -370,7 +407,7 @@ function formatFieldForQuery(field: string, value: string): string {
 
     // See if we need to double-quote value.
     const jsonValue = JSON.stringify(value)
-    if (value.includes(' ') || jsonValue.slice(1, jsonValue.length - 1) !== value) {
+    if (value.includes(' ') || jsonValue.slice(1, jsonValue.length - 1) !== value || alwaysQuote) {
         value = jsonValue
     }
 

@@ -21,26 +21,9 @@ declare module 'sourcegraph' {
      * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL)
      */
     export class URI {
-        /**
-         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which does not contain this method.
-         */
-        static parse(value: string): URI
-
-        /**
-         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which does not contain this method.
-         */
-        static file(path: string): URI
-
         constructor(value: string)
 
         toString(): string
-
-        /**
-         * Returns a JSON representation of this Uri.
-         *
-         * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL), which returns a string instead of an object.
-         */
-        toJSON(): any
     }
 
     export class Position {

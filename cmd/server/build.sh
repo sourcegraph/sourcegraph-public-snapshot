@@ -32,7 +32,6 @@ for pkg in $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
-    github.com/sourcegraph/sourcegraph/cmd/symbols \
     github.com/sourcegraph/sourcegraph/cmd/repo-updater \
     github.com/sourcegraph/sourcegraph/cmd/searcher \
     github.com/google/zoekt/cmd/zoekt-archive-index \
@@ -44,5 +43,6 @@ done
 
 mkdir -p "$OUTPUT/.ctags.d"
 cp cmd/symbols/.ctags.d/additional-languages.ctags "$OUTPUT/.ctags.d/additional-languages.ctags"
+env SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildExecutable
 
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT"
