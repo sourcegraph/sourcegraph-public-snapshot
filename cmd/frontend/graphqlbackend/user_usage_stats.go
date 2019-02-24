@@ -37,6 +37,10 @@ func (s *userUsageStatisticsResolver) CodeIntelligenceActions() int32 {
 	return s.userUsageStatistics.CodeIntelligenceActions
 }
 
+func (s *userUsageStatisticsResolver) FindRefsActions() int32 {
+	return s.userUsageStatistics.FindRefsActions
+}
+
 func (s *userUsageStatisticsResolver) LastActiveTime() *string {
 	if s.userUsageStatistics.LastActiveTime != nil {
 		t := s.userUsageStatistics.LastActiveTime.Format(time.RFC3339)

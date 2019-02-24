@@ -35,6 +35,7 @@ const (
 	fLastActive                    = "lastactive"
 	fSearchQueries                 = "searchqueries"
 	fCodeIntelActions              = "codeintelactions"
+	fFindRefsActions               = "codeintelactions:findrefs"
 	fLastActiveCodeHostIntegration = "lastactivecodehostintegration"
 
 	fSearchOccurred   = "searchoccurred"
@@ -59,7 +60,7 @@ func GetByUserID(userID int32) (*types.UserUsageStatistics, error) {
 	key := keyPrefix + userIDStr
 
 	c := pool.Get()
-	values, err := redis.Values(c.Do("HMGET", key, fPageViews, fSearchQueries, fLastActive, fCodeIntelActions, fLastActiveCodeHostIntegration))
+	values, err := redis.Values(c.Do("HMGET", key, fPageViews, fSearchQueries, fLastActive, fCodeIntelActions, fFindRefsActions, fLastActiveCodeHostIntegration))
 	c.Close()
 	if err != nil && err != redis.ErrNil {
 		return nil, err
@@ -69,7 +70,7 @@ func GetByUserID(userID int32) (*types.UserUsageStatistics, error) {
 	a := &types.UserUsageStatistics{
 		UserID: userID,
 	}
-	_, err = redis.Scan(values, &a.PageViews, &a.SearchQueries, &lastActiveStr, &a.CodeIntelligenceActions, &lastActiveCodeHostStr)
+	_, err = redis.Scan(values, &a.PageViews, &a.SearchQueries, &lastActiveStr, &a.CodeIntelligenceActions, &a.FindRefsActions, &lastActiveCodeHostStr)
 	if err != nil && err != redis.ErrNil {
 		return nil, err
 	}
@@ -377,6 +378,17 @@ func logCodeIntelAction(userID int32) error {
 	return c.Send("HINCRBY", key, fCodeIntelActions, 1)
 }
 
+func logCodeIntelRefsAction(userID int32) error {
+	key := keyPrefix + strconv.Itoa(int(userID))
+	c := pool.Get()
+	defer c.Close()
+
+	if err := c.Send("HINCRBY", key, fCodeIntelActions, 1); err != nil {
+		return err
+	}
+	return c.Send("HINCRBY", key, fFindRefsActions, 1)
+}
+
 // logCodeHostIntegrationUsage logs the last time a user was active on a code host integration
 func logCodeHostIntegrationUsage(userID int32) error {
 	key := keyPrefix + strconv.Itoa(int(userID))
@@ -468,7 +480,9 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 		return logSearchQuery(userID)
 	case "PAGEVIEW":
 		return logPageView(userID)
-	case "CODEINTEL", "CODEINTELREFS":
+	case "CODEINTELREFS":
+		return logCodeIntelRefsAction(userID)
+	case "CODEINTEL":
 		return logCodeIntelAction(userID)
 	case "CODEINTELINTEGRATION", "CODEINTELINTEGRATIONREFS":
 		if err := logCodeHostIntegrationUsage(userID); err != nil {
