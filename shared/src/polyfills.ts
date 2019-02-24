@@ -1,3 +1,6 @@
+// Commonly needed by extensions (used by vscode-jsonrpc)
+import 'core-js/web/immediate'
+
 import 'symbol-observable'
 
 // This gets automatically expanded into
