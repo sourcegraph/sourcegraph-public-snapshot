@@ -14,6 +14,7 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -119,7 +120,7 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps {
+interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps, ActivationProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
@@ -281,7 +282,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         history={this.props.history}
                                         placeholder=""
                                     />
-                                    <SearchButton />
+                                    <SearchButton activation={this.props.activation} />
                                 </Form>
                             </section>
                             <TreeEntriesSection

@@ -9,6 +9,7 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLa
 import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
+import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
 import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
@@ -45,7 +46,8 @@ interface BlobProps
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ActivationProps {
     /** The raw content of the blob. */
     content: string
 

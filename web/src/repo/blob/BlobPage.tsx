@@ -4,6 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -93,7 +94,8 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ActivationProps {
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -293,6 +295,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         location={this.props.location}
                         history={this.props.history}
                         isLightTheme={this.props.isLightTheme}
+                        activation={this.props.activation}
                     />
                 )}
                 {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (

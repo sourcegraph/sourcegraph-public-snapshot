@@ -24,4 +24,11 @@
     &__alert {
         margin-top: 1rem;
     }
+
+    &__activation-container {
+        border: 1px solid $dropdown-border-color;
+        border-radius: 3px;
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
 }
