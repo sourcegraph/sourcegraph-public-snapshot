@@ -1,8 +1,6 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { Observable, Subject, Subscription } from 'rxjs'
+import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { ExtWindowsAPI } from '../../extension/api/windows'
-import { ViewComponentData } from '../model'
 import {
     MessageActionItem,
     MessageType,
@@ -23,11 +21,7 @@ export interface ClientWindowsAPI extends ProxyValue {
 export class ClientWindows implements ClientWindowsAPI {
     public readonly [proxyValueSymbol] = true
 
-    private subscriptions = new Subscription()
-
     constructor(
-        private proxy: ProxyResult<ExtWindowsAPI>,
-        modelVisibleViewComponents: Observable<ViewComponentData[] | null>,
         /** Called when the client receives a window/showMessage notification. */
         private showMessage: (params: ShowMessageParams) => void,
         /**
@@ -41,26 +35,7 @@ export class ClientWindows implements ClientWindowsAPI {
          */
         private showInput: (params: ShowInputParams) => Promise<string | null>,
         private createProgressReporter: (options: sourcegraph.ProgressOptions) => Subject<sourcegraph.Progress>
-    ) {
-        this.subscriptions.add(
-            modelVisibleViewComponents.subscribe(viewComponents => {
-                // tslint:disable-next-line: no-floating-promises
-                this.proxy.$acceptWindowData(
-                    viewComponents
-                        ? [
-                              {
-                                  visibleViewComponents: viewComponents.map(viewComponent => ({
-                                      item: viewComponent.item,
-                                      selections: viewComponent.selections,
-                                      isActive: viewComponent.isActive,
-                                  })),
-                              },
-                          ]
-                        : []
-                )
-            })
-        )
-    }
+    ) {}
 
     public $showNotification(message: string): void {
         this.showMessage({ type: MessageType.Info, message })
@@ -68,7 +43,7 @@ export class ClientWindows implements ClientWindowsAPI {
 
     public $showMessage(message: string): Promise<void> {
         return this.showMessageRequest({ type: MessageType.Info, message }).then(
-            v =>
+            () =>
                 // TODO(sqs): update the showInput API to unify null/undefined etc between the old internal API and the new
                 // external API.
                 undefined
@@ -88,9 +63,5 @@ export class ClientWindows implements ClientWindowsAPI {
 
     public $showProgress(options: sourcegraph.ProgressOptions): sourcegraph.ProgressReporter & ProxyValue {
         return proxyValue(this.createProgressReporter(options))
-    }
-
-    public unsubscribe(): void {
-        this.subscriptions.unsubscribe()
     }
 }
