@@ -6,6 +6,8 @@ import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { syncSubscription } from '../../util'
 
+const convertError = (err: any) => err && Object.assign(Error(), err)
+
 /**
  * When a Subscribable is returned from the other thread (wrapped with `proxySubscribable()`),
  * this thread gets a `Promise` for a `Subscribable` _proxy_ where `subscribe()` returns a `Promise<Unsubscribable>`.
@@ -32,7 +34,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                             proxyObserver = {
                                 [proxyValueSymbol]: true,
                                 next: args[0] || noop,
-                                error: args[1] || noop,
+                                error: args[1] ? err => args[1](convertError(err)) : noop,
                                 complete: args[2] || noop,
                             }
                         } else {
@@ -40,7 +42,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                             proxyObserver = {
                                 [proxyValueSymbol]: true,
                                 next: partialObserver.next ? val => partialObserver.next(val) : noop,
-                                error: partialObserver.error ? err => partialObserver.error(err) : noop,
+                                error: partialObserver.error ? err => partialObserver.error(convertError(err)) : noop,
                                 complete: partialObserver.complete ? () => partialObserver.complete() : noop,
                             }
                         }

@@ -29,8 +29,10 @@ export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscr
                     observer.next(val as UnproxyOrClone<T>)
                 },
                 error: err => {
+                    // Only pass a few well-known Error properties
+                    // TODO should pass all properties serialized recursively, best handled on comlink level
                     // tslint:disable-next-line: no-floating-promises
-                    observer.error(err)
+                    observer.error(err && { message: err.message, name: err.name, code: err.code, stack: err.stack })
                 },
                 complete: () => {
                     // tslint:disable-next-line: no-floating-promises
