@@ -7,6 +7,7 @@ import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../.
 import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ActionsNavItems } from '../actions/ActionsNavItems'
+import { ActivationProps } from '../components/activation/Activation'
 import { FetchFileCtx } from '../components/CodeExcerpt'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
@@ -15,7 +16,7 @@ import { SettingsCascadeProps } from '../settings/settings'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps, SettingsCascadeProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps, SettingsCascadeProps, ActivationProps {
     location: H.Location
     history: H.History
     repoName?: string
@@ -80,6 +81,7 @@ export class Panel extends React.PureComponent<Props, State> {
                                       panelView={panelView}
                                       repoName={this.props.repoName}
                                       history={this.props.history}
+                                      activation={this.props.activation}
                                       location={this.props.location}
                                       isLightTheme={this.props.isLightTheme}
                                       extensionsController={this.props.extensionsController}

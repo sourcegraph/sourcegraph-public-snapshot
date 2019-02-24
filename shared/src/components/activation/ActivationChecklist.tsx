@@ -17,11 +17,11 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
 
     public render(): JSX.Element {
         return (
-            <div className="activation-item-container" onClick={this.doAction} data-tooltip={this.props.detail}>
+            <div className="activation-item" onClick={this.doAction} data-tooltip={this.props.detail}>
                 {this.props.done ? (
-                    <CheckboxMarkedCircleOutlineIcon className="icon-inline activation-item-container__checkbox--done" />
+                    <CheckboxMarkedCircleOutlineIcon className="icon-inline activation-item__checkbox--done" />
                 ) : (
-                    <CheckboxBlankCircleOutlineIcon className="icon-inline activation-item-container__checkbox--todo" />
+                    <CheckboxBlankCircleOutlineIcon className="icon-inline activation-item__checkbox--todo" />
                 )}
                 &nbsp;&nbsp;
                 {this.props.title}
