@@ -1,4 +1,5 @@
-import { BehaviorSubject, Observer, of } from 'rxjs'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { BehaviorSubject, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
@@ -17,7 +18,7 @@ export interface WindowData {
  * @internal
  */
 class ExtWindow implements sourcegraph.Window {
-    constructor(private windowsProxy: ClientWindowsAPI, private readonly textEditors: ExtCodeEditor[]) {}
+    constructor(private windowsProxy: ProxyResult<ClientWindowsAPI>, private readonly textEditors: ExtCodeEditor[]) {}
 
     public readonly activeViewComponentChanges = of(this.activeViewComponent)
 
@@ -30,6 +31,7 @@ class ExtWindow implements sourcegraph.Window {
     }
 
     public showNotification(message: string): void {
+        // tslint:disable-next-line: no-floating-promises
         this.windowsProxy.$showNotification(message)
     }
 
@@ -57,23 +59,26 @@ class ExtWindow implements sourcegraph.Window {
     }
 
     public async showProgress(options: sourcegraph.ProgressOptions): Promise<sourcegraph.ProgressReporter> {
-        const handle = await this.windowsProxy.$startProgress(options)
-        const reporter: Observer<sourcegraph.Progress> = {
-            next: (progress: sourcegraph.Progress): void => {
-                this.windowsProxy.$updateProgress(handle, progress)
+        const reporterProxy = await this.windowsProxy.$showProgress(options)
+        return {
+            next: progress => {
+                // tslint:disable-next-line: no-floating-promises
+                reporterProxy.next(progress)
             },
-            error: (err: any): void => {
+            error: err => {
                 const error = asError(err)
-                this.windowsProxy.$updateProgress(handle, undefined, {
+                // tslint:disable-next-line: no-floating-promises
+                reporterProxy.error({
                     message: error.message,
+                    name: error.name,
                     stack: error.stack,
                 })
             },
-            complete: (): void => {
-                this.windowsProxy.$updateProgress(handle, undefined, undefined, true)
+            complete: () => {
+                // tslint:disable-next-line: no-floating-promises
+                reporterProxy.complete()
             },
         }
-        return reporter
     }
 
     public toJSON(): any {
@@ -82,18 +87,19 @@ class ExtWindow implements sourcegraph.Window {
 }
 
 /** @internal */
-export interface ExtWindowsAPI {
+export interface ExtWindowsAPI extends ProxyValue {
     $acceptWindowData(allWindows: WindowData[]): void
 }
 
 /** @internal */
-export class ExtWindows implements ExtWindowsAPI {
+export class ExtWindows implements ExtWindowsAPI, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     private data: WindowData[] = []
 
     /** @internal */
     constructor(
-        private windowsProxy: ClientWindowsAPI,
-        private codeEditorProxy: ClientCodeEditorAPI,
+        private proxy: ProxyResult<{ windows: ClientWindowsAPI; codeEditor: ClientCodeEditorAPI }>,
         private documents: ExtDocuments
     ) {}
 
@@ -113,14 +119,14 @@ export class ExtWindows implements ExtWindowsAPI {
         return this.data.map(
             window =>
                 new ExtWindow(
-                    this.windowsProxy,
+                    this.proxy.windows,
                     window.visibleViewComponents.map(
                         c =>
                             new ExtCodeEditor(
                                 c.item.uri,
                                 c.selections,
                                 c.isActive,
-                                this.codeEditorProxy,
+                                this.proxy.codeEditor,
                                 this.documents
                             )
                     )

@@ -1,8 +1,12 @@
+import * as comlink from '@sourcegraph/comlink'
+import { isEqual } from 'lodash'
 import { from, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { ContextValues, Progress, ProgressOptions } from 'sourcegraph'
-import { Connection } from '../protocol/jsonrpc2/connection'
-import { Tracer } from '../protocol/jsonrpc2/trace'
+import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
+import { EndpointPair } from '../../platform/context'
+import { ExtensionHostAPIFactory } from '../extension/api/api'
+import { InitData } from '../extension/extensionHost'
+import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
 import { ClientCommands } from './api/commands'
 import { ClientConfiguration } from './api/configuration'
@@ -11,7 +15,7 @@ import { ClientDocuments } from './api/documents'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientRoots } from './api/roots'
-import { Search } from './api/search'
+import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
 import { applyContextUpdate } from './context/context'
@@ -24,12 +28,6 @@ import {
 } from './services/notifications'
 
 export interface ExtensionHostClientConnection {
-    /**
-     * Sets or unsets the tracer to use for logging all of this client's messages to/from the
-     * extension host.
-     */
-    setTracer(tracer: Tracer | null): void
-
     /**
      * Closes the connection to and terminates the extension host.
      */
@@ -51,85 +49,101 @@ export interface ActivatedExtension {
     deactivate(): void | Promise<void>
 }
 
-export function createExtensionHostClientConnection(
-    connection: Connection,
-    services: Services
-): ExtensionHostClientConnection {
+/**
+ * @param endpoint The Worker object to communicate with
+ */
+export async function createExtensionHostClientConnection(
+    endpoints: EndpointPair,
+    services: Services,
+    initData: InitData
+): Promise<Unsubscribable> {
     const subscription = new Subscription()
 
-    connection.onRequest('ping', () => 'pong')
+    // MAIN THREAD
 
-    subscription.add(new ClientConfiguration<any>(connection, services.settings))
-    subscription.add(
-        new ClientContext(connection, (updates: ContextValues) =>
-            services.context.data.next(applyContextUpdate(services.context.data.value, updates))
-        )
+    /** Proxy to the exposed extension host API */
+    const initializeExtensionHost = comlink.proxy<ExtensionHostAPIFactory>(endpoints.proxy)
+    const proxy = await initializeExtensionHost(initData)
+
+    const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
+    subscription.add(clientConfiguration)
+
+    const clientContext = new ClientContext((updates: ContextValues) =>
+        services.context.data.next(applyContextUpdate(services.context.data.value, updates))
     )
-    subscription.add(
-        new ClientWindows(
-            connection,
-            from(services.model.model).pipe(
-                map(({ visibleViewComponents }) => visibleViewComponents),
-                distinctUntilChanged()
-            ),
-            (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
-            (params: ShowMessageRequestParams) =>
-                new Promise<MessageActionItem | null>(resolve => {
-                    services.notifications.showMessageRequests.next({ ...params, resolve })
-                }),
-            (params: ShowInputParams) =>
-                new Promise<string | null>(resolve => {
-                    services.notifications.showInputs.next({ ...params, resolve })
-                }),
-            ({ title }: ProgressOptions) => {
-                const reporter = new Subject<Progress>()
-                services.notifications.progresses.next({ title, progress: reporter.asObservable() })
-                return reporter
-            }
-        )
+    subscription.add(clientContext)
+    const clientWindows = new ClientWindows(
+        proxy.windows,
+        from(services.model.model).pipe(
+            map(({ visibleViewComponents }) => visibleViewComponents),
+            distinctUntilChanged()
+        ),
+        (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
+        (params: ShowMessageRequestParams) =>
+            new Promise<MessageActionItem | null>(resolve => {
+                services.notifications.showMessageRequests.next({ ...params, resolve })
+            }),
+        (params: ShowInputParams) =>
+            new Promise<string | null>(resolve => {
+                services.notifications.showInputs.next({ ...params, resolve })
+            }),
+        ({ title }: ProgressOptions) => {
+            const reporter = new Subject<Progress>()
+            services.notifications.progresses.next({ title, progress: reporter.asObservable() })
+            return reporter
+        }
     )
-    subscription.add(new ClientViews(connection, services.views, services.textDocumentLocations))
-    subscription.add(new ClientCodeEditor(connection, services.textDocumentDecoration))
+    subscription.add(clientWindows)
+
+    const clientViews = new ClientViews(services.views, services.textDocumentLocations)
+
+    const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
+    subscription.add(clientCodeEditor)
     subscription.add(
         new ClientDocuments(
-            connection,
+            proxy.documents,
             from(services.model.model).pipe(
                 map(
                     ({ visibleViewComponents }) =>
                         visibleViewComponents && visibleViewComponents.map(({ item }) => item)
                 ),
-                distinctUntilChanged()
+                distinctUntilChanged((a, b) => isEqual(a, b))
             )
         )
     )
-    subscription.add(
-        new ClientLanguageFeatures(
-            connection,
-            services.textDocumentHover,
-            services.textDocumentDefinition,
-            services.textDocumentTypeDefinition,
-            services.textDocumentImplementation,
-            services.textDocumentReferences,
-            services.textDocumentLocations
-        )
+    const clientLanguageFeatures = new ClientLanguageFeatures(
+        services.textDocumentHover,
+        services.textDocumentDefinition,
+        services.textDocumentTypeDefinition,
+        services.textDocumentImplementation,
+        services.textDocumentReferences,
+        services.textDocumentLocations
     )
-    subscription.add(new Search(connection, services.queryTransformer))
-    subscription.add(new ClientCommands(connection, services.commands))
+    const clientSearch = new ClientSearch(services.queryTransformer)
+    const clientCommands = new ClientCommands(services.commands)
     subscription.add(
         new ClientRoots(
-            connection,
+            proxy.roots,
             from(services.model.model).pipe(
                 map(({ roots }) => roots),
                 distinctUntilChanged()
             )
         )
     )
-    subscription.add(new ClientExtensions(connection, services.extensions))
+    subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
-    return {
-        setTracer: tracer => {
-            connection.trace(tracer)
-        },
-        unsubscribe: () => subscription.unsubscribe(),
+    const clientAPI: ClientAPI = {
+        ping: () => 'pong',
+        context: clientContext,
+        search: clientSearch,
+        configuration: clientConfiguration,
+        languageFeatures: clientLanguageFeatures,
+        commands: clientCommands,
+        windows: clientWindows,
+        codeEditor: clientCodeEditor,
+        views: clientViews,
     }
+    comlink.expose(clientAPI, endpoints.expose)
+
+    return subscription
 }

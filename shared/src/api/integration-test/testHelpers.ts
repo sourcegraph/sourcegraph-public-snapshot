@@ -1,13 +1,13 @@
-import { BehaviorSubject, NEVER, NextObserver, of, Subscribable, throwError } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import 'message-port-polyfill'
+
+import { BehaviorSubject, NEVER, NextObserver, Subscribable, throwError } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { PlatformContext } from '../../platform/context'
-import { createExtensionHostClient, ExtensionHostClient } from '../client/client'
+import { EndpointPair, PlatformContext } from '../../platform/context'
+import { ExtensionHostClient } from '../client/client'
+import { createExtensionHostClientConnection } from '../client/connection'
 import { Model } from '../client/model'
 import { Services } from '../client/services'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
-import { createConnection } from '../protocol/jsonrpc2/connection'
-import { createMessageTransports } from '../protocol/jsonrpc2/testHelpers'
 
 const FIXTURE_MODEL: Model = {
     roots: [{ uri: 'file:///' }],
@@ -27,7 +27,7 @@ const FIXTURE_MODEL: Model = {
 
 interface TestContext {
     client: ExtensionHostClient
-    extensionHost: typeof sourcegraph
+    extensionAPI: typeof sourcegraph
 }
 
 interface Mocks
@@ -66,34 +66,32 @@ export async function integrationTestContext(
 > {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
-    const [clientTransports, serverTransports] = createMessageTransports()
+    const clientAPIChannel = new MessageChannel()
+    const extensionHostAPIChannel = new MessageChannel()
+    const extensionHostEndpoints: EndpointPair = {
+        proxy: clientAPIChannel.port2,
+        expose: extensionHostAPIChannel.port2,
+    }
+    const clientEndpoints: EndpointPair = {
+        proxy: extensionHostAPIChannel.port1,
+        expose: clientAPIChannel.port1,
+    }
 
-    const extensionHost = startExtensionHost(serverTransports)
+    const extensionHost = startExtensionHost(extensionHostEndpoints)
 
     const services = new Services(mocks)
-    const client = createExtensionHostClient(
-        services,
-        of(clientTransports).pipe(
-            switchMap(async clientTransports => {
-                const connection = createConnection(clientTransports)
-                connection.listen()
-
-                const initData: InitData = {
-                    sourcegraphURL: 'https://example.com',
-                    clientApplication: 'sourcegraph',
-                }
-                await connection.sendRequest('initialize', [initData])
-                return connection
-            })
-        )
-    )
+    const initData: InitData = {
+        sourcegraphURL: 'https://example.com',
+        clientApplication: 'sourcegraph',
+    }
+    const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     services.model.model.next(initModel)
 
-    await (await extensionHost.__testAPI).internal.sync()
+    const extensionAPI = await extensionHost.extensionAPI
     return {
         client,
-        extensionHost: await extensionHost.__testAPI,
+        extensionAPI,
         services,
         model: services.model.model,
     }

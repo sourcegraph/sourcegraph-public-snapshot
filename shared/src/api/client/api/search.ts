@@ -1,47 +1,25 @@
-import { from, Observable, Subscription } from 'rxjs'
-import { createProxyAndHandleRequests } from '../../common/proxy'
-import { ExtSearch } from '../../extension/api/search'
-import { Connection } from '../../protocol/jsonrpc2/connection'
+import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { from } from 'rxjs'
+import { QueryTransformer, Unsubscribable } from 'sourcegraph'
 import { TransformQuerySignature } from '../services/queryTransformer'
 import { FeatureProviderRegistry } from '../services/registry'
-import { SubscriptionMap } from './common'
 
 /** @internal */
-export interface SearchAPI {
-    $registerQueryTransformer(id: number): void
-    $unregister(id: number): void
+export interface ClientSearchAPI extends ProxyValue {
+    $registerQueryTransformer(transformer: ProxyResult<QueryTransformer & ProxyValue>): Unsubscribable & ProxyValue
 }
 
 /** @internal */
-export class Search implements SearchAPI {
-    private subscriptions = new Subscription()
-    private registrations = new SubscriptionMap()
-    private proxy: ExtSearch
+export class ClientSearch implements ClientSearchAPI, ProxyValue {
+    public readonly [proxyValueSymbol] = true
 
-    constructor(
-        connection: Connection,
-        private queryTransformerRegistry: FeatureProviderRegistry<{}, TransformQuerySignature>
-    ) {
-        this.subscriptions.add(this.registrations)
+    constructor(private queryTransformerRegistry: FeatureProviderRegistry<{}, TransformQuerySignature>) {}
 
-        this.proxy = createProxyAndHandleRequests('search', connection, this)
-    }
-
-    public $registerQueryTransformer(id: number): void {
-        this.registrations.add(
-            id,
-            this.queryTransformerRegistry.registerProvider(
-                {},
-                (query: string): Observable<string> => from(this.proxy.$transformQuery(id, query))
-            )
+    public $registerQueryTransformer(
+        transformer: ProxyResult<QueryTransformer & ProxyValue>
+    ): Unsubscribable & ProxyValue {
+        return proxyValue(
+            this.queryTransformerRegistry.registerProvider({}, query => from(transformer.transformQuery(query)))
         )
-    }
-
-    public $unregister(id: number): void {
-        this.registrations.remove(id)
-    }
-
-    public unsubscribe(): void {
-        this.subscriptions.unsubscribe()
     }
 }

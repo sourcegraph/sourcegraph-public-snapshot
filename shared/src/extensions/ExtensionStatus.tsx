@@ -6,7 +6,6 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { ExecutableExtension } from '../api/client/services/extensionsService'
 import { Link } from '../components/Link'
 import { PopoverButton } from '../components/PopoverButton'
-import { Toggle } from '../components/Toggle'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
@@ -19,8 +18,6 @@ interface State {
     /** The extension IDs of extensions that are active, an error, or undefined while loading. */
     extensionsOrError?: Pick<ExecutableExtension, 'id'>[] | ErrorLike
 
-    /** Whether to log traces of communication with extensions. */
-    traceExtensionHostCommunication?: boolean
     sideloadedExtensionURL?: string | null
 }
 
@@ -48,14 +45,6 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
         const platformContext = this.componentUpdates.pipe(
             map(({ platformContext }) => platformContext),
             distinctUntilChanged()
-        )
-        this.subscriptions.add(
-            platformContext
-                .pipe(
-                    switchMap(({ traceExtensionHostCommunication }) => traceExtensionHostCommunication),
-                    map(traceExtensionHostCommunication => ({ traceExtensionHostCommunication }))
-                )
-                .subscribe(stateUpdate => this.setState({ ...this.state, ...stateUpdate }))
         )
 
         this.subscriptions.add(
@@ -101,17 +90,6 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                         <LoadingSpinner className="icon-inline" /> Loading extensions...
                     </span>
                 )}
-                <div className="card-body border-top d-flex justify-content-start align-items-center">
-                    <label htmlFor="extension-status__trace" className="mr-2 mb-0">
-                        Log to devtools console{' '}
-                    </label>
-                    <Toggle
-                        id="extension-status__trace"
-                        onToggle={this.onToggleTrace}
-                        value={this.state.traceExtensionHostCommunication}
-                        title="Toggle extension trace logging to devtools console"
-                    />
-                </div>
                 <div className="card-body border-top">
                     <h6>Sideload extension</h6>
                     {this.state.sideloadedExtensionURL ? (
@@ -147,10 +125,6 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                 </div>
             </div>
         )
-    }
-
-    private onToggleTrace = () => {
-        this.props.platformContext.traceExtensionHostCommunication.next(!this.state.traceExtensionHostCommunication)
     }
 
     private setSideloadedExtensionURL = () => {

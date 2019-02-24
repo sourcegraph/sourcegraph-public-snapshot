@@ -1,5 +1,5 @@
 import { Observable, of } from 'rxjs'
-import { flatMap, map, switchMap } from 'rxjs/operators'
+import { mergeMap, switchMap } from 'rxjs/operators'
 import { FeatureProviderRegistry } from './registry'
 
 export type TransformQuerySignature = (query: string) => Observable<string>
@@ -24,9 +24,8 @@ export function transformQuery(providers: Observable<TransformQuerySignature[]>,
             if (providers.length === 0) {
                 return [query]
             }
-            return providers.reduce(
-                (currentQuery, transformQuery) =>
-                    currentQuery.pipe(flatMap(q => transformQuery(q).pipe(map(transformedQuery => transformedQuery)))),
+            return providers.reduce<Observable<string>>(
+                (currentQuery, transformQuery) => currentQuery.pipe(mergeMap(q => transformQuery(q))),
                 of(query)
             )
         })

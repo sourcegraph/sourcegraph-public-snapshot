@@ -1,7 +1,8 @@
-import { Observable, Subscription, Unsubscribable } from 'rxjs'
+import { from, merge, Observable, Unsubscribable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { Connection } from '../protocol/jsonrpc2/connection'
-import { createExtensionHostClientConnection, ExtensionHostClientConnection } from './connection'
+import { EndpointPair } from '../../platform/context'
+import { InitData } from '../extension/extensionHost'
+import { createExtensionHostClientConnection } from './connection'
 import { Services } from './services'
 
 export interface ExtensionHostClient extends Unsubscribable {
@@ -15,27 +16,20 @@ export interface ExtensionHostClient extends Unsubscribable {
 /**
  * Creates a client to communicate with an extension host.
  *
- * @param extensionHostConnection An observable that emits the connection to the extension host each time a new
+ * @param extensionHostEndpoint An observable that emits the connection to the extension host each time a new
  * connection is established.
  */
 export function createExtensionHostClient(
     services: Services,
-    extensionHostConnection: Observable<Connection>
+    extensionHostEndpoint: Observable<EndpointPair>,
+    initData: InitData
 ): ExtensionHostClient {
-    const subscriptions = new Subscription()
-
-    const client = extensionHostConnection.pipe(
-        switchMap(connection => {
-            const client = createExtensionHostClientConnection(connection, services)
-            return new Observable<ExtensionHostClientConnection>(sub => {
-                sub.next(client)
-                return () => client.unsubscribe()
-            })
-        })
+    const client = extensionHostEndpoint.pipe(
+        switchMap(endpoints =>
+            from(createExtensionHostClientConnection(endpoints, services, initData)).pipe(
+                switchMap(client => merge([client], new Observable<never>(() => client)))
+            )
+        )
     )
-    subscriptions.add(client.subscribe())
-
-    return {
-        unsubscribe: () => subscriptions.unsubscribe(),
-    }
+    return client.subscribe()
 }
