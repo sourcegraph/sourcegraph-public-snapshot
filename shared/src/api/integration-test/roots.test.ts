@@ -1,12 +1,11 @@
 import { WorkspaceRoot } from 'sourcegraph'
-import { URI } from '../extension/types/uri'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Workspace roots (integration)', () => {
     describe('workspace.roots', () => {
         test('lists roots', async () => {
             const { extensionAPI } = await integrationTestContext()
-            expect(extensionAPI.workspace.roots).toEqual([{ uri: new URI('file:///') }] as WorkspaceRoot[])
+            expect(extensionAPI.workspace.roots).toEqual([{ uri: new URL('file:///') }] as WorkspaceRoot[])
         })
 
         test('adds new text documents', async () => {
@@ -19,8 +18,8 @@ describe('Workspace roots (integration)', () => {
             await extensionAPI.internal.sync()
 
             expect(extensionAPI.workspace.roots).toEqual([
-                { uri: new URI('file:///a') },
-                { uri: new URI('file:///b') },
+                { uri: new URL('file:///a') },
+                { uri: new URL('file:///b') },
             ] as WorkspaceRoot[])
         })
     })

@@ -19,7 +19,6 @@ import { Location } from './types/location'
 import { Position } from './types/position'
 import { Range } from './types/range'
 import { Selection } from './types/selection'
-import { URI } from './types/uri'
 
 /**
  * Required information when initializing an extension host.
@@ -154,7 +153,7 @@ function createExtensionAPI(
 
     // Expose the extension API to extensions
     const extensionAPI: typeof sourcegraph = {
-        URI,
+        URI: URL,
         Position,
         Range,
         Selection,
@@ -245,7 +244,7 @@ function createExtensionAPI(
         internal: {
             sync,
             updateContext: (updates: sourcegraph.ContextValues) => context.updateContext(updates),
-            sourcegraphURL: new URI(initData.sourcegraphURL),
+            sourcegraphURL: new URL(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,
         },
     }

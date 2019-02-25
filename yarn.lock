@@ -13789,9 +13789,9 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.0, source-map@~0.6.1:
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
 sourcegraph@*:
-  version "21.0.0"
-  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-21.0.0.tgz#b84ef37a0655574759d5f4a7ee5c1da388111580"
-  integrity sha512-PcsvCepo3vORtzKgcjeaXMQcL+BQj2OO/Lkq7S0/k5bexefn6Wf5WrFD3SXJFqPVOWJM1hPG1tw1ME9Z5Gne3Q==
+  version "22.0.0"
+  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-22.0.0.tgz#b259929c31bf367f5160056698a881dc26eb36bd"
+  integrity sha512-cJHby0OPCM0y0BmRTKhY89D02f9koROluHMJGQGNE8q9CoIVbe1s6ctHCytz7bjY9mKtCpQMbtxYQhfIm5S4lg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
   version "0.0.0"
