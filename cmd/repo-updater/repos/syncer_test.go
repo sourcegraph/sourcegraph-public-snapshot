@@ -478,7 +478,7 @@ func (s fakeStore) ListRepos(context.Context, ...string) ([]*Repo, error) {
 	}
 
 	set := make(map[*Repo]bool, len(s.repos))
-	repos := make([]*Repo, 0, len(s.repos))
+	repos := make(Repos, 0, len(s.repos))
 	for _, r := range s.repos {
 		if !set[r] {
 			repos = append(repos, r)
@@ -486,9 +486,7 @@ func (s fakeStore) ListRepos(context.Context, ...string) ([]*Repo, error) {
 		}
 	}
 
-	sort.Slice(repos, func(i, j int) bool {
-		return repos[i].Name < repos[j].Name
-	})
+	sort.Sort(repos)
 
 	return repos, nil
 }
