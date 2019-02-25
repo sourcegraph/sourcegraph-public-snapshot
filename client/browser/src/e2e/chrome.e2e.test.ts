@@ -124,7 +124,7 @@ describe('Sourcegraph Chrome extension', () => {
             test(`provides tooltips for diff files (${diffType}, ${side})`, async () => {
                 await page.goto(`https://github.com/gorilla/mux/pull/328/files?diff=${diffType}`)
 
-                const token = tokens[side]
+                const token = tokens[side as 'base' | 'head']
                 const element = await getTokenWithSelector(page, token.text, token.selector)
 
                 // Scrolls the element into view so that code view is in view.

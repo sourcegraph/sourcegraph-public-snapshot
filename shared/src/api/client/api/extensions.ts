@@ -1,15 +1,13 @@
+import { ProxyResult } from '@sourcegraph/comlink'
 import { isEqual } from 'lodash'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
-import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
-import { Connection } from '../../protocol/jsonrpc2/connection'
 import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
 
 /** @internal */
 export class ClientExtensions {
     private subscriptions = new Subscription()
-    private proxy: ExtExtensionsAPI
 
     /**
      * Implements the client side of the extensions API.
@@ -18,9 +16,7 @@ export class ClientExtensions {
      * @param extensions An observable that emits the set of extensions that should be activated
      * upon subscription and whenever it changes.
      */
-    constructor(connection: Connection, extensionRegistry: ExtensionsService) {
-        this.proxy = createProxyAndHandleRequests('extensions', connection, this)
-
+    constructor(private proxy: ProxyResult<ExtExtensionsAPI>, extensionRegistry: ExtensionsService) {
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
                 .pipe(

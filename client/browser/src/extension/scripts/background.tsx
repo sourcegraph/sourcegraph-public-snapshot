@@ -3,8 +3,10 @@
 import '../../config/polyfill'
 
 import { without } from 'lodash'
-import { noop } from 'rxjs'
+import { fromEventPattern, noop, Observable } from 'rxjs'
+import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
 import DPT from 'webext-domain-permission-toggle'
+import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
 import * as browserAction from '../../browser/browserAction'
 import * as omnibox from '../../browser/omnibox'
 import * as permissions from '../../browser/permissions'
@@ -14,7 +16,7 @@ import * as tabs from '../../browser/tabs'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import initializeCli from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
-import { createBlobURLForBundle, createExtensionHostWorker } from '../../platform/worker'
+import { createBlobURLForBundle } from '../../platform/worker'
 import { requestGraphQL } from '../../shared/backend/graphql'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
@@ -175,7 +177,7 @@ storage.setSyncMigration(items => {
     const keysToRemove: string[] = []
 
     // Ensure all feature flags are in storage.
-    for (const key of Object.keys(featureFlagDefaults)) {
+    for (const key of Object.keys(featureFlagDefaults) as (keyof FeatureFlags)[]) {
         if (typeof featureFlags[key] === 'undefined') {
             keysToRemove.push(key)
             featureFlags = {
@@ -366,17 +368,74 @@ function setDefaultBrowserAction(): void {
 browserAction.onClicked(noop)
 setDefaultBrowserAction()
 
-// This is the entrypoint for the extension host.
-chrome.runtime.onConnect.addListener(port => {
-    const worker = createExtensionHostWorker()
-    worker.addEventListener('message', m => {
-        port.postMessage(m.data)
-    })
-    port.onMessage.addListener(m => {
-        worker.postMessage(m)
-    })
-    port.onDisconnect.addListener(() => worker.terminate())
-})
-
 // Add "Enable Sourcegraph on this domain" context menu item
 DPT.addContextMenu()
+
+const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
+
+const portKind = (port: chrome.runtime.Port) => {
+    const match = port.name.match(ENDPOINT_KIND_REGEX)
+    return match && match[1]
+}
+
+/**
+ * A stream of EndpointPair created from Port objects emitted by chrome.runtime.onConnect.
+ *
+ * Each EndpointPair represents a connection with an instance of the content script.
+ */
+const endpointPairs: Observable<{ proxy: chrome.runtime.Port; expose: chrome.runtime.Port }> = fromEventPattern<
+    chrome.runtime.Port
+>(
+    handler => chrome.runtime.onConnect.addListener(handler),
+    handler => chrome.runtime.onConnect.removeListener(handler)
+).pipe(
+    groupBy(
+        port => (port.name || 'other').replace(ENDPOINT_KIND_REGEX, ''),
+        port => port,
+        group => group.pipe(bufferCount(2))
+    ),
+    filter(group => group.key !== 'other'),
+    mergeMap(group =>
+        group.pipe(
+            bufferCount(2),
+            map(ports => {
+                const proxyPort = ports.find(port => portKind(port) === 'proxy')
+                if (!proxyPort) {
+                    throw new Error('No proxy port')
+                }
+                const exposePort = ports.find(port => portKind(port) === 'expose')
+                if (!exposePort) {
+                    throw new Error('No expose port')
+                }
+                return {
+                    proxy: proxyPort,
+                    expose: exposePort,
+                }
+            })
+        )
+    )
+)
+
+// Create one extension host worker per endpoint pair
+endpointPairs.subscribe(({ proxy, expose }) => {
+    const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
+    // Connect proxy client endpoint
+    clientEndpoints.proxy.start()
+    proxy.onMessage.addListener(message => {
+        clientEndpoints.proxy.postMessage(message)
+    })
+    clientEndpoints.proxy.addEventListener('message', ({ data }) => {
+        proxy.postMessage(data)
+    })
+    // Connect expose client endpoint
+    clientEndpoints.expose.start()
+    expose.onMessage.addListener(message => {
+        clientEndpoints.expose.postMessage(message)
+    })
+    clientEndpoints.expose.addEventListener('message', ({ data }) => {
+        expose.postMessage(data)
+    })
+    // Kill worker when either port disconnects
+    proxy.onDisconnect.addListener(() => worker.terminate())
+    expose.onDisconnect.addListener(() => worker.terminate())
+})

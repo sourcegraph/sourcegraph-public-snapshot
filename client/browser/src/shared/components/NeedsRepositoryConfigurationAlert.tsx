@@ -6,9 +6,10 @@ import { sourcegraphUrl } from '../util/context'
 
 interface Props {
     onClose: () => void
-    alertKey: string
     repoName: string
 }
+
+export const REPO_CONFIGURATION_KEY = 'NeedsRepoConfigurationAlertDismissed'
 
 /**
  * A global alert telling the site admin that they need to configure
@@ -16,7 +17,7 @@ interface Props {
  */
 export class NeedsRepositoryConfigurationAlert extends React.Component<Props, {}> {
     private sync = () => {
-        const obj = { [this.props.alertKey]: { [this.props.repoName]: true } }
+        const obj = { [REPO_CONFIGURATION_KEY]: { [this.props.repoName]: true } }
         storage.setSync(obj, () => {
             this.props.onClose()
         })

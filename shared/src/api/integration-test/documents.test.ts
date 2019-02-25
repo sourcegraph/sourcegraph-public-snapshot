@@ -1,17 +1,19 @@
+import { from } from 'rxjs'
+import { take } from 'rxjs/operators'
 import { TextDocument } from 'sourcegraph'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {
         test('lists text documents', async () => {
-            const { extensionHost } = await integrationTestContext()
-            expect(extensionHost.workspace.textDocuments).toEqual([
+            const { extensionAPI } = await integrationTestContext()
+            expect(extensionAPI.workspace.textDocuments).toEqual([
                 { uri: 'file:///f', languageId: 'l', text: 't' },
             ] as TextDocument[])
         })
 
         test('adds new text documents', async () => {
-            const { model, extensionHost } = await integrationTestContext()
+            const { model, extensionAPI } = await integrationTestContext()
             model.next({
                 ...model.value,
                 visibleViewComponents: [
@@ -23,8 +25,10 @@ describe('Documents (integration)', () => {
                     },
                 ],
             })
-            await extensionHost.internal.sync()
-            expect(extensionHost.workspace.textDocuments).toEqual([
+            await from(extensionAPI.workspace.openedTextDocuments)
+                .pipe(take(1))
+                .toPromise()
+            expect(extensionAPI.workspace.textDocuments).toEqual([
                 { uri: 'file:///f', languageId: 'l', text: 't' },
                 { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             ] as TextDocument[])
@@ -33,9 +37,9 @@ describe('Documents (integration)', () => {
 
     describe('workspace.openedTextDocuments', () => {
         test('fires when a text document is opened', async () => {
-            const { model, extensionHost } = await integrationTestContext()
+            const { model, extensionAPI } = await integrationTestContext()
 
-            const values = collectSubscribableValues(extensionHost.workspace.openedTextDocuments)
+            const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
             expect(values).toEqual([] as TextDocument[])
 
             model.next({
@@ -49,7 +53,9 @@ describe('Documents (integration)', () => {
                     },
                 ],
             })
-            await extensionHost.internal.sync()
+            await from(extensionAPI.workspace.openedTextDocuments)
+                .pipe(take(1))
+                .toPromise()
 
             expect(values).toEqual([{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
         })

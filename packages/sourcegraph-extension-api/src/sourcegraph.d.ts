@@ -18,13 +18,13 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * @deprecated In the future the API will use the [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL)
+     * @deprecated Use the global [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL)
      */
-    export class URI {
-        constructor(value: string)
-
-        toString(): string
-    }
+    export const URI: typeof URL
+    /**
+     * @deprecated Use the global [native `URL` API](https://developer.mozilla.org/en-US/docs/Web/API/URL)
+     */
+    export type URI = URL
 
     export class Position {
         /** Zero-based line number. */
@@ -287,7 +287,7 @@ declare module 'sourcegraph' {
         /**
          * The resource identifier of this location.
          */
-        readonly uri: URI
+        readonly uri: URL
 
         /**
          * The document range of this location.
@@ -300,7 +300,7 @@ declare module 'sourcegraph' {
          * @param uri The resource identifier.
          * @param rangeOrPosition The range or position. Positions will be converted to an empty range.
          */
-        constructor(uri: URI, rangeOrPosition?: Range | Position)
+        constructor(uri: URL, rangeOrPosition?: Range | Position)
     }
 
     /**
@@ -690,7 +690,7 @@ declare module 'sourcegraph' {
          *
          * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
          */
-        readonly uri: URI
+        readonly uri: URL
     }
 
     /**
@@ -1165,7 +1165,7 @@ declare module 'sourcegraph' {
          *
          * @example `https://sourcegraph.com`
          */
-        export const sourcegraphURL: URI
+        export const sourcegraphURL: URL
 
         /**
          * The client application that is running this extension, either 'sourcegraph' for Sourcegraph or 'other'
@@ -1211,10 +1211,14 @@ declare module 'sourcegraph' {
         /** @deprecated Use an observer instead of a complete callback */
         subscribe(next: null | undefined, error: null | undefined, complete: () => void): Unsubscribable
         /** @deprecated Use an observer instead of an error callback */
-        subscribe(next: null | undefined, error: (error: any) => void, complete?: () => void): Unsubscribable
+        subscribe(next: null | undefined, error: (error: any) => void, complete?: (() => void) | null): Unsubscribable
         /** @deprecated Use an observer instead of a complete callback */
         subscribe(next: (value: T) => void, error: null | undefined, complete: () => void): Unsubscribable
-        subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
+        subscribe(
+            next?: ((value: T) => void) | null,
+            error?: ((error: any) => void) | null,
+            complete?: (() => void) | null
+        ): Unsubscribable
     }
 
     /**

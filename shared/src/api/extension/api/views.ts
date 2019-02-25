@@ -1,7 +1,6 @@
-import { Unsubscribable } from 'rxjs'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
-import { ClientViewsAPI, PanelViewData } from '../../client/api/views'
-import { ProviderMap } from './common'
+import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
 
 /**
  * @internal
@@ -14,7 +13,7 @@ class ExtPanelView implements sourcegraph.PanelView {
         component: null,
     }
 
-    constructor(private proxy: ClientViewsAPI, private id: number, private subscription: Unsubscribable) {}
+    constructor(private proxyPromise: Promise<ProxyResult<PanelUpdater>>) {}
 
     public get title(): string {
         return this.data.title
@@ -49,27 +48,24 @@ class ExtPanelView implements sourcegraph.PanelView {
     }
 
     private sendData(): void {
-        this.proxy.$acceptPanelViewUpdate(this.id, this.data)
+        // tslint:disable-next-line: no-floating-promises
+        this.proxyPromise.then(proxy => proxy.update(this.data))
     }
 
     public unsubscribe(): void {
-        return this.subscription.unsubscribe()
+        // tslint:disable-next-line: no-floating-promises
+        this.proxyPromise.then(proxy => proxy.unsubscribe())
     }
 }
 
 /** @internal */
-export class ExtViews implements Unsubscribable {
-    private registrations = new ProviderMap<{}>(id => this.proxy.$unregister(id))
+export class ExtViews implements ProxyValue {
+    public readonly [proxyValueSymbol] = true
 
-    constructor(private proxy: ClientViewsAPI) {}
+    constructor(private proxy: ProxyResult<ClientViewsAPI>) {}
 
     public createPanelView(id: string): ExtPanelView {
-        const { id: regID, subscription } = this.registrations.add({})
-        this.proxy.$registerPanelViewProvider(regID, { id })
-        return new ExtPanelView(this.proxy, regID, subscription)
-    }
-
-    public unsubscribe(): void {
-        this.registrations.unsubscribe()
+        const panelProxyPromise = this.proxy.$registerPanelViewProvider({ id })
+        return new ExtPanelView(panelProxyPromise)
     }
 }

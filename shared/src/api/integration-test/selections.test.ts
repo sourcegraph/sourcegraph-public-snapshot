@@ -33,11 +33,11 @@ const withSelections = (...selections: { start: number; end: number }[]): ViewCo
 describe('Selections (integration)', () => {
     describe('editor.selectionsChanged', () => {
         test('reflects changes to the current selections', async () => {
-            const { model, extensionHost } = await integrationTestContext(undefined, {
+            const { model, extensionAPI } = await integrationTestContext(undefined, {
                 roots: [],
                 visibleViewComponents: [],
             })
-            const selectionChanges = from(extensionHost.app.activeWindowChanges).pipe(
+            const selectionChanges = from(extensionAPI.app.activeWindowChanges).pipe(
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
                 filter(isDefined),
@@ -54,7 +54,7 @@ describe('Selections (integration)', () => {
                     ...model.value,
                     visibleViewComponents: [withSelections(...selections)],
                 })
-                await extensionHost.internal.sync()
+                await extensionAPI.internal.sync()
             }
             assertToJSON(
                 selectionValues.map(selections => selections.map(s => ({ start: s.start.line, end: s.end.line }))),

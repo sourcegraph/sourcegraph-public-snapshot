@@ -1,26 +1,64 @@
-// The ponyfill symbol-observable is impure. Since extensions are loaded through importScripts,
-// if one of our extensions depends on symbol-observable, it may break other extensions:
-// https://github.com/sourcegraph/sourcegraph/issues/1243
-// Importing symbol-observable when starting the web worker fixes this by
-// ensuring that `Symbol.observable` is mutated happens before any extensions are loaded.
-import 'symbol-observable'
-import { createWebWorkerMessageTransports } from '../protocol/jsonrpc2/transports/webWorker'
+import '../../polyfills'
+
+import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
+import { fromEvent } from 'rxjs'
+import { take } from 'rxjs/operators'
+import { EndpointPair, isEndpointPair } from '../../platform/context'
 import { startExtensionHost } from './extensionHost'
+
+export interface InitMessage {
+    endpoints: {
+        proxy: MessagePort
+        expose: MessagePort
+    }
+    /**
+     * Whether the endpoints should be wrapped with a comlink {@link MessageChannelAdapter}.
+     *
+     * This is true when the messages passed on the endpoints are forwarded to/from
+     * other wrapped endpoints, like in the browser extension.
+     */
+    wrapEndpoints: boolean
+}
+
+const isInitMessage = (value: any): value is InitMessage => value.endpoints && isEndpointPair(value.endpoints)
+
+const wrapMessagePort = (port: MessagePort) =>
+    MessageChannelAdapter.wrap({
+        send: data => port.postMessage(data),
+        addEventListener: (event, listener) => port.addEventListener(event, listener),
+        removeEventListener: (event, listener) => port.removeEventListener(event, listener),
+    })
+
+const wrapEndpoints = ({ proxy, expose }: InitMessage['endpoints']): EndpointPair => {
+    proxy.start()
+    expose.start()
+    return {
+        proxy: wrapMessagePort(proxy),
+        expose: wrapMessagePort(expose),
+    }
+}
 
 /**
  * The entrypoint for the JavaScript context that runs the extension host (and all extensions).
  *
- * To initialize the extension host, the parent sends it an "initialize" message with
- * {@link InitData}.
+ * To initialize the extension host, the parent sends it an {@link InitMessage}
  */
-function extensionHostMain(): void {
+async function extensionHostMain(): Promise<void> {
     try {
-        const { unsubscribe } = startExtensionHost(createWebWorkerMessageTransports())
-        self.addEventListener('unload', () => unsubscribe())
+        const event = await fromEvent<MessageEvent>(self, 'message')
+            .pipe(take(1))
+            .toPromise()
+        if (!isInitMessage(event.data)) {
+            throw new Error('First message event in extension host worker was not a well-formed InitMessage')
+        }
+        const { endpoints } = event.data
+        const extensionHost = startExtensionHost(event.data.wrapEndpoints ? wrapEndpoints(endpoints) : endpoints)
+        self.addEventListener('unload', () => extensionHost.unsubscribe())
     } catch (err) {
         console.error('Error starting the extension host:', err)
         self.close()
     }
 }
 
+// tslint:disable-next-line: no-floating-promises
 extensionHostMain()

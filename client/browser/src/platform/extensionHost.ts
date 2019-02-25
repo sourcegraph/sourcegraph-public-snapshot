@@ -1,103 +1,57 @@
-import { Observable, of } from 'rxjs'
+import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
+import { Observable } from 'rxjs'
 import uuid from 'uuid'
-import { MessageTransports } from '../../../../shared/src/api/protocol/jsonrpc2/connection'
-import { Message } from '../../../../shared/src/api/protocol/jsonrpc2/messages'
-import {
-    AbstractMessageReader,
-    AbstractMessageWriter,
-    DataCallback,
-    MessageReader,
-    MessageWriter,
-} from '../../../../shared/src/api/protocol/jsonrpc2/transport'
-import { createWebWorkerMessageTransports } from '../../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
+import { createExtensionHost as createInPageExtensionHost } from '../../../../shared/src/api/extension/worker'
+import { EndpointPair } from '../../../../shared/src/platform/context'
 import { isInPage } from '../context'
-import { createExtensionHostWorker } from './worker'
 
 /**
- * Spawns an extension and returns a communication channel to it.
+ * Returns an observable of a communication channel to an extension host.
  */
-export function createExtensionHost(): Observable<MessageTransports> {
+export function createExtensionHost(): Observable<EndpointPair> {
     if (isInPage) {
-        return createInPageExtensionHost()
+        return createInPageExtensionHost({ wrapEndpoints: false })
     }
-    const channelID = uuid.v4()
-    return of(createPortMessageTransports(chrome.runtime.connect({ name: channelID })))
-}
-
-function createInPageExtensionHost(): Observable<MessageTransports> {
-    const worker = createExtensionHostWorker()
-    const messageTransports = createWebWorkerMessageTransports(worker)
-    return new Observable(sub => {
-        sub.next(messageTransports)
-        return () => worker.terminate()
+    const id = uuid.v4()
+    return new Observable(subscriber => {
+        const proxyPort = chrome.runtime.connect({ name: `proxy-${id}` })
+        const exposePort = chrome.runtime.connect({ name: `expose-${id}` })
+        subscriber.next({
+            proxy: endpointFromPort(proxyPort),
+            expose: endpointFromPort(exposePort),
+        })
+        return () => {
+            proxyPort.disconnect()
+            exposePort.disconnect()
+        }
     })
 }
 
-class PortMessageReader extends AbstractMessageReader implements MessageReader {
-    private pending: Message[] = []
-    private callback: DataCallback | null = null
-
-    constructor(private port: chrome.runtime.Port) {
-        super()
-
-        port.onMessage.addListener((message: any) => {
-            try {
-                if (this.callback) {
-                    this.callback(message)
-                } else {
-                    this.pending.push(message)
-                }
-            } catch (err) {
-                this.fireError(err)
+function endpointFromPort(port: chrome.runtime.Port): MessagePort {
+    const listeners = new Map<(event: MessageEvent) => any, (message: object, port: chrome.runtime.Port) => void>()
+    return MessageChannelAdapter.wrap({
+        send(data): void {
+            port.postMessage(data)
+        },
+        addEventListener(event, messageListener): void {
+            if (event !== 'message') {
+                return
             }
-        })
-        port.onDisconnect.addListener(() => {
-            this.fireClose()
-        })
-    }
-
-    public listen(callback: DataCallback): void {
-        if (this.callback) {
-            throw new Error('callback is already set')
-        }
-        this.callback = callback
-        while (this.pending.length !== 0) {
-            callback(this.pending.pop()!)
-        }
-    }
-
-    public unsubscribe(): void {
-        super.unsubscribe()
-        this.callback = null
-        this.port.disconnect()
-    }
-}
-
-class PortMessageWriter extends AbstractMessageWriter implements MessageWriter {
-    private errorCount = 0
-
-    constructor(private port: chrome.runtime.Port) {
-        super()
-    }
-
-    public write(message: Message): void {
-        try {
-            this.port.postMessage(message)
-        } catch (error) {
-            this.fireError(error, message, ++this.errorCount)
-        }
-    }
-
-    public unsubscribe(): void {
-        super.unsubscribe()
-        this.port.disconnect()
-    }
-}
-
-/** Creates JSON-RPC2 message transports for the Web Worker message communication interface. */
-function createPortMessageTransports(port: chrome.runtime.Port): MessageTransports {
-    return {
-        reader: new PortMessageReader(port),
-        writer: new PortMessageWriter(port),
-    }
+            const chromePortListener = (data: object) => {
+                messageListener.call(this, new MessageEvent('message', { data }))
+            }
+            listeners.set(messageListener, chromePortListener)
+            port.onMessage.addListener(chromePortListener)
+        },
+        removeEventListener(event, messageListener): void {
+            if (event !== 'message') {
+                return
+            }
+            const chromePortListener = listeners.get(messageListener)
+            if (!chromePortListener) {
+                return
+            }
+            port.onMessage.removeListener(chromePortListener)
+        },
+    })
 }
