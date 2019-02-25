@@ -25,5 +25,5 @@
     "prepublish": "yarn run tslint:build-rules",
     "storybook": "start-storybook -p 9001 -c .storybook"
   },
-  "sideEffects": false
+  "sideEffects": true
 }
