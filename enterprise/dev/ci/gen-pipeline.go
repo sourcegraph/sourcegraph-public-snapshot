@@ -298,12 +298,6 @@ func main() {
 		"symbols",
 	}
 
-	masterDockerImages := []string{
-		"frontend",
-		"management-console",
-		"server",
-	}
-
 	switch {
 	case taggedRelease:
 		for _, dockerImage := range allDockerImages {
@@ -316,14 +310,14 @@ func main() {
 		pipeline.AddWait()
 
 	case branch == "master":
-		for _, dockerImage := range masterDockerImages {
+		for _, dockerImage := range allDockerImages {
 			addDockerImageStep(dockerImage, true)
 		}
 		pipeline.AddWait()
 		addDeploySteps()
 
 	case strings.HasPrefix(branch, "master-dry-run/"): // replicates `master` build but does not deploy
-		for _, dockerImage := range masterDockerImages {
+		for _, dockerImage := range allDockerImages {
 			addDockerImageStep(dockerImage, true)
 		}
 		pipeline.AddWait()
@@ -333,21 +327,8 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 
 	case strings.HasPrefix(branch, "docker-images/"):
-		shouldBuildImage := true
-
-		// Only deploy images that aren't auto-deployed from master.
-		for _, dockerImage := range masterDockerImages {
-			ignoredBranch := fmt.Sprintf("docker-images/%s", dockerImage)
-			if branch == ignoredBranch {
-				shouldBuildImage = false
-				break
-			}
-		}
-
-		if shouldBuildImage {
-			addDockerImageStep(branch[14:], true)
-			pipeline.AddWait()
-			addDeploySteps()
-		}
+		// Don't deploy since they are auto-deployed from master.
+		addDockerImageStep(branch[14:], true)
+		pipeline.AddWait()
 	}
 }
