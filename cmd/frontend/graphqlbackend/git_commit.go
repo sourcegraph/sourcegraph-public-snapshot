@@ -91,10 +91,12 @@ func (r *gitCommitResolver) OID() (gitObjectID, error) {
 }
 
 func (r *gitCommitResolver) getCommitOID() (gitObjectID, error) {
+	var err error
+
 	r.once.Do(func() {
 		// If we already have the commit, no need to try to compute it.
 		if r.oid != "" {
-			return "", nil
+			return
 		}
 
 		// Commit OID is the empty string denoting the default branch. Find out
@@ -104,9 +106,10 @@ func (r *gitCommitResolver) getCommitOID() (gitObjectID, error) {
 
 		ctx := context.Background()
 
-		refs, err := indexInfo.Refs(ctx)
+		var refs []*repositoryTextSearchIndexedRef
+		refs, err = indexInfo.Refs(ctx)
 		if err != nil {
-			return "", err
+			return
 		}
 
 		for _, ref := range refs {
@@ -118,6 +121,10 @@ func (r *gitCommitResolver) getCommitOID() (gitObjectID, error) {
 			}
 		}
 	})
+
+	if err != nil {
+		return "", nil
+	}
 
 	return r.oid, nil
 }
