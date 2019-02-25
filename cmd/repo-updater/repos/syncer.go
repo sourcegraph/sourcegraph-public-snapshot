@@ -136,7 +136,10 @@ func (d *Diff) Sort() {
 		d.Unmodified,
 	} {
 		sort.Slice(ds, func(i, j int) bool {
-			return ds[i].ID < ds[j].ID
+			if ds[i].Name == ds[j].Name {
+				return ds[i].ExternalRepo.Compare(ds[j].ExternalRepo) == -1
+			}
+			return ds[i].Name < ds[j].Name
 		})
 	}
 }
