@@ -3,7 +3,6 @@ package repos
 import (
 	"container/heap"
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -216,15 +215,11 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 }
 
 func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
-	urls := r.CloneURLs()
-	if len(urls) == 0 {
-		panic(fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name))
+	repo := configuredRepo2{Name: api.RepoName(r.Name), Enabled: r.Enabled}
+	if urls := r.CloneURLs(); len(urls) > 0 {
+		repo.URL = urls[0]
 	}
-	return &configuredRepo2{
-		URL:     urls[0],
-		Name:    api.RepoName(r.Name),
-		Enabled: r.Enabled,
-	}
+	return &repo
 }
 
 // updateSource updates the list of configured repos associated with the given source.
