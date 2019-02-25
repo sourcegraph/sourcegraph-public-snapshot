@@ -5,7 +5,6 @@ import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
 import { assertToJSON } from '../extension/types/testHelpers'
-import { URI } from '../extension/types/uri'
 import { createBarrier, integrationTestContext } from './testHelpers'
 
 describe('LanguageFeatures (integration)', () => {
@@ -33,7 +32,7 @@ describe('LanguageFeatures (integration)', () => {
         registerProvider: extensionAPI => extensionAPI.languages.registerDefinitionProvider,
         labeledProvider: label => ({
             provideDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
-                of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
+                of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
         labeledProviderResults: labeledDefinitionResults,
         providerWithImplementation: run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
@@ -49,7 +48,7 @@ describe('LanguageFeatures (integration)', () => {
         registerProvider: extensionAPI => extensionAPI.languages.registerTypeDefinitionProvider,
         labeledProvider: label => ({
             provideTypeDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
-                of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
+                of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
         labeledProviderResults: labeledDefinitionResults,
         providerWithImplementation: run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
@@ -64,7 +63,7 @@ describe('LanguageFeatures (integration)', () => {
         registerProvider: extensionAPI => extensionAPI.languages.registerImplementationProvider,
         labeledProvider: label => ({
             provideImplementation: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
-                of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
+                of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
         labeledProviderResults: labeledDefinitionResults,
         providerWithImplementation: run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
@@ -83,7 +82,7 @@ describe('LanguageFeatures (integration)', () => {
                 doc: sourcegraph.TextDocument,
                 pos: sourcegraph.Position,
                 context: sourcegraph.ReferenceContext
-            ) => of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
+            ) => of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
         labeledProviderResults: labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
         providerWithImplementation: run =>
@@ -107,7 +106,7 @@ describe('LanguageFeatures (integration)', () => {
             extensionAPI.languages.registerLocationProvider('x', selector, provider),
         labeledProvider: label => ({
             provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
-                of([{ uri: new URI(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
+                of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
         labeledProviderResults: labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
         providerWithImplementation: run =>

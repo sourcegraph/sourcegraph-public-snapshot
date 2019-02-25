@@ -1,7 +1,7 @@
 import * as sourcegraph from 'sourcegraph'
 import { Position } from './position'
 import { Range } from './range'
-import { URI } from './uri'
+import { isURL } from './url'
 
 export class Location implements sourcegraph.Location {
     public static isLocation(thing: any): thing is sourcegraph.Location {
@@ -11,12 +11,12 @@ export class Location implements sourcegraph.Location {
         if (!thing) {
             return false
         }
-        return Range.isRange((thing as Location).range) && URI.isURI((thing as Location).uri)
+        return Range.isRange((thing as Location).range) && isURL((thing as Location).uri)
     }
 
     public readonly range?: sourcegraph.Range
 
-    constructor(public readonly uri: sourcegraph.URI, rangeOrPosition?: sourcegraph.Range | sourcegraph.Position) {
+    constructor(public readonly uri: URL, rangeOrPosition?: sourcegraph.Range | sourcegraph.Position) {
         if (!rangeOrPosition) {
             // that's OK
         } else if (rangeOrPosition instanceof Range) {
