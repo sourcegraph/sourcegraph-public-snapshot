@@ -41,20 +41,28 @@ func (r *gitTreeEntryResolver) Repository() *repositoryResolver { return r.commi
 
 func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
-func (r *gitTreeEntryResolver) URL(ctx context.Context) string {
+func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	if submodule := r.Submodule(); submodule != nil {
 		repoName, err := cloneURLToRepoName(ctx, submodule.URL())
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL())
-			return ""
+			return "", fmt.Errorf("failed to resolve submodule repository name from clone url: %s", submodule.URL())
 		}
-		return "/" + repoName + "@" + submodule.Commit()
+		return "/" + repoName + "@" + submodule.Commit(), nil
 	}
-	return r.urlPath(r.commit.repoRevURL())
+	url, err := r.commit.repoRevURL()
+	if err != nil {
+		return "", err
+	}
+	return r.urlPath(url), nil
 }
 
-func (r *gitTreeEntryResolver) CanonicalURL() string {
-	return r.urlPath(r.commit.canonicalRepoRevURL())
+func (r *gitTreeEntryResolver) CanonicalURL() (string, error) {
+	url, err := r.commit.canonicalRepoRevURL()
+	if err != nil {
+		return "", err
+	}
+	return r.urlPath(url), nil
 }
 
 func (r *gitTreeEntryResolver) urlPath(prefix string) string {
@@ -74,7 +82,11 @@ func (r *gitTreeEntryResolver) urlPath(prefix string) string {
 func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.path, r.stat.Mode().IsDir())
+	rev, err := r.commit.inputRevOrImmutableRev()
+	if err != nil {
+		return nil, err
+	}
+	return externallink.FileOrDir(ctx, r.commit.repo.repo, rev, r.path, r.stat.Mode().IsDir())
 }
 
 func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {

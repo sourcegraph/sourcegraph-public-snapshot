@@ -49,8 +49,7 @@ func toGitCommitResolver(repo *repositoryResolver, commit *git.Commit) *gitCommi
 	return &gitCommitResolver{
 		repo: repo,
 
-		oid:      gitObjectID(commit.ID),
-		oidReady: make(chan struct{}),
+		oid: gitObjectID(commit.ID),
 
 		author:    *authorResolver,
 		committer: toSignatureResolver(commit.Committer),
@@ -76,12 +75,9 @@ func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID gitObjectI
 	return spec.Repository, spec.CommitID, err
 }
 
-func (r *gitCommitResolver) ID() (graphql.ID, error) {
-	oid, err := r.OID()
-	if err != nil {
-		return "", err
-	}
-	return marshalGitCommitID(r.repo.ID(), oid), nil
+func (r *gitCommitResolver) ID() graphql.ID {
+	oid, _ := r.OID()
+	return marshalGitCommitID(r.repo.ID(), oid)
 }
 
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
@@ -160,8 +156,12 @@ func (r *gitCommitResolver) Parents(ctx context.Context) ([]*gitCommitResolver, 
 	return resolvers, nil
 }
 
-func (r *gitCommitResolver) URL() string {
-	return r.repo.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev())
+func (r *gitCommitResolver) URL() (string, error) {
+	rev, err := r.inputRevOrImmutableRev()
+	if err != nil {
+		return "", err
+	}
+	return r.repo.URL() + "/-/commit/" + string(rev), nil
 }
 
 func (r *gitCommitResolver) CanonicalURL() (string, error) {
@@ -262,15 +262,15 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 }) (*gitCommitConnectionResolver, error) {
 	oid, err := r.OID()
 	if err != nil {
-		return "", nil
+		return nil, nil
 	}
-	return nil, &gitCommitConnectionResolver{
+	return &gitCommitConnectionResolver{
 		revisionRange: string(oid),
 		first:         args.ConnectionArgs.First,
 		query:         args.Query,
 		path:          args.Path,
 		repo:          r.repo,
-	}
+	}, nil
 }
 
 func (r *gitCommitResolver) BehindAhead(ctx context.Context, args *struct {
@@ -303,7 +303,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 // canonical OID for the revision.
 func (r *gitCommitResolver) inputRevOrImmutableRev() (string, error) {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return escapeRevspecForURL(*r.inputRev)
+		return escapeRevspecForURL(*r.inputRev), nil
 	}
 	oid, err := r.OID()
 	return string(oid), err
@@ -327,9 +327,9 @@ func (r *gitCommitResolver) repoRevURL() (string, error) {
 		rev = string(oid)
 	}
 	if rev != "" {
-		return "", url + "@" + escapeRevspecForURL(rev)
+		return url + "@" + escapeRevspecForURL(rev), nil
 	}
-	return "", url
+	return url, nil
 }
 
 func (r *gitCommitResolver) canonicalRepoRevURL() (string, error) {

@@ -2,6 +2,7 @@ package vfsutil
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -13,6 +14,7 @@ import (
 func testVFS(t *testing.T, fs ctxvfs.FileSystem, want map[string]string) {
 	tree, err := ctxvfs.ReadAllFiles(context.Background(), fs, "", nil)
 	if err != nil {
+		fmt.Println("------>", fs)
 		t.Fatal(err)
 	}
 	if len(tree) != len(want) {
