@@ -108,13 +108,13 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	case "GITHUB":
 		_, err := s.Syncer.Sync(r.Context())
 		if err != nil {
-			log15.Error("server.external-service-sync", "error", err)
+			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	case "OTHER":
 		res := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService)
 		if len(res.Errors) > 0 {
-			log15.Error("server.external-service-sync", "error", res.Errors)
+			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", res.Errors)
 			http.Error(w, res.Errors.Error(), http.StatusInternalServerError)
 		}
 	case "":

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestServer_handleExternalServiceSync(t *testing.T) {
@@ -156,7 +157,10 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestRepoLookup(t *testing.T) {
-	s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
+	s := Server{
+		Store:            emptyStore{},
+		OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil),
+	}
 
 	t.Run("no args", func(t *testing.T) {
 		if _, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
@@ -268,4 +272,24 @@ func TestRepoLookup(t *testing.T) {
 			}
 		})
 	})
+}
+
+type emptyStore struct{}
+
+func (emptyStore) GetRepoByName(ctx context.Context, name string) (*repos.Repo, error) {
+	return nil, repos.ErrNoResults
+}
+
+func (emptyStore) ListRepos(ctx context.Context, names ...string) ([]*repos.Repo, error) {
+	return nil, nil
+}
+
+func (emptyStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) error {
+	return errors.New("not implemented")
+}
+
+func init() {
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+	}
 }
