@@ -129,18 +129,13 @@ type Diff struct {
 
 // Sort sorts all Diff elements by Repo.IDs.
 func (d *Diff) Sort() {
-	for _, ds := range [][]*Repo{
+	for _, ds := range []Repos{
 		d.Added,
 		d.Deleted,
 		d.Modified,
 		d.Unmodified,
 	} {
-		sort.Slice(ds, func(i, j int) bool {
-			if ds[i].Name == ds[j].Name {
-				return ds[i].ExternalRepo.Compare(ds[j].ExternalRepo) == -1
-			}
-			return ds[i].Name < ds[j].Name
-		})
+		sort.Sort(ds)
 	}
 }
 

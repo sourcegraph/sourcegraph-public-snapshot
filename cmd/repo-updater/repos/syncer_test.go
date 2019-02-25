@@ -395,6 +395,8 @@ func TestDiff(t *testing.T) {
 			t.Parallel()
 
 			diff := NewDiff(tc.source, tc.store)
+			diff.Sort()
+			tc.diff.Sort()
 			if cmp := pretty.Compare(diff, tc.diff); cmp != "" {
 				t.Logf("have: %s\nwant: %s\n", pp.Sprint(diff), pp.Sprint(tc.diff))
 				t.Fatalf("unexpected diff:\n%s", cmp)

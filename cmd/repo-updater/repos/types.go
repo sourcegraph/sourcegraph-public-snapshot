@@ -92,3 +92,18 @@ func (rs Repos) Names() []string {
 	}
 	return names
 }
+
+func (rs Repos) Len() int {
+	return len(rs)
+}
+
+func (rs Repos) Swap(i, j int) {
+	rs[i], rs[j] = rs[j], rs[i]
+}
+
+func (rs Repos) Less(i, j int) bool {
+	if rs[i].Name == rs[j].Name {
+		return rs[i].ExternalRepo.Compare(rs[j].ExternalRepo) == -1
+	}
+	return rs[i].Name < rs[j].Name
+}
