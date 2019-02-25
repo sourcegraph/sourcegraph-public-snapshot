@@ -61,11 +61,11 @@ class ExtWindow implements sourcegraph.Window {
     public async showProgress(options: sourcegraph.ProgressOptions): Promise<sourcegraph.ProgressReporter> {
         const reporterProxy = await this.windowsProxy.$showProgress(options)
         return {
-            next: progress => {
+            next: (progress: sourcegraph.Progress) => {
                 // tslint:disable-next-line: no-floating-promises
                 reporterProxy.next(progress)
             },
-            error: err => {
+            error: (err: any) => {
                 const error = asError(err)
                 // tslint:disable-next-line: no-floating-promises
                 reporterProxy.error({

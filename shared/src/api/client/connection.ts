@@ -1,7 +1,7 @@
 import * as comlink from '@sourcegraph/comlink'
 import { isEqual } from 'lodash'
 import { from, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { concatMap, distinctUntilChanged, map } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
@@ -11,7 +11,6 @@ import { ClientCodeEditor } from './api/codeEditor'
 import { ClientCommands } from './api/commands'
 import { ClientConfiguration } from './api/configuration'
 import { ClientContext } from './api/context'
-import { ClientDocuments } from './api/documents'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientRoots } from './api/roots'
@@ -26,6 +25,7 @@ import {
     ShowMessageParams,
     ShowMessageRequestParams,
 } from './services/notifications'
+import { TextDocumentItem } from './types/textDocument'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -72,12 +72,42 @@ export async function createExtensionHostClientConnection(
         services.context.data.next(applyContextUpdate(services.context.data.value, updates))
     )
     subscription.add(clientContext)
+
+    // Sync visible views and text documents to the extension host
+    let visibleTextDocuments: TextDocumentItem[] = []
+    subscription.add(
+        from(services.model.model)
+            .pipe(
+                map(({ visibleViewComponents }) => visibleViewComponents),
+                distinctUntilChanged(),
+                concatMap(async viewComponents => {
+                    // Important: Make sure documents were synced before syncing windows, as windows reference them
+                    const nextVisibleTextDocuments = viewComponents ? viewComponents.map(v => v.item) : []
+                    if (!isEqual(visibleTextDocuments, nextVisibleTextDocuments)) {
+                        visibleTextDocuments = nextVisibleTextDocuments
+                        await proxy.documents.$acceptDocumentData(nextVisibleTextDocuments)
+                    }
+                    await proxy.windows.$acceptWindowData(
+                        viewComponents
+                            ? [
+                                  {
+                                      visibleViewComponents: viewComponents.map(viewComponent => ({
+                                          item: {
+                                              uri: viewComponent.item.uri,
+                                          },
+                                          selections: viewComponent.selections,
+                                          isActive: viewComponent.isActive,
+                                      })),
+                                  },
+                              ]
+                            : []
+                    )
+                })
+            )
+            .subscribe()
+    )
+
     const clientWindows = new ClientWindows(
-        proxy.windows,
-        from(services.model.model).pipe(
-            map(({ visibleViewComponents }) => visibleViewComponents),
-            distinctUntilChanged()
-        ),
         (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
         (params: ShowMessageRequestParams) =>
             new Promise<MessageActionItem | null>(resolve => {
@@ -93,24 +123,12 @@ export async function createExtensionHostClientConnection(
             return reporter
         }
     )
-    subscription.add(clientWindows)
 
     const clientViews = new ClientViews(services.views, services.textDocumentLocations)
 
     const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
     subscription.add(clientCodeEditor)
-    subscription.add(
-        new ClientDocuments(
-            proxy.documents,
-            from(services.model.model).pipe(
-                map(
-                    ({ visibleViewComponents }) =>
-                        visibleViewComponents && visibleViewComponents.map(({ item }) => item)
-                ),
-                distinctUntilChanged((a, b) => isEqual(a, b))
-            )
-        )
-    )
+
     const clientLanguageFeatures = new ClientLanguageFeatures(
         services.textDocumentHover,
         services.textDocumentDefinition,

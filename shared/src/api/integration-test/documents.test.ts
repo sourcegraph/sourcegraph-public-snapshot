@@ -1,3 +1,5 @@
+import { from } from 'rxjs'
+import { take } from 'rxjs/operators'
 import { TextDocument } from 'sourcegraph'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
@@ -23,7 +25,9 @@ describe('Documents (integration)', () => {
                     },
                 ],
             })
-            await extensionAPI.internal.sync()
+            await from(extensionAPI.workspace.openedTextDocuments)
+                .pipe(take(1))
+                .toPromise()
             expect(extensionAPI.workspace.textDocuments).toEqual([
                 { uri: 'file:///f', languageId: 'l', text: 't' },
                 { uri: 'file:///f2', languageId: 'l2', text: 't2' },
@@ -49,7 +53,9 @@ describe('Documents (integration)', () => {
                     },
                 ],
             })
-            await extensionAPI.internal.sync()
+            await from(extensionAPI.workspace.openedTextDocuments)
+                .pipe(take(1))
+                .toPromise()
 
             expect(values).toEqual([{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
         })
