@@ -92,3 +92,10 @@ func (rs Repos) Names() []string {
 	}
 	return names
 }
+
+// Apply applies the given functional options to the Repo.
+func (rs Repos) Apply(opts ...func(*Repo)) {
+	for _, r := range rs {
+		r.Apply(opts...)
+	}
+}
