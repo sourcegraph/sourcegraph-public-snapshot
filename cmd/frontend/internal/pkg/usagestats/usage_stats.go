@@ -70,7 +70,7 @@ func GetByUserID(userID int32) (*types.UserUsageStatistics, error) {
 	a := &types.UserUsageStatistics{
 		UserID: userID,
 	}
-	_, err = redis.Scan(values, &a.PageViews, &a.SearchQueries, &lastActiveStr, &a.CodeIntelligenceActions, &a.FindRefsActions, &lastActiveCodeHostStr)
+	_, err = redis.Scan(values, &a.PageViews, &a.SearchQueries, &lastActiveStr, &a.CodeIntelligenceActions, &a.FindReferencesActions, &lastActiveCodeHostStr)
 	if err != nil && err != redis.ErrNil {
 		return nil, err
 	}

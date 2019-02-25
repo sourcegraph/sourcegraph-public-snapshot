@@ -102,7 +102,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
         if (this.props.activation) {
             this.subscriptions.add(
                 this.props.activation.completed.subscribe(completed => {
-                    if (completed) {
+                    if (completed !== null && completed !== undefined) {
                         this.setState({ activationCompleted: completed })
                     }
                 })
@@ -139,8 +139,8 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     title={`${setupPercentage}% of setup completed`}
                                     defaultExpanded={setupPercentage < 100}
                                 >
-                                    <div className="activation-container">
-                                        <div className="activation-container__header">
+                                    <div>
+                                        <div>
                                             {setupPercentage < 100 ? (
                                                 <div>
                                                     <h1>Almost there...</h1>

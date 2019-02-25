@@ -5,7 +5,7 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
-import { ActivationStatus, ActivationProps } from '../../shared/src/components/activation/Activation'
+import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     createController as createExtensionsController,
@@ -37,7 +37,7 @@ import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { newActivationStatus } from './tracking/activation'
+import { createActivationStatus } from './tracking/activation'
 import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
@@ -125,7 +125,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         authenticatedUser,
                         activation:
                             !window.context.sourcegraphDotComMode && authenticatedUser
-                                ? newActivationStatus(authenticatedUser.siteAdmin)
+                                ? createActivationStatus(authenticatedUser.siteAdmin)
                                 : undefined,
                     }),
                 () => this.setState({ authenticatedUser: null, activation: undefined })

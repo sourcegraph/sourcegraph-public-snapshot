@@ -1,0 +1,38 @@
+.activation-checklist {
+    margin-top: 0.5rem;
+}
+
+.activation-checklist__item {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+
+    border-bottom: 1px solid $dropdown-border-color;
+
+    @include hover-focus {
+        color: $dropdown-link-hover-color;
+        text-decoration: none;
+        @include gradient-bg($dropdown-link-hover-bg);
+    }
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.activation-item {
+    cursor: pointer;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+
+    &__checkbox {
+        &--done {
+            color: $oc-green-6;
+        }
+        &--todo {
+            color: $dropdown-border-color;
+        }
+    }
+}

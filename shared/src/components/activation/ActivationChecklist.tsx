@@ -43,10 +43,10 @@ export interface ActivationChecklistProps {
 export class ActivationChecklist extends React.PureComponent<ActivationChecklistProps, {}> {
     public render(): JSX.Element {
         return (
-            <div className="activation-list">
+            <div className="activation-checklist">
                 {this.props.completed ? (
                     this.props.steps.map(s => (
-                        <div key={s.id} className="activation-list__item">
+                        <div key={s.id} className="activation-checklist__item">
                             <ActivationChecklistItem
                                 {...s}
                                 history={this.props.history}

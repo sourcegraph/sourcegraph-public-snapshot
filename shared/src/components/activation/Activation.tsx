@@ -2,10 +2,18 @@ import H from 'history'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { first, pairwise } from 'rxjs/operators'
 
+/**
+ * Each component that might update or display the activation status needs
+ * to hold a reference to the ActivationStatus instance and its props
+ * should extend this interface.
+ */
 export interface ActivationProps {
     activation?: ActivationStatus
 }
 
+/**
+ * One step in the activation status.
+ */
 export interface ActivationStep {
     id: string
     title: string
@@ -14,7 +22,10 @@ export interface ActivationStep {
 }
 
 /**
- * Tracks the activation status of the current user.
+ * Tracks the activation status of the current user. The activation status is
+ * a checklist of actions the user must take before qualifying as "activated".
+ * There should only be one instance of ActivationStatus per instance of the
+ * application.
  */
 export class ActivationStatus {
     public readonly steps: ActivationStep[]

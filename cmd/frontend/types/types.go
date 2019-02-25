@@ -91,7 +91,7 @@ type UserUsageStatistics struct {
 	PageViews                   int32
 	SearchQueries               int32
 	CodeIntelligenceActions     int32
-	FindRefsActions             int32
+	FindReferencesActions       int32
 	LastActiveTime              *time.Time
 	LastCodeHostIntegrationTime *time.Time
 }

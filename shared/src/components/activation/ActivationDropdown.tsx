@@ -72,23 +72,27 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
             <ButtonDropdown
                 isOpen={this.state.isOpen}
                 toggle={this.toggleIsOpen}
-                className={`${this.state.show ? '' : 'activation-status-dropdown-button--hidden'} nav-link p-0`}
+                className={`${this.state.show ? '' : 'activation-dropdown-button--hidden'} nav-link p-0`}
             >
                 <DropdownToggle
                     caret={false}
                     className={`${
                         this.state.animate ? 'animate' : ''
-                    } first-use-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle`}
+                    } activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle`}
                     nav={true}
                 >
                     Setup
-                    <span className="activation-status-dropdown-button__progress-bar-container">
-                        <CircularProgressbar strokeWidth={12} percentage={percentageDone(this.state.completed)} />
+                    <span className="activation-dropdown-button__progress-bar-container">
+                        <CircularProgressbar
+                            className="activation-dropdown-button__circular-progress-bar"
+                            strokeWidth={12}
+                            percentage={percentageDone(this.state.completed)}
+                        />
                     </span>
                 </DropdownToggle>
                 <DropdownMenu right={true}>
                     <DropdownItem header={true} className="py-1">
-                        <div className="activation-status-dropdown-header">
+                        <div className="activation-dropdown-header">
                             <h2>
                                 <RocketIcon className="icon-inline" /> Hi there!
                             </h2>

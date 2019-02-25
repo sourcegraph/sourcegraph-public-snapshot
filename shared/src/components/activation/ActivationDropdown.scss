@@ -1,4 +1,4 @@
-.activation-status-dropdown-button {
+.activation-dropdown-button {
     &--hidden {
         display: none;
     }
@@ -6,8 +6,9 @@
     &__progress-bar-container {
         display: inline-block;
         width: 1rem;
-        margin-left: 0.4rem;
-
+        margin-left: 0.375rem;
+    }
+    &__circular-progress-bar {
         .CircularProgressbar-trail {
             stroke: $dropdown-border-color;
         }
@@ -17,56 +18,17 @@
     }
 }
 
-.activation-status-dropdown-header {
+.activation-dropdown-header {
     padding: 0.25rem 0.5rem;
 }
 
-.activation-list {
-    margin-top: 0.5rem;
-}
-
-.activation-list__item {
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-
-    border-bottom: 1px solid $dropdown-border-color;
-
-    @include hover-focus {
-        color: $dropdown-link-hover-color;
-        text-decoration: none;
-        @include gradient-bg($dropdown-link-hover-bg);
-    }
-    &:last-child {
-        border-bottom: none;
-    }
-}
-
-.activation-item {
-    cursor: pointer;
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-
-    &__checkbox {
-        &--done {
-            color: $oc-green-6;
-        }
-        &--todo {
-            color: $dropdown-border-color;
-        }
-    }
-}
-
-.first-use-button {
+.activation-dropdown-button__animated-button {
     display: block;
     position: relative;
 }
 
-.first-use-button::before,
-.first-use-button::after {
+.activation-dropdown-button__animated-button::before,
+.activation-dropdown-button__animated-button::after {
     position: absolute;
     content: '';
     display: block;
@@ -77,7 +39,7 @@
     transition: all ease-in-out 0.5s;
     background-repeat: no-repeat;
 }
-.first-use-button::before {
+.activation-dropdown-button__animated-button::before {
     display: none;
     top: -75%;
     background-image: radial-gradient(circle, #00b4f2 20%, transparent 20%),
@@ -88,7 +50,7 @@
         radial-gradient(circle, #00b4f2 20%, transparent 20%), radial-gradient(circle, #f96216 20%, transparent 20%);
     background-size: 10% 20%, 20% 40%, 15% 40%, 20% 50%, 18% 40%, 10% 10%, 15% 30%, 10% 50%, 18% 18%;
 }
-.first-use-button::after {
+.activation-dropdown-button__animated-button::after {
     display: none;
     bottom: -75%;
     background-image: radial-gradient(circle, #00b4f2 20%, transparent 20%),
@@ -98,16 +60,16 @@
         radial-gradient(circle, #00b4f2 20%, transparent 20%), radial-gradient(circle, #b200f8 20%, transparent 20%);
     background-size: 15% 30%, 20% 50%, 18% 40%, 20% 50%, 15% 30%, 10% 20%, 20% 40%;
 }
-.first-use-button.animate::before {
+.activation-dropdown-button__animated-button.animate::before {
     display: block;
-    animation: topBubbles ease-in-out 0.75s forwards;
+    animation: activation-dropdown-button__animated-button__top-bubbles ease-in-out 0.75s forwards;
 }
-.first-use-button.animate::after {
+.activation-dropdown-button__animated-button.animate::after {
     display: block;
-    animation: bottomBubbles ease-in-out 0.75s forwards;
+    animation: activation-dropdown-button__animated-button__bottom-bubbles ease-in-out 0.75s forwards;
 }
 
-@keyframes topBubbles {
+@keyframes activation-dropdown-button__animated-button__top-bubbles {
     0% {
         background-position: 5% 120%, 10% 120%, 10% 120%, 15% 120%, 25% 120%, 25% 100%, 40% 100%, 55% 100%, 70% 100%;
     }
@@ -119,7 +81,7 @@
         background-size: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%;
     }
 }
-@keyframes bottomBubbles {
+@keyframes activation-dropdown-button__animated-button__bottom-bubbles {
     0% {
         background-position: 10% -40%, 30% 10%, 55% -10%, 70% -10%, 85% -10%, 70% -10%, 70% 0%;
     }

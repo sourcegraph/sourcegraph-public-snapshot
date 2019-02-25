@@ -3,7 +3,7 @@ import { pick } from 'lodash'
 import { Observable } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 import { ActivationStatus, ActivationStep } from '../../../shared/src/components/activation/Activation'
-import { dataAndErrors, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
 import { logUserEvent } from '../user/account/backend'
@@ -24,23 +24,19 @@ const fetchReferencesLink: () => Observable<string | null> = () =>
             }
         }
     `).pipe(
-        map(dataAndErrors),
-        map(dataAndErrors => {
-            if (!dataAndErrors.data) {
-                return null
-            }
-            const data = dataAndErrors.data
+        map(dataOrThrowErrors),
+        map(data => {
             if (!data.repositories.nodes) {
                 return null
             }
-            const rURLs = data.repositories.nodes
+            const repositoryURLs = data.repositories.nodes
                 .filter(r => r.gitRefs && r.gitRefs.totalCount > 0)
-                .sort(r => (r.gitRefs ? -r.gitRefs.totalCount : 0))
+                .sort((r1, r2) => r2.gitRefs!.totalCount! - r1.gitRefs!.totalCount)
                 .map(r => r.url)
-            if (rURLs.length === 0) {
+            if (repositoryURLs.length === 0) {
                 return null
             }
-            return rURLs[0]
+            return repositoryURLs[0]
         })
     )
 
@@ -64,7 +60,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean) => () =>
                       currentUser {
                           usageStatistics {
                               searchQueries
-                              findRefsActions
+                              findReferencesActions
                           }
                       }
                   }
@@ -74,7 +70,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean) => () =>
                       currentUser {
                           usageStatistics {
                               searchQueries
-                              findRefsActions
+                              findReferencesActions
                           }
                       }
                   }
@@ -85,7 +81,8 @@ const fetchActivationStatus = (isSiteAdmin: boolean) => () =>
             const authProviders = window.context.authProviders
             const completed: { [key: string]: boolean } = {
                 didSearch: !!data.currentUser && data.currentUser.usageStatistics.searchQueries > 0,
-                'action:findReferences': !!data.currentUser && data.currentUser.usageStatistics.findRefsActions > 0,
+                'action:findReferences':
+                    !!data.currentUser && data.currentUser.usageStatistics.findReferencesActions > 0,
             }
             if (isSiteAdmin) {
                 completed.connectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
@@ -105,7 +102,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean) => () =>
  *
  * @param isSiteAdmin determines if site-admin-only activation steps are included.
  */
-export const newActivationStatus = (isSiteAdmin: boolean) => {
+export const createActivationStatus = (isSiteAdmin: boolean) => {
     const s = new ActivationStatus(
         [
             {
@@ -125,7 +122,7 @@ export const newActivationStatus = (isSiteAdmin: boolean) => {
             {
                 id: 'didSearch',
                 title: 'Search your code',
-                detail: 'Issue a search query over your code.',
+                detail: 'Perform a search query on your code.',
                 action: (h: H.History) => h.push('/search'),
             },
             {
@@ -136,7 +133,13 @@ export const newActivationStatus = (isSiteAdmin: boolean) => {
                 action: (h: H.History) =>
                     fetchReferencesLink()
                         .pipe(first())
-                        .subscribe(r => r && h.push(r)),
+                        .subscribe(r => {
+                            if (r) {
+                                h.push(r)
+                            } else {
+                                alert('Must add repositories before finding references')
+                            }
+                        }),
             },
             {
                 id: 'enabledSignOn',
@@ -151,7 +154,9 @@ export const newActivationStatus = (isSiteAdmin: boolean) => {
         fetchActivationStatus(true)
     )
 
-    // Subscribe to activation events that require server updates
+    // Subscribe to activation events that require server updates.
+    // Only certain events require server updates here, because others
+    // trigger server updates elsewhere.
     s.updateCompleted.subscribe(u => {
         if (u['action:findReferences']) {
             logUserEvent(GQL.UserEvent.CODEINTELREFS)
