@@ -12,36 +12,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
-// This error is passed to txstore.Done in order to always
-// roll-back the transaction a test case executes in.
-// This is meant to ensure each test case has a clean slate.
-var errRollback = errors.New("tx: rollback")
-
-func TestIntegration_DBStore(t *testing.T) {
-	t.Parallel()
-
-	db, cleanup := testDatabase(t)
-	defer cleanup()
-
-	for _, tc := range []struct {
-		name string
-		test func(*testing.T)
-	}{
-		{"GetRepoByName", testDBStoreGetRepoByName(db)},
-		{"UpsertRepos", testDBStoreUpsertRepos(db)},
-		{"ListRepos", testDBStoreListRepos(db)},
-	} {
-		t.Run(tc.name, tc.test)
-	}
-}
-
 func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
+		t.Helper()
+
 		kinds := []string{
 			"GITHUB",
 		}
@@ -55,7 +33,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 			}
 		})
 
-		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx TxStore) {
+		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx Store) {
 			want := make([]*Repo, 0, 512) // Test more than one page load
 			for i := 0; i < cap(want); i++ {
 				id := strconv.Itoa(i)
@@ -155,6 +133,8 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
+		t.Helper()
+
 		for _, tc := range []struct {
 			name   string
 			kinds  []string
@@ -179,7 +159,7 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 			ctx := context.Background()
 			store := NewDBStore(ctx, db, tc.kinds, sql.TxOptions{Isolation: sql.LevelDefault})
 
-			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx TxStore) {
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
 					t.Errorf("failed to setup store: %v", err)
 					return
@@ -220,6 +200,8 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
+		t.Helper()
+
 		for _, tc := range []struct {
 			test   string
 			name   string
@@ -245,7 +227,7 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 			ctx := context.Background()
 			store := NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
 
-			t.Run(tc.test, transact(ctx, store, func(t testing.TB, tx TxStore) {
+			t.Run(tc.test, transact(ctx, store, func(t testing.TB, tx Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
 					t.Errorf("failed to setup store: %v", err)
 					return
@@ -268,15 +250,25 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func transact(ctx context.Context, store *DBStore, test func(testing.TB, TxStore)) func(*testing.T) {
-	// NOTE: We use t.Errorf instead of t.Fatalf in order to run defers.
+func transact(ctx context.Context, s Store, test func(testing.TB, Store)) func(*testing.T) {
 	return func(t *testing.T) {
-		txstore, err := store.Transact(ctx)
-		if err != nil {
-			t.Errorf("failed to start transaction: %v", err)
-			return
+		t.Helper()
+
+		tr, ok := s.(interface {
+			Transact(context.Context) (TxStore, error)
+		})
+
+		if ok {
+			txstore, err := tr.Transact(ctx)
+			if err != nil {
+				// NOTE: We use t.Errorf instead of t.Fatalf in order to run defers.
+				t.Errorf("failed to start transaction: %v", err)
+				return
+			}
+			defer txstore.Done(&errRollback)
+			s = txstore
 		}
-		defer txstore.Done(&errRollback)
-		test(t, txstore)
+
+		test(t, s)
 	}
 }
