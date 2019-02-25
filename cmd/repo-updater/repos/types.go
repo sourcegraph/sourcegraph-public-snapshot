@@ -108,6 +108,12 @@ func (rs Repos) Less(i, j int) bool {
 	return rs[i].Name < rs[j].Name
 }
 
+func (rs *Repos) Concat(others ...Repos) {
+	for _, o := range others {
+		*rs = append(*rs, o...)
+	}
+}
+
 // Apply applies the given functional options to the Repo.
 func (rs Repos) Apply(opts ...func(*Repo)) {
 	for _, r := range rs {

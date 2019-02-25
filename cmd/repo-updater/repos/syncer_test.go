@@ -217,20 +217,10 @@ func testSyncerSync(s Store) func(*testing.T) {
 				syncer := NewSyncer(0, st, tc.sourcer, nil, now)
 				diff, err := syncer.Sync(ctx)
 
-				var want []*Repo
-				for _, ds := range []Repos{
-					diff.Added,
-					diff.Modified,
-					diff.Unmodified,
-				} {
-					for _, d := range ds {
-						d.ID = 0 // Exclude auto-generated ID from comparisons
-						want = append(want, d)
-					}
-				}
-				for _, d := range diff.Deleted {
-					d.ID = 0 // Exclude auto-generated ID from comparisons
-				}
+				var want Repos
+				want.Concat(diff.Added, diff.Modified, diff.Unmodified)
+				want.Apply(id(0)) // Exclude auto-generated ID from comparisons
+				diff.Deleted.Apply(id(0))
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -249,7 +239,7 @@ func testSyncerSync(s Store) func(*testing.T) {
 					for _, d := range have {
 						d.ID = 0 // Exclude auto-generated ID from comparisons
 					}
-					if diff := cmp.Diff(have, want); diff != "" {
+					if diff := cmp.Diff(Repos(have), want); diff != "" {
 						// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
 						t.Fatalf("unexpected stored repos:\n%s", diff)
 					}
@@ -537,6 +527,12 @@ func (s *fakeStore) UpsertRepos(_ context.Context, upserts ...*Repo) error {
 //
 // Repo functional options
 //
+
+func id(n uint32) func(*Repo) {
+	return func(r *Repo) {
+		r.ID = n
+	}
+}
 
 func createdAt(ts time.Time) func(*Repo) {
 	return func(r *Repo) {

@@ -99,9 +99,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
-			for _, repo := range want {
-				repo.DeletedAt = time.Now().UTC()
-			}
+			Repos(want).Apply(deletedAt(time.Now().UTC()))
 
 			if err = tx.UpsertRepos(ctx, want...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
@@ -170,9 +168,7 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				for _, r := range repos {
-					r.ID = 0 // Exclude auto-generated IDs from equality tests
-				}
+				Repos(repos).Apply(id(0)) // Exclude auto-generated IDs from equality tests
 
 				if have, want := repos, tc.repos; !reflect.DeepEqual(have, want) {
 					t.Errorf("repos: %s", cmp.Diff(have, want))

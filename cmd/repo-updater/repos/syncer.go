@@ -121,10 +121,10 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 
 // A Diff of two sets of Diffables.
 type Diff struct {
-	Added      []*Repo
-	Deleted    []*Repo
-	Modified   []*Repo
-	Unmodified []*Repo
+	Added      Repos
+	Deleted    Repos
+	Modified   Repos
+	Unmodified Repos
 }
 
 // Sort sorts all Diff elements by Repo.IDs.
@@ -137,34 +137,6 @@ func (d *Diff) Sort() {
 	} {
 		sort.Sort(ds)
 	}
-}
-
-// Repos returns all the repos
-func (d Diff) Repos(groups ...string) (rs Repos) {
-	for i := range groups {
-		var group Repos
-		switch groups[i] {
-		case "added":
-			group = d.Added
-		case "deleted":
-			group = d.Deleted
-		case "modified":
-			group = d.Modified
-		case "unmodified":
-			group = d.Unmodified
-		}
-		rs = append(rs, group...)
-	}
-
-	if len(groups) == 0 {
-		rs = make(Repos, len(d.Added)+len(d.Deleted)+len(d.Modified)+len(d.Unmodified))
-		rs = append(rs, d.Added...)
-		rs = append(rs, d.Deleted...)
-		rs = append(rs, d.Modified...)
-		rs = append(rs, d.Unmodified...)
-	}
-
-	return rs
 }
 
 // NewDiff returns a diff from the given sourced and stored repos.
