@@ -1,5 +1,7 @@
 import * as clientType from '@sourcegraph/extension-api-types'
-import { take } from 'rxjs/operators'
+import { from } from 'rxjs'
+import { first, take } from 'rxjs/operators'
+import { isDefined } from '../../util/types'
 import { Range } from '../extension/types/range'
 import { integrationTestContext } from './testHelpers'
 
@@ -10,7 +12,10 @@ describe('CodeEditor (integration)', () => {
             const dt = extensionAPI.app.createDecorationType()
 
             // Set some decorations and check they are present on the client.
-            const codeEditor = extensionAPI.app.windows[0].visibleViewComponents[0]
+            const activeWindow = await from(extensionAPI.app.activeWindowChanges)
+                .pipe(first(isDefined))
+                .toPromise()
+            const codeEditor = activeWindow.visibleViewComponents[0]
             codeEditor.setDecorations(dt, [
                 {
                     range: new Range(1, 2, 3, 4),
@@ -45,7 +50,10 @@ describe('CodeEditor (integration)', () => {
             const { services, extensionAPI } = await integrationTestContext()
             const [dt1, dt2] = [extensionAPI.app.createDecorationType(), extensionAPI.app.createDecorationType()]
 
-            const codeEditor = extensionAPI.app.windows[0].visibleViewComponents[0]
+            const activeWindow = await from(extensionAPI.app.activeWindowChanges)
+                .pipe(first(isDefined))
+                .toPromise()
+            const codeEditor = activeWindow.visibleViewComponents[0]
             codeEditor.setDecorations(dt1, [
                 {
                     range: new Range(1, 2, 3, 4),
@@ -136,7 +144,10 @@ describe('CodeEditor (integration)', () => {
             const dt = extensionAPI.app.createDecorationType()
 
             // Set some decorations and check they are present on the client.
-            const codeEditor = extensionAPI.app.windows[0].visibleViewComponents[0]
+            const activeWindow = await from(extensionAPI.app.activeWindowChanges)
+                .pipe(first(isDefined))
+                .toPromise()
+            const codeEditor = activeWindow.visibleViewComponents[0]
             codeEditor.setDecorations(dt, [
                 {
                     range: new Range(1, 2, 3, 4),
