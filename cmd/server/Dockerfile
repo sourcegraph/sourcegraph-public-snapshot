@@ -39,6 +39,9 @@ RUN apk update && apk add --no-cache \
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:393a538 /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
+# hadolint ignore=DL3022
+COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
+ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 ENV GO111MODULES=on LANG=en_US.utf8
