@@ -139,6 +139,34 @@ func (d *Diff) Sort() {
 	}
 }
 
+// Repos returns all the repos
+func (d Diff) Repos(groups ...string) (rs Repos) {
+	for i := range groups {
+		var group Repos
+		switch groups[i] {
+		case "added":
+			group = d.Added
+		case "deleted":
+			group = d.Deleted
+		case "modified":
+			group = d.Modified
+		case "unmodified":
+			group = d.Unmodified
+		}
+		rs = append(rs, group...)
+	}
+
+	if len(groups) == 0 {
+		rs = make(Repos, len(d.Added)+len(d.Deleted)+len(d.Modified)+len(d.Unmodified))
+		rs = append(rs, d.Added...)
+		rs = append(rs, d.Deleted...)
+		rs = append(rs, d.Modified...)
+		rs = append(rs, d.Unmodified...)
+	}
+
+	return rs
+}
+
 // NewDiff returns a diff from the given sourced and stored repos.
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
