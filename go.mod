@@ -107,7 +107,6 @@ require (
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 	github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10
-	github.com/sourcegraph/httpcache v0.0.0-20160524185540-16db777d8ebe
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
