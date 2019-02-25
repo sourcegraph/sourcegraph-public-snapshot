@@ -114,6 +114,14 @@ func (rs *Repos) Concat(others ...Repos) {
 	}
 }
 
+func (rs Repos) Clone() Repos {
+	o := make(Repos, 0, len(rs))
+	for _, r := range rs {
+		o = append(o, r.Clone())
+	}
+	return o
+}
+
 // Apply applies the given functional options to the Repo.
 func (rs Repos) Apply(opts ...func(*Repo)) {
 	for _, r := range rs {

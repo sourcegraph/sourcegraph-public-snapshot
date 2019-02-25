@@ -86,6 +86,7 @@ func includesGitHubDotComSource(srcs []Source) bool {
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
+	// TODO(keegancsmith) document contract of ListRepos + contract tests
 	ListRepos(context.Context) ([]*Repo, error)
 }
 

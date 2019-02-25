@@ -7,9 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
-	"github.com/k0kubun/pp"
-	"github.com/kylelemons/godebug/pretty"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -259,12 +258,14 @@ func TestDiff(t *testing.T) {
 	}
 	now := time.Now()
 
-	for _, tc := range []struct {
+	type testCase struct {
 		name   string
 		store  Repos
 		source Repos
 		diff   Diff
-	}{
+	}
+
+	cases := []testCase{
 		{
 			name: "empty",
 			diff: Diff{},
@@ -365,6 +366,9 @@ func TestDiff(t *testing.T) {
 				{ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
 			}},
 		},
+	}
+
+	permutedCases := []testCase{
 		{
 			// Repo renamed and repo created with old name
 			name: "renamed repo",
@@ -401,7 +405,24 @@ func TestDiff(t *testing.T) {
 				},
 			},
 		},
-	} {
+	}
+
+	for _, tc := range permutedCases {
+		store := permutation.New(tc.store)
+		for i := 0; store.Next(); i++ {
+			source := permutation.New(tc.source)
+			for j := 0; source.Next(); j++ {
+				cases = append(cases, testCase{
+					name:   fmt.Sprintf("%s/permutation_%d_%d", tc.name, i, j),
+					store:  tc.store.Clone(),
+					source: tc.source.Clone(),
+					diff:   tc.diff,
+				})
+			}
+		}
+	}
+
+	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -409,9 +430,9 @@ func TestDiff(t *testing.T) {
 			diff := NewDiff(tc.source, tc.store)
 			diff.Sort()
 			tc.diff.Sort()
-			if cmp := pretty.Compare(diff, tc.diff); cmp != "" {
-				t.Logf("have: %s\nwant: %s\n", pp.Sprint(diff), pp.Sprint(tc.diff))
-				t.Fatalf("unexpected diff:\n%s", cmp)
+			if cDiff := cmp.Diff(diff, tc.diff); cDiff != "" {
+				//t.Logf("have: %s\nwant: %s\n", pp.Sprint(diff), pp.Sprint(tc.diff))
+				t.Fatalf("unexpected diff:\n%s", cDiff)
 			}
 		})
 	}

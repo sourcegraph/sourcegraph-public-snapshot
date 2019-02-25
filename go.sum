@@ -140,6 +140,8 @@ github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49P
 github.com/gfleury/go-bitbucket-v1 v0.0.0-20181102191809-4910839b609e/go.mod h1:Se0U4YUmRkRAOh8kD7KXz+3VCUBmvTFcdWP2QYYRjjc=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
+github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909 h1:9NC8seTx6/zRmMTAdsHj/uOMi0EGHGQtjyLafBjk77Q=
+github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909/go.mod h1:lP+DW8LR6Rw3ru9Vo2/y/3iiLaLWmofYql/va+7zJOk=
 github.com/gliderlabs/ssh v0.1.1/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
 github.com/go-critic/checkers v0.0.0-20181204210945-97246d3b3c67 h1:AhL5n4pH/qzefJ64+0RbymXZSBsvgbBaVJQCcjFaJPw=
 github.com/go-critic/checkers v0.0.0-20181204210945-97246d3b3c67/go.mod h1:Cg5JCP9M6m93z6fecpRcVgD2lZf2RvPtb85ldjiShZc=
