@@ -50,6 +50,7 @@ const config: webpack.Configuration = {
         minimize: mode === 'production',
         minimizer: [
             new TerserPlugin({
+                sourceMap: true,
                 terserOptions: {
                     compress: {
                         // // Don't inline functions, which causes name collisions with uglify-es:
