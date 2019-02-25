@@ -20,7 +20,7 @@ Core Services:
 
 Code search and navigation:
 
-- Non-precise code intelligence improvements 
+- Non-precise code intelligence improvements
 - [Code navigation UX and robustness](https://github.com/sourcegraph/sourcegraph/issues/2070)
 - [Search UX](https://github.com/sourcegraph/sourcegraph/issues/2081)
 
@@ -49,7 +49,7 @@ Distribution:
 
 Code search:
 
-- TBD
+- [Search UX](https://github.com/sourcegraph/sourcegraph/issues/2081)
 
 Code navigation:
 
