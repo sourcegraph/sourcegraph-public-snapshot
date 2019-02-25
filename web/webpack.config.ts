@@ -12,7 +12,7 @@ import * as webpack from 'webpack'
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 console.log('Using mode', mode)
 
-const devtool = mode === 'production' ? undefined : 'cheap-module-eval-source-map'
+const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
 
 const rootDir = path.resolve(__dirname, '..')
 const nodeModulesPath = path.resolve(__dirname, '..', 'node_modules')
