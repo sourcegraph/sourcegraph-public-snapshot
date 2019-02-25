@@ -67,7 +67,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
                             // Extract the text content of the result.
-                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText
+                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText.trim()
                             if (codeContent) {
                                 return highlightCode({
                                     code: codeContent,
@@ -77,7 +77,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                 }).pipe(
                                     switchMap(highlightedStr => {
                                         const highlightedMarkdown = decode(markdownHTML).replace(
-                                            codeContent,
+                                            '<pre>' + codeContent + '\n</pre>',
                                             highlightedStr
                                         )
                                         return of(highlightedMarkdown)
