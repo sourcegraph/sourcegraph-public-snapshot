@@ -1,4 +1,4 @@
-package repos
+package repos_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
@@ -25,7 +26,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 		}
 
 		ctx := context.Background()
-		store := NewDBStore(ctx, db, kinds, sql.TxOptions{Isolation: sql.LevelSerializable})
+		store := repos.NewDBStore(ctx, db, kinds, sql.TxOptions{Isolation: sql.LevelSerializable})
 
 		t.Run("no repos", func(t *testing.T) {
 			if err := store.UpsertRepos(ctx); err != nil {
@@ -33,11 +34,11 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 			}
 		})
 
-		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx Store) {
-			want := make([]*Repo, 0, 512) // Test more than one page load
+		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			want := make(repos.Repos, 0, 512) // Test more than one page load
 			for i := 0; i < cap(want); i++ {
 				id := strconv.Itoa(i)
-				want = append(want, &Repo{
+				want = append(want, &repos.Repo{
 					Name:        "github.com/foo/bar" + id,
 					Description: "The description",
 					Language:    "barlang",
@@ -50,7 +51,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 						ServiceType: "github",
 						ServiceID:   "http://github.com",
 					},
-					Sources: map[string]*SourceInfo{
+					Sources: map[string]*repos.SourceInfo{
 						"extsvc:123": {
 							ID:       "extsvc:123",
 							CloneURL: "git@github.com:foo/bar.git",
@@ -99,13 +100,13 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
-			Repos(want).Apply(deletedAt(time.Now().UTC()))
+			want.Apply(repos.Opt.DeletedAt(time.Now().UTC()))
 
 			if err = tx.UpsertRepos(ctx, want...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx); err != nil {
 				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, []*Repo{}); diff != "" {
+			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
@@ -114,9 +115,9 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 }
 
 func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
-	foo := Repo{
+	foo := repos.Repo{
 		Name: "foo",
-		Sources: map[string]*SourceInfo{
+		Sources: map[string]*repos.SourceInfo{
 			"extsvc:123": {
 				ID:       "extsvc:123",
 				CloneURL: "git@github.com:bar/foo.git",
@@ -138,39 +139,39 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 			kinds  []string
 			ctx    context.Context
 			names  []string
-			stored []*Repo
-			repos  []*Repo
+			stored repos.Repos
+			repos  repos.Repos
 			err    error
 		}{
 			{
 				name:  "case-insensitive kinds",
 				kinds: []string{"GiThUb"},
-				stored: Repos{foo.With(func(r *Repo) {
+				stored: repos.Repos{foo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
 				})},
-				repos: Repos{foo.With(func(r *Repo) {
+				repos: repos.Repos{foo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
 				})},
 			},
 		} {
 			tc := tc
 			ctx := context.Background()
-			store := NewDBStore(ctx, db, tc.kinds, sql.TxOptions{Isolation: sql.LevelDefault})
+			store := repos.NewDBStore(ctx, db, tc.kinds, sql.TxOptions{Isolation: sql.LevelDefault})
 
-			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx Store) {
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
 					t.Errorf("failed to setup store: %v", err)
 					return
 				}
 
-				repos, err := tx.ListRepos(ctx, tc.names...)
+				rs, err := tx.ListRepos(ctx, tc.names...)
 				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				Repos(repos).Apply(id(0)) // Exclude auto-generated IDs from equality tests
-
-				if have, want := repos, tc.repos; !reflect.DeepEqual(have, want) {
+				have := repos.Repos(rs)
+				have.Apply(repos.Opt.ID(0)) // Exclude auto-generated IDs from equality tests
+				if want := tc.repos; !reflect.DeepEqual(have, want) {
 					t.Errorf("repos: %s", cmp.Diff(have, want))
 				}
 			}))
@@ -179,9 +180,9 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 }
 
 func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
-	foo := Repo{
+	foo := repos.Repo{
 		Name: "github.com/foo/bar",
-		Sources: map[string]*SourceInfo{
+		Sources: map[string]*repos.SourceInfo{
 			"extsvc:123": {
 				ID:       "extsvc:123",
 				CloneURL: "git@github.com:foo/bar.git",
@@ -201,18 +202,18 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 		for _, tc := range []struct {
 			test   string
 			name   string
-			stored []*Repo
-			repo   *Repo
+			stored repos.Repos
+			repo   *repos.Repo
 			err    error
 		}{
 			{
 				test: "no results error",
 				name: "intergalatical repo lost in spaaaaaace",
-				err:  ErrNoResults,
+				err:  repos.ErrNoResults,
 			},
 			{
 				test:   "success",
-				stored: Repos{foo.Clone()},
+				stored: repos.Repos{foo.Clone()},
 				name:   foo.Name,
 				repo:   foo.Clone(),
 			},
@@ -221,9 +222,9 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 
 			tc := tc
 			ctx := context.Background()
-			store := NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
+			store := repos.NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
 
-			t.Run(tc.test, transact(ctx, store, func(t testing.TB, tx Store) {
+			t.Run(tc.test, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
 					t.Errorf("failed to setup store: %v", err)
 					return
@@ -249,7 +250,7 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 func testDBStoreTransact(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		store := NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
+		store := repos.NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
 
 		txstore, err := store.Transact(ctx)
 		if err != nil {
@@ -257,7 +258,7 @@ func testDBStoreTransact(db *sql.DB) func(*testing.T) {
 		}
 		defer txstore.Done()
 
-		_, err = txstore.(Transactor).Transact(ctx)
+		_, err = txstore.(repos.Transactor).Transact(ctx)
 		have := fmt.Sprintf("%s", err)
 		want := "dbstore: already in a transaction"
 		if have != want {
@@ -266,11 +267,11 @@ func testDBStoreTransact(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func transact(ctx context.Context, s Store, test func(testing.TB, Store)) func(*testing.T) {
+func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.Store)) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
-		tr, ok := s.(Transactor)
+		tr, ok := s.(repos.Transactor)
 
 		if ok {
 			txstore, err := tr.Transact(ctx)
@@ -288,11 +289,11 @@ func transact(ctx context.Context, s Store, test func(testing.TB, Store)) func(*
 }
 
 type noopTxStore struct {
-	Store
+	repos.Store
 	count int
 }
 
-func (tx *noopTxStore) Transact(context.Context) (TxStore, error) {
+func (tx *noopTxStore) Transact(context.Context) (repos.TxStore, error) {
 	if tx.count != 0 {
 		return nil, fmt.Errorf("noopTxStore: %d current transactions", tx.count)
 	}

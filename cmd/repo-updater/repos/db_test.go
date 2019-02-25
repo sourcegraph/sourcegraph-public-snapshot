@@ -1,4 +1,4 @@
-package repos
+package repos_test
 
 import (
 	"database/sql"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 )
 
 var dsn = flag.String(
@@ -37,7 +38,7 @@ func testDatabase(t testing.TB) (*sql.DB, func()) {
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
 
-	if err = MigrateDB(testDB); err != nil {
+	if err = repos.MigrateDB(testDB); err != nil {
 		t.Fatalf("failed to apply migrations: %s", err)
 	}
 
@@ -57,7 +58,7 @@ func testDatabase(t testing.TB) (*sql.DB, func()) {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
-	db, err := NewDB(cfg.String())
+	db, err := repos.NewDB(cfg.String())
 	if err != nil {
 		t.Fatalf("failed to connect to database: %s", err)
 	}

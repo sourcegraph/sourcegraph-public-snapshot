@@ -1,4 +1,4 @@
-package repos
+package repos_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 )
 
 // This error is passed to txstore.Done in order to always
@@ -29,7 +30,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertRepos", testDBStoreUpsertRepos(db)},
 		{"DBStore/ListRepos", testDBStoreListRepos(db)},
 		{"Syncer/Sync", testSyncerSync(
-			NewDBStore(ctx, db, nil, sql.TxOptions{Isolation: sql.LevelSerializable}),
+			repos.NewDBStore(ctx, db, nil, sql.TxOptions{Isolation: sql.LevelSerializable}),
 		)},
 	} {
 		t.Run(tc.name, tc.test)

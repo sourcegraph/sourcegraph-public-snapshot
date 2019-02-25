@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 	"time"
 
@@ -165,7 +164,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 
 		if src == nil {
 			diff.Deleted = append(diff.Deleted, old)
-		} else if upsert(old, src) {
+		} else if old.Update(src) {
 			diff.Modified = append(diff.Modified, old)
 		} else {
 			diff.Unmodified = append(diff.Unmodified, old)
@@ -188,47 +187,7 @@ func merge(o, n *Repo) {
 	for id, src := range o.Sources {
 		n.Sources[id] = src
 	}
-	upsert(o, n)
-}
-
-func upsert(o, n *Repo) (modified bool) {
-	if !o.ExternalRepo.Equal(&n.ExternalRepo) && o.Name != n.Name {
-		panic(fmt.Errorf("merge called with distinct repos: older: %+v, newer: %+v", o, n))
-	}
-
-	if o.Name != n.Name {
-		o.Name, modified = n.Name, true
-	}
-
-	if o.Description != n.Description {
-		o.Description, modified = n.Description, true
-	}
-
-	if o.Language != n.Language {
-		o.Language, modified = n.Language, true
-	}
-
-	if !o.ExternalRepo.Equal(&n.ExternalRepo) {
-		o.ExternalRepo, modified = n.ExternalRepo, true
-	}
-
-	if o.Archived != n.Archived {
-		o.Archived, modified = n.Archived, true
-	}
-
-	if o.Fork != n.Fork {
-		o.Fork, modified = n.Fork, true
-	}
-
-	if !reflect.DeepEqual(o.Sources, n.Sources) {
-		o.Sources, modified = n.Sources, true
-	}
-
-	if !reflect.DeepEqual(o.Metadata, n.Metadata) {
-		o.Metadata, modified = n.Metadata, true
-	}
-
-	return modified
+	o.Update(n)
 }
 
 func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {

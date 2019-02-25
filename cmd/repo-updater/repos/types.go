@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -55,6 +56,49 @@ func (r *Repo) CloneURLs() []string {
 		}
 	}
 	return urls
+}
+
+// Update updates Repo r with the fields from the given newer Repo n,
+// returning true if modified.
+func (r *Repo) Update(n *Repo) (modified bool) {
+	if !r.ExternalRepo.Equal(&n.ExternalRepo) && r.Name != n.Name {
+		return false
+	}
+
+	if r.Name != n.Name {
+		r.Name, modified = n.Name, true
+	}
+
+	if r.Description != n.Description {
+		r.Description, modified = n.Description, true
+	}
+
+	if r.Language != n.Language {
+		r.Language, modified = n.Language, true
+	}
+
+	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
+		!r.ExternalRepo.Equal(&n.ExternalRepo) {
+		r.ExternalRepo, modified = n.ExternalRepo, true
+	}
+
+	if r.Archived != n.Archived {
+		r.Archived, modified = n.Archived, true
+	}
+
+	if r.Fork != n.Fork {
+		r.Fork, modified = n.Fork, true
+	}
+
+	if !reflect.DeepEqual(r.Sources, n.Sources) {
+		r.Sources, modified = n.Sources, true
+	}
+
+	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
+		r.Metadata, modified = n.Metadata, true
+	}
+
+	return modified
 }
 
 // Clone returns a clone of the given repo.
