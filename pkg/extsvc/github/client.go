@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -38,6 +37,11 @@ var (
 
 	requestCounter = metrics.NewRequestCounter("github", "Total number of requests sent to the GitHub API.")
 )
+
+// Doer captures the Do method of an HTTP client.
+type Doer interface {
+	Do(*http.Request) (*http.Response, error)
+}
 
 // Client is a caching GitHub API client.
 //
@@ -60,7 +64,7 @@ type Client struct {
 	defaultToken string
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
-	httpClient *http.Client
+	httpClient Doer
 
 	// repoCache is a map of rcache.Cache instances keyed by auth token.
 	repoCache   map[string]*rcache.Cache
@@ -206,10 +210,17 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 		span.Finish()
 	}()
 
-	resp, err = ctxhttp.Do(ctx, c.httpClient, req)
+	resp, err = c.httpClient.Do(req.WithContext(ctx))
+	// If we got an error, and the context has been canceled,
+	// the context's error is probably more useful.
 	if err != nil {
-		return err
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		default:
+		}
 	}
+
 	defer resp.Body.Close()
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
