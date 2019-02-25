@@ -6,6 +6,7 @@ import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/se
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
+import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
@@ -14,12 +15,10 @@ import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
-    isLightTheme: boolean
-    onThemeChange: () => void
 }
 
 interface State {

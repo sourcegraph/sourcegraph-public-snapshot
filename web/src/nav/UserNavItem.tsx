@@ -3,14 +3,12 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { eventLogger } from '../tracking/eventLogger'
+import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
-interface Props {
+interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
     authenticatedUser: GQL.IUser
-    isLightTheme: boolean
-    onThemeChange: () => void
     showAbout: boolean
     showDiscussions: boolean
 }
@@ -69,13 +67,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/search/searches" className="dropdown-item">
                         Saved searches
                     </Link>
-                    <button
-                        type="button"
-                        className="dropdown-item e2e-user-nav-item__theme"
-                        onClick={this.onThemeChange}
-                    >
-                        Use {this.props.isLightTheme ? 'dark' : 'light'} theme
-                    </button>
                     {window.context.sourcegraphDotComMode ? (
                         <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
                             Help
@@ -93,6 +84,20 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             </Link>
                         </>
                     )}
+                    <DropdownItem divider={true} />
+                    <div className="dropdown-item d-flex align-items-center">
+                        <div className="mr-2">Theme</div>
+                        {/* tslint:disable-next-line: jsx-ban-elements <Select> doesn't support small version */}
+                        <select
+                            className="custom-select custom-select-sm e2e-theme-toggle"
+                            onChange={this.onThemeChange}
+                            value={this.props.themePreference}
+                        >
+                            <option value={ThemePreference.Light}>Light</option>
+                            <option value={ThemePreference.Dark}>Dark</option>
+                            <option value={ThemePreference.System}>System</option>
+                        </select>
+                    </div>
                     {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
                         <>
                             <DropdownItem divider={true} />
@@ -116,8 +121,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
-    private onThemeChange = () => {
-        eventLogger.log(this.props.isLightTheme ? 'DarkThemeClicked' : 'LightThemeClicked')
-        this.setState(prevState => ({ isOpen: !prevState.isOpen }), this.props.onThemeChange)
+    private onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
+        this.props.onThemePreferenceChange(event.target.value as ThemePreference)
     }
 }

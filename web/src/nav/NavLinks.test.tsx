@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { flatten } from 'lodash'
+import { flatten, noop } from 'lodash'
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { setLinkComponent } from '../../../shared/src/components/Link'
@@ -7,6 +7,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { KeybindingsProps } from '../keybindings'
+import { ThemePreference } from '../theme'
 import { NavLinks } from './NavLinks'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
@@ -51,7 +52,8 @@ describe('NavLinks', () => {
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
         isLightTheme: true,
-        onThemeChange: () => void 0,
+        themePreference: ThemePreference.Light,
+        onThemePreferenceChange: noop,
         keybindings: KEYBINDINGS,
         settingsCascade: SETTINGS_CASCADE,
     }

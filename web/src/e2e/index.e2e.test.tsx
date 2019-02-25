@@ -184,22 +184,27 @@ describe('e2e test suite', function(this: any): void {
     }
 
     describe('Theme switcher', () => {
-        test('changes the theme when toggle is clicked', async () => {
+        test('changes the theme', async () => {
             await page.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
             await enableOrAddRepositoryIfNeeded()
             await page.waitForSelector('.theme')
-            const currentThemes: string[] = await page.evaluate(() =>
+            const currentThemes = await page.evaluate(() =>
                 Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
             )
-            expect(currentThemes.length).toEqual(1)
-            const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
+            expect(currentThemes).toHaveLength(1)
             await page.click('.e2e-user-nav-item-toggle')
-            await page.click('.e2e-user-nav-item__theme')
+            await page.select('.e2e-theme-toggle', 'dark')
             expect(
                 await page.evaluate(() =>
                     Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
                 )
-            ).toEqual([expectedTheme])
+            ).toEqual(['theme-dark'])
+            await page.select('.e2e-theme-toggle', 'light')
+            expect(
+                await page.evaluate(() =>
+                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
+                )
+            ).toEqual(['theme-light'])
         })
     })
 

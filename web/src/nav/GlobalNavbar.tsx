@@ -10,15 +10,20 @@ import { authRequired } from '../auth'
 import { KeybindingsProps } from '../keybindings'
 import { parseSearchURLQuery } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsControllerProps, KeybindingsProps {
+interface Props
+    extends SettingsCascadeProps,
+        PlatformContextProps,
+        ExtensionsControllerProps,
+        KeybindingsProps,
+        ThemeProps,
+        ThemePreferenceProps {
     history: H.History
     location: H.Location
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
-    onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
 
