@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { omit, pick } from 'lodash'
+import { omit } from 'lodash'
 import path from 'path'
 import shelljs from 'shelljs'
 import signale from 'signale'
@@ -10,15 +10,17 @@ import schema from '../src/extension/schema.json'
 
 export type BuildEnv = 'dev' | 'prod'
 
+type Browser = 'firefox' | 'chrome'
+
 const BUILDS_DIR = 'build'
 
-export const WEBPACK_STATS_OPTIONS = {
+export const WEBPACK_STATS_OPTIONS: Stats.ToStringOptions = {
     all: false,
     timings: true,
     errors: true,
     warnings: true,
     colors: true,
-} as Stats.ToStringOptions
+}
 
 function ensurePaths(): void {
     shelljs.mkdir('-p', 'build/dist')
@@ -49,42 +51,32 @@ export function copyPhabricator(): void {
     shelljs.cp('build/dist/css/style.bundle.css', 'build/phabricator/dist/css')
 }
 
-const browserTitles = {
+const BROWSER_TITLES = {
     firefox: 'Firefox',
     chrome: 'Chrome',
 }
 
-const browserBundleZips = {
+const BROWSER_BUNDLE_ZIPS = {
     firefox: 'firefox-bundle.xpi',
     chrome: 'chrome-bundle.zip',
 }
 
-const browserBlacklist = {
+const BROWSER_BLACKLIST = {
     chrome: ['applications'],
     firefox: ['key'],
 }
 
-const browserWhitelist = {}
-
-function writeSchema(env, browser, writeDir): void {
+function writeSchema(env: BuildEnv, browser: Browser, writeDir: string): void {
     fs.writeFileSync(`${writeDir}/schema.json`, JSON.stringify(schema, null, 4))
 }
 
 const version = utcVersion()
 
-function writeManifest(env, browser, writeDir): void {
-    let envInfo = omit(extensionInfo[env], browserBlacklist[browser])
-
-    let manifest
-    const whitelist = browserWhitelist[browser]
-    if (whitelist) {
-        manifest = pick(extensionInfo, whitelist)
-        envInfo = pick(envInfo, whitelist)
-    } else {
-        manifest = omit(extensionInfo, ['dev', 'prod', ...browserBlacklist[browser]])
+function writeManifest(env: BuildEnv, browser: Browser, writeDir: string): void {
+    const manifest = {
+        ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLACKLIST[browser]]),
+        ...omit(extensionInfo[env], BROWSER_BLACKLIST[browser]),
     }
-
-    manifest = { ...manifest, ...envInfo }
 
     if (browser === 'firefox') {
         manifest.permissions.push('<all_urls>')
@@ -100,10 +92,10 @@ function writeManifest(env, browser, writeDir): void {
     fs.writeFileSync(`${writeDir}/manifest.json`, JSON.stringify(manifest, null, 4))
 }
 
-function buildForBrowser(browser): (env: string) => () => void {
+function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
     ensurePaths()
     return env => {
-        const title = browserTitles[browser]
+        const title = BROWSER_TITLES[browser]
 
         const buildDir = path.resolve(process.cwd(), `${BUILDS_DIR}/${browser}`)
 
@@ -115,7 +107,7 @@ function buildForBrowser(browser): (env: string) => () => void {
 
             copyDist(buildDir)
 
-            const zipDest = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${browserBundleZips[browser]}`)
+            const zipDest = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${BROWSER_BUNDLE_ZIPS[browser]}`)
             if (zipDest) {
                 shelljs.mkdir('-p', `./${BUILDS_DIR}/bundles`)
                 shelljs.exec(`cd ${buildDir} && zip -q -r ${zipDest} *`)
