@@ -158,7 +158,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 
 func TestRepoLookup(t *testing.T) {
 	s := Server{
-		Store:            emptyStore{},
+		Store:            repos.NewFakeStore(nil, nil, nil),
 		OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil),
 	}
 
@@ -272,20 +272,6 @@ func TestRepoLookup(t *testing.T) {
 			}
 		})
 	})
-}
-
-type emptyStore struct{}
-
-func (emptyStore) GetRepoByName(ctx context.Context, name string) (*repos.Repo, error) {
-	return nil, repos.ErrNoResults
-}
-
-func (emptyStore) ListRepos(ctx context.Context, names ...string) ([]*repos.Repo, error) {
-	return []*repos.Repo{}, nil
-}
-
-func (emptyStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) error {
-	return errors.New("not implemented")
 }
 
 func init() {
