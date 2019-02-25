@@ -81,7 +81,7 @@ export async function integrationTestContext(
 
     const services = new Services(mocks)
     const initData: InitData = {
-        sourcegraphURL: 'https://example.com',
+        sourcegraphURL: 'https://example.com/',
         clientApplication: 'sourcegraph',
     }
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
