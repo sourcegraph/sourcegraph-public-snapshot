@@ -89,6 +89,7 @@ interface ConduitDiffDetails {
             status: string
             refs: ConduitRef[]
         }
+        'local:commits': string[]
     }
 }
 
@@ -316,7 +317,7 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
                             phabricatorURL: window.location.origin,
                         }).subscribe(() => resolve(details))
                     } else {
-                        reject(new Error('could not parse repo details'))
+                        return reject(new Error('could not parse repo details'))
                     }
                 })
             })
@@ -394,7 +395,7 @@ function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetail
                                 resolve(details)
                             })
                     } else {
-                        reject(new Error('could not parse repo details'))
+                        return reject(new Error('could not parse repo details'))
                     }
                 })
             })
@@ -681,8 +682,8 @@ export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> 
                     }
 
                     if (!propsWithInfo.isBase) {
-                        for (const cmit of Object.keys(propsWithInfo.info.properties['local:commits'])) {
-                            return resolve({ commitID: cmit })
+                        for (const commit of Object.keys(propsWithInfo.info.properties['local:commits'])) {
+                            return resolve({ commitID: commit })
                         }
                     }
                     // last ditch effort to search conduit API for commit ID

@@ -8,7 +8,7 @@ import { logUserEvent } from '../backend/userEvents'
 const uidKey = 'sourcegraphAnonymousUid'
 
 export class EventLogger implements TelemetryService {
-    private uid: string
+    private uid: string | null = null
 
     constructor() {
         // Fetch user ID on initial load.

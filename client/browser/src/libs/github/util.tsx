@@ -199,6 +199,7 @@ function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
     if (branchElements && branchElements.length === 2) {
         return { baseCommitID: branchElements[0].innerText, headCommitID: branchElements[1].innerText }
     }
+    return undefined
 }
 
 function getDiffResolvedRevFromPageSource(pageSource: string): DiffResolvedRevSpec | null {

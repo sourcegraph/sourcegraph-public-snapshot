@@ -2,8 +2,8 @@ import * as React from 'react'
 import storage from '../../browser/storage'
 import { resolveRev } from '../repo/backend'
 import { isSourcegraphDotCom } from '../util/context'
-import { NeedsRepositoryConfigurationAlert } from './NeedsRepositoryConfigurationAlert'
-import { NeedsServerConfigurationAlert } from './ServerAlert'
+import { NeedsRepositoryConfigurationAlert, REPO_CONFIGURATION_KEY } from './NeedsRepositoryConfigurationAlert'
+import { NeedsServerConfigurationAlert, SERVER_CONFIGURATION_KEY } from './ServerAlert'
 
 interface State {
     needsConfig: boolean
@@ -13,9 +13,6 @@ interface State {
 interface Props {
     repoName: string
 }
-
-const SERVER_CONFIGURATION_KEY = 'NeedsServerConfigurationAlertDismissed'
-const REPO_CONFIGURATION_KEY = 'NeedsRepoConfigurationAlertDismissed'
 
 export class Alerts extends React.Component<Props, State> {
     constructor(props: Props) {
@@ -41,7 +38,7 @@ export class Alerts extends React.Component<Props, State> {
             if (!items[SERVER_CONFIGURATION_KEY]) {
                 alerts.push(SERVER_CONFIGURATION_KEY)
             }
-            if (!items[REPO_CONFIGURATION_KEY] || !items[REPO_CONFIGURATION_KEY][this.props.repoName]) {
+            if (!items[REPO_CONFIGURATION_KEY] || !items[REPO_CONFIGURATION_KEY]![this.props.repoName]) {
                 alerts.push(REPO_CONFIGURATION_KEY)
             }
             this.setState(() => ({ ...this.state, alerts }))
@@ -50,17 +47,11 @@ export class Alerts extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         if (this.state.needsConfig && isSourcegraphDotCom() && this.state.alerts.includes(SERVER_CONFIGURATION_KEY)) {
-            return <NeedsServerConfigurationAlert alertKey={SERVER_CONFIGURATION_KEY} onClose={this.updateAlerts} />
+            return <NeedsServerConfigurationAlert onClose={this.updateAlerts} />
         }
 
         if (this.state.needsConfig && this.state.alerts.includes(REPO_CONFIGURATION_KEY) && !isSourcegraphDotCom()) {
-            return (
-                <NeedsRepositoryConfigurationAlert
-                    repoName={this.props.repoName}
-                    alertKey={REPO_CONFIGURATION_KEY}
-                    onClose={this.updateAlerts}
-                />
-            )
+            return <NeedsRepositoryConfigurationAlert repoName={this.props.repoName} onClose={this.updateAlerts} />
         }
 
         return null

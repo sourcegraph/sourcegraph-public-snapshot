@@ -68,6 +68,10 @@ export interface StorageItems {
      */
     clientSettings: string
     sideloadedExtensionURL: string | null
+    NeedsServerConfigurationAlertDismissed?: boolean
+    NeedsRepoConfigurationAlertDismissed?: {
+        [repoName: string]: boolean
+    }
 }
 
 interface ClientConfigurationDetails {

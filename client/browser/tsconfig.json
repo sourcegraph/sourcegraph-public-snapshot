@@ -3,9 +3,6 @@
   "compilerOptions": {
     "typeRoots": ["../../shared/src/types", "../../node_modules/@types", "src/types"],
     "jsx": "react",
-    "noImplicitAny": false,
-    "noImplicitReturns": false,
-    "strictPropertyInitialization": false,
     "resolveJsonModule": true,
     "checkJs": true
   },
