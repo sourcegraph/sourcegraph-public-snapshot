@@ -20,6 +20,15 @@ export interface Contributions {
     searchFilters?: SearchFilters[]
 }
 
+export interface EvaluatedContributions extends Pick<Contributions, Exclude<keyof Contributions, 'actions'>> {
+    actions?: EvaluatedActionContribution[]
+}
+
+export interface EvaluatedActionContribution
+    extends Pick<ActionContribution, Exclude<keyof ActionContribution, 'actionItem'>> {
+    actionItem?: EvaluatedActionItem
+}
+
 /**
  * An action contribution describes a command that can be invoked, along with a title, description, icon, etc.
  */
@@ -186,6 +195,22 @@ export interface ActionItem {
      * to users needing the textual description.
      */
     iconDescription?: string
+
+    /**
+     * An expression that, if given, should evaluate to a boolean value specifying whether
+     * the action item should be rendered as a pressed button.
+     */
+    pressed?: string
+}
+
+/**
+ * An {@link ActionItem} with all expressions replaced by their evaluated value.
+ */
+export interface EvaluatedActionItem extends Pick<ActionItem, Exclude<keyof ActionItem, 'pressed'>> {
+    /**
+     * Whether the action item should be rendered as a pressed button.
+     */
+    pressed?: boolean
 }
 
 export enum ContributableMenu {

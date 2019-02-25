@@ -7,6 +7,8 @@ import {
     ActionItem,
     ContributableMenu,
     Contributions,
+    EvaluatedActionContribution,
+    EvaluatedContributions,
     MenuContributions,
     MenuItemContribution,
 } from '../../protocol'
@@ -88,7 +90,7 @@ export class ContributionRegistry {
     public getContributions<T>(
         scope?: ContributionScope | undefined,
         extraContext?: Context<T>
-    ): Observable<Contributions> {
+    ): Observable<EvaluatedContributions> {
         return this.getContributionsFromEntries(this._entries, scope, extraContext)
     }
 
@@ -101,7 +103,7 @@ export class ContributionRegistry {
         scope: ContributionScope | undefined,
         extraContext?: Context<T>,
         logWarning = (...args: any[]) => console.log(...args)
-    ): Observable<Contributions> {
+    ): Observable<EvaluatedContributions> {
         return combineLatest(
             entries.pipe(
                 switchMap(entries =>
@@ -109,7 +111,7 @@ export class ContributionRegistry {
                         entries.map(entry =>
                             isObservable<Contributions | Contributions[]>(entry.contributions)
                                 ? entry.contributions
-                                : of<Contributions>(entry.contributions)
+                                : of(entry.contributions)
                         ),
                         []
                     )
@@ -167,14 +169,14 @@ export class ContributionRegistry {
  * Most callers should use ContributionRegistry#getContributions, which merges all registered
  * contributions.
  */
-export function mergeContributions(contributions: Contributions[]): Contributions {
+export function mergeContributions(contributions: EvaluatedContributions[]): EvaluatedContributions {
     if (contributions.length === 0) {
         return {}
     }
     if (contributions.length === 1) {
         return contributions[0]
     }
-    const merged: Contributions = {}
+    const merged: EvaluatedContributions = {}
     for (const c of contributions) {
         if (c.actions) {
             if (!merged.actions) {
@@ -259,13 +261,13 @@ export function evaluateContributions(
     context: ComputedContext,
     contributions: Contributions,
     { evaluateTemplate, needsEvaluation } = DEFAULT_TEMPLATE_EVALUATOR
-): Contributions {
+): EvaluatedContributions {
     if (!contributions.actions || contributions.actions.length === 0) {
-        return contributions
+        return { ...contributions } as EvaluatedContributions
     }
-    const evaluatedActions: ActionContribution[] = []
+    const evaluatedActions: EvaluatedActionContribution[] = []
     for (const action of contributions.actions as Readonly<ActionContribution>[]) {
-        const changed: Partial<ActionContribution> = {}
+        const changed: Partial<EvaluatedActionContribution> = {}
         if (action.commandArguments) {
             for (const [i, arg] of action.commandArguments.entries()) {
                 if (typeof arg === 'string' && needsEvaluation(arg)) {
@@ -306,12 +308,15 @@ export function evaluateContributions(
             if (action.actionItem.iconDescription && needsEvaluation(action.actionItem.iconDescription)) {
                 changedActionItem.iconDescription = evaluateTemplate(action.actionItem.iconDescription, context)
             }
+            if (action.actionItem.pressed) {
+                changedActionItem.pressed = evaluate(action.actionItem.pressed, context)
+            }
             if (Object.keys(changedActionItem).length !== 0) {
-                changed.actionItem = { ...action.actionItem, ...changedActionItem }
+                changed.actionItem = { ...action.actionItem, ...changedActionItem } as any
             }
         }
         const modified = Object.keys(changed).length !== 0
-        evaluatedActions.push(modified ? { ...action, ...changed } : action)
+        evaluatedActions.push(modified ? { ...action, ...changed } : (action as any))
     }
     return { ...contributions, actions: evaluatedActions }
 }

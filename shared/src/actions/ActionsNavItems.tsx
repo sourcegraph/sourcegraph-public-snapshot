@@ -17,6 +17,7 @@ interface Props extends ActionsProps {
 
     listClass?: string
     actionItemClass?: string
+    actionItemPressedClass?: string
     listItemClass?: string
 }
 
@@ -63,6 +64,7 @@ export class ActionsNavItems extends React.PureComponent<Props, ActionsState> {
                     extensionsController={this.props.extensionsController}
                     platformContext={this.props.platformContext}
                     className={this.props.actionItemClass}
+                    pressedClassName={this.props.actionItemPressedClass}
                     location={this.props.location}
                 />
             </li>

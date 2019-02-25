@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { ActionItem, ActionItemProps } from '../actions/ActionItem'
-import { ContributableMenu, Contributions } from '../api/protocol'
+import { ContributableMenu, EvaluatedContributions } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { PopoverButton } from '../components/PopoverButton'
 import { getContributedActionItems } from '../contributions/contributions'
@@ -28,7 +28,7 @@ interface Props
 
 interface State {
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
-    contributions?: Contributions
+    contributions?: EvaluatedContributions
 
     input: string
     selectedIndex: number

@@ -61,10 +61,16 @@
     .repo-header {
         border-color: #233043;
     }
+    .action-item--pressed {
+        background-color: $color-bg-3;
+    }
 }
 
 .theme-light {
     .repo-header {
         border-color: $color-light-border;
+    }
+    .action-item--pressed {
+        background-color: $color-light-bg-3;
     }
 }
