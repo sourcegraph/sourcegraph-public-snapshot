@@ -1,8 +1,10 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, NEVER, NextObserver, Subscribable, throwError } from 'rxjs'
+import { BehaviorSubject, from, NEVER, NextObserver, Subscribable, throwError } from 'rxjs'
+import { first, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
+import { isDefined } from '../../util/types'
 import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Model } from '../client/model'
@@ -86,9 +88,19 @@ export async function integrationTestContext(
     }
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
+    const extensionAPI = await extensionHost.extensionAPI
     services.model.model.next(initModel)
 
-    const extensionAPI = await extensionHost.extensionAPI
+    // Wait for initModel to be initialised
+    await Promise.all([
+        from(extensionAPI.workspace.openedTextDocuments)
+            .pipe(take((initModel.visibleViewComponents || []).length))
+            .toPromise(),
+        from(extensionAPI.app.activeWindowChanges)
+            .pipe(first(isDefined))
+            .toPromise(),
+    ])
+
     return {
         client,
         extensionAPI,
