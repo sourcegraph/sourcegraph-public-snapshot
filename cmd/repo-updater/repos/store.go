@@ -56,7 +56,7 @@ func NewDBStore(ctx context.Context, db DB, kinds []string, txOpts sql.TxOptions
 // to a TxBeginner.
 func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	if _, ok := s.db.(Tx); ok { // Already in a Tx.
-		return s, nil
+		return nil, errors.New("dbstore: already in a transaction")
 	}
 
 	tb, ok := s.db.(TxBeginner)
@@ -210,7 +210,6 @@ func (s DBStore) paginate(ctx context.Context, repos *[]*Repo, q paginatedQuery)
 		}
 	}
 	return err
-
 }
 
 func (s DBStore) list(ctx context.Context, q *sqlf.Query, repos *[]*Repo) (err error) {

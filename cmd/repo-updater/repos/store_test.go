@@ -250,13 +250,31 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 	}
 }
 
+func testDBStoreTransact(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+		store := NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
+
+		txstore, err := store.Transact(ctx)
+		if err != nil {
+			t.Fatal("expected DBStore to support transactions", err)
+		}
+		defer txstore.Done()
+
+		_, err = txstore.(Transactor).Transact(ctx)
+		have := fmt.Sprintf("%s", err)
+		want := "dbstore: already in a transaction"
+		if have != want {
+			t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+		}
+	}
+}
+
 func transact(ctx context.Context, s Store, test func(testing.TB, Store)) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
-		tr, ok := s.(interface {
-			Transact(context.Context) (TxStore, error)
-		})
+		tr, ok := s.(Transactor)
 
 		if ok {
 			txstore, err := tr.Transact(ctx)
@@ -266,9 +284,33 @@ func transact(ctx context.Context, s Store, test func(testing.TB, Store)) func(*
 				return
 			}
 			defer txstore.Done(&errRollback)
-			s = txstore
+			s = &noopTxStore{Store: txstore}
 		}
 
 		test(t, s)
 	}
+}
+
+type noopTxStore struct {
+	Store
+	count int
+}
+
+func (tx *noopTxStore) Transact(context.Context) (TxStore, error) {
+	if tx.count != 0 {
+		return nil, fmt.Errorf("noopTxStore: %d current transactions", tx.count)
+	}
+	tx.count++
+	// noop
+	return tx, nil
+}
+
+func (tx *noopTxStore) Done(errs ...*error) {
+	if tx.count != 1 {
+		panic("no current transactions")
+	}
+	if len(errs) > 0 && *errs[0] != nil {
+		panic("unexpected error in noopTxStore")
+	}
+	tx.count--
 }

@@ -35,6 +35,7 @@ func testSyncerSync(s Store) func(*testing.T) {
 		name    string
 		sourcer Sourcer
 		store   Store
+		stored  Repos
 		ctx     context.Context
 		now     func() time.Time
 		diff    Diff
@@ -77,9 +78,10 @@ func testSyncerSync(s Store) func(*testing.T) {
 			testCases = append(testCases, testCase{
 				name:    "had name and got external_id",
 				sourcer: sourcer(nil, source("a", nil, foo.Clone())),
-				store: store(t, s, foo.With(sources("a"), func(r *Repo) {
+				store:   s,
+				stored: Repos{foo.With(sources("a"), func(r *Repo) {
 					r.ExternalRepo = api.ExternalRepoSpec{}
-				})),
+				})},
 				now: clock.Now,
 				diff: Diff{Modified: Repos{
 					foo.With(modifiedAt(clock.Time(1)), sources("a")),
@@ -96,8 +98,9 @@ func testSyncerSync(s Store) func(*testing.T) {
 					source("a", nil, foo.Clone()),
 					source("b", nil, foo.Clone()),
 				),
-				store: store(t, s, foo.With(sources("a"))),
-				now:   clock.Now,
+				store:  s,
+				stored: Repos{foo.With(sources("a"))},
+				now:    clock.Now,
 				diff: Diff{Modified: Repos{
 					foo.With(modifiedAt(clock.Time(1)), sources("a", "b")),
 				}},
@@ -112,10 +115,11 @@ func testSyncerSync(s Store) func(*testing.T) {
 				sourcer: sourcer(nil, source("a", nil, foo.With(func(r *Repo) {
 					r.Enabled = !r.Enabled
 				}))),
-				store: store(t, s, foo.With(sources("a"))),
-				now:   clock.Now,
-				diff:  Diff{Unmodified: Repos{foo.With(sources("a"))}},
-				err:   "<nil>",
+				store:  s,
+				stored: Repos{foo.With(sources("a"))},
+				now:    clock.Now,
+				diff:   Diff{Unmodified: Repos{foo.With(sources("a"))}},
+				err:    "<nil>",
 			})
 		}
 
@@ -126,8 +130,9 @@ func testSyncerSync(s Store) func(*testing.T) {
 				sourcer: sourcer(nil,
 					source("a", nil, foo.Clone()),
 				),
-				store: store(t, s, foo.With(sources("a", "b"))),
-				now:   clock.Now,
+				store:  s,
+				stored: Repos{foo.With(sources("a", "b"))},
+				now:    clock.Now,
 				diff: Diff{Modified: Repos{
 					foo.With(modifiedAt(clock.Time(1)), sources("a")),
 				}},
@@ -140,7 +145,8 @@ func testSyncerSync(s Store) func(*testing.T) {
 			testCases = append(testCases, testCase{
 				name:    "deleted ALL repo sources",
 				sourcer: sourcer(nil),
-				store:   store(t, s, foo.With(sources("a", "b"))),
+				store:   s,
+				stored:  Repos{foo.With(sources("a", "b"))},
 				now:     clock.Now,
 				diff: Diff{Deleted: Repos{
 					foo.With(deletedAt(clock.Time(1))),
@@ -154,9 +160,10 @@ func testSyncerSync(s Store) func(*testing.T) {
 			testCases = append(testCases, testCase{
 				name:    "renamed repo is detected via external_id",
 				sourcer: sourcer(nil, source("a", nil, foo.Clone())),
-				store: store(t, s, foo.With(sources("a"), func(r *Repo) {
+				store:   s,
+				stored: Repos{foo.With(sources("a"), func(r *Repo) {
 					r.Name = "old-name"
-				})),
+				})},
 				now: clock.Now,
 				diff: Diff{Modified: Repos{
 					foo.With(sources("a"), modifiedAt(clock.Time(1))),
@@ -172,14 +179,15 @@ func testSyncerSync(s Store) func(*testing.T) {
 				sourcer: sourcer(nil, source("a", nil,
 					foo.With(modifiedAt(clock.Time(1)),
 						sources("a"),
-						metadata([]byte(`{"metadata": true}`))),
+						metadata(&github.Repository{IsArchived: true})),
 				)),
-				store: store(t, s, foo.With(sources("a"))),
-				now:   clock.Now,
+				store:  s,
+				stored: Repos{foo.With(sources("a"))},
+				now:    clock.Now,
 				diff: Diff{Modified: Repos{
 					foo.With(modifiedAt(clock.Time(1)),
 						sources("a"),
-						metadata([]byte(`{"metadata": true}`))),
+						metadata(&github.Repository{IsArchived: true})),
 				}},
 				err: "<nil>",
 			})
@@ -200,6 +208,12 @@ func testSyncerSync(s Store) func(*testing.T) {
 					ctx = context.Background()
 				}
 
+				if st != nil && len(tc.stored) > 0 {
+					if err := st.UpsertRepos(ctx, tc.stored...); err != nil {
+						t.Fatalf("failed to prepare store: %v", err)
+					}
+				}
+
 				syncer := NewSyncer(0, st, tc.sourcer, nil, now)
 				diff, err := syncer.Sync(ctx)
 
@@ -208,16 +222,21 @@ func testSyncerSync(s Store) func(*testing.T) {
 					diff.Added,
 					diff.Modified,
 					diff.Unmodified,
-					diff.Deleted,
 				} {
 					for _, d := range ds {
 						d.ID = 0 // Exclude auto-generated ID from comparisons
 						want = append(want, d)
 					}
 				}
+				for _, d := range diff.Deleted {
+					d.ID = 0 // Exclude auto-generated ID from comparisons
+				}
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
+				}
+				if err != nil {
+					return
 				}
 
 				if diff := cmp.Diff(diff, tc.diff); diff != "" {
@@ -225,11 +244,14 @@ func testSyncerSync(s Store) func(*testing.T) {
 					t.Fatalf("unexpected diff:\n%s", diff)
 				}
 
-				if tc.store != nil {
-					have, _ := tc.store.ListRepos(ctx)
-					if cmp := pretty.Compare(have, want); cmp != "" {
+				if st != nil {
+					have, _ := st.ListRepos(ctx)
+					for _, d := range have {
+						d.ID = 0 // Exclude auto-generated ID from comparisons
+					}
+					if diff := cmp.Diff(have, want); diff != "" {
 						// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
-						t.Fatalf("unexpected stored repos:\n%s", cmp)
+						t.Fatalf("unexpected stored repos:\n%s", diff)
 					}
 				}
 			}))
@@ -447,14 +469,6 @@ type fakeStore struct {
 	upsert error
 }
 
-func store(t testing.TB, s Store, rs ...*Repo) Store {
-	t.Helper()
-	if err := s.UpsertRepos(context.Background(), rs...); err != nil {
-		t.Fatalf("failed to prepare store: %v", err)
-	}
-	return s
-}
-
 func (s fakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) {
 	if s.get != nil {
 		return nil, s.get
@@ -555,7 +569,7 @@ func sources(srcs ...string) func(*Repo) {
 	}
 }
 
-func metadata(md []byte) func(*Repo) {
+func metadata(md interface{}) func(*Repo) {
 	return func(r *Repo) {
 		r.Metadata = md
 	}

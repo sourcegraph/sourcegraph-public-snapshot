@@ -24,6 +24,7 @@ func TestIntegration(t *testing.T) {
 		name string
 		test func(*testing.T)
 	}{
+		{"DBStore/Transact", testDBStoreTransact(db)},
 		{"DBStore/GetRepoByName", testDBStoreGetRepoByName(db)},
 		{"DBStore/UpsertRepos", testDBStoreUpsertRepos(db)},
 		{"DBStore/ListRepos", testDBStoreListRepos(db)},

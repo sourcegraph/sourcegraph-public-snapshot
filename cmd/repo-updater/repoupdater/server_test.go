@@ -281,7 +281,7 @@ func (emptyStore) GetRepoByName(ctx context.Context, name string) (*repos.Repo, 
 }
 
 func (emptyStore) ListRepos(ctx context.Context, names ...string) ([]*repos.Repo, error) {
-	return nil, nil
+	return []*repos.Repo{}, nil
 }
 
 func (emptyStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) error {
