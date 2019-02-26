@@ -38,43 +38,77 @@ func main() {
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	go debugserver.Start(debugserver.Endpoint{
-		Name: "Repo Updater State",
-		Path: "/repo-updater-state",
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var data interface{}
-			if conf.UpdateScheduler2Enabled() {
-				data = repos.Scheduler.DebugDump()
-			} else {
-				data = repos.QueueSnapshot()
-			}
+	// The kinds of external services we sync with the new syncer code.
+	kinds := conf.NewRepoSyncerEnabledExternalServices()
 
-			d, err := json.MarshalIndent(data, "", "  ")
-			if err != nil {
-				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(d)
-		}),
-	})
+	newSyncerEnabled := map[string]bool{}
+	for _, kind := range kinds {
+		newSyncerEnabled[kind] = true
+	}
 
 	// Synced repos of other external service kind will be sent here.
 	otherSynced := make(chan *protocol.RepoInfo)
-
 	frontendAPI := repos.NewInternalAPI(10 * time.Second)
-
-	// Other external services syncing thread. Repo updates will be sent on the given channel.
 	otherSyncer := repos.NewOtherReposSyncer(frontendAPI, otherSynced)
+
+	for _, kind := range []string{
+		"AWSCODECOMMIT",
+		"BITBUCKETSERVER",
+		"GITHUB",
+		"GITLAB",
+		"GITOLITE",
+		"PHABRICATOR",
+		"OTHER",
+	} {
+		if newSyncerEnabled[kind] {
+			switch kind {
+			case "GITHUB":
+				continue
+			default:
+				log.Fatalf("repo.Source not implemented yet for external service of kind %q", kind)
+			}
+		}
+
+		switch kind {
+		case "AWSCODECOMMIT":
+			go repos.SyncAWSCodeCommitConnections(ctx)
+			go repos.RunAWSCodeCommitRepositorySyncWorker(ctx)
+		case "BITBUCKETSERVER":
+			go repos.SyncBitbucketServerConnections(ctx)
+			go repos.RunBitbucketServerRepositorySyncWorker(ctx)
+		case "GITHUB":
+			go repos.SyncGitHubConnections(ctx)
+			go repos.RunGitHubRepositorySyncWorker(ctx)
+		case "GITLAB":
+			go repos.SyncGitLabConnections(ctx)
+			go repos.RunGitLabRepositorySyncWorker(ctx)
+		case "GITOLITE":
+			go repos.RunGitoliteRepositorySyncWorker(ctx)
+		case "PHABRICATOR":
+			go repos.RunPhabricatorRepositorySyncWorker(ctx)
+		case "OTHER":
+			go func() { log.Fatal(otherSyncer.Run(ctx, repos.GetUpdateInterval())) }()
+
+			go func() {
+				for repo := range otherSynced {
+					if conf.Get().DisableAutoGitUpdates {
+						continue
+					} else if conf.UpdateScheduler2Enabled() {
+						repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
+					} else {
+						repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
+					}
+				}
+			}()
+
+		default:
+			log.Fatalf("unknown external service kind %q", kind)
+		}
+	}
 
 	db, err := repos.NewDB(repos.NewDSNFromEnv())
 	if err != nil {
 		log.Fatalf("failed to initalise db store: %v", err)
-	}
-
-	// The kinds of external services we sync with the new syncer code.
-	kinds := []string{
-		"GITHUB",
 	}
 
 	store := repos.NewDBStore(ctx, db, kinds, sql.TxOptions{Isolation: sql.LevelSerializable})
@@ -102,65 +136,50 @@ func main() {
 		}
 	}()
 
+	// Repos old syncing thread
+	go repos.RunRepositorySyncWorker(ctx)
+
+	// git-server repos purging thread
+	go repos.RunRepositoryPurgeWorker(ctx)
+
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{
 		Store:            store,
 		Syncer:           syncer,
 		OtherReposSyncer: otherSyncer,
 	}
+
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
+
 	addr := net.JoinHostPort(host, port)
 	log15.Info("repo-updater: listening", "addr", addr)
 	srv := &http.Server{Addr: addr, Handler: handler}
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 
-	// Repos List syncing thread
-	go repos.RunRepositorySyncWorker(ctx)
-
-	// Repos purging thread
-	go repos.RunRepositoryPurgeWorker(ctx)
-
-	// GitHub connections and repos syncing threads
-	// go repos.SyncGitHubConnections(ctx)
-	// go repos.RunGitHubRepositorySyncWorker(ctx)
-
-	// GitLab connections and repos syncing threads
-	go repos.SyncGitLabConnections(ctx)
-	go repos.RunGitLabRepositorySyncWorker(ctx)
-
-	// AWS CodeCommit connections and repos syncing threads
-	go repos.SyncAWSCodeCommitConnections(ctx)
-	go repos.RunAWSCodeCommitRepositorySyncWorker(ctx)
-
-	// Phabricator Repository syncing thread
-	go repos.RunPhabricatorRepositorySyncWorker(ctx)
-
-	// Gitolite syncing thread
-	go repos.RunGitoliteRepositorySyncWorker(ctx)
-
-	// Bitbucket connections and repos syncing threads
-	go repos.SyncBitbucketServerConnections(ctx)
-	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
-
-	// Start other repos syncer syncing thread
-	go func() { log.Fatal(otherSyncer.Run(ctx, repos.GetUpdateInterval())) }()
-
-	// Start other repos updates scheduler relay thread.
-	go func() {
-		for repo := range otherSynced {
-			if conf.Get().DisableAutoGitUpdates {
-				continue
-			} else if conf.UpdateScheduler2Enabled() {
-				repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
+	go debugserver.Start(debugserver.Endpoint{
+		Name: "Repo Updater State",
+		Path: "/repo-updater-state",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var data interface{}
+			if conf.UpdateScheduler2Enabled() {
+				data = repos.Scheduler.DebugDump()
 			} else {
-				repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
+				data = repos.QueueSnapshot()
 			}
-		}
-	}()
+
+			d, err := json.MarshalIndent(data, "", "  ")
+			if err != nil {
+				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(d)
+		}),
+	})
 
 	select {}
 }
