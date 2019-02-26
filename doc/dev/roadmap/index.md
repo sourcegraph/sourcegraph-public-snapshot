@@ -31,8 +31,6 @@ Code search and navigation:
 
 ### 3.2
 
-TODO: We are currently planning 3.2.
-
 Release date: 2019-03-20
 
 Core services:
@@ -41,11 +39,11 @@ Core services:
 
 Distribution:
 
-- Automate cloud provider deployment process
+- [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
 - [Improve scaling documentation](https://github.com/sourcegraph/sourcegraph/issues/2019)
 - [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
-- Docs UX (TBD)
-- [Better docs for setting up an instance ready for sharing](https://github.com/sourcegraph/sourcegraph/issues/2277) (TBD)
+- [Improve docs UX](https://github.com/sourcegraph/sourcegraph/issues/2023) (TBD)
+- [Better docs for setting up an instance ready for sharing](https://github.com/sourcegraph/sourcegraph/issues/2277)
 
 Code search:
 
@@ -53,7 +51,7 @@ Code search:
 
 Code navigation:
 
-- Integrations foundation (details TBD)
+- [Integrations quality](https://github.com/sourcegraph/sourcegraph/issues/2380)
 - Code intelligence (details TBD)
 
 ---
