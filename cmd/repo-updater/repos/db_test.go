@@ -78,7 +78,7 @@ func newDSN() string {
 	if *dsn != "" {
 		return *dsn
 	}
-	if os.Getenv("PGHOST") != "" {
+	if os.Getenv("PGDATABASE") != "" {
 		return repos.NewDSNFromEnv()
 	}
 	return "postgres://sourcegraph:sourcegraph@localhost/postgres?sslmode=disable&timezone=UTC"
