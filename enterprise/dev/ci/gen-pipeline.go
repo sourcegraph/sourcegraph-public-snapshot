@@ -325,4 +325,6 @@ func main() {
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
 		addDockerImageStep(branch[20:], false)
+		pipeline.AddWait()
+	}
 }
