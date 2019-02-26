@@ -137,7 +137,6 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 		for _, tc := range []struct {
 			name   string
 			kinds  []string
-			ctx    context.Context
 			names  []string
 			stored repos.Repos
 			repos  repos.Repos

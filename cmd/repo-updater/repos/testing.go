@@ -71,7 +71,7 @@ func NewFakeStore(get, list, upsert error, rs ...*Repo) *FakeStore {
 		list:   list,
 		upsert: upsert,
 	}
-	s.UpsertRepos(context.Background(), rs...)
+	_ = s.UpsertRepos(context.Background(), rs...)
 	return &s
 }
 
