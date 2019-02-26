@@ -35,8 +35,9 @@ type gitCommitResolver struct {
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
-	oid  gitObjectID
-	once sync.Once
+	oid     gitObjectID
+	once    sync.Once
+	onceErr error
 
 	author    signatureResolver
 	committer *signatureResolver
@@ -87,8 +88,6 @@ func (r *gitCommitResolver) OID() (gitObjectID, error) {
 }
 
 func (r *gitCommitResolver) getCommitOID() (gitObjectID, error) {
-	var err error
-
 	r.once.Do(func() {
 		// If we already have the commit, no need to try to compute it.
 		if r.oid != "" {
@@ -103,8 +102,8 @@ func (r *gitCommitResolver) getCommitOID() (gitObjectID, error) {
 		ctx := context.Background()
 
 		var refs []*repositoryTextSearchIndexedRef
-		refs, err = indexInfo.Refs(ctx)
-		if err != nil {
+		refs, r.onceErr = indexInfo.Refs(ctx)
+		if r.onceErr != nil {
 			return
 		}
 
@@ -118,11 +117,7 @@ func (r *gitCommitResolver) getCommitOID() (gitObjectID, error) {
 		}
 	})
 
-	if err != nil {
-		return "", nil
-	}
-
-	return r.oid, nil
+	return r.oid, r.onceErr
 }
 
 func (r *gitCommitResolver) AbbreviatedOID() (string, error) {
