@@ -5,7 +5,6 @@ import (
 	"flag"
 	"math/rand"
 	"net/url"
-	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -16,7 +15,7 @@ import (
 
 var dsn = flag.String(
 	"dsn",
-	"",
+	"postgres://sourcegraph:sourcegraph@localhost/postgres?sslmode=disable&timezone=UTC",
 	"Database connection string to use in integration tests",
 )
 
@@ -25,11 +24,11 @@ func init() {
 }
 
 func testDatabase(t testing.TB) (*sql.DB, func()) {
-	dsn := newDSN()
-	config, err := url.Parse(dsn)
+	config, err := url.Parse(*dsn)
 	if err != nil {
-		t.Fatalf("failed to parse dsn %q: %s", dsn, err)
+		t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
 	}
+	repos.UpdateDSNFromEnv(config)
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
@@ -72,16 +71,6 @@ func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
 	if err != nil {
 		t.Errorf("failed to exec %q: %s", q, err)
 	}
-}
-
-func newDSN() string {
-	if *dsn != "" {
-		return *dsn
-	}
-	if os.Getenv("PGDATABASE") != "" {
-		return repos.NewDSNFromEnv()
-	}
-	return "postgres://sourcegraph:sourcegraph@localhost/postgres?sslmode=disable&timezone=UTC"
 }
 
 const killClientConnsQuery = `

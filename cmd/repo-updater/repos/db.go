@@ -38,9 +38,15 @@ type TxBeginner interface {
 
 // NewDSNFromEnv returns a DSN based on PGXXX environment variables.
 func NewDSNFromEnv() string {
-	dsn := url.URL{
-		Scheme: "postgres",
-		Host:   os.Getenv("PGHOST"),
+	u := &url.URL{Scheme: "postgres"}
+	UpdateDSNFromEnv(u)
+	return u.String()
+}
+
+// UpdateDSNFromEnv updates dsn based on PGXXX environment variables.
+func UpdateDSNFromEnv(dsn *url.URL) {
+	if host := os.Getenv("PGHOST"); host != "" {
+		dsn.Host = host
 	}
 
 	if port := os.Getenv("PGPORT"); port != "" {
@@ -59,7 +65,11 @@ func NewDSNFromEnv() string {
 		dsn.Path = db
 	}
 
-	return dsn.String()
+	if sslmode := os.Getenv("PGSSLMODE"); sslmode != "" {
+		qry := dsn.Query()
+		qry.Set("sslmode", sslmode)
+		dsn.RawQuery = qry.Encode()
+	}
 }
 
 // NewDB returns a new *sql.DB from the given dsn (data source name).
