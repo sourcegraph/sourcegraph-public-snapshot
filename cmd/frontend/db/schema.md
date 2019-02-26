@@ -445,6 +445,7 @@ Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_service_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id) WHERE external_service_type IS NOT NULL AND external_service_id IS NOT NULL AND external_id IS NOT NULL
     "repo_name_unique" UNIQUE, btree (name)
+    "repo_metadata_gin_idx" gin (metadata)
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_sources_gin_idx" gin (sources)
 Check constraints:

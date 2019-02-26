@@ -198,8 +198,8 @@
 // 1528395567_add_repo_external_service_unique_index.up.sql (1.164kB)
 // 1528395568_add_sources_column_to_repo_table.down.sql (71B)
 // 1528395568_add_sources_column_to_repo_table.up.sql (169B)
-// 1528395569_add_metadata_column_to_repo_table.down.sql (39B)
-// 1528395569_add_metadata_column_to_repo_table.up.sql (108B)
+// 1528395569_add_metadata_column_to_repo_table.down.sql (73B)
+// 1528395569_add_metadata_column_to_repo_table.up.sql (173B)
 
 package migrations
 
@@ -4228,7 +4228,7 @@ func _1528395568_add_sources_column_to_repo_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395569_add_metadata_column_to_repo_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\x4d\x2d\x49\x4c\x49\x2c\x49\xb4\xe6\x02\x04\x00\x00\xff\xff\xb7\x1f\x13\x72\x27\x00\x00\x00")
+var __1528395569_add_metadata_column_to_repo_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\x28\x4a\x2d\xc8\x8f\xcf\x4d\x2d\x49\x4c\x49\x2c\x49\x8c\x4f\xcf\xcc\x8b\xcf\x4c\xa9\xb0\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x05\x2b\x51\x00\x6b\x71\xf6\xf7\x09\xf5\xf5\x53\x80\x29\xb7\xe6\x02\x04\x00\x00\xff\xff\xe4\xf9\x42\x60\x49\x00\x00\x00")
 
 func _1528395569_add_metadata_column_to_repo_tableDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -4244,11 +4244,11 @@ func _1528395569_add_metadata_column_to_repo_tableDownSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395569_add_metadata_column_to_repo_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xac, 0x75, 0x8a, 0x10, 0xb, 0xfa, 0x4f, 0x36, 0x13, 0x75, 0xe9, 0x92, 0x67, 0x62, 0xf1, 0xf1, 0x3d, 0x15, 0xb3, 0x48, 0x2b, 0xb2, 0xe7, 0x5b, 0x2a, 0xa1, 0xb9, 0x53, 0x8f, 0x5a, 0x1, 0x47}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5a, 0x6d, 0x81, 0xb2, 0xc8, 0x55, 0x12, 0xb5, 0x2b, 0xb2, 0x48, 0xec, 0x44, 0x6, 0x21, 0xa3, 0x51, 0x3e, 0xcd, 0xcb, 0xb7, 0x2e, 0x76, 0xc4, 0xdc, 0x5f, 0xcd, 0xf9, 0x55, 0xf9, 0xd0, 0x24}}
 	return a, nil
 }
 
-var __1528395569_add_metadata_column_to_repo_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\x4d\x2d\x49\x4c\x49\x2c\x49\x54\xf0\x0a\xf6\xf7\x73\x52\xf0\xf3\x0f\x51\xf0\x0b\xf5\xf1\x51\x70\x71\x75\x73\x0c\xf5\x09\x51\x50\xaf\xae\x55\xe7\x72\xf6\x70\x75\xf6\x56\xd0\xc8\x2a\xce\xcf\x4b\x8a\x2f\xa9\x2c\x48\xcd\x4f\xd3\x80\x69\xd4\x54\xb0\x55\x50\xcf\x4f\xca\x4a\x4d\x2e\x51\xd7\xb4\xe6\x02\x04\x00\x00\xff\xff\x03\x09\x83\x51\x6c\x00\x00\x00")
+var __1528395569_add_metadata_column_to_repo_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x44\x8e\xc1\x8a\x83\x30\x14\x45\xf7\x7e\xc5\xdd\x45\xbf\x41\x66\x11\x93\x8c\xe3\x4c\xe6\x05\x34\x81\xee\x82\xd6\xb4\x28\xd4\x48\x9b\x45\x4b\xe9\xbf\x17\x5a\xa4\xfb\x7b\xcf\x39\x5c\x5b\xd5\xc2\xf2\x4a\x2b\x9c\xc3\x1a\xc1\xa5\x84\x30\xda\xfd\x13\x4e\x21\xf5\x63\x9f\x7a\xfc\x76\x86\x2a\x90\xb1\x20\xa7\x35\xa4\xfa\xe6\x4e\x5b\xb0\xfb\x83\x65\xe2\x47\x89\x3f\xe4\xf3\x25\x2e\x83\x4f\xb7\x35\xc4\x43\xbe\x1d\x0b\x7c\x81\xc5\x61\x0e\xfb\xc4\x8a\x32\x13\xad\xe2\x56\xa1\x21\xa9\x76\x2f\x99\xdf\x86\xfe\x38\x2d\x7e\x1a\xaf\x30\xf4\xae\x70\x5d\x43\x35\xea\x86\xf0\x81\x95\xd9\x33\x00\x00\xff\xff\x48\xb2\x1a\x09\xad\x00\x00\x00")
 
 func _1528395569_add_metadata_column_to_repo_tableUpSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -4264,7 +4264,7 @@ func _1528395569_add_metadata_column_to_repo_tableUpSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395569_add_metadata_column_to_repo_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1e, 0xd, 0x5a, 0x6, 0x60, 0x27, 0x80, 0x16, 0xc0, 0x39, 0x19, 0x45, 0xee, 0xc4, 0xfa, 0x16, 0x8b, 0x1b, 0xc4, 0xfe, 0x65, 0x3d, 0x6d, 0xe1, 0x4f, 0x7d, 0x50, 0xdc, 0xfa, 0x84, 0x4b, 0x95}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x83, 0xfd, 0xb7, 0x83, 0x3e, 0x30, 0xe7, 0xfa, 0x94, 0x8c, 0xfb, 0x16, 0x2e, 0xaf, 0x86, 0x47, 0x24, 0xe, 0xb0, 0x3d, 0x80, 0x59, 0xba, 0xcc, 0x8e, 0xc9, 0xa8, 0x30, 0xba, 0x58, 0xe1, 0xed}}
 	return a, nil
 }
 
