@@ -41,8 +41,6 @@ for pkg in $server_pkg \
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o "$bindir/$(basename "$pkg")" "$pkg"
 done
 
-mkdir -p "$OUTPUT/.ctags.d"
-cp cmd/symbols/.ctags.d/additional-languages.ctags "$OUTPUT/.ctags.d/additional-languages.ctags"
-env SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildExecutable
+env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
 
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT"

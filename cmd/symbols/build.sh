@@ -125,20 +125,51 @@ function execute() {
     "$SYMBOLS_EXECUTABLE_OUTPUT_PATH"
 }
 
+# Builds the libsqlite3-pcre Docker image.
+function buildLibsqlite3PcreDockerImage() {
+    EMPTY_DIRECTORY="$(mktemp -d)"
+    trap "rm -rf $EMPTY_DIRECTORY" EXIT
+
+    echo "Building the libsqlite3-pcre Docker image..."
+    docker build --quiet -f cmd/symbols/libsqlite3-pcre/Dockerfile -t "libsqlite3-pcre" "$EMPTY_DIRECTORY"
+    echo "Building the libsqlite3-pcre Docker image... done"
+}
+
+# Builds the Docker images that the symbols Docker image depends on. The caller
+# must set:
+#
+# - SYMBOLS_EXECUTABLE_OUTPUT_PATH
+# - CTAGS_D_OUTPUT_PATH
+function buildSymbolsDockerImageDependencies() {
+    if [ -z "$SYMBOLS_EXECUTABLE_OUTPUT_PATH" ]; then
+        echo "buildSymbolsDockerImageDependencies expects SYMBOLS_EXECUTABLE_OUTPUT_PATH to be set."
+        exit 1
+    fi
+    if [ -z "$CTAGS_D_OUTPUT_PATH" ]; then
+        echo "buildSymbolsDockerImageDependencies expects CTAGS_D_OUTPUT_PATH to be set."
+        exit 1
+    fi
+
+    export GO111MODULE=on
+    export GOARCH=amd64
+    export GOOS=linux
+    buildExecutable
+
+    buildCtagsDockerImage
+
+    buildLibsqlite3PcreDockerImage
+
+    cp -R cmd/symbols/.ctags.d "$CTAGS_D_OUTPUT_PATH"
+}
+
 # Builds the symbols Docker image.
 function buildSymbolsDockerImage() {
     symbolsDockerBuildContext="$(mktemp -d)"
     trap "rm -rf $symbolsDockerBuildContext" EXIT
 
-    export GO111MODULE=on
-    export GOARCH=amd64
-    export GOOS=linux
     SYMBOLS_EXECUTABLE_OUTPUT_PATH="$symbolsDockerBuildContext/symbols"
-    buildExecutable
-
-    buildCtagsDockerImage
-
-    cp -R cmd/symbols/.ctags.d "$symbolsDockerBuildContext"
+    CTAGS_D_OUTPUT_PATH="$symbolsDockerBuildContext/.ctags.d"
+    buildSymbolsDockerImageDependencies
 
     echo "Building the $IMAGE Docker image..."
     docker build --quiet -f cmd/symbols/Dockerfile -t "$IMAGE" "$symbolsDockerBuildContext"
