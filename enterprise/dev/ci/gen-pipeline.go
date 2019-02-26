@@ -325,10 +325,4 @@ func main() {
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
 		addDockerImageStep(branch[20:], false)
-
-	case strings.HasPrefix(branch, "docker-images/"):
-		// Don't deploy since they are auto-deployed from master.
-		addDockerImageStep(branch[14:], true)
-		pipeline.AddWait()
-	}
 }
