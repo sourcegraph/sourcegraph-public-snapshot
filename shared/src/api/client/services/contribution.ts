@@ -3,11 +3,8 @@ import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscriba
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import {
-    ActionContribution,
-    ActionItem,
     ContributableMenu,
     Contributions,
-    EvaluatedActionContribution,
     EvaluatedContributions,
     MenuContributions,
     MenuItemContribution,
@@ -262,61 +259,31 @@ export function evaluateContributions(
     contributions: Contributions,
     { evaluateTemplate, needsEvaluation } = DEFAULT_TEMPLATE_EVALUATOR
 ): EvaluatedContributions {
-    if (!contributions.actions || contributions.actions.length === 0) {
-        return { ...contributions } as EvaluatedContributions
+    const evaluateTemplateIfNeeded = (template: string | undefined, context: ComputedContext): string | undefined =>
+        template && needsEvaluation(template) ? evaluateTemplate(template, context) : template
+    return {
+        ...contributions,
+        actions:
+            contributions.actions &&
+            contributions.actions.map(action => ({
+                ...action,
+                title: evaluateTemplateIfNeeded(action.title, context),
+                category: evaluateTemplateIfNeeded(action.category, context),
+                description: evaluateTemplateIfNeeded(action.description, context),
+                iconURL: evaluateTemplateIfNeeded(action.iconURL, context),
+                actionItem: action.actionItem && {
+                    ...action.actionItem,
+                    label: evaluateTemplateIfNeeded(action.actionItem.label, context),
+                    description: evaluateTemplateIfNeeded(action.actionItem.description, context),
+                    iconURL: evaluateTemplateIfNeeded(action.actionItem.iconURL, context),
+                    iconDescription: evaluateTemplateIfNeeded(action.actionItem.iconDescription, context),
+                    pressed: action.actionItem.pressed && evaluate(action.actionItem.pressed, context),
+                },
+                commandArguments:
+                    action.commandArguments &&
+                    action.commandArguments.map(arg =>
+                        typeof arg === 'string' && needsEvaluation(arg) ? evaluateTemplate(arg, context) : arg
+                    ),
+            })),
     }
-    const evaluatedActions: EvaluatedActionContribution[] = []
-    for (const action of contributions.actions as Readonly<ActionContribution>[]) {
-        const changed: Partial<EvaluatedActionContribution> = {}
-        if (action.commandArguments) {
-            for (const [i, arg] of action.commandArguments.entries()) {
-                if (typeof arg === 'string' && needsEvaluation(arg)) {
-                    const evaluatedArg = evaluateTemplate(arg, context)
-                    if (changed.commandArguments) {
-                        changed.commandArguments.push(evaluatedArg)
-                    } else {
-                        changed.commandArguments = action.commandArguments.slice(0, i).concat(evaluatedArg)
-                    }
-                } else if (changed.commandArguments) {
-                    changed.commandArguments.push(arg)
-                }
-            }
-        }
-        if (action.title && needsEvaluation(action.title)) {
-            changed.title = evaluateTemplate(action.title, context)
-        }
-        if (action.category && needsEvaluation(action.category)) {
-            changed.category = evaluateTemplate(action.category, context)
-        }
-        if (action.description && needsEvaluation(action.description)) {
-            changed.description = evaluateTemplate(action.description, context)
-        }
-        if (action.iconURL && needsEvaluation(action.iconURL)) {
-            changed.iconURL = evaluateTemplate(action.iconURL, context)
-        }
-        if (action.actionItem) {
-            const changedActionItem: Partial<ActionItem> = {}
-            if (action.actionItem.label && needsEvaluation(action.actionItem.label)) {
-                changedActionItem.label = evaluateTemplate(action.actionItem.label, context)
-            }
-            if (action.actionItem.description && needsEvaluation(action.actionItem.description)) {
-                changedActionItem.description = evaluateTemplate(action.actionItem.description, context)
-            }
-            if (action.actionItem.iconURL && needsEvaluation(action.actionItem.iconURL)) {
-                changedActionItem.iconURL = evaluateTemplate(action.actionItem.iconURL, context)
-            }
-            if (action.actionItem.iconDescription && needsEvaluation(action.actionItem.iconDescription)) {
-                changedActionItem.iconDescription = evaluateTemplate(action.actionItem.iconDescription, context)
-            }
-            if (action.actionItem.pressed) {
-                changedActionItem.pressed = evaluate(action.actionItem.pressed, context)
-            }
-            if (Object.keys(changedActionItem).length !== 0) {
-                changed.actionItem = { ...action.actionItem, ...changedActionItem } as any
-            }
-        }
-        const modified = Object.keys(changed).length !== 0
-        evaluatedActions.push(modified ? { ...action, ...changed } : (action as any))
-    }
-    return { ...contributions, actions: evaluatedActions }
 }
