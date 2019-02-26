@@ -90,6 +90,10 @@ func NewDB(dsn string) (*sql.DB, error) {
 		return nil, errors.Wrap(err, "failed to connect to database")
 	}
 
+	if err := db.Ping(); err != nil {
+		return nil, errors.Wrap(err, "failed to ping database")
+	}
+
 	// TODO(tsenart): Instrument with Prometheus
 
 	db.SetMaxOpenConns(maxOpen)

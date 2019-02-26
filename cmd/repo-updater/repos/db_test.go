@@ -62,7 +62,7 @@ func testDatabase(t testing.TB) (*sql.DB, func()) {
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 	db, err := repos.NewDB(cfg.String())
 	if err != nil {
-		t.Fatalf("failed to connect to database: %s", err)
+		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
 	return db
 }
