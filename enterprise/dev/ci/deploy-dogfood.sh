@@ -7,18 +7,8 @@ case "$BUILDKITE_BRANCH" in
         CONTAINER=frontend
         ;;
 
-    docker-images/gitserver)
-        DEPLOYMENT="gitserver-1"
-        CONTAINER="gitserver-1"
-        ;;
-
-    docker-images/*)
-        DEPLOYMENT=$(echo $BUILDKITE_BRANCH | awk -F '/' '{printf $2}')
-        CONTAINER=$DEPLOYMENT
-        ;;
-
     *)
-        echo "Expected BUILDKITE_BRANCH to match master or docker-images/*, got $BUILDKITE_BRANCH"
+        echo "Expected BUILDKITE_BRANCH to match master, got $BUILDKITE_BRANCH"
         exit 1
 esac
 
