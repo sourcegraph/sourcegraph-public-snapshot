@@ -52,7 +52,7 @@ Code search:
 Code navigation:
 
 - [Integrations quality](https://github.com/sourcegraph/sourcegraph/issues/2380)
-- Code intelligence (details TBD)
+- [Code intelligence](https://github.com/sourcegraph/sourcegraph/issues/2452)
 
 ---
 
