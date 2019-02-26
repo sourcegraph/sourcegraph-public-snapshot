@@ -54,13 +54,6 @@ func (s *Syncer) Run(ctx context.Context) error {
 
 // Sync synchronizes the repositories of a single Source
 func (s *Syncer) Sync(ctx context.Context) (_ Diff, err error) {
-	// TODO(tsenart): Ensure that transient failures do not remove
-	// repositories. This means we need to use the store as a fallback Source
-	// in the face of those kinds of errors, so that the diff results in Unmodified
-	// entries. This logic can live here. We only need to make the returned error
-	// more structured so we can identify which sources failed and for what reason.
-	// See the SyncError type defined in other_external_services.go for inspiration.
-
 	var sourced Repos
 	if sourced, err = s.sourced(ctx); err != nil {
 		return Diff{}, err
