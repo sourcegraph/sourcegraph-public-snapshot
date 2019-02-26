@@ -1,15 +1,17 @@
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { URI } from '../types/uri'
 
 /** @internal */
-export interface ExtRootsAPI {
+export interface ExtRootsAPI extends ProxyValue {
     $acceptRoots(roots: clientType.WorkspaceRoot[]): void
 }
 
 /** @internal */
-export class ExtRoots implements ExtRootsAPI {
+export class ExtRoots implements ExtRootsAPI, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     private roots: ReadonlyArray<sourcegraph.WorkspaceRoot> = []
 
     /**
@@ -24,9 +26,7 @@ export class ExtRoots implements ExtRootsAPI {
     public readonly changes = new Subject<void>()
 
     public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
-        this.roots = Object.freeze(
-            roots.map(plain => ({ ...plain, uri: new URI(plain.uri) } as sourcegraph.WorkspaceRoot))
-        )
+        this.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
         this.changes.next()
     }
 }

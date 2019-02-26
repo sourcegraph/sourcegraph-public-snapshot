@@ -26,6 +26,7 @@ import { LayoutRouteProps } from './routes'
 import { parseSearchURLQuery } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { ThemePreferenceProps, ThemeProps } from './theme'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -37,7 +38,9 @@ export interface LayoutProps
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeybindingsProps {
+        KeybindingsProps,
+        ThemeProps,
+        ThemePreferenceProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
@@ -62,8 +65,6 @@ export interface LayoutProps
      */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
-    isLightTheme: boolean
-    onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
 
@@ -75,11 +76,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
-
-    // Force light theme on site init page.
-    if (isSiteInit && !props.isLightTheme) {
-        props.onThemeChange()
-    }
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {

@@ -1,5 +1,5 @@
-import { combineLatest, from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, map, share, switchMap, tap } from 'rxjs/operators'
+import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { createExtensionHostClient } from '../api/client/client'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParams } from '../api/client/services/command'
@@ -8,8 +8,6 @@ import { ExtensionsService } from '../api/client/services/extensionsService'
 import { MessageType } from '../api/client/services/notifications'
 import { InitData } from '../api/extension/extensionHost'
 import { Contributions } from '../api/protocol'
-import { createConnection } from '../api/protocol/jsonrpc2/connection'
-import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands } from '../commands/commands'
 import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
@@ -67,30 +65,12 @@ export function createController(context: PlatformContext): Controller {
     const subscriptions = new Subscription()
 
     const services = new Services(context)
-    const extensionHostConnection = combineLatest(
-        context.createExtensionHost().pipe(
-            switchMap(async messageTransports => {
-                const connection = createConnection(messageTransports)
-                connection.listen()
-
-                const initData: InitData = {
-                    sourcegraphURL: context.sourcegraphURL,
-                    clientApplication: context.clientApplication,
-                }
-                await connection.sendRequest('initialize', [initData])
-                return connection
-            }),
-            share()
-        ),
-        context.traceExtensionHostCommunication
-    ).pipe(
-        tap(([connection, trace]) => {
-            connection.trace(trace ? new BrowserConsoleTracer('') : null)
-        }),
-        map(([connection]) => connection),
-        distinctUntilChanged()
-    )
-    const client = createExtensionHostClient(services, extensionHostConnection)
+    const extensionHostEndpoint = context.createExtensionHost()
+    const initData: InitData = {
+        sourcegraphURL: context.sourcegraphURL,
+        clientApplication: context.clientApplication,
+    }
+    const client = createExtensionHostClient(services, extensionHostEndpoint, initData)
     subscriptions.add(client)
 
     const notifications = new Subject<Notification>()

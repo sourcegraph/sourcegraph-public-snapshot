@@ -1,14 +1,13 @@
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { flatten, values } from 'lodash'
 import { BehaviorSubject, Observable, Subscription } from 'rxjs'
-import { handleRequests } from '../../common/proxy'
-import { Connection } from '../../protocol/jsonrpc2/connection'
 import { ProvideTextDocumentDecorationSignature } from '../services/decoration'
 import { FeatureProviderRegistry } from '../services/registry'
 import { TextDocumentIdentifier } from '../types/textDocument'
 
 /** @internal */
-export interface ClientCodeEditorAPI {
+export interface ClientCodeEditorAPI extends ProxyValue {
     $setDecorations(resource: string, decorationType: string, decorations: TextDocumentDecoration[]): void
 }
 
@@ -20,6 +19,8 @@ interface PreviousDecorations {
 
 /** @internal */
 export class ClientCodeEditor implements ClientCodeEditorAPI {
+    public readonly [proxyValueSymbol] = true
+
     private subscriptions = new Subscription()
 
     /** Map of document URI to its decorations (last published by the server). */
@@ -27,10 +28,7 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
 
     private previousDecorations: PreviousDecorations = {}
 
-    constructor(
-        connection: Connection,
-        private registry: FeatureProviderRegistry<undefined, ProvideTextDocumentDecorationSignature>
-    ) {
+    constructor(private registry: FeatureProviderRegistry<undefined, ProvideTextDocumentDecorationSignature>) {
         this.subscriptions.add(
             this.registry.registerProvider(
                 undefined,
@@ -38,8 +36,6 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
                     this.getDecorationsSubject(textDocument.uri)
             )
         )
-
-        handleRequests(connection, 'codeEditor', this)
     }
 
     public $setDecorations(resource: string, decorationType: string, decorations: TextDocumentDecoration[]): void {

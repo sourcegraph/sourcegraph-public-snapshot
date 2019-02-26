@@ -286,20 +286,20 @@ func main() {
 		// 	bk.Cmd("./dev/enterprise/ci/deploy-prod.sh"))
 	}
 
+	allDockerImages := []string{
+		"frontend",
+		"github-proxy",
+		"gitserver",
+		"management-console",
+		"query-runner",
+		"repo-updater",
+		"searcher",
+		"server",
+		"symbols",
+	}
+
 	switch {
 	case taggedRelease:
-		allDockerImages := []string{
-			"frontend",
-			"github-proxy",
-			"gitserver",
-			"management-console",
-			"query-runner",
-			"repo-updater",
-			"searcher",
-			"server",
-			"symbols",
-		}
-
 		for _, dockerImage := range allDockerImages {
 			addDockerImageStep(dockerImage, false)
 		}
@@ -310,14 +310,16 @@ func main() {
 		pipeline.AddWait()
 
 	case branch == "master":
-		addDockerImageStep("frontend", true)
-		addDockerImageStep("server", true)
+		for _, dockerImage := range allDockerImages {
+			addDockerImageStep(dockerImage, true)
+		}
 		pipeline.AddWait()
 		addDeploySteps()
 
 	case strings.HasPrefix(branch, "master-dry-run/"): // replicates `master` build but does not deploy
-		addDockerImageStep("frontend", true)
-		addDockerImageStep("server", true)
+		for _, dockerImage := range allDockerImages {
+			addDockerImageStep(dockerImage, true)
+		}
 		pipeline.AddWait()
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
@@ -325,11 +327,8 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 
 	case strings.HasPrefix(branch, "docker-images/"):
-		// Only deploy images that aren't auto deployed from master.
-		if branch != "docker-images/server" && branch != "docker-images/frontend" {
-			addDockerImageStep(branch[14:], true)
-			pipeline.AddWait()
-			addDeploySteps()
-		}
+		// Don't deploy since they are auto-deployed from master.
+		addDockerImageStep(branch[14:], true)
+		pipeline.AddWait()
 	}
 }

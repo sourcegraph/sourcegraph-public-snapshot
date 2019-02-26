@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"testing"
 
@@ -52,7 +53,7 @@ func BenchmarkSearch(b *testing.B) {
 				if err != nil {
 					b.Fatal(err)
 				}
-				defer tempFile.Close()
+				defer os.Remove(tempFile.Name())
 				err = service.writeAllSymbolsToNewDB(ctx, tempFile.Name(), test.Repo, test.CommitID)
 				if err != nil {
 					b.Fatal(err)

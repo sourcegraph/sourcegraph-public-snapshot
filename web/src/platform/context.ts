@@ -1,7 +1,6 @@
-import { concat, Observable, ReplaySubject } from 'rxjs'
+import { concat, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
-import ExtensionHostWorker from 'worker-loader!../../../shared/src/api/extension/main.worker.ts'
-import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
+import { createExtensionHost } from '../../../shared/src/api/extension/worker'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
@@ -61,19 +60,11 @@ export function createPlatformContext(): PlatformContext {
                 variables
             ),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createExtensionHost: () => {
-            const worker = new ExtensionHostWorker()
-            const messageTransports = createWebWorkerMessageTransports(worker)
-            return new Observable(sub => {
-                sub.next(messageTransports)
-                return () => worker.terminate()
-            })
-        },
+        createExtensionHost: () => createExtensionHost({ wrapEndpoints: false }),
         urlToFile: toPrettyBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
         sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
     }
     return context

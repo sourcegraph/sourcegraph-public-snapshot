@@ -1,11 +1,7 @@
+import { ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import { Unsubscribable } from 'rxjs'
 import { ClientCommandsAPI } from '../../client/api/commands'
-import { ProviderMap } from './common'
-
-/** @internal */
-export interface ExtCommandsAPI {
-    $executeCommand(id: number, args: any[]): Promise<any>
-}
+import { syncSubscription } from '../../util'
 
 interface CommandEntry {
     command: string
@@ -13,16 +9,8 @@ interface CommandEntry {
 }
 
 /** @internal */
-export class ExtCommands implements ExtCommandsAPI, Unsubscribable {
-    private registrations = new ProviderMap<CommandEntry>(id => this.proxy.$unregister(id))
-
-    constructor(private proxy: ClientCommandsAPI) {}
-
-    /** Proxy method invoked by the client when the client wants to executes a command. */
-    public $executeCommand(id: number, args: any[]): Promise<any> {
-        const { callback } = this.registrations.get<CommandEntry>(id)
-        return Promise.resolve(callback(...args))
-    }
+export class ExtCommands {
+    constructor(private proxy: ProxyResult<ClientCommandsAPI>) {}
 
     /**
      * Extension API method invoked directly when an extension wants to execute a command. It calls to the client
@@ -34,12 +22,6 @@ export class ExtCommands implements ExtCommandsAPI, Unsubscribable {
     }
 
     public registerCommand(entry: CommandEntry): Unsubscribable {
-        const { id, subscription } = this.registrations.add(entry)
-        this.proxy.$registerCommand(id, entry.command)
-        return subscription
-    }
-
-    public unsubscribe(): void {
-        this.registrations.unsubscribe()
+        return syncSubscription(this.proxy.$registerCommand(entry.command, proxyValue(entry.callback)))
     }
 }

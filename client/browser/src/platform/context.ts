@@ -5,7 +5,6 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../../shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '../../../../shared/src/settings/settings'
-import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import { toPrettyBlobURL } from '../../../../shared/src/util/url'
 import { ExtensionStorageSubject } from '../browser/ExtensionStorageSubject'
 import * as runtime from '../browser/runtime'
@@ -141,7 +140,6 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
         },
         sourcegraphURL: sourcegraphUrl,
         clientApplication: 'other',
-        traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
         sideloadedExtensionURL: new ExtensionStorageSubject('sideloadedExtensionURL', null),
     }
     return context

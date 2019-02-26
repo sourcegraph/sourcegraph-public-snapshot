@@ -1,16 +1,14 @@
-import { Subscription } from 'rxjs'
-import { ContextValues } from 'sourcegraph'
-import { handleRequests } from '../../common/proxy'
-import { Connection } from '../../protocol/jsonrpc2/connection'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ContextValues, Unsubscribable } from 'sourcegraph'
 
 /** @internal */
-export interface ClientContextAPI {
+export interface ClientContextAPI extends ProxyValue {
     $acceptContextUpdates(updates: ContextValues): void
 }
 
 /** @internal */
-export class ClientContext implements ClientContextAPI {
-    private subscriptions = new Subscription()
+export class ClientContext implements ClientContextAPI, Unsubscribable {
+    public readonly [proxyValueSymbol] = true
 
     /**
      * Context keys set by this server. To ensure that context values are cleaned up, all context properties that
@@ -20,9 +18,7 @@ export class ClientContext implements ClientContextAPI {
      */
     private keys = new Set<string>()
 
-    constructor(connection: Connection, private updateContext: (updates: ContextValues) => void) {
-        handleRequests(connection, 'context', this)
-    }
+    constructor(private updateContext: (updates: ContextValues) => void) {}
 
     public $acceptContextUpdates(updates: ContextValues): void {
         for (const key of Object.keys(updates)) {
@@ -41,7 +37,5 @@ export class ClientContext implements ClientContextAPI {
         }
         this.keys.clear()
         this.updateContext(updates)
-
-        this.subscriptions.unsubscribe()
     }
 }

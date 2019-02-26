@@ -1488,6 +1488,11 @@
     rxjs "^6.3.3"
     ts-key-enum "^2.0.0"
 
+"@sourcegraph/comlink@^3.1.1-fork.3":
+  version "3.1.1-fork.3"
+  resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
+  integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
+
 "@sourcegraph/event-positions@^1.0.1":
   version "1.0.1"
   resolved "https://registry.npmjs.org/@sourcegraph/event-positions/-/event-positions-1.0.1.tgz#aa83c38170275db4e696a6d5fc0f4d1e733713be"
@@ -1505,9 +1510,8 @@
     sourcegraph "*"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "1.1.0"
-  dependencies:
-    sourcegraph "*"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -10178,6 +10182,11 @@ mermaid@^8.0.0:
     moment "^2.23.0"
     scope-css "^1.2.1"
 
+message-port-polyfill@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/message-port-polyfill/-/message-port-polyfill-0.1.0.tgz#0d6c9201e5e15301f36930c4b7fe0a56c17bc7a7"
+  integrity sha512-CKP0YTyLUnGZU+1SCqIm/QFE/oqo0oA4mLTb6BWSx5/YPlvlut32dpmYSr8u55xqAzy89Tc9X7bMdSwXtZJ2Ew==
+
 methods@~1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/methods/-/methods-1.1.2.tgz#5529a4d67654134edcc5266656835b0f851afcee"
@@ -13780,12 +13789,13 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.0, source-map@~0.6.1:
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
 sourcegraph@*:
-  version "19.4.0"
-  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-19.4.0.tgz#5e02146ef06a5a3b0e37d1f09375bbfa011ddee8"
-  integrity sha512-fyx0nFtySTdn+Y1JR7LPdl2lj9vHCbSgoLjzMEW5iuBjVuVHXdVldq3kjBYoI98MI6L53qATT993sDVrq4Jqwg==
+  version "22.0.0"
+  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-22.0.0.tgz#b259929c31bf367f5160056698a881dc26eb36bd"
+  integrity sha512-cJHby0OPCM0y0BmRTKhY89D02f9koROluHMJGQGNE8q9CoIVbe1s6ctHCytz7bjY9mKtCpQMbtxYQhfIm5S4lg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "22.0.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

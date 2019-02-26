@@ -3,7 +3,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, Subscription } from 'rxjs'
+import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
@@ -36,6 +36,7 @@ import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
@@ -68,10 +69,14 @@ interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadePr
 
     viewerSubject: LayoutProps['viewerSubject']
 
+    /** The user's preference for the theme (light, dark or following system theme) */
+    themePreference: ThemePreference
+
     /**
-     * Whether the light theme is enabled or not
+     * Whether the OS uses light theme, synced from a media query.
+     * If the browser/OS does not this, will default to true.
      */
-    isLightTheme: boolean
+    systemIsLightTheme: boolean
 
     /**
      * The current search query in the navbar.
@@ -80,6 +85,21 @@ interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadePr
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
+/** Reads the stored theme preference from localStorage */
+const readStoredThemePreference = (): ThemePreference => {
+    const value = localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY)
+    // Handle both old and new preference values
+    switch (value) {
+        case 'true':
+        case 'light':
+            return ThemePreference.Light
+        case 'false':
+        case 'dark':
+            return ThemePreference.Dark
+        default:
+            return ThemePreference.System
+    }
+}
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
@@ -93,11 +113,15 @@ setLinkComponent(RouterLinkOrAnchor)
  * The root component
  */
 export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+    private subscriptions = new Subscription()
+    private darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
+
     constructor(props: SourcegraphWebAppProps) {
         super(props)
         const platformContext = createPlatformContext()
         this.state = {
-            isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
+            themePreference: readStoredThemePreference(),
+            systemIsLightTheme: !this.darkThemeMediaList.matches,
             navbarSearchQuery: '',
             platformContext,
             extensionsController: createExtensionsController(platformContext),
@@ -106,7 +130,12 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         }
     }
 
-    private subscriptions = new Subscription()
+    /** Returns whether Sourcegraph should be in light theme */
+    private isLightTheme(): boolean {
+        return this.state.themePreference === 'system'
+            ? this.state.systemIsLightTheme
+            : this.state.themePreference === 'light'
+    }
 
     public componentDidMount(): void {
         updateUserSessionStores()
@@ -145,6 +174,17 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.subscriptions.add(
             from(this.state.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
+
+        // React to OS theme change
+        this.subscriptions.add(
+            fromEventPattern<MediaQueryListEvent>(
+                // Need to use addListener() because addEventListener() is not supported yet in Safari
+                handler => this.darkThemeMediaList.addListener(handler),
+                handler => this.darkThemeMediaList.removeListener(handler)
+            ).subscribe(event => {
+                this.setState({ systemIsLightTheme: !event.matches })
+            })
+        )
     }
 
     public componentWillUnmount(): void {
@@ -155,9 +195,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     public componentDidUpdate(): void {
-        localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.isLightTheme + '')
-        document.body.classList.toggle('theme-light', this.state.isLightTheme)
-        document.body.classList.toggle('theme-dark', !this.state.isLightTheme)
+        localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
+        document.body.classList.toggle('theme-light', this.isLightTheme())
+        document.body.classList.toggle('theme-dark', !this.isLightTheme())
     }
 
     public render(): React.ReactFragment | null {
@@ -208,8 +248,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         viewerSubject={this.state.viewerSubject}
                                         settingsCascade={this.state.settingsCascade}
                                         // Theme
-                                        isLightTheme={this.state.isLightTheme}
-                                        onThemeChange={this.onThemeChange}
+                                        isLightTheme={this.isLightTheme()}
+                                        themePreference={this.state.themePreference}
+                                        onThemePreferenceChange={this.onThemePreferenceChange}
                                         // Search query
                                         navbarSearchQuery={this.state.navbarSearchQuery}
                                         onNavbarQueryChange={this.onNavbarQueryChange}
@@ -228,8 +269,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
     }
 
-    private onThemeChange = () => {
-        this.setState(state => ({ isLightTheme: !state.isLightTheme }))
+    private onThemePreferenceChange = (themePreference: ThemePreference) => {
+        this.setState({ themePreference })
     }
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {

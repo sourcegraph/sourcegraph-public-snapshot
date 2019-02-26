@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,9 @@ import (
 func init() {
 	frontendregistry.HandleRegistryExtensionBundle = handleRegistryExtensionBundle
 }
+
+// sourceMappingURLLineRegex is a regular expression that matches all lines with a `//# sourceMappingURL` comment
+var sourceMappingURLLineRegex = regexp.MustCompile(`(?m)\r?\n?^//# sourceMappingURL=.+$`)
 
 // handleRegistryExtensionBundle serves the bundled JavaScript source file or the source map for an
 // extension in the registry as a raw JavaScript or JSON file.
@@ -79,7 +83,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		data = sourceMap
 	} else {
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-		data = bundle
+		data = sourceMappingURLLineRegex.ReplaceAll(bundle, []byte{})
 	}
 	w.Write(data)
 

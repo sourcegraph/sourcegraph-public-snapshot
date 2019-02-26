@@ -11,17 +11,18 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { isDiscussionsEnabled } from '../discussions'
 import { KeybindingsProps } from '../keybindings'
+import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { UserNavItem } from './UserNavItem'
 
 interface Props
     extends SettingsCascadeProps,
         KeybindingsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+        PlatformContextProps<'forceUpdateTooltip'>,
+        ThemeProps,
+        ThemePreferenceProps {
     location: H.Location
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
-    onThemeChange: () => void
     showDotComMarketing: boolean
 }
 
