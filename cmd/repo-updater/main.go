@@ -51,7 +51,7 @@ func main() {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			w.Write(d)
+			_, _ = w.Write(d)
 		}),
 	})
 

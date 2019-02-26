@@ -236,7 +236,7 @@ func TestRepoLookup(t *testing.T) {
 			metadataUpdate := make(chan *api.ReposUpdateMetadataRequest, 1)
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				var params api.ReposUpdateMetadataRequest
-				json.NewDecoder(r.Body).Decode(&params)
+				_ = json.NewDecoder(r.Body).Decode(&params)
 				metadataUpdate <- &params
 			}))
 			defer ts.Close()

@@ -93,8 +93,8 @@ func diff(b1, b2 []byte) (string, error) {
 	defer os.Remove(f2.Name())
 	defer f2.Close()
 
-	f1.Write(b1)
-	f2.Write(b2)
+	_, _ = f1.Write(b1)
+	_, _ = f2.Write(b2)
 
 	data, err := exec.Command("diff", "-u", f1.Name(), f2.Name()).CombinedOutput()
 	if len(data) > 0 {
