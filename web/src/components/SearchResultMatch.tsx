@@ -77,7 +77,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                 }).pipe(
                                     switchMap(highlightedStr => {
                                         const highlightedMarkdown = decode(markdownHTML).replace(
-                                            '<pre>' + codeContent + '\n</pre>',
+                                            codeContent,
                                             highlightedStr
                                         )
                                         return of(highlightedMarkdown)
