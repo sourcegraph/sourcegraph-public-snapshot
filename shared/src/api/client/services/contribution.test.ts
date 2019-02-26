@@ -33,7 +33,7 @@ const FIXTURE_CONTRIBUTIONS_2: Contributions = {
     },
 }
 
-const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
+const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
     actions: [
         { id: '1.a', command: 'c', title: '1.A' },
         { id: '1.b', command: 'c', title: '1.B' },
@@ -224,20 +224,41 @@ describe('ContributionRegistry', () => {
 })
 
 describe('mergeContributions', () => {
+    const FIXTURE_CONTRIBUTIONS_1: EvaluatedContributions = {
+        actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
+            [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
+        },
+    }
+
+    const FIXTURE_CONTRIBUTIONS_2: EvaluatedContributions = {
+        actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
+            [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
+        },
+    }
+    const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
+        actions: [
+            { id: '1.a', command: 'c', title: '1.A' },
+            { id: '1.b', command: 'c', title: '1.B' },
+            { id: '2.a', command: 'c', title: '2.A' },
+            { id: '2.b', command: 'c', title: '2.B' },
+        ],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '1.a' }, { action: '2.a' }],
+            [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
+            [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
+        },
+    }
+
     test('handles an empty array', () => expect(mergeContributions([])).toEqual({}))
     test('handles a single item', () =>
-        expect(mergeContributions([FIXTURE_CONTRIBUTIONS_1 as EvaluatedContributions])).toEqual(
-            FIXTURE_CONTRIBUTIONS_1
-        ))
+        expect(mergeContributions([FIXTURE_CONTRIBUTIONS_1])).toEqual(FIXTURE_CONTRIBUTIONS_1))
     test('handles multiple items', () =>
         expect(
-            mergeContributions([
-                FIXTURE_CONTRIBUTIONS_1 as EvaluatedContributions,
-                FIXTURE_CONTRIBUTIONS_2 as EvaluatedContributions,
-                {},
-                { actions: [] },
-                { menus: {} },
-            ])
+            mergeContributions([FIXTURE_CONTRIBUTIONS_1, FIXTURE_CONTRIBUTIONS_2, {}, { actions: [] }, { menus: {} }])
         ).toEqual(FIXTURE_CONTRIBUTIONS_MERGED))
 })
 
