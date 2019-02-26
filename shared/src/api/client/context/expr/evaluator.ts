@@ -24,7 +24,7 @@ export function evaluate(expr: string, context: ComputedContext): any {
  * A template is a string that interpolates expressions in ${...}. It uses the same syntax as
  * JavaScript templates.
  */
-export function evaluateTemplate(template: string, context: ComputedContext): any {
+export function evaluateTemplate(template: string, context: ComputedContext): string {
     return exec(new TemplateParser().parse(template), context)
 }
 
