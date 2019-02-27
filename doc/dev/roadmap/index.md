@@ -42,7 +42,7 @@ Distribution:
 - [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
 - [Improve scaling documentation](https://github.com/sourcegraph/sourcegraph/issues/2019)
 - [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
-- [Documentation improvements for 3.2](https://github.com/sourcegraph/sourcegraph/issues/2023)
+- [Documentation UX and content improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
 
 Code search:
 
