@@ -130,6 +130,25 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 			ID:          "foo",
 		},
 	}
+	unmanaged := repos.Repo{
+		Name:     "unmanaged",
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(github.Repository),
+		ExternalRepo: api.ExternalRepoSpec{
+			ServiceType: "non_existent_kind",
+			ServiceID:   "https://example.com/",
+			ID:          "unmanaged",
+		},
+	}
+
+	// TODO handle this case. Probably load all repos, or also load by external cols
+	//
+	// foo is managed by a
+	// a is deleted => foo is marked deleted
+	// foo is renamed to bar upstream
+	// a is recreated
+	// ListRepos(ctx, "bar") -> won't return bar since it doesn't exist and foo is deleted
+	// does the upsert fail, since it thinks bar is a new repo and store doesn't return it
 
 	return func(t *testing.T) {
 		t.Helper()
@@ -151,6 +170,12 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 				repos: repos.Repos{foo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
 				})},
+			},
+			{
+				name:   "ignores unmanaged",
+				kinds:  []string{"github"},
+				stored: repos.Repos{&foo, &unmanaged}.Clone(),
+				repos:  repos.Repos{&foo}.Clone(),
 			},
 		} {
 			tc := tc

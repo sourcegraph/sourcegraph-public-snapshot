@@ -134,9 +134,8 @@ func getRepoByNameQuery(name string) *sqlf.Query {
 	return sqlf.Sprintf(getRepoByNameQueryFmtstr, name)
 }
 
-// ListRepos lists all stored repos that are not deleted, have one of the configured
-// external service kind and have any sources defined OR their name is one of the given
-// names.
+// ListRepos lists all stored repos that are not deleted, have one of the
+// configured external service kind OR their name is one of the given names.
 func (s DBStore) ListRepos(ctx context.Context, names ...string) (repos []*Repo, err error) {
 	return repos, s.paginate(ctx, &repos, listReposQuery(s.kinds, names))
 }
@@ -162,8 +161,7 @@ SELECT
 FROM repo
 WHERE id > %s
 AND deleted_at IS NULL
-AND %s
-AND (sources != '{}' OR %s)
+AND (%s OR %s)
 ORDER BY id ASC LIMIT %s
 `
 
