@@ -25,8 +25,8 @@ const ExtensionLink: React.FunctionComponent<{ id: string }> = props => {
 export const GlobalDebug: React.FunctionComponent<Props> = props =>
     SHOW_DEBUG ? (
         <div className="global-debug navbar navbar-expand">
-            <ul className="navbar-nav align-items-center">
-                <li className="nav-item">
+            <div className="navbar-nav align-items-center">
+                <div className="nav-item">
                     <ShortcutProvider>
                         <ExtensionStatusPopover
                             location={props.location}
@@ -35,7 +35,7 @@ export const GlobalDebug: React.FunctionComponent<Props> = props =>
                             platformContext={props.platformContext}
                         />
                     </ShortcutProvider>
-                </li>
-            </ul>
+                </div>
+            </div>
         </div>
     ) : null
