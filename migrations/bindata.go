@@ -192,6 +192,8 @@
 // 1528395563_.up.sql (181B)
 // 1528395564_.down.sql (0)
 // 1528395564_.up.sql (0)
+// 1528395567_drop_global_dep_and_pkgs_tables.down.sql (998B)
+// 1528395567_drop_global_dep_and_pkgs_tables.up.sql (44B)
 
 package migrations
 
@@ -4100,6 +4102,46 @@ func _1528395564_UpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395567_drop_global_dep_and_pkgs_tablesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x92\xc1\x8a\xbb\x30\x10\xc6\xcf\xcd\x53\x0c\xb9\x54\xe1\xff\x7f\x82\x42\xc1\xd5\x69\x91\x95\x08\x31\x85\xdd\x53\x88\x6b\x48\x5d\x45\x43\xcd\x42\x1f\x7f\xc9\xd6\x6d\x6b\x5b\xec\x65\x0f\x5e\x26\x33\x3f\xbf\x99\xef\x8b\x39\x46\x02\xc1\xa9\xb2\xd5\x40\x4d\xdb\x97\xaa\x95\x95\xb6\x14\x02\xb2\xa0\xad\xea\xcc\x97\x32\x9a\x82\xd3\x47\x07\x2c\x17\xc0\x76\x59\xf6\x8f\x2c\x68\xa5\xad\xac\x94\x53\x14\x3e\x87\xbe\x2b\x27\x6f\x07\x6d\x7b\x59\x57\x14\xea\xce\x69\xa3\x0f\x93\xc7\x7d\xdd\xb9\x61\x9c\x22\xe1\x8a\x8c\x0a\x52\x96\xe0\xdb\xb5\x02\x59\x57\x47\x53\x77\x14\x72\x36\x15\xb6\x2b\x52\xb6\x05\x53\x77\x10\xdc\xaa\x90\x56\xb9\xbd\xec\xed\x30\xc7\x3d\xab\x7b\x0c\x2e\xdd\x41\x6b\x08\xce\x4b\xcc\xa1\x2e\xf7\x99\x67\x9d\xfb\x9e\xec\x2b\xad\xfa\x68\x1e\xf2\x82\xe0\x77\x55\xf8\xbf\x5e\xc3\x72\x6c\x5c\x42\x9c\x67\x99\xe7\xd1\x98\x86\xe1\x8a\x90\x28\x13\xc8\x41\x44\x2f\x19\xc2\x05\x00\x51\x92\x40\x9c\xb3\x42\xf0\x28\x65\x02\xee\xcf\x01\x9b\x9c\x63\xba\x65\xf0\x8a\xef\x10\x8c\xc5\x10\x38\x6e\x90\x23\x8b\xb1\x00\x5f\x83\xc0\x17\x73\x06\x09\x66\x28\x10\x38\x16\x82\xa7\xb1\x58\x11\x32\x4d\x92\x6d\xcc\x70\xca\xd0\x6c\x18\x66\x02\x66\x1b\x73\x9b\xad\xfb\xb8\xd8\xc6\x48\xff\xd5\xd5\xf1\x74\xb3\xd3\x7f\xaf\x23\xf2\xc3\xa1\xd3\x78\xdc\xfb\xe0\x21\x5e\xcc\x63\xd2\x73\x1f\xfd\xfc\xb8\xe9\xcc\xfc\x55\xa6\x26\x46\xf9\xde\x5b\x8b\x7c\xed\xaf\xcc\xf9\x0e\x00\x00\xff\xff\xb8\xbb\x25\xda\xe6\x03\x00\x00")
+
+func _1528395567_drop_global_dep_and_pkgs_tablesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395567_drop_global_dep_and_pkgs_tablesDownSql,
+		"1528395567_drop_global_dep_and_pkgs_tables.down.sql",
+	)
+}
+
+func _1528395567_drop_global_dep_and_pkgs_tablesDownSql() (*asset, error) {
+	bytes, err := _1528395567_drop_global_dep_and_pkgs_tablesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395567_drop_global_dep_and_pkgs_tables.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x51, 0x35, 0x7b, 0x4b, 0x3c, 0xae, 0xb3, 0xcc, 0xa7, 0x9, 0xd0, 0xc9, 0xba, 0x86, 0x10, 0xbe, 0x7, 0xc5, 0x16, 0xd, 0x9f, 0xda, 0x9e, 0x3a, 0x28, 0x8e, 0x7f, 0x1b, 0xa, 0x5f, 0x55, 0x72}}
+	return a, nil
+}
+
+var __1528395567_drop_global_dep_and_pkgs_tablesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x50\x4a\xcf\xc9\x4f\x4a\xcc\x89\x4f\x49\x2d\x50\xb2\xe6\x42\x96\x28\xc8\x4e\x2f\x56\xb2\xe6\x02\x04\x00\x00\xff\xff\x92\x67\x05\xe3\x2c\x00\x00\x00")
+
+func _1528395567_drop_global_dep_and_pkgs_tablesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395567_drop_global_dep_and_pkgs_tablesUpSql,
+		"1528395567_drop_global_dep_and_pkgs_tables.up.sql",
+	)
+}
+
+func _1528395567_drop_global_dep_and_pkgs_tablesUpSql() (*asset, error) {
+	bytes, err := _1528395567_drop_global_dep_and_pkgs_tablesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395567_drop_global_dep_and_pkgs_tables.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x79, 0x7c, 0x64, 0xa9, 0xa, 0x1, 0x9b, 0xff, 0xd, 0x7f, 0x67, 0x9a, 0x73, 0x19, 0x44, 0xbc, 0x58, 0x53, 0xbf, 0x60, 0x79, 0xcd, 0x51, 0x6d, 0x3, 0x6e, 0xc6, 0x8d, 0x37, 0x8b, 0xe4, 0xa6}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -4574,6 +4616,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395564_.down.sql": _1528395564_DownSql,
 
 	"1528395564_.up.sql": _1528395564_UpSql,
+
+	"1528395567_drop_global_dep_and_pkgs_tables.down.sql": _1528395567_drop_global_dep_and_pkgs_tablesDownSql,
+
+	"1528395567_drop_global_dep_and_pkgs_tables.up.sql": _1528395567_drop_global_dep_and_pkgs_tablesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -4809,6 +4855,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395563_.up.sql":                                          {_1528395563_UpSql, map[string]*bintree{}},
 	"1528395564_.down.sql":                                        {_1528395564_DownSql, map[string]*bintree{}},
 	"1528395564_.up.sql":                                          {_1528395564_UpSql, map[string]*bintree{}},
+	"1528395567_drop_global_dep_and_pkgs_tables.down.sql":         {_1528395567_drop_global_dep_and_pkgs_tablesDownSql, map[string]*bintree{}},
+	"1528395567_drop_global_dep_and_pkgs_tables.up.sql":           {_1528395567_drop_global_dep_and_pkgs_tablesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
