@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -66,12 +67,7 @@ func main() {
 		"OTHER",
 	} {
 		if newSyncerEnabled[kind] {
-			switch kind {
-			case "GITHUB":
-				continue
-			default:
-				log.Fatalf("repo.Source not implemented yet for external service of kind %q", kind)
-			}
+			continue
 		}
 
 		switch kind {
@@ -116,7 +112,14 @@ func main() {
 		log.Fatalf("failed to initalise db store: %v", err)
 	}
 
-	store := repos.NewDBStore(ctx, db, kinds, sql.TxOptions{Isolation: sql.LevelSerializable})
+	var store repos.Store
+	if !syncerEnabled {
+		err := errors.New("syncer disabled")
+		store = repos.NewFakeStore(err, err, err)
+	} else {
+		store = repos.NewDBStore(ctx, db, kinds, sql.TxOptions{Isolation: sql.LevelSerializable})
+	}
+
 	diffs := make(chan repos.Diff)
 	src := repos.NewExternalServicesSourcer(frontendAPI, kinds...)
 	syncer := repos.NewSyncer(10*time.Second, store, src, diffs, func() time.Time {
@@ -126,9 +129,10 @@ func main() {
 		return time.Now().UTC()
 	})
 
-	log.Printf("Starting new syncer for external service kinds: %+v", kinds)
-
-	go func() { log.Fatal(syncer.Run(ctx)) }()
+	if syncerEnabled {
+		log.Printf("Starting new syncer for external service kinds: %+v", kinds)
+		go func() { log.Fatal(syncer.Run(ctx)) }()
+	}
 
 	// Start new repo syncer updates scheduler relay thread.
 	go func() {
