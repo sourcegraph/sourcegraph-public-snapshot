@@ -2856,6 +2856,8 @@ type UserUsageStatistics {
     pageViews: Int!
     # The number of code intelligence actions that the user has performed.
     codeIntelligenceActions: Int!
+    # The number of find-refs actions that the user has performed.
+    findReferencesActions: Int!
     # The last time the user was active (any action, any platform).
     lastActiveTime: String
     # The last time the user was active on a code host integration.
