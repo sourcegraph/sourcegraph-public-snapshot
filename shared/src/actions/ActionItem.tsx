@@ -143,7 +143,8 @@ export class ActionItem extends React.PureComponent<Props, State> {
                             alt={this.props.action.actionItem.iconDescription}
                             className="icon-inline"
                         />
-                    )}{' '}
+                    )}
+                    {this.props.action.actionItem.iconURL && this.props.action.actionItem.label && <>&nbsp;</>}
                     {this.props.action.actionItem.label}
                 </>
             )
@@ -151,7 +152,10 @@ export class ActionItem extends React.PureComponent<Props, State> {
         } else {
             content = (
                 <>
-                    {this.props.action.iconURL && <img src={this.props.action.iconURL} className="icon-inline" />}{' '}
+                    {this.props.action.iconURL && <img src={this.props.action.iconURL} className="icon-inline" />}
+                    {this.props.action.iconURL && (this.props.action.category || this.props.action.title) && (
+                        <>&nbsp;</>
+                    )}
                     {this.props.action.category ? `${this.props.action.category}: ` : ''}
                     {this.props.action.title}
                 </>

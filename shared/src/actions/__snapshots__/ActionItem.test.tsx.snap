@@ -17,7 +17,7 @@ exports[`ActionItem actionItem variant 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -41,7 +41,7 @@ exports[`ActionItem non-actionItem variant 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -57,7 +57,7 @@ exports[`ActionItem noop command 1`] = `
     className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
 </span>
@@ -74,7 +74,6 @@ exports[`ActionItem pressed actionItem 1`] = `
   <div
     className="action-item__content"
   >
-     
     b
   </div>
 </a>
@@ -91,7 +90,6 @@ exports[`ActionItem render as link for "open" command 1`] = `
   <div
     className="action-item__content"
   >
-     
     
     t
   </div>
@@ -115,7 +113,7 @@ exports[`ActionItem run command 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -139,7 +137,7 @@ exports[`ActionItem run command 2`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -163,7 +161,7 @@ exports[`ActionItem run command with error 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -187,7 +185,7 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -211,7 +209,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -242,7 +240,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
