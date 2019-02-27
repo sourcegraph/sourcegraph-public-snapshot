@@ -6015,6 +6015,11 @@ doctrine@^2.0.0:
   dependencies:
     esutils "^2.0.2"
 
+dom-confetti@0.1.0:
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/dom-confetti/-/dom-confetti-0.1.0.tgz#0ed5b59878a253517907f2cf15b650219d67c4bd"
+  integrity sha512-yN8MrG3AQf/p2L0lNfqdzwsT0fiBbr3s1Ir6lr0MfaN9uKGNj83Ek7JJj+P6GALQCfrTayULQlrbXrehX9F0Rg==
+
 dom-converter@~0.2:
   version "0.2.0"
   resolved "https://registry.npmjs.org/dom-converter/-/dom-converter-0.2.0.tgz#6721a9daee2e293682955b6afe416771627bb768"
@@ -12249,6 +12254,13 @@ react-docgen@^3.0.0-rc.1:
     doctrine "^2.0.0"
     node-dir "^0.1.10"
     recast "^0.16.0"
+
+react-dom-confetti@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/react-dom-confetti/-/react-dom-confetti-0.1.0.tgz#9fe9eef23bc54ee001b9c9899afb25f594e6f785"
+  integrity sha512-U6OpSTfx5/Dz6cXGhgHDhrgxbHVilBybkd7Qf3ogo4CE/rb2m81rDRLFApaOXYNTFq8sUjtAlveEQfIxEY8bvg==
+  dependencies:
+    dom-confetti "0.1.0"
 
 react-dom@^16.6.3:
   version "16.7.0"

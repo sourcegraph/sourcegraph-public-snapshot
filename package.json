@@ -210,6 +210,7 @@
     "react": "^16.8.2",
     "react-circular-progressbar": "^1.0.0",
     "react-dom": "^16.8.2",
+    "react-dom-confetti": "^0.1.0",
     "react-icon-base": "^2.0.0",
     "react-router": "^4.4.0-beta.6",
     "react-router-dom": "^4.4.0-beta.6",
