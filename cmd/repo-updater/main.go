@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -29,6 +30,8 @@ import (
 const port = "3182"
 
 func main() {
+	syncerEnabled, _ := strconv.ParseBool(env.Get("SRC_SYNCER_ENABLED", "false", "Use the new repo metadata syncer."))
+
 	ctx := context.Background()
 	env.Lock()
 	env.HandleHelpFlag()
@@ -38,8 +41,10 @@ func main() {
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	// The kinds of external services we sync with the new syncer code.
-	kinds := conf.NewRepoSyncerEnabledExternalServices()
+	kinds := []string{}
+	if syncerEnabled {
+		kinds = []string{"GITHUB"}
+	}
 
 	newSyncerEnabled := map[string]bool{}
 	for _, kind := range kinds {
