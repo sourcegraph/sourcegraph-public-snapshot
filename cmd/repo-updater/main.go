@@ -121,6 +121,8 @@ func main() {
 		return time.Now().UTC()
 	})
 
+	log.Printf("Starting new syncer for external service kinds: %+v", kinds)
+
 	go func() { log.Fatal(syncer.Run(ctx)) }()
 
 	// Start new repo syncer updates scheduler relay thread.
