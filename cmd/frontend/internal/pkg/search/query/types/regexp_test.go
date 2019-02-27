@@ -33,7 +33,7 @@ func TestFixupCompileErrors(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 
-		want, err := syntax.Parse(test.want, syntax.Perl)
+		want, _ := syntax.Parse(test.want, syntax.Perl)
 		if got.String() != want.String() {
 			t.Errorf("query %s got %s want %s", test.query, got, want)
 		}
