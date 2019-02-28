@@ -465,4 +465,4 @@ const getActivationSteps = (isSiteAdmin: boolean) =>
         },
     ]
         .filter(e => true || !e.siteAdminOnly)
-        .map(e => pick<any, keyof ActivationStep>(e, 'id', 'title', 'detail', 'action'))
+        .map(({ siteAdminOnly, ...step }) => step)
