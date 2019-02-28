@@ -173,6 +173,12 @@ func main() {
 		pipeline.AddStep(":docker:", cmds...)
 	}
 
+	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
+		version = version + "_patch"
+		addDockerImageStep(branch[27:], false)
+		return
+	}
+
 	addBrowserExtensionReleaseSteps := func() {
 		// // Run e2e tests
 		// pipeline.AddStep(":chromium:",
@@ -268,6 +274,11 @@ func main() {
 		for _, dockerImage := range allDockerImages {
 			addDockerImageStep(dockerImage, true)
 		}
+		pipeline.AddWait()
+
+	case strings.HasPrefix(branch, "docker-images-patch/"):
+		version = version + "_patch"
+		addDockerImageStep(branch[20:], false)
 		pipeline.AddWait()
 	}
 }
