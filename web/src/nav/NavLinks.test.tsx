@@ -76,6 +76,7 @@ describe('NavLinks', () => {
                                 authenticatedUser={authenticatedUser}
                                 showDotComMarketing={showDotComMarketing}
                                 location={H.createLocation(path, history.location)}
+                                history={history}
                             />
                         )
                     ).toMatchSnapshot()
