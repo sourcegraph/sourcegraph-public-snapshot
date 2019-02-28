@@ -1,0 +1,23 @@
+.activation-dropdown-button {
+    &--hidden {
+        display: none;
+    }
+
+    &__progress-bar-container {
+        display: inline-block;
+        width: 1rem;
+        margin-left: 0.375rem;
+    }
+    &__circular-progress-bar {
+        .CircularProgressbar-trail {
+            stroke: $dropdown-border-color;
+        }
+        .CircularProgressbar-path {
+            stroke: $oc-green-4;
+        }
+    }
+}
+
+.activation-dropdown-header {
+    padding: 0.25rem 0.5rem;
+}

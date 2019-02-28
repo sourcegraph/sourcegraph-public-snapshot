@@ -1,7 +1,8 @@
 import H from 'history'
 import React from 'react'
-import { Observable } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
+import { ActivationProps } from '../../components/activation/Activation'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { Markdown } from '../../components/Markdown'
 import { ExtensionsControllerProps } from '../../extensions/controller'
@@ -11,7 +12,7 @@ import { renderMarkdown } from '../../util/markdown'
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
+interface Props extends ExtensionsControllerProps, SettingsCascadeProps, ActivationProps {
     panelView: PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>
     repoName?: string
     history: H.History
@@ -26,6 +27,24 @@ interface State {}
  * A panel view contributed by an extension using {@link sourcegraph.app.createPanelView}.
  */
 export class PanelView extends React.PureComponent<Props, State> {
+    private subscriptions = new Subscription()
+
+    public componentWillMount(): void {
+        if (this.props.panelView.locationProvider) {
+            this.subscriptions.add(
+                this.props.panelView.locationProvider.subscribe(l => {
+                    if (this.props.activation && this.props.panelView.id === 'references' && l && l.length > 0) {
+                        this.props.activation.update({ 'action:findReferences': true })
+                    }
+                })
+            )
+        }
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): JSX.Element | null {
         return (
             <div
