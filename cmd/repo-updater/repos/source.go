@@ -127,12 +127,12 @@ func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection) (*Git
 
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s GithubSource) ListRepos(ctx context.Context) ([]*Repo, error) {
-	var repos []*Repo
-	for repo := range s.conn.listAllRepositories(ctx) {
+func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+	rs, err := s.conn.listAllRepositories(ctx)
+	for _, repo := range rs {
 		repos = append(repos, githubRepoToRepo(s.svc, repo, s.conn))
 	}
-	return repos, nil
+	return repos, err
 }
 
 func githubRepoToRepo(
