@@ -75,23 +75,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
-				name:    "had name and got external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
-				store:   s,
-				stored: repos.Repos{foo.With(repos.Opt.Sources("a"), func(r *repos.Repo) {
-					r.ExternalRepo = api.ExternalRepoSpec{}
-				})},
-				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.ModifiedAt(clock.Time(1)), repos.Opt.Sources("a")),
-				}},
-				err: "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
 				name: "new repo sources",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource("a", "github", nil, foo.Clone()),
