@@ -142,17 +142,10 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 		},
 	}
 
-	// TODO handle this case. Probably load all repos, or also load by external cols
-	//
-	// foo is managed by a
-	// a is deleted => foo is marked deleted
-	// foo is renamed to bar upstream
-	// a is recreated
-	// ListRepos(ctx, "bar") -> won't return bar since it doesn't exist and foo is deleted
-	// does the upsert fail, since it thinks bar is a new repo and store doesn't return it
-
 	return func(t *testing.T) {
 		t.Helper()
+
+		now := time.Now().UTC()
 
 		for _, tc := range []struct {
 			name   string
@@ -176,6 +169,12 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 				kinds:  []string{"github"},
 				stored: repos.Repos{&foo, &unmanaged}.Clone(),
 				repos:  repos.Repos{&foo}.Clone(),
+			},
+			{
+				name:   "returns soft deleted repos",
+				kinds:  []string{"github"},
+				stored: repos.Repos{foo.With(repos.Opt.DeletedAt(now))},
+				repos:  repos.Repos{foo.With(repos.Opt.DeletedAt(now))},
 			},
 		} {
 			tc := tc
