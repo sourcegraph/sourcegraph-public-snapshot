@@ -31,7 +31,7 @@ describe('ActivationStatus', () => {
             () => fetchReturned.pipe(map(() => underlyingActivationStatus))
         )
 
-        const update = new Promise(resolve => activation.updateCompleted.pipe(first()).subscribe(u => resolve(u)))
+        const update = activation.updateCompleted.pipe(first()).toPromise()
         activation.update({ id2: true })
 
         // Initial fetch not yet returned
