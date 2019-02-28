@@ -7,6 +7,16 @@ import { isInPage } from '../context'
 
 /**
  * Returns an observable of a communication channel to an extension host.
+ *
+ * When executing in-page (for example as a Phabricator plugin), this simply
+ * creates an extension host worker and emits the returned EndpointPair.
+ *
+ * When executing in the browser extension, we create pair of chrome.runtime.Port objects,
+ * named 'expose-{uuid}' and 'proxy-{uuid}', and return the ports wrapped using ${@link endpointFromPort}.
+ *
+ * The background script will listen to newly created ports, create an extension host
+ * worker per pair of ports, and forward messages between the port objects and
+ * the extension host worker's endpoints.
  */
 export function createExtensionHost(): Observable<EndpointPair> {
     if (isInPage) {
@@ -27,6 +37,15 @@ export function createExtensionHost(): Observable<EndpointPair> {
     })
 }
 
+/**
+ * Partially wraps a chrome.runtime.Port and returns a MessagePort created using
+ * comlink's {@link MessageChannelAdapter}, so that the Port can be used
+ * as a comlink Endpoint to transport messages between the content script and the extension host.
+ *
+ * It is necessary to wrap the port using MessageChannelAdapter because chrome.runtime.Port objects do not support
+ * transfering MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
+ *
+ */
 function endpointFromPort(port: chrome.runtime.Port): MessagePort {
     const listeners = new Map<(event: MessageEvent) => any, (message: object, port: chrome.runtime.Port) => void>()
     return MessageChannelAdapter.wrap({
