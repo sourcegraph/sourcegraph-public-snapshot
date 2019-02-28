@@ -200,7 +200,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             .subscribe(c => this.setState({ activationCompleted: c }))
     }
 
-    private updateActivation = (u: { [key: string]: boolean }) => {
+    private updateActivation = (update: { [key: string]: boolean }) => {
         if (!this.state.activation) {
             return
         }
