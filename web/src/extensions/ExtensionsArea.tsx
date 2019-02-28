@@ -6,6 +6,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { HeroPage } from '../components/HeroPage'
+import { ThemeProps } from '../theme'
 import { RouteDescriptor } from '../util/contributions'
 import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
@@ -18,13 +19,12 @@ export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRoute
 /**
  * Properties passed to all page components in the extensions area.
  */
-export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, PlatformContextProps {
+export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, PlatformContextProps, ThemeProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
     /** The subject whose extensions and configuration to display. */
     subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-    isLightTheme: boolean
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
 }
@@ -32,7 +32,8 @@ export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, Platfo
 interface ExtensionsAreaProps
     extends RouteComponentProps<{ extensionID: string }>,
         SettingsCascadeProps,
-        PlatformContextProps {
+        PlatformContextProps,
+        ThemeProps {
     routes: ReadonlyArray<ExtensionsAreaRoute>
 
     /**
@@ -41,7 +42,6 @@ interface ExtensionsAreaProps
     authenticatedUser: GQL.IUser | null
 
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-    isLightTheme: boolean
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>

@@ -10,6 +10,7 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { siteFlags } from '../../site/backend'
+import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 import { UserAccountSidebar, UserAccountSidebarItems } from './UserAccountSidebar'
@@ -18,9 +19,8 @@ const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found"
 
 export interface UserAccountAreaRoute extends RouteDescriptor<UserAccountAreaRouteContext> {}
 
-export interface UserAccountAreaProps extends UserAreaRouteContext, RouteComponentProps<{}> {
+export interface UserAccountAreaProps extends UserAreaRouteContext, RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: GQL.IUser
-    isLightTheme: boolean
     sideBarItems: UserAccountSidebarItems
     routes: ReadonlyArray<UserAccountAreaRoute>
 }

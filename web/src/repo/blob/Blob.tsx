@@ -32,6 +32,7 @@ import {
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { isDiscussionsEnabled } from '../../discussions'
+import { ThemeProps } from '../../theme'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
@@ -45,7 +46,8 @@ interface BlobProps
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps {
     /** The raw content of the blob. */
     content: string
 
@@ -57,7 +59,6 @@ interface BlobProps
     className: string
     wrapCode: boolean
     renderMode: RenderMode
-    isLightTheme: boolean
 }
 
 interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemProps> {

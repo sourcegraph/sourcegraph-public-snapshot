@@ -1,10 +1,11 @@
 import { shuffle } from 'lodash'
 import React from 'react'
+import { ThemeProps } from '../../../theme'
 import { Logo1, Logo2, Logo3 } from './logos'
 
 // Shuffle logos because we love all of them infinitely. :)
 const LOGOS: {
-    component: React.ComponentType<{ className: string; isLightTheme: boolean }>
+    component: React.ComponentType<{ className: string } & ThemeProps>
     className: string
 }[] = shuffle([
     {
@@ -24,7 +25,7 @@ const LOGOS: {
 /**
  * The logos for the welcome main page.
  */
-export const WelcomeMainPageLogos: React.FunctionComponent<{ isLightTheme: boolean }> = ({ isLightTheme }) => (
+export const WelcomeMainPageLogos: React.FunctionComponent<ThemeProps> = ({ isLightTheme }) => (
     <>
         {LOGOS.map(({ component: C, className }, i) => (
             <C key={i} className={`welcome-main-page-logos__logo ${className}`} isLightTheme={isLightTheme} />

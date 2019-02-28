@@ -124,13 +124,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             </ErrorBoundary>
             {parseHash(props.location.hash).viewState && props.location.pathname !== '/sign-in' && (
                 <ResizablePanel
+                    {...props}
                     repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                    history={props.history}
-                    location={props.location}
-                    extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
-                    settingsCascade={props.settingsCascade}
-                    isLightTheme={props.isLightTheme}
                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                 />
             )}

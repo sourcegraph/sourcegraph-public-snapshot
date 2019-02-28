@@ -1,12 +1,11 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
+import { ThemeProps } from '../theme'
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
-interface Props extends SettingsAreaPageProps, Pick<RouteComponentProps<{}>, 'history' | 'location'> {
-    isLightTheme: boolean
-
+interface Props extends SettingsAreaPageProps, Pick<RouteComponentProps<{}>, 'history' | 'location'>, ThemeProps {
     /** Optional description to render above the editor. */
     description?: JSX.Element
 }

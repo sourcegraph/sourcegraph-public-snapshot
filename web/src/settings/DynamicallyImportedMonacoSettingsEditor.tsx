@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs'
 import { SaveToolbar } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
+import { ThemeProps } from '../theme'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -13,7 +14,8 @@ import { EditorAction } from '../site-admin/configHelpers'
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props
-    extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'isLightTheme'> {
+    extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema'>,
+        ThemeProps {
     value: string
 
     actions?: EditorAction[]
@@ -26,9 +28,6 @@ interface Props
     onSave?: (value: string) => void
     onChange?: (value: string) => void
     onDirtyChange?: (dirty: boolean) => void
-
-    isLightTheme: boolean
-
     history: H.History
 }
 

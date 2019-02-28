@@ -16,6 +16,7 @@ import { createAggregateError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
@@ -61,9 +62,11 @@ const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found"
 
 export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteContext> {}
 
-export interface ExtensionAreaProps extends ExtensionsAreaRouteContext, RouteComponentProps<{ extensionID: string }> {
+export interface ExtensionAreaProps
+    extends ExtensionsAreaRouteContext,
+        RouteComponentProps<{ extensionID: string }>,
+        ThemeProps {
     routes: ReadonlyArray<ExtensionAreaRoute>
-    isLightTheme: boolean
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
 }
 
@@ -75,7 +78,7 @@ interface ExtensionAreaState {
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface ExtensionAreaRouteContext extends SettingsCascadeProps, PlatformContextProps {
+export interface ExtensionAreaRouteContext extends SettingsCascadeProps, PlatformContextProps, ThemeProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -86,7 +89,6 @@ export interface ExtensionAreaRouteContext extends SettingsCascadeProps, Platfor
 
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
 }
 
 /**
