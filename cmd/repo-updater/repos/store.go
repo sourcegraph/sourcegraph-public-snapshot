@@ -345,6 +345,7 @@ updated AS (
     name                  = batch.name,
     description           = batch.description,
     language              = batch.language,
+    created_at            = COALESCE(batch.created_at, repo.created_at),
     updated_at            = COALESCE(batch.updated_at, repo.updated_at),
     deleted_at            = batch.deleted_at,
     external_service_type = COALESCE(batch.external_service_type, repo.external_service_type),

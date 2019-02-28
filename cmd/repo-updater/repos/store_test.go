@@ -82,17 +82,18 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 			}
 
 			suffix := "-updated"
-			now := time.Now()
+			now := time.Now().UTC()
 			for _, r := range want {
 				r.Name += suffix
 				r.Description += suffix
 				r.Language += suffix
 				r.UpdatedAt = now
+				r.CreatedAt = now
 				r.Archived = !r.Archived
 				r.Fork = !r.Fork
 			}
 
-			if err = tx.UpsertRepos(ctx, want...); err != nil {
+			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx); err != nil {
 				t.Errorf("ListRepos error: %s", err)
@@ -102,7 +103,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 
 			want.Apply(repos.Opt.DeletedAt(time.Now().UTC()))
 
-			if err = tx.UpsertRepos(ctx, want...); err != nil {
+			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx); err != nil {
 				t.Errorf("ListRepos error: %s", err)

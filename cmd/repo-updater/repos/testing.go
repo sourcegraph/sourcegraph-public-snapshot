@@ -187,6 +187,7 @@ var Opt = struct {
 	CreatedAt: func(ts time.Time) func(*Repo) {
 		return func(r *Repo) {
 			r.CreatedAt = ts
+			r.UpdatedAt = ts
 			r.DeletedAt = time.Time{}
 		}
 	},
