@@ -22,7 +22,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 		t.Helper()
 
 		kinds := []string{
-			"GITHUB",
+			"github",
 		}
 
 		ctx := context.Background()
