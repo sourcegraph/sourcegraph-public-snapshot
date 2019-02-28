@@ -1,0 +1,291 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActivationDropdown render 0/2 1`] = `
+<div
+  className=" nav-link p-0 btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className=" first-use-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    Setup
+    <span
+      className="activation-status-dropdown-button__progress-bar-container"
+    >
+      <svg
+        className="CircularProgressbar "
+        style={Object {}}
+        viewBox="0 0 100 100"
+      >
+        <path
+          className="CircularProgressbar-trail"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={Object {}}
+        />
+        <path
+          className="CircularProgressbar-path"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={
+            Object {
+              "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+              "strokeDashoffset": "276.46015351590177px",
+            }
+          }
+        />
+      </svg>
+    </span>
+  </a>
+  <div
+    aria-hidden={true}
+    className="dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <h6
+      className="py-1 dropdown-header"
+      onClick={[Function]}
+      tabIndex="-1"
+    >
+      <div
+        className="activation-status-dropdown-header"
+      >
+        <h2>
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M2.81,14.12L5.64,11.29L8.17,10.79C11.39,6.41 17.55,4.22 19.78,4.22C19.78,6.45 17.59,12.61 13.21,15.83L12.71,18.36L9.88,21.19L9.17,17.66C7.76,17.66 7.76,17.66 7.05,16.95C6.34,16.24 6.34,16.24 6.34,14.83L2.81,14.12M5.64,16.95L7.05,18.36L4.39,21.03H2.97V19.61L5.64,16.95M4.22,15.54L5.46,15.71L3,18.16V16.74L4.22,15.54M8.29,18.54L8.46,19.78L7.26,21H5.84L8.29,18.54M13,9.5C12.17,9.5 11.5,10.17 11.5,11C11.5,11.83 12.17,12.5 13,12.5C13.83,12.5 14.5,11.83 14.5,11C14.5,10.17 13.83,9.5 13,9.5Z"
+            />
+          </svg>
+           Hi there!
+        </h2>
+        <div>
+          Complete the steps below to finish onboarding to Sourcegraph.
+        </div>
+      </div>
+    </h6>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
+    <div
+      className="dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        className="activation-item"
+        data-tooltip="detail1"
+        onClick={[Function]}
+      >
+        <svg
+          className="mdi-icon icon-inline activation-item__checkbox--todo"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+          />
+        </svg>
+          
+        title1
+         
+      </div>
+    </div>
+    <div
+      className="dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        className="activation-item"
+        data-tooltip="detail2"
+        onClick={[Function]}
+      >
+        <svg
+          className="mdi-icon icon-inline activation-item__checkbox--todo"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+          />
+        </svg>
+          
+        title2
+         
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ActivationDropdown render 1/2 1`] = `
+<div
+  className=" nav-link p-0 btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className=" first-use-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    Setup
+    <span
+      className="activation-status-dropdown-button__progress-bar-container"
+    >
+      <svg
+        className="CircularProgressbar "
+        style={Object {}}
+        viewBox="0 0 100 100"
+      >
+        <path
+          className="CircularProgressbar-trail"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={Object {}}
+        />
+        <path
+          className="CircularProgressbar-path"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={
+            Object {
+              "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+              "strokeDashoffset": "138.23007675795088px",
+            }
+          }
+        />
+      </svg>
+    </span>
+  </a>
+  <div
+    aria-hidden={true}
+    className="dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <h6
+      className="py-1 dropdown-header"
+      onClick={[Function]}
+      tabIndex="-1"
+    >
+      <div
+        className="activation-status-dropdown-header"
+      >
+        <h2>
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M2.81,14.12L5.64,11.29L8.17,10.79C11.39,6.41 17.55,4.22 19.78,4.22C19.78,6.45 17.59,12.61 13.21,15.83L12.71,18.36L9.88,21.19L9.17,17.66C7.76,17.66 7.76,17.66 7.05,16.95C6.34,16.24 6.34,16.24 6.34,14.83L2.81,14.12M5.64,16.95L7.05,18.36L4.39,21.03H2.97V19.61L5.64,16.95M4.22,15.54L5.46,15.71L3,18.16V16.74L4.22,15.54M8.29,18.54L8.46,19.78L7.26,21H5.84L8.29,18.54M13,9.5C12.17,9.5 11.5,10.17 11.5,11C11.5,11.83 12.17,12.5 13,12.5C13.83,12.5 14.5,11.83 14.5,11C14.5,10.17 13.83,9.5 13,9.5Z"
+            />
+          </svg>
+           Hi there!
+        </h2>
+        <div>
+          Complete the steps below to finish onboarding to Sourcegraph.
+        </div>
+      </div>
+    </h6>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
+    <div
+      className="dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        className="activation-item"
+        data-tooltip="detail1"
+        onClick={[Function]}
+      >
+        <svg
+          className="mdi-icon icon-inline activation-item__checkbox--done"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M20,12C20,16.42 16.42,20 12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C12.76,4 13.5,4.11 14.2,4.31L15.77,2.74C14.61,2.26 13.34,2 12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"
+          />
+        </svg>
+          
+        title1
+         
+      </div>
+    </div>
+    <div
+      className="dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        className="activation-item"
+        data-tooltip="detail2"
+        onClick={[Function]}
+      >
+        <svg
+          className="mdi-icon icon-inline activation-item__checkbox--todo"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+          />
+        </svg>
+          
+        title2
+         
+      </div>
+    </div>
+  </div>
+</div>
+`;
