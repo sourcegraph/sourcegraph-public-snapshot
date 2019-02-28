@@ -10,9 +10,27 @@ import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 
+const EXTENSION_ID = isInPage ? '' : chrome.runtime.id
+
+const isExtensionStackTrace = (stacktrace: Sentry.Stacktrace): boolean =>
+    !!(stacktrace.frames && stacktrace.frames.some(({ filename }) => !!(filename && filename.includes(EXTENSION_ID))))
+
 const callSentryInit = once(() => {
     Sentry.init({
         dsn: 'https://32613b2b6a5b4da2aa50660a60297d79@sentry.io/1334031',
+        beforeSend: event => {
+            // Filter out events if we can tell from the stack trace that
+            // they didn't originate from extension code.
+            let keep = true
+            if (event.exception && event.exception.values) {
+                keep = event.exception.values.some(
+                    ({ stacktrace }) => !!(stacktrace && isExtensionStackTrace(stacktrace))
+                )
+            } else if (event.stacktrace) {
+                keep = isExtensionStackTrace(event.stacktrace)
+            }
+            return keep ? event : null
+        },
     })
 })
 
