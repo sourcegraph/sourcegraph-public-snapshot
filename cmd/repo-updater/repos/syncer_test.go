@@ -79,7 +79,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
 				store:   s,
 				stored: repos.Repos{foo.With(repos.Opt.Sources("a"), func(r *repos.Repo) {
-					r.ExternalRepo = api.ExternalRepoSpec{}
+					r.ExternalRepo.ID = ""
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{

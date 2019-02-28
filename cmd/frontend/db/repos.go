@@ -594,13 +594,46 @@ func (s *repos) UpdateRepositoryMetadata(ctx context.Context, name api.RepoName,
 	return err
 }
 
-const upsertSQL = `WITH UPSERT AS (
-	UPDATE repo SET name=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7, archived=$9 WHERE name=$1 RETURNING name
+const upsertSQL = `
+WITH UPSERT AS (
+  UPDATE repo
+  SET
+    name                  = $1,
+    description           = $2,
+    fork                  = $3,
+    enabled               = $4,
+    external_id           = NULLIF(BTRIM($5), ''),
+    external_service_type = NULLIF(BTRIM($6), ''),
+    external_service_id   = NULLIF(BTRIM($7), ''),
+    archived              = $9
+  WHERE
+    name = $1
+  RETURNING name
 )
-INSERT INTO repo(name, description, fork, language, enabled, external_id, external_service_type, external_service_id, archived) (
-	SELECT $1 AS name, $2 AS description, $3 AS fork, $8 as language, $4 AS enabled,
-	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id, $9 AS archived
-	WHERE $1 NOT IN (SELECT name FROM upsert)
+
+INSERT INTO repo (
+  name,
+  description,
+  fork,
+  language,
+  enabled,
+  external_id,
+  external_service_type,
+  external_service_id,
+  archived
+) (
+  SELECT
+    $1 AS name,
+    $2 AS description,
+    $3 AS fork,
+    $8 AS language,
+    $4 AS enabled,
+    NULLIF(BTRIM($5), '') AS external_id,
+    NULLIF(BTRIM($6), '') AS external_service_type,
+    NULLIF(BTRIM($7), '') AS external_service_id,
+    $9 AS archived
+  WHERE
+    $1 NOT IN (SELECT name FROM upsert)
 )`
 
 // Upsert updates the repository if it already exists (keyed on name) and
@@ -641,7 +674,20 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err = dbconn.Global.ExecContext(ctx, upsertSQL, op.Name, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
+	_, err = dbconn.Global.ExecContext(
+		ctx,
+		upsertSQL,
+		op.Name,
+		op.Description,
+		op.Fork,
+		enabled,
+		spec.id,
+		spec.serviceType,
+		spec.serviceID,
+		language,
+		op.Archived,
+	)
+
 	return err
 }
 

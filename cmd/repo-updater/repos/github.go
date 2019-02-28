@@ -194,20 +194,10 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 				return nil, true, errors.Wrap(github.ErrNotFound, fmt.Sprintf("IsRepoCloneable: %s", err))
 			}
 
-			return &protocol.RepoInfo{
-				Name:         args.Repo,
-				ExternalRepo: nil,
-				Description:  "",
-				Fork:         false,
-				Archived:     false,
-				Links: &protocol.RepoLinks{
-					Root:   remoteURL,
-					Tree:   remoteURL + "/tree/{rev}/{path}",
-					Blob:   remoteURL + "/blob/{rev}/{path}",
-					Commit: remoteURL + "/commit/{commit}",
-				},
-				VCS: protocol.VCSInfo{URL: remoteURL},
-			}, true, nil
+			info := githubRepoToRepoInfo(&github.Repository{URL: remoteURL}, conn)
+			info.Name = args.Repo
+
+			return info, true, nil
 		}
 
 		log15.Warn("Unable to get repository metadata from GitHub API for a (possibly) private repository.", logArgs...)
