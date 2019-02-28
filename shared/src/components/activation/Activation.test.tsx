@@ -13,7 +13,7 @@ describe('ActivationStatus', () => {
                     id: 'id1',
                     title: 'title1',
                     detail: 'detail1',
-                    action: (h: H.History) => void 0,
+                    action: noop,
                 },
                 {
                     id: 'id2',
