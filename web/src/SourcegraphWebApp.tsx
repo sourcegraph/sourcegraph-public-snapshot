@@ -1,15 +1,18 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
+import H from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { combineLatest, from, fromEventPattern, Observable, Subscription } from 'rxjs'
+import { first, map, startWith } from 'rxjs/operators'
+import { ActivationStep } from '../../shared/src/components/activation/Activation'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
 } from '../../shared/src/extensions/controller'
+import { dataOrThrowErrors, gql } from '../../shared/src/graphql/graphql'
 import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContextProps } from '../../shared/src/platform/context'
@@ -17,6 +20,7 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/s
 import { TelemetryContext } from '../../shared/src/telemetry/telemetryContext'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
+import { queryGraphQL } from './backend/graphql'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
@@ -38,6 +42,7 @@ import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
+import { logUserEvent } from './user/account/backend'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -82,6 +87,17 @@ interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadePr
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
+
+    /**
+     * Defines the activation steps that a user must complete and where
+     * this is fetched from.
+     */
+    activation?: ActivationParams
+
+    /**
+     * Specifies which activation steps have been completed.
+     */
+    activationCompleted?: { [key: string]: boolean }
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -143,8 +159,13 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         document.body.classList.add('theme')
         this.subscriptions.add(
             authenticatedUser.subscribe(
-                authenticatedUser => this.setState({ authenticatedUser }),
-                () => this.setState({ authenticatedUser: null })
+                authenticatedUser => {
+                    this.setState({
+                        authenticatedUser,
+                        activation: this.getActivationState(authenticatedUser),
+                    })
+                },
+                () => this.setState({ authenticatedUser: null, activation: undefined, activationCompleted: undefined })
             )
         )
 
@@ -185,6 +206,62 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 this.setState({ systemIsLightTheme: !event.matches })
             })
         )
+    }
+
+    private getActivationState = (authenticatedUser: GQL.IUser | null): ActivationParams | undefined => {
+        if (window.context.sourcegraphDotComMode || !authenticatedUser) {
+            return
+        }
+        const fetcher = fetchActivationStatus(authenticatedUser.siteAdmin)
+        const firstFetched = new Promise<void>(resolve => {
+            fetcher()
+                .pipe(first())
+                .subscribe(completed => {
+                    this.setState({ activationCompleted: completed })
+                    resolve()
+                })
+        })
+        return {
+            steps: getActivationSteps(authenticatedUser.siteAdmin),
+            fetcher,
+            firstFetched,
+        }
+    }
+
+    private refetchActivation = () => {
+        if (!this.state.activation) {
+            return
+        }
+        this.state.activation
+            .fetcher()
+            .pipe(first())
+            .subscribe(c => this.setState({ activationCompleted: c }))
+    }
+
+    private updateActivation = (update: { [key: string]: boolean }) => {
+        if (!this.state.activation) {
+            return
+        }
+        this.state.activation.firstFetched.then(() => {
+            if (!this.state.activation) {
+                return
+            }
+
+            // Send update to server for events that don't themselves trigger
+            // an update.
+            if (update['action:findReferences']) {
+                logUserEvent(GQL.UserEvent.CODEINTELREFS)
+            }
+
+            const newVal: { [key: string]: boolean } = {}
+            Object.assign(newVal, this.state.activationCompleted)
+            for (const step of this.state.activation.steps) {
+                if (update[step.id] !== undefined) {
+                    newVal[step.id] = update[step.id]
+                }
+            }
+            this.setState({ activationCompleted: newVal })
+        })
     }
 
     public componentWillUnmount(): void {
@@ -257,6 +334,16 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         // Extensions
                                         platformContext={this.state.platformContext}
                                         extensionsController={this.state.extensionsController}
+                                        // Activation
+                                        activation={
+                                            this.state.activation &&
+                                            this.state.activationCompleted && {
+                                                steps: this.state.activation.steps,
+                                                update: this.updateActivation,
+                                                refetch: this.refetchActivation,
+                                                completed: this.state.activationCompleted,
+                                            }
+                                        }
                                     />
                                 )}
                             />
@@ -277,3 +364,144 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.setState({ navbarSearchQuery })
     }
 }
+
+interface ActivationParams {
+    fetcher: () => Observable<{ [key: string]: boolean }>
+    firstFetched: Promise<void>
+    steps: ActivationStep[]
+}
+
+const fetchActivationStatus = (isSiteAdmin: boolean) => () =>
+    queryGraphQL(
+        isSiteAdmin
+            ? gql`
+                  query {
+                      externalServices {
+                          totalCount
+                      }
+                      repositories(enabled: true) {
+                          totalCount
+                      }
+                      viewerSettings {
+                          final
+                      }
+                      users {
+                          totalCount
+                      }
+                      currentUser {
+                          usageStatistics {
+                              searchQueries
+                              findReferencesActions
+                          }
+                      }
+                  }
+              `
+            : gql`
+                  query {
+                      currentUser {
+                          usageStatistics {
+                              searchQueries
+                              findReferencesActions
+                          }
+                      }
+                  }
+              `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            const authProviders = window.context.authProviders
+            const completed: { [key: string]: boolean } = {
+                didSearch: !!data.currentUser && data.currentUser.usageStatistics.searchQueries > 0,
+                'action:findReferences':
+                    !!data.currentUser && data.currentUser.usageStatistics.findReferencesActions > 0,
+            }
+            if (isSiteAdmin) {
+                completed.connectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
+                completed.enabledRepository =
+                    data.repositories && data.repositories.totalCount !== null && data.repositories.totalCount > 0
+                if (authProviders) {
+                    completed.enabledSignOn =
+                        data.users.totalCount > 1 || authProviders.filter(p => !p.isBuiltin).length > 0
+                }
+            }
+            return completed
+        })
+    )
+
+const fetchReferencesLink = (): Observable<string | null> =>
+    queryGraphQL(gql`
+        query {
+            repositories(enabled: true, cloned: true, first: 100, indexed: true) {
+                nodes {
+                    url
+                    gitRefs {
+                        totalCount
+                    }
+                }
+            }
+        }
+    `).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.repositories.nodes) {
+                return null
+            }
+            const repositoryURLs = data.repositories.nodes
+                .filter(r => r.gitRefs && r.gitRefs.totalCount > 0)
+                .sort((r1, r2) => r2.gitRefs!.totalCount! - r1.gitRefs!.totalCount)
+                .map(r => r.url)
+            if (repositoryURLs.length === 0) {
+                return null
+            }
+            return repositoryURLs[0]
+        })
+    )
+
+const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] =>
+    [
+        {
+            id: 'connectedCodeHost',
+            title: 'Connect your code host',
+            detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
+            link: { to: '/site-admin/external-services' },
+            siteAdminOnly: true,
+        },
+        {
+            id: 'enabledRepository',
+            title: 'Enable repositories',
+            detail: 'Select which repositories Sourcegraph should pull and index from your code host(s).',
+            link: { to: '/site-admin/repositories' },
+            siteAdminOnly: true,
+        },
+        {
+            id: 'didSearch',
+            title: 'Search your code',
+            detail: 'Perform a search query on your code.',
+            link: { to: '/search' },
+        },
+        {
+            id: 'action:findReferences',
+            title: 'Find some references',
+            detail:
+                'To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click "Find references".',
+            onClick: (event: React.MouseEvent<HTMLElement>, history: H.History) =>
+                fetchReferencesLink()
+                    .pipe(first())
+                    .subscribe(r => {
+                        if (r) {
+                            history.push(r)
+                        } else {
+                            alert('Must add repositories before finding references')
+                        }
+                    }),
+        },
+        {
+            id: 'enabledSignOn',
+            title: 'Configure SSO or share with teammates',
+            detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
+            link: { to: 'https://docs.sourcegraph.com/admin/auth', target: '_blank' },
+            siteAdminOnly: true,
+        },
+    ]
+        .filter(e => true || !e.siteAdminOnly)
+        .map(({ siteAdminOnly, ...step }) => step)

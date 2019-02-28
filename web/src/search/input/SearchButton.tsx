@@ -3,8 +3,9 @@ import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import * as React from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 
-interface Props {
+interface Props extends ActivationProps {
     /** Hide the "help" icon and dropdown. */
     noHelp?: boolean
 
@@ -14,20 +15,27 @@ interface Props {
 
 interface State {
     isOpen: boolean
+
+    didClick: boolean
 }
 
 /**
  * A search button with a dropdown with related links.
  */
 export class SearchButton extends React.Component<Props, State> {
-    public state: State = { isOpen: false }
+    public state: State = { isOpen: false, didClick: false }
+
+    private onClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        if (this.props.activation) {
+            this.props.activation.update({ didSearch: true })
+        }
+    }
 
     public render(): JSX.Element | null {
         const docsURLPrefix = window.context.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
-
         return (
             <div className="search-button d-flex">
-                <button className="btn btn-primary search-button__btn" type="submit">
+                <button className="btn btn-primary search-button__btn" type="submit" onClick={this.onClick}>
                     <SearchIcon className="icon-inline" />
                     {!this.props.noLabel && <span className="search-button__label">Search</span>}
                 </button>

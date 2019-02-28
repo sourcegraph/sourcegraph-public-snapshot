@@ -33,8 +33,6 @@ class ServerAdminWrapper {
                 eventAction === 'hover'
             ) {
                 logUserEvent(GQL.UserEvent.CODEINTEL)
-            } else if (eventAction === 'findReferences') {
-                logUserEvent(GQL.UserEvent.CODEINTELREFS)
             }
         }
     }

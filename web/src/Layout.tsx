@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
 import { ResizablePanel } from '../../shared/src/panel/Panel'
@@ -40,7 +41,8 @@ export interface LayoutProps
         ExtensionsControllerProps,
         KeybindingsProps,
         ThemeProps,
-        ThemePreferenceProps {
+        ThemePreferenceProps,
+        ActivationProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>

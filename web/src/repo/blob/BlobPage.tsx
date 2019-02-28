@@ -284,6 +284,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         html={this.state.blobOrError.highlight.html}
                         wrapCode={this.state.wrapCode}
                         renderMode={renderMode}
+                        location={this.props.location}
+                        history={this.props.history}
+                        isLightTheme={this.props.isLightTheme}
                     />
                 )}
                 {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (
