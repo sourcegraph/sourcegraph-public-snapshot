@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"regexp/syntax"
 	"strings"
 )
@@ -40,7 +39,6 @@ func fixupCompileErrors(value string, err error) (string, error) {
 	}
 
 	if index == -1 {
-		fmt.Println("sdalk;fj", err)
 		return value, err
 	}
 
@@ -48,8 +46,7 @@ func fixupCompileErrors(value string, err error) (string, error) {
 
 	out := ""
 	// Loop through and escape all runeToEscape
-	for i, r := range value {
-		fmt.Println(i, string(r), "==", string(runeToEscape), out)
+	for _, r := range value {
 		if r == runeToEscape {
 			out += string('\\') + string(r)
 		} else {
@@ -65,16 +62,17 @@ func fixupCompileErrors(value string, err error) (string, error) {
 // the identity of the rune.
 func flipRune(r rune) rune {
 	switch r {
-	case 41: // )
-		return r - 1
-	case 93: // ]
-		return r - 2
+	case ')':
+		return '('
+	case ']':
+		return '['
+	default:
+		return r
 	}
 
-	return r
 }
 
-func parseRegexp(value string) (*syntax.Regexp, error) {
+func parseRegexp(value string) (string, error) {
 	var r *syntax.Regexp
 	// If we can't fix the query up, we want to return the original error from the user entered query.
 	var originalErr error
@@ -86,18 +84,17 @@ func parseRegexp(value string) (*syntax.Regexp, error) {
 
 		s, err = fixupCompileErrors(value, originalErr)
 		if err != nil {
-			return nil, originalErr
+			return value, originalErr
 		}
 
 		r, err = syntax.Parse(s, syntax.Perl)
 	}
 
 	if err != nil {
-		fmt.Println("asjdlkkk", err, originalErr)
-		return nil, originalErr
+		return value, originalErr
 	}
 
 	escapeNonTerminalEOL(r)
 
-	return r, nil
+	return r.String(), nil
 }

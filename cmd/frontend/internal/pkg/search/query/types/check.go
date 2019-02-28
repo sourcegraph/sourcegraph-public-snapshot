@@ -127,7 +127,7 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 		if err != nil {
 			return err
 		}
-		p, err := regexp.Compile(r.String())
+		p, err := regexp.Compile(r)
 		if err != nil {
 			return err
 		}
