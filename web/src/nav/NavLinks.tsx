@@ -4,6 +4,8 @@ import { Subscription } from 'rxjs'
 import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { CommandListPopoverButton } from '../../../shared/src/commandPalette/CommandList'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
+import { ActivationDropdown } from '../../../shared/src/components/activation/ActivationDropdown'
 import { Link } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -17,8 +19,10 @@ interface Props
     extends SettingsCascadeProps,
         KeybindingsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+        PlatformContextProps<'forceUpdateTooltip'>,
+        ActivationProps {
     location: H.Location
+    history: H.History
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
@@ -64,6 +68,11 @@ export class NavLinks extends React.PureComponent<Props> {
                     platformContext={this.props.platformContext}
                     location={this.props.location}
                 />
+                {this.props.activation && (
+                    <li className="nav-item">
+                        <ActivationDropdown activation={this.props.activation} history={this.props.history} />
+                    </li>
+                )}
                 {(!this.props.showDotComMarketing ||
                     !!this.props.authenticatedUser ||
                     this.props.location.pathname !== '/welcome') && (

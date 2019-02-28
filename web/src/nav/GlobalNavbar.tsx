@@ -2,6 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -13,7 +14,12 @@ import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsControllerProps, KeybindingsProps {
+interface Props
+    extends SettingsCascadeProps,
+        PlatformContextProps,
+        ExtensionsControllerProps,
+        KeybindingsProps,
+        ActivationProps {
     history: H.History
     location: H.Location
     authenticatedUser: GQL.IUser | null

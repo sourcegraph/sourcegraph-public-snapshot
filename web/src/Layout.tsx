@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
 import { ResizablePanel } from '../../shared/src/panel/Panel'
@@ -37,7 +38,8 @@ export interface LayoutProps
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeybindingsProps {
+        KeybindingsProps,
+        ActivationProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
@@ -129,6 +131,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {parseHash(props.location.hash).viewState && props.location.pathname !== '/sign-in' && (
                 <ResizablePanel
                     repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                    activation={props.activation}
                     history={props.history}
                     location={props.location}
                     extensionsController={props.extensionsController}

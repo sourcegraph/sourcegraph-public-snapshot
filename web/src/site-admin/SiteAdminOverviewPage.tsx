@@ -1,15 +1,19 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import H from 'history'
 import { upperFirst } from 'lodash'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import CityIcon from 'mdi-react/CityIcon'
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
+import RocketIcon from 'mdi-react/RocketIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { ActivationProps, percentageDone } from '../../../shared/src/components/activation/Activation'
+import { ActivationChecklist } from '../../../shared/src/components/activation/ActivationChecklist'
 import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -21,7 +25,8 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 
-interface Props {
+interface Props extends ActivationProps {
+    history: H.History
     overviewComponents: ReadonlyArray<React.ComponentType>
     isLightTheme: boolean
 }
@@ -100,6 +105,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        let setupPercentage = 0
+        if (this.props.activation) {
+            setupPercentage = percentageDone(this.props.activation.completed)
+        }
         return (
             <div className="site-admin-overview-page pt-3">
                 <PageTitle title="Overview - Admin" />
@@ -117,6 +126,35 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                 <OverviewList>
                     {this.state.info && (
                         <>
+                            {this.props.activation && this.props.activation.completed && (
+                                <OverviewItem
+                                    icon={RocketIcon}
+                                    title={`${setupPercentage}% of setup completed`}
+                                    defaultExpanded={setupPercentage < 100}
+                                >
+                                    <div>
+                                        <div>
+                                            {setupPercentage < 100 ? (
+                                                <div>
+                                                    <h1>Almost there...</h1>
+                                                    <div>
+                                                        Complete the steps below to finish onboarding to Sourcegraph.
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <h2>Setup is complete!</h2>
+                                            )}
+                                        </div>
+                                        {this.props.activation.completed && (
+                                            <ActivationChecklist
+                                                history={this.props.history}
+                                                steps={this.props.activation.steps}
+                                                completed={this.props.activation.completed}
+                                            />
+                                        )}
+                                    </div>
+                                </OverviewItem>
+                            )}
                             <OverviewItem
                                 link="/explore"
                                 icon={PackageVariantIcon}
