@@ -211,15 +211,15 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
             // Send update to server for events that don't themselves trigger
             // an update.
-            if (u['action:findReferences']) {
+            if (update['action:findReferences']) {
                 logUserEvent(GQL.UserEvent.CODEINTELREFS)
             }
 
             const newVal: { [key: string]: boolean } = {}
             Object.assign(newVal, this.state.activationCompleted)
             for (const step of this.state.activation.steps) {
-                if (u[step.id] !== undefined) {
-                    newVal[step.id] = u[step.id]
+                if (update[step.id] !== undefined) {
+                    newVal[step.id] = update[step.id]
                 }
             }
             this.setState({ activationCompleted: newVal })
@@ -389,7 +389,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean) => () =>
         })
     )
 
-const fetchReferencesLink: () => Observable<string | null> = () =>
+const fetchReferencesLink = (): Observable<string | null> =>
     queryGraphQL(gql`
         query {
             repositories(enabled: true, cloned: true, first: 100, indexed: true) {
@@ -418,7 +418,7 @@ const fetchReferencesLink: () => Observable<string | null> = () =>
         })
     )
 
-const getActivationSteps = (isSiteAdmin: boolean) =>
+const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] =>
     [
         {
             id: 'connectedCodeHost',

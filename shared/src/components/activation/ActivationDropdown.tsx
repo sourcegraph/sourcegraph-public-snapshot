@@ -4,6 +4,8 @@ import React from 'react'
 import CircularProgressbar from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { concat, of, Subject } from 'rxjs'
+import { concatMap, delay, distinctUntilChanged, map, skip } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklistItem } from './ActivationChecklist'
 
@@ -32,16 +34,24 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
      */
     private removeAnimationTimeout?: NodeJS.Timeout
 
-    public componentDidUpdate(prevProps: Readonly<Props>, prevState: Readonly<State>): void {
-        const oldDone = percentageDone(prevProps.activation.completed)
-        const newDone = percentageDone(this.props.activation.completed)
-        if (newDone > oldDone && !this.state.animate) {
-            this.setState({ animate: true })
-            this.removeAnimationTimeout = setTimeout(() => {
-                this.setState({ animate: false })
-                this.removeAnimationTimeout = undefined
-            }, 1500)
-        }
+    private componentUpdates = new Subject<Props>()
+
+    public componentDidMount(): void {
+        concat([this.props], this.componentUpdates)
+            .pipe(
+                map(props => props.activation.completed),
+                distinctUntilChanged((a, b) => {
+                    console.log(a, b)
+                    return (a && b && percentageDone(a) >= percentageDone(b)) || false
+                }),
+                skip(1), // skip the initial value, because we only animate updates
+                concatMap(() => concat(of(true), of(false).pipe(delay(1500))))
+            )
+            .subscribe(animate => this.setState({ animate }))
+    }
+
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
