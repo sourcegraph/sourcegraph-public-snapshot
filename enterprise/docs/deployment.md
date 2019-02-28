@@ -34,7 +34,9 @@ Sourcegraph is deployed to multiple locations:
 ### Dogfood and production
 
 Commits to the master branch of github.com/sourcegraph/sourcegraph are
-continuously deployed to all of our services in production and in dogfood.
+continuously deployed to all of our services [except
+gitserver](https://github.com/sourcegraph/deploy-sourcegraph-dot-com/blob/release/README.info.md#automatic-ci-deployments)
+in production and in dogfood.
 
 If you need to update more than just the Docker images (i.e., if you need to update the
 Kubernetes configuration), refer to the appropriate link below:
