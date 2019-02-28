@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -29,11 +28,11 @@ func TestServeHelp(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/help/foo/bar", nil)
 		serveHelp(rw, req)
 
-		if want := http.StatusNotImplemented; rw.Code != want {
+		if want := http.StatusTemporaryRedirect; rw.Code != want {
 			t.Errorf("got %d, want %d", rw.Code, want)
 		}
-		if got, want := rw.Body.String(), "<a href=\"https://docs.sourcegraph.com/foo/bar"; !strings.Contains(got, want) {
-			t.Errorf("got %q, want to contain %q", got, want)
+		if got, want := rw.Header().Get("Location"), "http://localhost:5080/foo/bar"; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	})
 
