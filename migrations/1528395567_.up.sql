@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Create a temporary non unique index that makes finding
 -- duplicates by (external_service_id, external_id) fast.
 CREATE INDEX repo_external_service_temp_index
@@ -28,3 +30,5 @@ ON repo (external_service_type, external_service_id, external_id)
 WHERE external_service_type IS NOT NULL
 AND external_service_id IS NOT NULL
 AND external_id IS NOT NULL;
+
+COMMIT;
