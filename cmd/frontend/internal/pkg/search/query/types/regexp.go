@@ -21,42 +21,6 @@ func escapeNonTerminalEOL(r *syntax.Regexp) {
 	}
 }
 
-var escapeErrorMessages = []string{
-	"missing argument to repetition operator: `",
-	"missing closing ",
-}
-
-func fixupCompileErrors(value string, err error) (string, error) {
-	msg := err.Error()
-	index := -1
-
-	for _, errorMsg := range escapeErrorMessages {
-		index = strings.Index(msg, errorMsg)
-		if index > -1 {
-			index = len(errorMsg) + index
-			break
-		}
-	}
-
-	if index == -1 {
-		return value, err
-	}
-
-	runeToEscape := flipRune(rune(msg[index]))
-
-	out := ""
-	// Loop through and escape all runeToEscape
-	for _, r := range value {
-		if r == runeToEscape {
-			out += string('\\') + string(r)
-		} else {
-			out += string(r)
-		}
-	}
-
-	return out, nil
-}
-
 // flipRune maps opening block characters (e.g. ), ]) to their opening
 // counterparts. If the rune provided is not one of those, this func returns
 // the identity of the rune.
@@ -70,6 +34,47 @@ func flipRune(r rune) rune {
 		return r
 	}
 
+}
+
+var escapeErrorMessages = []struct {
+	message         string
+	getRuneToEscape func(rune) rune
+}{
+	{"missing closing ", flipRune},
+	{"missing argument to repetition operator: `", func(r rune) rune { return r }},
+	{"unexpected ", func(r rune) rune { return r }},
+}
+
+func fixupCompileErrors(value string, err error) (string, error) {
+	msg := err.Error()
+	var runeToEscape rune
+
+	for _, errorMsg := range escapeErrorMessages {
+		index := strings.Index(msg, errorMsg.message)
+		if index > -1 {
+			index = len(errorMsg.message) + index
+
+			runeToEscape = errorMsg.getRuneToEscape(rune(msg[index]))
+
+			break
+		}
+	}
+
+	if runeToEscape == 0 {
+		return value, err
+	}
+
+	out := ""
+	// Loop through and escape all runeToEscape
+	for _, r := range value {
+		if r == runeToEscape {
+			out += string('\\') + string(r)
+		} else {
+			out += string(r)
+		}
+	}
+
+	return out, nil
 }
 
 func parseRegexp(value string) (string, error) {
