@@ -157,6 +157,25 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
+				name:    "renamed repo which was deleted is detected and added",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
+				store:   s,
+				stored: repos.Repos{foo.With(func(r *repos.Repo) {
+					r.Sources = map[string]*repos.SourceInfo{}
+					r.Name = "old-name"
+					r.DeletedAt = clock.Time(0)
+				})},
+				now: clock.Now,
+				diff: repos.Diff{Added: repos.Repos{
+					foo.With(repos.Opt.Sources("a"), repos.Opt.CreatedAt(clock.Time(1))),
+				}},
+				err: "<nil>",
+			})
+		}
+
+		{
+			clock := repos.NewFakeClock(time.Now(), time.Second)
+			testCases = append(testCases, testCase{
 				name: "metadata update",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil,
 					foo.With(repos.Opt.ModifiedAt(clock.Time(1)),
