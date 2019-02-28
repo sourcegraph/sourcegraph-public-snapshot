@@ -2,11 +2,11 @@
 // prettier-ignore
 import '../../config/polyfill'
 
+import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
 import { fromEventPattern, noop, Observable } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
 import DPT from 'webext-domain-permission-toggle'
-import { Endpoint } from '@sourcegraph/comlink'
 import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
 import * as browserAction from '../../browser/browserAction'
 import * as omnibox from '../../browser/omnibox'
