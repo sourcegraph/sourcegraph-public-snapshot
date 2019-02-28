@@ -216,8 +216,9 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 	if err != nil {
 		select {
 		case <-ctx.Done():
-			err = ctx.Err()
+			return ctx.Err()
 		default:
+			return err
 		}
 	}
 
