@@ -39,7 +39,7 @@ export function createExtensionHost(): Observable<EndpointPair> {
 
 /**
  * Partially wraps a chrome.runtime.Port and returns a MessagePort created using
- * comlink's ${@link MessageChannelAdapter}, so that the Port can be used
+ * comlink's {@link MessageChannelAdapter}, so that the Port can be used
  * as a comlink Endpoint to transport messages between the content script and the extension host.
  *
  * It is necessary to wrap the port using MessageChannelAdapter because chrome.runtime.Port objects do not support
