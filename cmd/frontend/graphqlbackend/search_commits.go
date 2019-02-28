@@ -293,16 +293,25 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 
 		commitIcon := "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4="
-		results[i].label = createLabel(rawResult, commitResolver)
+		results[i].label, err = createLabel(rawResult, commitResolver)
+		if err != nil {
+			return nil, false, false, err
+		}
 		commitHash := string(rawResult.Commit.ID)
 		if len(rawResult.Commit.ID) > 7 {
 			commitHash = string(rawResult.Commit.ID)[:7]
 		}
 		timeagoConfig := timeago.NoMax(timeago.English)
-		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), commitResolver.URL())
-		results[i].url = commitResolver.URL()
+
+		url, err := commitResolver.URL()
+		if err != nil {
+			return nil, false, false, err
+		}
+
+		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), url)
+		results[i].url = url
 		results[i].icon = commitIcon
-		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: commitResolver.URL()}
+		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: url}
 		matches := []*searchResultMatchResolver{match}
 		results[i].matches = matches
 	}
@@ -358,14 +367,17 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 	return body, highlights
 }
 
-func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) string {
+func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) (string, error) {
 	message := commitSubject(rawResult.Commit.Message)
 	author := rawResult.Commit.Author.Name
 	repoName := displayRepoName(commitResolver.Repository().Name())
 	repoURL := commitResolver.Repository().URL()
-	url := commitResolver.URL()
+	url, err := commitResolver.URL()
+	if err != nil {
+		return "", err
+	}
 
-	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, url, message, url)
+	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, url, message, url), nil
 }
 
 func commitSubject(message string) string {
