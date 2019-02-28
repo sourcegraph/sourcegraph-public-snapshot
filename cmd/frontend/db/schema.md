@@ -163,24 +163,6 @@ Indexes:
 
 ```
 
-# Table "public.global_dep"
-```
-  Column  |  Type   | Modifiers 
-----------+---------+-----------
- language | text    | not null
- dep_data | jsonb   | not null
- repo_id  | integer | not null
- hints    | jsonb   | 
-Indexes:
-    "global_dep_idx_package" btree ((dep_data ->> ('package'::text COLLATE "C")))
-    "global_dep_idxgin" gin (dep_data jsonb_path_ops)
-    "global_dep_language" btree (language)
-    "global_dep_repo_id" btree (repo_id)
-Foreign-key constraints:
-    "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
-
-```
-
 # Table "public.global_state"
 ```
          Column          |  Type   |         Modifiers         
@@ -315,22 +297,6 @@ Indexes:
 
 ```
 
-# Table "public.pkgs"
-```
-  Column  |  Type   | Modifiers 
-----------+---------+-----------
- repo_id  | integer | not null
- language | text    | not null
- pkg      | jsonb   | not null
-Indexes:
-    "pkg_lang_idx" btree (language)
-    "pkg_pkg_idx" gin (pkg jsonb_path_ops)
-    "pkg_repo_idx" btree (repo_id)
-Foreign-key constraints:
-    "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
-
-```
-
 # Table "public.product_licenses"
 ```
          Column          |           Type           |       Modifiers        
@@ -455,8 +421,6 @@ Check constraints:
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
-    TABLE "global_dep" CONSTRAINT "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
-    TABLE "pkgs" CONSTRAINT "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 Triggers:
     trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW EXECUTE PROCEDURE set_repo_name()
 

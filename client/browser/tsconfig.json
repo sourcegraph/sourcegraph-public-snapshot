@@ -7,5 +7,5 @@
     "checkJs": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "config/**/*.js", "config/**/*.ts", "scripts/**/*.ts", "*.ts"],
-  "exclude": ["../../node_modules", "./build/**/*", "./*.safariextension"]
+  "exclude": ["../../node_modules", "./build/**/*"]
 }

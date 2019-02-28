@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -149,6 +150,12 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		defer f.Close()
+		fi, err := f.Stat()
+		if err != nil {
+			return err
+		}
+		w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
+
 		_, err = io.Copy(w, f)
 		return err
 

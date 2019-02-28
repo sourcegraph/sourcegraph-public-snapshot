@@ -7242,11 +7242,6 @@ format-util@^1.0.3:
   resolved "https://registry.npmjs.org/format-util/-/format-util-1.0.3.tgz#032dca4a116262a12c43f4c3ec8566416c5b2d95"
   integrity sha1-Ay3KShFiYqEsQ/TD7IVmQWxbLZU=
 
-formdata-polyfill@^3.0.9:
-  version "3.0.13"
-  resolved "https://registry.npmjs.org/formdata-polyfill/-/formdata-polyfill-3.0.13.tgz#991321c83b7a760aaf3788f1b7bbbf77e85b09bb"
-  integrity sha512-aYrFSz9wxtBc9E1yCfD5IFhTK9FDZVRM53kUQn1W6Et5+R9c4tpa5Mg9hQIBIc2er3fLx0ElbKujipu+2551vQ==
-
 forwarded@~0.1.2:
   version "0.1.2"
   resolved "https://registry.npmjs.org/forwarded/-/forwarded-0.1.2.tgz#98c23dab1175657b8c0573e8ceccd91b0ff18c84"
@@ -8433,11 +8428,6 @@ interpret@^1.0.0, interpret@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/interpret/-/interpret-1.1.0.tgz#7ed1b1410c6a0e0f78cf95d3b8440c63f78b8614"
   integrity sha1-ftGxQQxqDg94z5XTuEQMY/eLhhQ=
-
-intersection-observer@^0.5.0:
-  version "0.5.1"
-  resolved "https://registry.npmjs.org/intersection-observer/-/intersection-observer-0.5.1.tgz#e340fc56ce74290fe2b2394d1ce88c4353ac6dfa"
-  integrity sha512-Zd7Plneq82kiXFixs7bX62YnuZ0BMRci9br7io88LwDyF3V43cQMI+G5IiTlTNTt+LsDUppl19J/M2Fp9UkH6g==
 
 invariant@^2.2.2, invariant@^2.2.4:
   version "2.2.4"

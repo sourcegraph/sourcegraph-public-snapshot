@@ -58,7 +58,8 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
-	InjectSourcegraphTracker bool
+	InjectSourcegraphTracker     bool
+	InjectGoogleAnalyticsTracker bool
 
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
@@ -93,8 +94,12 @@ func repoShortName(name api.RepoName) string {
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
 	injectTelligentTracker := false
+	injectGoogleAnalyticsTracker := false
 	if envvar.SourcegraphDotComMode() {
 		injectTelligentTracker = true
+		if strings.TrimPrefix(r.URL.Path, "/") == routeWelcome {
+			injectGoogleAnalyticsTracker = true
+		}
 	}
 
 	common := &Common{
@@ -108,7 +113,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
 
-		InjectSourcegraphTracker: injectTelligentTracker,
+		InjectSourcegraphTracker:     injectTelligentTracker,
+		InjectGoogleAnalyticsTracker: injectGoogleAnalyticsTracker,
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {

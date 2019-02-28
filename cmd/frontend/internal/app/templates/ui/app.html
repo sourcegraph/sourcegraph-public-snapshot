@@ -25,7 +25,18 @@
 	<script ignore-csp>
 		; (function (t, r, a, c, k, e, d) { if (!t[k]) { t.GlobalTelligentNamespace = t.GlobalTelligentNamespace || []; t.GlobalTelligentNamespace.push(k); t[k] = function () { (t[k].q = t[k].q || []).push(arguments) }; t[k].q = t[k].q || []; e = r.createElement(a); d = r.getElementsByTagName(a)[0]; e.async = 1; e.src = c; d.parentNode.insertBefore(e, d) } }(window, document, "script", "https://storage.googleapis.com/telligent-artifacts/tracker/tel.js", "telligent"));
 	</script>
-	{{end}}
+    {{end}}
+    {{if .InjectGoogleAnalyticsTracker}}
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script ignore-csp async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-17"></script>
+        <script ignore-csp>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-40540747-17');
+        gtag('config', 'AW-868484203');
+        </script>
+    {{end}}
 	<script ignore-csp>
 		window.context = {{.Context }}
 		window.pageError = {{.Error }}
