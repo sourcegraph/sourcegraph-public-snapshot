@@ -117,12 +117,12 @@ func main() {
 		err := errors.New("syncer disabled")
 		store = repos.NewFakeStore(err, err, err)
 	} else {
-		store = repos.NewDBStore(ctx, db, kinds, sql.TxOptions{Isolation: sql.LevelSerializable})
+		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 	}
 
 	diffs := make(chan repos.Diff)
-	src := repos.NewExternalServicesSourcer(frontendAPI, kinds...)
-	syncer := repos.NewSyncer(10*time.Second, store, src, diffs, func() time.Time {
+	src := repos.NewExternalServicesSourcer(frontendAPI)
+	syncer := repos.NewSyncer(store, src, diffs, func() time.Time {
 		// XXX(tsenart): It seems like the current db layer in the frontend API
 		// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
 		// and ensure it's the used timezone across the board.
@@ -131,7 +131,7 @@ func main() {
 
 	if syncerEnabled {
 		log.Printf("Starting new syncer for external service kinds: %+v", kinds)
-		go func() { log.Fatal(syncer.Run(ctx)) }()
+		go func() { log.Fatal(syncer.Run(ctx, 10*time.Second, kinds...)) }()
 	}
 
 	// Start new repo syncer updates scheduler relay thread.

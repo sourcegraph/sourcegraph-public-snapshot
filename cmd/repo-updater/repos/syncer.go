@@ -14,48 +14,45 @@ import (
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
-	interval time.Duration
-	store    Store
-	sourcer  Sourcer
-	diffs    chan Diff
-	now      func() time.Time
+	store   Store
+	sourcer Sourcer
+	diffs   chan Diff
+	now     func() time.Time
 }
 
-// NewSyncer returns a new Syncer that periodically synchronizes stored repos with
+// NewSyncer returns a new Syncer that syncs stored repos with
 // the repos yielded by the configured sources, retrieved by the given sourcer.
 // Each completed sync results in a diff that is sent to the given diffs channel.
 func NewSyncer(
-	interval time.Duration,
 	store Store,
 	sourcer Sourcer,
 	diffs chan Diff,
 	now func() time.Time,
 ) *Syncer {
 	return &Syncer{
-		interval: interval,
-		store:    store,
-		sourcer:  sourcer,
-		diffs:    diffs,
-		now:      now,
+		store:   store,
+		sourcer: sourcer,
+		diffs:   diffs,
+		now:     now,
 	}
 }
 
-// Run runs the Sync at its specified interval.
-func (s *Syncer) Run(ctx context.Context) error {
+// Run runs the Sync at the specified interval for the given external service kinds.
+func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...string) error {
 	for ctx.Err() == nil {
-		if _, err := s.Sync(ctx); err != nil {
+		if _, err := s.Sync(ctx, kinds...); err != nil {
 			log15.Error("Syncer", "err", err)
 		}
-		time.Sleep(s.interval)
+		time.Sleep(interval)
 	}
 
 	return ctx.Err()
 }
 
-// Sync synchronizes the repositories of a single Source
-func (s *Syncer) Sync(ctx context.Context) (_ Diff, err error) {
+// Sync synchronizes the repositories of the given external service kinds.
+func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) {
 	var sourced Repos
-	if sourced, err = s.sourced(ctx); err != nil {
+	if sourced, err = s.sourced(ctx, kinds...); err != nil {
 		return Diff{}, err
 	}
 
@@ -70,7 +67,7 @@ func (s *Syncer) Sync(ctx context.Context) (_ Diff, err error) {
 	}
 
 	var stored Repos
-	if stored, err = store.ListRepos(ctx, sourced.Names()...); err != nil {
+	if stored, err = store.ListRepos(ctx, kinds...); err != nil {
 		return Diff{}, err
 	}
 
@@ -183,8 +180,8 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
-	sources, err := s.sourcer.ListSources(ctx)
+func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) {
+	sources, err := s.sourcer.ListSources(ctx, kinds...)
 	if err != nil {
 		return nil, err
 	}

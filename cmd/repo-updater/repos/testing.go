@@ -23,23 +23,44 @@ func NewFakeSourcer(err error, srcs ...Source) *FakeSourcer {
 	return &FakeSourcer{err: err, srcs: srcs}
 }
 
-// ListSources returns the Sources that FakeSourcer was instantiated with
-// as well the error, if any.
-func (s FakeSourcer) ListSources(context.Context) ([]Source, error) {
-	return s.srcs, s.err
+// ListSources returns the Sources that FakeSourcer was instantiated with that have one
+// of the given kinds as well the error, if any.
+func (s FakeSourcer) ListSources(_ context.Context, kinds ...string) (srcs []Source, err error) {
+	if s.err != nil {
+		return nil, s.err
+	}
+
+	kindset := make(map[string]bool, len(kinds))
+	for _, k := range kinds {
+		kindset[k] = true
+	}
+
+	for _, src := range s.srcs {
+		switch s := src.(type) {
+		case *FakeSource:
+			if kindset[s.kind] {
+				srcs = append(srcs, s)
+			}
+		default:
+			panic(fmt.Errorf("FakeSourcer not compatible with %#v yet", s))
+		}
+	}
+
+	return srcs, s.err
 }
 
 // FakeSource is a fake implementation of Source to be used in tests.
 type FakeSource struct {
 	urn   string
+	kind  string
 	repos []*Repo
 	err   error
 }
 
 // NewFakeSource returns an instance of FakeSource with the given urn, error
 // and repos.
-func NewFakeSource(urn string, err error, rs ...*Repo) *FakeSource {
-	return &FakeSource{urn: urn, err: err, repos: rs}
+func NewFakeSource(urn, kind string, err error, rs ...*Repo) *FakeSource {
+	return &FakeSource{urn: urn, kind: kind, err: err, repos: rs}
 }
 
 // ListRepos returns the Repos that FakeSource was instantiated with
@@ -89,22 +110,21 @@ func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error
 	return r, nil
 }
 
-// ListRepos lists all repos in the store that either have a Source or match
-// one of the given names.
-func (s FakeStore) ListRepos(ctx context.Context, names ...string) ([]*Repo, error) {
+// ListRepos lists all repos in the store that have one of the specified external service kinds.
+func (s FakeStore) ListRepos(ctx context.Context, kinds ...string) ([]*Repo, error) {
 	if s.list != nil {
 		return nil, s.list
 	}
 
-	nameset := make(map[string]bool, len(names))
-	for _, name := range names {
-		nameset[name] = true
+	kindset := make(map[string]bool, len(kinds))
+	for _, kind := range kinds {
+		kindset[kind] = true
 	}
 
 	set := make(map[*Repo]bool, len(s.byName))
 	repos := make(Repos, 0, len(s.byName))
 	for _, r := range s.byName {
-		if !set[r] && (len(r.Sources) > 0 || nameset[r.Name]) {
+		if !set[r] && len(kinds) == 0 || kindset[r.ExternalRepo.ServiceType] {
 			repos = append(repos, r)
 			set[r] = true
 		}

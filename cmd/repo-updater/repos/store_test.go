@@ -26,7 +26,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 		}
 
 		ctx := context.Background()
-		store := repos.NewDBStore(ctx, db, kinds, sql.TxOptions{Isolation: sql.LevelSerializable})
+		store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
 		t.Run("no repos", func(t *testing.T) {
 			if err := store.UpsertRepos(ctx); err != nil {
@@ -70,7 +70,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				return want[i].ID < want[j].ID
 			})
 
-			have, err := tx.ListRepos(ctx)
+			have, err := tx.ListRepos(ctx, kinds...)
 			if err != nil {
 				t.Errorf("ListRepos error: %s", err)
 				return
@@ -106,7 +106,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx); err != nil {
 				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
+			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
@@ -156,7 +156,6 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 		for _, tc := range []struct {
 			name   string
 			kinds  []string
-			names  []string
 			stored repos.Repos
 			repos  repos.Repos
 			err    error
@@ -180,7 +179,7 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 		} {
 			tc := tc
 			ctx := context.Background()
-			store := repos.NewDBStore(ctx, db, tc.kinds, sql.TxOptions{Isolation: sql.LevelDefault})
+			store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
@@ -188,7 +187,7 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 					return
 				}
 
-				rs, err := tx.ListRepos(ctx, tc.names...)
+				rs, err := tx.ListRepos(ctx, tc.kinds...)
 				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
@@ -246,7 +245,7 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 
 			tc := tc
 			ctx := context.Background()
-			store := repos.NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
+			store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 			t.Run(tc.test, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
@@ -274,7 +273,7 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 func testDBStoreTransact(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		store := repos.NewDBStore(ctx, db, []string{"GITHUB"}, sql.TxOptions{Isolation: sql.LevelDefault})
+		store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 		txstore, err := store.Transact(ctx)
 		if err != nil {

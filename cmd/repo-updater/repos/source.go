@@ -16,26 +16,25 @@ import (
 
 // A Sourcer yields Sources whose Repos should be synced.
 type Sourcer interface {
-	ListSources(context.Context) ([]Source, error)
+	ListSources(ctx context.Context, kinds ...string) ([]Source, error)
 }
 
 // ExternalServicesSourcer converts each code host connection configured via external services
 // in the frontend API to a Source that yields Repos. Each invocation of ListSources
 // may yield different Sources depending on what the user configured at a given point in time.
 type ExternalServicesSourcer struct {
-	api   InternalAPI
-	kinds []string
+	api InternalAPI
 }
 
 // NewExternalServicesSourcer returns a new ExternalServicesSourcer with the given Frontend API.
-func NewExternalServicesSourcer(api InternalAPI, kinds ...string) *ExternalServicesSourcer {
-	return &ExternalServicesSourcer{api: api, kinds: kinds}
+func NewExternalServicesSourcer(api InternalAPI) *ExternalServicesSourcer {
+	return &ExternalServicesSourcer{api: api}
 }
 
-// ListSources lists all configured repository yielding Sources of the configured kinds (via the constructor),
+// ListSources lists all configured repository yielding Sources of the given kinds,
 // based on the code host connections configured via external services in the frontend API.
-func (s ExternalServicesSourcer) ListSources(ctx context.Context) ([]Source, error) {
-	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kinds: s.kinds})
+func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...string) ([]Source, error) {
+	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kinds: kinds})
 	if err != nil {
 		return nil, err
 	}

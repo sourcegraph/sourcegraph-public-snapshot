@@ -16,7 +16,7 @@ import (
 // A Store exposes methods to read and write persistent repositories.
 type Store interface {
 	GetRepoByName(ctx context.Context, name string) (*Repo, error)
-	ListRepos(ctx context.Context, names ...string) ([]*Repo, error)
+	ListRepos(ctx context.Context, kinds ...string) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 }
 
@@ -42,13 +42,12 @@ type TxStore interface {
 // from the Postgres database.
 type DBStore struct {
 	db     DB
-	kinds  []string // which source kinds to list
 	txOpts sql.TxOptions
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db DB, kinds []string, txOpts sql.TxOptions) *DBStore {
-	return &DBStore{db: db, kinds: kinds, txOpts: txOpts}
+func NewDBStore(ctx context.Context, db DB, txOpts sql.TxOptions) *DBStore {
+	return &DBStore{db: db, txOpts: txOpts}
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
@@ -71,7 +70,6 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 
 	return &DBStore{
 		db:     tx,
-		kinds:  s.kinds,
 		txOpts: s.txOpts,
 	}, nil
 }
@@ -135,9 +133,9 @@ func getRepoByNameQuery(name string) *sqlf.Query {
 }
 
 // ListRepos lists all stored repos that are not deleted, have one of the
-// configured external service kind OR their name is one of the given names.
-func (s DBStore) ListRepos(ctx context.Context, names ...string) (repos []*Repo, err error) {
-	return repos, s.paginate(ctx, &repos, listReposQuery(s.kinds, names))
+// specified external service kind.
+func (s DBStore) ListRepos(ctx context.Context, kinds ...string) (repos []*Repo, err error) {
+	return repos, s.paginate(ctx, &repos, listReposQuery(kinds))
 }
 
 const listReposQueryFmtstr = `
@@ -160,12 +158,11 @@ SELECT
   metadata
 FROM repo
 WHERE id > %s
-AND deleted_at IS NULL
-AND (%s OR %s)
+AND %s
 ORDER BY id ASC LIMIT %s
 `
 
-func listReposQuery(kinds, names []string) paginatedQuery {
+func listReposQuery(kinds []string) paginatedQuery {
 	kq := sqlf.Sprintf("TRUE")
 	if len(kinds) > 0 {
 		ks := make([]*sqlf.Query, 0, len(kinds))
@@ -175,21 +172,11 @@ func listReposQuery(kinds, names []string) paginatedQuery {
 		kq = sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ","))
 	}
 
-	nq := sqlf.Sprintf("FALSE")
-	if len(names) > 0 {
-		ns := make([]*sqlf.Query, 0, len(names))
-		for _, name := range names {
-			ns = append(ns, sqlf.Sprintf("%s", name))
-		}
-		nq = sqlf.Sprintf("name IN (%s)", sqlf.Join(ns, ",\n"))
-	}
-
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listReposQueryFmtstr,
 			cursor,
 			kq,
-			nq,
 			limit,
 		)
 	}

@@ -30,7 +30,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertRepos", testDBStoreUpsertRepos(db)},
 		{"DBStore/ListRepos", testDBStoreListRepos(db)},
 		{"Syncer/Sync", testSyncerSync(
-			repos.NewDBStore(ctx, db, nil, sql.TxOptions{Isolation: sql.LevelSerializable}),
+			repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable}),
 		)},
 	} {
 		t.Run(tc.name, tc.test)
