@@ -13,7 +13,7 @@ files=$(ls -1 | grep '^[0-9]'.*\.sql | sort -n | tail -n2)
 
 for f in $files; do
     cat > $f <<EOF
-BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
 
 -- Insert migration here. See README.md. Highlights:
 --  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
