@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isEqual } from 'lodash'
 import { upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ReactStripeElements } from 'react-stripe-elements'
@@ -9,6 +9,7 @@ import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { Form } from '../../../components/Form'
+import { ThemeProps } from '../../../theme'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
 import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
@@ -29,7 +30,7 @@ export interface ProductSubscriptionFormData {
 
 const LOADING: 'loading' = 'loading'
 
-interface Props {
+interface Props extends ThemeProps {
     /**
      * The ID of the account associated with the subscription, or null if there is none (in which case this form
      * can only be used to price out a subscription, not to buy).
@@ -41,8 +42,6 @@ interface Props {
      * or null if this is a new subscription.
      */
     subscriptionID: GQL.ID | null
-
-    isLightTheme: boolean
 
     /** Called when the user submits the form (to buy or update the subscription). */
     onSubmit: (args: ProductSubscriptionFormData) => void

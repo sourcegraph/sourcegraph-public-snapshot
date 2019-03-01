@@ -33,6 +33,7 @@ import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
+import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
@@ -119,16 +120,14 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps {
+interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
-    // filePath is the tree's path in TreePage. We call it filePath for consistency elsewhere.
+    /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
     rev: string
-    isLightTheme: boolean
-
     location: H.Location
     history: H.History
 }
@@ -273,12 +272,11 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 </h3>
                                 <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
                                     <QueryInput
+                                        {...this.props}
                                         value={this.state.query}
                                         onChange={this.onQueryChange}
                                         prependQueryForSuggestions={this.getQueryPrefix()}
                                         autoFocus={true}
-                                        location={this.props.location}
-                                        history={this.props.history}
                                         placeholder=""
                                     />
                                     <SearchButton />
@@ -293,11 +291,8 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 <div className="tree-page__section mt-2 tree-page__section--discussions">
                                     <h3 className="tree-page__section-header">Discussions</h3>
                                     <DiscussionsList
-                                        repoID={this.props.repoID}
-                                        rev={this.props.rev}
+                                        {...this.props}
                                         filePath={this.props.filePath + '/**' || undefined}
-                                        history={this.props.history}
-                                        location={this.props.location}
                                         noun="discussion in this tree"
                                         pluralNoun="discussions in this tree"
                                         defaultFirst={2}
@@ -306,6 +301,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 </div>
                             )}
                             <ActionsContainer
+                                {...this.props}
                                 menu={ContributableMenu.DirectoryPage}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={items => (
@@ -313,20 +309,15 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         <h3 className="tree-page__section-header">Actions</h3>
                                         {items.map((item, i) => (
                                             <ActionItem
+                                                {...this.props}
                                                 key={i}
                                                 {...item}
                                                 className="btn btn-secondary mr-1 mb-1"
-                                                extensionsController={this.props.extensionsController}
-                                                platformContext={this.props.platformContext}
-                                                location={this.props.location}
                                             />
                                         ))}
                                     </section>
                                 )}
                                 empty={null}
-                                extensionsController={this.props.extensionsController}
-                                platformContext={this.props.platformContext}
-                                location={this.props.location}
                             />
                             <div className="tree-page__section">
                                 <h3 className="tree-page__section-header">Changes</h3>
@@ -334,6 +325,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     GQL.IGitCommit,
                                     Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>
                                 >
+                                    {...this.props}
                                     className="mt-2 tree-page__section--commits"
                                     listClassName="list-group list-group-flush"
                                     noun="commit in this tree"
@@ -347,10 +339,8 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     }}
                                     updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}`}
                                     defaultFirst={7}
-                                    history={this.props.history}
                                     shouldUpdateURLQuery={false}
                                     hideSearch={true}
-                                    location={this.props.location}
                                 />
                             </div>
                         </>

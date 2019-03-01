@@ -23,6 +23,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -93,10 +94,10 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps {
     location: H.Location
     history: H.History
-    isLightTheme: boolean
     repoID: GQL.ID
     authenticatedUser: GQL.IUser | null
 }
@@ -277,22 +278,12 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 )}
                 {renderMode === 'code' && !this.state.blobOrError.highlight.aborted && (
                     <Blob
+                        {...this.props}
                         className="blob-page__blob"
-                        repoName={this.props.repoName}
-                        commitID={this.props.commitID}
-                        filePath={this.props.filePath}
                         content={this.state.blobOrError.content}
                         html={this.state.blobOrError.highlight.html}
-                        rev={this.props.rev}
-                        mode={this.props.mode}
-                        settingsCascade={this.props.settingsCascade}
-                        platformContext={this.props.platformContext}
-                        extensionsController={this.props.extensionsController}
                         wrapCode={this.state.wrapCode}
                         renderMode={renderMode}
-                        location={this.props.location}
-                        history={this.props.history}
-                        isLightTheme={this.props.isLightTheme}
                     />
                 )}
                 {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (
@@ -307,17 +298,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 )}
                 <BlobPanel
                     {...this.props}
-                    repoID={this.props.repoID}
-                    repoName={this.props.repoName}
-                    commitID={this.props.commitID}
-                    platformContext={this.props.platformContext}
-                    extensionsController={this.props.extensionsController}
                     position={
                         lprToRange(parseHash(this.props.location.hash))
                             ? lprToRange(parseHash(this.props.location.hash))!.start
                             : undefined
                     }
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
             </>
         )

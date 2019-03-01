@@ -7,18 +7,17 @@ import { mapTo, startWith, switchMap, withLatestFrom } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { getLastIDForSubject } from '../../settings/configuration'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createSavedQuery, deleteSavedQuery } from '../backend'
 import { SavedQueryRow } from './SavedQueryRow'
 import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
-
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
     savedQuery: GQL.ISavedQuery
     onDidUpdate?: () => void
     onDidDuplicate?: () => void
     onDidDelete?: () => void
-    isLightTheme: boolean
 }
 
 interface State {

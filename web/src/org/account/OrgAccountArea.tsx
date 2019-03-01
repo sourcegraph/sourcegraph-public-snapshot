@@ -5,6 +5,7 @@ import * as React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { ThemeProps } from '../../theme'
 import { OrgAreaPageProps } from '../area/OrgArea'
 import { OrgAccountProfilePage } from './OrgAccountProfilePage'
 import { OrgAccountSidebar } from './OrgAccountSidebar'
@@ -17,9 +18,8 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
     location: H.Location
-    isLightTheme: boolean
 }
 
 /**

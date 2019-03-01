@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { ThemeProps } from '../../../theme'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { WelcomeMainPageDemos } from './WelcomeMainPageDemos'
 import { WelcomeMainPageLogos } from './WelcomeMainPageLogos'
@@ -14,9 +15,8 @@ import { WelcomeMainPageLogos } from './WelcomeMainPageLogos'
 //
 // tslint:disable:jsx-no-lambda
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
     location: H.Location
     history: H.History
 }

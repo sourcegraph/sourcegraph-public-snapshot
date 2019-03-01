@@ -13,12 +13,12 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
 import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
+import { ThemeProps } from '../theme'
 import { HighlightRange } from './SearchResult'
 
-interface SearchResultMatchProps {
+interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch
     highlightRanges: HighlightRange[]
-    isLightTheme: boolean
 }
 
 interface SearchResultMatchState {

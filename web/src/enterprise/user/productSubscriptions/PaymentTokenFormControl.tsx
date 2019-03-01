@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { CardElement, ReactStripeElements } from 'react-stripe-elements'
+import { ThemeProps } from '../../../theme'
 
-interface Props {
+interface Props extends ThemeProps {
     disabled?: boolean
-    isLightTheme: boolean
 }
 
 interface State {}

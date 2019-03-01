@@ -11,18 +11,17 @@ import { asError, createAggregateError, ErrorLike } from '../../../../../shared/
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
+import { ThemeProps } from '../../../theme'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**
      * The user who will own the new subscrption when created, or null when there is no authenticated user and this
      * page is accessed at /user/subscriptions/new.
      */
     user: GQL.IUser | null
-
-    isLightTheme: boolean
 }
 
 const LOADING: 'loading' = 'loading'

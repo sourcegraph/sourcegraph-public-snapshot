@@ -4,6 +4,7 @@ import React from 'react'
 import { ResultContainer } from '../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
+import { ThemeProps } from '../theme'
 import { SearchResultMatch } from './SearchResultMatch'
 
 export interface HighlightRange {
@@ -21,9 +22,8 @@ export interface HighlightRange {
     length: number
 }
 
-interface Props {
+interface Props extends ThemeProps {
     result: GQL.GenericSearchResultInterface
-    isLightTheme: boolean
 }
 
 export class SearchResult extends React.Component<Props> {

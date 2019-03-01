@@ -1,7 +1,7 @@
 import React from 'react'
+import { ThemeProps } from '../../../theme'
 
-interface Props {
-    isLightTheme: boolean
+interface Props extends ThemeProps {
     className: string
 }
 

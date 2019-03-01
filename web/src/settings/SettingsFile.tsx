@@ -7,10 +7,11 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
+import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 
-interface Props {
+interface Props extends ThemeProps {
     history: H.History
 
     settings: GQL.ISettings | null
@@ -35,8 +36,6 @@ interface Props {
      * if any.
      */
     commitError?: Error
-
-    isLightTheme: boolean
 }
 
 interface State {

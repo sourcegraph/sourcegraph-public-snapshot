@@ -4,12 +4,12 @@ import { DecorationAttachmentRenderOptions } from 'sourcegraph'
 import { decorationAttachmentStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { AbsoluteRepoFile } from '../../../../shared/src/util/url'
+import { ThemeProps } from '../../theme'
 
-interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
+interface LineDecorationAttachmentProps extends AbsoluteRepoFile, ThemeProps {
     line: number
     portalID: string
     attachment: DecorationAttachmentRenderOptions
-    isLightTheme: boolean
 }
 
 /** Displays text after a line in Blob. */

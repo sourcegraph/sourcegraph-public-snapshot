@@ -1,12 +1,12 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { ThemeProps } from '../../../theme'
 import { RedirectToUserPage } from '../../../user/account/RedirectToUserPage'
 import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptionsNewProductSubscriptionPage'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
 }
 
 /**

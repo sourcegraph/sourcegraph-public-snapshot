@@ -8,10 +8,10 @@ import { FeedbackText } from '../components/FeedbackText'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { submitSurvey } from './backend'
 import { SurveyCTA } from './SurveyToast'
-
 interface SurveyFormProps {
     location: H.Location
     history: H.History
@@ -160,8 +160,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
     }
 }
 
-interface SurveyPageProps extends RouteComponentProps<{ score?: string }> {
-    isLightTheme: boolean
+interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, ThemeProps {
     authenticatedUser: GQL.IUser | null
 }
 

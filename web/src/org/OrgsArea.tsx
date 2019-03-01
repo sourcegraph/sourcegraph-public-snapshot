@@ -5,6 +5,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { HeroPage } from '../components/HeroPage'
+import { ThemeProps } from '../theme'
 import { OrgArea } from './area/OrgArea'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
 
@@ -16,9 +17,8 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<any>, PlatformContextProps, SettingsCascadeProps {
+interface Props extends RouteComponentProps<any>, PlatformContextProps, SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
 }
 
 /**
