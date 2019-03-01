@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 import H from 'history'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
@@ -192,9 +193,13 @@ export class ActionItem extends React.PureComponent<Props, State> {
                     (this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
                     this.state.actionOrError === LOADING
                 }
-                className={`action-item ${this.props.className || ''} ${
-                    showLoadingSpinner ? 'action-item--loading' : ''
-                } ${variantClassName} ${pressed ? `action-item--pressed ${this.props.pressedClassName || ''}` : ''}`}
+                className={classNames(
+                    'action-item',
+                    this.props.className,
+                    showLoadingSpinner && 'action-item--loading',
+                    variantClassName,
+                    pressed && [`action-item--pressed`, this.props.pressedClassName]
+                )}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
                 to={
