@@ -40,10 +40,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
         concat([this.props], this.componentUpdates)
             .pipe(
                 map(props => props.activation.completed),
-                distinctUntilChanged((a, b) => {
-                    console.log(a, b)
-                    return (a && b && percentageDone(a) >= percentageDone(b)) || false
-                }),
+                distinctUntilChanged((a, b) => (a && b && percentageDone(a) >= percentageDone(b)) || false),
                 skip(1), // skip the initial value, because we only animate updates
                 concatMap(() => concat(of(true), of(false).pipe(delay(1500))))
             )
@@ -125,7 +122,11 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     <DropdownItem divider={true} />
                     {this.props.activation && this.props.activation.completed ? (
                         this.props.activation.steps.map(s => (
-                            <div key={s.id} className="dropdown-item" onClick={this.toggleIsOpen}>
+                            <div
+                                key={s.id}
+                                className="activation-dropdown-item dropdown-item"
+                                onClick={this.toggleIsOpen}
+                            >
                                 <ActivationChecklistItem
                                     {...s}
                                     history={this.props.history}

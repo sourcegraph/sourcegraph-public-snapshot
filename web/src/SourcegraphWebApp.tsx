@@ -424,33 +424,33 @@ const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] =>
             id: 'connectedCodeHost',
             title: 'Connect your code host',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
-            action: (h: H.History) => h.push('/site-admin/external-services'),
+            link: { to: '/site-admin/external-services' },
             siteAdminOnly: true,
         },
         {
             id: 'enabledRepository',
             title: 'Enable repositories',
             detail: 'Select which repositories Sourcegraph should pull and index from your code host(s).',
-            action: (h: H.History) => h.push('/site-admin/repositories'),
+            link: { to: '/site-admin/repositories' },
             siteAdminOnly: true,
         },
         {
             id: 'didSearch',
             title: 'Search your code',
             detail: 'Perform a search query on your code.',
-            action: (h: H.History) => h.push('/search'),
+            link: { to: '/search' },
         },
         {
             id: 'action:findReferences',
             title: 'Find some references',
             detail:
                 'To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click "Find references".',
-            action: (h: H.History) =>
+            onClick: (event: React.MouseEvent<HTMLElement>, history: H.History) =>
                 fetchReferencesLink()
                     .pipe(first())
                     .subscribe(r => {
                         if (r) {
-                            h.push(r)
+                            history.push(r)
                         } else {
                             alert('Must add repositories before finding references')
                         }
@@ -460,7 +460,7 @@ const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] =>
             id: 'enabledSignOn',
             title: 'Configure SSO or share with teammates',
             detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
-            action: () => window.open('https://docs.sourcegraph.com/admin/auth', '_blank'),
+            link: { to: 'https://docs.sourcegraph.com/admin/auth', target: '_blank' },
             siteAdminOnly: true,
         },
     ]

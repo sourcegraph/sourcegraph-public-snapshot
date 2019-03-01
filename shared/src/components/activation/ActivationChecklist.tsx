@@ -2,6 +2,7 @@ import H from 'history'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckboxMarkedCircleOutlineIcon from 'mdi-react/CheckboxMarkedCircleOutlineIcon'
 import * as React from 'react'
+import { Link } from '../Link'
 import { ActivationStep } from './Activation'
 
 interface ActivationChecklistItemProps extends ActivationStep {
@@ -13,11 +14,15 @@ interface ActivationChecklistItemProps extends ActivationStep {
  * A single item in the activation checklist.
  */
 export class ActivationChecklistItem extends React.PureComponent<ActivationChecklistItemProps, {}> {
-    private doAction = () => this.props.action(this.props.history)
-
+    private onClick = (e: React.MouseEvent<HTMLElement>) => {
+        if (this.props.onClick) {
+            this.props.onClick(e, this.props.history)
+        }
+    }
     public render(): JSX.Element {
-        return (
-            <div className="activation-item" onClick={this.doAction} data-tooltip={this.props.detail}>
+        const checkboxElem = (
+            <div className={'activation-item'}>
+                {' '}
                 {this.props.done ? (
                     <CheckboxMarkedCircleOutlineIcon className="icon-inline activation-item__checkbox--done" />
                 ) : (
@@ -26,6 +31,18 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
                 &nbsp;&nbsp;
                 {this.props.title}
                 &nbsp;
+            </div>
+        )
+
+        return (
+            <div onClick={this.onClick} data-tooltip={this.props.detail}>
+                {this.props.link ? (
+                    <Link className={'activation-item__link'} {...this.props.link}>
+                        {checkboxElem}
+                    </Link>
+                ) : (
+                    checkboxElem
+                )}
             </div>
         )
     }

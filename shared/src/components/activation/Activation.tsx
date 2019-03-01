@@ -1,4 +1,5 @@
 import H from 'history'
+import { LinkProps } from '../Link'
 
 /**
  * Represents the activation status of the current user.
@@ -39,7 +40,8 @@ export interface ActivationStep {
     id: string
     title: string
     detail: string
-    action: (h: H.History) => void
+    link?: LinkProps
+    onClick?: (event: React.MouseEvent<HTMLElement>, history: H.History) => void
 }
 
 /**
