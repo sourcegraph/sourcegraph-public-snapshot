@@ -237,11 +237,6 @@ func (s *Server) Handler() http.Handler {
 
 // Janitor does clean up tasks over s.ReposDir.
 func (s *Server) Janitor() {
-	// We may have clones which do not live in a directory named .git. Move
-	// them.
-	s.migrateGitDir()
-
-	// Other janitorial tasks
 	s.cleanupRepos()
 }
 
