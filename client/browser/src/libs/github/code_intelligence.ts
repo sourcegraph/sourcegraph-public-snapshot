@@ -19,7 +19,7 @@ import { createOpenOnSourcegraphIfNotExists } from './inject'
 import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
 
 const toolbarButtonProps = {
-    className: 'btn btn-sm tooltipped tooltipped-n',
+    className: 'btn btn-sm tooltipped tooltipped-s',
     style: { marginRight: '5px', textDecoration: 'none', color: 'inherit' },
 }
 
