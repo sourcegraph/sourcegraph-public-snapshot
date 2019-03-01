@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFixupCompileErrors(t *testing.T) {
+func TestAutoCorrectRegexp(t *testing.T) {
 	tests := []struct {
 		query string
 		want  string
@@ -30,7 +30,7 @@ func TestFixupCompileErrors(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got, err := parseRegexp(test.query)
+		got, err := autoCorrectRegexp(test.query)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -42,14 +42,14 @@ func TestFixupCompileErrors(t *testing.T) {
 	}
 }
 
-func TestFixupCompileErrors_failures(t *testing.T) {
+func TestAutoCorrectRegexp_failures(t *testing.T) {
 	tests := []string{
 		// If the user is trying to use capture groups, then forgetting to escape a paren is definitely an error.
 		"(foo|bar)(",
 	}
 
 	for _, query := range tests {
-		_, gotErr := parseRegexp(query)
+		_, gotErr := autoCorrectRegexp(query)
 		if gotErr == nil {
 			t.Errorf("expected error for `%s`, got none", query)
 			continue

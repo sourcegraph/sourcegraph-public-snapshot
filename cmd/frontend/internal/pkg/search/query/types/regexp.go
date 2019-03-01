@@ -77,7 +77,7 @@ func fixupCompileErrors(value string, err error) (string, error) {
 	return out, nil
 }
 
-func parseRegexp(value string) (string, error) {
+func autoCorrectRegexp(value string) (string, error) {
 	var r *syntax.Regexp
 	// If we can't fix the query up, we want to return the original error from the user entered query.
 	var originalErr error
