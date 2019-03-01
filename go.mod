@@ -122,7 +122,7 @@ require (
 	github.com/zenazn/goji v0.9.0 // indirect
 	go.opencensus.io v0.19.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
-	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
+	golang.org/x/arch v0.0.0-20190301082356-36aee92af9e8 // indirect
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
 	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd
 	golang.org/x/oauth2 v0.0.0-20190212230446-3e8b2be13635
