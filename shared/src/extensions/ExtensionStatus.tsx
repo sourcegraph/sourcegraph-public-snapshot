@@ -10,7 +10,7 @@ import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps<'sideloadedExtensionURL'> {
     link: React.ComponentType<{ id: string }>
 }
 
