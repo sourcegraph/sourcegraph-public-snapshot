@@ -19,6 +19,7 @@ for the patch release checklist.
 ## 5 working days before release (YYYY-MM-DD)
 
 - [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done by the time that the release branch is scheduled to be created.
+- [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
 
 ## 3 working days before release (YYYY-MM-DD)
 
@@ -95,6 +96,7 @@ for the patch release checklist.
     - [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
     - [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/pull/8))
 - [ ] Review all issues in the release milestone. Backlog things that didn't make it into the release and ping issues that still need to be done for the release (e.g. Tweets, marketing).
+- [ ] Verify that the blog post is ready to be merged.
 
 ## By 10am PT on the 20th
 
