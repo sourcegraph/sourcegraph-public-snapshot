@@ -4,21 +4,21 @@ import { LinkProps } from '../Link'
 /**
  * Represents the activation status of the current user.
  */
-export interface Activation {
+export interface Activation<K extends string> {
     /**
      * The steps that make up the activation list
      */
-    steps: ActivationStep[]
+    steps: ActivationStep<K>[]
 
     /**
      * The completion status of each activation step
      */
-    completed?: { [key: string]: boolean }
+    completed?: { [key in K]: boolean }
 
     /**
      * Updates the activation status with the given steps and their completion status.
      */
-    update: (u: { [key: string]: boolean }) => void
+    update: (u: { [key in K]: boolean }) => void
 
     /**
      * Resync the activation status from the server.
@@ -29,15 +29,15 @@ export interface Activation {
 /**
  * Component props should inherit from this to include activation status.
  */
-export interface ActivationProps {
-    activation?: Activation
+export interface ActivationProps<K extends string> {
+    activation?: Activation<K>
 }
 
 /**
  * One step in the activation status.
  */
-export interface ActivationStep {
-    id: string
+export interface ActivationStep<K> {
+    id: K
     title: string
     detail: string
     link?: LinkProps
@@ -47,7 +47,7 @@ export interface ActivationStep {
 /**
  * Returns the percent of activation checklist items completed.
  */
-export const percentageDone = (info?: { [key: string]: boolean }): number => {
+export function percentageDone<K extends string>(info?: { [K: string]: boolean }): number {
     if (!info) {
         return 0
     }

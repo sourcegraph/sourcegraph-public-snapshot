@@ -329,7 +329,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 interface ActivationParams {
     fetcher: () => Observable<{ [key: string]: boolean }>
     firstFetched: Promise<void>
-    steps: ActivationStep[]
+    steps: ActivationStep<WebAppActivationKeys>[]
 }
 
 const fetchActivationStatus = (isSiteAdmin: boolean) => () =>
@@ -418,8 +418,15 @@ const fetchReferencesLink = (): Observable<string | null> =>
         })
     )
 
-const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] =>
-    [
+type WebAppActivationKeys =
+    | 'connectedCodeHost'
+    | 'enabledRepository'
+    | 'didSearch'
+    | 'action:findReferences'
+    | 'enabledSignOn'
+
+const getActivationSteps = (isSiteAdmin: boolean): ActivationStep<WebAppActivationKeys>[] => {
+    const stepSources: (ActivationStep<WebAppActivationKeys> & { siteAdminOnly?: boolean })[] = [
         {
             id: 'connectedCodeHost',
             title: 'Connect your code host',
@@ -464,5 +471,6 @@ const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] =>
             siteAdminOnly: true,
         },
     ]
-        .filter(e => true || !e.siteAdminOnly)
-        .map(({ siteAdminOnly, ...step }) => step)
+
+    return stepSources.filter(e => true || !e.siteAdminOnly).map(({ siteAdminOnly, ...step }) => step)
+}

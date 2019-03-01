@@ -39,7 +39,7 @@ export interface LayoutProps
         PlatformContextProps,
         ExtensionsControllerProps,
         KeybindingsProps,
-        ActivationProps {
+        ActivationProps<string> {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
