@@ -26,14 +26,7 @@ func main() {
 
 	// Run e2e tests
 	pipeline.AddStep(":chromium:",
-		bk.Env("FORCE_COLOR", "1"),
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		bk.Env("DISPLAY", ":99"),
-		bk.Cmd("Xvfb :99 &"),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd web"),
-		bk.Cmd("yarn run test-e2e -t 'theme'"), // only run the theme switcher test for speed of debugging
-		bk.Cmd("popd"),
+		bk.Cmd("./e2e.sh"),
 		bk.ArtifactPaths("./puppeteer/*.png"),
 	)
 }
