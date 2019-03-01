@@ -41,7 +41,7 @@ func NewSyncer(
 func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...string) error {
 	for ctx.Err() == nil {
 		if _, err := s.Sync(ctx, kinds...); err != nil {
-			log15.Error("Syncer", "err", err)
+			log15.Error("Syncer", "error", err)
 		}
 		time.Sleep(interval)
 	}
