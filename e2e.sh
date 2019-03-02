@@ -2,11 +2,9 @@
 
 set -ex
 
-trap 'kill $(jobs -p)' EXIT
-
 echo "Running a daemonized sourcegraph/server as the test subject..."
 CONTAINER="$(docker container run --rm -d sourcegraph/server:3.1.1)"
-trap "docker container stop $CONTAINER" EXIT
+trap 'kill $(jobs -p)'" ; docker container stop $CONTAINER" EXIT
 
 # hax
 docker exec "$CONTAINER" apk add --no-cache socat
