@@ -51,6 +51,7 @@ func main() {
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Env("ENTERPRISE", "1"),
 	)
@@ -112,6 +113,7 @@ func main() {
 			bk.Env("VERSION", version),
 			bk.Cmd("./cmd/server/build.sh"),
 			bk.Cmd("popd"),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Cmd("./web/e2e.sh"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
