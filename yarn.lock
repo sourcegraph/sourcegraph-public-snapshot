@@ -1510,8 +1510,9 @@
     sourcegraph "*"
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "1.1.0"
+  dependencies:
+    sourcegraph "*"
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -1523,12 +1524,12 @@
   resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
   integrity sha512-F4GMp+8XhlRQzEngc+CwbalT8zy8vXMxMrUjhm2cslTjWgWuSft0vSNCmCJDVPshpG/B+Ehb/OzpLLAzsG2JKg==
 
-"@sourcegraph/stylelint-config@^1.1.1":
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.1.1.tgz#b7dd3c2ee19f5f7abe6785a885fdada9afd7410e"
-  integrity sha512-gjdVXJfgkw1wJAMqR43HX7Rsh74csOjZqr7hwkvaBeOBMheitdUiXMQ3WVAKR6eVy19XMCJmbCQtm6BWEkWqog==
+"@sourcegraph/stylelint-config@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.1.2.tgz#e96ca72f9f0ec0d5bcdeb64882e20461078d991d"
+  integrity sha512-yfiHTJOblsVXlNPKHNeC7L12TEg2pWNhzdDsvaInew7StXLiHMkvQCWdRNd0FrLsU02Gl6bqErk4g2uzJIqLoQ==
   dependencies:
-    stylelint-config-prettier "^4.0.0"
+    stylelint-config-prettier "^5.0.0"
     stylelint-config-standard "^18.2.0"
     stylelint-scss "^3.3.0"
 
@@ -13789,8 +13790,7 @@ sourcegraph@*:
   integrity sha512-cJHby0OPCM0y0BmRTKhY89D02f9koROluHMJGQGNE8q9CoIVbe1s6ctHCytz7bjY9mKtCpQMbtxYQhfIm5S4lg==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "22.0.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
@@ -14192,10 +14192,10 @@ stylehacks@^4.0.0:
     postcss "^7.0.0"
     postcss-selector-parser "^3.0.0"
 
-stylelint-config-prettier@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/stylelint-config-prettier/-/stylelint-config-prettier-4.0.0.tgz#8c712977be13bd25191ab8b986b5c07a3342a5dc"
-  integrity sha512-cwh3QbBC2+3zBeMvuxFjT8XsbSdyoyELOY9BZqMuvphUKEQ+srkPWoN60FlvRwLB014TOke4Y12KvTtfKnaHhg==
+stylelint-config-prettier@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/stylelint-config-prettier/-/stylelint-config-prettier-5.0.0.tgz#e7339da065dac8129ca821e234abddcef950b7f8"
+  integrity sha512-ksd78d8Kfq5CCDaT7C+/5O8RyDnRMkLNsqcpqXtdDkHIkIN9lNTdFeYo6clMFw0MmtibO8Mb7/AbEcZysAKRpw==
 
 stylelint-config-recommended@^2.1.0:
   version "2.1.0"
