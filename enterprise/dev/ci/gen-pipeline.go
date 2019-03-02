@@ -114,7 +114,7 @@ func main() {
 			bk.Cmd("./cmd/server/build.sh"),
 			bk.Cmd("popd"),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("./web/e2e.sh"),
+			bk.Cmd("./dev/ci/e2e.sh"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 
