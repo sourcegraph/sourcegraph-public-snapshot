@@ -15,12 +15,10 @@ socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat std
 
 URL="http://localhost:7080"
 
-set +ex
-until curl --output /dev/null --silent --head --fail "$URL"; do
-    echo "Waiting 5s for $URL..."
+timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
+    echo Waiting 5s for $URL...
     sleep 5
-done
-set -ex
+done"
 echo "Waiting for $URL... done"
 
 export FORCE_COLOR="1"
