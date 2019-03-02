@@ -190,7 +190,9 @@ describe('e2e test suite', function(this: any): void {
 
     const assertNonemptyRefs = async (): Promise<void> => {
         // verify active group is references
-        await page.waitForSelector('.panel__tabs .tab-bar__tab--active')
+        await page.waitForXPath(
+            "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
+        )
         // verify there are some references
         await page.waitForSelector('.panel__tabs-content .file-match__item')
     }
