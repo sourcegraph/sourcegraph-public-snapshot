@@ -1,6 +1,7 @@
 import * as os from 'os'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
+import { Key } from 'ts-key-enum'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
@@ -86,11 +87,11 @@ describe('e2e test suite', function(this: any): void {
 
         const editor = await page.waitForSelector('.view-line')
         await editor.click()
-        const modifier = os.platform() === 'darwin' ? 'Meta' : 'Control'
+        const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await page.keyboard.down(modifier)
         await page.keyboard.press('KeyA')
         await page.keyboard.up(modifier)
-        await page.keyboard.press('Backspace')
+        await page.keyboard.press(Key.Backspace)
         await page.keyboard.type(
             JSON.stringify({
                 url: 'https://github.com',
