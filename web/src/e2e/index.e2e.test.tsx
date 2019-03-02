@@ -20,9 +20,8 @@ describe('e2e test suite', function(this: any): void {
     let page: puppeteer.Page
 
     async function init(): Promise<void> {
-        page = await browser.newPage()
-        await ensureLoggedIn(page)
-        await ensureHasExternalService(page)
+        await ensureLoggedIn()
+        await ensureHasExternalService()
     }
 
     // Start browser.
@@ -37,6 +36,7 @@ describe('e2e test suite', function(this: any): void {
             args,
             headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
         })
+        page = await browser.newPage()
         await init()
     })
 
@@ -50,7 +50,7 @@ describe('e2e test suite', function(this: any): void {
         }
     })
 
-    async function ensureLoggedIn(page: puppeteer.Page): Promise<void> {
+    async function ensureLoggedIn(): Promise<void> {
         await page.goto(baseURL)
         const url = new URL(await page.url())
         if (url.pathname === '/site-admin/init') {
@@ -67,7 +67,7 @@ describe('e2e test suite', function(this: any): void {
         }
     }
 
-    async function ensureHasExternalService(page: puppeteer.Page): Promise<void> {
+    async function ensureHasExternalService(): Promise<void> {
         await page.goto(baseURL + '/site-admin/external-services')
         await page.waitFor('.filtered-connection')
         await page.waitForSelector('.filtered-connection__loader', { hidden: true })
