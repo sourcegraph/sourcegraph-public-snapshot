@@ -80,7 +80,7 @@ describe('e2e test suite', function(this: any): void {
 
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
-        path.resolve(__dirname, '..', '..', '..', '..'),
+        path.resolve(__dirname, '..', '..', '..'),
         path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
         () => page
     )
