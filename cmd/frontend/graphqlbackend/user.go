@@ -22,25 +22,31 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 	Username *string
 	Email    *string
 }) (*UserResolver, error) {
-	// 🚨 SECURITY: Only admins are allowed to access the email address or username on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	switch {
+	case args.Username != nil:
+		user, err := db.Users.GetByUsername(ctx, *args.Username)
+		if err != nil {
 			return nil, err
 		}
-	}
+		return &UserResolver{user: user}, nil
 
-	if args.Email != nil {
+	case args.Email != nil:
+		// 🚨 SECURITY: Only site admins are allowed to look up by email address on Sourcegraph.com, for
+		// user privacy reasons.
+		if envvar.SourcegraphDotComMode() {
+			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+				return nil, err
+			}
+		}
 		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
 			return nil, err
 		}
 		return &UserResolver{user: user}, nil
+
+	default:
+		return nil, errors.New("must specify either username or email to look up user")
 	}
-	user, err := db.Users.GetByUsername(ctx, *args.Username)
-	if err != nil {
-		return nil, err
-	}
-	return &UserResolver{user: user}, nil
 }
 
 // UserResolver implements the GraphQL User type.
