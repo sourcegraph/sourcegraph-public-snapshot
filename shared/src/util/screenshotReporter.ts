@@ -8,7 +8,11 @@ import puppeteer from 'puppeteer'
  *
  * From https://github.com/smooth-code/jest-puppeteer/issues/131#issuecomment-424073620.
  */
-export function saveScreenshotsUponFailuresAndClosePage(screenshotDir: string, getPage: () => puppeteer.Page): void {
+export function saveScreenshotsUponFailuresAndClosePage(
+    repoRootDir: string,
+    screenshotDir: string,
+    getPage: () => puppeteer.Page
+): void {
     /**
      * jasmine reporter does not support async, so we store the promise and wait for it before each test.
      */
@@ -24,7 +28,9 @@ export function saveScreenshotsUponFailuresAndClosePage(screenshotDir: string, g
     jasmine.getEnv().addReporter({
         specDone: async result => {
             if (result.status === 'failed') {
-                promise = promise.catch().then(() => takeScreenshot(getPage(), screenshotDir, result.fullName))
+                promise = promise
+                    .catch()
+                    .then(() => takeScreenshot(getPage(), repoRootDir, screenshotDir, result.fullName))
             }
 
             if (result.status !== 'disabled') {
@@ -40,14 +46,20 @@ export function saveScreenshotsUponFailuresAndClosePage(screenshotDir: string, g
     })
 }
 
-async function takeScreenshot(page: puppeteer.Page, screenshotDir: string, testName: string): Promise<void> {
+async function takeScreenshot(
+    page: puppeteer.Page,
+    repoRootDir: string,
+    screenshotDir: string,
+    testName: string
+): Promise<void> {
     await mkdirp(screenshotDir)
     const filePath = path.join(screenshotDir, testName.replace(/\W/g, '_') + '.png')
+    const relativePath = path.relative(repoRootDir, filePath)
     await page.screenshot({ path: filePath })
     if (process.env.CI) {
         // Print image with ANSI escape code for Buildkite: https://buildkite.com/docs/builds/images-in-log-output.
-        console.log(`\u001B]1338;url="artifact://${filePath}";alt="Screenshot"\u0007`)
+        console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
     } else {
-        console.log(`Saved screenshot of failure to ${filePath}`)
+        console.log(`Saved screenshot of failure to ${relativePath}`)
     }
 }
