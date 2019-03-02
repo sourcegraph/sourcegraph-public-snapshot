@@ -7,9 +7,12 @@ echo "Running a daemonized sourcegraph/server as the test subject..."
 CONTAINER="$(docker container run --rm -d sourcegraph/server:insiders)"
 trap 'kill $(jobs -p)'" ; docker container stop $CONTAINER" EXIT
 
-# hax
 docker exec "$CONTAINER" apk add --no-cache socat
+# TODO install socat on the buildkite agent
 apt-get install -y socat
+# Connect the server container's port 7080 to localhost:7080 so that e2e tests
+# can hit it. This is similar to port-forwarding via SSH tunneling, but uses
+# docker exec as the transport.
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
 
 URL="http://localhost:7080"
