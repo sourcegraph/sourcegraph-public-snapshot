@@ -22,7 +22,7 @@ export function readEnvBoolean({
     defaultValue?: boolean
 }): boolean {
     const value = process.env[variable]
-    if (value === undefined) {
+    if (value === undefined || value === '') {
         if (defaultValue === undefined) {
             throw new Error(`Environment variable ${variable} must be set.`)
         } else {
@@ -45,7 +45,7 @@ export function readEnvBoolean({
  */
 export function readEnvString({ variable, defaultValue }: { variable: string; defaultValue?: string }): string {
     const value = process.env[variable]
-    if (value === undefined) {
+    if (value === undefined || value === '') {
         if (defaultValue === undefined) {
             throw new Error(`Environment variable ${variable} must be set.`)
         } else {
