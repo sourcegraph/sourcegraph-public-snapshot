@@ -188,13 +188,22 @@ describe('e2e test suite', function(this: any): void {
         expect(highlightedTokens.every(txt => txt === label)).toBeTruthy()
     }
 
-    const assertNonemptyRefs = async (): Promise<void> => {
+    const assertNonemptyLocalRefs = async (): Promise<void> => {
         // verify active group is references
         await page.waitForXPath(
             "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
         await page.waitForSelector('.panel__tabs-content .file-match__item')
+    }
+
+    const assertNonemptyExternalRefs = async (): Promise<void> => {
+        // verify active group is references
+        await page.waitForXPath(
+            "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
+        )
+        // verify there are some references
+        await page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item')
     }
 
     describe('Theme switcher', () => {
@@ -576,7 +585,7 @@ describe('e2e test suite', function(this: any): void {
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6&tab=references'
                         )
 
-                        await assertNonemptyRefs()
+                        await assertNonemptyLocalRefs()
 
                         // verify the appropriate # of references are fetched
                         await page.waitForSelector('.panel__tabs-content .file-match__list')
@@ -611,7 +620,7 @@ describe('e2e test suite', function(this: any): void {
 
                             // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
                             // look like they're for the appropriate token)
-                            await assertNonemptyRefs()
+                            await assertNonemptyExternalRefs()
 
                             // verify all the matches highlight a `Reader` token
                             await assertAllHighlightedTokens('Reader')
@@ -628,7 +637,7 @@ describe('e2e test suite', function(this: any): void {
                 await enableOrAddRepositoryIfNeeded()
                 await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
                 await assertStickyHighlightedToken('Compare')
-                await assertNonemptyRefs()
+                await assertNonemptyLocalRefs()
                 await assertAllHighlightedTokens('Compare')
             })
 
@@ -641,7 +650,7 @@ describe('e2e test suite', function(this: any): void {
                 await enableOrAddRepositoryIfNeeded()
                 await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
                 await assertStickyHighlightedToken('Compare')
-                await assertNonemptyRefs()
+                await assertNonemptyLocalRefs()
                 await assertAllHighlightedTokens('Compare')
             })
 
@@ -653,7 +662,7 @@ describe('e2e test suite', function(this: any): void {
                 await enableOrAddRepositoryIfNeeded()
                 await assertWindowLocationPrefix('/github.com/gorilla/mux/-/blob/mux.go')
                 await assertStickyHighlightedToken('Router')
-                await assertNonemptyRefs()
+                await assertNonemptyLocalRefs()
                 await assertAllHighlightedTokens('Router')
             })
         })
