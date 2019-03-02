@@ -13,8 +13,6 @@ CONTAINER="$(docker container run --rm -d $IMAGE)"
 trap 'kill $(jobs -p)'" ; docker container stop $CONTAINER" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
-# TODO install socat on the buildkite agent
-apt-get install -y socat
 # Connect the server container's port 7080 to localhost:7080 so that e2e tests
 # can hit it. This is similar to port-forwarding via SSH tunneling, but uses
 # docker exec as the transport.
