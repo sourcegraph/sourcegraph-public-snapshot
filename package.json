@@ -51,7 +51,7 @@
     "@storybook/addons": "^4.1.4",
     "@storybook/components": "^4.1.4",
     "@storybook/react": "^4.1.4",
-    "@types/babel__core": "7.0.4",
+    "@types/babel__core": "7.1.0",
     "@types/chai": "4.1.7",
     "@types/chai-as-promised": "7.1.0",
     "@types/chalk": "2.2.0",
