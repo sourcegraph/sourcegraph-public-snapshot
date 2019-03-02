@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+cd $(dirname "${BASH_SOURCE[0]}")/..
 set -ex
 
 echo "Running a daemonized sourcegraph/server as the test subject..."
@@ -18,10 +19,6 @@ timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; 
     sleep 5
 done"
 echo "Waiting for $URL... done"
-
-export FORCE_COLOR="1"
-export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=""
-yarn --frozen-lockfile --network-timeout 60000
 
 pushd web
 env SOURCEGRAPH_BASE_URL="$URL" yarn run test-e2e
