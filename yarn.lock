@@ -2402,10 +2402,10 @@
   resolved "https://registry.npmjs.org/@types/node/-/node-10.12.18.tgz#1d3ca764718915584fcd9f6344621b7672665c67"
   integrity sha512-fh+pAqt4xRzPfqA6eh3Z2y6fyZavRIumvjhaCL753+TVkGKGhpPeyrJG2JftD0T9q4GF00KjefsQ+PQNDdWQaQ==
 
-"@types/optimize-css-assets-webpack-plugin@1.3.3":
-  version "1.3.3"
-  resolved "http://registry.npmjs.org/@types/optimize-css-assets-webpack-plugin/-/optimize-css-assets-webpack-plugin-1.3.3.tgz#e2b79784473ac5931ade079e4b70e525b35cd4ad"
-  integrity sha512-pnxKUggSNq3P+OtHkMc72BZ0FHvUCdMW5clkD+9MWcuWvuo+KJg3X5llMXFcDARJnqYfhaa3hVngnnwaSVwimg==
+"@types/optimize-css-assets-webpack-plugin@1.3.4":
+  version "1.3.4"
+  resolved "https://registry.npmjs.org/@types/optimize-css-assets-webpack-plugin/-/optimize-css-assets-webpack-plugin-1.3.4.tgz#6838ab7a3a5ec1253ad98c348bdcd009e91b39cd"
+  integrity sha512-04LJJFAdZ7sW7V66htTeKz95WP/E+aTuKv3wikgM6bmmeO1alcqQ9eDoRSTrrkL/zeuoaoW4WR1FdjvqiWoSkQ==
   dependencies:
     "@types/webpack" "*"
 
