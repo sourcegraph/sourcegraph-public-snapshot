@@ -2416,10 +2416,10 @@
   dependencies:
     "@types/retry" "*"
 
-"@types/plugin-error@0.1.0":
-  version "0.1.0"
-  resolved "https://registry.npmjs.org/@types/plugin-error/-/plugin-error-0.1.0.tgz#47e8efd62ccdf6c495f7154c3033e1360353c882"
-  integrity sha512-iFWVbyq1mvC3YuFhJMyToA1GXEbvRWoOFIWZXZZ6fd8Qm5b0Qs62i6evnoHcPXXcQgXq8r2RaXQrdXZC/IsTiQ==
+"@types/plugin-error@0.1.1":
+  version "0.1.1"
+  resolved "https://registry.npmjs.org/@types/plugin-error/-/plugin-error-0.1.1.tgz#22da36bc716285d2d1fbea7434ae3006f46801ba"
+  integrity sha512-Up9nG/aPoFz+80/RY3TgSGa8Y0Ge/4jCyz6FLBkKHafFD+U8I3saMyncFqLUrtd0z05WhUCrR5/sMiML2aJNhA==
 
 "@types/prettier@^1.13.2":
   version "1.13.2"
