@@ -108,6 +108,14 @@ describe('e2e test suite', function(this: any): void {
             })
         )
         await (await page.$x("//form/*[contains(text(), 'Add external service')]"))[0].click()
+        // TODO figure out how to refresh the repositories
+        // https://sourcegraph.slack.com/archives/C07KZF47K/p1551516553020000
+        function delay(timeout: number): Promise<void> {
+            return new Promise(resolve => {
+                setTimeout(resolve, timeout)
+            })
+        }
+        await delay(10000)
     }
 
     // Open page.
