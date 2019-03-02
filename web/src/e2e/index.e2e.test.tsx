@@ -1,54 +1,14 @@
 import * as path from 'path'
 import puppeteer from 'puppeteer'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { retry } from '../util/e2e-test-utils'
+import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
 jest.setTimeout(30000)
 
 /**
- * Looks up an environment variable and parses it as a boolean. Throws when not
- * set and no default is provided, or if parsing fails.
- */
-function readEnvBoolean({ variable: variable, defaultValue }: { variable: string; defaultValue?: boolean }): boolean {
-    const value = process.env[variable]
-    if (value === undefined) {
-        if (defaultValue === undefined) {
-            throw new Error(`Environment variable ${variable} must be set.`)
-        } else {
-            return defaultValue
-        }
-    } else if (value === 'true') {
-        return true
-    } else if (value === 'false') {
-        return false
-    } else {
-        throw new Error(
-            `Incorrect environment variable ${variable}=${value}. Must be set to true/false or not set at all.`
-        )
-    }
-}
-
-/**
- * Looks up an environment variable. Throws when not set and no default is
- * provided.
- */
-function readEnvString({ variable, defaultValue }: { variable: string; defaultValue?: string }): string {
-    const value = process.env[variable]
-    if (value === undefined) {
-        if (defaultValue === undefined) {
-            throw new Error(`Environment variable ${variable} must be set.`)
-        } else {
-            return defaultValue
-        }
-    } else {
-        return value
-    }
-}
-
-/**
  * Used in the external service configuration.
  */
-const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
+export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
 
 describe('e2e test suite', function(this: any): void {
     const baseURL = readEnvString({ variable: 'SOURCEGRAPH_BASE_URL', defaultValue: 'http://localhost:3080' })
@@ -79,7 +39,6 @@ describe('e2e test suite', function(this: any): void {
 
     // Close browser.
     afterAll(async () => {
-        console.log('afterAll')
         if (browser) {
             if (page && !page.isClosed()) {
                 await page.close()
