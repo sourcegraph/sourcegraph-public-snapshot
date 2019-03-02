@@ -27,7 +27,7 @@ export class SearchButton extends React.Component<Props, State> {
 
     private onClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
         if (this.props.activation) {
-            this.props.activation.update({ didSearch: true })
+            this.props.activation.update({ DidSearch: true })
         }
     }
 

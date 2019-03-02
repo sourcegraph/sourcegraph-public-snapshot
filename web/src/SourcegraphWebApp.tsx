@@ -6,7 +6,7 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, fromEventPattern, Observable, Subscription } from 'rxjs'
 import { first, map, startWith } from 'rxjs/operators'
-import { ActivationStep } from '../../shared/src/components/activation/Activation'
+import { ActivationCompleted, ActivationStep } from '../../shared/src/components/activation/Activation'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     createController as createExtensionsController,
@@ -97,7 +97,7 @@ interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadePr
     /**
      * Specifies which activation steps have been completed.
      */
-    activationCompleted?: { [key: string]: boolean }
+    activationCompleted?: ActivationCompleted
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -238,7 +238,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             .subscribe(c => this.setState({ activationCompleted: c }))
     }
 
-    private updateActivation = (update: { [key: string]: boolean }) => {
+    private updateActivation = (update: ActivationCompleted) => {
         if (!this.state.activation) {
             return
         }
@@ -249,11 +249,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
             // Send update to server for events that don't themselves trigger
             // an update.
-            if (update['action:findReferences']) {
+            if (update.FoundReferences) {
                 logUserEvent(GQL.UserEvent.CODEINTELREFS)
             }
 
-            const newVal: { [key: string]: boolean } = {}
+            const newVal: ActivationCompleted = {}
             Object.assign(newVal, this.state.activationCompleted)
             for (const step of this.state.activation.steps) {
                 if (update[step.id] !== undefined) {
@@ -366,7 +366,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 }
 
 interface ActivationParams {
-    fetcher: () => Observable<{ [key: string]: boolean }>
+    fetcher: () => Observable<ActivationCompleted>
     firstFetched: Promise<void>
     steps: ActivationStep[]
 }
@@ -410,17 +410,16 @@ const fetchActivationStatus = (isSiteAdmin: boolean) => () =>
         map(dataOrThrowErrors),
         map(data => {
             const authProviders = window.context.authProviders
-            const completed: { [key: string]: boolean } = {
-                didSearch: !!data.currentUser && data.currentUser.usageStatistics.searchQueries > 0,
-                'action:findReferences':
-                    !!data.currentUser && data.currentUser.usageStatistics.findReferencesActions > 0,
+            const completed: ActivationCompleted = {
+                DidSearch: !!data.currentUser && data.currentUser.usageStatistics.searchQueries > 0,
+                FoundReferences: !!data.currentUser && data.currentUser.usageStatistics.findReferencesActions > 0,
             }
             if (isSiteAdmin) {
-                completed.connectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
-                completed.enabledRepository =
+                completed.ConnectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
+                completed.EnabledRepository =
                     data.repositories && data.repositories.totalCount !== null && data.repositories.totalCount > 0
                 if (authProviders) {
-                    completed.enabledSignOn =
+                    completed.EnabledSharing =
                         data.users.totalCount > 1 || authProviders.filter(p => !p.isBuiltin).length > 0
                 }
             }
@@ -457,30 +456,30 @@ const fetchReferencesLink = (): Observable<string | null> =>
         })
     )
 
-const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] =>
-    [
+const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] => {
+    const sources: (ActivationStep & { siteAdminOnly?: boolean })[] = [
         {
-            id: 'connectedCodeHost',
+            id: 'ConnectedCodeHost',
             title: 'Connect your code host',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
             link: { to: '/site-admin/external-services' },
             siteAdminOnly: true,
         },
         {
-            id: 'enabledRepository',
+            id: 'EnabledRepository',
             title: 'Enable repositories',
             detail: 'Select which repositories Sourcegraph should pull and index from your code host(s).',
             link: { to: '/site-admin/repositories' },
             siteAdminOnly: true,
         },
         {
-            id: 'didSearch',
+            id: 'DidSearch',
             title: 'Search your code',
             detail: 'Perform a search query on your code.',
             link: { to: '/search' },
         },
         {
-            id: 'action:findReferences',
+            id: 'FoundReferences',
             title: 'Find some references',
             detail:
                 'To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click "Find references".',
@@ -496,12 +495,12 @@ const getActivationSteps = (isSiteAdmin: boolean): ActivationStep[] =>
                     }),
         },
         {
-            id: 'enabledSignOn',
+            id: 'EnabledSharing',
             title: 'Configure SSO or share with teammates',
             detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
             link: { to: 'https://docs.sourcegraph.com/admin/auth', target: '_blank' },
             siteAdminOnly: true,
         },
     ]
-        .filter(e => true || !e.siteAdminOnly)
-        .map(({ siteAdminOnly, ...step }) => step)
+    return sources.filter(e => true || !e.siteAdminOnly).map(({ siteAdminOnly, ...step }) => step)
+}

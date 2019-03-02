@@ -62,12 +62,12 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
         return (
             <div className="activation-checklist">
                 {this.props.completed ? (
-                    this.props.steps.map(s => (
-                        <div key={s.id} className="activation-checklist__item">
+                    this.props.steps.map(step => (
+                        <div key={step.id} className="activation-checklist__item">
                             <ActivationChecklistItem
-                                {...s}
+                                {...step}
                                 history={this.props.history}
-                                done={(this.props.completed && this.props.completed[s.id]) || false}
+                                done={(this.props.completed && this.props.completed[step.id]) || false}
                             />
                         </div>
                     ))

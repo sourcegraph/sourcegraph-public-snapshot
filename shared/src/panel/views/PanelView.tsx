@@ -1,6 +1,7 @@
 import H from 'history'
 import React from 'react'
-import { Observable, Subscription } from 'rxjs'
+import { concat, Observable, of, Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
 import { ActivationProps } from '../../components/activation/Activation'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
@@ -28,17 +29,31 @@ interface State {}
  */
 export class PanelView extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
+    private componentUpdates = new Subject<Props>()
 
     public componentWillMount(): void {
-        if (this.props.panelView.locationProvider) {
-            this.subscriptions.add(
-                this.props.panelView.locationProvider.subscribe(l => {
-                    if (this.props.activation && this.props.panelView.id === 'references' && l && l.length > 0) {
-                        this.props.activation.update({ 'action:findReferences': true })
+        this.subscriptions.add(
+            concat([this.props], this.componentUpdates)
+                .pipe(
+                    map(props => props.panelView.locationProvider),
+                    distinctUntilChanged(),
+                    switchMap(locationProvider => locationProvider || of(null))
+                )
+                .subscribe(locations => {
+                    if (
+                        this.props.activation &&
+                        this.props.panelView.id === 'references' &&
+                        locations &&
+                        locations.length > 0
+                    ) {
+                        this.props.activation.update({ FoundReferences: true })
                     }
                 })
-            )
-        }
+        )
+    }
+
+    public componentDidUpdate?(prevProps: Readonly<Props>, prevState: Readonly<State>): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

@@ -1,6 +1,8 @@
 import H from 'history'
 import { LinkProps } from '../Link'
 
+type ActivationID = 'ConnectedCodeHost' | 'EnabledRepository' | 'DidSearch' | 'FoundReferences' | 'EnabledSharing'
+
 /**
  * Represents the activation status of the current user.
  */
@@ -13,18 +15,23 @@ export interface Activation {
     /**
      * The completion status of each activation step
      */
-    completed?: { [key: string]: boolean }
+    completed?: ActivationCompleted
 
     /**
      * Updates the activation status with the given steps and their completion status.
      */
-    update: (u: { [key: string]: boolean }) => void
+    update: (u: ActivationCompleted) => void
 
     /**
      * Resync the activation status from the server.
      */
     refetch: () => void
 }
+
+/**
+ * A map indicating which activation steps have been completed
+ */
+export type ActivationCompleted = { [K in ActivationID]?: boolean }
 
 /**
  * Component props should inherit from this to include activation status.
@@ -40,7 +47,7 @@ export interface ActivationStep {
     /**
      * The identifier for the activation step
      */
-    id: string
+    id: ActivationID
 
     /**
      * The title of the step to display in the activation dropdown

@@ -60,12 +60,12 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
     public render(): JSX.Element {
         const show = this.state.animate || percentageDone(this.props.activation.completed) < 100
         const confettiConfig = {
-            spread: '68',
-            startVelocity: '23',
-            elementCount: '81',
-            dragFriction: '0.09',
-            duration: '5700',
-            delay: '20',
+            spread: 68,
+            startVelocity: 23,
+            elementCount: 81,
+            dragFriction: 0.09,
+            duration: 5700,
+            delay: 20,
             width: '10px',
             height: '10px',
             colors: ['#a864fd', '#29cdff', '#78ff44', '#ff718d', '#fdff6a'],
@@ -85,22 +85,18 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                 >
                     <Confetti
                         active={this.state.animate}
-                        config={
-                            {
-                                angle: '210',
-                                ...confettiConfig,
-                            } as any
-                        }
+                        config={{
+                            angle: 210,
+                            ...confettiConfig,
+                        }}
                     />
                     Setup
                     <Confetti
                         active={this.state.animate}
-                        config={
-                            {
-                                angle: '330',
-                                ...confettiConfig,
-                            } as any
-                        }
+                        config={{
+                            angle: 330,
+                            ...confettiConfig,
+                        }}
                     />
                     <span className="activation-dropdown-button__progress-bar-container">
                         <CircularProgressbar
