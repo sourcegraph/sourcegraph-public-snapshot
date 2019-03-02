@@ -604,28 +604,22 @@ describe('e2e test suite', function(this: any): void {
                         await assertAllHighlightedTokens('MultiFileDiffReader')
                     })
 
-                    // Testing external references on localhost is unreliable, since different dev environments will
-                    // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
-                    // 1 repo, in which case there would never be external references. So we *only* run this test against
-                    // non-localhost servers.
-                    const skipExternalReferences = baseURL === 'http://localhost:3080'
-                    ;(skipExternalReferences ? test.skip : test)(
-                        'opens widget and fetches external references',
-                        async () => {
-                            await page.goto(
-                                baseURL +
-                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
-                            )
-                            await enableOrAddRepositoryIfNeeded()
+                    // TODO unskip this once basic-code-intel looks for external
+                    // references even when local references are found.
+                    test.skip('opens widget and fetches external references', async () => {
+                        await page.goto(
+                            baseURL +
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
+                        )
+                        await enableOrAddRepositoryIfNeeded()
 
-                            // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
-                            // look like they're for the appropriate token)
-                            await assertNonemptyExternalRefs()
+                        // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
+                        // look like they're for the appropriate token)
+                        await assertNonemptyExternalRefs()
 
-                            // verify all the matches highlight a `Reader` token
-                            await assertAllHighlightedTokens('Reader')
-                        }
-                    )
+                        // verify all the matches highlight a `Reader` token
+                        await assertAllHighlightedTokens('Reader')
+                    })
                 })
             })
         })
