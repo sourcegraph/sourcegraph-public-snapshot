@@ -70,7 +70,7 @@
     "@types/he": "1.1.0",
     "@types/highlight.js": "9.12.3",
     "@types/jest": "23.3.12",
-    "@types/lodash": "4.14.120",
+    "@types/lodash": "4.14.121",
     "@types/marked": "0.6.0",
     "@types/mermaid": "8.0.1",
     "@types/mini-css-extract-plugin": "0.2.0",
