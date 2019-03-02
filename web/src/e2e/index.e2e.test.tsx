@@ -67,6 +67,8 @@ describe('e2e test suite', function(this: any): void {
 
     async function ensureHasExternalService(page: puppeteer.Page): Promise<void> {
         await page.goto(baseURL + '/site-admin/external-services')
+        await page.waitFor('.filtered-connection')
+        await page.waitFor(() => !document.querySelector('.filtered-connection__loader'))
         // Matches buttons for deleting external services named 'test-github'.
         const deleteButtons = await page.$x(
             "//*[contains(@class, 'external-service-node') and div/div[text()='test-github']]//*[contains(@class,'btn-danger')]"
