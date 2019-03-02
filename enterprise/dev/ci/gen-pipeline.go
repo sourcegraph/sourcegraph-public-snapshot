@@ -111,6 +111,7 @@ func main() {
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
 			bk.Env("VERSION", version),
 			bk.Cmd("./cmd/server/build.sh"),
+			bk.Cmd("popd"),
 			bk.Cmd("./web/e2e.sh"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
