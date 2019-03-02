@@ -107,16 +107,9 @@ When running Sourcegraph in development mode, you can access a live preview of t
 
 You can also follow the [sourcegraph/docs.sourcegraph.com README](https://github.com/sourcegraph/docs.sourcegraph.com) to run the docs.sourcegraph.com site locally.
 
-## Sourcegraph /help
+## Linking to documentation in-product
 
-Every Sourcegraph instance includes the documentation at the URL path `/help`
-(`https://sourcegraph.example.com/help`), e.g., <https://sourcegraph.com/help>.
-
-The documentation available on https://docs.sourcegraph.com is continuously deployed every 5 minutes from the `master` branch of `sourcegraph/sourcegraph`.
-
-### Linking to /help
-
-When you're building a new feature, you may need to link to the documentation from the product. In-product documentation links should refer to the documentation hosted on the product itself (at `/help`) so that the product and documentation versions are consistent. (The docs on docs.sourcegraph.com may be for a newer version than what the user is running.)
+In-product documentation links should point to `/help/PATH` instead of using an absolute URL of the form https://docs.sourcegraph.com/PATH. This ensures they link to the documentation for the current product version. There is a redirect (when using either `<a>` or react-router `<Link>`) from `/help/PATH` to the versioned docs.sourcegraph.com URL (https://docs.sourcegraph.com/@VERSION/PATH).
 
 ## Prefer primary documents
 
