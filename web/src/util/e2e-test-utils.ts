@@ -25,18 +25,14 @@ export function readEnvBoolean({
     if (value === undefined || value === '') {
         if (defaultValue === undefined) {
             throw new Error(`Environment variable ${variable} must be set.`)
-        } else {
-            return defaultValue
         }
+        return defaultValue
     } else if (value === 'true') {
         return true
     } else if (value === 'false') {
         return false
-    } else {
-        throw new Error(
-            `Incorrect environment variable ${variable}=${value}. Must be set to true/false or not set at all.`
-        )
     }
+    throw new Error(`Incorrect environment variable ${variable}=${value}. Must be set to true/false or not set at all.`)
 }
 
 /**
@@ -48,10 +44,8 @@ export function readEnvString({ variable, defaultValue }: { variable: string; de
     if (value === undefined || value === '') {
         if (defaultValue === undefined) {
             throw new Error(`Environment variable ${variable} must be set.`)
-        } else {
-            return defaultValue
         }
-    } else {
-        return value
+        return defaultValue
     }
+    return value
 }
