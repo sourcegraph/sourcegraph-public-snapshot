@@ -2122,10 +2122,10 @@
     "@types/cp-file" "*"
     "@types/glob" "*"
 
-"@types/d3-axis@1.0.11":
-  version "1.0.11"
-  resolved "https://registry.npmjs.org/@types/d3-axis/-/d3-axis-1.0.11.tgz#efd975f9fec14c2afd03828f3acec0ef97d37c3b"
-  integrity sha512-cuigApCyCwYJxaQPghj+BqaxzbdRdT/lpZBMtF7EuEIJ61NMQ8yvGnqFvHCIgJEmUu2Wb2wiZqy9kiHi3Ddftg==
+"@types/d3-axis@1.0.12":
+  version "1.0.12"
+  resolved "https://registry.npmjs.org/@types/d3-axis/-/d3-axis-1.0.12.tgz#8c124edfcc02f3b3a9cdaa2a28b8a20341401799"
+  integrity sha512-BZISgSD5M8TgURyNtcPAmUB9sk490CO1Thb6/gIn0WZTt3Y50IssX+2Z0vTccoqZksUDTep0b+o4ofXslvNbqg==
   dependencies:
     "@types/d3-selection" "*"
 
