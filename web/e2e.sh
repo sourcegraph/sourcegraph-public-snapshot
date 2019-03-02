@@ -3,8 +3,13 @@
 cd $(dirname "${BASH_SOURCE[0]}")/..
 set -ex
 
-echo "Running a daemonized sourcegraph/server as the test subject..."
-CONTAINER="$(docker container run --rm -d sourcegraph/server:insiders)"
+if [ -z "$IMAGE" ]; then
+    echo "Must specify \$IMAGE."
+    exit 1
+fi
+
+echo "Running a daemonized $IMAGE as the test subject..."
+CONTAINER="$(docker container run --rm -d $IMAGE)"
 trap 'kill $(jobs -p)'" ; docker container stop $CONTAINER" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
