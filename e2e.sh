@@ -24,5 +24,5 @@ export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=""
 yarn --frozen-lockfile --network-timeout 60000
 
 pushd web
-env SOURCEGRAPH_BASE_URL="$URL" yarn run test-e2e -t 'theme'
+env SOURCEGRAPH_BASE_URL="$URL" yarn run test-e2e
 popd
