@@ -3,7 +3,7 @@
 set -ex
 
 echo "Running a daemonized sourcegraph/server as the test subject..."
-CONTAINER="$(docker container run --rm -d sourcegraph/server:3.1.1)"
+CONTAINER="$(docker container run --rm -d sourcegraph/server:insiders)"
 trap 'kill $(jobs -p)'" ; docker container stop $CONTAINER" EXIT
 
 # hax
