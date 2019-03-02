@@ -1,3 +1,4 @@
+import * as os from 'os'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
@@ -83,9 +84,10 @@ describe('e2e test suite', function(this: any): void {
 
         const editor = await page.waitForSelector('.view-line')
         await editor.click()
-        await page.keyboard.down('Meta')
+        const modifier = os.platform() === 'darwin' ? 'Meta' : 'Control'
+        await page.keyboard.down(modifier)
         await page.keyboard.press('KeyA')
-        await page.keyboard.up('Meta')
+        await page.keyboard.up(modifier)
         await page.keyboard.press('Backspace')
         await page.keyboard.type(
             JSON.stringify({
