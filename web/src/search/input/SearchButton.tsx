@@ -15,15 +15,13 @@ interface Props extends ActivationProps {
 
 interface State {
     isOpen: boolean
-
-    didClick: boolean
 }
 
 /**
  * A search button with a dropdown with related links.
  */
 export class SearchButton extends React.Component<Props, State> {
-    public state: State = { isOpen: false, didClick: false }
+    public state: State = { isOpen: false }
 
     private onClick = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
         if (this.props.activation) {
