@@ -5,7 +5,7 @@ import CircularProgressbar from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { concat, of, Subject } from 'rxjs'
-import { concatMap, delay, distinctUntilChanged, map, skip } from 'rxjs/operators'
+import { concatMap, delay, filter, map, pairwise } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklistItem } from './ActivationChecklist'
 
@@ -18,6 +18,8 @@ interface State {
     isOpen: boolean
     animate: boolean
 }
+
+const animationDurationMillis = 5700
 
 /**
  * Renders the activation status navlink item, a dropdown button that shows activation
@@ -40,9 +42,14 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
         concat([this.props], this.componentUpdates)
             .pipe(
                 map(props => props.activation.completed),
-                distinctUntilChanged((a, b) => (a && b && percentageDone(a) >= percentageDone(b)) || false),
-                skip(1), // skip the initial value, because we only animate updates
-                concatMap(() => concat(of(true), of(false).pipe(delay(1500))))
+                pairwise(),
+                filter(([prev, cur]) => {
+                    if (!prev || !cur) {
+                        return false
+                    }
+                    return percentageDone(cur) > percentageDone(prev)
+                }),
+                concatMap(() => concat(of(true), of(false).pipe(delay(animationDurationMillis))))
             )
             .subscribe(animate => this.setState({ animate }))
     }
@@ -64,7 +71,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
             startVelocity: 23,
             elementCount: 81,
             dragFriction: 0.09,
-            duration: 5700,
+            duration: animationDurationMillis,
             delay: 20,
             width: '10px',
             height: '10px',

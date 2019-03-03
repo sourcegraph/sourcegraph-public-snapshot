@@ -75,7 +75,7 @@ export interface ActivationStep {
 /**
  * Returns the percent of activation checklist items completed.
  */
-export const percentageDone = (info?: { [key: string]: boolean }): number => {
+export const percentageDone = (info?: ActivationCompleted): number => {
     if (!info) {
         return 0
     }
