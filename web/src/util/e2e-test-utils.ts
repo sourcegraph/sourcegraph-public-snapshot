@@ -22,17 +22,19 @@ export function readEnvBoolean({
     defaultValue?: boolean
 }): boolean {
     const value = process.env[variable]
-    if (value === undefined || value === '') {
+
+    if (!value) {
         if (defaultValue === undefined) {
             throw new Error(`Environment variable ${variable} must be set.`)
         }
         return defaultValue
-    } else if (value === 'true') {
-        return true
-    } else if (value === 'false') {
-        return false
     }
-    throw new Error(`Incorrect environment variable ${variable}=${value}. Must be set to true/false or not set at all.`)
+
+    try {
+        return Boolean(JSON.parse(value))
+    } catch (e) {
+        throw new Error(`Incorrect environment variable ${variable}=${value}. Must be truthy or not set at all.`)
+    }
 }
 
 /**
@@ -41,7 +43,8 @@ export function readEnvBoolean({
  */
 export function readEnvString({ variable, defaultValue }: { variable: string; defaultValue?: string }): string {
     const value = process.env[variable]
-    if (value === undefined || value === '') {
+
+    if (!value) {
         if (defaultValue === undefined) {
             throw new Error(`Environment variable ${variable} must be set.`)
         }
