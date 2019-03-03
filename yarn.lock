@@ -2491,10 +2491,10 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react-router@4.4.3":
-  version "4.4.3"
-  resolved "https://registry.npmjs.org/@types/react-router/-/react-router-4.4.3.tgz#ea68b4021cb576866f83365b2201411537423d50"
-  integrity sha512-8GmjakEBFNCLJbpg9jtDp1EDvFP0VkIPPKBpVwmB3Q+9whFoHu8rluMUXUE5SoGkEQvVOtgJzWmUsJojNpFMQQ==
+"@types/react-router@4.4.4":
+  version "4.4.4"
+  resolved "https://registry.npmjs.org/@types/react-router/-/react-router-4.4.4.tgz#4dbd5588ea6024e0c04519bd8aabe74c0a2b77e5"
+  integrity sha512-TZVfpT6nvUv/lbho/nRtckEtgkhspOQr3qxrnpXixwgQRKKyg5PvDfNKc8Uend/p/Pi70614VCmC0NPAKWF+0g==
   dependencies:
     "@types/history" "*"
     "@types/react" "*"
