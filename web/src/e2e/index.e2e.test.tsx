@@ -68,22 +68,22 @@ describe('e2e test suite', function(this: any): void {
 
     async function ensureHasExternalService(): Promise<void> {
         await page.goto(baseURL + '/site-admin/external-services')
-        await page.waitFor('.filtered-connection')
-        await page.waitForSelector('.filtered-connection__loader', { hidden: true })
+        await page.waitFor('.e2e-filtered-connection')
+        await page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
         // Matches buttons for deleting external services named 'test-github'.
-        const deleteButtons = await page.$x(
-            "//*[contains(@class, 'external-service-node') and div/div[text()='test-github']]//*[contains(@class,'btn-danger')]"
+        const deleteButton = await page.$(
+            '[data-e2e-external-service-name="test-github"] .e2e-delete-external-service-button'
         )
-        if (deleteButtons.length > 0) {
+        if (deleteButton) {
             const accept = async (dialog: puppeteer.Dialog) => {
                 await dialog.accept()
                 page.off('dialog', accept)
             }
             page.on('dialog', accept)
-            await deleteButtons[0].click()
+            await deleteButton.click()
         }
-        await (await page.waitForXPath("//*[contains(text(), 'Add external service')]")).click()
-        await (await page.waitForSelector('#external-service-form-display-name')).type('test-github')
+        await (await page.waitForSelector('.e2e-goto-add-external-service-page')).click()
+        await (await page.waitForSelector('#e2e-external-service-form-display-name')).type('test-github')
 
         const editor = await page.waitForSelector('.view-line')
         await editor.click()
@@ -108,7 +108,7 @@ describe('e2e test suite', function(this: any): void {
                 ],
             })
         )
-        await (await page.$x("//form/*[contains(text(), 'Add external service')]"))[0].click()
+        await page.click('.e2e-add-external-service-button')
         // Wait for repositories to sync.
         await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
         await retry(async () => {
