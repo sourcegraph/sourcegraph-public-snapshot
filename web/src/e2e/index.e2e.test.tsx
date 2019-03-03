@@ -89,7 +89,7 @@ describe('e2e test suite', function(this: any): void {
         await editor.click()
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await page.keyboard.down(modifier)
-        await page.keyboard.press('KeyA')
+        await page.keyboard.press('a')
         await page.keyboard.up(modifier)
         await page.keyboard.press(Key.Backspace)
         await page.keyboard.type(
