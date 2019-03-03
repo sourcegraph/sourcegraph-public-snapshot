@@ -2,6 +2,7 @@
   "$comment": "The actual configuration, templates, and assets for https://docs.sourcegraph.com live in https://github.com/sourcegraph/docs.sourcegraph.com. This docsite.json merely enables `docsite check` to check the doc files for common problems in this repository's CI.",
   "templates": "../dev/check/docsite",
   "content": ".",
+  "baseURLPath": "/",
   "check": {
     "ignoreURLPattern": "(^https?://)|(^#)|(^mailto:support@sourcegraph\\.com(\\?.*)?$)|(^chrome://)"
   }

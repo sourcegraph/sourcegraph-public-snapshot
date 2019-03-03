@@ -1,3 +1,7 @@
+---
+ignoreDisconnectedPageCheck: true
+---
+
 # Publishing a local copy of an extension
 
 <!-- TODO(sqs): WIP -->

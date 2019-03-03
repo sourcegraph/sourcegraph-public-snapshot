@@ -1,4 +1,4 @@
-# Tomás’ notes on the Postgres upgrade
+# Tomás’ notes on the PostgreSQL upgrade
 
 ## Action Items / Learnings
 

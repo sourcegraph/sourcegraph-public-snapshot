@@ -20,6 +20,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [Repository permissions](repo/permissions.md)
   - [Upgrading PostgreSQL](postgres.md)
   - [Using external databases (PostgreSQL and Redis)](external_database.md)
+  - [User data deletion](user_data_deletion.md)
 - Features:
   - [Code intelligence and language servers](../user/code_intelligence/index.md)
   - [Sourcegraph extensions and extension registry](extensions.md)
