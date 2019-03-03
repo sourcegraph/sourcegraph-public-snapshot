@@ -8,12 +8,32 @@ import { queryGraphQL } from '../backend/graphql'
 import { logUserEvent } from '../user/account/backend'
 
 /**
- * Encapsulates fetching and updating activation status.
+ * Source of truth for activation status. The activation status is a function
+ * of both server-side state and user-initiated actions. The initial status is
+ * fetched from the server. Subsequent user actions can update the status.
+ *
+ * This class manages updates to activation status from both the user and server,
+ * synthesizing these into a single Observable of activation completion status.
  */
 export class ActivationStatus {
+    /**
+     * The steps required for activation.
+     */
     public steps: ActivationStep[]
+
+    /**
+     * The current completion status.
+     */
     public completed = new BehaviorSubject<ActivationCompleted | null>(null)
+
+    /**
+     * A promise that resolves after completion status has first been fetched.
+     */
     private completedFirstFetch: Promise<void>
+
+    /**
+     * Used to queue refetech requests requested by calls to `refetchCompleted`.
+     */
     private refetchRequested = new Subject<void>()
 
     constructor(private authenticatedUser: GQL.IUser) {
