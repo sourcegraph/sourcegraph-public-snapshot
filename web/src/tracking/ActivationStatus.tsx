@@ -24,7 +24,7 @@ export class ActivationStatus {
     /**
      * The current completion status.
      */
-    public completed = new BehaviorSubject<ActivationCompleted | null>(null)
+    private completed_ = new BehaviorSubject<ActivationCompleted | null>(null)
 
     /**
      * A promise that resolves after completion status has first been fetched.
@@ -38,7 +38,7 @@ export class ActivationStatus {
 
     constructor(private authenticatedUser: GQL.IUser) {
         this.steps = getActivationSteps(authenticatedUser)
-        this.completedFirstFetch = this.completed
+        this.completedFirstFetch = this.completed_
             .pipe(
                 skip(1),
                 first(),
@@ -47,12 +47,27 @@ export class ActivationStatus {
             .toPromise()
         this.refetchRequested
             .pipe(switchMap(() => fetchActivationStatus(this.authenticatedUser.siteAdmin)))
-            .subscribe(completed => this.completed.next(completed))
+            .subscribe(completed => this.completed_.next(completed))
         this.refetchCompleted()
     }
 
+    /**
+     * Subscribe to this Observable to get a stream of current activation completion
+     * statuses.
+     */
+    public get completed(): Observable<ActivationCompleted | null> {
+        return this.completed_
+    }
+
+    /**
+     * Refetch activation completion status from server.
+     */
     public refetchCompleted = (): void => this.refetchRequested.next()
 
+    /**
+     * Update the activation competition status (should only be called in response
+     * to a client-side user action).
+     */
     public updateCompleted = (update: ActivationCompleted): void => {
         this.completedFirstFetch.then(() => {
             // Send update to server for events that don't themselves trigger
@@ -62,13 +77,13 @@ export class ActivationStatus {
             }
 
             const newVal: ActivationCompleted = {}
-            Object.assign(newVal, this.completed.value)
+            Object.assign(newVal, this.completed_.value)
             for (const step of this.steps) {
                 if (update[step.id] !== undefined) {
                     newVal[step.id] = update[step.id]
                 }
             }
-            this.completed.next(newVal)
+            this.completed_.next(newVal)
         })
     }
 }
