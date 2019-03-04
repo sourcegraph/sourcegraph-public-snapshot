@@ -75,6 +75,21 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
+				name:    "new repo",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
+				store:   s,
+				stored:  repos.Repos{},
+				now:     clock.Now,
+				diff: repos.Diff{Added: repos.Repos{
+					foo.With(repos.Opt.CreatedAt(clock.Time(1)), repos.Opt.Sources("a")),
+				}},
+				err: "<nil>",
+			})
+		}
+
+		{
+			clock := repos.NewFakeClock(time.Now(), time.Second)
+			testCases = append(testCases, testCase{
 				name:    "had name and got external_id",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
 				store:   s,
@@ -119,6 +134,23 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				now:    clock.Now,
 				diff:   repos.Diff{Unmodified: repos.Repos{foo.With(repos.Opt.Sources("a"))}},
 				err:    "<nil>",
+			})
+		}
+
+		{
+			clock := repos.NewFakeClock(time.Now(), time.Second)
+			testCases = append(testCases, testCase{
+				name: "enabled field of a undeleted repo is not updateable",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.With(func(r *repos.Repo) {
+					r.Enabled = !r.Enabled
+				}))),
+				store:  s,
+				stored: repos.Repos{foo.With(repos.Opt.Sources("a"), repos.Opt.DeletedAt(clock.Time(0)))},
+				now:    clock.Now,
+				diff: repos.Diff{Added: repos.Repos{
+					foo.With(repos.Opt.Sources("a"), repos.Opt.CreatedAt(clock.Time(1))),
+				}},
+				err: "<nil>",
 			})
 		}
 

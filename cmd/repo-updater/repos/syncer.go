@@ -167,21 +167,26 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	seenName := make(map[string]bool, len(stored))
 
 	for _, old := range stored {
-		if !old.DeletedAt.IsZero() {
-			continue
-		}
-
 		src := byID[old.ExternalRepo]
 		if src == nil {
 			src = byName[old.Name]
 		}
 
 		if src == nil {
-			diff.Deleted = append(diff.Deleted, old)
-		} else if old.Update(src) {
-			diff.Modified = append(diff.Modified, old)
+			if !old.IsDeleted() {
+				diff.Deleted = append(diff.Deleted, old)
+			} else {
+				diff.Unmodified = append(diff.Unmodified, old)
+			}
+		} else if !old.IsDeleted() {
+			if old.Update(src) {
+				diff.Modified = append(diff.Modified, old)
+			} else {
+				diff.Unmodified = append(diff.Unmodified, old)
+			}
 		} else {
-			diff.Unmodified = append(diff.Unmodified, old)
+			old.Update(src)
+			diff.Added = append(diff.Added, old)
 		}
 
 		seenID[old.ExternalRepo] = true

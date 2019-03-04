@@ -58,6 +58,9 @@ func (r *Repo) CloneURLs() []string {
 	return urls
 }
 
+// IsDeleted returns true if the repo is deleted.
+func (r *Repo) IsDeleted() bool { return !r.DeletedAt.IsZero() }
+
 // Update updates Repo r with the fields from the given newer Repo n,
 // returning true if modified.
 func (r *Repo) Update(n *Repo) (modified bool) {
