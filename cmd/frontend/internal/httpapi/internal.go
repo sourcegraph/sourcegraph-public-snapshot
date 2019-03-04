@@ -148,7 +148,7 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if len(req.Kinds) == 0 {
+	if len(req.Kinds) == 0 && req.Kind != "" {
 		req.Kinds = append(req.Kinds, req.Kind)
 	}
 
