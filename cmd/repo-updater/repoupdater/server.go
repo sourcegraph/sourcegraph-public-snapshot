@@ -124,6 +124,10 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		switch {
 		case err == nil:
 			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+			json.NewEncoder(w).Encode(&protocol.ExternalServiceSyncResult{
+				ExternalService: req.ExternalService,
+				Error:           err,
+			})
 		default:
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -133,14 +133,5 @@ type ExternalServiceSyncRequest struct {
 // ExternalServiceSyncResult is a result type of an external service's sync request.
 type ExternalServiceSyncResult struct {
 	ExternalService api.ExternalService
-	Diff            Diff
 	Error           error
-}
-
-// A Diff returned by an ExternalServiceSyncRequest.
-type Diff struct {
-	Added      []*RepoInfo
-	Deleted    []*RepoInfo
-	Modified   []*RepoInfo
-	Unmodified []*RepoInfo
 }

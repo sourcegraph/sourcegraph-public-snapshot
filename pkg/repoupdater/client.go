@@ -168,16 +168,17 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 	}
 	defer resp.Body.Close()
 
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
 	var result protocol.ExternalServiceSyncResult
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		// TODO(tsenart): Use response type for unmarshalling errors too.
 		// This needs to be done after rolling out the response type in prod.
-		bs, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
 		return nil, errors.New(string(bs))
-	} else if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	} else if err = json.Unmarshal(bs, &result); err != nil {
 		return nil, err
 	}
 
