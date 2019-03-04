@@ -1,7 +1,7 @@
 import { basename, dirname, extname } from 'path'
+import { TextDocument } from 'sourcegraph'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
 import { Model, ViewComponentData } from '../model'
-import { TextDocumentItem } from '../types/textDocument'
 
 /**
  * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
@@ -34,7 +34,7 @@ export interface Context<T = never>
 
 export type ContributionScope =
     | (Pick<ViewComponentData, 'type' | 'selections'> & {
-          item: Pick<TextDocumentItem, 'uri' | 'languageId'>
+          item: Pick<TextDocument, 'uri' | 'languageId'>
       })
     | { type: 'panelView'; id: string }
 

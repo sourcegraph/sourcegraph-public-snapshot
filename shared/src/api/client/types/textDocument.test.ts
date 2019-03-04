@@ -1,7 +1,7 @@
-import { DocumentSelector } from 'sourcegraph'
-import { match, score, TextDocumentItem } from './textDocument'
+import { DocumentSelector, TextDocument } from 'sourcegraph'
+import { match, score } from './textDocument'
 
-const FIXTURE_TEXT_DOCUMENT: TextDocumentItem = { uri: 'file:///f', languageId: 'l', text: '' }
+const FIXTURE_TEXT_DOCUMENT: TextDocument = { uri: 'file:///f', languageId: 'l', text: '' }
 
 describe('match', () => {
     test('reports true if any selectors match', () => {
