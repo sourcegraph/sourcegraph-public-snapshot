@@ -138,7 +138,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
             </div>
         )
         const oidElement = <code className="git-commit-node__oid">{this.props.node.abbreviatedOID}</code>
-		console.log(this.props.node)
+        console.log(this.props.node)
         return (
             <div
                 key={this.props.node.id}
