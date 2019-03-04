@@ -1,1 +1,2 @@
-<!-- Remember to update the changelog for user-facing changes. -->
+- [ ] I've updated the changelog (or do not need to).
+- [ ] This change is covered by tests, or I have a strong reason for not doing so (explain).
