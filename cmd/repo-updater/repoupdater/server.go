@@ -114,6 +114,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	if s.Syncer == nil {
+		log15.Warn("server.external-service-sync", "syncer", "disabled")
 		return
 	}
 
@@ -124,6 +125,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
 	default:
 		// TODO(tsenart): Handle other external service kinds.
 	}
