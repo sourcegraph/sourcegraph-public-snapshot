@@ -48,10 +48,8 @@
         }
         p,
         pre {
-            &:not(:last-child) {
-                margin-bottom: 0.5rem;
-                overflow: auto;
-            }
+            margin-bottom: 0.5rem;
+            overflow: auto;
             &:last-child {
                 margin-bottom: 0;
             }
