@@ -72,7 +72,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                                     of<Partial<State>>({ updatedOrError: u }).pipe(delay(1000))
                                 )
                             ),
-                            catchError((error: Error) => [{ updateOrError: asError(error) }])
+                            catchError((error: Error) => [{ updatedOrError: asError(error) }])
                         )
                     )
                 )
@@ -92,6 +92,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
 
     public render(): JSX.Element | null {
         let error: ErrorLike | undefined
+        console.log('updatedOrError:', this.state.updatedOrError)
         if (isErrorLike(this.state.updatedOrError)) {
             error = this.state.updatedOrError
         }
