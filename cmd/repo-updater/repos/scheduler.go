@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -185,9 +184,8 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log15.Debug("updating configured repos", "diff", pp.Sprint(diff))
-
 	for _, del := range diff.Deleted {
+		log15.Debug("scheduler.update-from-diff.deleted", "repo", del.Name)
 		repo := configuredRepo2FromRepo(del)
 		s.schedule.remove(repo)
 		updating := false
@@ -195,6 +193,7 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	}
 
 	for _, add := range diff.Added {
+		log15.Debug("scheduler.update-from-diff.added", "repo", add.Name)
 		repo := configuredRepo2FromRepo(add)
 		s.schedule.add(repo)
 		s.updateQueue.enqueue(repo, priorityLow)
@@ -202,9 +201,11 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 
 	for _, mod := range diff.Modified {
 		if repo := configuredRepo2FromRepo(mod); repo.Enabled {
+			log15.Debug("scheduler.update-from-diff.modified.update", "repo", mod.Name)
 			s.schedule.update(repo)
 			s.updateQueue.update(repo)
 		} else {
+			log15.Debug("scheduler.update-from-diff.modified.deleted", "repo", mod.Name)
 			s.schedule.remove(repo)
 			updating := false
 			s.updateQueue.remove(repo, updating)
