@@ -1,7 +1,6 @@
 import { flatMap } from 'lodash'
 import React from 'react'
 import { Observable } from 'rxjs'
-import { pluralize } from '../../../shared/src/util/strings'
 import * as GQL from '../graphql/schema'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash } from '../util/url'
