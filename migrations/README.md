@@ -21,10 +21,10 @@ Run the following:
 ./dev/add_migration.sh
 ```
 
-There will be up/down `.sql` migration files created in this directory. Add SQL statements to these
-files that will perform the desired migration. **NOTE**: the migration runner wraps each migration
-script in a transaction block; do not add explicit transaction blocks to the migration script as
-this has caused issues in the past.
+There will be up/down `.sql` migration files created in this directory. Add
+SQL statements to these files that will perform the desired
+migration. **NOTE**: the migration runner does not use transactions. Use the
+explicit transaction blocks added to the migration script template.
 
 ```sql
 # Enter statements here

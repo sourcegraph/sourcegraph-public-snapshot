@@ -14,6 +14,7 @@ import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAccountAreaRoute } from '../account/UserAccountArea'
 import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
@@ -64,7 +65,11 @@ const NotFoundPage = () => (
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
 
-interface UserAreaProps extends RouteComponentProps<{ username: string }>, PlatformContextProps, SettingsCascadeProps {
+interface UserAreaProps
+    extends RouteComponentProps<{ username: string }>,
+        PlatformContextProps,
+        SettingsCascadeProps,
+        ThemeProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
     userAccountSideBarItems: UserAccountSidebarItems
@@ -75,8 +80,6 @@ interface UserAreaProps extends RouteComponentProps<{ username: string }>, Platf
      * parameter.
      */
     authenticatedUser: GQL.IUser | null
-
-    isLightTheme: boolean
 }
 
 interface UserAreaState {
@@ -90,7 +93,7 @@ interface UserAreaState {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps {
+export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ThemeProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -109,8 +112,6 @@ export interface UserAreaRouteContext extends PlatformContextProps, SettingsCasc
      * user is Bob.
      */
     authenticatedUser: GQL.IUser | null
-
-    isLightTheme: boolean
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
 }

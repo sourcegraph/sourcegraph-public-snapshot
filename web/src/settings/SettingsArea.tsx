@@ -15,14 +15,14 @@ import { gqlToCascade, SettingsCascadeProps } from '../../../shared/src/settings
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
+import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
-
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps {
+interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps {
     /** The subject whose settings to edit. */
     subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
 
@@ -30,8 +30,6 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
      */
     authenticatedUser: GQL.IUser | null
-
-    isLightTheme: boolean
 }
 
 interface SettingsData {

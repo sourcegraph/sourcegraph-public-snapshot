@@ -10,6 +10,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
+import { ThemeProps } from '../../../theme'
 import { RouteDescriptor } from '../../../util/contributions'
 import { WelcomeAreaFooter } from './WelcomeAreaFooter'
 
@@ -17,9 +18,12 @@ const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found"
 
 export interface WelcomeAreaRoute extends RouteDescriptor<WelcomeAreaRouteContext> {}
 
-export interface WelcomeAreaProps extends ExtensionsControllerProps, PlatformContextProps, RouteComponentProps<{}> {
+export interface WelcomeAreaProps
+    extends ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps,
+        RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
     routes: ReadonlyArray<WelcomeAreaRoute>
     location: H.Location
     history: H.History

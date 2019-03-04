@@ -140,6 +140,6 @@ func (r *symbolResolver) Language() string { return r.language }
 
 func (r *symbolResolver) Location() *locationResolver { return r.location }
 
-func (r *symbolResolver) URL(ctx context.Context) string { return r.location.URL(ctx) }
+func (r *symbolResolver) URL(ctx context.Context) (string, error) { return r.location.URL(ctx) }
 
-func (r *symbolResolver) CanonicalURL() string { return r.location.CanonicalURL() }
+func (r *symbolResolver) CanonicalURL() (string, error) { return r.location.CanonicalURL() }

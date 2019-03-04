@@ -58,13 +58,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         </a>
                     </li>
                 )}
-                <ActionsNavItems
-                    menu={ContributableMenu.GlobalNav}
-                    actionItemClass="nav-link"
-                    extensionsController={this.props.extensionsController}
-                    platformContext={this.props.platformContext}
-                    location={this.props.location}
-                />
+                <ActionsNavItems {...this.props} menu={ContributableMenu.GlobalNav} actionItemClass="nav-link" />
                 {(!this.props.showDotComMarketing ||
                     !!this.props.authenticatedUser ||
                     this.props.location.pathname !== '/welcome') && (
@@ -108,11 +102,9 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 {this.props.location.pathname !== '/welcome' && (
                     <CommandListPopoverButton
+                        {...this.props}
                         menu={ContributableMenu.CommandPalette}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
                         toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
-                        location={this.props.location}
                     />
                 )}
                 {this.props.authenticatedUser && (

@@ -19,7 +19,7 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps extends PlatformContextProps, ExtensionsControllerProps, FileInfo {
+interface CodeViewToolbarProps extends PlatformContextProps<'forceUpdateTooltip'>, ExtensionsControllerProps, FileInfo {
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps: ButtonProps

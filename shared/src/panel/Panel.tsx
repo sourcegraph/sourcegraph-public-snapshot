@@ -70,24 +70,12 @@ export class Panel extends React.PureComponent<Props, State> {
         const items = this.state.panelViews
             ? this.state.panelViews
                   .map(
-                      panelView =>
-                          ({
-                              label: panelView.title,
-                              id: panelView.id,
-                              priority: panelView.priority,
-                              element: (
-                                  <PanelView
-                                      panelView={panelView}
-                                      repoName={this.props.repoName}
-                                      history={this.props.history}
-                                      location={this.props.location}
-                                      isLightTheme={this.props.isLightTheme}
-                                      extensionsController={this.props.extensionsController}
-                                      settingsCascade={this.props.settingsCascade}
-                                      fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                                  />
-                              ),
-                          } as PanelItem)
+                      (panelView): PanelItem => ({
+                          label: panelView.title,
+                          id: panelView.id,
+                          priority: panelView.priority,
+                          element: <PanelView {...this.props} panelView={panelView} />,
+                      })
                   )
                   .sort(byPriority)
             : []
@@ -114,12 +102,10 @@ export class Panel extends React.PureComponent<Props, State> {
                         }
                         toolbarFragment={
                             <ActionsNavItems
+                                {...this.props}
                                 listClass="w-100 justify-content-end"
                                 actionItemClass="nav-link"
                                 menu={ContributableMenu.PanelToolbar}
-                                extensionsController={this.props.extensionsController}
-                                platformContext={this.props.platformContext}
-                                location={this.props.location}
                                 scope={
                                     activePanelViewID !== undefined
                                         ? {

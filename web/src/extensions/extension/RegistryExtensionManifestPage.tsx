@@ -7,9 +7,9 @@ import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/e
 import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
 }> = ({ extension }) => (
@@ -26,9 +26,7 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
     </div>
 )
 
-interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    isLightTheme: boolean
-}
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}
 
 interface State {
     viewMode: ViewMode

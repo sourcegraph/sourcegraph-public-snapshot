@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/highlight"
-	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -23,7 +23,12 @@ func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	contents, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.oid), r.path)
+	oid, err := r.commit.OID()
+	if err != nil {
+		return "", err
+	}
+
+	contents, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(oid), r.path)
 	if err != nil {
 		return "", err
 	}
@@ -42,7 +47,7 @@ func (r *gitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return markdown.Render(content, nil)
+	return markdown.Render(content, nil), nil
 }
 
 type markdownOptions struct {
@@ -52,7 +57,7 @@ type markdownOptions struct {
 func (*schemaResolver) RenderMarkdown(args *struct {
 	Markdown string
 	Options  *markdownOptions
-}) (string, error) {
+}) string {
 	return markdown.Render(args.Markdown, nil)
 }
 
@@ -100,7 +105,12 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	content, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.oid), r.path)
+	oid, err := r.commit.OID()
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(oid), r.path)
 	if err != nil {
 		return nil, err
 	}

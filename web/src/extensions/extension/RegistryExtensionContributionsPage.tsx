@@ -4,13 +4,12 @@ import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ExtensionManifest } from '../../../../shared/src/schema/extension.schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
-interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    isLightTheme: boolean
-}
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}
 
 interface ContributionGroup {
     title: string

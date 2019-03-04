@@ -15,6 +15,7 @@ import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
+import { ThemeProps } from '../theme'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
@@ -28,12 +29,12 @@ export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        PlatformContextProps {
+        PlatformContextProps,
+        ThemeProps {
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
     resolvedRev: ResolvedRev
-    isLightTheme: boolean
     routePrefix: string
 }
 
@@ -44,12 +45,12 @@ interface RepoRevContainerProps
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps {
     routes: ReadonlyArray<RepoRevContainerRoute>
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
     routePrefix: string
 
     /**

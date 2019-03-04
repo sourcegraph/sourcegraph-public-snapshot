@@ -22,14 +22,14 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
-interface SearchResultsListProps extends SettingsCascadeProps {
-    isLightTheme: boolean
+interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null

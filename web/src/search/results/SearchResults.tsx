@@ -13,6 +13,7 @@ import { isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { fetchHighlightedFileLines } from '../../repo/backend'
 import { Settings } from '../../schema/settings.schema'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from '../backend'
 import { FilterChip } from '../FilterChip'
@@ -22,11 +23,10 @@ import { SearchResultsList } from './SearchResultsList'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps, PlatformContextProps {
+interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps, PlatformContextProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
-    isLightTheme: boolean
     navbarSearchQuery: string
 }
 

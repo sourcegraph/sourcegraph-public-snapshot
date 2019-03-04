@@ -16,6 +16,7 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { ThemeProps } from '../../theme'
 import { OrgAccountArea } from '../account/OrgAccountArea'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
@@ -64,13 +65,11 @@ const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-interface Props extends RouteComponentProps<{ name: string }>, PlatformContextProps, SettingsCascadeProps {
+interface Props extends RouteComponentProps<{ name: string }>, PlatformContextProps, SettingsCascadeProps, ThemeProps {
     /**
      * The currently authenticated user.
      */
     authenticatedUser: GQL.IUser | null
-
-    isLightTheme: boolean
 }
 
 interface State {

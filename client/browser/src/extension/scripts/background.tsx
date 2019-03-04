@@ -2,6 +2,7 @@
 // prettier-ignore
 import '../../config/polyfill'
 
+import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
 import { fromEventPattern, noop, Observable } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
@@ -381,7 +382,12 @@ const portKind = (port: chrome.runtime.Port) => {
 /**
  * A stream of EndpointPair created from Port objects emitted by chrome.runtime.onConnect.
  *
- * Each EndpointPair represents a connection with an instance of the content script.
+ * On initialization, the content script creates a pair of chrome.runtime.Port objects
+ * using chrome.runtime.connect(). The two ports are named 'proxy-{uuid}' and 'expose-{uuid}',
+ * and wrapped using {@link endpointFromPort} to behave like comlink endpoints on the content script side.
+ *
+ * This listens to events on chrome.runtime.onConnect, pairs emitted ports using their naming pattern,
+ * and emits pairs. Each pair of ports represents a connection with an instance of the content script.
  */
 const endpointPairs: Observable<{ proxy: chrome.runtime.Port; expose: chrome.runtime.Port }> = fromEventPattern<
     chrome.runtime.Port
@@ -416,25 +422,38 @@ const endpointPairs: Observable<{ proxy: chrome.runtime.Port; expose: chrome.run
     )
 )
 
-// Create one extension host worker per endpoint pair
+/**
+ * Extension Host Connection
+ *
+ * When an Port pair is emitted, create an extension host worker.
+ *
+ * Messages from the ports are forwarded to the endpoints returned by {@link createExtensionHostWorker}, and vice-versa.
+ *
+ * The lifetime of the extension host worker is tied to that of the content script instance:
+ * when a port disconnects, the worker is terminated. This means there should always be exactly one
+ * extension host worker per active instance of the content script.
+ *
+ */
 endpointPairs.subscribe(({ proxy, expose }) => {
+    // It's necessary to wrap endpoints because chrome.runtime.Port objects do not support transfering MessagePorts.
+    // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
     const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
+    const connectPortAndEndpoint = (
+        port: chrome.runtime.Port,
+        endpoint: Endpoint & Pick<MessagePort, 'start'>
+    ): void => {
+        endpoint.start()
+        port.onMessage.addListener(message => {
+            endpoint.postMessage(message)
+        })
+        endpoint.addEventListener('message', ({ data }) => {
+            port.postMessage(data)
+        })
+    }
     // Connect proxy client endpoint
-    clientEndpoints.proxy.start()
-    proxy.onMessage.addListener(message => {
-        clientEndpoints.proxy.postMessage(message)
-    })
-    clientEndpoints.proxy.addEventListener('message', ({ data }) => {
-        proxy.postMessage(data)
-    })
+    connectPortAndEndpoint(proxy, clientEndpoints.proxy)
     // Connect expose client endpoint
-    clientEndpoints.expose.start()
-    expose.onMessage.addListener(message => {
-        clientEndpoints.expose.postMessage(message)
-    })
-    clientEndpoints.expose.addEventListener('message', ({ data }) => {
-        expose.postMessage(data)
-    })
+    connectPortAndEndpoint(expose, clientEndpoints.expose)
     // Kill worker when either port disconnects
     proxy.onDisconnect.addListener(() => worker.terminate())
     expose.onDisconnect.addListener(() => worker.terminate())

@@ -234,6 +234,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			k.repoName = s.repo.Name
 		case *gitTreeEntryResolver:
 			k.repoName = s.commit.repo.repo.Name
+			// We explicitely do not use gitCommitResolver.OID() to get the OID here
+			// because it could significantly slow down search suggestions from zoekt as
+			// it doesn't specify the commit the default branch is on. This result would in
+			// computing this commit for each suggestion, which could be heavy.
 			k.repoRev = string(s.commit.oid)
 			// Zoekt only searches the default branch and sets commit ID to an empty string. This
 			// may cause duplicate suggestions when merging results from Zoekt and non-Zoekt sources

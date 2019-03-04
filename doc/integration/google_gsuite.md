@@ -1,4 +1,4 @@
-# G Suite integration
+# G Suite and Chrome Enterprise integration
 
 > NOTE: Company-wide deployment via G Suite is a [paid upgrade](https://about.sourcegraph.com/pricing)
 

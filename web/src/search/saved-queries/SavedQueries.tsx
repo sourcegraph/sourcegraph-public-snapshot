@@ -11,6 +11,7 @@ import { map, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { siteFlags } from '../../site/backend'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchSavedQueries } from '../backend'
 import { ExampleSearches } from './ExampleSearches'
@@ -18,10 +19,9 @@ import { SavedQuery } from './SavedQuery'
 import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SavedQueryFields } from './SavedQueryForm'
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
-    isLightTheme: boolean
     hideExampleSearches?: boolean
     hideTitle?: boolean
 }

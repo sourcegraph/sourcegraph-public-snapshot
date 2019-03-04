@@ -6,6 +6,7 @@ import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'r
 import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../schema/settings.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
+import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
@@ -18,7 +19,7 @@ interface JSONSchema {
     $id: string
 }
 
-export interface Props {
+export interface Props extends ThemeProps {
     id?: string
     value: string | undefined
     onChange?: (newValue: string) => void
@@ -31,8 +32,6 @@ export interface Props {
     jsonSchema?: JSONSchema
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
-    isLightTheme: boolean
-
     /**
      * Called when the user presses the key binding for "save" (Ctrl+S/Cmd+S).
      */

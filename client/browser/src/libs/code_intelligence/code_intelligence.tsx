@@ -31,7 +31,7 @@ import { registerHighlightContributions } from '../../../../../shared/src/highli
 import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
 import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { Controller } from '../../../../../shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
 import { HoverContext, HoverOverlay } from '../../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../../shared/src/languages'
@@ -61,7 +61,7 @@ import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { fetchFileContents, findCodeViews } from './code_views'
-import { applyDecorations, initializeExtensions } from './extensions'
+import { applyDecorations, initializeExtensions, injectCommandPalette, injectGlobalDebug } from './extensions'
 import { injectViewContextOnSourcegraph } from './external_links'
 
 registerHighlightContributions()
@@ -162,7 +162,7 @@ export interface CodeHost {
 
     /**
      * Resolve `CodeView`s from the DOM. This is useful when each code view type
-     * doesn't have a distinct selector for
+     * doesn't have a distinct selector
      */
     codeViewResolver?: CodeViewResolver
 
@@ -239,23 +239,24 @@ export interface FileInfo {
     baseContent?: string
 }
 
+interface CodeIntelligenceProps
+    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL'> {
+    codeHost: CodeHost
+    extensionsController: Controller
+    showGlobalDebug?: boolean
+}
+
 /**
  * Prepares the page for code intelligence. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
  *
  * @param codeHost
  */
-function initCodeIntelligence(
-    codeHost: CodeHost
-): {
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
-    controllers: ExtensionsControllerProps & PlatformContextProps
-} {
-    const {
-        platformContext,
-        extensionsController,
-    }: PlatformContextProps & ExtensionsControllerProps = initializeExtensions(codeHost)
-
+export function initCodeIntelligence({
+    codeHost,
+    platformContext,
+    extensionsController,
+}: CodeIntelligenceProps): Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps> {
     const { getHover } = createLSPFromExtensions(extensionsController)
 
     /** Emits when the close button was clicked */
@@ -398,7 +399,7 @@ function initCodeIntelligence(
         overlayContainerMount
     )
 
-    return { hoverifier, controllers: { platformContext, extensionsController } }
+    return hoverifier
 }
 
 /**
@@ -410,15 +411,14 @@ export interface ResolvedCodeView extends CodeViewWithOutSelector {
     codeView: HTMLElement
 }
 
-function handleCodeHost(codeHost: CodeHost): Subscription {
-    const {
-        hoverifier,
-        controllers: { platformContext, extensionsController },
-    } = initCodeIntelligence(codeHost)
-
+export function handleCodeHost({
+    codeHost,
+    extensionsController,
+    platformContext,
+    showGlobalDebug,
+}: CodeIntelligenceProps): Subscription {
+    const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
-
-    subscriptions.add(hoverifier)
 
     const ensureRepoExists = (context: CodeHostContext) =>
         resolveRev(context).pipe(
@@ -439,6 +439,18 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
         })
     }
 
+    const hoverifier = initCodeIntelligence({ codeHost, extensionsController, platformContext, showGlobalDebug })
+    subscriptions.add(hoverifier)
+
+    // Inject UI components
+    injectCommandPalette({ extensionsController, platformContext, history, getMount: codeHost.getCommandPaletteMount })
+    injectGlobalDebug({
+        extensionsController,
+        platformContext,
+        getMount: codeHost.getGlobalDebugMount,
+        history,
+        showGlobalDebug,
+    })
     injectViewContextOnSourcegraph(sourcegraphUrl, codeHost, ensureRepoExists, isInPage ? undefined : openOptionsMenu)
 
     // A stream of selections for the current code view. By default, selections
@@ -586,13 +598,27 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
     return subscriptions
 }
 
-async function injectCodeIntelligenceToCodeHosts(codeHosts: CodeHost[]): Promise<Subscription> {
+const SHOW_DEBUG = () => localStorage.getItem('debug') !== null
+
+export async function injectCodeIntelligenceToCodeHosts(
+    codeHosts: CodeHost[],
+    showGlobalDebug = SHOW_DEBUG()
+): Promise<Subscription> {
     const subscriptions = new Subscription()
 
     for (const codeHost of codeHosts) {
         const isCodeHost = await Promise.resolve(codeHost.check())
         if (isCodeHost) {
-            subscriptions.add(handleCodeHost(codeHost))
+            const { platformContext, extensionsController } = initializeExtensions(codeHost)
+            subscriptions.add(extensionsController)
+            subscriptions.add(
+                handleCodeHost({
+                    codeHost,
+                    extensionsController,
+                    platformContext,
+                    showGlobalDebug,
+                })
+            )
             break
         }
     }

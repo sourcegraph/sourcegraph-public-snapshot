@@ -781,12 +781,6 @@ type Query {
     ): SurveyResponseConnection!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
-    # The Sourcegraph documentation page for the given path, used to serve the content for help
-    # pages under the URL path /help on the Sourcegraph instance. If no page exists at the path,
-    # null is returned.
-    #
-    # FOR INTERNAL USE ONLY.
-    docSitePage(path: String!): DocSitePage
     # Queries that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -3190,18 +3184,6 @@ type RegistryExtensionConnection {
     # In order to be able to return local extensions even when the remote registry is unreachable, errors are
     # recorded here instead of in the top-level GraphQL errors list.
     error: String
-}
-
-# A Sourcegraph product documentation page.
-type DocSitePage {
-    # The title of this page.
-    title: String!
-    # The content, as Markdown-rendered HTML.
-    contentHTML: String!
-    # The page index, as rendered HTML.
-    indexHTML: String!
-    # The filename of the file containing this page's content.
-    filePath: String!
 }
 
 # Mutations that are only used on Sourcegraph.com.

@@ -35,7 +35,7 @@ const LOADING: 'loading' = 'loading'
  * "Find references".
  */
 export function getHoverActions(
-    { extensionsController, platformContext }: ExtensionsControllerProps & PlatformContextProps,
+    { extensionsController, platformContext }: ExtensionsControllerProps & PlatformContextProps<'urlToFile'>,
     hoverContext: HoveredToken & HoverContext
 ): Observable<ActionItemProps[]> {
     return getHoverActionsContext({ extensionsController, platformContext }, hoverContext).pipe(
@@ -71,7 +71,7 @@ export function getHoverActionsContext(
         extensionsController,
         platformContext: { urlToFile },
     }:
-        | (ExtensionsControllerProps & PlatformContextProps)
+        | (ExtensionsControllerProps & PlatformContextProps<'urlToFile'>)
         | {
               extensionsController: {
                   services: {

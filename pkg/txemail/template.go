@@ -7,7 +7,7 @@ import (
 	texttemplate "text/template"
 
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/sourcegraph/sourcegraph/pkg/markdown"
+	gfm "github.com/shurcooL/github_flavored_markdown"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 )
 
@@ -62,12 +62,12 @@ var (
 
 	htmlFuncMap = map[string]interface{}{
 		// Renders Markdown for display in an HTML email.
-		"markdownToSafeHTML": func(markdownSource string) (htmltemplate.HTML, error) {
-			html, err := markdown.Render(markdownSource, nil)
-			if err != nil {
-				return "", err
-			}
-			return htmltemplate.HTML(html), nil
+		"markdownToSafeHTML": func(markdownSource string) htmltemplate.HTML {
+			unsafeHTML := gfm.Markdown([]byte(markdownSource))
+
+			// The recommended policy at https://github.com/russross/blackfriday#extensions
+			p := bluemonday.UGCPolicy()
+			return htmltemplate.HTML(p.SanitizeBytes(unsafeHTML))
 		},
 	}
 )

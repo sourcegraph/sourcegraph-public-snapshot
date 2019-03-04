@@ -7,8 +7,6 @@
 /web/src/ @felixfbecker
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
-/cmd/gitserver/ @sourcegraph/core-services
-/cmd/repo-updater/ @sourcegraph/core-services
 /cmd/frontend/authz/ @beyang
 /cmd/frontend/auth/ @beyang
 /cmd/frontend/internal/auth/ @beyang
@@ -18,6 +16,11 @@
 /cmd/frontend/external/session/session.go @beyang
 /enterprise/cmd/frontend/internal/authz @beyang
 /enterprise/cmd/frontend/auth @beyang
+
+# Core Services
+/cmd/gitserver/ @sourcegraph/core-services
+/cmd/repo-updater/ @sourcegraph/core-services
+/migrations/ @sourcegraph/core-services
 
 # Search
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search

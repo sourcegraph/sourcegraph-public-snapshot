@@ -14,3 +14,4 @@ zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/z
 management-console: PROJECT_ROOT=./cmd/management-console TLS_CERT=$HOME/.sourcegraph/management/cert.pem TLS_KEY=$HOME/.sourcegraph/management/key.pem management-console
 management-console-web: cd ./cmd/management-console/web && ./serve.sh
 # jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest
+docsite: .bin/docsite -config doc/docsite.json serve -http=localhost:5080

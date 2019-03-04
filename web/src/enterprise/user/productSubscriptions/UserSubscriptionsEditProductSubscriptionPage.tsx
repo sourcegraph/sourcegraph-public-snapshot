@@ -20,12 +20,12 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
+import { ThemeProps } from '../../../theme'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 
-interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
+interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
     user: GQL.IUser
-    isLightTheme: boolean
 }
 
 const LOADING: 'loading' = 'loading'

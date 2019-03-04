@@ -1,6 +1,7 @@
 import React from 'react'
+import { ThemeProps } from '../../../theme'
 
-export const WelcomeAreaFooter: React.FunctionComponent<{ isLightTheme: boolean }> = ({ isLightTheme }) => (
+export const WelcomeAreaFooter: React.FunctionComponent<ThemeProps> = ({ isLightTheme }) => (
     <>
         <div className="row mt-5 pt-4 border-top">
             <div className="col-sm-4 col-m-4 col-lg-4">

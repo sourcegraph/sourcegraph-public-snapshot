@@ -4,13 +4,14 @@ import { Subject, Subscription } from 'rxjs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
+import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { ComponentDescriptor } from '../util/contributions'
 
 /**
  * Properties passed to all section components in the explore area.
  */
-export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
+export interface ExploreAreaSectionContext extends ExtensionsControllerProps, ThemeProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -20,7 +21,6 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
     /** The viewer's settings. */
     settingsCascade: SettingsCascadeOrError
 
-    isLightTheme: boolean
     location: H.Location
     history: H.History
 }

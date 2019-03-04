@@ -27,19 +27,24 @@ import { CodeHost } from './code_intelligence'
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
  *
- * If the "Use extensions" feature flag is enabled (or always for Sourcegraph.com), it injects the command palette.
- * If extensions are not supported by the associated Sourcegraph instance, the extensions controller will behave as
- * though no individual extensions are enabled, which makes it effectively a noop.
  */
 export function initializeExtensions({
-    getCommandPaletteMount,
     urlToFile,
-}: Pick<CodeHost, 'getCommandPaletteMount' | 'urlToFile'>): PlatformContextProps & ExtensionsControllerProps {
+}: Pick<CodeHost, 'urlToFile'>): PlatformContextProps & ExtensionsControllerProps {
     const platformContext = createPlatformContext({ urlToFile })
     const extensionsController = createExtensionsController(platformContext)
-    const history = H.createBrowserHistory()
+    return { platformContext, extensionsController }
+}
 
-    if (getCommandPaletteMount) {
+interface InjectProps
+    extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL'>,
+        ExtensionsControllerProps {
+    getMount?: () => HTMLElement
+    history: H.History
+}
+
+export function injectCommandPalette({ extensionsController, platformContext, getMount, history }: InjectProps): void {
+    if (getMount) {
         render(
             <ShortcutProvider>
                 <TelemetryContext.Provider value={eventLogger}>
@@ -52,20 +57,28 @@ export function initializeExtensions({
                     <Notifications extensionsController={extensionsController} />
                 </TelemetryContext.Provider>
             </ShortcutProvider>,
-            getCommandPaletteMount()
+            getMount()
         )
     }
+}
 
-    render(
-        <GlobalDebug
-            extensionsController={extensionsController}
-            location={history.location}
-            platformContext={platformContext}
-        />,
-        getGlobalDebugMount()
-    )
-
-    return { platformContext, extensionsController }
+export function injectGlobalDebug({
+    extensionsController,
+    platformContext,
+    history,
+    showGlobalDebug,
+    getMount = getGlobalDebugMount,
+}: InjectProps & { showGlobalDebug?: boolean }): void {
+    if (showGlobalDebug) {
+        render(
+            <GlobalDebug
+                extensionsController={extensionsController}
+                location={history.location}
+                platformContext={platformContext}
+            />,
+            getMount()
+        )
+    }
 }
 
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)

@@ -22,6 +22,8 @@ interface State {
  * authenticated viewers.
  */
 export class UserNavItem extends React.PureComponent<Props, State> {
+    private supportsSystemTheme = window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)')
+        .matches
     public state: State = { isOpen: false }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -45,7 +47,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         <strong>{this.props.authenticatedUser.username}</strong>
                     )}
                 </DropdownToggle>
-                <DropdownMenu right={true}>
+                <DropdownMenu right={true} className="user-nav-item__dropdown-menu">
                     <DropdownItem header={true} className="py-1">
                         Signed in as <strong>@{this.props.authenticatedUser.username}</strong>
                     </DropdownItem>
@@ -85,18 +87,34 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         </>
                     )}
                     <DropdownItem divider={true} />
-                    <div className="dropdown-item d-flex align-items-center">
-                        <div className="mr-2">Theme</div>
-                        {/* tslint:disable-next-line: jsx-ban-elements <Select> doesn't support small version */}
-                        <select
-                            className="custom-select custom-select-sm e2e-theme-toggle"
-                            onChange={this.onThemeChange}
-                            value={this.props.themePreference}
-                        >
-                            <option value={ThemePreference.Light}>Light</option>
-                            <option value={ThemePreference.Dark}>Dark</option>
-                            <option value={ThemePreference.System}>System</option>
-                        </select>
+                    <div className="px-2 py-1">
+                        <div className="d-flex align-items-center">
+                            <div className="mr-2">Theme</div>
+                            {/* tslint:disable-next-line: jsx-ban-elements <Select> doesn't support small version */}
+                            <select
+                                className="custom-select custom-select-sm e2e-theme-toggle"
+                                onChange={this.onThemeChange}
+                                value={this.props.themePreference}
+                            >
+                                <option value={ThemePreference.Light}>Light</option>
+                                <option value={ThemePreference.Dark}>Dark</option>
+                                <option value={ThemePreference.System}>System</option>
+                            </select>
+                        </div>
+                        {this.props.themePreference === ThemePreference.System && !this.supportsSystemTheme && (
+                            <div className="text-wrap">
+                                <small>
+                                    <a
+                                        href="https://caniuse.com/#feat=prefers-color-scheme"
+                                        className="text-warning"
+                                        target="_blank"
+                                        rel="noopener"
+                                    >
+                                        Your browser does not support the system theme.
+                                    </a>
+                                </small>
+                            </div>
+                        )}
                     </div>
                     {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
                         <>

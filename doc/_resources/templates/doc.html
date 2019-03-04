@@ -1,0 +1,110 @@
+{{define "root"}}
+	<html>
+		<head>
+			<title>{{with .Content}}{{.Doc.Title}}{{else}}Error{{end}} - Sourcegraph</title>
+			<link rel="stylesheet" type="text/css" href="{{asset "layout.css"}}?6" />
+			<link rel="stylesheet" type="text/css" href="{{asset "content.css"}}?2" />
+			<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+			{{if (or (not .Content) .ContentVersion)}}<meta name="robots" content="noindex">{{end}}
+		</head>
+		<body {{with .Content}}data-path="{{.Path}}"{{end}} class="is-docsite">
+			<header id="header">
+				<div class="container">
+					<a href="/" id="logo"><img src="{{asset "sourcegraph-logo.svg"}}" /> <span aria-hidden="true" class="visible-sm">Docs</span> <span class="visible-lg">Documentation</span></a>
+					<nav>
+
+						<form id="search-form" onsubmit="location.href = 'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+'+encodeURIComponent(document.getElementById('search').value);return false"><input type="search" id="search" placeholder="Search docs..." spellcheck="false" /><button id="search-button" type="submit">Search</button></form>
+						<a href="https://github.com/sourcegraph/sourcegraph">Code</a>
+						<a href="https://about.sourcegraph.com">About</a>
+						<a href="https://sourcegraph.com">Sourcegraph.com</a>
+					</nav>
+				</div>
+			</header>
+			<div id="page">
+				<div class="container">
+					{{with .Content}}
+						<nav id="index">
+							{{template "index" .}}
+						</nav>
+					{{end}}
+					<section id="content">
+						<nav id="version">
+							{{/* Update these after each release. */}}
+							{{$currentReleaseRevspec := "v3.1.0"}}
+							{{$currentReleaseVersion := "3.1"}}
+							{{$nextReleaseVersion := "3.2"}}
+							Version:
+							{{if (and .ContentVersion (ne .ContentVersion $currentReleaseRevspec))}}
+								<strong>{{.ContentVersion}}</strong> /
+							{{end}}
+							<a rel="nofollow" class="{{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">{{$nextReleaseVersion}} (next)</a>
+							/
+							<a rel="nofollow" class="{{if eq .ContentVersion $currentReleaseRevspec}}active{{end}}" href="/@{{$currentReleaseRevspec}}/{{.ContentPagePath}}">{{$currentReleaseVersion}} (current)</a>
+						</nav>
+						{{with .Content}}
+							<nav id="breadcrumbs" class="breadcrumbs">
+								{{range .Breadcrumbs}}
+									<a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">{{.Label}}</a> {{if not .IsActive}}/{{end}}
+								{{end}}
+							</nav>
+							<div class="markdown-body">{{markdown .}}</div>
+						{{else}}
+							{{if .ContentVersionNotFoundError}}
+								<h1>Version not found</h1>
+								<p>The version <code>{{.ContentVersion}}</code> was not found.</p>
+							{{else if .ContentPageNotFoundError}}
+								<h1>Page not found</h1>
+								<p>The page <code>{{.ContentPagePath}}</code> was not found.</p>
+							{{else}}error
+							{{end}}
+						{{end}}
+					</section>
+				</div>
+      </div>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        {{/* docs.sourcegraph.com only */}}
+        gtag('config', 'UA-40540747-20');
+        {{/* about.sourcegraph.com + docs.sourcegraph.com */}}
+        gtag('config', 'UA-40540747-17');
+        gtag('config', 'AW-868484203');
+      </script>
+      {{if (eq .ContentPagePath "")}}
+        {{/*
+        register AdWords conversion on https://docs.sourcegraph.com (i.e., on Quickstart)
+        */}}
+        <script>
+          gtag('event', 'conversion', {'send_to': 'AW-868484203/v2YvCJ2s3JUBEOuIkJ4D'});
+        </script>
+      {{end}}
+		</body>
+	</html>
+{{end}}
+
+{{/*
+The index and doc_nav templates are copied to the https://github.com/sourcegraph/sourcegraph
+repository's docsite package. They should be kept in sync.
+*/}}
+{{define "index"}}
+	{{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
+		<h4 class="visible-sm">{{$.Doc.Title}}</h4>
+		<h4 class="visible-lg">On this page:</h4>
+		<ul>{{template "doc_nav" .}}</ul>
+	{{end}}
+	<a class="edit-btn" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">Edit this page</a>
+{{end}}
+{{define "doc_nav"}}
+	{{range .}}
+		<li>
+			<a href="{{.URL}}">{{.Title}}</a>
+			{{with .Children}}
+				<ul>
+					{{template "doc_nav" .}}
+				</ul>
+			{{end}}
+	{{end}}
+{{end}}

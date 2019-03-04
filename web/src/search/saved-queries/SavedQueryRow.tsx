@@ -5,11 +5,12 @@ import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, map, startWith, switchMap, withLatestFrom } from 'rxjs/operators'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchSearchResultStats } from '../backend'
 import { Sparkline } from './Sparkline'
 
-interface Props {
+interface Props extends ThemeProps {
     query: string
     description: string
 
@@ -17,7 +18,6 @@ interface Props {
     form?: React.ReactNode
 
     className?: string
-    isLightTheme: boolean
 
     /**
      * The event logged when a user clicks on the link (e.g. 'SavedQueryClick' or 'ExampleSearchClick')

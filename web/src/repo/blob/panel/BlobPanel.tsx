@@ -17,10 +17,10 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
 import { isDiscussionsEnabled } from '../../../discussions'
+import { ThemeProps } from '../../../theme'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
-
 interface Props
     extends AbsoluteRepoFile,
         Partial<PositionSpec>,
@@ -28,13 +28,13 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
     repoName: string
     commitID: string
-    isLightTheme: boolean
     authenticatedUser: GQL.IUser | null
 }
 

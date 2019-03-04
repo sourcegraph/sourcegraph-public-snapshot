@@ -101,22 +101,24 @@ We treat documentation as code, so we've implemented some testing:
 
 - `docsite check`: Check that all internal (relative) links work correctly.
 
-## Previewing the changes live
+## Updating documentation
 
-When running Sourcegraph in development mode, you can access a live preview of the docs at http://localhost:3080/help. The Markdown rendering and structure is the same as on docs.sourcegraph.com.
+To update documentation content, templates, or assets on https://docs.sourcegraph.com, push changes in the `doc/` directory to this repository's `master` branch, then wait up to 5 minutes. Every 5 minutes, docs.sourcegraph.com reloads all content, templates, and assets from `master`.
 
-You can also follow the [sourcegraph/docs.sourcegraph.com README](https://github.com/sourcegraph/docs.sourcegraph.com) to run the docs.sourcegraph.com site locally.
+- Documentation content lives in `doc/**/*.md`.
+- Assets and templates live in `doc/_resources/{templates,assets}`.
 
-## Sourcegraph /help
+See "[Documentation site](site.md)" for more information.
 
-Every Sourcegraph instance includes the documentation at the URL path `/help`
-(`https://sourcegraph.example.com/help`), e.g., <https://sourcegraph.com/help>.
+### Previewing changes locally
 
-The documentation available on https://docs.sourcegraph.com is continuously deployed every 5 minutes from the `master` branch of `sourcegraph/sourcegraph`.
+You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../local_development.md) (using `dev/launch.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
 
-### Linking to /help
+See also "[Other ways of previewing changes locally (very rare)](site.md#other-ways-of-previewing-changes-locally-very-rare)".
 
-When you're building a new feature, you may need to link to the documentation from the product. In-product documentation links should refer to the documentation hosted on the product itself (at `/help`) so that the product and documentation versions are consistent. (The docs on docs.sourcegraph.com may be for a newer version than what the user is running.)
+## Linking to documentation in-product
+
+In-product documentation links should point to `/help/PATH` instead of using an absolute URL of the form https://docs.sourcegraph.com/PATH. This ensures they link to the documentation for the current product version. There is a redirect (when using either `<a>` or react-router `<Link>`) from `/help/PATH` to the versioned docs.sourcegraph.com URL (https://docs.sourcegraph.com/@VERSION/PATH).
 
 ## Prefer primary documents
 
