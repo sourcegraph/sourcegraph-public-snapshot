@@ -1,5 +1,5 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import { combineLatest, from, Observable, of } from 'rxjs'
+import { from, Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
@@ -26,36 +26,38 @@ export class TextDocumentLocationProviderRegistry<
     L extends Location = Location
 > extends DocumentFeatureProviderRegistry<ProvideTextDocumentLocationSignature<P, L>> {
     /**
-     * Returns an observable that emits the registered providers' location results whenever any of
-     * the last-emitted set of providers emits hovers.
+     * Returns an observable that, initially and upon the registered provider set changing, emits an
+     * observable of the combined location results from all providers.
+     *
+     * Using a higher-order observable here lets the caller display a loading indicator when some
+     * providers have not yet completed (i.e., when the inner observable is not yet completed). The
+     * outer observable never completes because providers may be registered and unregistered at any
+     * time.
      */
-    public getLocations(params: P): Observable<L[] | null> {
+    public getLocations(params: P): Observable<Observable<L[] | null>> {
         return getLocationsFromProviders(this.providersForDocument(params.textDocument), params)
     }
 
-    public getLocationsAndProviders(
-        model: Observable<Pick<Model, 'visibleViewComponents'>>,
-        extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
-    ): Observable<{ locations: Observable<Location[] | null> | null; hasProviders: boolean }> {
-        return combineLatest(this.entries, model).pipe(
-            map(([entries, { visibleViewComponents }]) => {
-                const params = modelToTextDocumentPositionParams({ visibleViewComponents })
+    /**
+     * Reports whether there are any location providers registered for the active text document.
+     * This can be used, for example, to selectively show a "Find references" button if there are
+     * any reference providers registered.
+     *
+     * @param model The current model.
+     */
+    public hasProvidersForActiveTextDocument(model: Pick<Model, 'visibleViewComponents'>): Observable<boolean> {
+        return this.entries.pipe(
+            map(entries => {
+                const params = modelToTextDocumentPositionParams(model)
                 if (!params) {
-                    return { locations: null, hasProviders: false }
+                    return false
                 }
 
-                const providers = entries
-                    .filter(({ registrationOptions }) =>
+                return (
+                    entries.filter(({ registrationOptions }) =>
                         match(registrationOptions.documentSelector, params.textDocument)
-                    )
-                    .map(({ provider }) => provider)
-                return {
-                    locations: getLocationsFromProviders<P, L>(of(providers), {
-                        ...(params as Pick<P, keyof TextDocumentPositionParams>),
-                        ...(extraParams as Pick<P, Exclude<keyof P, 'textDocument' | 'position'>>),
-                    } as P),
-                    hasProviders: providers.length > 0,
-                }
+                    ).length > 0
+                )
             })
         )
     }
@@ -101,7 +103,9 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
      * @param id The provider ID.
      */
     public getLocations(id: string, params: TextDocumentPositionParams): Observable<Location[] | null> {
-        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params)
+        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params).pipe(
+            switchMap(locations => locations)
+        )
     }
 }
 
@@ -118,9 +122,9 @@ export function getLocationsFromProviders<
     providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>,
     params: P,
     logErrors = true
-): Observable<L[] | null> {
+): Observable<Observable<L[] | null>> {
     return providers.pipe(
-        switchMap(providers =>
+        map(providers =>
             combineLatestOrDefault(
                 providers.map(provider =>
                     from(provider(params)).pipe(
@@ -132,8 +136,7 @@ export function getLocationsFromProviders<
                         })
                     )
                 )
-            )
-        ),
-        map(flattenAndCompact)
+            ).pipe(map(locations => flattenAndCompact(locations)))
+        )
     )
 }

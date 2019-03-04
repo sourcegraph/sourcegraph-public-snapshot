@@ -1,6 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { from, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { TextDocumentIdentifier } from '../../../../../shared/src/api/client/types/textDocument'
 import { TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
@@ -44,7 +44,7 @@ export const createLSPFromExtensions = (extensionsController: Controller): Simpl
             map(hover => (hover === null ? HoverMerged.from([]) : hover))
         ),
     fetchDefinition: pos =>
-        from(
-            extensionsController.services.textDocumentDefinition.getLocations(toTextDocumentPositionParams(pos))
+        from(extensionsController.services.textDocumentDefinition.getLocations(toTextDocumentPositionParams(pos))).pipe(
+            switchMap(locations => locations)
         ) as Observable<Location | Location[] | null>,
 })
