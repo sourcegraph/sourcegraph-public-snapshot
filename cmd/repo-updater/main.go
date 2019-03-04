@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -42,12 +41,12 @@ func main() {
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	kinds := []string{}
+	var kinds []string
 	if syncerEnabled {
-		kinds = []string{"GITHUB"}
+		kinds = append(kinds, "GITHUB")
 	}
 
-	newSyncerEnabled := map[string]bool{}
+	newSyncerEnabled := make(map[string]bool, len(kinds))
 	for _, kind := range kinds {
 		newSyncerEnabled[kind] = true
 	}
@@ -107,45 +106,44 @@ func main() {
 		}
 	}
 
-	db, err := repos.NewDB(repos.NewDSNFromEnv())
-	if err != nil {
-		log.Fatalf("failed to initalise db store: %v", err)
-	}
-
-	var store repos.Store
-	if !syncerEnabled {
-		err := errors.New("syncer disabled")
-		store = repos.NewFakeStore(err, err, err)
-	} else {
-		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
-	}
-
-	diffs := make(chan repos.Diff)
-	src := repos.NewExternalServicesSourcer(frontendAPI)
-	syncer := repos.NewSyncer(store, src, diffs, func() time.Time {
-		// XXX(tsenart): It seems like the current db layer in the frontend API
-		// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
-		// and ensure it's the used timezone across the board.
-		return time.Now().UTC()
-	})
+	var (
+		store  repos.Store
+		syncer *repos.Syncer
+	)
 
 	if syncerEnabled {
+		db, err := repos.NewDB(repos.NewDSNFromEnv())
+		if err != nil {
+			log.Fatalf("failed to initalise db store: %v", err)
+		}
+
+		diffs := make(chan repos.Diff)
+		src := repos.NewExternalServicesSourcer(frontendAPI)
+
+		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
+			// XXX(tsenart): It seems like the current db layer in the frontend API
+			// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
+			// and ensure it's the used timezone across the board.
+			return time.Now().UTC()
+		})
+
 		log.Printf("Starting new syncer for external service kinds: %+v", kinds)
 		go func() { log.Fatal(syncer.Run(ctx, 10*time.Second, kinds...)) }()
-	}
 
-	// Start new repo syncer updates scheduler relay thread.
-	go func() {
-		for diff := range diffs {
-			if conf.Get().DisableAutoGitUpdates {
-				continue
-			} else if conf.UpdateScheduler2Enabled() {
-				repos.Scheduler.UpdateFromDiff(diff)
-			} else {
-				log15.Error("Diff based scheduler update not implemented for old scheduler")
+		// Start new repo syncer updates scheduler relay thread.
+		go func() {
+			for diff := range diffs {
+				if conf.Get().DisableAutoGitUpdates {
+					continue
+				} else if conf.UpdateScheduler2Enabled() {
+					repos.Scheduler.UpdateFromDiff(diff)
+				} else {
+					log15.Error("Diff based scheduler update not implemented for old scheduler")
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	// Repos old syncing thread
 	go repos.RunRepositorySyncWorker(ctx)

@@ -104,6 +104,19 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if req.ExternalService.Kind == "OTHER" {
+		res := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService)
+		if len(res.Errors) > 0 {
+			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", res.Errors)
+			http.Error(w, res.Errors.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if s.Syncer == nil {
+		return
+	}
+
 	switch req.ExternalService.Kind {
 	case "GITHUB":
 		_, err := s.Syncer.Sync(r.Context())
@@ -111,14 +124,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	case "OTHER":
-		res := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService)
-		if len(res.Errors) > 0 {
-			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", res.Errors)
-			http.Error(w, res.Errors.Error(), http.StatusInternalServerError)
-		}
-	case "":
-		http.Error(w, "empty external service kind", http.StatusBadRequest)
 	default:
 		// TODO(tsenart): Handle other external service kinds.
 	}
@@ -155,6 +160,10 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return r, r != nil, nil
 		},
 		func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
+			if s.Store == nil {
+				return nil, false, nil
+			}
+
 			repo, err := s.Store.GetRepoByName(ctx, string(args.Repo))
 			if err != nil {
 				return nil, false, err
