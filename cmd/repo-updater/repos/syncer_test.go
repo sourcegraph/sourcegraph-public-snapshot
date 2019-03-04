@@ -45,7 +45,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{
 			name:    "sourcer error aborts sync",
 			sourcer: repos.NewFakeSourcer(errors.New("boom")),
-			err:     "boom",
+			err:     "syncer.sync.sourced: boom",
 		},
 		{
 			name: "sources partial errors aborts sync",
@@ -53,19 +53,19 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				repos.NewFakeSource("a", "github", nil, foo.Clone()),
 				repos.NewFakeSource("b", "github", errors.New("boom")),
 			),
-			err: "1 error occurred:\n\t* boom\n\n",
+			err: "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name:    "store list error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
 			store:   repos.NewFakeStore(nil, errors.New("boom"), nil),
-			err:     "boom",
+			err:     "syncer.sync.store.list-repos: boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
 			store:   repos.NewFakeStore(nil, nil, errors.New("booya")),
-			err:     "booya",
+			err:     "syncer.sync.store.upsert-repos: booya",
 		},
 	}
 
