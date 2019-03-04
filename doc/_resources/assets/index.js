@@ -1,8 +1,12 @@
 //Index.js
 // Docs site JS code
 
-// Toggle search dropdown on button click
-// Accepts the ID for the dropdown to toggle
+
+/**
+ * Toggle search dropdown on button click
+ * Accepts the ID for the dropdown to toggle
+ * @param {string} dropdownName
+ */
 const toggleDropdown = dropdownName => {
   const dropdown = document.getElementById(dropdownName)
   dropdown.classList.toggle('show')
@@ -53,7 +57,11 @@ document.addEventListener('click', e => {
   navState.checked = false
 })
 
-// Search with specific search provider
+/**
+ * Search sourcegraph docs with a specific search provider
+ * Accepts the string for search provider
+ * @param {string} searchProvider
+ */
 const searchDocsWithProvider = searchProvider => {
   if (searchProvider === 'google') {
     location.href =
