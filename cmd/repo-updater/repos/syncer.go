@@ -7,8 +7,8 @@ import (
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
@@ -53,14 +53,14 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...strin
 func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) {
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, kinds...); err != nil {
-		return Diff{}, err
+		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
 	}
 
 	store := s.store
 	if tr, ok := s.store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
-			return Diff{}, err
+			return Diff{}, errors.Wrap(err, "syncer.sync.transact")
 		}
 		defer txs.Done(&err)
 		store = txs
@@ -68,14 +68,14 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) 
 
 	var stored Repos
 	if stored, err = store.ListRepos(ctx, kinds...); err != nil {
-		return Diff{}, err
+		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
 	diff := NewDiff(sourced, stored)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return Diff{}, err
+		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
 	}
 
 	if s.diffs != nil {

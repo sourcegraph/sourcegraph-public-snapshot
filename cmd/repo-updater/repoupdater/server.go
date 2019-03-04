@@ -120,12 +120,14 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	switch req.ExternalService.Kind {
 	case "GITHUB":
-		_, err := s.Syncer.Sync(r.Context())
-		if err != nil {
+		_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
+		switch {
+		case err == nil:
+			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+		default:
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
 	default:
 		// TODO(tsenart): Handle other external service kinds.
 	}
@@ -142,30 +144,24 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	var (
-		result        protocol.RepoLookupResult
-		repo          *protocol.RepoInfo
-		authoritative bool
-		err           error
-	)
+	type getfn struct {
+		kind string
+		fn   func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
+	}
 
-	type getfn func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
-
-	// Find the authoritative source of the repository being looked up.
-	for _, get := range []getfn{
+	fns := []getfn{
 		// We begin by searching the "OTHER" external service kind repos because lookups
 		// are fast in-memory only operations, as opposed to the other external service kinds which
 		// don't *always* have enough metadata cached to answer this request without performing network
 		// requests to their respective code host APIs
-		func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
+		{"OTHER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
 			r := s.OtherReposSyncer.GetRepoInfoByName(ctx, string(args.Repo))
 			return r, r != nil, nil
-		},
-		func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			if s.Store == nil {
-				return nil, false, nil
-			}
+		}},
+	}
 
+	if s.Store != nil && s.Syncer != nil {
+		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
 			repo, err := s.Store.GetRepoByName(ctx, string(args.Repo))
 			if err != nil {
 				return nil, false, err
@@ -177,15 +173,29 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			}
 
 			return info, true, nil
-		},
-		// Slower, *potentially* I/O bound lookups, unless there's an HTTP client cache hit.
-		repos.GetGitHubRepository,
-		repos.GetGitLabRepository,
-		repos.GetBitbucketServerRepository,
-		repos.GetAWSCodeCommitRepository,
-		repos.GetGitoliteRepository,
-	} {
-		if repo, authoritative, err = get(ctx, args); authoritative {
+		}})
+	} else {
+		fns = append(fns, getfn{"GITHUB", repos.GetGitHubRepository})
+	}
+
+	fns = append(fns,
+		getfn{"GITLAB", repos.GetGitLabRepository},
+		getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
+		getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
+		getfn{"GITOLITE", repos.GetGitoliteRepository},
+	)
+
+	var (
+		result        protocol.RepoLookupResult
+		repo          *protocol.RepoInfo
+		authoritative bool
+		err           error
+	)
+
+	// Find the authoritative source of the repository being looked up.
+	for _, get := range fns {
+		if repo, authoritative, err = get.fn(ctx, args); authoritative {
+			log15.Debug("repoupdater.lookup-repo", "source", get.kind)
 			break
 		}
 	}
