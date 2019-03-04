@@ -128,7 +128,7 @@ func main() {
 			return time.Now().UTC()
 		})
 
-		log.Printf("Starting new syncer for external service kinds: %+v", kinds)
+		log15.Info("starting new syncer", "external service kinds", kinds)
 		go func() { log.Fatal(syncer.Run(ctx, 10*time.Second, kinds...)) }()
 
 		// Start new repo syncer updates scheduler relay thread.
@@ -165,7 +165,7 @@ func main() {
 	}
 
 	addr := net.JoinHostPort(host, port)
-	log15.Info("repo-updater: listening", "addr", addr)
+	log15.Info("server listening", "addr", addr)
 	srv := &http.Server{Addr: addr, Handler: handler}
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 
