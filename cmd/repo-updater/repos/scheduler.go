@@ -185,7 +185,7 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log15.Debug("updating configured repos with diff", pp.Sprint(diff))
+	log15.Debug("updating configured repos", "diff", pp.Sprint(diff))
 
 	for _, del := range diff.Deleted {
 		repo := configuredRepo2FromRepo(del)
