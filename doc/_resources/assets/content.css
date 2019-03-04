@@ -1,53 +1,64 @@
+/* Prevent header from covering hash tag links */
+/* This prevents the header from being covered by the nav bar when loading hash links */
+h1::before, h2::before, h3::before, h4::before, h5::before {
+	display: block;
+	content: " ";
+	margin-top: -90px;
+	height: 90px;
+	visibility: hidden;
+	pointer-events: none;
+}
+
 /* Line break that is only visible, but not copy-pasted. Used for terminal commands. */
 .virtual-br::before {
-  content: "\A";
+	content: "\A";
 }
 
 .pre-wrap {
-  white-space: pre-wrap;
+	white-space: pre-wrap;
 }
 
 .text-center {
-  text-align: center;
+	text-align: center;
 }
 
 .markdown-body {
-  -ms-text-size-adjust: 100%;
-  -webkit-text-size-adjust: 100%;
-  line-height: 1.5;
-  color: #24292e;
-  /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
-  font-size: 16px;
-  line-height: 1.5;
-  word-wrap: break-word;
-  tab-size: 2;
+	-ms-text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
+	line-height: 1.5;
+	color: #24292e;
+	font-size: 16px;
+	line-height: 1.5;
+	word-wrap: break-word;
+	tab-size: 2;
+	width: 100%;
 }
 
 .markdown-body .pl-c {
-  color: #6a737d;
+	color: #6a737d;
 }
 
 .markdown-body .pl-c1,
 .markdown-body .pl-s .pl-v {
-  color: #005cc5;
+	color: #005cc5;
 }
 
 .markdown-body .pl-e,
 .markdown-body .pl-en {
-  color: #6f42c1;
+	color: #6f42c1;
 }
 
 .markdown-body .pl-smi,
 .markdown-body .pl-s .pl-s1 {
-  color: #24292e;
+	color: #24292e;
 }
 
 .markdown-body .pl-ent {
-  color: #22863a;
+	color: #22863a;
 }
 
 .markdown-body .pl-k {
-  color: #d73a49;
+	color: #d73a49;
 }
 
 .markdown-body .pl-s,
@@ -57,197 +68,200 @@
 .markdown-body .pl-sr .pl-cce,
 .markdown-body .pl-sr .pl-sre,
 .markdown-body .pl-sr .pl-sra {
-  color: #032f62;
+	color: #032f62;
 }
 
 .markdown-body .pl-v,
 .markdown-body .pl-smw {
-  color: #e36209;
+	color: #e36209;
 }
 
 .markdown-body .pl-bu {
-  color: #b31d28;
+	color: #b31d28;
 }
 
 .markdown-body .pl-ii {
-  color: #fafbfc;
-  background-color: #b31d28;
+	color: #fafbfc;
+	background-color: #b31d28;
 }
 
 .markdown-body .pl-c2 {
-  color: #fafbfc;
-  background-color: #d73a49;
+	color: #fafbfc;
+	background-color: #d73a49;
 }
 
 .markdown-body .pl-c2::before {
-  content: "^M";
+	content: "^M";
 }
 
 .markdown-body .pl-sr .pl-cce {
-  font-weight: bold;
-  color: #22863a;
+	font-weight: bold;
+	color: #22863a;
 }
 
 .markdown-body .pl-ml {
-  color: #735c0f;
+	color: #735c0f;
 }
 
 .markdown-body .pl-mh,
 .markdown-body .pl-mh .pl-en,
 .markdown-body .pl-ms {
-  font-weight: bold;
-  color: #005cc5;
+	font-weight: bold;
+	color: #005cc5;
 }
 
 .markdown-body .pl-mi {
-  font-style: italic;
-  color: #24292e;
+	font-style: italic;
+	color: #24292e;
 }
 
 .markdown-body .pl-mb {
-  font-weight: bold;
-  color: #24292e;
+	font-weight: bold;
+	color: #24292e;
 }
 
 .markdown-body .pl-md {
-  color: #b31d28;
-  background-color: #ffeef0;
+	color: #b31d28;
+	background-color: #ffeef0;
 }
 
 .markdown-body .pl-mi1 {
-  color: #22863a;
-  background-color: #f0fff4;
+	color: #22863a;
+	background-color: #f0fff4;
 }
 
 .markdown-body .pl-mc {
-  color: #e36209;
-  background-color: #ffebda;
+	color: #e36209;
+	background-color: #ffebda;
 }
 
 .markdown-body .pl-mi2 {
-  color: #f6f8fa;
-  background-color: #005cc5;
+	color: #f6f8fa;
+	background-color: #005cc5;
 }
 
 .markdown-body .pl-mdr {
-  font-weight: bold;
-  color: #6f42c1;
+	font-weight: bold;
+	color: #6f42c1;
 }
 
 .markdown-body .pl-ba {
-  color: #586069;
+	color: #586069;
 }
 
 .markdown-body .pl-sg {
-  color: #959da5;
+	color: #959da5;
 }
 
 .markdown-body .pl-corl {
-  text-decoration: underline;
-  color: #032f62;
+	text-decoration: underline;
+	color: #032f62;
 }
 
 .markdown-body .octicon {
-  display: inline-block;
-  vertical-align: text-top;
-  fill: currentColor;
+	display: inline-block;
+	vertical-align: text-top;
+	fill: currentColor;
 }
 
 .markdown-body a {
-  background-color: transparent;
+	background-color: transparent;
 }
 
 .markdown-body a:active,
 .markdown-body a:hover {
-  outline-width: 0;
+	outline-width: 0;
 }
 
 .markdown-body strong {
-  font-weight: inherit;
+	font-weight: inherit;
 }
 
 .markdown-body strong {
-  font-weight: bolder;
+	font-weight: bolder;
 }
 
 .markdown-body h1 {
-  font-size: 2em;
-  margin: 0.67em 0;
+	font-size: 2em;
+	margin: 0.67em 0;
 }
 
 .markdown-body img {
-  border-style: none;
+	border-style: none;
 }
 
 .markdown-body code,
 .markdown-body kbd,
 .markdown-body pre {
-  font-family: monospace, monospace;
-  font-size: 1em;
+	font-family: monospace, monospace;
+	font-size: 1em;
 }
 
 .markdown-body hr {
-  box-sizing: content-box;
-  height: 0;
-  overflow: visible;
+	box-sizing: content-box;
+	height: 0;
+	overflow: visible;
 }
 
 .markdown-body input {
-  font: inherit;
-  margin: 0;
+	font: inherit;
+	margin: 0;
 }
 
 .markdown-body input {
-  overflow: visible;
+	overflow: visible;
 }
 
 .markdown-body [type="checkbox"] {
-  box-sizing: border-box;
-  padding: 0;
+	box-sizing: border-box;
+	padding: 0;
 }
 
 .markdown-body * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 .markdown-body input {
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
 }
 
 .markdown-body strong {
-  font-weight: 600;
+	font-weight: 600;
 }
 
 .markdown-body hr {
-  height: 0;
-  margin: 15px 0;
-  overflow: hidden;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid #dfe2e5;
+	height: 0;
+	margin: 15px 0;
+	overflow: visible;
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid #dfe2e5;
 }
 
 .markdown-body hr::before {
-  display: table;
-  content: "";
+	display: table;
+	content: "";
 }
 
 .markdown-body hr::after {
-  display: table;
-  clear: both;
-  content: "";
+	display: table;
+	clear: both;
+	content: "";
 }
 
 .markdown-body table {
-  border-spacing: 0;
-  border-collapse: collapse;
+	word-wrap: break-word;
+	table-layout: fixed;
+	width: 100%;
+	border-spacing: 0;
+	border-collapse: collapse;
 }
 
 .markdown-body td,
 .markdown-body th {
-  padding: 0;
+	padding: 0;
 }
 
 .markdown-body h1,
@@ -256,160 +270,167 @@
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  margin-top: 0;
-  margin-bottom: 0;
+	margin-top: 0;
+	margin-bottom: 0;
 }
 
 .markdown-body h1 {
-  font-size: 32px;
-  font-weight: 600;
+	font-size: 32px;
+	font-weight: 600;
 }
 
 .markdown-body h2 {
-  font-size: 24px;
-  font-weight: 600;
+	font-size: 24px;
+	font-weight: 600;
 }
 
 .markdown-body h3 {
-  font-size: 20px;
-  font-weight: 600;
+	font-size: 20px;
+	font-weight: 600;
 }
 
 .markdown-body h4 {
-  font-size: 16px;
-  font-weight: 600;
+	font-size: 16px;
+	font-weight: 600;
 }
 
 .markdown-body h5 {
-  font-size: 14px;
-  font-weight: 600;
+	font-size: 14px;
+	font-weight: 600;
 }
 
 .markdown-body h6 {
-  font-size: 12px;
-  font-weight: 600;
+	font-size: 12px;
+	font-weight: 600;
 }
 
 .markdown-body p {
-  margin-top: 0;
-  margin-bottom: 10px;
+	margin-top: 0;
+	margin-bottom: 10px;
 }
 
 .markdown-body blockquote {
-  margin: 0;
+	margin: 0;
 }
 
 .markdown-body ul,
 .markdown-body ol {
-  padding-left: 0;
-  margin-top: 0;
-  margin-bottom: 0;
+	padding-left: 0;
+	margin-top: 0;
+	margin-bottom: 0;
 }
 
 .markdown-body ol ol,
 .markdown-body ul ol {
-  list-style-type: lower-roman;
+	list-style-type: lower-roman;
 }
 
 .markdown-body ul ul ol,
 .markdown-body ul ol ol,
 .markdown-body ol ul ol,
 .markdown-body ol ol ol {
-  list-style-type: lower-alpha;
+	list-style-type: lower-alpha;
 }
 
 .markdown-body dd {
-  margin-left: 0;
+	margin-left: 0;
 }
 
 .markdown-body code {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
-    monospace;
-  font-size: 12px;
+	font-family: "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+	font-size: 12px;
 }
-
+.markdown-body td code {
+	line-height: 22px;
+}
 .markdown-body pre {
-  margin-top: 0;
-  margin-bottom: 0;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
-    monospace;
-  font-size: 12px;
+	margin-top: 0;
+	margin-bottom: 0;
+	font-family: "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+	font-size: 12px;
 }
 
 .markdown-body .octicon {
-  vertical-align: text-bottom;
+	vertical-align: text-bottom;
 }
 
 .markdown-body .pl-0 {
-  padding-left: 0 !important;
+	padding-left: 0 !important;
 }
 
 .markdown-body .pl-1 {
-  padding-left: 4px !important;
+	padding-left: 4px !important;
 }
 
 .markdown-body .pl-2 {
-  padding-left: 8px !important;
+	padding-left: 8px !important;
 }
 
 .markdown-body .pl-3 {
-  padding-left: 16px !important;
+	padding-left: 16px !important;
 }
 
 .markdown-body .pl-4 {
-  padding-left: 24px !important;
+	padding-left: 24px !important;
 }
 
 .markdown-body .pl-5 {
-  padding-left: 32px !important;
+	padding-left: 32px !important;
 }
 
 .markdown-body .pl-6 {
-  padding-left: 40px !important;
+	padding-left: 40px !important;
 }
 
 .markdown-body::before {
-  display: table;
-  content: "";
+	display: table;
+	content: "";
 }
 
 .markdown-body::after {
-  display: table;
-  clear: both;
-  content: "";
+	display: table;
+	clear: both;
+	content: "";
 }
 
 .markdown-body > *:first-child {
-  margin-top: 0 !important;
+	margin-top: 0 !important;
 }
 
 .markdown-body > *:last-child {
-  margin-bottom: 0 !important;
+	margin-bottom: 0 !important;
 }
 
 .markdown-body a:not([href]) {
-  color: inherit;
-  text-decoration: none;
+	color: inherit;
+	text-decoration: none;
 }
 
 .markdown-body .anchor {
-  position: relative;
-  opacity: 0;
+	position: relative;
+	opacity: 0;
 }
 
 .markdown-body .anchor::before {
-  content: "#";
-  position: absolute;
-  padding-left: 5px;
-  padding-right: 3px;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  font-size: 16px;
+	content: "#";
+	position: absolute;
+	padding-left: 5px;
+	padding-right: 3px;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	font-size: 16px;
+}
+/* Firefox fix for misaligned hash link */
+/* Prevents hash marks for links from being under the content on firefox */
+@-moz-document url-prefix() {
+	.markdown-body .anchor::before {
+		top: -26px;
+	}
 }
 
 .markdown-body .anchor:focus {
-  outline: none;
+	outline: none;
 }
 
 .markdown-body p,
@@ -419,68 +440,68 @@
 .markdown-body dl,
 .markdown-body table,
 .markdown-body pre {
-  margin-top: 0;
-  margin-bottom: 16px;
+	margin-top: 0;
+	margin-bottom: 16px;
 }
 
 .markdown-body hr {
-  height: 0.25em;
-  padding: 0;
-  margin: 24px 0;
-  background-color: #e1e4e8;
-  border: 0;
+	height: 0.25em;
+	padding: 0;
+	margin: 24px 0;
+	background-color: #e1e4e8;
+	border: 0;
 }
 
 .markdown-body blockquote {
-  padding: 0 1em;
-  color: #6a737d;
-  border-left: 0.25em solid #dfe2e5;
+	padding: 0 1em;
+	color: #6a737d;
+	border-left: 0.25em solid #dfe2e5;
 }
 
 .markdown-body blockquote > :first-child {
-  margin-top: 0;
+	margin-top: 0;
 }
 
 .markdown-body blockquote > :last-child {
-  margin-bottom: 0;
+	margin-bottom: 0;
 }
 
 .markdown-body aside {
-  padding: 0.65em 0.9em 0.55em;
-  margin-bottom: 1em;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 3px;
+	padding: 0.65em 0.9em 0.55em;
+	margin-bottom: 1em;
+	border-width: 1px;
+	border-style: solid;
+	border-radius: 3px;
 }
 .markdown-body aside > :first-child {
-  margin-top: 0;
+	margin-top: 0;
 }
 .markdown-body aside > :last-child {
-  margin-bottom: 0;
+	margin-bottom: 0;
 }
 .markdown-body aside.note {
-  border-color: #bce8f1;
-  background-color: #d9edf7;
-  color: #26607c;
+	border-color: #bce8f1;
+	background-color: #d9edf7;
+	color: #26607c;
 }
 .markdown-body aside.warning {
-  border-color: #faebcc;
-  background-color: #fcf8e3;
-  color: #70572b;
+	border-color: #faebcc;
+	background-color: #fcf8e3;
+	color: #70572b;
 }
 
 .markdown-body kbd {
-  display: inline-block;
-  padding: 3px 5px;
-  font-size: 11px;
-  line-height: 10px;
-  color: #444d56;
-  vertical-align: middle;
-  background-color: #fafbfc;
-  border: solid 1px #c6cbd1;
-  border-bottom-color: #959da5;
-  border-radius: 3px;
-  box-shadow: inset 0 -1px 0 #959da5;
+	display: inline-block;
+	padding: 3px 5px;
+	font-size: 11px;
+	line-height: 10px;
+	color: #444d56;
+	vertical-align: middle;
+	background-color: #fafbfc;
+	border: solid 1px #c6cbd1;
+	border-bottom-color: #959da5;
+	border-radius: 3px;
+	box-shadow: inset 0 -1px 0 #959da5;
 }
 
 .markdown-body h1,
@@ -489,10 +510,10 @@
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  line-height: 1.25;
+	margin-top: 24px;
+	margin-bottom: 16px;
+	font-weight: 600;
+	line-height: 1.25;
 }
 
 .markdown-body h1:hover .anchor,
@@ -501,212 +522,211 @@
 .markdown-body h4:hover .anchor,
 .markdown-body h5:hover .anchor,
 .markdown-body h6:hover .anchor {
-  text-decoration: none;
-  opacity: 1;
+	text-decoration: none;
+	opacity: 1;
 }
 
 .markdown-body h1 {
-  padding-bottom: 0.3em;
-  font-size: 2em;
-  border-bottom: 1px solid #eaecef;
+	padding-bottom: 0.3em;
+	font-size: 2em;
+	border-bottom: 1px solid #eaecef;
 }
 
 .markdown-body h2 {
-  padding-bottom: 0.3em;
-  font-size: 1.5em;
-  border-bottom: 1px solid #eaecef;
+	padding-bottom: 0.3em;
+	font-size: 1.5em;
+	border-bottom: 1px solid #eaecef;
 }
 
 .markdown-body h3 {
-  font-size: 1.25em;
+	font-size: 1.25em;
 }
 
 .markdown-body h4 {
-  font-size: 1em;
+	font-size: 1em;
 }
 
 .markdown-body h5 {
-  font-size: 0.875em;
+	font-size: 0.875em;
 }
 
 .markdown-body h6 {
-  font-size: 0.85em;
-  color: #6a737d;
+	font-size: 0.85em;
+	color: #6a737d;
 }
 
 .markdown-body ul,
 .markdown-body ol {
-  padding-left: 2em;
+	padding-left: 2em;
 }
 
 .markdown-body ul ul,
 .markdown-body ul ol,
 .markdown-body ol ol,
 .markdown-body ol ul {
-  margin-top: 0;
-  margin-bottom: 0;
+	margin-top: 0;
+	margin-bottom: 0;
 }
 
 .markdown-body li {
-  word-wrap: break-all;
+	word-wrap: break-all;
 }
 
 .markdown-body li > p {
-  margin-top: 16px;
+	margin-top: 16px;
 }
 
 .markdown-body li + li {
-  margin-top: 0.25em;
+	margin-top: 0.25em;
 }
 
 .markdown-body dl {
-  padding: 0;
+	padding: 0;
 }
 
 .markdown-body dl dt {
-  padding: 0;
-  margin-top: 16px;
-  font-size: 1em;
-  font-style: italic;
-  font-weight: 600;
+	padding: 0;
+	margin-top: 16px;
+	font-size: 1em;
+	font-style: italic;
+	font-weight: 600;
 }
 
 .markdown-body dl dd {
-  padding: 0 16px;
-  margin-bottom: 16px;
+	padding: 0 16px;
+	margin-bottom: 16px;
 }
 
 .markdown-body table {
-  display: block;
-  width: 100%;
-  overflow: auto;
+	display: block;
+	width: 100%;
+	overflow: auto;
 }
 
 .markdown-body table th {
-  font-weight: 600;
+	font-weight: 600;
 }
 
 .markdown-body table th,
 .markdown-body table td {
-  padding: 6px 13px;
-  border: 1px solid #dfe2e5;
+	padding: 6px 13px;
+	border: 1px solid #dfe2e5;
 }
 
 .markdown-body table tr {
-  background-color: #fff;
-  border-top: 1px solid #c6cbd1;
+	background-color: #fff;
+	border-top: 1px solid #c6cbd1;
 }
 
 .markdown-body table tr:nth-child(2n) {
-  background-color: #f6f8fa;
+	background-color: #f6f8fa;
 }
 
 .markdown-body img {
-  max-width: 100%;
-  box-sizing: content-box;
-  background-color: #fff;
+	max-width: 100%;
+	box-sizing: content-box;
+	background-color: #fff;
 }
 
 .markdown-body img[align="right"] {
-  padding-left: 20px;
+	padding-left: 20px;
 }
 
 .markdown-body img[align="left"] {
-  padding-right: 20px;
+	padding-right: 20px;
 }
 
 .markdown-body code {
-  padding: 0.2em 0.4em;
-  margin: 0;
-  font-size: 85%;
-  background-color: rgba(27, 31, 35, 0.05);
-  border-radius: 3px;
+	padding: 0.2em 0.4em;
+	margin: 0;
+	font-size: 85%;
+	background-color: rgba(27, 31, 35, 0.05);
+	border-radius: 3px;
 }
 
 .markdown-body pre {
-  word-wrap: normal;
+	word-wrap: normal;
 }
 
 .markdown-body .pre-wrap pre {
-  white-space: pre-wrap !important;
+	white-space: pre-wrap !important;
 }
 
 .markdown-body pre > code {
-  padding: 0;
-  margin: 0;
-  font-size: 100%;
-  word-break: normal;
-  white-space: pre;
-  background: transparent;
-  border: 0;
+	padding: 0;
+	margin: 0;
+	font-size: 100%;
+	word-break: normal;
+	white-space: pre;
+	background: transparent;
+	border: 0;
 }
 
 .markdown-body .highlight {
-  margin-bottom: 16px;
+	margin-bottom: 16px;
 }
 
 .markdown-body .highlight pre {
-  margin-bottom: 0;
-  word-break: normal;
+	margin-bottom: 0;
+	word-break: normal;
 }
 
 .markdown-body .highlight pre,
 .markdown-body pre {
-  padding: 16px;
-  overflow: auto;
-  font-size: 85%;
-  line-height: 1.45;
-  background-color: #f6f8fa;
-  border-radius: 3px;
+	padding: 16px;
+	overflow: auto;
+	font-size: 85%;
+	line-height: 1.45;
+	background-color: #E4E9F1 !important;
+	border-radius: 3px;
 }
 
 .markdown-body pre code {
-  display: inline;
-  max-width: auto;
-  padding: 0;
-  margin: 0;
-  overflow: visible;
-  line-height: inherit;
-  word-wrap: normal;
-  background-color: transparent;
-  border: 0;
+	display: inline;
+	max-width: auto;
+	padding: 0;
+	margin: 0;
+	overflow: visible;
+	line-height: inherit;
+	word-wrap: normal;
+	background-color: transparent;
+	border: 0;
 }
 
 .markdown-body kbd {
-  display: inline-block;
-  padding: 3px 5px;
-  font: 11px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
-    monospace;
-  line-height: 10px;
-  color: #444d56;
-  vertical-align: middle;
-  background-color: #fafbfc;
-  border: solid 1px #d1d5da;
-  border-bottom-color: #c6cbd1;
-  border-radius: 3px;
-  box-shadow: inset 0 -1px 0 #c6cbd1;
+	display: inline-block;
+	padding: 3px 5px;
+	font: 11px "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+	line-height: 10px;
+	color: #444d56;
+	vertical-align: middle;
+	background-color: #fafbfc;
+	border: solid 1px #d1d5da;
+	border-bottom-color: #c6cbd1;
+	border-radius: 3px;
+	box-shadow: inset 0 -1px 0 #c6cbd1;
 }
 
 .markdown-body hr {
-  border-bottom-color: #eee;
+	border-bottom-color: #eee;
 }
 
 /*
 
 Visibility classes:
 
-  .visible-docsite: Only visible on docs.sourcegraph.com.
+.visible-docsite: Only visible on docs.sourcegraph.com.
 
-  .visible-product: Only visible on Sourcegraph in-product /help.
+.visible-product: Only visible on Sourcegraph in-product /help.
 
 */
 body.is-docsite .visible-docsite {
 }
 body.is-docsite .visible-product {
-  display: none;
+	display: none;
 }
 body:not(.is-docsite) .visible-docsite {
-  display: none;
+	display: none;
 }
 body:not(.is-docsite) .visible-product {
 }
