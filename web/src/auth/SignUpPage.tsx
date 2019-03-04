@@ -111,6 +111,9 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         )}
                     </button>
                 </div>
+				{window.context.sourcegraphDotComMode && (
+					<p>Create a public account to browse and discuss open-source code and manage Sourcegraph subscriptions.</p>
+				)}
                 {signupTerms && (
                     <small className="form-text text-muted">
                         By signing up, you agree to our{' '}
@@ -200,7 +203,11 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                 <PageTitle title="Sign up" />
                 <HeroPage
                     icon={UserIcon}
-                    title="Sign up for Sourcegraph"
+                    title={window.context.sourcegraphDotComMode ? (
+						'Sign up for Sourcegraph.com'
+					) : (
+						'Sign up for Sourcegraph'
+					)}
                     cta={
                         <div>
                             <Link className="signin-signup-form__mode" to={`/sign-in${this.props.location.search}`}>
