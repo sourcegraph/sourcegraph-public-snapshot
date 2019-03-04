@@ -208,7 +208,7 @@ func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) 
 	}
 
 	var repos []*Repo
-	var errs *multierror.Error
+	errs := new(multierror.Error)
 
 	for i := 0; i < cap(ch); i++ {
 		if r := <-ch; r.err != nil {

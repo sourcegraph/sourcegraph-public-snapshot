@@ -413,6 +413,10 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 						ch <- batch{err: errors.Wrapf(err, "Error listing public repositories: sinceRepoID=%d", sinceRepoID)}
 						return
 					}
+					if len(repos) == 0 {
+						return
+					}
+					log15.Debug("github sync public", "repos", len(repos), "err", err)
 					for _, r := range repos {
 						if sinceRepoID < r.DatabaseID {
 							sinceRepoID = r.DatabaseID
