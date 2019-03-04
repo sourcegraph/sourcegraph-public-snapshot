@@ -1,15 +1,12 @@
 import { PlatformContext } from '../../platform/context'
+import { ReferenceParams } from '../protocol'
 import { createContextService } from './context/contextService'
 import { CommandRegistry } from './services/command'
 import { ContributionRegistry } from './services/contribution'
 import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { ExtensionsService } from './services/extensionsService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
-import {
-    TextDocumentLocationProviderIDRegistry,
-    TextDocumentLocationProviderRegistry,
-    TextDocumentReferencesProviderRegistry,
-} from './services/location'
+import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
 import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
@@ -41,7 +38,7 @@ export class Services {
     public readonly extensions = new ExtensionsService(this.platformContext, this.model.model, this.settings)
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentImplementation = new TextDocumentLocationProviderRegistry()
-    public readonly textDocumentReferences = new TextDocumentReferencesProviderRegistry()
+    public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
     public readonly textDocumentTypeDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()

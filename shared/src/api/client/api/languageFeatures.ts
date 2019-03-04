@@ -4,11 +4,7 @@ import { DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
-import {
-    ProvideTextDocumentLocationSignature,
-    TextDocumentLocationProviderIDRegistry,
-    TextDocumentReferencesProviderRegistry,
-} from '../services/location'
+import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
 import { wrapRemoteObservable } from './common'
 
@@ -65,19 +61,10 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
             TextDocumentRegistrationOptions,
             ProvideTextDocumentHoverSignature
         >,
-        private definitionRegistry: FeatureProviderRegistry<
-            TextDocumentRegistrationOptions,
-            ProvideTextDocumentLocationSignature
-        >,
-        private typeDefinitionRegistry: FeatureProviderRegistry<
-            TextDocumentRegistrationOptions,
-            ProvideTextDocumentLocationSignature
-        >,
-        private implementationRegistry: FeatureProviderRegistry<
-            TextDocumentRegistrationOptions,
-            ProvideTextDocumentLocationSignature
-        >,
-        private referencesRegistry: TextDocumentReferencesProviderRegistry,
+        private definitionRegistry: TextDocumentLocationProviderRegistry,
+        private typeDefinitionRegistry: TextDocumentLocationProviderRegistry,
+        private implementationRegistry: TextDocumentLocationProviderRegistry,
+        private referencesRegistry: TextDocumentLocationProviderRegistry<ReferenceParams>,
         private locationRegistry: TextDocumentLocationProviderIDRegistry
     ) {}
 

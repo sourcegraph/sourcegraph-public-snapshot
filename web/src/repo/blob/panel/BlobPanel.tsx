@@ -2,7 +2,7 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { from, Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, skip, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
@@ -64,7 +64,6 @@ function toSubject(props: Props): PanelSubject {
  */
 export class BlobPanel extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
-    private locationsUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public constructor(props: Props) {
@@ -196,9 +195,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                 )
             )
         )
-
-        // Update references when subject changes after the initial mount.
-        this.subscriptions.add(subjectChanges.pipe(skip(1)).subscribe(() => this.locationsUpdates.next()))
     }
 
     public componentDidUpdate(): void {
