@@ -294,7 +294,7 @@ func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository)
 func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	repos, err := conn.listAllRepositories(ctx)
 	if err != nil {
-		log15.Error("failed to list some github repos: ", err)
+		log15.Error("failed to list some github repos", "error", err.Error())
 	}
 
 	repoChan := make(chan repoCreateOrUpdateRequest)
