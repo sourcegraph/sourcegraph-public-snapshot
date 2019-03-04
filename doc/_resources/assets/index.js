@@ -57,32 +57,6 @@ document.addEventListener('click', e => {
   navState.checked = false
 })
 
-/**
- * Search sourcegraph docs with a specific search provider
- * Accepts the string for search provider
- * @param {string} searchProvider
- */
-const searchDocsWithProvider = searchProvider => {
-  if (searchProvider === 'google') {
-    location.href =
-      'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+ ' +
-      encodeURIComponent(document.getElementById('search').value)
-    return false
-  } else if (searchProvider === 'duckduckgo') {
-    location.href =
-      'https://www.duckduckgo.com/site%3Adocs.sourcegraph.com ' +
-      encodeURIComponent(document.getElementById('search').value)
-    return false
-  } else if (searchProvider === 'sourcegraph') {
-    location.href =
-      'https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph+file:doc/+file:%5C.md%24+' +
-      encodeURIComponent(document.getElementById('search').value)
-    return false
-  } else {
-    console.error('searchProvider not valid')
-  }
-}
-
 // Open and close nav section
 const toggleNavSection = navSection => {
   const section = document.getElementById(navSection)

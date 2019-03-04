@@ -22,10 +22,10 @@
 						<img class="nav-logo-image-small large-hidden medium-hidden" src="/assets/sourcegraph-logo-docs-small.svg">
 					</a>
 					<div id="version-form" class="dropdown version-dropdown">
-						<button class="btn btn-outline dropdown-toggle monospace-text" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onClick="toggleDropdown('versionDropdown')">
-							@{{.ContentVersion}}{{/* If no version is specified we are on the master branch */}}{{if eq .ContentVersion ""}}master{{end}}
-						</button>
-						<div class="dropdown-menu" id="versionDropdown" aria-labelledby="Version Dropdown">
+ 						<button class="btn btn-outline dropdown-toggle monospace-text" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onClick="toggleDropdown('versionDropdown')">
+ 							@{{.ContentVersion}}{{/* If no version is specified we are on the master branch */}}{{if eq .ContentVersion ""}}master{{end}}
+ 						</button>
+						<details-menu class="dropdown-menu" id="versionDropdown" aria-labelledby="Version Dropdown">
 							<h6 class="dropdown-header">Sourcegraph version:</h6>
 
 							{{/* Update these after each release. */}}
@@ -36,16 +36,12 @@
 							{{$previousDotRelease := "v3.0.1"}}
 							{{$currentReleaseVersion := "v3.1.1"}}
 
-							<a rel="nofollow" class=" dropdown-item monospace-text {{if eq $legacyRelease2136 .ContentVersion ""}}active{{end}}" href="/@{{$legacyRelease2136}}/{{.ContentPagePath}}">@{{$legacyRelease2136}}</a>
-
-							<!-- <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $previousRelease .ContentVersion ""}}active{{end}}" href="/@{{$previousRelease}}/{{.ContentPagePath}}">@{{$previousRelease}}</a> -->
-
-							<a rel="nofollow" class=" dropdown-item monospace-text {{if eq $previousDotRelease .ContentVersion ""}}active{{end}}" href="/@{{$previousDotRelease}}/{{.ContentPagePath}}">@{{$previousDotRelease}}</a>
-
-							<a rel="nofollow" class=" dropdown-item monospace-text {{if eq $currentReleaseVersion .ContentVersion ""}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">@{{$currentReleaseVersion}}<span class="current-branch">current</span></a>
-
 							<a rel="nofollow" class="dropdown-item monospace-text {{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">@master</a>
-						</div>
+							<a rel="nofollow" class=" dropdown-item monospace-text {{if eq $currentReleaseVersion .ContentVersion ""}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">@{{$currentReleaseVersion}}<span class="current-branch">current</span></a>
+							<a rel="nofollow" class=" dropdown-item monospace-text {{if eq $previousDotRelease .ContentVersion ""}}active{{end}}" href="/@{{$previousDotRelease}}/{{.ContentPagePath}}">@{{$previousDotRelease}}</a>
+							<!-- <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $previousRelease .ContentVersion ""}}active{{end}}" href="/@{{$previousRelease}}/{{.ContentPagePath}}">@{{$previousRelease}}</a> -->
+							<a rel="nofollow" class=" dropdown-item monospace-text {{if eq $legacyRelease2136 .ContentVersion ""}}active{{end}}" href="/@{{$legacyRelease2136}}/{{.ContentPagePath}}">@{{$legacyRelease2136}}</a>
+						</details-menu>
 					</div>
 				</div>
 				<span class="mobile-nav-button"></span>
@@ -61,22 +57,10 @@
 							<a href="https://sourcegraph.com">Sourcegraph.com</a>
 						</li>
 					</ul>
-					<form id="search-form" class="form-inline" onSubmit="return searchDocsWithProvider('google')">
+					<form id="search-form" class="form-inline" onsubmit="location.href = 'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+'+encodeURIComponent(document.getElementById('search').value);return false">
 						<input class="nav-search form-control" type="search" id="search" placeholder="Search docs..." spellcheck="false">
-						<div class="btn-group">
-							<button class="btn btn-primary nav-search-button" id="search-button" type="submit" onClick="searchDocsWithProvider('google')">Search</button>
-							<button onClick="toggleDropdown('searchDropdown')" type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-								<span class="sr-only">Change search provider</span>
-							</button>
-							<div id="searchDropdown" class="dropdown-menu dropdown-menu-right">
-								<h6 class="dropdown-header">Search docs with:</h6>
-								<button class="dropdown-item" type="button" onClick="searchDocsWithProvider('duckduckgo')">DuckDuckGo</button>
-								<button class="dropdown-item active" type="button" onClick="searchDocsWithProvider('google')">Google</button>
-								<button class="dropdown-item" type="button" onClick="searchDocsWithProvider('sourcegraph')">Sourcegraph.com</button>
-							</div>
-						</div>
+						<button class="btn btn-primary nav-search-button" id="search-button" type="submit">Search</button>
 					</form>
-
 				</div>
 			</div>
 		</div>
