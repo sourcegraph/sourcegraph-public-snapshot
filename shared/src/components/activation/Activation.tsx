@@ -15,12 +15,12 @@ export interface Activation {
     /**
      * The completion status of each activation step
      */
-    completed?: ActivationCompleted
+    completed?: ActivationCompletionStatus
 
     /**
      * Updates the activation status with the given steps and their completion status.
      */
-    update: (u: ActivationCompleted) => void
+    update: (u: ActivationCompletionStatus) => void
 
     /**
      * Resync the activation status from the server.
@@ -31,7 +31,7 @@ export interface Activation {
 /**
  * A map indicating which activation steps have been completed
  */
-export type ActivationCompleted = { [K in ActivationID]?: boolean }
+export type ActivationCompletionStatus = { [K in ActivationID]?: boolean }
 
 /**
  * Component props should inherit from this to include activation status.
@@ -75,7 +75,7 @@ export interface ActivationStep {
 /**
  * Returns the percent of activation checklist items completed.
  */
-export const percentageDone = (info?: ActivationCompleted): number => {
+export const percentageDone = (info?: ActivationCompletionStatus): number => {
     if (!info) {
         return 0
     }

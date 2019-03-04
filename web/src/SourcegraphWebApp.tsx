@@ -3,9 +3,8 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, fromEventPattern, of, Subscription } from 'rxjs'
-import { map, startWith, switchMap } from 'rxjs/operators'
-import { Activation, ActivationProps } from '../../shared/src/components/activation/Activation'
+import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
+import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     createController as createExtensionsController,
@@ -38,7 +37,7 @@ import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
-import { ActivationStatus } from './tracking/ActivationStatus'
+import { withActivation } from './tracking/ActivationStatus'
 import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
@@ -63,11 +62,7 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     routes: ReadonlyArray<LayoutRouteProps>
 }
 
-interface SourcegraphWebAppState
-    extends PlatformContextProps,
-        SettingsCascadeProps,
-        ExtensionsControllerProps,
-        ActivationProps {
+interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadeProps, ExtensionsControllerProps {
     error?: Error
 
     /** The currently authenticated user (or null if the viewer is anonymous). */
@@ -115,6 +110,8 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminis
 
 setLinkComponent(RouterLinkOrAnchor)
 
+const LayoutWithActivation = withActivation(Layout)
+
 /**
  * The root component
  */
@@ -160,33 +157,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     })
             )
         )
-
-        if (!window.context.sourcegraphDotComMode) {
-            // Add activation status
-            this.subscriptions.add(
-                authenticatedUser
-                    .pipe(
-                        map(user => (user ? new ActivationStatus(user) : undefined)),
-                        switchMap(activationStatus => {
-                            if (!activationStatus) {
-                                return of(undefined)
-                            }
-                            return activationStatus.completed.pipe(
-                                map(completed => {
-                                    const activation: Activation = {
-                                        steps: activationStatus.steps,
-                                        completed: completed || undefined,
-                                        update: activationStatus.updateCompleted,
-                                        refetch: activationStatus.refetchCompleted,
-                                    }
-                                    return activation
-                                })
-                            )
-                        })
-                    )
-                    .subscribe(activation => this.setState({ activation }))
-            )
-        }
 
         this.subscriptions.add(
             combineLatest(from(this.state.platformContext.settings), authenticatedUser.pipe(startWith(null))).subscribe(
@@ -280,27 +250,31 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                             <Route
                                 path="/"
                                 // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                                render={routeComponentProps => (
-                                    <Layout
-                                        {...props}
-                                        {...routeComponentProps}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
+                                render={routeComponentProps => {
+                                    const layoutProps = {
+                                        ...props,
+                                        ...routeComponentProps,
+                                        authenticatedUser,
+                                        viewerSubject: this.state.viewerSubject,
+                                        settingsCascade: this.state.settingsCascade,
                                         // Theme
-                                        isLightTheme={this.isLightTheme()}
-                                        themePreference={this.state.themePreference}
-                                        onThemePreferenceChange={this.onThemePreferenceChange}
+                                        isLightTheme: this.isLightTheme(),
+                                        themePreference: this.state.themePreference,
+                                        onThemePreferenceChange: this.onThemePreferenceChange,
                                         // Search query
-                                        navbarSearchQuery={this.state.navbarSearchQuery}
-                                        onNavbarQueryChange={this.onNavbarQueryChange}
+                                        navbarSearchQuery: this.state.navbarSearchQuery,
+                                        onNavbarQueryChange: this.onNavbarQueryChange,
                                         // Extensions
-                                        platformContext={this.state.platformContext}
-                                        extensionsController={this.state.extensionsController}
-                                        // Activation
-                                        activation={this.state.activation}
-                                    />
-                                )}
+                                        platformContext: this.state.platformContext,
+                                        extensionsController: this.state.extensionsController,
+                                    }
+
+                                    return window.context.sourcegraphDotComMode ? (
+                                        <Layout {...layoutProps} />
+                                    ) : (
+                                        <LayoutWithActivation {...layoutProps} />
+                                    )
+                                }}
                             />
                         </BrowserRouter>
                         <Tooltip key={1} />

@@ -1,92 +1,142 @@
 import H from 'history'
-import { BehaviorSubject, Observable, Subject } from 'rxjs'
-import { first, map, skip, switchMap } from 'rxjs/operators'
-import { ActivationCompleted, ActivationStep } from '../../../shared/src/components/activation/Activation'
+import React from 'react'
+import { concat, Observable, ReplaySubject, Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged, first, map, switchMap } from 'rxjs/operators'
+import {
+    ActivationCompletionStatus,
+    ActivationProps,
+    ActivationStep,
+} from '../../../shared/src/components/activation/Activation'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
 import { logUserEvent } from '../user/account/backend'
 
-/**
- * Source of truth for activation status. The activation status is a function
- * of both server-side state and user-initiated actions. The initial status is
- * fetched from the server. Subsequent user actions can update the status.
- *
- * This class manages updates to activation status from both the user and server,
- * synthesizing these into a single Observable of activation completion status.
- */
-export class ActivationStatus {
-    /**
-     * The steps required for activation.
-     */
-    public steps: ActivationStep[]
+interface Props {
+    authenticatedUser: GQL.IUser | null
+}
 
-    /**
-     * The current completion status.
-     */
-    private completed_ = new BehaviorSubject<ActivationCompleted | null>(null)
+interface State {
+    completed?: ActivationCompletionStatus
+}
 
-    /**
-     * A promise that resolves after completion status has first been fetched.
-     */
-    private completedFirstFetch: Promise<void>
+export const withActivation = <P extends ActivationProps & Props>(Component: React.ComponentType<P>) =>
+    class WithActivation extends React.Component<Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>, State> {
+        private subscriptions = new Subscription()
+        private componentUpdates = new Subject<Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>>()
+        public state: State = {}
 
-    /**
-     * Used to queue refetech requests requested by calls to `refetchCompleted`.
-     */
-    private refetchRequested = new Subject<void>()
+        /**
+         * Calling `next` triggers refetches. This ensures at most one refetch request is outstanding
+         * at any given time.
+         */
+        private refetches = new Subject<void>()
 
-    constructor(private authenticatedUser: GQL.IUser) {
-        this.steps = getActivationSteps(authenticatedUser)
-        this.completedFirstFetch = this.completed_
-            .pipe(
-                skip(1),
-                first(),
-                map(() => void 0)
+        /**
+         * This field is reinitialized every time the activation status is reset due to a
+         * change in the authenticated user. This necessitates that the activation status
+         * be fetched from the server and all subsequent activation updates should block
+         * on this initial fetch.
+         */
+        private completionStatusSet = new ReplaySubject<void>(1)
+
+        public componentDidMount = () => {
+            // Refetch activation status from server when requested
+            this.subscriptions.add(
+                this.refetches
+                    .pipe(
+                        switchMap(() =>
+                            this.props.authenticatedUser
+                                ? fetchActivationStatus(this.props.authenticatedUser.siteAdmin)
+                                : []
+                        )
+                    )
+                    .subscribe(completed => {
+                        this.setState({ completed })
+                        this.completionStatusSet.next()
+                    })
             )
-            .toPromise()
-        this.refetchRequested
-            .pipe(switchMap(() => fetchActivationStatus(this.authenticatedUser.siteAdmin)))
-            .subscribe(completed => this.completed_.next(completed))
-        this.refetchCompleted()
-    }
+            // Reset the activation status when the authenticated user changes
+            this.subscriptions.add(
+                concat([this.props], this.componentUpdates)
+                    .pipe(
+                        map(props => props.authenticatedUser),
+                        distinctUntilChanged()
+                    )
+                    .subscribe(() => {
+                        this.completionStatusSet = new ReplaySubject<void>(1)
+                        this.setState({ completed: undefined })
+                        this.refetchCompletionStatus()
+                    })
+            )
+        }
 
-    /**
-     * Subscribe to this Observable to get a stream of current activation completion
-     * statuses.
-     */
-    public get completed(): Observable<ActivationCompleted | null> {
-        return this.completed_
-    }
+        public componentWillUnmount = () => {
+            this.subscriptions.unsubscribe()
+        }
 
-    /**
-     * Refetch activation completion status from server.
-     */
-    public refetchCompleted = (): void => this.refetchRequested.next()
+        public componentDidUpdate = () => {
+            this.componentUpdates.next(this.props as Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>)
+        }
 
-    /**
-     * Update the activation competition status (should only be called in response
-     * to a client-side user action).
-     */
-    public updateCompleted = (update: ActivationCompleted): void => {
-        this.completedFirstFetch.then(() => {
-            // Send update to server for events that don't themselves trigger
-            // an update.
+        private steps = (): ActivationStep[] | undefined => {
+            const user: GQL.IUser | null = this.props.authenticatedUser
+            if (user) {
+                return getActivationSteps(user)
+            }
+            return undefined
+        }
+
+        private refetchCompletionStatus = () => this.refetches.next()
+
+        private updateCompletionStatus = (update: ActivationCompletionStatus): void => {
+            this.completionStatusSet.pipe(first()).subscribe(() => {
+                this.recordUpdate(update)
+            })
+            const steps = this.steps()
+            if (!steps) {
+                return
+            }
+
+            const completed: ActivationCompletionStatus = {}
+            Object.assign(completed, this.state.completed)
+            for (const step of steps) {
+                if (update[step.id] !== undefined) {
+                    completed[step.id] = update[step.id]
+                }
+            }
+            this.setState({ completed })
+        }
+
+        /**
+         * Sends update to server for events that don't themselves trigger
+         * an update.
+         */
+        private recordUpdate = (update: ActivationCompletionStatus): void => {
             if (update.FoundReferences) {
                 logUserEvent(GQL.UserEvent.CODEINTELREFS)
             }
+        }
 
-            const newVal: ActivationCompleted = {}
-            Object.assign(newVal, this.completed_.value)
-            for (const step of this.steps) {
-                if (update[step.id] !== undefined) {
-                    newVal[step.id] = update[step.id]
-                }
+        public render(): React.ReactFragment | null {
+            const steps = this.steps()
+            const activationProps: ActivationProps = {
+                activation: steps && {
+                    steps,
+                    completed: this.state.completed,
+                    update: this.updateCompletionStatus,
+                    refetch: this.refetchCompletionStatus,
+                },
             }
-            this.completed_.next(newVal)
-        })
+            // This is safe to cast to P, because this.props has everything in P *except*
+            // the properties in ActivationProps.
+            const props = {
+                ...this.props,
+                ...activationProps,
+            }
+            return <Component {...props as P} />
+        }
     }
-}
 
 const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
     const sources: (ActivationStep & { siteAdminOnly?: boolean })[] = [
@@ -168,7 +218,7 @@ const fetchReferencesLink = (): Observable<string | null> =>
         })
     )
 
-const fetchActivationStatus = (isSiteAdmin: boolean): Promise<ActivationCompleted> =>
+const fetchActivationStatus = (isSiteAdmin: boolean): Promise<ActivationCompletionStatus> =>
     queryGraphQL(
         isSiteAdmin
             ? gql`
@@ -208,7 +258,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Promise<ActivationComplete
             map(dataOrThrowErrors),
             map(data => {
                 const authProviders = window.context.authProviders
-                const completed: ActivationCompleted = {
+                const completed: ActivationCompletionStatus = {
                     DidSearch: !!data.currentUser && data.currentUser.usageStatistics.searchQueries > 0,
                     FoundReferences: !!data.currentUser && data.currentUser.usageStatistics.findReferencesActions > 0,
                 }
