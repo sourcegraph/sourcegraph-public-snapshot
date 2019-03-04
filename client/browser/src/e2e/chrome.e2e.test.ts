@@ -34,17 +34,8 @@ async function clickElement(page: puppeteer.Page, element: puppeteer.ElementHand
 }
 
 describe('Sourcegraph Chrome extension', () => {
-    let authenticate: (page: puppeteer.Page) => Promise<void>
-
     let browser: puppeteer.Browser
     let page: puppeteer.Page
-
-    const overrideAuthSecret = process.env.OVERRIDE_AUTH_SECRET
-    if (!overrideAuthSecret) {
-        throw new Error('Auth secret not set - unable to execute tests')
-    }
-
-    authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
     // Open browser.
     beforeAll(
@@ -72,13 +63,12 @@ describe('Sourcegraph Chrome extension', () => {
     // Open page.
     beforeEach(async () => {
         page = await browser.newPage()
-        await authenticate(page)
     })
 
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
         path.resolve(__dirname, '..', '..', '..', '..'),
-        path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
+        path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
         () => page
     )
 
@@ -129,9 +119,7 @@ describe('Sourcegraph Chrome extension', () => {
 
                 // Scrolls the element into view so that code view is in view.
                 await element.hover()
-                await page.waitForSelector(
-                    '[data-path="regexp.go"] .code-view-toolbar .open-on-sourcegraph:nth-of-type(2)'
-                )
+                await page.waitForSelector('[data-path="regexp.go"] .code-view-toolbar .open-on-sourcegraph')
                 await clickElement(page, element)
                 await page.waitForSelector('.e2e-tooltip-j2d')
             })
