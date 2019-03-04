@@ -32,7 +32,10 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
 
     public render(): JSX.Element | null {
         return (
-            <li className="external-service-node list-group-item py-2">
+            <li
+                className="external-service-node list-group-item py-2"
+                data-e2e-external-service-name={this.props.node.displayName}
+            >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>{this.props.node.displayName}</div>
                     <div>
@@ -44,7 +47,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                             <SettingsIcon className="icon-inline" /> Settings
                         </Link>{' '}
                         <button
-                            className="btn btn-sm btn-danger"
+                            className="btn btn-sm btn-danger e2e-delete-external-service-button"
                             onClick={this.deleteExternalService}
                             disabled={this.state.loading}
                             data-tooltip="Delete external service"
@@ -134,7 +137,10 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
                 <PageTitle title="External services - Admin" />
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
                     <h2 className="mb-0">External services</h2>
-                    <Link className="btn btn-primary" to="/site-admin/external-services/add">
+                    <Link
+                        className="btn btn-primary e2e-goto-add-external-service-page"
+                        to="/site-admin/external-services/add"
+                    >
                         <AddIcon className="icon-inline" /> Add external service
                     </Link>
                 </div>
