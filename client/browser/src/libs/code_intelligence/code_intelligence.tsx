@@ -8,7 +8,6 @@ import {
     HoverState,
     PositionAdjuster,
 } from '@sourcegraph/codeintellify'
-import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { Selection } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
@@ -37,6 +36,7 @@ import { HoverContext, HoverOverlay } from '../../../../../shared/src/hover/Hove
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
+import { isDefined, propertyIsDefined } from '../../../../../shared/src/util/types'
 import {
     FileSpec,
     lprToSelectionsZeroIndexed,
@@ -474,6 +474,13 @@ export function handleCodeHost({
         switchMap(({ info, ...rest }) =>
             fetchFileContents(info).pipe(map(infoWithContents => ({ info: infoWithContents, ...rest })))
         ),
+        catchError(err => {
+            if ((err as Error).name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                return of(null)
+            }
+            throw err
+        }),
+        filter(isDefined),
         observeOn(animationFrameScheduler)
     )
 
