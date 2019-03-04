@@ -415,7 +415,6 @@ Indexes:
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_sources_gin_idx" gin (sources)
 Check constraints:
-    "check_external" CHECK (external_id IS NULL AND external_service_type IS NULL AND external_service_id IS NULL OR external_id IS NOT NULL AND external_service_type IS NOT NULL AND external_service_id IS NOT NULL)
     "check_name_nonempty" CHECK (name <> ''::citext)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
