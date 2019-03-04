@@ -1,6 +1,6 @@
 import { Selection, WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import { TextDocument } from 'sourcegraph'
 import { TextDocumentPositionParams } from '../protocol'
-import { TextDocumentItem } from './types/textDocument'
 
 /**
  * Describes a view component.
@@ -11,7 +11,7 @@ import { TextDocumentItem } from './types/textDocument'
  */
 export interface ViewComponentData {
     type: 'textEditor'
-    item: TextDocumentItem
+    item: TextDocument
     selections: Selection[]
     isActive: boolean
 }
@@ -66,7 +66,7 @@ export const EMPTY_MODEL: Model = {
  */
 export function modelToTextDocumentPositionParams({
     visibleViewComponents,
-}: Pick<Model, 'visibleViewComponents'>): (TextDocumentPositionParams & { textDocument: TextDocumentItem }) | null {
+}: Pick<Model, 'visibleViewComponents'>): (TextDocumentPositionParams & { textDocument: TextDocument }) | null {
     if (!visibleViewComponents) {
         return null
     }

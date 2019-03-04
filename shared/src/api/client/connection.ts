@@ -2,7 +2,7 @@ import * as comlink from '@sourcegraph/comlink'
 import { isEqual } from 'lodash'
 import { from, Subject, Subscription } from 'rxjs'
 import { concatMap, distinctUntilChanged, map } from 'rxjs/operators'
-import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
+import { ContextValues, Progress, ProgressOptions, TextDocument, Unsubscribable } from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
@@ -25,7 +25,6 @@ import {
     ShowMessageParams,
     ShowMessageRequestParams,
 } from './services/notifications'
-import { TextDocumentItem } from './types/textDocument'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -74,7 +73,7 @@ export async function createExtensionHostClientConnection(
     subscription.add(clientContext)
 
     // Sync visible views and text documents to the extension host
-    let visibleTextDocuments: TextDocumentItem[] = []
+    let visibleTextDocuments: TextDocument[] = []
     subscription.add(
         from(services.model.model)
             .pipe(

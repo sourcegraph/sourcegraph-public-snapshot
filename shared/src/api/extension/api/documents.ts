@@ -1,18 +1,17 @@
 import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
-import { TextDocumentItem } from '../../client/types/textDocument'
 
 /** @internal */
 export interface ExtDocumentsAPI extends ProxyValue {
-    $acceptDocumentData(doc: TextDocumentItem[]): void
+    $acceptDocumentData(doc: TextDocument[]): void
 }
 
 /** @internal */
 export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
     public readonly [proxyValueSymbol] = true
 
-    private documents = new Map<string, TextDocumentItem>()
+    private documents = new Map<string, TextDocument>()
 
     constructor(private sync: () => Promise<void>) {}
 
@@ -56,7 +55,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
 
     public openedTextDocuments = new Subject<TextDocument>()
 
-    public $acceptDocumentData(docs: TextDocumentItem[] | null): void {
+    public $acceptDocumentData(docs: TextDocument[] | null): void {
         if (!docs) {
             // We don't ever (yet) communicate to the extension when docs are closed.
             return

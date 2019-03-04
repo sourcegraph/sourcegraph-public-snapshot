@@ -319,8 +319,13 @@ declare module 'sourcegraph' {
 
         /**
          * The text contents of the text document.
+         *
+         * When using the [Sourcegraph browser
+         * extension](https://docs.sourcegraph.com/integration/browser_extension), the value is
+         * `undefined` because determining the text contents (in general) is not possible without
+         * additional access to the code host API. In the future, this limitation may be removed.
          */
-        readonly text: string
+        readonly text: string | undefined
     }
 
     /**
