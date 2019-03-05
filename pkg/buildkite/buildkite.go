@@ -7,7 +7,9 @@
 package buildkite
 
 import (
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/ghodss/yaml"
 )
@@ -83,8 +85,15 @@ func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
 type StepOpt func(step *Step)
 
 func Cmd(command string) StepOpt {
+	if strings.Contains(command, "'") || strings.Contains(command, "\\") {
+		return func(step *Step) {
+			step.Command = append(step.Command, command)
+		}
+	}
 	return func(step *Step) {
-		step.Command = append(step.Command, command)
+		step.Command = append(step.Command,
+			fmt.Sprintf("echo '--- %s'", command),
+			command)
 	}
 }
 
