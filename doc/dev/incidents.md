@@ -44,4 +44,8 @@ Here are some useful procedures:
 
 ## Learn from the incident
 
-Document the incident in the [ops log](https://docs.google.com/document/d/1dtrOHs5STJYKvyjigL1kMm6u-W0mlyRSyVxPfKIOfEw/edit) and schedule a [retrospective](retrospectives/index.md).
+After the incident is resolved:
+
+- Document the incident in the [ops log](https://docs.google.com/document/d/1dtrOHs5STJYKvyjigL1kMm6u-W0mlyRSyVxPfKIOfEw/edit).
+- Create GitHub issues for any appropriate followup work.
+- Schedule a [retrospective](retrospectives/index.md) if you think it would be valuable.
