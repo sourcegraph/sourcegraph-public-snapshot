@@ -360,8 +360,9 @@ type restSearchResponse struct {
 
 func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	urlValues := url.Values{
-		"q":    []string{searchString},
-		"page": []string{strconv.Itoa(page)},
+		"q":        []string{searchString},
+		"page":     []string{strconv.Itoa(page)},
+		"per_page": []string{"100"},
 	}
 	path := "search/repositories?" + urlValues.Encode()
 	var response restSearchResponse
