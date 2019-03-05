@@ -37,14 +37,7 @@ func main() {
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var data interface{}
-			if conf.UpdateScheduler2Enabled() {
-				data = repos.Scheduler.DebugDump()
-			} else {
-				data = repos.QueueSnapshot()
-			}
-
-			d, err := json.MarshalIndent(data, "", "  ")
+			d, err := json.MarshalIndent(repos.Scheduler.DebugDump(), "", "  ")
 			if err != nil {
 				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
 				return
@@ -79,8 +72,8 @@ func main() {
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	// Repos List syncing thread
-	go repos.RunRepositorySyncWorker(ctx)
+	// Git fetches scheduler
+	go repos.RunScheduler(ctx)
 
 	// Repos purging thread
 	go repos.RunRepositoryPurgeWorker(ctx)
@@ -113,12 +106,8 @@ func main() {
 	// Start other repos updates scheduler relay thread.
 	go func() {
 		for repo := range synced {
-			if conf.Get().DisableAutoGitUpdates {
-				continue
-			} else if conf.UpdateScheduler2Enabled() {
+			if !conf.Get().DisableAutoGitUpdates {
 				repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
-			} else {
-				repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
 			}
 		}
 	}()

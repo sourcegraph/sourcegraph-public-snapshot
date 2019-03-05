@@ -16,6 +16,65 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// Scheduler schedules repo updates.
+var Scheduler = newUpdateScheduler()
+
+// schedulerConfig tracks the active scheduler configuration.
+type schedulerConfig struct {
+	running               bool
+	autoGitUpdatesEnabled bool
+}
+
+// RunScheduler runs the worker that schedules git fetches of synced repositories in git-server.
+func RunScheduler(ctx context.Context) {
+	var (
+		have schedulerConfig
+		stop context.CancelFunc
+	)
+
+	conf.Watch(func() {
+		c := conf.Get()
+
+		want := schedulerConfig{
+			running:               true,
+			autoGitUpdatesEnabled: !c.DisableAutoGitUpdates,
+		}
+
+		if have == want {
+			return
+		}
+
+		if stop != nil {
+			stop()
+			log15.Info("stopped previous scheduler")
+		}
+
+		// We setup a separate sub-context so that we can reuse the original
+		// parent context every time we're starting up the newly configured
+		// scheduler. If we'd assign to ctx it'd only be usable up until the
+		// we'd call stop.
+		var ctx2 context.Context
+		ctx2, stop = context.WithCancel(ctx)
+
+		go Scheduler.runUpdateLoop(ctx2)
+		if want.autoGitUpdatesEnabled {
+			go Scheduler.runScheduleLoop(ctx2)
+		}
+
+		log15.Info(
+			"started configured scheduler",
+			"version", "new",
+			"auto-git-updates", want.autoGitUpdatesEnabled,
+		)
+
+		// We converged to the desired configuration.
+		have = want
+
+		// Assigning stop to _ makes go-lint not report a false positive context leak.
+		_ = stop
+	})
+}
+
 const (
 	// minDelay is the minimum amount of time between scheduled updates for a single repository.
 	minDelay = 45 * time.Second

@@ -88,7 +88,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                     )}
                 </>
             )
-            if (window.context.updateScheduler2Enabled && !updateSchedule) {
+            if (!updateSchedule) {
                 description = 'This repository is automatically updated when accessed by a user.'
             } else {
                 description =

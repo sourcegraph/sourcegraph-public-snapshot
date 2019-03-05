@@ -91,13 +91,6 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	}
 }
 
-// UpdateScheduler2Enabled returns true if UpdateScheduler2 experiment is enabled.
-func UpdateScheduler2Enabled() bool {
-	p := Get().ExperimentalFeatures.UpdateScheduler2
-	// default is enabled
-	return p != "disabled"
-}
-
 func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
 	var config []*schema.AWSCodeCommitConnection
 	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
