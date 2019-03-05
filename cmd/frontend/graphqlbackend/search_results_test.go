@@ -90,7 +90,7 @@ func TestSearchResults(t *testing.T) {
 		calledSearchSymbols := false
 		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
-			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
+			if want := `(foo[0-9]).*?(bar\*)`; args.Pattern.Pattern != want {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
 			// TODO return mock results here and assert that they are output as results
@@ -101,7 +101,7 @@ func TestSearchResults(t *testing.T) {
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
-			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
+			if want := `(foo[0-9]).*?(bar\*)`; args.Pattern.Pattern != want {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
 			return []*fileMatchResolver{
