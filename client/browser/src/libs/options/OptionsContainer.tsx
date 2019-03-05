@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { contains as containsPermissions, request as requestPermissions } from '../../browser/permissions'
+import * as permissions from '../../browser/permissions'
 import { getExtensionVersionSync } from '../../browser/runtime'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
 import { OptionsMenu, OptionsMenuProps } from './Menu'
@@ -84,7 +84,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                     url = res
                 }
 
-                const urlHasPermissions = await containsPermissions(url)
+                const urlHasPermissions = await permissions.contains(url)
                 this.setState({ urlHasPermissions })
 
                 props.setSourcegraphURL(url)
@@ -119,7 +119,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
     }
 
     private requestPermissions = async () => {
-        await requestPermissions([this.state.sourcegraphURL])
+        await permissions.request([this.state.sourcegraphURL])
     }
 
     private handleURLChange = (value: string) => {
