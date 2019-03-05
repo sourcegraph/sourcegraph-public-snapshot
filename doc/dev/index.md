@@ -2,7 +2,7 @@
 
 This documentation is for developers contributing to Sourcegraph itself.
 
-Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph). 
+Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 
 ### Project links
 
@@ -20,6 +20,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Using PostgreSQL](postgresql.md)
 - [Testing](testing.md)
 - [Code style guide](style.md)
+- [Sourcegraph design standards](design.md)
 - [Telemetry](telemetry.md)
 - [Phabricator/Gitolite documentation](phabricator_gitolite.md)
 

@@ -12,7 +12,7 @@ Sourcegraph design standards exists to:
 ## Sourcegraph style guides
 
 Sourcegraph has three style guides:
-1. [Sourcegraph development style guide](dev/style.md)
+1. [Sourcegraph development style guide](style.md)
 2. [Sourcegraph copy style guide](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/STYLEGUIDE.md)
 3. [Sourcegraph design style guide](https://app.zeplin.io/project/5bc8c49fb3930253e4588db1)
 
@@ -30,7 +30,7 @@ This style guide explains how to use design elements, how to place and space ele
 
 > NOTE: We are currently migrating our design style guide from Figma to Zeplin
 
-Use the style guide in Zeplin unless an element is missing then refer to the archived style guide in Figma. Reach out to [Francis](mailto:francis@sourcegraph.com) for questions on missing styles or ambiguous elements.
+Use the style guide in Zeplin unless an element is missing then refer to the archived style guide in Figma. Reach out to Francis for questions on missing styles or ambiguous elements.
 
 - [Sourcegraph style guide (Zeplin)](https://app.zeplin.io/project/5bc8c49fb3930253e4588db1)
 - [Figma style guide (Archive)](https://www.figma.com/file/BEzamzacHWao4WXkxunlBZ1j/styleguide__reboot)
