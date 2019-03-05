@@ -203,6 +203,8 @@ func main() {
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
+		pipeline.AddWait()
+
 		// Release to the Chrome Webstore
 		pipeline.AddStep(":chrome:",
 			bk.Env("FORCE_COLOR", "1"),
