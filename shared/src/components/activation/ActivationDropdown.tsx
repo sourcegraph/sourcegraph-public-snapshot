@@ -1,11 +1,12 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import RocketIcon from 'mdi-react/RocketIcon'
 import React from 'react'
 import CircularProgressbar from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { concat, of, Subject } from 'rxjs'
-import { concatMap, delay, filter, map, pairwise } from 'rxjs/operators'
+import { concat, of, Subject, Subscription } from 'rxjs'
+import { concatMap, delay, filter, map, pairwise, startWith } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklistItem } from './ActivationChecklist'
 
@@ -27,31 +28,27 @@ const animationDurationMillis = 5700
  */
 export class ActivationDropdown extends React.PureComponent<Props, State> {
     public state: State = { isOpen: false, animate: false }
-
     private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
-
-    /**
-     * Tracks the last remove-animation timeout that was added, which should be cleared when
-     * the component is unmounted.
-     */
-    private removeAnimationTimeout?: NodeJS.Timeout
-
     private componentUpdates = new Subject<Props>()
+    private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        concat([this.props], this.componentUpdates)
-            .pipe(
-                map(props => props.activation.completed),
-                pairwise(),
-                filter(([prev, cur]) => {
-                    if (!prev || !cur) {
-                        return false
-                    }
-                    return percentageDone(cur) > percentageDone(prev)
-                }),
-                concatMap(() => concat(of(true), of(false).pipe(delay(animationDurationMillis))))
-            )
-            .subscribe(animate => this.setState({ animate }))
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    startWith(this.props),
+                    map(props => props.activation.completed),
+                    pairwise(),
+                    filter(([prev, cur]) => {
+                        if (!prev || !cur) {
+                            return false
+                        }
+                        return percentageDone(cur) > percentageDone(prev)
+                    }),
+                    concatMap(() => concat(of(true), of(false).pipe(delay(animationDurationMillis))))
+                )
+                .subscribe(animate => this.setState({ animate }))
+        )
     }
 
     public componentDidUpdate(): void {
@@ -59,9 +56,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        if (this.removeAnimationTimeout) {
-            clearTimeout(this.removeAnimationTimeout)
-        }
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element {
@@ -124,24 +119,26 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     </DropdownItem>
                     <DropdownItem divider={true} />
                     {this.props.activation && this.props.activation.completed ? (
-                        this.props.activation.steps.map(s => (
+                        this.props.activation.steps.map(step => (
                             <div
-                                key={s.id}
+                                key={step.id}
                                 className="activation-dropdown-item dropdown-item"
                                 onClick={this.toggleIsOpen}
                             >
                                 <ActivationChecklistItem
-                                    {...s}
+                                    {...step}
                                     history={this.props.history}
                                     done={
-                                        (this.props.activation.completed && this.props.activation.completed[s.id]) ||
+                                        (this.props.activation.completed && this.props.activation.completed[step.id]) ||
                                         false
                                     }
                                 />
                             </div>
                         ))
                     ) : (
-                        <div>Loading...</div>
+                        <div className="activation-dropdown-button__loader">
+                            <LoadingSpinner className="icon-inline" />
+                        </div>
                     )}
                 </DropdownMenu>
             </ButtonDropdown>

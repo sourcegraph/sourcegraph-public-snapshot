@@ -146,15 +146,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         document.body.classList.add('theme')
         this.subscriptions.add(
             authenticatedUser.subscribe(
-                authenticatedUser => {
-                    this.setState({
-                        authenticatedUser,
-                    })
-                },
-                () =>
-                    this.setState({
-                        authenticatedUser: null,
-                    })
+                authenticatedUser => this.setState({ authenticatedUser }),
+                () => this.setState({ authenticatedUser: null })
             )
         )
 

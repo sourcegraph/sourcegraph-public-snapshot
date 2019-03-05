@@ -129,7 +129,7 @@ export const withActivation = <P extends ActivationProps & Props>(Component: Rea
                 },
             }
             // This is safe to cast to P, because this.props has everything in P *except*
-            // the properties in ActivationProps.
+            // the properties in ActivationProps
             const props = {
                 ...this.props,
                 ...activationProps,

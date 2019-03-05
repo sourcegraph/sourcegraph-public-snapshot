@@ -1,9 +1,10 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckboxMarkedCircleOutlineIcon from 'mdi-react/CheckboxMarkedCircleOutlineIcon'
 import * as React from 'react'
 import { Link } from '../Link'
-import { ActivationStep } from './Activation'
+import { ActivationCompletionStatus, ActivationStep } from './Activation'
 
 interface ActivationChecklistItemProps extends ActivationStep {
     done: boolean
@@ -51,7 +52,7 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
 export interface ActivationChecklistProps {
     history: H.History
     steps: ActivationStep[]
-    completed?: { [key: string]: boolean }
+    completed?: ActivationCompletionStatus
 }
 
 /**
@@ -61,7 +62,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
     public render(): JSX.Element {
         return (
             <div className="activation-checklist">
-                {this.props.completed ? (
+                {this.props.completed && false ? (
                     this.props.steps.map(step => (
                         <div key={step.id} className="activation-checklist__item">
                             <ActivationChecklistItem
@@ -72,7 +73,9 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
                         </div>
                     ))
                 ) : (
-                    <div>Loading...</div>
+                    <div>
+                        <LoadingSpinner className="icon-inline" />
+                    </div>
                 )}
             </div>
         )
