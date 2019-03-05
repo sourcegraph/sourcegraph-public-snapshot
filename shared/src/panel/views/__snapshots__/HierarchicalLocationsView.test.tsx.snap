@@ -87,7 +87,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             className="file-match__list"
           >
             <a
-              className="file-match__item file-match__item-clickable"
+              className="file-match__item file-match__item-clickable e2e-file-match-item"
               onClick={[Function]}
               to="/github.com/foo/bar/-/blob/undefined#L2:1"
             >
@@ -297,7 +297,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             className="file-match__list"
           >
             <a
-              className="file-match__item file-match__item-clickable"
+              className="file-match__item file-match__item-clickable e2e-file-match-item"
               onClick={[Function]}
               to="/github.com/foo/bar/-/blob/file1.txt#L2:1"
             >
@@ -463,7 +463,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             className="file-match__list"
           >
             <a
-              className="file-match__item file-match__item-clickable"
+              className="file-match__item file-match__item-clickable e2e-file-match-item"
               onClick={[Function]}
               to="/github.com/foo/bar/-/blob/undefined#L2:1"
             >

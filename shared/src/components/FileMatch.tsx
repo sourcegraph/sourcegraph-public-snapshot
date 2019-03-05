@@ -182,7 +182,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 {(this.props.result.symbols || []).map(symbol => (
                     <Link
                         to={symbol.url}
-                        className="file-match__item"
+                        className="file-match__item e2e-file-match-item"
                         key={`symbol:${symbol.name}${symbol.containerName}${symbol.url}`}
                     >
                         <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
@@ -199,7 +199,7 @@ export class FileMatch extends React.PureComponent<Props> {
                         <Link
                             to={`${result.file.url}${toPositionOrRangeHash({ position })}`}
                             key={`linematch:${result.file.url}${position.line}:${position.character}`}
-                            className="file-match__item file-match__item-clickable"
+                            className="file-match__item file-match__item-clickable e2e-file-match-item"
                             onClick={this.props.onSelect}
                         >
                             <CodeExcerpt
