@@ -1,6 +1,7 @@
 import { flatMap } from 'lodash'
 import React from 'react'
 import { Observable } from 'rxjs'
+import { pluralize } from '../../../shared/src/util/strings'
 import * as GQL from '../graphql/schema'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash } from '../util/url'
@@ -126,8 +127,8 @@ export class FileMatch extends React.PureComponent<Props> {
                 title,
                 collapsedChildren: this.getChildren(items, result, false),
                 expandedChildren,
-                collapseLabel: `Hide ${len} of ${items.length} matches`,
-                expandLabel: `Show all ${items.length} matches`,
+                collapseLabel: `Hide ${len} ${pluralize('match', len, 'matches')}`,
+                expandLabel: `Show ${len} more ${pluralize('match', len, 'matches')}`,
                 allExpanded: this.props.allExpanded,
             }
         }
