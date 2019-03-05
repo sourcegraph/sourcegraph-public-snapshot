@@ -64,12 +64,12 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         updateExternalService(input).pipe(
                             mapTo(null),
                             startWith(LOADING),
-                            mergeMap(u =>
+                            mergeMap(() =>
                                 concat(
                                     // Flash "updated" text
                                     of<Partial<State>>({ updatedOrError: true }),
                                     // Hide "updated" text again after 1s
-                                    of<Partial<State>>({ updatedOrError: u }).pipe(delay(1000))
+                                    of<Partial<State>>({ updatedOrError: null }).pipe(delay(1000))
                                 )
                             ),
                             catchError((error: Error) => [{ updatedOrError: asError(error) }])
@@ -92,7 +92,6 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
 
     public render(): JSX.Element | null {
         let error: ErrorLike | undefined
-        console.log('updatedOrError:', this.state.updatedOrError)
         if (isErrorLike(this.state.updatedOrError)) {
             error = this.state.updatedOrError
         }
