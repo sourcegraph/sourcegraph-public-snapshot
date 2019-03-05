@@ -113,7 +113,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                 </div>
                 {window.context.sourcegraphDotComMode && (
                     <p>
-                        Create a public account to browse and search/navigate open-source code and manage Sourcegraph
+                        Create a public account to search/navigate open-source code and manage Sourcegraph
                         subscriptions.
                     </p>
                 )}
