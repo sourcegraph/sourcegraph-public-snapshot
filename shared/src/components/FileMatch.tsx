@@ -127,7 +127,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 title,
                 collapsedChildren: this.getChildren(items, result, false),
                 expandedChildren,
-                collapseLabel: `Hide ${len} matches`,
+                collapseLabel: `Hide ${len} ${pluralize('match', len, 'matches')}`,
                 expandLabel: `Show ${len} more ${pluralize('match', len, 'matches')}`,
                 allExpanded: this.props.allExpanded,
             }
