@@ -34,7 +34,7 @@ export function fromHover(hover: sourcegraph.Hover): clientType.Hover {
         contents: hover.contents,
         __backcompatContents: hover.__backcompatContents, // tslint:disable-line deprecation
         range: fromRange(hover.range),
-    } as any // TODO(sqs): remove any
+    }
 }
 
 /**

@@ -123,7 +123,11 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 	case StringType:
 		dst.String = &valueString
 	case RegexpType:
-		p, err := regexp.Compile(valueString)
+		r, err := autoCorrectRegexp(valueString)
+		if err != nil {
+			return err
+		}
+		p, err := regexp.Compile(r)
 		if err != nil {
 			return err
 		}

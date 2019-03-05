@@ -12,7 +12,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 const SHOW_DEBUG = localStorage.getItem('debug') !== null
 
 const ExtensionLink: React.FunctionComponent<{ id: string }> = props => (
-    <Link to={`extensions/${props.id}`}>{props.id}</Link>
+    <Link to={`/extensions/${props.id}`}>{props.id}</Link>
 )
 
 /**

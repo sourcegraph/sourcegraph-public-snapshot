@@ -26,9 +26,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
                 {this.props.error && <p className="alert alert-danger">{upperFirst(this.props.error.message)}</p>}
                 <div className="form-group">
-                    <label htmlFor="external-service-form-display-name">Display name</label>
+                    <label htmlFor="e2e-external-service-form-display-name">Display name</label>
                     <input
-                        id="external-service-form-display-name"
+                        id="e2e-external-service-form-display-name"
                         type="text"
                         className="form-control"
                         required={true}
@@ -76,7 +76,11 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
                     </p>
                 </div>
-                <button type="submit" className="btn btn-primary" disabled={this.props.loading}>
+                <button
+                    type="submit"
+                    className={`btn btn-primary ${this.props.mode === 'create' && 'e2e-add-external-service-button'}`}
+                    disabled={this.props.loading}
+                >
                     {this.props.loading && <LoadingSpinner className="icon-inline" />}
                     {this.props.mode === 'edit' ? 'Update external service' : 'Add external service'}
                 </button>

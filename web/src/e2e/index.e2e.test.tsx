@@ -1,87 +1,131 @@
+import * as os from 'os'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
+import { Key } from 'ts-key-enum'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { retry } from '../util/e2e-test-utils'
+import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
+
+jest.setTimeout(30000)
+
+/**
+ * Used in the external service configuration.
+ */
+export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
 
 describe('e2e test suite', function(this: any): void {
-    let authenticate: (page: puppeteer.Page) => Promise<void>
-    let baseURL: string
-
-    const overrideAuthSecret = process.env.OVERRIDE_AUTH_SECRET
-    if (!overrideAuthSecret) {
-        throw new Error('Auth secret not set - unable to execute tests')
-    }
-
-    if (process.env.SOURCEGRAPH_BASE_URL && process.env.SOURCEGRAPH_BASE_URL !== 'http://localhost:3080') {
-        baseURL = process.env.SOURCEGRAPH_BASE_URL
-    } else {
-        baseURL = 'http://localhost:3080'
-    }
-    console.log('Using base URL', baseURL)
-    authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
-
-    const browserWSEndpoint = process.env.BROWSER_WS_ENDPOINT
-
-    const disableDefaultFeatureFlags = async (page: puppeteer.Page) => {
-        // Make feature flags mirror production
-        await page.goto(baseURL)
-        await page.evaluate(() => {
-            window.localStorage.clear()
-            window.localStorage.setItem('disableDefaultFeatureFlags', 'true')
-        })
-    }
+    const baseURL = readEnvString({ variable: 'SOURCEGRAPH_BASE_URL', defaultValue: 'http://localhost:3080' })
 
     let browser: puppeteer.Browser
     let page: puppeteer.Page
-    if (browserWSEndpoint) {
-        // Connect to browser.
-        beforeAll(async () => {
-            browser = await puppeteer.connect({ browserWSEndpoint })
-        })
 
-        // Disconnect from browser.
-        afterAll(async () => {
-            if (browser) {
-                if (page && !page.isClosed()) {
-                    await page.close()
-                }
-                await browser.disconnect()
-            }
-        })
-    } else {
-        // Start browser.
-        beforeAll(async () => {
-            let args: string[] | undefined
-            if (process.getuid() === 0) {
-                // TODO don't run as root in CI
-                console.warn('Running as root, disabling sandbox')
-                args = ['--no-sandbox', '--disable-setuid-sandbox']
-            }
-            browser = await puppeteer.launch({ args })
-        })
+    async function init(): Promise<void> {
+        await ensureLoggedIn()
+        await ensureHasExternalService()
+    }
 
-        // Close browser.
-        afterAll(async () => {
-            if (browser) {
-                if (page && !page.isClosed()) {
-                    await page.close()
-                }
-                await browser.close()
+    // Start browser.
+    beforeAll(async () => {
+        let args: string[] | undefined
+        if (process.getuid() === 0) {
+            // TODO don't run as root in CI
+            console.warn('Running as root, disabling sandbox')
+            args = ['--no-sandbox', '--disable-setuid-sandbox']
+        }
+        browser = await puppeteer.launch({
+            args,
+            headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+        })
+        page = await browser.newPage()
+        await init()
+    })
+
+    // Close browser.
+    afterAll(async () => {
+        if (browser) {
+            if (page && !page.isClosed()) {
+                await page.close()
             }
+            await browser.close()
+        }
+    })
+
+    async function ensureLoggedIn(): Promise<void> {
+        await page.goto(baseURL)
+        const url = new URL(await page.url())
+        if (url.pathname === '/site-admin/init') {
+            await page.type('input[name=email]', 'test@test.com')
+            await page.type('input[name=username]', 'test')
+            await page.type('input[name=password]', 'test')
+            await page.click('button[type=submit]')
+            await page.waitForNavigation()
+        } else if (url.pathname === '/sign-in') {
+            await page.type('input', 'test')
+            await page.type('input[name=password]', 'test')
+            await page.click('button[type=submit]')
+            await page.waitForNavigation()
+        }
+    }
+
+    async function ensureHasExternalService(): Promise<void> {
+        await page.goto(baseURL + '/site-admin/external-services')
+        await page.waitFor('.e2e-filtered-connection')
+        await page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+        // Matches buttons for deleting external services named 'test-github'.
+        const deleteButton = await page.$(
+            '[data-e2e-external-service-name="test-github"] .e2e-delete-external-service-button'
+        )
+        if (deleteButton) {
+            const accept = async (dialog: puppeteer.Dialog) => {
+                await dialog.accept()
+                page.off('dialog', accept)
+            }
+            page.on('dialog', accept)
+            await deleteButton.click()
+        }
+        await (await page.waitForSelector('.e2e-goto-add-external-service-page')).click()
+        await (await page.waitForSelector('#e2e-external-service-form-display-name')).type('test-github')
+
+        const editor = await page.waitForSelector('.view-line')
+        await editor.click()
+        const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
+        await page.keyboard.down(modifier)
+        await page.keyboard.press('a')
+        await page.keyboard.up(modifier)
+        await page.keyboard.press(Key.Backspace)
+        await page.keyboard.type(
+            JSON.stringify({
+                url: 'https://github.com',
+                token: gitHubToken,
+                repos: [
+                    'gorilla/mux',
+                    'gorilla/securecookie',
+                    'sourcegraphtest/AlwaysCloningTest',
+                    'sourcegraph/godockerize',
+                    'sourcegraph/jsonrpc2',
+                    'sourcegraph/checkup',
+                    'sourcegraph/go-diff',
+                    'sourcegraph/go-vcs',
+                ],
+            })
+        )
+        await page.click('.e2e-add-external-service-button')
+        // Wait for repositories to sync.
+        await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
+        await retry(async () => {
+            await page.reload()
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]', { timeout: 5000 })
         })
     }
 
     // Open page.
     beforeEach(async () => {
         page = await browser.newPage()
-        await authenticate(page)
-        await disableDefaultFeatureFlags(page)
     })
 
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
         path.resolve(__dirname, '..', '..', '..'),
-        path.resolve(__dirname, '..', '..', 'puppeteer'),
+        path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
         () => page
     )
 
@@ -147,40 +191,21 @@ describe('e2e test suite', function(this: any): void {
     }
 
     const assertNonemptyLocalRefs = async (): Promise<void> => {
-        // verify active group is local references
-        await page.waitForSelector('.panel__tabs .tab-bar__tab--active')
-        expect(
-            await page.evaluate(() =>
-                document.querySelector('.panel__tabs .tab-bar__tab--active')!.textContent!.replace(/\d/g, '')
-            )
-        ).toEqual('References')
-
-        await page.waitForSelector('.panel__tabs-content .file-match__list')
-        await retry(async () =>
-            expect(
-                // assert some (local) refs fetched
-                (await page.evaluate(
-                    () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
-                )) > 0
-            ).toBeTruthy()
+        // verify active group is references
+        await page.waitForXPath(
+            "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
         )
+        // verify there are some references
+        await page.waitForSelector('.panel__tabs-content .file-match__item')
     }
 
     const assertNonemptyExternalRefs = async (): Promise<void> => {
-        // verify active group is external references
-        await page.waitForSelector('.panel__tabs .tab-bar__tab--active')
-        expect(
-            await page.evaluate(() => document.querySelector('.panel__tabs .tab-bar__tab--active')!.textContent)
-        ).toEqual('External references')
-        await page.waitForSelector('.panel__tabs .file-match__list')
-        await retry(async () => {
-            expect(
-                // assert some external refs fetched
-                (await page.evaluate(
-                    () => document.querySelectorAll('.panel__tabs .hierarchical-locations-view__item').length // get the external refs count
-                )) > 0
-            ).toBeTruthy()
-        })
+        // verify active group is references
+        await page.waitForXPath(
+            "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
+        )
+        // verify there are some references
+        await page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item')
     }
 
     describe('Theme switcher', () => {
@@ -581,28 +606,22 @@ describe('e2e test suite', function(this: any): void {
                         await assertAllHighlightedTokens('MultiFileDiffReader')
                     })
 
-                    // Testing external references on localhost is unreliable, since different dev environments will
-                    // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
-                    // 1 repo, in which case there would never be external references. So we *only* run this test against
-                    // non-localhost servers.
-                    const skipExternalReferences = baseURL === 'http://localhost:3080'
-                    ;(skipExternalReferences ? test.skip : test)(
-                        'opens widget and fetches external references',
-                        async () => {
-                            await page.goto(
-                                baseURL +
-                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
-                            )
-                            await enableOrAddRepositoryIfNeeded()
+                    // TODO unskip this once basic-code-intel looks for external
+                    // references even when local references are found.
+                    test.skip('opens widget and fetches external references', async () => {
+                        await page.goto(
+                            baseURL +
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
+                        )
+                        await enableOrAddRepositoryIfNeeded()
 
-                            // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
-                            // look like they're for the appropriate token)
-                            await assertNonemptyExternalRefs()
+                        // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
+                        // look like they're for the appropriate token)
+                        await assertNonemptyExternalRefs()
 
-                            // verify all the matches highlight a `Reader` token
-                            await assertAllHighlightedTokens('Reader')
-                        }
-                    )
+                        // verify all the matches highlight a `Reader` token
+                        await assertAllHighlightedTokens('Reader')
+                    })
                 })
             })
         })
@@ -699,7 +718,7 @@ describe('e2e test suite', function(this: any): void {
             // TODO: test search scopes
 
             // Submit the search
-            await page.click('button.search-button')
+            await page.click('.search-button')
 
             await page.waitForSelector('.e2e-search-results-stats')
             await retry(async () => {

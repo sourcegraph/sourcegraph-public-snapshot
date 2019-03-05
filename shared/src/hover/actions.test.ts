@@ -1,7 +1,7 @@
 import { HoveredToken, LOADER_DELAY } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { createMemoryHistory } from 'history'
-import { from, of } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 // tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
@@ -64,7 +64,9 @@ describe('getHoverActionsContext', () => {
                                     model: testModelService(),
                                     textDocumentDefinition: {
                                         getLocations: () =>
-                                            cold<Location[]>(`- ${LOADER_DELAY}ms --- d`, { d: [FIXTURE_LOCATION] }),
+                                            cold<Observable<Location[]>>(`- ${LOADER_DELAY}ms --- d`, {
+                                                d: of([FIXTURE_LOCATION]),
+                                            }),
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
@@ -127,7 +129,8 @@ describe('getHoverActionsContext', () => {
                                 services: {
                                     model: testModelService(),
                                     textDocumentDefinition: {
-                                        getLocations: () => cold<Location[]>(`-b`, { b: [FIXTURE_LOCATION] }),
+                                        getLocations: () =>
+                                            cold<Observable<Location[]>>(`-b`, { b: of([FIXTURE_LOCATION]) }),
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
@@ -180,7 +183,7 @@ describe('getDefinitionURL', () => {
                 { urlToFile },
                 {
                     model: testModelService(),
-                    textDocumentDefinition: { getLocations: () => of(null) },
+                    textDocumentDefinition: { getLocations: () => of(of(null)) },
                 },
                 FIXTURE_PARAMS
             )
@@ -194,7 +197,7 @@ describe('getDefinitionURL', () => {
                 { urlToFile },
                 {
                     model: testModelService(),
-                    textDocumentDefinition: { getLocations: () => of([]) },
+                    textDocumentDefinition: { getLocations: () => of(of([])) },
                 },
                 FIXTURE_PARAMS
             )
@@ -210,7 +213,9 @@ describe('getDefinitionURL', () => {
                         { urlToFile },
                         {
                             model: testModelService(),
-                            textDocumentDefinition: { getLocations: () => of<Location[]>([{ uri: 'git://r3?c3#f' }]) },
+                            textDocumentDefinition: {
+                                getLocations: () => of<Observable<Location[]>>(of([{ uri: 'git://r3?c3#f' }])),
+                            },
                         },
                         FIXTURE_PARAMS
                     )
@@ -226,7 +231,9 @@ describe('getDefinitionURL', () => {
                         { urlToFile },
                         {
                             model: testModelService(),
-                            textDocumentDefinition: { getLocations: () => of<Location[]>([FIXTURE_LOCATION]) },
+                            textDocumentDefinition: {
+                                getLocations: () => of<Observable<Location[]>>(of([FIXTURE_LOCATION])),
+                            },
                         },
                         FIXTURE_PARAMS
                     )
@@ -241,7 +248,8 @@ describe('getDefinitionURL', () => {
                         {
                             model: testModelService(),
                             textDocumentDefinition: {
-                                getLocations: () => of<Location[]>([{ ...FIXTURE_LOCATION, range: undefined }]),
+                                getLocations: () =>
+                                    of<Observable<Location[]>>(of([{ ...FIXTURE_LOCATION, range: undefined }])),
                             },
                         },
                         FIXTURE_PARAMS
@@ -259,7 +267,8 @@ describe('getDefinitionURL', () => {
                 {
                     model: testModelService([{ uri: 'git://r?c', inputRevision: 'v' }]),
                     textDocumentDefinition: {
-                        getLocations: () => of<Location[]>([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }]),
+                        getLocations: () =>
+                            of<Observable<Location[]>>(of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }])),
                     },
                 },
                 FIXTURE_PARAMS
@@ -273,7 +282,7 @@ describe('registerHoverContributions', () => {
     const contribution = new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
     const commands = new CommandRegistry()
     const textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'> = {
-        getLocations: () => of(null),
+        getLocations: () => of(of(null)),
     }
     const history = createMemoryHistory()
     const subscription = registerHoverContributions({
@@ -427,7 +436,7 @@ describe('registerHoverContributions', () => {
 
     describe('goToDefinition command', () => {
         test('reports no definition found', async () => {
-            textDocumentDefinition.getLocations = () => of(null) // mock
+            textDocumentDefinition.getLocations = () => of(of(null)) // mock
             return expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'No definition found.' })
@@ -435,7 +444,7 @@ describe('registerHoverContributions', () => {
 
         test('reports panel already visible', async () => {
             textDocumentDefinition.getLocations = () =>
-                of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'git://r3?v3#f3' }]) // mock
+                of(of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'git://r3?v3#f3' }])) // mock
             history.push('/r@c/-/blob/f#L2:2&tab=def')
             return expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
@@ -443,7 +452,7 @@ describe('registerHoverContributions', () => {
         })
 
         test('reports already at the definition', async () => {
-            textDocumentDefinition.getLocations = () => of([FIXTURE_LOCATION]) // mock
+            textDocumentDefinition.getLocations = () => of(of([FIXTURE_LOCATION])) // mock
             history.push('/r2@c2/-/blob/f2#L3:3')
             return expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })

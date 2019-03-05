@@ -4,9 +4,9 @@ It is not used for patch releases. See [patch_release_issue_template.md](patch_r
 for the patch release checklist.
 -->
 
-# MAJOR.MINOR Release (YYYY-MM-DD)
+# MAJOR.MINOR Release (YYYY-MM-20)
 
-## No later than 5 working days before release (YYYY-MM-DD)
+## At the start of the month (YYYY-MM-01)
 
 - [ ] Choose dates/times for the steps in this release process and update this issue template accordingly. Note that this template references _working days_, which do not include weekends or holidays observed by Sourcegraph.
 - [ ] Add events to the shared Release Schedule calendar in Google and invite team@sourcegraph.com.
@@ -14,7 +14,12 @@ for the patch release checklist.
     - [ ] Tagging the final release.
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
-- [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done three working days before the release.
+- [ ] Schedule the [retrospective](retrospectives/index.md) for this release.
+
+## 5 working days before release (YYYY-MM-DD)
+
+- [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done by the time that the release branch is scheduled to be created.
+- [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
 
 ## 3 working days before release (YYYY-MM-DD)
 
@@ -73,7 +78,7 @@ for the patch release checklist.
 - Re-test any flows that might have been impacted by commits that have been cherry picked into the release branch.
 - Tag additional release candidates.
 
-## 1 working day before the release (YYYY-MM-DD)
+## 1 working day before release (YYYY-MM-DD)
 
 - [ ] **HH:MM AM/PM PT** Tag the final release.
 - [ ] Send a message to #dev-announce to announce the final release.
@@ -91,10 +96,11 @@ for the patch release checklist.
     - [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
     - [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/docs.sourcegraph.com/pull/8))
 - [ ] Review all issues in the release milestone. Backlog things that didn't make it into the release and ping issues that still need to be done for the release (e.g. Tweets, marketing).
+- [ ] Verify that the blog post is ready to be merged.
 
-## On or before release day (YYYY-MM-DD)
+## By 10am PT on the 20th
 
 - [ ] Merge the docs PRs created in the previous step.
-- [ ] **HH:MM AM/PM PT** Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
+- [ ] Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
 - [ ] Close this issue.
 - [ ] Close the milestone.

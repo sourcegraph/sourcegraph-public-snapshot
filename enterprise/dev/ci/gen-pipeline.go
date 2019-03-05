@@ -104,6 +104,18 @@ func main() {
 		pipeline.AddStep(":docker:",
 			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
 			bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+
+		pipeline.AddStep(":chromium:",
+			bk.Cmd(fmt.Sprintf(`echo "Building server..."`)),
+			bk.Cmd("pushd enterprise"),
+			bk.Cmd("./cmd/server/pre-build.sh"),
+			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+			bk.Env("VERSION", version),
+			bk.Cmd("./cmd/server/build.sh"),
+			bk.Cmd("popd"),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Cmd("./dev/ci/e2e.sh"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 
 	pipeline.AddWait()
@@ -137,6 +149,8 @@ func main() {
 		getBuildScript := func() string {
 			buildScriptByApp := map[string]string{
 				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
+				// The server image was built prior to e2e tests in a previous step.
+				"server": fmt.Sprintf("docker tag %s:%s_candidate %s:%s", image, version, image, version),
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript
@@ -179,41 +193,15 @@ func main() {
 	}
 
 	addBrowserExtensionReleaseSteps := func() {
-		// // Run e2e tests
-		// pipeline.AddStep(":chromium:",
-		// 	bk.Env("FORCE_COLOR", "1"),
-		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		// 	bk.Env("DISPLAY", ":99"),
-		// 	bk.Cmd("Xvfb :99 &"),
-		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		// 	bk.Cmd("pushd client/browser"),
-		// 	bk.Cmd("yarn -s run build"),
-		// 	bk.Cmd("yarn -s run test:ci"),
-		// 	bk.Cmd("yarn -s run test:e2e-ci --retries 5"),
-		// 	bk.Cmd("popd"),
-		// 	bk.ArtifactPaths("./puppeteer/*.png"),
-		// )
-
-		// pipeline.AddWait()
-
-		// // Run e2e tests with extensions enabled
-		// //
-		// // TODO: Remove this step when extensions are enabled by default
-		// pipeline.AddStep(":chromium:",
-		// 	bk.Env("FORCE_COLOR", "1"),
-		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		// 	bk.Env("DISPLAY", ":99"),
-		// 	bk.Cmd("Xvfb :99 &"),
-		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		// 	bk.Cmd("pushd client/browser"),
-		// 	bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
-		// 	bk.Cmd("yarn -s run test:ci"),
-		// 	bk.Cmd("yarn -s run test:e2e-ci --retries 5"),
-		// 	bk.Cmd("popd"),
-		// 	bk.ArtifactPaths("./puppeteer/*.png"),
-		// )
-
-		// pipeline.AddWait()
+		// Run e2e tests
+		pipeline.AddStep(":chromium:",
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd client/browser"),
+			bk.Cmd("yarn -s run build"),
+			bk.Cmd("yarn -s run test-e2e"),
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
 
 		// Release to the Chrome Webstore
 		pipeline.AddStep(":chrome:",

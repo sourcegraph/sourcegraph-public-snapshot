@@ -1,6 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { asyncScheduler, Observable, of } from 'rxjs'
-import { observeOn, take, toArray } from 'rxjs/operators'
+import { observeOn, switchMap, take, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
@@ -37,10 +37,12 @@ describe('LanguageFeatures (integration)', () => {
         labeledProviderResults: labeledDefinitionResults,
         providerWithImplementation: run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
         getResult: services =>
-            services.textDocumentDefinition.getLocations({
-                textDocument: { uri: 'file:///f' },
-                position: { line: 1, character: 2 },
-            }),
+            services.textDocumentDefinition
+                .getLocations({
+                    textDocument: { uri: 'file:///f' },
+                    position: { line: 1, character: 2 },
+                })
+                .pipe(switchMap(locations => locations)),
     })
     // tslint:disable deprecation The tests must remain until they are removed.
     testLocationProvider({
@@ -53,10 +55,12 @@ describe('LanguageFeatures (integration)', () => {
         labeledProviderResults: labeledDefinitionResults,
         providerWithImplementation: run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
         getResult: services =>
-            services.textDocumentTypeDefinition.getLocations({
-                textDocument: { uri: 'file:///f' },
-                position: { line: 1, character: 2 },
-            }),
+            services.textDocumentTypeDefinition
+                .getLocations({
+                    textDocument: { uri: 'file:///f' },
+                    position: { line: 1, character: 2 },
+                })
+                .pipe(switchMap(locations => locations)),
     })
     testLocationProvider<sourcegraph.ImplementationProvider>({
         name: 'registerImplementationProvider',
@@ -68,10 +72,12 @@ describe('LanguageFeatures (integration)', () => {
         labeledProviderResults: labeledDefinitionResults,
         providerWithImplementation: run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
         getResult: services =>
-            services.textDocumentImplementation.getLocations({
-                textDocument: { uri: 'file:///f' },
-                position: { line: 1, character: 2 },
-            }),
+            services.textDocumentImplementation
+                .getLocations({
+                    textDocument: { uri: 'file:///f' },
+                    position: { line: 1, character: 2 },
+                })
+                .pipe(switchMap(locations => locations)),
     })
     // tslint:enable deprecation
     testLocationProvider<sourcegraph.ReferenceProvider>({
@@ -94,11 +100,13 @@ describe('LanguageFeatures (integration)', () => {
                 ) => run(doc, pos),
             } as sourcegraph.ReferenceProvider),
         getResult: services =>
-            services.textDocumentReferences.getLocations({
-                textDocument: { uri: 'file:///f' },
-                position: { line: 1, character: 2 },
-                context: { includeDeclaration: true },
-            }),
+            services.textDocumentReferences
+                .getLocations({
+                    textDocument: { uri: 'file:///f' },
+                    position: { line: 1, character: 2 },
+                    context: { includeDeclaration: true },
+                })
+                .pipe(switchMap(locations => locations)),
     })
     testLocationProvider<sourcegraph.LocationProvider>({
         name: 'registerLocationProvider',
@@ -203,6 +211,6 @@ function testLocationProvider<P>({
     })
 }
 
-function labeledDefinitionResults(labels: string[]): Location | Location[] {
+function labeledDefinitionResults(labels: string[]): Location[] {
     return labels.map(label => ({ uri: `file:///${label}`, range: undefined }))
 }

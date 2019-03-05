@@ -1,5 +1,5 @@
 import minimatch from 'minimatch'
-import { DocumentFilter, DocumentSelector } from 'sourcegraph'
+import { DocumentFilter, DocumentSelector, TextDocument } from 'sourcegraph'
 
 /**
  * A literal to identify a text document in the client.
@@ -12,28 +12,11 @@ export interface TextDocumentIdentifier {
 }
 
 /**
- * An item to transfer a text document from the client to the server.
- */
-export interface TextDocumentItem extends TextDocumentIdentifier {
-    /**
-     * The ID of the document's language. This is a well-defined string identifier such as "python".
-     *
-     * @todo Document the known language IDs.
-     */
-    languageId: string
-
-    /**
-     * The document's text contents.
-     */
-    text: string
-}
-
-/**
  * Returns whether any of the document selectors match (or "select") the document.
  */
 export function match(
     selectors: DocumentSelector | IterableIterator<DocumentSelector>,
-    document: Pick<TextDocumentItem, 'uri' | 'languageId'>
+    document: Pick<TextDocument, 'uri' | 'languageId'>
 ): boolean {
     for (const selector of isSingleDocumentSelector(selectors) ? [selectors] : selectors) {
         if (match1(selector, document)) {
@@ -62,7 +45,7 @@ function isDocumentFilter(value: any): value is DocumentFilter {
     )
 }
 
-function match1(selector: DocumentSelector, document: Pick<TextDocumentItem, 'uri' | 'languageId'>): boolean {
+function match1(selector: DocumentSelector, document: Pick<TextDocument, 'uri' | 'languageId'>): boolean {
     return score(selector, document.uri, document.languageId) !== 0
 }
 

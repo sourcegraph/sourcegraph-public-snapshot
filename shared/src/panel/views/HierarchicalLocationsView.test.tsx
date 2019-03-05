@@ -6,7 +6,7 @@ jest.mock('react-visibility-sensor', () => 'VisibilitySensor')
 import { Location } from '@sourcegraph/extension-api-types'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, NEVER, of } from 'rxjs'
+import { BehaviorSubject, concat, NEVER, Observable, of } from 'rxjs'
 import * as sinon from 'sinon'
 import { setLinkComponent } from '../../components/Link'
 import { Controller } from '../../extensions/controller'
@@ -43,9 +43,17 @@ describe('<HierarchicalLocationsView />', () => {
         }
         return { services, props }
     }
-    test('shows a spinner in loading state', () => {
+
+    test('shows a spinner before any locations emissions', () => {
         const { props } = getProps()
         expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+    })
+
+    test('shows a spinner if locations emits empty and is not complete', () => {
+        const { props } = getProps()
+        expect(
+            renderer.create(<HierarchicalLocationsView {...props} locations={of(concat(of([]), NEVER))} />).toJSON()
+        ).toMatchSnapshot()
     })
 
     test("registers a 'Group by file' contribution", () => {
@@ -73,25 +81,33 @@ describe('<HierarchicalLocationsView />', () => {
         })
     })
 
-    test('displays a single location', () => {
-        const locations = of<Location[]>([
-            {
-                uri: 'git://github.com/foo/bar',
-                range: {
-                    start: {
-                        line: 1,
-                        character: 0,
-                    },
-                    end: {
-                        line: 1,
-                        character: 10,
-                    },
-                },
+    const SAMPLE_LOCATION: Location = {
+        uri: 'git://github.com/foo/bar',
+        range: {
+            start: {
+                line: 1,
+                character: 0,
             },
-        ])
+            end: {
+                line: 1,
+                character: 10,
+            },
+        },
+    }
+
+    test('displays a single location when complete', () => {
+        const locations = of<Observable<Location[]>>(of([SAMPLE_LOCATION]))
         const props = {
             ...getProps().props,
             locations,
+        }
+        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+    })
+
+    test('displays partial locations before complete', () => {
+        const props = {
+            ...getProps().props,
+            locations: concat(of(of([SAMPLE_LOCATION])), NEVER),
         }
         expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
     })
@@ -172,7 +188,7 @@ describe('<HierarchicalLocationsView />', () => {
                     'panel.locations.groupByFile': true,
                 },
             },
-            locations,
+            locations: of(locations),
         }
         expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
     })
