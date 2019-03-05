@@ -408,6 +408,11 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 				}
 				var sinceRepoID int64
 				for {
+					if err := ctx.Err(); err != nil {
+						ch <- batch{err: err}
+						return
+					}
+
 					repos, err := c.client.ListPublicRepositories(ctx, sinceRepoID)
 					if err != nil {
 						ch <- batch{err: errors.Wrapf(err, "Error listing public repositories: sinceRepoID=%d", sinceRepoID)}
@@ -427,6 +432,11 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 			case "affiliated":
 				hasNextPage := true
 				for page := 1; hasNextPage; page++ {
+					if err := ctx.Err(); err != nil {
+						ch <- batch{err: err}
+						break
+					}
+
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
@@ -462,6 +472,11 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 				// (https://github.com/search/advanced).
 				hasNextPage := true
 				for page := 1; hasNextPage; page++ {
+					if err := ctx.Err(); err != nil {
+						ch <- batch{err: err}
+						break
+					}
+
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
@@ -488,6 +503,11 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 		defer wg.Done()
 		var b batch
 		for _, nameWithOwner := range c.config.Repos {
+			if err := ctx.Err(); err != nil {
+				b.err = err
+				break
+			}
+
 			owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 			if err != nil {
 				b.err = errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)

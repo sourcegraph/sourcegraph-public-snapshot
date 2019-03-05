@@ -224,6 +224,8 @@ func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) 
 	ch := make(chan result, len(sources))
 	for _, src := range sources {
 		go func(src Source) {
+			ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			defer cancel()
 			if repos, err := src.ListRepos(ctx); err != nil {
 				ch <- result{src: src, err: err}
 			} else {
