@@ -247,7 +247,7 @@ func (c *FakeClock) Now() time.Time {
 func (c FakeClock) Time(step int) time.Time {
 	// We truncate to microsecond precision because Postgres' timestamptz type
 	// doesn't handle nanoseconds.
-	return c.epoch.Add(time.Duration(step) * c.step).Truncate(time.Microsecond).UTC()
+	return c.epoch.Add(time.Duration(step) * c.step).UTC().Truncate(time.Microsecond)
 }
 
 // FakeInternalAPI implements the InternalAPI interface with the given in memory data.

@@ -258,7 +258,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 				now := tc.now
 				if now == nil {
-					now = time.Now
+					clock := repos.NewFakeClock(time.Now(), time.Second)
+					now = clock.Now
 				}
 
 				ctx := tc.ctx

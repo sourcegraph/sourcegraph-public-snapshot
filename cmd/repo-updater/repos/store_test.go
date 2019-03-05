@@ -18,6 +18,9 @@ import (
 )
 
 func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -45,7 +48,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 					Enabled:     true,
 					Archived:    false,
 					Fork:        false,
-					CreatedAt:   time.Now().UTC(),
+					CreatedAt:   now,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          id,
 						ServiceType: "github",
@@ -82,7 +85,6 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 			}
 
 			suffix := "-updated"
-			now := time.Now().UTC()
 			for _, r := range want {
 				r.Name += suffix
 				r.Description += suffix
@@ -101,7 +103,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
-			want.Apply(repos.Opt.DeletedAt(time.Now().UTC()))
+			want.Apply(repos.Opt.DeletedAt(now))
 
 			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
@@ -116,6 +118,9 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 }
 
 func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
 	foo := repos.Repo{
 		Name: "foo",
 		Sources: map[string]*repos.SourceInfo{
@@ -144,8 +149,6 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 
 	return func(t *testing.T) {
 		t.Helper()
-
-		now := time.Now().UTC()
 
 		for _, tc := range []struct {
 			name   string
