@@ -28,7 +28,7 @@ The owner of the incident may delegate tasks to other available/working engineer
 
 ## Resolving the incident
 
-The goal is to resolve the incident as quickly and safely as possible. Your default action should be to rollback to a known good state instead of fixing forward.
+The goal is to resolve the incident as quickly and safely as possible. Your default action should be to rollback to a known good state instead of trying to identify the exact issue and fixing it.
 
 Here are some useful procedures:
 
