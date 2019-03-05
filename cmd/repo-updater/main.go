@@ -122,9 +122,6 @@ func main() {
 
 		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
-			// XXX(tsenart): It seems like the current db layer in the frontend API
-			// doesn't set the timezone to UTC. Figure out how to migrate TZs to UTC
-			// and ensure it's the used timezone across the board.
 			return time.Now().UTC()
 		})
 
@@ -139,6 +136,7 @@ func main() {
 				} else if conf.UpdateScheduler2Enabled() {
 					repos.Scheduler.UpdateFromDiff(diff)
 				} else {
+					// TODO(keegancsmith) Remove old scheduler https://github.com/sourcegraph/sourcegraph/issues/2063
 					log15.Error("Diff based scheduler update not implemented for old scheduler")
 				}
 			}

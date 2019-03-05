@@ -19,10 +19,7 @@ import (
 
 // A DB captures the essential methods of a sql.DB.
 type DB interface {
-	PrepareContext(ctx context.Context, q string) (*sql.Stmt, error)
-	ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error)
 	QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row
 }
 
 // A Tx captures the essential methods of a sql.Tx.
