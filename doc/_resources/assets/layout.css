@@ -565,7 +565,7 @@ a.content-nav-section-header {
 }
 .content-nav-section.expandable.expanded > li {
     overflow: hidden;
-    max-height: 100%;
+    max-height: 10000%;
     height: auto;
 }
 .content-nav-button {
