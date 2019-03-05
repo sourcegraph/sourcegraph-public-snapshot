@@ -129,7 +129,7 @@ func main() {
 		})
 
 		log15.Info("starting new syncer", "external service kinds", kinds)
-		go func() { log.Fatal(syncer.Run(ctx, 10*time.Second, kinds...)) }()
+		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval(), kinds...)) }()
 
 		// Start new repo syncer updates scheduler relay thread.
 		go func() {
