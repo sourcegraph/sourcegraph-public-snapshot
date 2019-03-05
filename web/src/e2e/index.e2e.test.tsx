@@ -718,6 +718,7 @@ describe('e2e test suite', function(this: any): void {
                 )
                 expect(label.includes('results')).toEqual(true)
             })
+            await page.waitForSelector('.e2e-file-match-item')
         })
 
         test('renders results for sourcegraph/go-diff (no search group)', async () => {
