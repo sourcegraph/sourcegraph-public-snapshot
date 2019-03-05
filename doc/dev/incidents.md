@@ -23,7 +23,7 @@ Operational incidents can be reported by anyone (e.g. customers, Sourcegraph tea
 
 ## Owning the incident
 
-If you are owning or asked to own an incident, it is critical that you acknowledge ownership in the #incidents thread in Slack (i.e. "I am on it").
+If you are owning or asked to own an incident, it is critical that you acknowledge ownership in the #incidents thread in Slack (i.e. "I am on it"), communicate your intended next steps, and post regular updates on your progress.
 
 The owner of the incident may delegate tasks to other available/working engineers. This delegated work preempts work unrelated to operational incidents.
 
