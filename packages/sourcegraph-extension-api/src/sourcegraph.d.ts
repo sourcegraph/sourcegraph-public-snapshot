@@ -429,7 +429,7 @@ declare module 'sourcegraph' {
          * @param message The message to show. Markdown is supported.
          * @param type a {@link NotificationType} affecting the display of the notification.
          */
-        showNotification<T extends string>(message: string, type: NotificationType): void
+        showNotification(message: string, type: NotificationType): void
 
         /**
          * Show progress in the window. Progress is shown while running the given callback
