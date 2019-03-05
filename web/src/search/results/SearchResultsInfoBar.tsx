@@ -103,7 +103,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <div className="search-results-info-bar__row-right">
                     {/* Expand all feature */}
                     {props.results.results.length > 0 && (
-                        <button onClick={props.onExpandAllResultsToggle} className="btn btn-link">
+                        <button
+                            onClick={props.onExpandAllResultsToggle}
+                            className="btn btn-link"
+                            data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                        >
                             {props.allExpanded ? (
                                 <>
                                     <ArrowCollapseVerticalIcon className="icon-inline" /> Collapse all
