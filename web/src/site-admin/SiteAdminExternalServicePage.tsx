@@ -61,18 +61,20 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
             this.submits
                 .pipe(
                     switchMap(input =>
-                        updateExternalService(input).pipe(
-                            mapTo(null),
-                            startWith(LOADING),
-                            mergeMap(() =>
-                                concat(
-                                    // Flash "updated" text
-                                    of<Partial<State>>({ updatedOrError: true }),
-                                    // Hide "updated" text again after 1s
-                                    of<Partial<State>>({ updatedOrError: null }).pipe(delay(1000))
-                                )
-                            ),
-                            catchError((error: Error) => [{ updatedOrError: asError(error) }])
+                        concat(
+                            [{ updatedOrError: LOADING }],
+                            updateExternalService(input).pipe(
+                                mapTo(null),
+                                mergeMap(() =>
+                                    concat(
+                                        // Flash "updated" text
+                                        of<Partial<State>>({ updatedOrError: true }),
+                                        // Hide "updated" text again after 1s
+                                        of<Partial<State>>({ updatedOrError: null }).pipe(delay(1000))
+                                    )
+                                ),
+                                catchError((error: Error) => [{ updatedOrError: asError(error) }])
+                            )
                         )
                     )
                 )
