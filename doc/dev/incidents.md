@@ -26,6 +26,8 @@ If you are owning or asked to own an incident, it is critical that you acknowled
 
 The owner of the incident may delegate tasks to other available/working engineers. This delegated work preempts work unrelated to operational incidents.
 
+If the issue can not be quickly resolved (via rollback or other means) and if it is a severe problem with sourcegraph.com, then create an issue on sourcegraph/sourcegraph and tweet from the Sourcegraph account (e.g. https://twitter.com/srcgraph/status/1101603205203484672, https://twitter.com/srcgraph/status/1101606401753792512, https://twitter.com/srcgraph/status/1101621105620529153)
+
 ## Resolving the incident
 
 The goal is to resolve the incident as quickly and safely as possible. Your default action should be to rollback to a known good state instead of trying to identify the exact issue and fixing it.
