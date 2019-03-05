@@ -41,6 +41,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Retrospectives](retrospectives/index.md)
 - [Company goals](goals.md)
 - [Documentation guide](documentation/index.md)
+- [Incident response](incidents.md)
 
 ### Other
 
