@@ -8,10 +8,11 @@ import * as sourcegraph from 'sourcegraph'
  *
  */
 export const NotificationType = {
-    Error: 'Error' as sourcegraph.NotificationType.Error,
-    Warning: 'Warning' as sourcegraph.NotificationType.Warning,
-    Info: 'Info' as sourcegraph.NotificationType.Info,
-    Success: 'Success' as sourcegraph.NotificationType.Success,
+    Error: 1,
+    Warning: 2,
+    Info: 3,
+    Log: 4,
+    Success: 5,
 }
 
 interface PromiseCallback<T> {

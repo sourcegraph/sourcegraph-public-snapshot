@@ -849,10 +849,26 @@ declare module 'sourcegraph' {
      * The type of a notification shown through {@link Window.showNotification}.
      */
     export const enum NotificationType {
-        Info = 'Info',
-        Success = 'Success',
-        Warning = 'Warning',
-        Error = 'Error',
+        /**
+         * An error message.
+         */
+        Error = 1,
+        /**
+         * A warning message.
+         */
+        Warning = 2,
+        /**
+         * An info message.
+         */
+        Info = 3,
+        /**
+         * A log message.
+         */
+        Log = 4,
+        /**
+         * A success message.
+         */
+        Success = 5,
     }
 
     /**

@@ -84,7 +84,7 @@ export function createController(context: PlatformContext): Controller {
     )
     subscriptions.add(
         services.notifications.progresses.subscribe(({ title, progress }) => {
-            notifications.next({ message: title, progress })
+            notifications.next({ message: title, progress, type: NotificationType.Log })
         })
     )
 

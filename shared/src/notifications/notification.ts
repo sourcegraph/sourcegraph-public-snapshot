@@ -11,7 +11,7 @@ export interface Notification {
     /**
      * The type of the message.
      */
-    type?: NotificationType
+    type: NotificationType
 
     /** The source of the notification.  */
     source?: string
