@@ -20,6 +20,8 @@ describe('ServerURLForm', () => {
                 status={'connected'}
                 onChange={onChange}
                 onSubmit={onSubmit}
+                urlHasPermissions={false}
+                requestPermissions={noop}
             />
         )
 
@@ -39,6 +41,8 @@ describe('ServerURLForm', () => {
             status: 'connected',
             onChange: noop,
             onSubmit: noop,
+            urlHasPermissions: false,
+            requestPermissions: noop,
         }
 
         const { container, rerender } = render(<ServerURLForm {...props} />)
@@ -56,7 +60,14 @@ describe('ServerURLForm', () => {
         const onSubmit = sinon.spy()
 
         const { container } = render(
-            <ServerURLForm value={'https://sourcegraph.com'} status={'connected'} onChange={noop} onSubmit={onSubmit} />
+            <ServerURLForm
+                value={'https://sourcegraph.com'}
+                status={'connected'}
+                onChange={noop}
+                onSubmit={onSubmit}
+                urlHasPermissions={false}
+                requestPermissions={noop}
+            />
         )
 
         const form = container.querySelector('form')!
@@ -79,6 +90,8 @@ describe('ServerURLForm', () => {
                     status={'connected'}
                     onChange={noop}
                     onSubmit={nextSubmit}
+                    urlHasPermissions={false}
+                    requestPermissions={noop}
                 />
             )
 
@@ -120,6 +133,8 @@ describe('ServerURLForm', () => {
                 status: 'connected',
                 onChange: nextChange,
                 onSubmit: nextSubmit,
+                urlHasPermissions: false,
+                requestPermissions: noop,
             }
 
             const { container } = render(<ServerURLForm {...props} />)
