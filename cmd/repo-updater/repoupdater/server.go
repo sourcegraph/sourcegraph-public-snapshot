@@ -114,7 +114,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	if s.Syncer == nil {
-		log15.Warn("server.external-service-sync", "syncer", "disabled")
+		log15.Debug("server.external-service-sync", "syncer", "disabled")
 		return
 	}
 
