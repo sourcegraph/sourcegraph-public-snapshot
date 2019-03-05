@@ -39,6 +39,13 @@ describe('e2e test suite', function(this: any): void {
         await init()
     })
 
+    beforeEach(async () => {
+        if (page.isClosed()) {
+            console.log('creating new page')
+            page = await browser.newPage()
+        }
+    })
+
     // Close browser.
     afterAll(async () => {
         if (browser) {
@@ -687,24 +694,53 @@ describe('e2e test suite', function(this: any): void {
     })
 
     describe('Search component', () => {
-        test.skip('renders results for sourcegraph/go-diff (no search group)', async () => {
-            await page.goto(
-                baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
-            )
-            await page.waitForSelector('.search-results__stats')
+        test('can execute search with search operators', async () => {
+            await page.goto(baseURL + '/github.com/sourcegraph/go-diff')
+            await enableOrAddRepositoryIfNeeded()
+
+            const operators: { [key: string]: string } = {
+                repo: 'sourcegraph/go-diff',
+                count: '1000',
+                type: 'file',
+                file: '.go',
+                '-file': '.md',
+            }
+
+            const operatorsQuery = Object.keys(operators)
+                .map(op => `${op}:${operators[op]}`)
+                .join('+')
+
+            await page.goto(`${baseURL}/search?q=diff+${operatorsQuery}`)
+            await page.waitForSelector('.e2e-search-results-stats')
             await retry(async () => {
                 const label = await page.evaluate(
-                    () => document.querySelector('.search-results__stats')!.textContent || ''
+                    () => document.querySelector('.e2e-search-results-stats')!.textContent || ''
                 )
                 expect(label.includes('results')).toEqual(true)
             })
+        })
+
+        test('renders results for sourcegraph/go-diff (no search group)', async () => {
+            await page.goto(baseURL + '/github.com/sourcegraph/go-diff')
+            await enableOrAddRepositoryIfNeeded()
+            await page.goto(
+                baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
+            )
+            await page.waitForSelector('.e2e-search-results-stats')
+            await retry(async () => {
+                const label = await page.evaluate(
+                    () => document.querySelector('.e2e-search-results-stats')!.textContent || ''
+                )
+                expect(label.includes('results')).toEqual(true)
+            })
+
+            const firstFileMatchHref = await page.$$eval('a.file-match__item', ([a]) => (a as any).href)
+
             // navigate to result on click
             await page.click('.file-match__item')
+
             await retry(async () => {
-                expect(await page.evaluate(() => window.location.href)).toEqual(
-                    baseURL +
-                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/testdata/sample_file_extended_empty_rename.diff#L1:1a'
-                )
+                expect(await page.evaluate(() => window.location.href)).toEqual(firstFileMatchHref)
             })
         })
 
@@ -712,7 +748,7 @@ describe('e2e test suite', function(this: any): void {
             await page.goto(baseURL + '/search')
 
             // Update the input value
-            await page.waitForSelector('input.query-input2__input')
+            await page.waitForSelector('.e2e-query-input')
             await page.keyboard.type('test repo:sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
 
             // TODO: test search scopes
