@@ -699,7 +699,7 @@ describe('e2e test suite', function(this: any): void {
             await enableOrAddRepositoryIfNeeded()
 
             const operators: { [key: string]: string } = {
-                repo: 'sourcegraph/go-diff',
+                repo: '^github.com/sourcegraph/go-diff$',
                 count: '1000',
                 type: 'file',
                 file: '.go',
@@ -734,10 +734,10 @@ describe('e2e test suite', function(this: any): void {
                 expect(label.includes('results')).toEqual(true)
             })
 
-            const firstFileMatchHref = await page.$$eval('a.file-match__item', ([a]) => (a as any).href)
+            const firstFileMatchHref = await page.$eval('.e2e-file-match-item', a => (a as HTMLAnchorElement).href)
 
             // navigate to result on click
-            await page.click('.file-match__item')
+            await page.click('.e2e-file-match-item')
 
             await retry(async () => {
                 expect(await page.evaluate(() => window.location.href)).toEqual(firstFileMatchHref)
