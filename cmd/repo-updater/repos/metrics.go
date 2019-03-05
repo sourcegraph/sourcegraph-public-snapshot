@@ -119,10 +119,4 @@ var (
 		Name:      "sched_known_repos",
 		Help:      "The number of unique repositories that have been managed by the scheduler.",
 	})
-	schedScale = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "sched_scale",
-		Help:      "The scheduler interval scale.",
-	})
 )

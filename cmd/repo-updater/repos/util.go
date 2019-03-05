@@ -70,8 +70,6 @@ type repoCreateOrUpdateRequest struct {
 // a given source.
 func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
 	c := conf.Get()
-	newList := make(sourceRepoList)
-	newScheduler := newSchedulerEnabled(c)
 	newMap := make(sourceRepoMap)
 
 	do := func(op repoCreateOrUpdateRequest) {
@@ -91,9 +89,7 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 			return
 		}
 
-		if !newScheduler {
-			newList[string(createdRepo.Name)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
-		} else if !c.DisableAutoGitUpdates {
+		if !c.DisableAutoGitUpdates {
 			newMap[createdRepo.Name] = &configuredRepo2{
 				Name:    createdRepo.Name,
 				URL:     op.URL,
@@ -106,9 +102,7 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 		do(repo)
 	}
 
-	if !newScheduler {
-		repos.updateSource(source, newList)
-	} else if !c.DisableAutoGitUpdates {
+	if !c.DisableAutoGitUpdates {
 		Scheduler.updateSource(source, newMap)
 	}
 }

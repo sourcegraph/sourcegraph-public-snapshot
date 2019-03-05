@@ -23,6 +23,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- The `"updateScheduler2"` experiment is now the default and it's no longer possible to configure.
+
 ## 3.1.1
 
 ### Added
