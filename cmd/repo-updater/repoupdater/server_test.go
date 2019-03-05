@@ -29,7 +29,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 		{
 			name: "bad kind",
 			svc:  &api.ExternalService{},
-			err:  "empty external service kind\n",
+			err:  "<nil>",
 		},
 		{
 			name: "bad service config",
@@ -53,7 +53,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 			cli := repoupdater.Client{URL: ts.URL, HTTPClient: http.DefaultClient}
 			ctx := context.Background()
 
-			err := cli.SyncExternalService(ctx, *tc.svc)
+			_, err := cli.SyncExternalService(ctx, *tc.svc)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("\nhave: %s\nwant: %s", have, want)
 			}
