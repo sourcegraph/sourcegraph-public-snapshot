@@ -10,8 +10,6 @@ export let eventLogger = new EventLogger()
 export let sourcegraphUrl =
     window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || DEFAULT_SOURCEGRAPH_URL
 
-export let renderMermaidGraphsEnabled = false
-
 export let inlineSymbolSearchEnabled = false
 
 interface UrlCache {
@@ -23,7 +21,6 @@ export const repoUrlCache: UrlCache = {}
 if (window.SG_ENV === 'EXTENSION') {
     storage.getSync(items => {
         sourcegraphUrl = items.sourcegraphURL
-        renderMermaidGraphsEnabled = items.featureFlags.renderMermaidGraphsEnabled
         inlineSymbolSearchEnabled = items.featureFlags.inlineSymbolSearchEnabled
     })
 }
@@ -38,10 +35,6 @@ export function isBrowserExtension(): boolean {
 
 export function isSourcegraphDotCom(url: string = sourcegraphUrl): boolean {
     return url === DEFAULT_SOURCEGRAPH_URL
-}
-
-export function setRenderMermaidGraphsEnabled(enabled: boolean): void {
-    renderMermaidGraphsEnabled = enabled
 }
 
 export function setInlineSymbolSearchEnabled(enabled: boolean): void {

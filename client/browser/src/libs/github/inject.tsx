@@ -1,10 +1,9 @@
-import mermaid from 'mermaid'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
 import { Alerts } from '../../shared/components/Alerts'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
-import { eventLogger, inlineSymbolSearchEnabled, renderMermaidGraphsEnabled } from '../../shared/util/context'
+import { eventLogger, inlineSymbolSearchEnabled } from '../../shared/util/context'
 import { getFileContainers, parseURL } from './util'
 
 async function refreshModules(): Promise<void> {
@@ -31,8 +30,6 @@ export async function injectGitHubApplication(marker: HTMLElement): Promise<void
 
 async function inject(): Promise<void> {
     injectServerBanner()
-
-    injectMermaid()
 
     injectInlineSearch()
 }
@@ -68,68 +65,6 @@ function injectServerBanner(): void {
         </TelemetryContext.Provider>,
         mount
     )
-}
-
-function injectMermaid(): void {
-    if (!renderMermaidGraphsEnabled) {
-        return
-    }
-
-    // The structure looks like:
-    //
-    //    ...
-    //    <pre lang="mermaid">
-    //       <code>
-    //          graph TD;
-    //             A-->B;
-    //       </code>
-    //    </pre>
-    //   ...
-    //
-    // We want to end up with:
-    //
-    //    ...
-    //    <pre lang="mermaid">
-    //       <code>
-    //          graph TD;
-    //             A-->B;
-    //       </code>
-    //    </pre>
-    //    <svg>
-    //       /* SVG FROM MERMAID GOES HERE */
-    //    </svg>
-    //   ...
-
-    let id = 1
-
-    const renderMermaidCharts = () => {
-        const pres = document.querySelectorAll('pre[lang=mermaid]')
-        for (const pre of pres) {
-            const el = pre as HTMLElement
-            if (el.style.display === 'none') {
-                // already rendered
-                continue
-            }
-            el.style.display = 'none'
-            const chartDefinition = pre.getElementsByTagName('code')[0].textContent || ''
-            const chartID = `mermaid_${id++}`
-            mermaid.mermaidAPI.render(chartID, chartDefinition, svg => el.insertAdjacentHTML('afterend', svg))
-        }
-    }
-
-    // Render mermaid charts async and debounce the rendering
-    // to minimize impact on page load.
-    let timeout: number | undefined
-    const handleDomChange = () => {
-        clearTimeout(timeout)
-        // Need to use window.setTimeout because:
-        // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/21310#issuecomment-367919251
-        timeout = window.setTimeout(() => renderMermaidCharts(), 200)
-    }
-
-    const observer = new MutationObserver(() => handleDomChange())
-    observer.observe(document.body, { subtree: true, childList: true })
-    handleDomChange()
 }
 
 function injectInlineSearch(): void {
