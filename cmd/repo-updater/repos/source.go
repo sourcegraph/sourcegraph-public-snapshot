@@ -50,8 +50,10 @@ func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...strin
 	}
 
 	if !includesGitHubDotComSource(srcs) {
-		// add a GitHub.com source by default, to support navigating to URL paths like
-		// /github.com/foo/bar to auto-add that repository.
+		// add a GitHub.com source by default, to support navigating to URL
+		// paths like /github.com/foo/bar to auto-add that repository. This
+		// source returns nothing for ListRepos. However, in the future we
+		// intend to use it in repoLookup.
 		src, err := NewGithubDotComSource()
 		srcs, errs = append(srcs, src), multierror.Append(errs, err)
 	}
