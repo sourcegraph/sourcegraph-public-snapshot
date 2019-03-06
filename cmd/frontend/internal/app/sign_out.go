@@ -63,14 +63,16 @@ func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutUR
 
 var (
 	signoutPageTemplate = template.Must(template.New("").Parse(`
-<pre>
-<strong>Signed out of Sourcegraph</strong>
-<br>
-<a href="/">Return to Sourcegraph</a>
-<br>
+<style>.auth-box,.center{position:relative}.auth-box,a,body{display:block}a,body,h1{text-align:center}html{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{background-color:#0e121b}*{font-family:system,-apple-system,San Francisco,\.SFNSDisplay-Regular,Segoe UI,Segoe,Segoe WP,Helvetica Neue,helvetica,Lucida Grande,arial,sans-serif;font-size:14px;color:#f2f4f8}.auth-box{box-sizing:border-box;width:100%;max-width:420px;margin:10vh auto auto;overflow:hidden;border:1px solid #2B3750;background-color:#1D2535;box-shadow:0 0 8px 0 rgba(0,0,0,.4);padding:14px;border-radius:6px}@media screen and (max-width:678px){.auth-box{border:none;margin-top:64px;background-color:#0e121b}}.logo{margin-top:28px;width:atuo}.center{padding-top:48px}h1{font-size:22px;font-weight:500;margin-top:40px}a{font-size:14px;line-height:20px;border:none;border-radius:2px;background-color:#2b3750;margin-bottom:20px;text-decoration:none;word-wrap:normal;transition:opacity 250ms ease;padding:6px 12px}a:last-of-type{margin-bottom:0}a:hover{opacity:.85}a:active,a:target{opacity:.7}.primary{margin-top:14px;color:#fff;background-color:#1663a9;border-color:#155d9e;margin-bottom:48px}</style>
+<div class="auth-box">
+<img class="logo" src="http://localhost:3080/.assets/img/sourcegraph-head-logo.svg">
+<div class="center">
+<h1>Signed out of Sourcegraph</h1>
+<a class="primary" href="/">Return to Sourcegraph</a>
 {{range .SignoutURLs}}
-<a href="{{.URL}}">Sign out of {{if .ProviderDisplayName}}{{.ProviderDisplayName}}{{else}}{{.ProviderServiceType}} authentication provider{{end}}</a><br>
+<a href="{{.URL}}">Sign out of {{if .ProviderDisplayName}}{{.ProviderDisplayName}}{{else}}{{.ProviderServiceType}} authentication provider{{end}}</a>
 {{end}}
-</pre>
+</div>
+</div>
 `))
 )
