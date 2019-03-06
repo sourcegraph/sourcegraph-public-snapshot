@@ -9,8 +9,8 @@ if [ -z "$IMAGE" ]; then
 fi
 
 echo "Running a daemonized $IMAGE as the test subject..."
-CONTAINER="$(docker container run --rm -d $IMAGE)"
-trap 'kill $(jobs -p)'" ; docker container stop $CONTAINER" EXIT
+CONTAINER="$(docker container run -d $IMAGE)"
+trap 'kill $(jobs -p)'" ; docker container rm -f $CONTAINER" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
 # Connect the server container's port 7080 to localhost:7080 so that e2e tests
