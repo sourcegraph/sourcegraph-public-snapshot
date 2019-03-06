@@ -48,7 +48,6 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
 
     public constructor(props: SearchResultMatchProps) {
         super(props)
-
         // Render the match body as markdown, and syntax highlight the response if it's a code block.
         // This is a lot of network requests right now, but once extensions can run on the backend we can
         // run results through the renderer and syntax highlighter without network requests.
@@ -67,7 +66,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
                             // Extract the text content of the result.
-                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText
+                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText.trim()
                             if (codeContent) {
                                 return highlightCode({
                                     code: codeContent,

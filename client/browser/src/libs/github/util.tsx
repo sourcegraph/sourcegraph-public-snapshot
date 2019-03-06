@@ -193,7 +193,7 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
 }
 
 function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
-    const branchElements = document.querySelectorAll('.commitish-suggester span.js-select-button') as NodeListOf<
+    const branchElements = document.querySelectorAll('.commitish-suggester .select-menu-button span') as NodeListOf<
         HTMLSpanElement
     >
     if (branchElements && branchElements.length === 2) {

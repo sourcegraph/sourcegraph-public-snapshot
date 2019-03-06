@@ -9,8 +9,8 @@ if [ -z "$IMAGE" ]; then
 fi
 
 echo "Running a daemonized $IMAGE as the test subject..."
-CONTAINER="$(docker container run --rm -d $IMAGE)"
-trap 'kill $(jobs -p)'" ; docker container stop $CONTAINER" EXIT
+CONTAINER="$(docker container run -d $IMAGE)"
+trap 'kill $(jobs -p)'" ; docker container rm -f $CONTAINER" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
 # Connect the server container's port 7080 to localhost:7080 so that e2e tests
@@ -20,10 +20,18 @@ socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat std
 
 URL="http://localhost:7080"
 
+set +e
 timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
 done"
+if [ $? -ne 0 ]; then
+    echo "$URL was not accessible within 30s. Here's the output of docker inspect and docker logs:"
+    docker inspect "$CONTAINER"
+    docker logs "$CONTAINER"
+    exit 1
+fi
+set -e
 echo "Waiting for $URL... done"
 
 pushd web

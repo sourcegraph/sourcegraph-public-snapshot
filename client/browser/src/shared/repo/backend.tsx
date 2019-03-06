@@ -150,7 +150,7 @@ export const fetchBlobContentLines = memoizeObservable(
                     }
                 }
 
-                // Don't swollow unexpected errors
+                // Don't swallow unexpected errors.
                 throw { errors, ...rest }
             })
         ),

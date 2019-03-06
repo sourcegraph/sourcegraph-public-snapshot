@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -45,11 +44,7 @@ func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var result *protocol.RepoUpdateSchedulerInfoResult
-	if conf.UpdateScheduler2Enabled() {
-		result = repos.Scheduler.ScheduleInfo(args.RepoName)
-	}
-
+	result := repos.Scheduler.ScheduleInfo(args.RepoName)
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -88,13 +83,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	if conf.UpdateScheduler2Enabled() {
-		repos.Scheduler.UpdateOnce(req.Repo, req.URL)
-		return
-	}
-
-	repos.UpdateOnce(r.Context(), req.Repo, req.URL)
+	repos.Scheduler.UpdateOnce(req.Repo, req.URL)
 }
 
 func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {

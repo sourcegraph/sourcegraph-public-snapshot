@@ -91,12 +91,8 @@ func main() {
 
 			go func() {
 				for repo := range otherSynced {
-					if conf.Get().DisableAutoGitUpdates {
-						continue
-					} else if conf.UpdateScheduler2Enabled() {
+					if !conf.Get().DisableAutoGitUpdates {
 						repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
-					} else {
-						repos.UpdateOnce(ctx, repo.Name, repo.VCS.URL)
 					}
 				}
 			}()
@@ -131,20 +127,15 @@ func main() {
 		// Start new repo syncer updates scheduler relay thread.
 		go func() {
 			for diff := range diffs {
-				if conf.Get().DisableAutoGitUpdates {
-					continue
-				} else if conf.UpdateScheduler2Enabled() {
+				if !conf.Get().DisableAutoGitUpdates {
 					repos.Scheduler.UpdateFromDiff(diff)
-				} else {
-					// TODO(keegancsmith) Remove old scheduler https://github.com/sourcegraph/sourcegraph/issues/2063
-					log15.Error("Diff based scheduler update not implemented for old scheduler")
 				}
 			}
 		}()
 	}
 
-	// Repos old syncing thread
-	go repos.RunRepositorySyncWorker(ctx)
+	// Git fetches scheduler
+	go repos.RunScheduler(ctx)
 
 	// git-server repos purging thread
 	go repos.RunRepositoryPurgeWorker(ctx)
@@ -171,14 +162,7 @@ func main() {
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var data interface{}
-			if conf.UpdateScheduler2Enabled() {
-				data = repos.Scheduler.DebugDump()
-			} else {
-				data = repos.QueueSnapshot()
-			}
-
-			d, err := json.MarshalIndent(data, "", "  ")
+			d, err := json.MarshalIndent(repos.Scheduler.DebugDump(), "", "  ")
 			if err != nil {
 				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
 				return

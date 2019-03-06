@@ -16,12 +16,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Symbols search is much faster now. After the initial indexing, you can expect code intelligence to be nearly instant no matter the size of your repository.
-- Common regexp search mistakes are now automattically fixed ([see this issue
-  for more info.](https://github.com/sourcegraph/sourcegraph/issues/2125))
 
 ### Fixed
 
 ### Removed
+
+- The `"updateScheduler2"` experiment is now the default and it's no longer possible to configure.
 
 ## 3.1.1
 

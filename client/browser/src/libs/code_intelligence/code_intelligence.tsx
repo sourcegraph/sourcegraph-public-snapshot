@@ -8,13 +8,12 @@ import {
     HoverState,
     PositionAdjuster,
 } from '@sourcegraph/codeintellify'
-import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { Selection } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
-import { animationFrameScheduler, combineLatest, fromEvent, Observable, of, Subject, Subscription } from 'rxjs'
+import { animationFrameScheduler, combineLatest, EMPTY, fromEvent, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     distinctUntilChanged,
@@ -37,6 +36,7 @@ import { HoverContext, HoverOverlay } from '../../../../../shared/src/hover/Hove
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
+import { propertyIsDefined } from '../../../../../shared/src/util/types'
 import {
     FileSpec,
     lprToSelectionsZeroIndexed,
@@ -424,8 +424,8 @@ export function handleCodeHost({
         resolveRev(context).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
-            catchError(error => {
-                if ((error as Error).name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+            catchError((err: Error) => {
+                if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
                     return [false]
                 }
 
@@ -474,6 +474,12 @@ export function handleCodeHost({
         switchMap(({ info, ...rest }) =>
             fetchFileContents(info).pipe(map(infoWithContents => ({ info: infoWithContents, ...rest })))
         ),
+        catchError((err: Error) => {
+            if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                return EMPTY
+            }
+            throw err
+        }),
         observeOn(animationFrameScheduler)
     )
 

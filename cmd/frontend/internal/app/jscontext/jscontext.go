@@ -76,8 +76,6 @@ type JSContext struct {
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
-
-	UpdateScheduler2Enabled bool `json:"updateScheduler2Enabled"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -170,8 +168,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AllowSignup: conf.AuthAllowSignup(),
 
 		AuthProviders: authProviders,
-
-		UpdateScheduler2Enabled: conf.UpdateScheduler2Enabled(),
 	}
 }
 

@@ -35,6 +35,8 @@ export interface ServerURLFormProps {
     value: string
     onChange: (value: string) => void
     onSubmit: () => void
+    urlHasPermissions: boolean
+    requestPermissions: () => void
 
     /**
      * Overrides `this.props.status` and `this.state.isUpdating` in order to
@@ -137,6 +139,15 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                             </a>
                             .
                         </p>
+                        {!this.props.urlHasPermissions && (
+                            <p>
+                                You may need to{' '}
+                                <a href="#" onClick={this.props.requestPermissions}>
+                                    grant the Sourcegraph browser extension additional permissions
+                                </a>{' '}
+                                for this URL.
+                            </p>
+                        )}
                         <p>
                             <b>If you are an admin,</b> please ensure that{' '}
                             <a

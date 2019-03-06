@@ -39,7 +39,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	}
 
 	if err := syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "external service created, but sync request failed")
+		return nil, errors.Wrap(err, "warning: external service created, but sync request failed")
 	}
 
 	return &externalServiceResolver{externalService: externalService}, nil
@@ -80,7 +80,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	}
 
 	if err = syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "external service updated, but sync request failed")
+		return nil, errors.Wrap(err, "warning: external service updated, but sync request failed")
 	}
 
 	return &externalServiceResolver{externalService: externalService}, nil

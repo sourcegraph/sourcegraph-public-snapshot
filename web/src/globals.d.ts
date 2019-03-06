@@ -109,9 +109,6 @@ interface SourcegraphContext {
         isBuiltin: boolean
         authenticationURL?: string
     }[]
-
-    /** Whether the new update scheduler is enabled */
-    updateScheduler2Enabled: boolean
 }
 
 /**

@@ -13,11 +13,7 @@ import { injectGitHubApplication } from '../../libs/github/inject'
 import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
-import {
-    setInlineSymbolSearchEnabled,
-    setRenderMermaidGraphsEnabled,
-    setSourcegraphUrl,
-} from '../../shared/util/context'
+import { setInlineSymbolSearchEnabled, setSourcegraphUrl } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -77,11 +73,6 @@ function injectApplication(): void {
 
         if (isGitHub || isGitHubEnterprise) {
             setSourcegraphUrl(sourcegraphServerUrl)
-            setRenderMermaidGraphsEnabled(
-                items.featureFlags.renderMermaidGraphsEnabled === undefined
-                    ? false
-                    : items.featureFlags.renderMermaidGraphsEnabled
-            )
             setInlineSymbolSearchEnabled(
                 items.featureFlags.inlineSymbolSearchEnabled === undefined
                     ? false

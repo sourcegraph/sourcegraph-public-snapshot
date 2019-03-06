@@ -12,13 +12,6 @@ export interface PhabricatorMapping {
  */
 export interface FeatureFlags {
     /**
-     * Whether or not to render [Mermaid](https://mermaidjs.github.io/) graphs
-     * in markdown files viewed on GitHub.
-     *
-     * @duration permanent
-     */
-    renderMermaidGraphsEnabled: boolean
-    /**
      * Whether or not to use the new inject method for code intelligence.
      *
      * @duration temporary - to be removed November first.
@@ -41,7 +34,6 @@ export interface FeatureFlags {
 
 export const featureFlagDefaults: FeatureFlags = {
     newInject: false,
-    renderMermaidGraphsEnabled: true,
     inlineSymbolSearchEnabled: true,
     allowErrorReporting: false,
 }

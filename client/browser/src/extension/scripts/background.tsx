@@ -191,8 +191,6 @@ storage.setSyncMigration(items => {
 
     newItems.featureFlags = featureFlags
 
-    newItems.featureFlags.renderMermaidGraphsEnabled = true
-
     // TODO: Remove this block after a few releases
     const clientSettings = JSON.parse(items.clientSettings || '{}')
     if (clientSettings['codecov.endpoints'] || typeof clientSettings['codecov.showCoverage'] !== 'undefined') {

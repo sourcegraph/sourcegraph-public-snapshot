@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as permissions from '../../browser/permissions'
 import { getExtensionVersionSync } from '../../browser/runtime'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
 import { OptionsMenu, OptionsMenuProps } from './Menu'
@@ -20,7 +21,10 @@ export interface OptionsContainerProps {
 }
 
 interface OptionsContainerState
-    extends Pick<OptionsMenuProps, 'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen'> {}
+    extends Pick<
+        OptionsMenuProps,
+        'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen' | 'urlHasPermissions'
+    > {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
     private version = getExtensionVersionSync()
@@ -35,6 +39,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         this.state = {
             status: 'connecting',
             sourcegraphURL: props.sourcegraphURL,
+            urlHasPermissions: false,
             connectionError: undefined,
             isSettingsOpen: false,
         }
@@ -64,7 +69,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         )
 
         this.subscriptions.add(
-            fetchingSite.subscribe(res => {
+            fetchingSite.subscribe(async res => {
                 let url = ''
 
                 if (isErrorLike(res)) {
@@ -78,6 +83,9 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                     this.setState({ status: 'connected' })
                     url = res
                 }
+
+                const urlHasPermissions = await permissions.contains(url)
+                this.setState({ urlHasPermissions })
 
                 props.setSourcegraphURL(url)
             })
@@ -105,8 +113,13 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 toggleFeatureFlag={this.props.toggleFeatureFlag}
                 featureFlags={this.props.featureFlags}
                 onSettingsClick={this.handleSettingsClick}
+                requestPermissions={this.requestPermissions}
             />
         )
+    }
+
+    private requestPermissions = async () => {
+        await permissions.request([this.state.sourcegraphURL])
     }
 
     private handleURLChange = (value: string) => {
