@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import escapeStringRegexp from 'escape-string-regexp'
 import { decode } from 'he'
 import { isEqual } from 'lodash'
 import { range } from 'lodash'
@@ -67,6 +68,8 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const parser = new DOMParser()
                             // Extract the text content of the result.
                             const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText.trim()
+                            // Match the code content and any trailing newlines if any.
+                            const codeContentAndAnyNewLines = new RegExp(escapeStringRegexp(codeContent) + '\\n*')
                             if (codeContent) {
                                 return highlightCode({
                                     code: codeContent,
@@ -76,7 +79,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                 }).pipe(
                                     switchMap(highlightedStr => {
                                         const highlightedMarkdown = decode(markdownHTML).replace(
-                                            codeContent,
+                                            codeContentAndAnyNewLines,
                                             highlightedStr
                                         )
                                         return of(highlightedMarkdown)
