@@ -1,7 +1,3 @@
----
-ignoreDisconnectedPageCheck: true
----
-
 # Sourcegraph: open product, open company, open source
 
 As part of making Sourcegraph open source, we now build Sourcegraph ([roadmap](roadmap/index.md) and [issues](http://github.com/sourcegraph/sourcegraph/issues/)) as an **open product**, and **open company**. Our [website](https://github.com/sourcegraph/about) and [documentation](https://github.com/sourcegraph/sourcegraph/tree/master/doc) is now open source  which holds product- and company-related docs.
@@ -26,8 +22,4 @@ Open company doesn't mean that everything is public; only principles, strategies
 
 <!-- TODO (ryan): Talk to @sqs about what content should go here -->
 
-Sourcegraph OSS is available freely under the [Apache 2 license](LICENSE.apache). Sourcegraph OSS comprises all files in this repository except those in the `enterprise/` and `web/src/enterprise` directories.
-
-All files in the `enterprise/` and `web/src/enterprise/` directories are subject to the [Sourcegraph Enterprise license](LICENSE.enterprise).
-
-More info is in the [open source FAQs](faq.md)
+To learn more about what **open source** means at Sourcegraph, see the [open source FAQs](faq.md) and [license documentation](../README.md#license).
