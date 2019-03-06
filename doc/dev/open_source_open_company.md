@@ -20,6 +20,4 @@ Open company doesn't mean that everything is public; only principles, strategies
 
 ## Open source
 
-<!-- TODO (ryan): Talk to @sqs about what content should go here -->
-
 To learn more about what **open source** means at Sourcegraph, see the [open source FAQs](faq.md) and [license documentation](../README.md#license).
