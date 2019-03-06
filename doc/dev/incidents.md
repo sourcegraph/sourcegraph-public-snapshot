@@ -7,7 +7,7 @@ Examples:
 - sourcegraph.com is down or a critical feature is broken (e.g. sign-in, search, code intel).
 - A customer reports that their own Sourcegraph instance is down or a critical feature is broken.
 - There is a security issue with Sourcegraph.
-- The build on `master` is broken.
+- The `master` build is broken.
 
 ## Identifying an incident
 
