@@ -35,5 +35,5 @@ set -e
 echo "Waiting for $URL... done"
 
 pushd web
-env SOURCEGRAPH_BASE_URL="$URL" yarn run test-e2e
+env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
 popd

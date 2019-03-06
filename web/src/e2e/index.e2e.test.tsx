@@ -1,3 +1,4 @@
+import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as os from 'os'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
@@ -6,6 +7,12 @@ import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/uti
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
 jest.setTimeout(30000)
+
+// tslint:disable-next-line: no-empty
+const noopPercySnapshot: typeof realPercySnapshot = async () => {}
+const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
+    ? realPercySnapshot
+    : noopPercySnapshot
 
 /**
  * Used in the external service configuration.
@@ -214,6 +221,13 @@ describe('e2e test suite', function(this: any): void {
         // verify there are some references
         await page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item')
     }
+
+    describe('Visual tests', () => {
+        test('Repositories list', async () => {
+            await page.goto(baseURL + '/site-admin/repositories')
+            await percySnapshot(page, 'Repositories list')
+        })
+    })
 
     describe('Theme switcher', () => {
         test('changes the theme', async () => {
