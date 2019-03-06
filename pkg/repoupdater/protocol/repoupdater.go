@@ -129,3 +129,9 @@ type RepoUpdateRequest struct {
 type ExternalServiceSyncRequest struct {
 	ExternalService api.ExternalService
 }
+
+// ExternalServiceSyncResult is a result type of an external service's sync request.
+type ExternalServiceSyncResult struct {
+	ExternalService api.ExternalService
+	Error           error
+}

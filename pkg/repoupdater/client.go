@@ -160,23 +160,33 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) err
 }
 
 // SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) error {
+func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error) {
 	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		bs, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		return errors.New(string(bs))
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
-	return nil
+	var result protocol.ExternalServiceSyncResult
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		// TODO(tsenart): Use response type for unmarshalling errors too.
+		// This needs to be done after rolling out the response type in prod.
+		return nil, errors.New(string(bs))
+	} else if len(bs) == 0 {
+		// TODO(keegancsmith): Remove once repo-updater update is rolled out.
+		result.ExternalService = svc
+		return &result, nil
+	} else if err = json.Unmarshal(bs, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {

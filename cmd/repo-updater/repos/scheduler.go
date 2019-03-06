@@ -238,6 +238,50 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 	return limiter
 }
 
+// UpdateFromDiff updates the list of configured repos from the given sync diff.
+func (s *updateScheduler) UpdateFromDiff(diff Diff) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, del := range diff.Deleted {
+		log15.Debug("scheduler.update-from-diff.deleted", "repo", del.Name)
+		repo := configuredRepo2FromRepo(del)
+		s.schedule.remove(repo)
+		updating := false
+		s.updateQueue.remove(repo, updating)
+	}
+
+	for _, add := range diff.Added {
+		log15.Debug("scheduler.update-from-diff.added", "repo", add.Name)
+		repo := configuredRepo2FromRepo(add)
+		s.schedule.add(repo)
+		s.updateQueue.enqueue(repo, priorityLow)
+	}
+
+	for _, mod := range diff.Modified {
+		log15.Debug("scheduler.update-from-diff.modified.update", "repo", mod.Name)
+		repo := configuredRepo2FromRepo(mod)
+		s.schedule.update(repo)
+		s.updateQueue.update(repo)
+	}
+
+	for _, unm := range diff.Unmodified {
+		log15.Debug("scheduler.update-from-diff.unmodified", "repo", unm.Name)
+		repo := configuredRepo2FromRepo(unm)
+		s.schedule.add(repo)
+	}
+
+	schedKnownRepos.Set(float64(len(diff.Unmodified) + len(diff.Modified) + len(diff.Added)))
+}
+
+func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
+	repo := configuredRepo2{Name: api.RepoName(r.Name), Enabled: r.Enabled}
+	if urls := r.CloneURLs(); len(urls) > 0 {
+		repo.URL = urls[0]
+	}
+	return &repo
+}
+
 // updateSource updates the list of configured repos associated with the given source.
 // This is the source of truth for what repos exist in the schedule.
 func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
@@ -276,6 +320,7 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 
 	s.sourceRepos[source] = newList
 
+	// TODO(keegancsmith) fix this metric, requires setting a source but source contains a secret
 	schedKnownRepos.Set(float64(len(newList)))
 }
 

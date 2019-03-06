@@ -10,7 +10,6 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -91,7 +90,7 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 		svcs    []*api.ExternalService
 		before  []*api.Repo
 		after   []*api.Repo
-		results SyncResults
+		results OtherSyncResults
 		err     error
 	}{
 		{
@@ -99,7 +98,7 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 			svcs:   []*api.ExternalService{svcs["github.com"]},
 			before: []*api.Repo{},
 			after:  []*api.Repo{repos["github.com/foo/bar"]},
-			results: SyncResults{
+			results: OtherSyncResults{
 				{
 					Service: svcs["github.com"],
 					Synced:  []*protocol.RepoInfo{repoInfo(repos["github.com/foo/bar"])},
@@ -111,7 +110,7 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 			svcs:   []*api.ExternalService{svcs["github.com"]},
 			before: []*api.Repo{repos["github.com/foo/bar"]},
 			after:  []*api.Repo{repos["github.com/foo/bar"]},
-			results: SyncResults{
+			results: OtherSyncResults{
 				{
 					Service: svcs["github.com"],
 					Synced:  []*protocol.RepoInfo{repoInfo(repos["github.com/foo/bar"])},
@@ -119,21 +118,14 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 			},
 		},
 		{
-			name:   "external service listing error",
-			svcs:   []*api.ExternalService{},
-			before: []*api.Repo{},
-			after:  []*api.Repo{},
-			err:    errors.New(`no external services of kind "OTHER"`),
-		},
-		{
 			name:   "invalid JSON in exernal service config",
 			svcs:   []*api.ExternalService{svcs["invalid-json"]},
 			before: []*api.Repo{},
 			after:  []*api.Repo{},
-			results: SyncResults{
+			results: OtherSyncResults{
 				{
 					Service: svcs["invalid-json"],
-					Errors: SyncErrors{
+					Errors: OtherSyncErrors{
 						{
 							Service: svcs["invalid-json"],
 							Err:     "config error: failed to parse JSON: [CloseBraceExpected]",
@@ -147,10 +139,10 @@ func TestOtherReposSyncer_syncAll(t *testing.T) {
 			svcs:   []*api.ExternalService{svcs["bad"]},
 			before: []*api.Repo{},
 			after:  []*api.Repo{},
-			results: SyncResults{
+			results: OtherSyncResults{
 				{
 					Service: svcs["bad"],
-					Errors: SyncErrors{
+					Errors: OtherSyncErrors{
 						{
 							Service: svcs["bad"],
 							Repo: &protocol.RepoInfo{

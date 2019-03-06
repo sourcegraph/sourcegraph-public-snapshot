@@ -42,7 +42,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 			return repos, nil
 		}
 
-		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("WHERE true"))
+		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("true"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -60,7 +60,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 			return nil, nil
 		}
 
-		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("WHERE true"))
+		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("true"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +79,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 			return filteredRepos, nil
 		}
 
-		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("WHERE true"))
+		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("true"))
 		if err != nil {
 			t.Fatal(err)
 		}

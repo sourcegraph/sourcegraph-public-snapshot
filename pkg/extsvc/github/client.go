@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -38,6 +37,11 @@ var (
 
 	requestCounter = metrics.NewRequestCounter("github", "Total number of requests sent to the GitHub API.")
 )
+
+// Doer captures the Do method of an HTTP client.
+type Doer interface {
+	Do(*http.Request) (*http.Response, error)
+}
 
 // Client is a caching GitHub API client.
 //
@@ -60,7 +64,7 @@ type Client struct {
 	defaultToken string
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
-	httpClient *http.Client
+	httpClient Doer
 
 	// repoCache is a map of rcache.Cache instances keyed by auth token.
 	repoCache   map[string]*rcache.Cache
@@ -78,14 +82,16 @@ type Client struct {
 	RateLimit *ratelimit.Monitor
 }
 
-type githubAPIError struct {
+// APIError is an error type returned by Client when the Github API responds with
+// an error.
+type APIError struct {
 	URL              string
 	Code             int
 	Message          string
 	DocumentationURL string `json:"documentation_url"`
 }
 
-func (e *githubAPIError) Error() string {
+func (e *APIError) Error() string {
 	return fmt.Sprintf("request to %s returned status %d: %s", e.URL, e.Code, e.Message)
 }
 
@@ -206,14 +212,22 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 		span.Finish()
 	}()
 
-	resp, err = ctxhttp.Do(ctx, c.httpClient, req)
+	resp, err = c.httpClient.Do(req.WithContext(ctx))
+	// If we got an error, and the context has been canceled,
+	// the context's error is probably more useful.
 	if err != nil {
-		return err
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			return err
+		}
 	}
+
 	defer resp.Body.Close()
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
-		var err githubAPIError
+		var err APIError
 		if decErr := json.NewDecoder(resp.Body).Decode(&err); decErr != nil {
 			log15.Warn("Failed to decode error response from github API", "error", decErr)
 		}
@@ -294,7 +308,7 @@ func unmarshal(data []byte, v interface{}) error {
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
-	if e, ok := errors.Cause(err).(*githubAPIError); ok {
+	if e, ok := errors.Cause(err).(*APIError); ok {
 		return e.Code
 	}
 	return 0
@@ -327,7 +341,7 @@ func IsNotFound(err error) bool {
 // IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
 // limit was exceeded.
 func IsRateLimitExceeded(err error) bool {
-	if e, ok := errors.Cause(err).(*githubAPIError); ok {
+	if e, ok := errors.Cause(err).(*APIError); ok {
 		return strings.Contains(e.Message, "API rate limit exceeded") || strings.Contains(e.DocumentationURL, "#rate-limiting")
 	}
 

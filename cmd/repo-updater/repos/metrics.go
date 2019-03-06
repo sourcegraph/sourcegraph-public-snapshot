@@ -117,6 +117,6 @@ var (
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "sched_known_repos",
-		Help:      "The number of unique repositories that have been managed by the scheduler.",
+		Help:      "The number of repositories that are managed by the scheduler.",
 	})
 )

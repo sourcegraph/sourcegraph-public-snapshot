@@ -83,6 +83,17 @@ func (r *ExternalRepoSpec) Equal(s *ExternalRepoSpec) bool {
 	return r.ID == s.ID && r.ServiceType == s.ServiceType && r.ServiceID == s.ServiceID
 }
 
+// Compare returns -1 if r < s, 0 if r == s or 1 if r > s
+func (r ExternalRepoSpec) Compare(s ExternalRepoSpec) int {
+	if r.ServiceType != s.ServiceType {
+		return cmp(r.ServiceType, s.ServiceType)
+	}
+	if r.ServiceID != s.ServiceID {
+		return cmp(r.ServiceID, s.ServiceID)
+	}
+	return cmp(r.ID, s.ID)
+}
+
 func (r *ExternalRepoSpec) String() string {
 	return fmt.Sprintf("ExternalRepoSpec{%s %s %s}", r.ServiceID, r.ServiceType, r.ID)
 }
@@ -128,4 +139,15 @@ type ExternalService struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time
+}
+
+func cmp(a, b string) int {
+	switch {
+	case a < b:
+		return -1
+	case b < a:
+		return 1
+	default:
+		return 0
+	}
 }

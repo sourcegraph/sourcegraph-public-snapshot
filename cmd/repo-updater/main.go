@@ -4,10 +4,12 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -28,10 +30,133 @@ import (
 const port = "3182"
 
 func main() {
+	syncerEnabled, _ := strconv.ParseBool(env.Get("SRC_SYNCER_ENABLED", "false", "Use the new repo metadata syncer."))
+
 	ctx := context.Background()
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
+
+	// Syncing relies on access to frontend and git-server, so wait until they started up.
+	api.WaitForFrontend(ctx)
+	gitserver.DefaultClient.WaitForGitServers(ctx)
+
+	var kinds []string
+	if syncerEnabled {
+		kinds = append(kinds, "GITHUB")
+	}
+
+	newSyncerEnabled := make(map[string]bool, len(kinds))
+	for _, kind := range kinds {
+		newSyncerEnabled[kind] = true
+	}
+
+	// Synced repos of other external service kind will be sent here.
+	otherSynced := make(chan *protocol.RepoInfo)
+	frontendAPI := repos.NewInternalAPI(10 * time.Second)
+	otherSyncer := repos.NewOtherReposSyncer(frontendAPI, otherSynced)
+
+	for _, kind := range []string{
+		"AWSCODECOMMIT",
+		"BITBUCKETSERVER",
+		"GITHUB",
+		"GITLAB",
+		"GITOLITE",
+		"PHABRICATOR",
+		"OTHER",
+	} {
+		if newSyncerEnabled[kind] {
+			continue
+		}
+
+		switch kind {
+		case "AWSCODECOMMIT":
+			go repos.SyncAWSCodeCommitConnections(ctx)
+			go repos.RunAWSCodeCommitRepositorySyncWorker(ctx)
+		case "BITBUCKETSERVER":
+			go repos.SyncBitbucketServerConnections(ctx)
+			go repos.RunBitbucketServerRepositorySyncWorker(ctx)
+		case "GITHUB":
+			go repos.SyncGitHubConnections(ctx)
+			go repos.RunGitHubRepositorySyncWorker(ctx)
+		case "GITLAB":
+			go repos.SyncGitLabConnections(ctx)
+			go repos.RunGitLabRepositorySyncWorker(ctx)
+		case "GITOLITE":
+			go repos.RunGitoliteRepositorySyncWorker(ctx)
+		case "PHABRICATOR":
+			go repos.RunPhabricatorRepositorySyncWorker(ctx)
+		case "OTHER":
+			go func() { log.Fatal(otherSyncer.Run(ctx, repos.GetUpdateInterval())) }()
+
+			go func() {
+				for repo := range otherSynced {
+					if !conf.Get().DisableAutoGitUpdates {
+						repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
+					}
+				}
+			}()
+
+		default:
+			log.Fatalf("unknown external service kind %q", kind)
+		}
+	}
+
+	var (
+		store  repos.Store
+		syncer *repos.Syncer
+	)
+
+	if syncerEnabled {
+		db, err := repos.NewDB(repos.NewDSNFromEnv())
+		if err != nil {
+			log.Fatalf("failed to initalise db store: %v", err)
+		}
+
+		diffs := make(chan repos.Diff)
+		src := repos.NewExternalServicesSourcer(frontendAPI)
+
+		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
+			return time.Now().UTC()
+		})
+
+		log15.Info("starting new syncer", "external service kinds", kinds)
+		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval(), kinds...)) }()
+
+		// Start new repo syncer updates scheduler relay thread.
+		go func() {
+			for diff := range diffs {
+				if !conf.Get().DisableAutoGitUpdates {
+					repos.Scheduler.UpdateFromDiff(diff)
+				}
+			}
+		}()
+	}
+
+	// Git fetches scheduler
+	go repos.RunScheduler(ctx)
+
+	// git-server repos purging thread
+	go repos.RunRepositoryPurgeWorker(ctx)
+
+	// Start up handler that frontend relies on
+	repoupdater := repoupdater.Server{
+		Store:            store,
+		Syncer:           syncer,
+		OtherReposSyncer: otherSyncer,
+	}
+
+	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+
+	addr := net.JoinHostPort(host, port)
+	log15.Info("server listening", "addr", addr)
+	srv := &http.Server{Addr: addr, Handler: handler}
+	go func() { log.Fatal(srv.ListenAndServe()) }()
 
 	go debugserver.Start(debugserver.Endpoint{
 		Name: "Repo Updater State",
@@ -43,74 +168,9 @@ func main() {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			w.Write(d)
+			_, _ = w.Write(d)
 		}),
 	})
-
-	// Synced repos will be sent here.
-	synced := make(chan *protocol.RepoInfo)
-
-	// Other external services syncing thread. Repo updates will be sent on the given channel.
-	syncer := repos.NewOtherReposSyncer(
-		repos.NewInternalAPI(10*time.Second),
-		synced,
-	)
-
-	// Start up handler that frontend relies on
-	repoupdater := repoupdater.Server{OtherReposSyncer: syncer}
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-	addr := net.JoinHostPort(host, port)
-	log15.Info("repo-updater: listening", "addr", addr)
-	srv := &http.Server{Addr: addr, Handler: handler}
-	go func() { log.Fatal(srv.ListenAndServe()) }()
-
-	// Sync relies on access to frontend and git-server, so wait until they started up.
-	api.WaitForFrontend(ctx)
-	gitserver.DefaultClient.WaitForGitServers(ctx)
-
-	// Git fetches scheduler
-	go repos.RunScheduler(ctx)
-
-	// Repos purging thread
-	go repos.RunRepositoryPurgeWorker(ctx)
-
-	// GitHub connections and repos syncing threads
-	go repos.SyncGitHubConnections(ctx)
-	go repos.RunGitHubRepositorySyncWorker(ctx)
-
-	// GitLab connections and repos syncing threads
-	go repos.SyncGitLabConnections(ctx)
-	go repos.RunGitLabRepositorySyncWorker(ctx)
-
-	// AWS CodeCommit connections and repos syncing threads
-	go repos.SyncAWSCodeCommitConnections(ctx)
-	go repos.RunAWSCodeCommitRepositorySyncWorker(ctx)
-
-	// Phabricator Repository syncing thread
-	go repos.RunPhabricatorRepositorySyncWorker(ctx)
-
-	// Gitolite syncing thread
-	go repos.RunGitoliteRepositorySyncWorker(ctx)
-
-	// Bitbucket connections and repos syncing threads
-	go repos.SyncBitbucketServerConnections(ctx)
-	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
-
-	// Start other repos syncer syncing thread
-	go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
-
-	// Start other repos updates scheduler relay thread.
-	go func() {
-		for repo := range synced {
-			if !conf.Get().DisableAutoGitUpdates {
-				repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
-			}
-		}
-	}()
 
 	select {}
 }

@@ -1,0 +1,1 @@
+ALTER TABLE repo DROP CONSTRAINT IF EXISTS check_external;

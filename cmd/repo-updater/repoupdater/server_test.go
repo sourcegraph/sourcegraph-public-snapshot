@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestServer_handleExternalServiceSync(t *testing.T) {
@@ -28,7 +29,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 		{
 			name: "bad kind",
 			svc:  &api.ExternalService{},
-			err:  "empty external service kind\n",
+			err:  "<nil>",
 		},
 		{
 			name: "bad service config",
@@ -52,7 +53,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 			cli := repoupdater.Client{URL: ts.URL, HTTPClient: http.DefaultClient}
 			ctx := context.Background()
 
-			err := cli.SyncExternalService(ctx, *tc.svc)
+			_, err := cli.SyncExternalService(ctx, *tc.svc)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("\nhave: %s\nwant: %s", have, want)
 			}
@@ -156,7 +157,10 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestRepoLookup(t *testing.T) {
-	s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
+	s := Server{
+		Store:            repos.NewFakeStore(nil, nil, nil),
+		OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil),
+	}
 
 	t.Run("no args", func(t *testing.T) {
 		if _, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
@@ -232,7 +236,7 @@ func TestRepoLookup(t *testing.T) {
 			metadataUpdate := make(chan *api.ReposUpdateMetadataRequest, 1)
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				var params api.ReposUpdateMetadataRequest
-				json.NewDecoder(r.Body).Decode(&params)
+				_ = json.NewDecoder(r.Body).Decode(&params)
 				metadataUpdate <- &params
 			}))
 			defer ts.Close()
@@ -268,4 +272,10 @@ func TestRepoLookup(t *testing.T) {
 			}
 		})
 	})
+}
+
+func init() {
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+	}
 }

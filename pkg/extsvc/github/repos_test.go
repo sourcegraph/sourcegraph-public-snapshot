@@ -40,7 +40,7 @@ func newMockHTTPResponseBody(responseBody string, status int) *mockHTTPResponseB
 	}
 }
 
-func (s *mockHTTPResponseBody) RoundTrip(req *http.Request) (*http.Response, error) {
+func (s *mockHTTPResponseBody) Do(req *http.Request) (*http.Response, error) {
 	s.count++
 	status := s.status
 	if status == 0 {
@@ -57,7 +57,7 @@ type mockHTTPEmptyResponse struct {
 	statusCode int
 }
 
-func (s mockHTTPEmptyResponse) RoundTrip(req *http.Request) (*http.Response, error) {
+func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Request:    req,
 		StatusCode: s.statusCode,
@@ -65,11 +65,11 @@ func (s mockHTTPEmptyResponse) RoundTrip(req *http.Request) (*http.Response, err
 	}, nil
 }
 
-func newTestClient(t *testing.T) *Client {
+func newTestClient(t *testing.T, cli Doer) *Client {
 	rcache.SetupForTest(t)
 	return &Client{
 		apiURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
-		httpClient:      &http.Client{},
+		httpClient:      cli,
 		RateLimit:       &ratelimit.Monitor{},
 		repoCache:       map[string]*rcache.Cache{},
 		repoCachePrefix: "__test__gh_repo",
@@ -89,8 +89,7 @@ func TestClient_GetRepository(t *testing.T) {
 	"fork": true
 }
 `}
-	c := newTestClient(t)
-	c.httpClient.Transport = &mock
+	c := newTestClient(t, &mock)
 
 	want := Repository{
 		ID:            "i",
@@ -134,8 +133,7 @@ func TestClient_GetRepository(t *testing.T) {
 // on a repository that does not exist.
 func TestClient_GetRepository_nonexistent(t *testing.T) {
 	mock := mockHTTPEmptyResponse{http.StatusNotFound}
-	c := newTestClient(t)
-	c.httpClient.Transport = &mock
+	c := newTestClient(t, &mock)
 
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")
 	if !IsNotFound(err) {
@@ -162,8 +160,7 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 	}
 }
 `}
-	c := newTestClient(t)
-	c.httpClient.Transport = &mock
+	c := newTestClient(t, &mock)
 
 	want := Repository{
 		ID:            "i",
@@ -214,8 +211,7 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 	}
 }
 `}
-	c := newTestClient(t)
-	c.httpClient.Transport = &mock
+	c := newTestClient(t, &mock)
 
 	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
 	if !IsNotFound(err) {
@@ -270,8 +266,7 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
   ]
 }
 `}
-	c := newTestClient(t)
-	c.httpClient.Transport = &mock
+	c := newTestClient(t, &mock)
 
 	wantRepos := []*Repository{
 		{
@@ -303,9 +298,8 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 
 // 🚨 SECURITY: test that cache entries are keyed by auth token
 func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
-	c := newTestClient(t)
+	c := newTestClient(t, newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0" } } }`, http.StatusOK))
 
-	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0" } } }`, http.StatusOK)
 	got, err := c.GetRepositoryByNodeID(context.Background(), "tok0", "id0")
 	if err != nil {
 		t.Fatal(err)
@@ -314,7 +308,7 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 
-	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "SHOULD NOT BE SEEN" } } }`, http.StatusOK)
+	c.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "SHOULD NOT BE SEEN" } } }`, http.StatusOK)
 	got, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id0")
 	if err != nil {
 		t.Fatal(err)
@@ -323,7 +317,7 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 
-	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0-tok1" } } }`, http.StatusOK)
+	c.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0-tok1" } } }`, http.StatusOK)
 	got, err = c.GetRepositoryByNodeID(context.Background(), "tok1", "id0")
 	if err != nil {
 		t.Fatal(err)
@@ -332,14 +326,14 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 
-	c.httpClient.Transport = newMockHTTPResponseBody(`{}`, http.StatusNotFound)
+	c.httpClient = newMockHTTPResponseBody(`{}`, http.StatusNotFound)
 	_, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id1")
 	if err != ErrNotFound {
 		t.Errorf("expected err %v, but got %v", ErrNotFound, err)
 	}
 
 	// "not found" should be cached
-	c.httpClient.Transport = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1" } } }`, http.StatusOK)
+	c.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1" } } }`, http.StatusOK)
 	_, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id1")
 	if err != ErrNotFound {
 		t.Errorf("expected err %v, but got %v", ErrNotFound, err)

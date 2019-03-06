@@ -1,6 +1,10 @@
 package repos
 
-import "testing"
+import (
+	"testing"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
+)
 
 func TestSetUserinfoBestEffort(t *testing.T) {
 	cases := []struct {
@@ -39,5 +43,11 @@ func TestSetUserinfoBestEffort(t *testing.T) {
 		if got != c.want {
 			t.Errorf("setUserinfoBestEffort(%q, %q, %q): got %q want %q", c.rawurl, c.username, c.password, got, c.want)
 		}
+	}
+}
+
+func init() {
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 	}
 }

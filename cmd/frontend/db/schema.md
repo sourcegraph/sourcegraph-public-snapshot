@@ -404,13 +404,20 @@ Referenced by:
  enabled                 | boolean                  | not null default true
  archived                | boolean                  | not null default false
  uri                     | citext                   | not null
+ deleted_at              | timestamp with time zone | 
+ sources                 | jsonb                    | not null default '{}'::jsonb
+ metadata                | jsonb                    | not null default '{}'::jsonb
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
+    "repo_external_service_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id) WHERE external_service_type IS NOT NULL AND external_service_id IS NOT NULL AND external_id IS NOT NULL
     "repo_name_unique" UNIQUE, btree (name)
+    "repo_metadata_gin_idx" gin (metadata)
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
+    "repo_sources_gin_idx" gin (sources)
 Check constraints:
-    "check_external" CHECK (external_id IS NULL AND external_service_type IS NULL AND external_service_id IS NULL OR external_id IS NOT NULL AND external_service_type IS NOT NULL AND external_service_id IS NOT NULL)
     "check_name_nonempty" CHECK (name <> ''::citext)
+    "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+    "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 Triggers:
