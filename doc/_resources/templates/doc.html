@@ -74,7 +74,7 @@
 				</ul>
 				<ul class="content-nav-section content-nav-home">
 					<li>
-						<a class="content-nav-section-header" href="/">Docs home</a>
+						<a class="content-nav-section-header" href="/">Home</a>
 					</li>
 				</ul>
 				<ul id="contentNavUser"class="content-nav-section expandable">
@@ -362,7 +362,7 @@
 			 </script>
 			 <span class="breadcrumb-links">
 				{{if eq (len .Breadcrumbs ) 0}}
-				<a href="/" class="active">Documentation</a> &nbsp;
+				&nbsp;
 				{{end}}
 				{{range .Breadcrumbs}}
 				<a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">{{.Label}}</a> {{if not .IsActive}}/{{end}}
