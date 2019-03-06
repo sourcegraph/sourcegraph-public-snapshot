@@ -263,11 +263,6 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 			log15.Debug("scheduler.update-from-diff.modified.update", "repo", mod.Name)
 			s.schedule.update(repo)
 			s.updateQueue.update(repo)
-		} else {
-			log15.Debug("scheduler.update-from-diff.modified.deleted", "repo", mod.Name)
-			s.schedule.remove(repo)
-			updating := false
-			s.updateQueue.remove(repo, updating)
 		}
 	}
 
