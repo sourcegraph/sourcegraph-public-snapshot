@@ -1,4 +1,4 @@
-.e2e-filtered-connection {
+.filtered-connection {
     &__nodes {
         list-style-type: none;
         padding: 0;
@@ -60,7 +60,7 @@
 }
 
 .theme-light {
-    .e2e-filtered-connection {
+    .filtered-connection {
         &--compact .filtered-connection__summary {
             border-color: $color-light-border;
         }
