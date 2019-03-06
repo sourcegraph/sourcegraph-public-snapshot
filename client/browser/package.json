@@ -14,7 +14,7 @@
     "release:ff": "./scripts/release-ff.sh",
     "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o app/gqlschema.d.ts",
     "lint": "yarn run tslint && yarn run stylelint",
-    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json 'src/**/*.ts?(x)'",
+    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json './**/*.ts?(x)'",
     "stylelint": "stylelint 'app/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "test": "jest --testPathIgnorePatterns e2e",
