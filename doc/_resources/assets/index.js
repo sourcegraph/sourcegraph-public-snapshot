@@ -79,8 +79,7 @@ const openNavSection = navSection => {
 const breadcrumbNavToggle = () => {
   // Check if breadcrumb is defined
   if (breadcrumbs.length === 0) {
-    // If breadcrumb isn't defined open the user nav section (on by default)
-    toggleNavSection('contentNavUser')
+    // If breadcrumb isn't defined (docs home) do nothing
     return
   }
 
