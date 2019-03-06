@@ -259,11 +259,16 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	}
 
 	for _, mod := range diff.Modified {
-		if repo := configuredRepo2FromRepo(mod); repo.Enabled {
-			log15.Debug("scheduler.update-from-diff.modified.update", "repo", mod.Name)
-			s.schedule.update(repo)
-			s.updateQueue.update(repo)
-		}
+		log15.Debug("scheduler.update-from-diff.modified.update", "repo", mod.Name)
+		repo := configuredRepo2FromRepo(mod)
+		s.schedule.update(repo)
+		s.updateQueue.update(repo)
+	}
+
+	for _, unm := range diff.Unmodified {
+		log15.Debug("scheduler.update-from-diff.unmodified", "repo", unm.Name)
+		repo := configuredRepo2FromRepo(unm)
+		s.schedule.add(repo)
 	}
 
 	// schedKnownRepos.Set(float64(len(diff.Unmodified) + len(diff.Modified) + len(diff.Added)))
