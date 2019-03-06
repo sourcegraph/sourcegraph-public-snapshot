@@ -2,9 +2,9 @@
 
 Sourcegraph uses [nginx](https://nginx.org/en/) to proxy HTTP traffic between clients and the Sourcegraph HTTP server. It ships with a default nginx configuration that is intended for local/internal network usage.
 
-On initial startup Sourcegraph will generate an `nginx.conf` which you can modify. It is located at `/etc/sourcegraph/nginx.conf` in the container. So if you use the quick start docker run command it will be at `~/.sourcegraph/config/nginx.conf`. (due to the docker flag `--volume ~/.sourcegraph/config:/etc/sourcegraph`).
+On initial startup Sourcegraph will generate an `nginx.conf` which you can modify. It is located at `/etc/sourcegraph/nginx.conf` in the container. If you use the [quickstart `docker run` command](../index.md#quickstart), it will be at `~/.sourcegraph/config/nginx.conf` (because of the Docker volume flag `--volume ~/.sourcegraph/config:/etc/sourcegraph`).
 
-## TLS / HTTPS
+## TLS/HTTPS
 
 If you don't already have a TLS certificate and key, you can generate them with:
 
