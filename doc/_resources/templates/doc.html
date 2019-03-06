@@ -25,8 +25,7 @@
  						<button class="btn btn-outline dropdown-toggle monospace-text" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onClick="toggleDropdown('versionDropdown')">
  							{{.ContentVersion}}{{/* If no version is specified we are on the master branch */}}{{if eq .ContentVersion ""}}master{{end}}
  						</button>
-						<details-menu class="dropdown-menu" id="versionDropdown" aria-labelledby="Version Dropdown">
-							<h6 class="dropdown-header">Sourcegraph version:</h6>
+						<details-menu area-label="Sourcegraph version" class="dropdown-menu" id="versionDropdown" aria-labelledby="Version Dropdown">
 
 							{{/* Update these after each release. */}}
 							{{/* You do not have to use all of these. Simply remove the A tag to remove it from the dropdown. */}}
