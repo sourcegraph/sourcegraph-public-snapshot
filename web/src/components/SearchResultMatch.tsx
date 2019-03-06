@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import escapeStringRegexp from 'escape-string-regexp'
+import { escapeRegexp } from 'lodash'
 import { decode } from 'he'
 import { isEqual } from 'lodash'
 import { range } from 'lodash'
