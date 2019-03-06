@@ -266,10 +266,7 @@ func serveWelcome(w http.ResponseWriter, r *http.Request) error {
 	if common == nil {
 		return nil // request was handled
 	}
-	common.Metadata = &Metadata{
-	    Title: "Sourcegraph",
-	    Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
-	}
+
 	if !envvar.SourcegraphDotComMode() {
 		// The welcome page only exists on Sourcegraph.com.
 		w.WriteHeader(http.StatusNotFound)
