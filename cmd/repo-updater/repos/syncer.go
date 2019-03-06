@@ -112,16 +112,19 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	for _, repo := range diff.Deleted {
 		repo.UpdatedAt, repo.DeletedAt = now, now
 		repo.Sources = map[string]*SourceInfo{}
+		repo.Enabled = false // Set for backwards compatibility
 		upserts = append(upserts, repo)
 	}
 
 	for _, repo := range diff.Modified {
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}
+		repo.Enabled = true // Set for backwards compatibility
 		upserts = append(upserts, repo)
 	}
 
 	for _, repo := range diff.Added {
 		repo.CreatedAt, repo.UpdatedAt, repo.DeletedAt = now, now, time.Time{}
+		repo.Enabled = true // Set for backwards compatibility
 		upserts = append(upserts, repo)
 	}
 

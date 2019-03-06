@@ -189,12 +189,14 @@ var Opt = struct {
 			r.CreatedAt = ts
 			r.UpdatedAt = ts
 			r.DeletedAt = time.Time{}
+			r.Enabled = true
 		}
 	},
 	ModifiedAt: func(ts time.Time) func(*Repo) {
 		return func(r *Repo) {
 			r.UpdatedAt = ts
 			r.DeletedAt = time.Time{}
+			r.Enabled = true
 		}
 	},
 	DeletedAt: func(ts time.Time) func(*Repo) {
@@ -202,6 +204,7 @@ var Opt = struct {
 			r.UpdatedAt = ts
 			r.DeletedAt = ts
 			r.Sources = map[string]*SourceInfo{}
+			r.Enabled = false
 		}
 	},
 	Sources: func(srcs ...string) func(*Repo) {
