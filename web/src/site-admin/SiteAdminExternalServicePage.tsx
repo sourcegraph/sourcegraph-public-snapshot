@@ -68,9 +68,9 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                                 mergeMap(() =>
                                     concat(
                                         // Flash "updated" text
-                                        of<Partial<State>>({ updatedOrError: true }),
+                                        of({ updatedOrError: true }),
                                         // Hide "updated" text again after 1s
-                                        of<Partial<State>>({ updatedOrError: null }).pipe(delay(1000))
+                                        of({ updatedOrError: null }).pipe(delay(1000))
                                     )
                                 ),
                                 catchError((error: Error) => [{ updatedOrError: asError(error) }])
