@@ -271,7 +271,7 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 		s.schedule.add(repo)
 	}
 
-	// schedKnownRepos.Set(float64(len(diff.Unmodified) + len(diff.Modified) + len(diff.Added)))
+	schedKnownRepos.Set(float64(len(diff.Unmodified) + len(diff.Modified) + len(diff.Added)))
 }
 
 func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
@@ -320,6 +320,7 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 
 	s.sourceRepos[source] = newList
 
+	// TODO(keegancsmith) fix this metric, requires setting a source but source contains a secret
 	schedKnownRepos.Set(float64(len(newList)))
 }
 
