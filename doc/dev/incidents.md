@@ -18,7 +18,7 @@ Operational incidents can be reported by anyone (e.g. customers, Sourcegraph tea
 1. If the incident was reported by someone outside of Sourcegraph, acknowledge that the incident is being handled.
 2. Start an internal communication thread about this incident in the #incidents channel in Slack.
 3. Find an engineer to acknowledge ownership of the incident.
-    - If you are an engineer and are available/working, or if you are engineering on-call, then you should immediately acknowledge the incident and start working to resolve it.
+    - If you are an engineer and are available/working, or if you are on-call, then you should immediately acknowledge the incident and start working to resolve it.
     - If you are not an engineer, or if you are not available/working and not on-call, then you should message (in-person, Slack, phone call) available/working engineers until one acknowledges ownership. If you are unable to quickly find an owner, default to calling [the engineer who is on-call](https://app.opsgenie.com/schedule/detail/190e2873-1e3b-4350-b67b-2e681d542970).
 
 ## Owning the incident
