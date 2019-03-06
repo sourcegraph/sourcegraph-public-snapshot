@@ -113,9 +113,9 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
 		Metadata: &Metadata{
-	        Title: "Sourcegraph",
-	        Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
-	    },
+			Title:       "Sourcegraph",
+			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
+		},
 
 		InjectSourcegraphTracker:     injectTelligentTracker,
 		InjectGoogleAnalyticsTracker: injectGoogleAnalyticsTracker,
