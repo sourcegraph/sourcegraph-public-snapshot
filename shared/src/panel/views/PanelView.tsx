@@ -1,7 +1,7 @@
 import H from 'history'
 import React from 'react'
 import { concat, Observable, of, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, map, switchMap, startWith } from 'rxjs/operators'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
 import { ActivationProps } from '../../components/activation/Activation'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
@@ -33,8 +33,9 @@ export class PanelView extends React.PureComponent<Props, State> {
 
     public componentWillMount(): void {
         this.subscriptions.add(
-            concat([this.props], this.componentUpdates)
+            this.componentUpdates
                 .pipe(
+                    startWith(this.props),
                     map(props => props.panelView.locationProvider),
                     distinctUntilChanged(),
                     switchMap(locationProvider => locationProvider || of(null))

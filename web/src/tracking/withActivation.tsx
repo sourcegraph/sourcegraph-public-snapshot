@@ -1,7 +1,7 @@
 import H from 'history'
 import React from 'react'
 import { concat, Observable, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, first, map, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, first, map, switchMap, startWith } from 'rxjs/operators'
 import {
     ActivationCompletionStatus,
     ActivationProps,
@@ -211,8 +211,9 @@ export const withActivation = <P extends ActivationProps & Props>(Component: Rea
             )
             // Reset the activation status when the authenticated user changes
             this.subscriptions.add(
-                concat([this.props], this.componentUpdates)
+                this.componentUpdates
                     .pipe(
+                        startWith(this.props),
                         map(props => props.authenticatedUser),
                         distinctUntilChanged()
                     )
