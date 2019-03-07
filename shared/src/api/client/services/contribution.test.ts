@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs'
 import { Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { ContributableMenu, Contributions } from '../../protocol'
+import { ContributableMenu, Contributions, EvaluatedContributions } from '../../protocol'
 import { Context, ContributionScope } from '../context/context'
 import { EMPTY_COMPUTED_CONTEXT } from '../context/expr/evaluator'
 import { EMPTY_MODEL, Model } from '../model'
@@ -33,7 +33,7 @@ const FIXTURE_CONTRIBUTIONS_2: Contributions = {
     },
 }
 
-const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
+const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
     actions: [
         { id: '1.a', command: 'c', title: '1.A' },
         { id: '1.b', command: 'c', title: '1.B' },
@@ -96,7 +96,7 @@ describe('ContributionRegistry', () => {
             const registry = new class extends ContributionRegistry {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
-                ): Observable<Contributions> {
+                ): Observable<EvaluatedContributions> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
             }(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
@@ -120,7 +120,7 @@ describe('ContributionRegistry', () => {
             const registry = new class extends ContributionRegistry {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
-                ): Observable<Contributions> {
+                ): Observable<EvaluatedContributions> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
             }(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
@@ -166,7 +166,7 @@ describe('ContributionRegistry', () => {
 
                     public getContributionsFromEntries(
                         entries: Observable<ContributionsEntry[]>
-                    ): Observable<Contributions> {
+                    ): Observable<EvaluatedContributions> {
                         return super.getContributionsFromEntries(entries, undefined)
                     }
                 }()
@@ -199,7 +199,7 @@ describe('ContributionRegistry', () => {
                     public getContributionsFromEntries(
                         entries: Observable<ContributionsEntry[]>,
                         scope?: ContributionScope
-                    ): Observable<Contributions> {
+                    ): Observable<EvaluatedContributions> {
                         return super.getContributionsFromEntries(entries, scope, undefined, () => void 0 /* noop log */)
                     }
                 }()
@@ -224,8 +224,37 @@ describe('ContributionRegistry', () => {
 })
 
 describe('mergeContributions', () => {
+    const FIXTURE_CONTRIBUTIONS_1: EvaluatedContributions = {
+        actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
+            [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
+        },
+    }
+
+    const FIXTURE_CONTRIBUTIONS_2: EvaluatedContributions = {
+        actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
+            [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
+        },
+    }
+    const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
+        actions: [
+            { id: '1.a', command: 'c', title: '1.A' },
+            { id: '1.b', command: 'c', title: '1.B' },
+            { id: '2.a', command: 'c', title: '2.A' },
+            { id: '2.b', command: 'c', title: '2.B' },
+        ],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '1.a' }, { action: '2.a' }],
+            [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
+            [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
+        },
+    }
+
     test('handles an empty array', () => expect(mergeContributions([])).toEqual({}))
-    test('handles an single item', () =>
+    test('handles a single item', () =>
         expect(mergeContributions([FIXTURE_CONTRIBUTIONS_1])).toEqual(FIXTURE_CONTRIBUTIONS_1))
     test('handles multiple items', () =>
         expect(
@@ -407,6 +436,13 @@ describe('evaluateContributions', () => {
     test('throws an error if an error occurs during evaluation', () => {
         const input: Contributions = { actions: [{ id: 'a', command: 'c', title: 'a' }] }
         expect(() => evaluateContributions(FIXTURE_CONTEXT, input, TEST_THROW_EVALUATOR)).toThrow()
+    })
+
+    test('evaluates `actionItem.pressed` if present', () => {
+        const input: Contributions = { actions: [{ id: 'a', command: 'c', title: 'a', actionItem: { pressed: 'a' } }] }
+        expect(evaluateContributions(FIXTURE_CONTEXT, input)).toEqual({
+            actions: [{ id: 'a', command: 'c', title: 'a', actionItem: { pressed: true } }],
+        })
     })
 })
 // tslint:enable:no-invalid-template-strings

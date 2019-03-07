@@ -47,6 +47,19 @@ describe('ActionItem', () => {
         expect(component.toJSON()).toMatchSnapshot()
     })
 
+    test('pressed actionItem', () => {
+        const component = renderer.create(
+            <ActionItem
+                action={{ id: 'a', command: 'c', actionItem: { pressed: true, label: 'b' } }}
+                variant="actionItem"
+                location={history.location}
+                extensionsController={NOOP_EXTENSIONS_CONTROLLER}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )
+        expect(component.toJSON()).toMatchSnapshot()
+    })
+
     test('title element', () => {
         const component = renderer.create(
             <ActionItem

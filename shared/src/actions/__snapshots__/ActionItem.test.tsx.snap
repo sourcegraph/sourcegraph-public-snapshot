@@ -3,7 +3,7 @@
 exports[`ActionItem actionItem variant 1`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -17,7 +17,7 @@ exports[`ActionItem actionItem variant 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -27,7 +27,7 @@ exports[`ActionItem actionItem variant 1`] = `
 exports[`ActionItem non-actionItem variant 1`] = `
 <a
   aria-label="d"
-  className="action-item    "
+  className="action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -41,7 +41,7 @@ exports[`ActionItem non-actionItem variant 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -57,15 +57,31 @@ exports[`ActionItem noop command 1`] = `
     className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
 </span>
 `;
 
+exports[`ActionItem pressed actionItem 1`] = `
+<a
+  className="action-item action-item--variant-action-item action-item--pressed "
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  <div
+    className="action-item__content"
+  >
+    b
+  </div>
+</a>
+`;
+
 exports[`ActionItem render as link for "open" command 1`] = `
 <a
-  className="action-item    "
+  className="action-item "
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
@@ -74,7 +90,6 @@ exports[`ActionItem render as link for "open" command 1`] = `
   <div
     className="action-item__content"
   >
-     
     
     t
   </div>
@@ -84,7 +99,7 @@ exports[`ActionItem render as link for "open" command 1`] = `
 exports[`ActionItem run command 1`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item disabled"
+  className="action-item action-item--variant-action-item disabled"
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -98,7 +113,7 @@ exports[`ActionItem run command 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -108,7 +123,7 @@ exports[`ActionItem run command 1`] = `
 exports[`ActionItem run command 2`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -122,7 +137,7 @@ exports[`ActionItem run command 2`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -132,7 +147,7 @@ exports[`ActionItem run command 2`] = `
 exports[`ActionItem run command with error 1`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -146,7 +161,7 @@ exports[`ActionItem run command with error 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -156,7 +171,7 @@ exports[`ActionItem run command with error 1`] = `
 exports[`ActionItem run command with error with showInlineError 1`] = `
 <a
   aria-label="Error: x"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="Error: x"
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -170,7 +185,7 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -180,7 +195,7 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <a
   aria-label="d"
-  className="action-item  action-item--loading action-item--variant-action-item disabled"
+  className="action-item action-item--loading action-item--variant-action-item disabled"
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -194,7 +209,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -211,7 +226,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -225,7 +240,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
       className="icon-inline"
       src="u"
     />
-     
+     
     g: 
     t
   </div>
@@ -235,7 +250,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 exports[`ActionItem title element 1`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}

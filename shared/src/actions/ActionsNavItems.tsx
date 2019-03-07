@@ -7,7 +7,13 @@ import { ActionItem } from './ActionItem'
 import { ActionsState } from './actions'
 import { ActionsProps } from './ActionsContainer'
 
-interface Props extends ActionsProps {
+export interface ActionNavItemsClassProps {
+    actionItemClass?: string
+    actionItemPressedClass?: string
+    listItemClass?: string
+}
+
+interface Props extends ActionsProps, ActionNavItemsClassProps {
     /**
      * If true, it renders a <ul className="nav">...</ul> around the items. If there are no items, it renders null.
      *
@@ -16,8 +22,6 @@ interface Props extends ActionsProps {
     wrapInList?: boolean
 
     listClass?: string
-    actionItemClass?: string
-    listItemClass?: string
 }
 
 /**
@@ -63,6 +67,7 @@ export class ActionsNavItems extends React.PureComponent<Props, ActionsState> {
                     extensionsController={this.props.extensionsController}
                     platformContext={this.props.platformContext}
                     className={this.props.actionItemClass}
+                    pressedClassName={this.props.actionItemPressedClass}
                     location={this.props.location}
                 />
             </li>

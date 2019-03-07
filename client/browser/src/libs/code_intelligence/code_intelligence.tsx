@@ -28,6 +28,7 @@ import {
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
 import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
+import { ActionNavItemsClassProps } from '../../../../../shared/src/actions/ActionsNavItems'
 import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { Controller } from '../../../../../shared/src/extensions/controller'
@@ -192,6 +193,9 @@ export interface CodeHost {
 
     /** Returns a stream representing the selections in the current code view */
     selectionsChanges?: () => Observable<Selection[]>
+
+    /** Optional classes for ActionNavItems, useful to customize the style of buttons contributed to the code view toolbar */
+    actionNavItemClassProps?: ActionNavItemsClassProps
 }
 
 export interface FileInfo {
@@ -584,6 +588,7 @@ export function handleCodeHost({
                     <TelemetryContext.Provider value={eventLogger}>
                         <CodeViewToolbar
                             {...info}
+                            {...codeHost.actionNavItemClassProps}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
                             buttonProps={

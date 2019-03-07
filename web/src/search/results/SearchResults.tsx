@@ -4,7 +4,7 @@ import * as React from 'react'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery } from '..'
-import { Contributions } from '../../../../shared/src/api/protocol'
+import { EvaluatedContributions } from '../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -46,7 +46,7 @@ interface SearchResultsState {
     showSavedQueryModal: boolean
     didSaveQuery: boolean
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
-    contributions?: Contributions
+    contributions?: EvaluatedContributions
 }
 
 const newRepoFilters = localStorage.getItem('newRepoFilters') !== 'false'

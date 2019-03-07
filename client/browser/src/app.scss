@@ -83,6 +83,10 @@ $theme-colors-light: (
 @import './shared/components/symbols';
 @import './shared/components/CodeViewToolbar.scss';
 @import './libs/options/styles.scss';
+@import './libs/bitbucket/style.scss';
+@import './libs/gitlab/style.scss';
+@import './libs/github/style.scss';
+@import './libs/phabricator/style.scss';
 @import './libs/code_intelligence/HoverOverlay.scss';
 @import './shared';
 

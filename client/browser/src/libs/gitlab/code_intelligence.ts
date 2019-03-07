@@ -92,4 +92,8 @@ export const gitlabCodeHost: CodeHost = {
     codeViewResolver,
     adjustOverlayPosition,
     getCommandPaletteMount,
+    actionNavItemClassProps: {
+        actionItemClass: 'btn btn-secondary action-item--gitlab',
+        actionItemPressedClass: 'active',
+    },
 }

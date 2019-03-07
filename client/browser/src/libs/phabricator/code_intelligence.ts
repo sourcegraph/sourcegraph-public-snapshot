@@ -99,7 +99,7 @@ const adjustPosition: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedR
     )
 
 const toolbarButtonProps = {
-    className: 'button button-grey has-icon has-text phui-button-default msl',
+    className: 'button grey button-grey has-icon has-text phui-button-default msl',
     iconStyle: { marginTop: '-1px', paddingRight: '4px', fontSize: '18px', height: '.8em', width: '.8em' },
     style: {},
 }
@@ -196,4 +196,7 @@ export const phabricatorCodeHost: CodeHost = {
     // TODO: handle parsing selected line number from Phabricator href,
     // and find a way to listen to changes (Phabricator does not emit popstate events).
     selectionsChanges: () => of([]),
+    actionNavItemClassProps: {
+        actionItemClass: 'button grey action-item--phabricator',
+    },
 }

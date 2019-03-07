@@ -100,3 +100,11 @@
         font-weight: bold;
     }
 }
+
+.action-item--gitlab {
+    height: 30px;
+    .action-item__content {
+        height: 28px;
+        line-height: 28px;
+    }
+}

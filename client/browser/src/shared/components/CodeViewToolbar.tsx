@@ -1,7 +1,7 @@
 import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
+import { ActionNavItemsClassProps, ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
@@ -19,14 +19,14 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps extends PlatformContextProps<'forceUpdateTooltip'>, ExtensionsControllerProps, FileInfo {
+interface CodeViewToolbarProps
+    extends PlatformContextProps<'forceUpdateTooltip'>,
+        ExtensionsControllerProps,
+        FileInfo,
+        ActionNavItemsClassProps {
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps: ButtonProps
-    actionsNavItemClassProps?: {
-        listItemClass?: string
-        actionItemClass?: string
-    }
     location: H.Location
 }
 
@@ -57,11 +57,10 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
             >
                 <ul className={`nav ${this.props.platformContext ? 'pr-1' : ''}`}>
                     <ActionsNavItems
+                        {...this.props}
                         menu={ContributableMenu.EditorTitle}
                         extensionsController={this.props.extensionsController}
                         platformContext={this.props.platformContext}
-                        listItemClass="BtnGroup"
-                        actionItemClass="btn btn-sm tooltipped tooltipped-s BtnGroup-item"
                         location={this.props.location}
                         scope={{
                             type: 'textEditor',

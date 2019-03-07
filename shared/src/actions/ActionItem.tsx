@@ -1,10 +1,11 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 import H from 'history'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ExecuteCommandParams } from '../api/client/services/command'
-import { ActionContribution } from '../api/protocol'
+import { EvaluatedActionContribution } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -17,16 +18,17 @@ export interface ActionItemProps {
      * The action specified in the menu item's {@link module:sourcegraph.module/protocol.MenuItemContribution#action}
      * property.
      */
-    action: ActionContribution
+    action: EvaluatedActionContribution
 
     /**
      * The alternative action specified in the menu item's
      * {@link module:sourcegraph.module/protocol.MenuItemContribution#alt} property.
      */
-    altAction?: ActionContribution
+    altAction?: EvaluatedActionContribution
 
     variant?: 'actionItem'
     className?: string
+    pressedClassName?: string
 
     /** Called after executing the action (for both success and failure). */
     onDidExecute?: (actionID: string) => void
@@ -142,7 +144,8 @@ export class ActionItem extends React.PureComponent<Props, State> {
                             alt={this.props.action.actionItem.iconDescription}
                             className="icon-inline"
                         />
-                    )}{' '}
+                    )}
+                    {this.props.action.actionItem.iconURL && this.props.action.actionItem.label && <>&nbsp;</>}
                     {this.props.action.actionItem.label}
                 </>
             )
@@ -150,7 +153,10 @@ export class ActionItem extends React.PureComponent<Props, State> {
         } else {
             content = (
                 <>
-                    {this.props.action.iconURL && <img src={this.props.action.iconURL} className="icon-inline" />}{' '}
+                    {this.props.action.iconURL && <img src={this.props.action.iconURL} className="icon-inline" />}
+                    {this.props.action.iconURL && (this.props.action.category || this.props.action.title) && (
+                        <>&nbsp;</>
+                    )}
                     {this.props.action.category ? `${this.props.action.category}: ` : ''}
                     {this.props.action.title}
                 </>
@@ -173,6 +179,8 @@ export class ActionItem extends React.PureComponent<Props, State> {
         }
 
         const showLoadingSpinner = this.props.showLoadingSpinnerDuringExecution && this.state.actionOrError === LOADING
+        const pressed =
+            this.props.variant === 'actionItem' && this.props.action.actionItem && this.props.action.actionItem.pressed
 
         return (
             <LinkOrButton
@@ -185,9 +193,13 @@ export class ActionItem extends React.PureComponent<Props, State> {
                     (this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
                     this.state.actionOrError === LOADING
                 }
-                className={`action-item ${this.props.className || ''} ${
-                    showLoadingSpinner ? 'action-item--loading' : ''
-                } ${variantClassName}`}
+                className={classNames(
+                    'action-item',
+                    this.props.className,
+                    showLoadingSpinner && 'action-item--loading',
+                    variantClassName,
+                    pressed && [`action-item--pressed`, this.props.pressedClassName]
+                )}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
                 to={
@@ -251,7 +263,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
     }
 }
 
-function urlForClientCommandOpen(action: ActionContribution, location: H.Location): string | undefined {
+function urlForClientCommandOpen(action: EvaluatedActionContribution, location: H.Location): string | undefined {
     if (action.command === 'open' && action.commandArguments && typeof action.commandArguments[0] === 'string') {
         return action.commandArguments[0]
     }
