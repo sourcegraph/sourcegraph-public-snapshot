@@ -1,0 +1,375 @@
+<svg id="mermaid-1551921004212" width="100%" xmlns="http://www.w3.org/2000/svg" style="max-width: 634.75px;" viewBox="0 0 634.75 127"><style>
+
+
+#mermaid-1551921004212 .label {
+  font-family: 'trebuchet ms', verdana, arial;
+  color: #333; 
+  font-size: 14px;
+  font-variant: tabular-nums;
+  line-height: 1.5;
+ }
+
+#mermaid-1551921004212 .node rect,
+#mermaid-1551921004212 .node circle,
+#mermaid-1551921004212 .node ellipse,
+#mermaid-1551921004212 .node polygon {
+  fill: #eee;
+  stroke: #999;
+  stroke-width: 1px; }
+
+#mermaid-1551921004212 .node.clickable {
+  cursor: pointer; }
+
+#mermaid-1551921004212 .arrowheadPath {
+  fill: #333333; }
+
+#mermaid-1551921004212 .edgePath .path {
+  stroke: #666;
+  stroke-width: 1.5px; }
+
+#mermaid-1551921004212 .edgeLabel:nth-child(1) span {
+  background-color: white; 
+}
+
+#mermaid-1551921004212 .edgeLabel:nth-child(2) span {
+  background-color: #eaf2fb;
+}
+
+#mermaid-1551921004212 .cluster rect {
+  fill: #eaf2fb !important;
+  stroke: #26a !important;
+  stroke-width: 1px !important; }
+
+#mermaid-1551921004212 .cluster text {
+  fill: #333; 
+  font-family: 'trebuchet ms', verdana, arial;
+  color: #333; 
+  font-size: 14px;
+  font-variant: tabular-nums;
+  line-height: 1.5;
+  }
+
+#mermaid-1551921004212 div.mermaidTooltip {
+  position: absolute;
+  text-align: center;
+  max-width: 200px;
+  padding: 2px;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 12px;
+  background: #eaf2fb;
+  border: 1px solid #26a;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 100; }
+
+#mermaid-1551921004212 .actor {
+  stroke: #999;
+  fill: #eee; }
+
+#mermaid-1551921004212 text.actor {
+  fill: #333;
+  stroke: none; }
+
+#mermaid-1551921004212 .actor-line {
+  stroke: #666; }
+
+#mermaid-1551921004212 .messageLine0 {
+  stroke-width: 1.5;
+  stroke-dasharray: '2 2';
+  stroke: #333; }
+
+#mermaid-1551921004212 .messageLine1 {
+  stroke-width: 1.5;
+  stroke-dasharray: '2 2';
+  stroke: #333; }
+
+#mermaid-1551921004212 #arrowhead {
+  fill: #333; }
+
+#mermaid-1551921004212 #crosshead path {
+  fill: #333 !important;
+  stroke: #333 !important; }
+
+#mermaid-1551921004212 .messageText {
+  fill: #333;
+  stroke: none; }
+
+#mermaid-1551921004212 .labelBox {
+  stroke: #999;
+  fill: #eee; }
+
+#mermaid-1551921004212 .labelText {
+  fill: white;
+  stroke: none; }
+
+#mermaid-1551921004212 .loopText {
+  fill: white;
+  stroke: none; }
+
+#mermaid-1551921004212 .loopLine {
+  stroke-width: 2;
+  stroke-dasharray: '2 2';
+  stroke: #999; }
+
+#mermaid-1551921004212 .note {
+  stroke: #777700;
+  fill: #ffa; }
+
+#mermaid-1551921004212 .noteText {
+  fill: black;
+  stroke: none;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 14px; }
+
+#mermaid-1551921004212 .activation0 {
+  fill: #f4f4f4;
+  stroke: #666; }
+
+#mermaid-1551921004212 .activation1 {
+  fill: #f4f4f4;
+  stroke: #666; }
+
+#mermaid-1551921004212 .activation2 {
+  fill: #f4f4f4;
+  stroke: #666; }
+
+
+#mermaid-1551921004212 .section {
+  stroke: none;
+  opacity: 0.2; }
+
+#mermaid-1551921004212 .section0 {
+  fill: #80b3e6; }
+
+#mermaid-1551921004212 .section2 {
+  fill: #80b3e6; }
+
+#mermaid-1551921004212 .section1,
+#mermaid-1551921004212 .section3 {
+  fill: white;
+  opacity: 0.2; }
+
+#mermaid-1551921004212 .sectionTitle0 {
+  fill: #333; }
+
+#mermaid-1551921004212 .sectionTitle1 {
+  fill: #333; }
+
+#mermaid-1551921004212 .sectionTitle2 {
+  fill: #333; }
+
+#mermaid-1551921004212 .sectionTitle3 {
+  fill: #333; }
+
+#mermaid-1551921004212 .sectionTitle {
+  text-anchor: start;
+  font-size: 11px;
+  text-height: 14px; }
+
+
+#mermaid-1551921004212 .grid .tick {
+  stroke: #e6e6e6;
+  opacity: 0.3;
+  shape-rendering: crispEdges; }
+
+#mermaid-1551921004212 .grid path {
+  stroke-width: 0; }
+
+
+#mermaid-1551921004212 .today {
+  fill: none;
+  stroke: #d42;
+  stroke-width: 2px; }
+
+
+
+#mermaid-1551921004212 .task {
+  stroke-width: 2; }
+
+#mermaid-1551921004212 .taskText {
+  text-anchor: middle;
+  font-size: 11px; }
+
+#mermaid-1551921004212 .taskTextOutsideRight {
+  fill: #333;
+  text-anchor: start;
+  font-size: 11px; }
+
+#mermaid-1551921004212 .taskTextOutsideLeft {
+  fill: #333;
+  text-anchor: end;
+  font-size: 11px; }
+
+
+#mermaid-1551921004212 .taskText0,
+#mermaid-1551921004212 .taskText1,
+#mermaid-1551921004212 .taskText2,
+#mermaid-1551921004212 .taskText3 {
+  fill: white; }
+
+#mermaid-1551921004212 .task0,
+#mermaid-1551921004212 .task1,
+#mermaid-1551921004212 .task2,
+#mermaid-1551921004212 .task3 {
+  fill: #26a;
+  stroke: #1a4d80; }
+
+#mermaid-1551921004212 .taskTextOutside0,
+#mermaid-1551921004212 .taskTextOutside2 {
+  fill: #333; }
+
+#mermaid-1551921004212 .taskTextOutside1,
+#mermaid-1551921004212 .taskTextOutside3 {
+  fill: #333; }
+
+
+#mermaid-1551921004212 .active0,
+#mermaid-1551921004212 .active1,
+#mermaid-1551921004212 .active2,
+#mermaid-1551921004212 .active3 {
+  fill: #eee;
+  stroke: #1a4d80; }
+
+#mermaid-1551921004212 .activeText0,
+#mermaid-1551921004212 .activeText1,
+#mermaid-1551921004212 .activeText2,
+#mermaid-1551921004212 .activeText3 {
+  fill: #333 !important; }
+
+
+#mermaid-1551921004212 .done0,
+#mermaid-1551921004212 .done1,
+#mermaid-1551921004212 .done2,
+#mermaid-1551921004212 .done3 {
+  stroke: #666;
+  fill: #bbb;
+  stroke-width: 2; }
+
+#mermaid-1551921004212 .doneText0,
+#mermaid-1551921004212 .doneText1,
+#mermaid-1551921004212 .doneText2,
+#mermaid-1551921004212 .doneText3 {
+  fill: #333 !important; }
+
+
+#mermaid-1551921004212 .crit0,
+#mermaid-1551921004212 .crit1,
+#mermaid-1551921004212 .crit2,
+#mermaid-1551921004212 .crit3 {
+  stroke: #b1361b;
+  fill: #d42;
+  stroke-width: 2; }
+
+#mermaid-1551921004212 .activeCrit0,
+#mermaid-1551921004212 .activeCrit1,
+#mermaid-1551921004212 .activeCrit2,
+#mermaid-1551921004212 .activeCrit3 {
+  stroke: #b1361b;
+  fill: #eee;
+  stroke-width: 2; }
+
+#mermaid-1551921004212 .doneCrit0,
+#mermaid-1551921004212 .doneCrit1,
+#mermaid-1551921004212 .doneCrit2,
+#mermaid-1551921004212 .doneCrit3 {
+  stroke: #b1361b;
+  fill: #bbb;
+  stroke-width: 2;
+  cursor: pointer;
+  shape-rendering: crispEdges; }
+
+#mermaid-1551921004212 .doneCritText0,
+#mermaid-1551921004212 .doneCritText1,
+#mermaid-1551921004212 .doneCritText2,
+#mermaid-1551921004212 .doneCritText3 {
+  fill: #333 !important; }
+
+#mermaid-1551921004212 .activeCritText0,
+#mermaid-1551921004212 .activeCritText1,
+#mermaid-1551921004212 .activeCritText2,
+#mermaid-1551921004212 .activeCritText3 {
+  fill: #333 !important; }
+
+#mermaid-1551921004212 .titleText {
+  text-anchor: middle;
+  font-size: 18px;
+  fill: #333; }
+
+#mermaid-1551921004212 g.classGroup text {
+  fill: #999;
+  stroke: none;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 10px; }
+
+#mermaid-1551921004212 g.classGroup rect {
+  fill: #eee;
+  stroke: #999; }
+
+#mermaid-1551921004212 g.classGroup line {
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 .classLabel .box {
+  stroke: none;
+  stroke-width: 0;
+  fill: #eee;
+  opacity: 0.5; }
+
+#mermaid-1551921004212 .classLabel .label {
+  fill: #999;
+  font-size: 10px; }
+
+#mermaid-1551921004212 .relation {
+  stroke: #999;
+  stroke-width: 1;
+  fill: none; }
+
+#mermaid-1551921004212 #compositionStart {
+  fill: #999;
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 #compositionEnd {
+  fill: #999;
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 #aggregationStart {
+  fill: #eee;
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 #aggregationEnd {
+  fill: #eee;
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 #dependencyStart {
+  fill: #999;
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 #dependencyEnd {
+  fill: #999;
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 #extensionStart {
+  fill: #999;
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 #extensionEnd {
+  fill: #999;
+  stroke: #999;
+  stroke-width: 1; }
+
+#mermaid-1551921004212 .commit-id,
+#mermaid-1551921004212 .commit-msg,
+#mermaid-1551921004212 .branch-label {
+  fill: lightgrey;
+  color: lightgrey; }
+</style><style>#mermaid-1551921004212 {
+    color: rgba(0, 0, 0, 0.65);
+    font: ;
+  }</style><g transform="translate(-12, -12)"><g class="output"><g class="clusters"><g class="cluster" id="subGraph0" transform="translate(434.078125,75.5)" style="opacity: 1;"><rect width="409.34375" height="111" x="-204.671875" y="-55.5"></rect><g class="label"><g transform="translate(0,0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; white-space: nowrap;"></div></foreignObject></g></g><text x="0" y="-41.5" fill="black" stroke="none" id="mermaid-1551921004212Text" style="text-anchor: middle;">Sourcegraph server Docker container</text></g></g><g class="edgePaths"><g class="edgePath" style="opacity: 1;"><path class="path" d="M90.046875,75.5L159.7265625,75.5L229.40625,75.5L254.40625,75.5" marker-end="url(#arrowhead2022)" style="fill:none"></path><defs><marker id="arrowhead2022" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="8" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowheadPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></path></marker></defs></g><g class="edgePath" style="opacity: 1;"><path class="path" d="M313.4375,75.5L383.1171875,75.5L452.796875,75.5" marker-end="url(#arrowhead2023)" style="fill:none"></path><defs><marker id="arrowhead2023" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="8" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowheadPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></path></marker></defs></g></g><g class="edgeLabels"><g class="edgeLabel" transform="translate(159.7265625,75.5)" style="opacity: 1;"><g transform="translate(-44.6796875,-10.5)" class="label"><foreignObject width="89.359375" height="21"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; white-space: nowrap;"><span class="edgeLabel">HTTP request</span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(383.1171875,75.5)" style="opacity: 1;"><g transform="translate(-44.6796875,-10.5)" class="label"><foreignObject width="89.359375" height="21"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; white-space: nowrap;"><span class="edgeLabel">HTTP request</span></div></foreignObject></g></g></g><g class="nodes"><g class="node" id="B" transform="translate(283.921875,75.5)" style="opacity: 1;"><rect rx="5" ry="5" x="-29.515625" y="-20.5" width="59.03125" height="41"></rect><g class="label" transform="translate(0,0)"><g transform="translate(-19.515625,-10.5)"><foreignObject width="39.03125" height="21"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; white-space: nowrap;">NGINX</div></foreignObject></g></g></g><g class="node" id="C" transform="translate(533.2734375,75.5)" style="opacity: 1;"><rect rx="5" ry="5" x="-80.4765625" y="-20.5" width="160.953125" height="41"></rect><g class="label" transform="translate(0,0)"><g transform="translate(-70.4765625,-10.5)"><foreignObject width="140.953125" height="21"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; white-space: nowrap;">Sourcegraph front-end</div></foreignObject></g></g></g><g class="node" id="A" transform="translate(55.0234375,75.5)" style="opacity: 1;"><rect rx="5" ry="5" x="-35.0234375" y="-20.5" width="70.046875" height="41"></rect><g class="label" transform="translate(0,0)"><g transform="translate(-25.0234375,-10.5)"><foreignObject width="50.046875" height="21"><div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; white-space: nowrap;">Browser</div></foreignObject></g></g></g></g></g></g></svg>

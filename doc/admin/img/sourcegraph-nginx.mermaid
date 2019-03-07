@@ -1,0 +1,11 @@
+%% NGINX and Sourcegraph server docker architecture
+
+graph LR
+A(Browser)
+B(NGINX)
+C(Sourcegraph front-end)
+
+A-->|HTTP request|B
+subgraph Docker container
+B-->|HTTP request|C
+end
