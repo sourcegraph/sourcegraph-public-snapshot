@@ -158,8 +158,10 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
-	// Try to get latest remote URL, but continue even if that fails.
-	grepo, err := GitRepo(ctx, repo)
+	// We use fastGitRepoForRevResolution to intelligently choose between
+	// GitRepo / CachedGitRepo here based on whether or not Gitserver is aware
+	// of the revision or not. See that function for more details.
+	grepo, err := fastGitRepoForRevResolution(ctx, repo, rev)
 	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
@@ -181,13 +183,43 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	// Try to get latest remote URL, but continue even if that fails.
-	gitserverRepo, err := GitRepo(ctx, repo)
+	// We use fastGitRepoForRevResolution to intelligently choose between
+	// GitRepo / CachedGitRepo here based on whether or not Gitserver is aware
+	// of the revision or not. See that function for more details.
+	gitserverRepo, err := fastGitRepoForRevResolution(ctx, repo, string(commitID))
 	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
 	return git.GetCommit(ctx, gitserverRepo, commitID)
+}
+
+// fastGitRepoForRevResolution returns a CachedGitRepo if it contains the
+// specified rev, or else returns a GitRepo (which will update the gitserver
+// repo if the rev does not exist).
+//
+// This is primarily useful for resolving commit and revision information from
+// the returned gitserver repository, because this is done VERY often (e.g.
+// twice per search result viewed!), and using GitRepo incurs the cost of a
+// repo-updater /repo-lookup request -- which itself involves two code host API
+// requests (which are strictly rate-limited).
+//
+// It should be noted that while this will always ensure valid revs exist in
+// the repository -- it makes no guarantees about them being up to date. For
+// example, requesting "mybranch" will cause gitserver to pull down that branch
+// if it is not already aware of it, but it will not go out of its way to
+// update it. This is usually fine because this is the same behavior a plain
+// GitRepo has under the hood: gitserver won't update it unless the revision
+// does not exist (see cmd/gitserver/server/server.go Server.ensureRevision).
+func fastGitRepoForRevResolution(ctx context.Context, repo *types.Repo, rev string) (gitserver.Repo, error) {
+	gitserverRepo, err := CachedGitRepo(ctx, repo)
+	if err == nil {
+		_, err := git.ResolveRevision(ctx, *gitserverRepo, nil, rev, nil)
+		if err == nil {
+			return *gitserverRepo, nil // Gitserver has the revision so we can spare ourselves a bunch of work.
+		}
+	}
+	return GitRepo(ctx, repo) // Gitserver doesn't have the revision, so we must use a GitRepo.
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {
