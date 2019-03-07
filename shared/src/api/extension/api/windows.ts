@@ -30,9 +30,9 @@ class ExtWindow implements sourcegraph.Window {
         return this.textEditors.find(({ isActive }) => isActive)
     }
 
-    public showNotification(message: string): void {
+    public showNotification(message: string, type: sourcegraph.NotificationType): void {
         // tslint:disable-next-line: no-floating-promises
-        this.windowsProxy.$showNotification(message)
+        this.windowsProxy.$showNotification(message, type)
     }
 
     public showMessage(message: string): Promise<void> {

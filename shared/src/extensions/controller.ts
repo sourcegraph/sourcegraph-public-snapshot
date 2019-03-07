@@ -5,7 +5,7 @@ import { Services } from '../api/client/services'
 import { ExecuteCommandParams } from '../api/client/services/command'
 import { ContributionRegistry } from '../api/client/services/contribution'
 import { ExtensionsService } from '../api/client/services/extensionsService'
-import { MessageType } from '../api/client/services/notifications'
+import { NotificationType } from '../api/client/services/notifications'
 import { InitData } from '../api/extension/extensionHost'
 import { Contributions } from '../api/protocol'
 import { registerBuiltinClientCommands } from '../commands/commands'
@@ -84,7 +84,7 @@ export function createController(context: PlatformContext): Controller {
     )
     subscriptions.add(
         services.notifications.progresses.subscribe(({ title, progress }) => {
-            notifications.next({ message: title, progress, type: MessageType.Log })
+            notifications.next({ message: title, progress, type: NotificationType.Log })
         })
     )
 
@@ -113,13 +113,6 @@ export function createController(context: PlatformContext): Controller {
         )
     )
 
-    // Print window/logMessage log messages to the browser devtools console.
-    subscriptions.add(
-        services.notifications.logMessages.subscribe(({ message }) => {
-            log('info', 'EXT', message)
-        })
-    )
-
     // Debug helpers.
     const DEBUG = true
     if (DEBUG) {
@@ -143,7 +136,7 @@ export function createController(context: PlatformContext): Controller {
                 if (!suppressNotificationOnError) {
                     notifications.next({
                         message: asError(err).message,
-                        type: MessageType.Error,
+                        type: NotificationType.Error,
                         source: params.command,
                     })
                 }

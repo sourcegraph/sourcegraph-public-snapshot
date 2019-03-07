@@ -1,6 +1,5 @@
 import { Observable } from 'rxjs'
-import { Progress } from 'sourcegraph'
-import { MessageType } from '../api/client/services/notifications'
+import { NotificationType, Progress } from 'sourcegraph'
 
 /**
  * A notification message to display to the user.
@@ -11,10 +10,8 @@ export interface Notification {
 
     /**
      * The type of the message.
-     *
-     * @default MessageType.Info
      */
-    type?: MessageType
+    type: NotificationType
 
     /** The source of the notification.  */
     source?: string

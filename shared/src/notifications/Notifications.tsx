@@ -2,7 +2,7 @@ import { uniqueId } from 'lodash'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { delay, map, takeWhile } from 'rxjs/operators'
-import { MessageType } from '../api/client/services/notifications'
+import { NotificationType } from '../api/client/services/notifications'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { asError } from '../util/errors'
 import { Notification } from './notification'
@@ -53,7 +53,7 @@ export class Notifications extends React.PureComponent<Props, State> {
                                                 n === notification
                                                     ? {
                                                           ...n,
-                                                          type: MessageType.Error,
+                                                          type: NotificationType.Error,
                                                           message: asError(err).message,
                                                       }
                                                     : n

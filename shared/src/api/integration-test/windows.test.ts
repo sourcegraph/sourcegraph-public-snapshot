@@ -1,7 +1,6 @@
 import { from } from 'rxjs'
 import { map, take, toArray } from 'rxjs/operators'
-import { ViewComponent, Window } from 'sourcegraph'
-import { MessageType } from '../client/services/notifications'
+import { NotificationType, ViewComponent, Window } from 'sourcegraph'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
@@ -179,9 +178,9 @@ describe('Windows (integration)', () => {
         test('Window#showNotification', async () => {
             const { extensionAPI, services } = await integrationTestContext()
             const values = collectSubscribableValues(services.notifications.showMessages)
-            extensionAPI.app.activeWindow!.showNotification('a') // tslint:disable-line deprecation
+            extensionAPI.app.activeWindow!.showNotification('a', NotificationType.Info) // tslint:disable-line deprecation
             await extensionAPI.internal.sync()
-            expect(values).toEqual([{ message: 'a', type: MessageType.Info }] as typeof values)
+            expect(values).toEqual([{ message: 'a', type: NotificationType.Info }] as typeof values)
         })
 
         test('Window#showMessage', async () => {
@@ -191,7 +190,7 @@ describe('Windows (integration)', () => {
                 services.notifications.showMessageRequests.pipe(map(({ message, type }) => ({ message, type })))
             )
             expect(await extensionAPI.app.activeWindow!.showMessage('a')).toBe(undefined)
-            expect(values).toEqual([{ message: 'a', type: MessageType.Info }] as typeof values)
+            expect(values).toEqual([{ message: 'a', type: NotificationType.Info }] as typeof values)
         })
 
         test('Window#showInputBox', async () => {

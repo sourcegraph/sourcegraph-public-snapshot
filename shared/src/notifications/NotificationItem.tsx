@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
-import { Progress } from 'sourcegraph'
-import { MessageType } from '../api/client/services/notifications'
+import * as sourcegraph from 'sourcegraph'
+import { NotificationType } from '../api/client/services/notifications'
 import { renderMarkdown } from '../util/markdown'
 import { Notification } from './notification'
 
@@ -13,7 +13,7 @@ interface Props {
 }
 
 interface State {
-    progress?: Required<Progress>
+    progress?: Required<sourcegraph.Progress>
 }
 
 /**
@@ -41,7 +41,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                         from(progress || []).pipe(
                             // Hide progress bar and update message if error occured
                             // Merge new progress updates with previous
-                            scan<Progress, Required<Progress>>(
+                            scan<sourcegraph.Progress, Required<sourcegraph.Progress>>(
                                 (current, { message = current.message, percentage = current.percentage }) => ({
                                     message,
                                     percentage,
@@ -119,15 +119,16 @@ export class NotificationItem extends React.PureComponent<Props, State> {
 /**
  * @return The Bootstrap class that corresponds to {@link type}.
  */
-function getBootstrapClass(type: MessageType | undefined): string {
+function getBootstrapClass(type: sourcegraph.NotificationType | undefined): string {
     switch (type) {
-        case MessageType.Error:
+        case NotificationType.Error:
             return 'danger'
-        case MessageType.Warning:
+        case NotificationType.Warning:
             return 'warning'
-        case MessageType.Info:
+        case NotificationType.Success:
+            return 'success'
+        case NotificationType.Info:
             return 'info'
-        case MessageType.Log:
         default:
             return 'secondary'
     }

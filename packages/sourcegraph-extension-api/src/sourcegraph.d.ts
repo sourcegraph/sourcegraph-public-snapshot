@@ -426,11 +426,10 @@ declare module 'sourcegraph' {
         /**
          * Show a notification message to the user that does not require interaction or steal focus.
          *
-         * @deprecated This API will change.
          * @param message The message to show. Markdown is supported.
-         * @return A promise that resolves when the user dismisses the message.
+         * @param type a {@link NotificationType} affecting the display of the notification.
          */
-        showNotification(message: string): void
+        showNotification(message: string, type: NotificationType): void
 
         /**
          * Show progress in the window. Progress is shown while running the given callback
@@ -844,6 +843,32 @@ declare module 'sourcegraph' {
          * @default MarkupKind.Markdown
          */
         kind?: MarkupKind
+    }
+
+    /**
+     * The type of a notification shown through {@link Window.showNotification}.
+     */
+    export const enum NotificationType {
+        /**
+         * An error message.
+         */
+        Error = 1,
+        /**
+         * A warning message.
+         */
+        Warning = 2,
+        /**
+         * An info message.
+         */
+        Info = 3,
+        /**
+         * A log message.
+         */
+        Log = 4,
+        /**
+         * A success message.
+         */
+        Success = 5,
     }
 
     /**
