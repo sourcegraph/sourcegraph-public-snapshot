@@ -1,8 +1,8 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { escapeRegexp } from 'lodash'
 import { decode } from 'he'
 import { isEqual } from 'lodash'
 import { range } from 'lodash'
+import { escapeRegexp } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
@@ -69,7 +69,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             // Extract the text content of the result.
                             const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText.trim()
                             // Match the code content and any trailing newlines if any.
-                            const codeContentAndAnyNewLines = new RegExp(escapeStringRegexp(codeContent) + '\\n*')
+                            const codeContentAndAnyNewLines = new RegExp(escapeRegexp(codeContent) + '\\n*')
                             if (codeContent) {
                                 return highlightCode({
                                     code: codeContent,
