@@ -62,7 +62,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
     public render(): JSX.Element {
         return (
             <div className="activation-checklist">
-                {this.props.completed && false ? (
+                {this.props.completed ? (
                     this.props.steps.map(step => (
                         <div key={step.id} className="activation-checklist__item">
                             <ActivationChecklistItem
