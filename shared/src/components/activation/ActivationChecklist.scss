@@ -1,46 +1,49 @@
 .activation-checklist {
-    margin-top: 0.5rem;
-	overflow: hidden;
+    overflow: hidden;
 
     &__item {
-		box-sizing: content-box;
-		position: relative;
-
+        box-sizing: content-box;
+        position: relative;
         border-top: 1px solid $dropdown-border-color;
-		margin-top: -1px;
-		margin-bottom: -1px;
-		z-index: 10;
-		transition: all 250ms ease;
-
-
+        margin-top: -1px;
+        margin-bottom: -1px;
+        z-index: 10;
+        transition: all 250ms ease;
+        border-left: 0.75rem solid var(--body-bg);
+        border-right: 0.75rem solid var(--body-bg);
 
         @include hover-focus {
             color: $dropdown-link-hover-color;
             text-decoration: none;
-			border-color: var(--theme-bg-plain);
-			background-color: var(--theme-bg-plain);
-			margin-bottom: -1px;
-			z-index: 20;
+            border-color: var(--theme-bg-plain);
+            background-color: var(--theme-bg-plain);
+            margin-bottom: -1px;
+            z-index: 20;
 
-			box-shadow:  0 0 14px 14px rgba(2, 3, 3, 0.4)
-			.theme-light {
-				box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
-			}
+            box-shadow: 0 0 14px 14px rgba(2, 3, 3, 0.4);
         }
     }
 }
-
+.theme-light {
+    .activation-checklist__item {
+        @include hover-focus {
+            box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
+        }
+    }
+}
 .activation-item {
     cursor: pointer;
     padding: 0.5rem 0.5rem;
 
-    &__checkbox {
-        &--done {
-            color: $oc-green-6;
-        }
-        &--todo {
-            color: $dropdown-border-color;
-        }
+    &__checkbox--done {
+        color: $oc-green-6;
+        position: absolute;
+        right: 0.25rem;
+    }
+    &__checkbox--todo {
+        color: $dropdown-border-color;
+        position: absolute;
+        right: 0.25rem;
     }
 
     &__link {

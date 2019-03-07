@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CheckboxMarkedCircleOutlineIcon from 'mdi-react/CheckboxMarkedCircleOutlineIcon'
+import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
 import { Link } from '../Link'
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
@@ -23,15 +23,13 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
     public render(): JSX.Element {
         const checkboxElem = (
             <div className={'activation-item'}>
-                {' '}
-                {this.props.done ? (
-                    <CheckboxMarkedCircleOutlineIcon className="icon-inline activation-item__checkbox--done" />
-                ) : (
-                    <CheckboxBlankCircleOutlineIcon className="icon-inline activation-item__checkbox--todo" />
-                )}
-                &nbsp;&nbsp;
                 {this.props.title}
                 &nbsp;
+                {this.props.done ? (
+                    <CheckIcon className="icon-inline activation-item__checkbox--done" />
+                ) : (
+                    <CheckboxBlankCircleIcon className="icon-inline activation-item__checkbox--todo" />
+                )}
             </div>
         )
 
