@@ -1,7 +1,7 @@
 import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { ActionsNavItems, ActionNavItemsClassProps } from '../../../../../shared/src/actions/ActionsNavItems'
+import { ActionNavItemsClassProps, ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
