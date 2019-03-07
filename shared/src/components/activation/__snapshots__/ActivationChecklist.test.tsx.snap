@@ -4,10 +4,33 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
 <div
   className="activation-checklist"
 >
-  <div>
+  <div
+    className="activation-checklist__item"
+  >
     <div
-      className="loading-spinner icon-inline"
-    />
+      data-tooltip="detail1"
+      onClick={[Function]}
+    >
+      <div
+        className="activation-item"
+      >
+         
+        <svg
+          className="mdi-icon icon-inline activation-item__checkbox--todo"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+          />
+        </svg>
+          
+        title1
+         
+      </div>
+    </div>
   </div>
 </div>
 `;
@@ -16,10 +39,33 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
 <div
   className="activation-checklist"
 >
-  <div>
+  <div
+    className="activation-checklist__item"
+  >
     <div
-      className="loading-spinner icon-inline"
-    />
+      data-tooltip="detail1"
+      onClick={[Function]}
+    >
+      <div
+        className="activation-item"
+      >
+         
+        <svg
+          className="mdi-icon icon-inline activation-item__checkbox--todo"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+          />
+        </svg>
+          
+        title1
+         
+      </div>
+    </div>
   </div>
 </div>
 `;
@@ -28,10 +74,33 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
 <div
   className="activation-checklist"
 >
-  <div>
+  <div
+    className="activation-checklist__item"
+  >
     <div
-      className="loading-spinner icon-inline"
-    />
+      data-tooltip="detail1"
+      onClick={[Function]}
+    >
+      <div
+        className="activation-item"
+      >
+         
+        <svg
+          className="mdi-icon icon-inline activation-item__checkbox--done"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M20,12C20,16.42 16.42,20 12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C12.76,4 13.5,4.11 14.2,4.31L15.77,2.74C14.61,2.26 13.34,2 12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"
+          />
+        </svg>
+          
+        title1
+         
+      </div>
+    </div>
   </div>
 </div>
 `;
