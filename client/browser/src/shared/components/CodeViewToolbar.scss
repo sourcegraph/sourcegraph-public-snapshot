@@ -3,10 +3,3 @@
         vertical-align: middle;
     }
 }
-
-.action-item--github {
-    // Match GitHub's button height even if button only contains icon
-    // (no text that would push the height)
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    height: 28px;
-}

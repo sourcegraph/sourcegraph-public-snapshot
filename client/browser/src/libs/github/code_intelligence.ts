@@ -157,6 +157,11 @@ export const githubCodeHost: CodeHost = {
     getOverlayMount,
     getCommandPaletteMount,
     getGlobalDebugMount,
+    actionNavItemClassProps: {
+        listItemClass: 'BtnGroup',
+        actionItemClass: 'btn btn-sm tooltipped tooltipped-s BtnGroup-item action-item--github',
+        actionItemPressedClass: 'selected',
+    },
     urlToFile: (
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => {

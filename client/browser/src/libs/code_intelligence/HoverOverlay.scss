@@ -1,26 +1,5 @@
-@import '../bitbucket/style.scss';
-@import '../gitlab/style.scss';
 @import '../../shared/global-styles/variables.scss';
 @import '../../../../../shared/src/hover/HoverOverlay.scss';
-
-.hover-overlay-mount__phabricator {
-    .hover-overlay {
-        .hover-overlay__action {
-            padding: 6px 12px;
-            color: #24292e;
-            background-color: #eff3f6;
-            background-image: linear-gradient(-180deg, #fafbfc 0%, #eff3f6 90%);
-
-            &:hover {
-                background-color: #e6ebf1;
-                background-image: linear-gradient(-180deg, #f0f3f6 0%, #e6ebf1 90%);
-                background-position: -0.5em;
-                border-color: rgba(27, 31, 35, 0.35);
-                text-decoration: none;
-            }
-        }
-    }
-}
 
 .hover-overlay {
     z-index: $default-z-index;
