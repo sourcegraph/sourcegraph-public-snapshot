@@ -1,7 +1,7 @@
 import H from 'history'
 import React from 'react'
-import { concat, Observable, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, first, map, switchMap, startWith } from 'rxjs/operators'
+import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
 import {
     ActivationCompletionStatus,
     ActivationProps,
@@ -15,7 +15,7 @@ import { logUserEvent } from '../user/account/backend'
 /**
  * Fetches activation status from server.
  */
-const fetchActivationStatus = (isSiteAdmin: boolean): Promise<ActivationCompletionStatus> =>
+const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompletionStatus> =>
     queryGraphQL(
         isSiteAdmin
             ? gql`
@@ -50,28 +50,26 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Promise<ActivationCompleti
                       }
                   }
               `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            const authProviders = window.context.authProviders
+            const completed: ActivationCompletionStatus = {
+                DidSearch: !!data.currentUser && data.currentUser.usageStatistics.searchQueries > 0,
+                FoundReferences: !!data.currentUser && data.currentUser.usageStatistics.findReferencesActions > 0,
+            }
+            if (isSiteAdmin) {
+                completed.ConnectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
+                completed.EnabledRepository =
+                    data.repositories && data.repositories.totalCount !== null && data.repositories.totalCount > 0
+                if (authProviders) {
+                    completed.EnabledSharing =
+                        data.users.totalCount > 1 || authProviders.filter(p => !p.isBuiltin).length > 0
+                }
+            }
+            return completed
+        })
     )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(data => {
-                const authProviders = window.context.authProviders
-                const completed: ActivationCompletionStatus = {
-                    DidSearch: !!data.currentUser && data.currentUser.usageStatistics.searchQueries > 0,
-                    FoundReferences: !!data.currentUser && data.currentUser.usageStatistics.findReferencesActions > 0,
-                }
-                if (isSiteAdmin) {
-                    completed.ConnectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
-                    completed.EnabledRepository =
-                        data.repositories && data.repositories.totalCount !== null && data.repositories.totalCount > 0
-                    if (authProviders) {
-                        completed.EnabledSharing =
-                            data.users.totalCount > 1 || authProviders.filter(p => !p.isBuiltin).length > 0
-                    }
-                }
-                return completed
-            })
-        )
-        .toPromise()
 
 /**
  * Returns the link a user should go to when they click on the uncompleted find-references
@@ -161,6 +159,16 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
         .map(({ siteAdminOnly, ...step }) => step)
 }
 
+/**
+ * Sends update to server for events that don't themselves trigger
+ * an update.
+ */
+const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
+    if (update.FoundReferences) {
+        logUserEvent(GQL.UserEvent.CODEINTELREFS)
+    }
+}
+
 interface Props {
     authenticatedUser: GQL.IUser | null
 }
@@ -185,55 +193,51 @@ export const withActivation = <P extends ActivationProps & Props>(Component: Rea
          */
         private refetches = new Subject<void>()
 
-        /**
-         * This field is reinitialized every time the activation status is reset due to a
-         * change in the authenticated user. This necessitates that the activation status
-         * be fetched from the server and all subsequent activation updates should block
-         * on this initial fetch.
-         */
-        private completionStatusSet = new ReplaySubject<void>(1)
+        private updates = new Subject<Partial<ActivationCompletionStatus>>()
 
-        public componentDidMount = () => {
-            // Refetch activation status from server when requested
-            this.subscriptions.add(
-                this.refetches
-                    .pipe(
-                        switchMap(() =>
-                            this.props.authenticatedUser
-                                ? fetchActivationStatus(this.props.authenticatedUser.siteAdmin)
-                                : []
-                        )
-                    )
-                    .subscribe(completed => {
-                        this.setState({ completed })
-                        this.completionStatusSet.next()
-                    })
+        public componentDidMount(): void {
+            const authenticatedUser: Observable<GQL.IUser | null> = this.componentUpdates.pipe(
+                startWith(this.props),
+                map(props => props.authenticatedUser),
+                distinctUntilChanged()
             )
-            // Reset the activation status when the authenticated user changes
+            const serverCompletionStatus: Observable<ActivationCompletionStatus> = combineLatest(
+                authenticatedUser,
+                this.refetches
+            ).pipe(
+                switchMap(([authenticatedUser]) =>
+                    authenticatedUser ? fetchActivationStatus(authenticatedUser.siteAdmin) : []
+                )
+            )
+            const localCompletionStatus: Observable<Partial<ActivationCompletionStatus>> = merge(
+                authenticatedUser.pipe(map(() => null)), // reset on new authenticated user
+                this.updates
+            ).pipe(
+                tap(update => update && recordUpdate(update)),
+                scan((prev, next) => (next ? { ...prev, ...next } : {})),
+                map(p => p || {})
+            )
             this.subscriptions.add(
-                this.componentUpdates
+                combineLatest(serverCompletionStatus, localCompletionStatus)
                     .pipe(
-                        startWith(this.props),
-                        map(props => props.authenticatedUser),
-                        distinctUntilChanged()
+                        map(([serverCompletionStatus, localCompletionStatus]) => ({
+                            ...serverCompletionStatus,
+                            ...localCompletionStatus,
+                        }))
                     )
-                    .subscribe(() => {
-                        this.completionStatusSet = new ReplaySubject<void>(1)
-                        this.setState({ completed: undefined })
-                        this.refetchCompletionStatus()
-                    })
+                    .subscribe(completed => this.setState({ completed }))
             )
         }
 
-        public componentWillUnmount = () => {
+        public componentWillUnmount(): void {
             this.subscriptions.unsubscribe()
         }
 
-        public componentDidUpdate = () => {
+        public componentDidUpdate(): void {
             this.componentUpdates.next(this.props as Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>)
         }
 
-        private steps = (): ActivationStep[] | undefined => {
+        private steps(): ActivationStep[] | undefined {
             const user: GQL.IUser | null = this.props.authenticatedUser
             if (user) {
                 return getActivationSteps(user)
@@ -243,34 +247,8 @@ export const withActivation = <P extends ActivationProps & Props>(Component: Rea
 
         private refetchCompletionStatus = () => this.refetches.next()
 
-        private updateCompletionStatus = (update: ActivationCompletionStatus): void => {
-            this.completionStatusSet.pipe(first()).subscribe(() => {
-                this.recordUpdate(update)
-            })
-            const steps = this.steps()
-            if (!steps) {
-                return
-            }
-
-            const completed: ActivationCompletionStatus = {}
-            Object.assign(completed, this.state.completed)
-            for (const step of steps) {
-                if (update[step.id] !== undefined) {
-                    completed[step.id] = update[step.id]
-                }
-            }
-            this.setState({ completed })
-        }
-
-        /**
-         * Sends update to server for events that don't themselves trigger
-         * an update.
-         */
-        private recordUpdate = (update: ActivationCompletionStatus): void => {
-            if (update.FoundReferences) {
-                logUserEvent(GQL.UserEvent.CODEINTELREFS)
-            }
-        }
+        private updateCompletionStatus = (update: Partial<ActivationCompletionStatus>): void =>
+            this.updates.next(update)
 
         public render(): React.ReactFragment | null {
             const steps = this.steps()

@@ -110,7 +110,7 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminis
 
 setLinkComponent(RouterLinkOrAnchor)
 
-const LayoutWithActivation = withActivation(Layout)
+const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 
 /**
  * The root component
@@ -243,31 +243,25 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                             <Route
                                 path="/"
                                 // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                                render={routeComponentProps => {
-                                    const layoutProps = {
-                                        ...props,
-                                        ...routeComponentProps,
-                                        authenticatedUser,
-                                        viewerSubject: this.state.viewerSubject,
-                                        settingsCascade: this.state.settingsCascade,
+                                render={routeComponentProps => (
+                                    <LayoutWithActivation
+                                        {...props}
+                                        {...routeComponentProps}
+                                        authenticatedUser={authenticatedUser}
+                                        viewerSubject={this.state.viewerSubject}
+                                        settingsCascade={this.state.settingsCascade}
                                         // Theme
-                                        isLightTheme: this.isLightTheme(),
-                                        themePreference: this.state.themePreference,
-                                        onThemePreferenceChange: this.onThemePreferenceChange,
+                                        isLightTheme={this.isLightTheme()}
+                                        themePreference={this.state.themePreference}
+                                        onThemePreferenceChange={this.onThemePreferenceChange}
                                         // Search query
-                                        navbarSearchQuery: this.state.navbarSearchQuery,
-                                        onNavbarQueryChange: this.onNavbarQueryChange,
+                                        navbarSearchQuery={this.state.navbarSearchQuery}
+                                        onNavbarQueryChange={this.onNavbarQueryChange}
                                         // Extensions
-                                        platformContext: this.state.platformContext,
-                                        extensionsController: this.state.extensionsController,
-                                    }
-
-                                    return window.context.sourcegraphDotComMode ? (
-                                        <Layout {...layoutProps} />
-                                    ) : (
-                                        <LayoutWithActivation {...layoutProps} />
-                                    )
-                                }}
+                                        platformContext={this.state.platformContext}
+                                        extensionsController={this.state.extensionsController}
+                                    />
+                                )}
                             />
                         </BrowserRouter>
                         <Tooltip key={1} />
