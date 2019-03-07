@@ -9,6 +9,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Repository returns the external links for a repository.
@@ -124,6 +126,8 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 	if err != nil {
 		ext.Error.Set(span, true)
 		span.SetTag("repoUpdaterErr", err.Error())
+		log15.Warn("linksForRepository failed to RepoLookup", "repo", repo.Name, "error", err)
+		linksForRepositoryFailed.Inc()
 	}
 	if info != nil && info.Repo != nil {
 		link = info.Repo.Links
@@ -133,4 +137,15 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 	}
 
 	return phabRepo, link, serviceType
+}
+
+var linksForRepositoryFailed = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "graphql",
+	Name:      "links_for_repository_failed_total",
+	Help:      "The total number of times the GraphQL field LinksForRepository failed.",
+})
+
+func init() {
+	prometheus.MustRegister(linksForRepositoryFailed)
 }
