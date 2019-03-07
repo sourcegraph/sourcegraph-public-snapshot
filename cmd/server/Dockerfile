@@ -37,7 +37,7 @@ RUN apk update && apk add --no-cache \
   mailcap nginx openssh-client su-exec tini
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:393a538 /syntect_server /usr/local/bin/
+COPY --from=sourcegraph/syntect_server:056c730 /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
