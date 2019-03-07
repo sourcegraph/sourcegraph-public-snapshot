@@ -6,6 +6,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -69,7 +70,8 @@ interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
         PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps {
+        ThemeProps,
+        ActivationProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
     userAccountSideBarItems: UserAccountSidebarItems
@@ -93,7 +95,7 @@ interface UserAreaState {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ThemeProps {
+export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ThemeProps, ActivationProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -183,6 +185,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
+            activation: this.props.activation,
             userAccountAreaRoutes: this.props.userAccountAreaRoutes,
             userAccountSideBarItems: this.props.userAccountSideBarItems,
         }

@@ -1,7 +1,9 @@
 import H from 'history'
 import React from 'react'
-import { Observable } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
+import { ActivationProps } from '../../components/activation/Activation'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { Markdown } from '../../components/Markdown'
 import { ExtensionsControllerProps } from '../../extensions/controller'
@@ -11,7 +13,7 @@ import { renderMarkdown } from '../../util/markdown'
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
+interface Props extends ExtensionsControllerProps, SettingsCascadeProps, ActivationProps {
     panelView: PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>
     repoName?: string
     history: H.History
@@ -26,6 +28,40 @@ interface State {}
  * A panel view contributed by an extension using {@link sourcegraph.app.createPanelView}.
  */
 export class PanelView extends React.PureComponent<Props, State> {
+    private subscriptions = new Subscription()
+    private componentUpdates = new Subject<Props>()
+
+    public componentWillMount(): void {
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    startWith(this.props),
+                    map(props => props.panelView.locationProvider),
+                    distinctUntilChanged(),
+                    switchMap(locationProvider => locationProvider || []),
+                    switchMap(locationsObservable => locationsObservable)
+                )
+                .subscribe(locations => {
+                    if (
+                        this.props.activation &&
+                        this.props.panelView.id === 'references' &&
+                        locations &&
+                        locations.length > 0
+                    ) {
+                        this.props.activation.update({ FoundReferences: true })
+                    }
+                })
+        )
+    }
+
+    public componentDidUpdate?(prevProps: Readonly<Props>, prevState: Readonly<State>): void {
+        this.componentUpdates.next(this.props)
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): JSX.Element | null {
         return (
             <div

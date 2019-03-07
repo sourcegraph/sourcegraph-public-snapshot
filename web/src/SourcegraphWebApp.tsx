@@ -38,6 +38,7 @@ import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
+import { withActivation } from './tracking/withActivation'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -108,6 +109,8 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminis
 }
 
 setLinkComponent(RouterLinkOrAnchor)
+
+const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 
 /**
  * The root component
@@ -241,7 +244,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 path="/"
                                 // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
                                 render={routeComponentProps => (
-                                    <Layout
+                                    <LayoutWithActivation
                                         {...props}
                                         {...routeComponentProps}
                                         authenticatedUser={authenticatedUser}
