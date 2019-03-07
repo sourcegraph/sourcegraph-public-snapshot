@@ -129,22 +129,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             {this.props.activation && this.props.activation.completed && (
                                 <OverviewItem
                                     icon={RocketIcon}
-                                    title={`${setupPercentage}% of setup completed`}
+                                    title={`${setupPercentage < 100 ? 'Setup Sourcegraph' : 'Status'}`}
                                     defaultExpanded={setupPercentage < 100}
                                 >
                                     <div>
-                                        <div>
-                                            {setupPercentage < 100 ? (
-                                                <div>
-                                                    <h1>Almost there...</h1>
-                                                    <div>
-                                                        Complete the steps below to finish onboarding to Sourcegraph.
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <h2>Setup is complete!</h2>
-                                            )}
-                                        </div>
                                         {this.props.activation.completed && (
                                             <ActivationChecklist
                                                 history={this.props.history}

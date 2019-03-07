@@ -93,7 +93,7 @@ export class OverviewItem extends React.Component<Props, State> {
                         </div>
                         {actions && <div className="overview-item__actions">{actions}</div>}
                         {this.props.children && this.state.expanded && (
-                            <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
+                            <div className="overview-item__children mb-2">{this.props.children}</div>
                         )}
                     </div>
                 </Link>
@@ -104,7 +104,7 @@ export class OverviewItem extends React.Component<Props, State> {
                     <div className="overview-item__header">{e}</div>
                     {actions && <div className="overview-item__actions">{actions}</div>}
                     {this.props.children && this.state.expanded && (
-                        <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
+                        <div className="overview-item__children mb-2">{this.props.children}</div>
                     )}
                 </div>
             )

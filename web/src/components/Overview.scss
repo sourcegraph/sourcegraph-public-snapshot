@@ -5,7 +5,6 @@
 }
 
 .overview-item {
-    padding: 0.5rem;
     margin: 0.75rem 0.5rem;
 
     display: flex;
@@ -35,6 +34,7 @@
     }
 
     &__header {
+        padding: 0.5rem;
         font-size: 20px;
         white-space: nowrap;
         &-link {
@@ -51,6 +51,7 @@
         }
     }
     &__actions {
+        padding-right: 1rem;
         padding-left: 0.75rem;
         margin: -0.25rem;
         display: flex;
