@@ -203,7 +203,7 @@ export const withActivation = <P extends ActivationProps & Props>(Component: Rea
             )
             const serverCompletionStatus: Observable<ActivationCompletionStatus> = combineLatest(
                 authenticatedUser,
-                this.refetches
+                this.refetches.pipe(startWith(undefined))
             ).pipe(
                 switchMap(([authenticatedUser]) =>
                     authenticatedUser ? fetchActivationStatus(authenticatedUser.siteAdmin) : []
