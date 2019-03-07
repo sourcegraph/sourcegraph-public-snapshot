@@ -184,7 +184,7 @@ interface State {
 export const withActivation = <P extends ActivationProps & Props>(Component: React.ComponentType<P>) =>
     class WithActivation extends React.Component<Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>, State> {
         private subscriptions = new Subscription()
-        private componentUpdates = new Subject<Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>>()
+        private componentUpdates = new Subject<Readonly<Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>>>()
         public state: State = {}
 
         /**
@@ -214,8 +214,10 @@ export const withActivation = <P extends ActivationProps & Props>(Component: Rea
                 this.updates
             ).pipe(
                 tap(update => update && recordUpdate(update)),
-                scan((prev, next) => (next ? { ...prev, ...next } : {})),
-                map(p => p || {})
+                scan<Partial<ActivationCompletionStatus> | null, Partial<ActivationCompletionStatus>>(
+                    (prev, next) => (next ? { ...prev, ...next } : {}),
+                    {}
+                )
             )
             this.subscriptions.add(
                 combineLatest(serverCompletionStatus, localCompletionStatus)
@@ -234,7 +236,7 @@ export const withActivation = <P extends ActivationProps & Props>(Component: Rea
         }
 
         public componentDidUpdate(): void {
-            this.componentUpdates.next(this.props as Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>)
+            this.componentUpdates.next(this.props)
         }
 
         private steps(): ActivationStep[] | undefined {
