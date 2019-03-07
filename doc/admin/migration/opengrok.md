@@ -79,8 +79,6 @@ When you've added repositories and confirmed that you can search and browse them
 
 ### Configuring user authentication
 
-> NOTE: Single sign-on integrations are a [paid upgrade](https://about.sourcegraph.com/pricing).
-
 Like Oracle OpenGrok, Sourcegraph is self-hosted. You control who can access it. Sourcegraph supports many user authentication and security options:
 
 - [OpenID Connect user authentication](../auth/index.md#openid-connect) and [SAML user authentication](../auth/index.md#saml) (for Google/G Suite accounts, Okta, OneLogin, etc.)
