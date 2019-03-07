@@ -1,6 +1,6 @@
 import H from 'history'
 import React from 'react'
-import { Observable, of, Subject, Subscription } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
 import { ActivationProps } from '../../components/activation/Activation'
@@ -38,7 +38,8 @@ export class PanelView extends React.PureComponent<Props, State> {
                     startWith(this.props),
                     map(props => props.panelView.locationProvider),
                     distinctUntilChanged(),
-                    switchMap(locationProvider => locationProvider || of(null))
+                    switchMap(locationProvider => locationProvider || []),
+                    switchMap(locationsObservable => locationsObservable)
                 )
                 .subscribe(locations => {
                     if (
