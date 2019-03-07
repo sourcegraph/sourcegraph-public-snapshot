@@ -198,6 +198,5 @@ export const phabricatorCodeHost: CodeHost = {
     selectionsChanges: () => of([]),
     actionNavItemClassProps: {
         actionItemClass: 'button grey action-item--phabricator',
-        actionItemPressedClass: 'action-item--phabricator__pressed',
     },
 }
