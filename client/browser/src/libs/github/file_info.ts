@@ -24,7 +24,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
             return { ...rest, codeView, headFilePath, baseFilePath }
         }),
         map(data => {
-            const diffResolvedRev = getDiffResolvedRev()
+            const diffResolvedRev = getDiffResolvedRev(codeView)
             if (!diffResolvedRev) {
                 throw new Error('cannot determine delta info')
             }

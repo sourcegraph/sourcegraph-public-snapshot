@@ -118,7 +118,7 @@ export function isDomSplitDiff(): boolean {
 /**
  * getDiffResolvedRev returns the base and head revision SHA, or null for non-diff views.
  */
-export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
+export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec | null {
     const { isDelta, isCommit, isPullRequest, isCompare } = parseURL()
     if (!isDelta) {
         return null
@@ -129,6 +129,7 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
     const fetchContainers = document.getElementsByClassName(
         'js-socket-channel js-updatable-content js-pull-refresh-on-pjax'
     )
+    const isCommentedSnippet = codeView.classList.contains('js-comment-container')
     if (isPullRequest) {
         if (fetchContainers && fetchContainers.length === 1) {
             // tslint:disable-next-line
@@ -154,6 +155,11 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
                         headCommitID = v
                     }
                 }
+            }
+        } else if (isCommentedSnippet) {
+            const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
+            if (resolvedDiffSpec) {
+                return resolvedDiffSpec
             }
         } else {
             // Last-ditch: look for inline comment form input which has base/head on it.
@@ -187,9 +193,36 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
     }
 
     if (baseCommitID === '' || headCommitID === '') {
-        return getDiffResolvedRevFromPageSource(document.documentElement!.innerHTML)
+        return getDiffResolvedRevFromPageSource(document.documentElement!.innerHTML, isPullRequest!)
     }
     return { baseCommitID, headCommitID }
+}
+
+// ".../files/(BASE..)?HEAD#diff-DIFF"
+// https://github.com/sourcegraph/codeintellify/pull/77/files/e8ffee0c59e951d29bcc7cff7d58caff1c5c97c2..ce472adbfc6ac8ccf1bf7afbe71f18505ca994ec#diff-8a128e9e8a5a8bb9767f5f5392391217
+// https://github.com/lguychard/sourcegraph-configurable-references/pull/1/files/fa32ce95d666d73cf4cb3e13b547993374eb158d#diff-45327f86d4438556066de133327f4ca2
+const COMMENTED_SNIPPET_DIFF_REGEX = /\/files\/((\w+)\.\.)?(\w+)#diff-\w+$/
+
+function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolvedRevSpec | null {
+    // For commented snippets, try to get the HEAD commit ID from the file header,
+    // as it will always be the most accurate (for example in the case of outdated snippets).
+    const linkToFile: HTMLLinkElement | null = codeView.querySelector('.file-header a')
+    if (!linkToFile) {
+        return null
+    }
+    const match = linkToFile.href.match(COMMENTED_SNIPPET_DIFF_REGEX)
+    if (!match) {
+        return null
+    }
+    const headCommitID = match[3]
+    // The file header may not contain the base commit ID, so we get it from the page source.
+    const resolvedRevFromPageSource = getDiffResolvedRevFromPageSource(document.documentElement!.innerHTML, true)
+    return headCommitID && resolvedRevFromPageSource
+        ? {
+              ...resolvedRevFromPageSource,
+              headCommitID,
+          }
+        : null
 }
 
 function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
@@ -202,8 +235,7 @@ function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
     return undefined
 }
 
-function getDiffResolvedRevFromPageSource(pageSource: string): DiffResolvedRevSpec | null {
-    const { isPullRequest } = parseURL()
+function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boolean): DiffResolvedRevSpec | null {
     if (!isPullRequest) {
         return null
     }
