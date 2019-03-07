@@ -56,6 +56,7 @@ describe('NavLinks', () => {
         onThemePreferenceChange: noop,
         keybindings: KEYBINDINGS,
         settingsCascade: SETTINGS_CASCADE,
+        history,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed
@@ -76,7 +77,6 @@ describe('NavLinks', () => {
                                 authenticatedUser={authenticatedUser}
                                 showDotComMarketing={showDotComMarketing}
                                 location={H.createLocation(path, history.location)}
-                                history={history}
                             />
                         )
                     ).toMatchSnapshot()

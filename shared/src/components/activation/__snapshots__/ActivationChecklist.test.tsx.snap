@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActivationChecklist render 0/1 complete 1`] = `
+<div
+  className="activation-checklist"
+>
+  <div>
+    <div
+      className="loading-spinner icon-inline"
+    />
+  </div>
+</div>
+`;
+
+exports[`ActivationChecklist render 0/1 complete 2`] = `
+<div
+  className="activation-checklist"
+>
+  <div>
+    <div
+      className="loading-spinner icon-inline"
+    />
+  </div>
+</div>
+`;
+
+exports[`ActivationChecklist render 1/1 complete 1`] = `
+<div
+  className="activation-checklist"
+>
+  <div>
+    <div
+      className="loading-spinner icon-inline"
+    />
+  </div>
+</div>
+`;
+
+exports[`ActivationChecklist render loading 1`] = `
+<div
+  className="activation-checklist"
+>
+  <div>
+    <div
+      className="loading-spinner icon-inline"
+    />
+  </div>
+</div>
+`;
