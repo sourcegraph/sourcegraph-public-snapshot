@@ -294,10 +294,10 @@ echo 524288 | sudo tee -a /proc/sys/fs/inotify/max_user_watches
 sudo sysctl fs.inotify.max_user_watches=524288
 ```
 
-If you ever need to wipe your local database, run the following command.
+If you ever need to wipe your local database and Redis, run the following command.
 
 ```
-./dev/drop-entire-local-database.sh
+./dev/drop-entire-local-database-and-redis.sh
 ```
 
 ## How to Run Tests
