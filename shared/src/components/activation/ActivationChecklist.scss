@@ -1,16 +1,31 @@
 .activation-checklist {
     margin-top: 0.5rem;
+	overflow: hidden;
 
     &__item {
-        border-bottom: 1px solid $dropdown-border-color;
+		box-sizing: content-box;
+		position: relative;
+
+        border-top: 1px solid $dropdown-border-color;
+		margin-top: -1px;
+		margin-bottom: -1px;
+		z-index: 10;
+		transition: all 250ms ease;
+
+
 
         @include hover-focus {
             color: $dropdown-link-hover-color;
             text-decoration: none;
-            @include gradient-bg($dropdown-link-hover-bg);
-        }
-        &:last-child {
-            border-bottom: none;
+			border-color: var(--theme-bg-plain);
+			background-color: var(--theme-bg-plain);
+			margin-bottom: -1px;
+			z-index: 20;
+
+			box-shadow:  0 0 14px 14px rgba(2, 3, 3, 0.4)
+			.theme-light {
+				box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
+			}
         }
     }
 }
