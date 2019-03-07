@@ -15,14 +15,12 @@ const toggleDropdown = dropdownName => {
 // Listen for click outside search form to close dropdowns
 document.addEventListener('click', e => {
   // Consts for dropdown areas (dropdown and button)
-  const searchDropdownArea = document.getElementById('search-form')
   const versionDropdownArea = document.getElementById('version-form')
 
   // Const for navbar
   const navArea = document.getElementById('globalNav')
 
   // Consts for the actual dropdown element
-  const searchDropdown = document.getElementById('searchDropdown')
   const versionDropdown = document.getElementById('versionDropdown')
 
   // Const for navbar checkbox
@@ -31,11 +29,7 @@ document.addEventListener('click', e => {
   let targetElement = e.target
 
   do {
-    if (targetElement == searchDropdownArea) {
-      // If clicked area is in search dropdown remove all other dropdowns
-      versionDropdown.classList.remove('show')
-      return
-    } else if (targetElement == versionDropdownArea) {
+    if (targetElement == versionDropdownArea) {
       // If clicked area is in version dropdown remove all other dropdowns
       searchDropdown.classList.remove('show')
       return
@@ -43,7 +37,6 @@ document.addEventListener('click', e => {
       // Because this is ran after the other two check it is okay to close all dropdowns
       // even through they are contained in nav.
       versionDropdown.classList.remove('show')
-      searchDropdown.classList.remove('show')
       return
     }
     targetElement = targetElement.parentNode
@@ -51,7 +44,6 @@ document.addEventListener('click', e => {
 
   // If clicked area is outside all dropdowns remove all other dropdowns
   versionDropdown.classList.remove('show')
-  searchDropdown.classList.remove('show')
 
   // Close dropdown on mobile
   navState.checked = false

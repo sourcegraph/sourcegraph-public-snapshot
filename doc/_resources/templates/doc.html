@@ -56,7 +56,7 @@
 							<a href="https://sourcegraph.com">Sourcegraph.com</a>
 						</li>
 					</ul>
-					<form id="search-form" class="form-inline" onsubmit="location.href = 'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+'+encodeURIComponent(document.getElementById('search').value);return false">
+					<form id="search-form" class="form-inline small-hidden" onsubmit="location.href = 'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+'+encodeURIComponent(document.getElementById('search').value);return false">
 						<input class="nav-search form-control" type="search" id="search" placeholder="Search docs..." spellcheck="false">
 						<button class="btn btn-primary nav-search-button" id="search-button" type="submit">Search</button>
 					</form>
@@ -65,12 +65,36 @@
 		</div>
 	</div>
 	<div id="page" class="docs-content">
-		<div id="contentNav" class="nav-sticky-wrapper page-nav-wrapper column large-2 medium-3">
-			<div class="content-nav">
-				<!-- Mobile close nav -->
-				<ul class="content-nav-section expandable large-hidden medium-hidden">
-					<li><a onclick="toggleContentNav()" class="content-nav-section-header">Return to content</a></li>
-				</ul>
+		<div class="nav-sticky-wrapper page-nav-wrapper column large-2 medium-3 mobile-show">
+			<!-- Mobile breadcrumb nav -->
+			{{with .Content}}
+
+			<nav id="breadcrumbs" class="breadcrumbs large-hidden medium-hidden">
+			<input type="button" onclick="toggleContentNav();" class="content-nav-mobile-state large-hidden medium-hidden"/>
+			<span class="content-nav-mobile-button"></span>
+			<script>
+				{{if eq (len .Breadcrumbs ) 0}}
+					var breadcrumbs = [];
+				{{else}}
+					var breadcrumbs = {{ .Breadcrumbs}};
+				{{end}}
+				breadcrumbNavToggle();
+			 </script>
+			 <span class="breadcrumb-links">
+				{{if eq (len .Breadcrumbs ) 0}}
+				<a href="/" class=" large-hidden medium-hidden active">Documentation</a> &nbsp;
+				{{end}}
+				{{range .Breadcrumbs}}
+				<a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">{{.Label}}</a> {{if not .IsActive}}/{{end}}
+				{{end}} &nbsp;
+			</span>
+			</nav>
+			{{end}}
+			<div id="contentNav" class="content-nav">
+				<form id="search-form" class="form-inline mobile-search large-hidden medium-hidden" onsubmit="location.href = 'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+'+encodeURIComponent(document.getElementById('search').value);return false">
+					<input class="nav-search form-control" type="search" id="search" placeholder="Search docs..." spellcheck="false">
+					<button class="btn btn-primary nav-search-button" id="search-button" type="submit">Search</button>
+				</form>
 				<ul class="content-nav-section content-nav-home">
 					<li>
 						<a class="content-nav-section-header" href="/">Home</a>
@@ -348,7 +372,7 @@
 			{{/* Create breadcrumb nav*/}}
 			{{with .Content}}
 
-			<nav id="breadcrumbs" class="breadcrumbs">
+			<nav id="breadcrumbs" class="breadcrumbs small-hidden">
 			<input type="button" onclick="toggleContentNav();" class="content-nav-mobile-state large-hidden medium-hidden"/>
 			<span class="content-nav-mobile-button"></span>
 			<script>
@@ -361,7 +385,7 @@
 			 </script>
 			 <span class="breadcrumb-links">
 				{{if eq (len .Breadcrumbs ) 0}}
-				&nbsp;
+				<a href="/" class=" large-hidden medium-hidden active">Documentation</a> &nbsp;
 				{{end}}
 				{{range .Breadcrumbs}}
 				<a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">{{.Label}}</a> {{if not .IsActive}}/{{end}}

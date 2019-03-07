@@ -196,7 +196,12 @@ body {
     -webkit-backdrop-filter: saturate(240%) blur(14px);
     backdrop-filter: saturate(240%) blur(14px);
 }
-
+@media screen and (max-width: 768px) {
+	.global-navbar {
+		position: absolute;
+		top: 0;
+	}
+}
 .nav-content {
     height: 100%;
     padding: 0 1rem;
@@ -359,8 +364,10 @@ a:active .current-branch {
         box-shadow: 0 0 18px 0 rgba(0, 0, 0, 0.2);
         right: 0.5rem;
         left: 0.5rem;
-        padding: 2rem 1.5rem 1rem;
+        padding: 1rem 1.5rem 1rem;
         border-radius: 6px;
+		width: auto;
+		margin: 0;
     }
     /* devices with notch support */
     @supports (left: max(0.5rem)) {
@@ -376,7 +383,7 @@ a:active .current-branch {
         list-style: none;
         margin: 0;
         padding-left: 0;
-        padding-top: 0.5rem;
+        padding-top: 0;
         padding-bottom: 0;
     }
     .nav-link {
@@ -444,6 +451,7 @@ a:active .current-branch {
     max-height: calc(100vh - 70px);
     top: 70px;
     padding-top: 4px;
+	-webkit-overflow-scrolling: touch;
 }
 
 .content-nav-section {
@@ -529,9 +537,6 @@ li.content-nav-no-hover:hover {
 .content-nav-section-subsection li {
 	padding-top: .25rem;
 	padding-bottom: .25rem;
-}
-.content-nav-section-subsection > li:first-of-type {
-    padding-top: 0;
 }
 .content-nav-section-subsection a {
     font-size: 14px;
@@ -651,7 +656,15 @@ li.content-nav-no-hover:hover {
     min-height: calc(100vh - 340px);
     position: relative;
 }
-
+@media screen and (max-width: 1020px) {
+	.docs-content {
+		/*
+			Set min height of content to viewport height on mobile
+			This prevents small pages from having footer above bottom of page.
+		 */
+	    min-height: 100vh;
+	}
+}
 .docs-content-section {
     padding: 0 1rem;
     padding-bottom: 2rem;
@@ -668,26 +681,31 @@ li.content-nav-no-hover:hover {
     opacity: 0.8;
 }
 
-@media screen and (max-width: 768px) {
-}
 .content-nav-mobile-checkbox,
 .content-nav-mobile-button {
     display: none;
 }
 
 @media screen and (max-width: 768px) {
+	.page-nav-wrapper {
+		border: none;
+	}
     /* Give space at bottom of div for breadcrumbs */
     .docs-content-section .markdown-body {
         padding-bottom: 1rem;
+		padding-top: 9rem;
     }
+	.mobile-search {
+		margin: 1rem 0 0;
+	}
     .breadcrumbs {
         z-index: 9999;
         margin-top: 0;
         vertical-align: middle;
         position: -webkit-sticky;
-        top: 70px;
+        top: 12px;
         margin-top: 70px;
-        margin-bottom: 22px;
+        margin-bottom: 16px;
         background-color: rgba(255, 255, 255, 0.85);
         -webkit-backdrop-filter: saturate(240%) blur(12px);
         backdrop-filter: saturate(240%) blur(12px);
@@ -715,6 +733,10 @@ li.content-nav-no-hover:hover {
         background-size: 100%;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' style='width:24px;height:24px' viewBox='0 0 24 24'%3E%3Cpath d='M0,9.61 L1.31775701,11 L6,6 L1.31775701,1 L0,2.39 L3.3271028,6 L0,9.61 L0,9.61 Z M18,0 L5,0 L5,2 L18,2 L18,0 L18,0 Z M18,7 L18,5 L8,5 L8,7 L18,7 L18,7 Z M18,12 L18,10 L5,10 L5,12 L18,12 Z' id='Shape'%3E%3C/path%3E%3C/svg%3E");
     }
+	.content-nav {
+		top: 20px;
+		height: calc(100% - 12px);
+	}
     .content-nav-mobile-state {
         opacity: 0;
         display: pointer;
@@ -729,22 +751,39 @@ li.content-nav-no-hover:hover {
     .page-nav-wrapper {
         display: none;
     }
-    .page-nav-wrapper.mobile-show {
-        top: -10px;
+	.content-nav {
+		display: none;
+	}
+	.content-nav.mobile-show {
+		display: block;
+		position: -webkit-sticky;
+		background-color: #ffffff;
+		top: 78px;
+		border-radius: 6px;
+		border: 1px solid #eaeaea;
+		box-shadow: 0 0 12px 4px rgba(0, 0, 0, 0.1);
+		height: calc(100vh - 140px);
+	}
+	.content-nav.mobile-show > ul:last-of-type {
+		margin-bottom: 5rem;
+	}
+    .page-nav-wrapper {
         z-index: 99;
         display: block;
-        height: calc(100% + 10px);
-        width: 100%;
-        position: fixed;
-        background: #ffffff;
+        height: 100%;
+        width: auto;
+		position: absolute;
+		/* top: 132px; */
+		left: 1rem;
+		right: 1rem;
     }
     .page-nav-wrapper.mobile-show .content-nav {
         padding-left: 20px;
         padding-right: 20px;
     }
     body.fix-body {
-        height: 100vh;
         overflow: hidden;
+		position: relative;
     }
     .content-nav-section:nth-of-type(2) {
         border-top: 1px solid #eaeaea !important;
