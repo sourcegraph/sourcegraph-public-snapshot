@@ -244,12 +244,12 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 
 	switch strings.ToLower(r.ExternalRepo.ServiceType) {
 	case "github":
-		baseURL := r.ExternalRepo.ServiceID
+		ghrepo := r.Metadata.(*github.Repository)
 		info.Links = &protocol.RepoLinks{
-			Root:   baseURL,
-			Tree:   baseURL + "/tree/{rev}/{path}",
-			Blob:   baseURL + "/blob/{rev}/{path}",
-			Commit: baseURL + "/commit/{commit}",
+			Root:   ghrepo.URL,
+			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
 		}
 	}
 
@@ -275,4 +275,11 @@ func isUnauthorized(err error) bool {
 
 func isTemporarilyUnavailable(err error) bool {
 	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
+}
+
+func pathAppend(base, p string) string {
+	if strings.HasPrefix(p, "/") {
+		return strings.TrimRight(base, "/") + p
+	}
+	return strings.TrimRight(base, "/") + "/" + p
 }
