@@ -187,7 +187,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
-	return git.GetCommit(ctx, gitserverRepo, commitID)
+	return git.GetCommit(ctx, gitserverRepo, nil, commitID)
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {
