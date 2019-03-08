@@ -244,12 +244,12 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 
 	switch strings.ToLower(r.ExternalRepo.ServiceType) {
 	case "github":
-		baseURL := r.ExternalRepo.ServiceID
+		ghrepo := r.Metadata.(*github.Repository)
 		info.Links = &protocol.RepoLinks{
-			Root:   baseURL,
-			Tree:   baseURL + "/tree/{rev}/{path}",
-			Blob:   baseURL + "/blob/{rev}/{path}",
-			Commit: baseURL + "/commit/{commit}",
+			Root:   ghrepo.URL,
+			Tree:   ghrepo.URL + "/tree/{rev}/{path}",
+			Blob:   ghrepo.URL + "/blob/{rev}/{path}",
+			Commit: ghrepo.URL + "/commit/{commit}",
 		}
 	}
 
