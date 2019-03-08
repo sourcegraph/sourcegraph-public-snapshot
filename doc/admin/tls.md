@@ -1,12 +1,18 @@
-# Configuring Sourcegraph with TLS encryption (HTTPS / SSL support) using a self-signed certificate
+---
+ignoreDisconnectedPageCheck: true
+---
 
-> NOTE: This tutorial supports Linux only. Windows 10 support is coming soon.
+# Configure Sourcegraph to support HTTPS with NGINX SSL configuration
 
-> NOTE: This guide does not yet cover using a Certificate Authority (CA) for issuing certificates which can be trusted by installing the CA on your local machine. This is coming soon too.
+> NOTE: This tutorial supports Linux only.
 
-> NOTE: Self-signed certificates are ok when initially sharing Sourcegraph with your team internally, but we recommend acquiring a valid (and trusted) certificate through your infrastructure team/person as soon as possible. The same steps below apply for the NGINX configuration section.
+---
 
-> NOTE: Sourcegraph is working on Terraform examples for AWS and soon Google Cloud Platform (GCP), Azure and DigitalOcean that configure Sourcegraph to use a self-signed certificate from the start ([Secure by default](https://en.wikipedia.org/wiki/Secure_by_default)).
+> NOTE: Self-signed certificates are ok when sharing Sourcegraph with your team initially, but we recommend acquiring a valid (and trusted) certificate.
+
+---
+
+> NOTE: Sourcegraph is working on [Terraform](https://www.terraform.io/intro/index.html) examples that come pre-configured to support HTTPS ([Secure by default](https://en.wikipedia.org/wiki/Secure_by_default)).
 
 In Sourcegraph 3.0+, [NGINX](https://www.nginx.com/resources/glossary/nginx/) is used as the [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph HTTP front-end server, making it responsible for [SSL support and termination](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/).
 
@@ -15,40 +21,78 @@ Non-sighted users can view a [text-representation of this diagram](img/sourcegra
 
 Running Sourcegraph with the [quickstart docker run command](https://docs.sourcegraph.com/) uses the [default NGINX configuration](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf) which presumes local usage and TLS encryption (SSL).
 
-Adding TLS support with a self-signed certificate requires two steps:
+There are four steps required SSL support wth a self-signed certificate:
 
-1. Installing OpenSSL.
-1. Creating a self-signed certificate and key.
-1. Modifying the default `nginx.conf` file created when Sourcegraph is first initialized.
+1. Install [mkcert](https://github.com/FiloSottile/mkcert)
+1. Create a self-signed certificate and key.
+1. Modify the NGINX for SSL
+1. Change `docker run` command to listen on port `443` for SSL.
 
-## 1. Installing OpenSSL
+> NOTE: These commands are to be run on the host the Sourcegraph container is running on, **not** inside the Sourcegraph container.
 
-Installing OpenSSL differs for each operating system and Linux distribution so searching the web for **"installing openssl for ubuntu"** is your best bet.
+## Prerequisites
 
-Confirm the `openssl` is on your path by running:
+The `docker run` command from the [quickstart guide](https://docs.sourcegraph.com) must be run so the `nginx.conf` file will exist at `~/.sourcegraph/config/nginx.conf`.
+
+
+## 1. Install mkcert
+
+To create the certificate, we'll use [mkcert](https://github.com/FiloSottile/mkcert#mkcert), an abstraction over OpenSSL with a lovely API written by [Filippo Valsorda](https://github.com/FiloSottile), a cryptographer working at Google on the Go team.
+
+Follow the [installation instructions](https://github.com/FiloSottile/mkcert#installation) for your OS.
+
+Then create the root [Certificate Authority](https://en.wikipedia.org/wiki/Certificate_authority) (CA) by running:
 
 ```shell
-openssl version
+mkcert -install
 ```
+
+We're now ready for mkcert to issue the certificate and key
 
 ## 2. Creating a self-signed certificate and key
 
-Before we commence creating the key, it's important to state some assumptions:
+> NOTE: *Self-signed or invalid certificates are now not able to be marked as trusted *within* the browser. Instead, the certificate and the CA that issued it must be installed and trusted by the host operating system.
 
-- You're already run Sourcegraph using the `docker run` command from the [Sourcegraph documentation](/../../index.md) which means the `nginx.conf` file is at `~/.sourcegraph/config/nginx.cong`.
-- Your [`nginx.conf` file is from version 3.0+](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf).
-- You're ok with the browser reporting the certificate to be invalid*.
-
-NOTE: *Browsers are now very strict and do not allow certificates with invalid certificates or un-trusted CA's to be trusted/ignored permanently. This is for the most part a good thing. If you haven't already, reach out to your infrastructure team/person to begin the process of acquiring a valid (and trusted) certificate sooner rather than later.
-
-Now that OpenSSL is installed, we can generate the self-signed cert and key:
-
-> NOTE: TODO(ryan): Change the below `openssl` command to have values for all required parameters so the cert and key are generated without user input. The cert won't be valid in any case so it does not matter if the hostname is hardcoded to be `sourcegraph` for example.
+Now let's use `mkcert` to create the self-signed certificate and key:
 
 ```shell
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ~/.sourcegraph/config/sourcegraph.key -out ~/.sourcegraph/config/sourcegraph.crt
+mkcert -cert-file ~/.sourcegraph/config/sourcegraph.crt -key-file ~/.sourcegraph/config/sourcegraph.key localhost
 ```
 
-## 3. Configure NGINX
+> NOTE: If you don't want to use `mkcert`, you can create the certificate and key using OpenSSL:
 
-WIP.
+```shell
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ~/.sourcegraph/config/sourcegraph.key -out ~/.sourcegraph/config/sourcegraph.crt -subj "/CN=localhost"
+```
+
+## 3. Modify the NGINX for SSL
+
+Open the `~/.sourcegraph/nginx.conf` file and make the following changes:
+
+**1.** Replace `listen 7080;` with `listen 7080 ssl;`
+
+**2.** Then add the following two lines below the `listen 7080 ssl;` statement.
+
+```nginx
+ssl_certificate         sourcegraph.crt;
+ssl_certificate_key     sourcegraph.key;
+```
+
+## 4. Change `docker run` command to listen on port `443` for SSL
+
+Now that NGINX is listening on port 443, add `--publish 443:7080` to the `docker run` command. It now should resemble this:
+
+```shell
+docker container run \
+  --publish 7080:7080  \
+  --publish: 443:7080 \
+  --publish 2633:2633  \
+  --rm  \
+  --volume ~/.sourcegraph/config:/etc/sourcegraph  \
+  --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
+  sourcegraph/server:3.1.1
+```
+
+Now open your browser to `https:///localhost` substitute `localhost` for the IP address of the host machine.
+
+> NOTE: It's up to you whether you keep `--publish 7080:7080` as technically you don't need it anymore
