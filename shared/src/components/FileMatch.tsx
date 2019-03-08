@@ -164,17 +164,14 @@ export class FileMatch extends React.PureComponent<Props> {
             )
         }
 
-        // Check if search.defaultContextLines is configured in settings.
-        const defaultContextLinesSetting =
+        // Check if search.contextLines is configured in settings.
+        const contextLinesSetting =
             isSettingsValid<Settings>(this.props.settingsCascade) &&
             this.props.settingsCascade.final &&
-            this.props.settingsCascade.final['search.defaultContextLines']
+            this.props.settingsCascade.final['search.contextLines']
 
         // The number of lines of context to show before and after each match.
-        const context =
-            typeof defaultContextLinesSetting === 'number' && defaultContextLinesSetting >= 0
-                ? defaultContextLinesSetting
-                : 1
+        const context = typeof contextLinesSetting === 'number' && contextLinesSetting >= 0 ? contextLinesSetting : 1
 
         const groupsOfItems = mergeContext(
             context,
