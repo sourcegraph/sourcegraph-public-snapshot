@@ -60,7 +60,7 @@ const SettingsSchemaJSON = `{
         "items": { "type": "string" }
       }
     },
-    "search.defaultContextLines": {
+    "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",
       "minimum": 0,

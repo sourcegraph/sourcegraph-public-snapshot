@@ -363,7 +363,7 @@ type Settings struct {
 	Extensions             map[string]bool           `json:"extensions,omitempty"`
 	Motd                   []string                  `json:"motd,omitempty"`
 	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
-	SearchContextLines     int                       `json:"search.ContextLines,omitempty"`
+	SearchContextLines     int                       `json:"search.contextLines,omitempty"`
 	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
 	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
