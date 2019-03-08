@@ -136,7 +136,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 </OverviewItem>
                             )}
                             {this.state.info.repositories !== null && (
-                                <OverviewItem link="/explore" actions="Jump tp explore page" title="Explore" />
+                                <OverviewItem link="/explore" actions="Jump to explore page" title="Explore" />
                             )}
                             {this.state.info.repositories !== null && (
                                 <OverviewItem
