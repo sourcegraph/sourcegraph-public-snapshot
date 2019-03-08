@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -271,6 +272,83 @@ func TestRepoLookup(t *testing.T) {
 				t.Error("ReposUpdateMetadata was not called")
 			}
 		})
+	})
+}
+
+func TestRepoLookup_syncer(t *testing.T) {
+	now := time.Now().UTC()
+	ctx := context.Background()
+	s := Server{
+		OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil),
+		Syncer:           &repos.Syncer{},
+		Store: repos.NewFakeStore(nil, nil, nil,
+			&repos.Repo{
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				Language:    "barlang",
+				Enabled:     true,
+				Archived:    false,
+				Fork:        false,
+				CreatedAt:   now,
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:123": {
+						ID:       "extsvc:123",
+						CloneURL: "git@github.com:foo/bar.git",
+					},
+				},
+				Metadata: &github.Repository{
+					ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					URL:           "github.com/foo/bar",
+					DatabaseID:    1234,
+					Description:   "The description",
+					NameWithOwner: "foo/bar",
+				},
+			}),
+	}
+
+	t.Run("not found", func(t *testing.T) {
+		result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/a/b"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
+			t.Errorf("got result %+v, want nil", result)
+		}
+	})
+
+	t.Run("found", func(t *testing.T) {
+		want := &protocol.RepoLookupResult{
+			Repo: &protocol.RepoInfo{
+				ExternalRepo: &api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			},
+		}
+
+		result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/foo/bar"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := pretty.Compare(result, want); diff != "" {
+			t.Errorf("ListRepos:\n%s", diff)
+			return
+		}
 	})
 }
 
