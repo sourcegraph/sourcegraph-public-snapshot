@@ -14,7 +14,7 @@ staleLabel: stale
 
 # Comment to post when marking an issue as stale. Set to `false` to disable
 markComment: >
-  Please post an update to this issue or close if it is no longer relevant.
+  Please post an update to this issue or close the issue with an explanation if it is no longer relevant.
 
   If this issue receives no more activity it will be closed automatically.
 
