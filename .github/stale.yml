@@ -19,4 +19,6 @@ markComment: >
   If this issue receives no more activity it will be closed automatically.
 
 # Comment to post when closing a stale issue. Set to `false` to disable
-closeComment: false
+# This makes it possible to search for issues that were closed by stalebot.
+closeComment: >
+  Stalebot is closing this due to inactivity.
