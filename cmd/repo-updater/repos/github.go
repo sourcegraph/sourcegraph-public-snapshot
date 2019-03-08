@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -69,7 +71,7 @@ func SyncGitHubConnections(ctx context.Context) {
 
 		var conns []*githubConnection
 		for _, c := range githubConf {
-			conn, err := newGitHubConnection(c)
+			conn, err := newGitHubConnection(c, nil)
 			if err != nil {
 				log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
 				continue
@@ -316,7 +318,7 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	}
 }
 
-func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, error) {
+func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*githubConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -326,7 +328,24 @@ func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, er
 
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
-	transport, err := cachedTransportWithCertTrusted(config.Certificate)
+	if cf == nil {
+		cf = httpcli.NewFactory(
+			nil, // No middleware for now. Use this for Prometheus instrumentation later.
+			httpcli.TracedTransportOpt,
+			httpcli.NewCachedTransportOpt(httputil.Cache, true),
+		)
+	}
+
+	var opts []httpcli.Opt
+	if config.Certificate != "" {
+		pool, err := newCertPool(config.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+	}
+
+	cli, err := cf.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -335,8 +354,8 @@ func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, er
 		config:           config,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		client:           github.NewClient(apiURL, config.Token, transport),
-		searchClient:     github.NewClient(apiURL, config.Token, transport),
+		client:           github.NewClient(apiURL, config.Token, cli),
+		searchClient:     github.NewClient(apiURL, config.Token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }

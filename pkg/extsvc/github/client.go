@@ -19,6 +19,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -37,11 +38,6 @@ var (
 
 	requestCounter = metrics.NewRequestCounter("github", "Total number of requests sent to the GitHub API.")
 )
-
-// Doer captures the Do method of an HTTP client.
-type Doer interface {
-	Do(*http.Request) (*http.Response, error)
-}
 
 // Client is a caching GitHub API client.
 //
@@ -64,7 +60,7 @@ type Client struct {
 	defaultToken string
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
-	httpClient Doer
+	httpClient httpcli.Doer
 
 	// repoCache is a map of rcache.Cache instances keyed by auth token.
 	repoCache   map[string]*rcache.Cache
@@ -134,15 +130,16 @@ func NewRepoCache(apiURL *url.URL, token string, keyPrefix string, cacheTTL time
 // NewClient creates a new GitHub API client with an optional default personal access token.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
-func NewClient(apiURL *url.URL, defaultToken string, transport http.RoundTripper) *Client {
+func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
-		transport = disabledTransport{}
+		cli = disabledClient{}
 	}
-	if transport == nil {
-		transport = http.DefaultTransport
+	if cli == nil {
+		cli = http.DefaultClient
 	}
-	transport = requestCounter.Transport(transport, func(u *url.URL) string {
+
+	cli = requestCounter.Doer(cli, func(u *url.URL) string {
 		// The first component of the Path mostly maps to the type of API
 		// request we are making. See `curl https://api.github.com` for the
 		// exact mapping
@@ -157,7 +154,7 @@ func NewClient(apiURL *url.URL, defaultToken string, transport http.RoundTripper
 		apiURL:       apiURL,
 		githubDotCom: urlIsGitHubDotCom(apiURL),
 		defaultToken: defaultToken,
-		httpClient:   &http.Client{Transport: transport},
+		httpClient:   cli,
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
 		repoCache:    map[string]*rcache.Cache{},
 	}
@@ -377,9 +374,9 @@ func (e graphqlErrors) Error() string {
 	return fmt.Sprintf("error in GraphQL response: %s", e[0].Message)
 }
 
-type disabledTransport struct{}
+type disabledClient struct{}
 
-func (t disabledTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
 	return nil, errors.New("http: github communication disabled")
 }
 
