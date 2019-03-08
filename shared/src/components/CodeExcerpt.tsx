@@ -133,9 +133,11 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
 
         // If the search.contextLines value is 0, we need to add 1 to the
         // last line value so that `range(firstLine, lastLine)` is a non-empty array
-        // since range is exclusive of the lastLine value.
+        // since range is exclusive of the lastLine value, and this.getFirstLine() and this.getLastLine()
+        // will return the same value.
         const additionalLine = this.props.context === 0 ? 1 : 0
 
+        console.log(this.getFirstLine(), this.getLastLine())
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
