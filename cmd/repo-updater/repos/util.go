@@ -35,6 +35,15 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
+// CachedRoundTripper wraps another http.RoundTripper with caching.
+func CachedRoundTripper(rt http.RoundTripper) http.RoundTripper {
+	return &httpcache.Transport{
+		Transport:           &nethttp.Transport{RoundTripper: rt},
+		Cache:               httputil.Cache,
+		MarkCachedResponses: true, // so we avoid using cached rate limit info
+	}
+}
+
 // cachedTransportWithCertTrusted returns an http.Transport that trusts the
 // provided PEM cert, or http.DefaultTransport if it is empty. The transport
 // is also using our redis backed cache.
@@ -49,12 +58,7 @@ func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
 			TLSClientConfig: &tls.Config{RootCAs: certPool},
 		}
 	}
-
-	return &httpcache.Transport{
-		Transport:           &nethttp.Transport{RoundTripper: transport},
-		Cache:               httputil.Cache,
-		MarkCachedResponses: true, // so we avoid using cached rate limit info
-	}, nil
+	return CachedRoundTripper(transport), nil
 }
 
 // A repoCreateOrUpdateRequest is a RepoCreateOrUpdateRequest, from the API,
