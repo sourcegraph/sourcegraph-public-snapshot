@@ -225,6 +225,7 @@ describe('e2e test suite', function(this: any): void {
     describe('Visual tests', () => {
         test('Repositories list', async () => {
             await page.goto(baseURL + '/site-admin/repositories')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
             await percySnapshot(page, 'Repositories list')
         })
     })
