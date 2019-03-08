@@ -3,7 +3,12 @@
     padding: 0;
     margin: -0.75rem -0.5rem;
 }
-
+a.overview-item {
+    color: $color-text;
+    .overview-item__header {
+        color: $color-text;
+    }
+}
 .overview-item {
     margin: 0.75rem 0.5rem;
 
@@ -12,7 +17,7 @@
     justify-content: space-between;
     align-items: center;
 
-	overflow: hidden;
+    overflow: hidden;
 
     border: 1px solid #2b3750;
     border-radius: 0.125rem;
@@ -34,11 +39,11 @@
     &__toggle-icon {
         cursor: pointer;
     }
-
     &__header {
-        padding: 0.5rem;
+        padding: 0.5rem 0.5rem 0.5rem 1rem;
         font-size: 20px;
         white-space: nowrap;
+        text-decoration: none;
         &-link {
             color: $color-text;
             display: flex;
@@ -69,32 +74,6 @@
     &__children {
         width: 100%;
     }
-
-    &__block {
-        .overview-item__header {
-            color: $color-text;
-        }
-        &:hover {
-            text-decoration: none;
-            .overview-item__header {
-                text-decoration: underline;
-                color: $color-text;
-            }
-        }
-
-        a {
-            .overview-item__header {
-                color: $color-text;
-            }
-
-            &:hover {
-                text-decoration: none;
-                .overview-item__header {
-                    text-decoration: underline;
-                }
-            }
-        }
-    }
 }
 
 .theme-light {
@@ -105,13 +84,11 @@
                 color: $color-light-text-1;
             }
         }
-        &__block {
-            .overview-item__header {
-                color: $color-light-text-1;
-            }
-            &:hover {
-                color: $color-light-text-1;
-            }
+    }
+    a.overview-item {
+        color: $color-light-text-1;
+        .overview-item__header {
+            color: $color-light-text-1;
         }
     }
 }

@@ -1,20 +1,13 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import { upperFirst } from 'lodash'
-import ChartLineIcon from 'mdi-react/ChartLineIcon'
-import CityIcon from 'mdi-react/CityIcon'
-import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
-import RocketIcon from 'mdi-react/RocketIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ActivationProps, percentageDone } from '../../../shared/src/components/activation/Activation'
 import { ActivationChecklist } from '../../../shared/src/components/activation/ActivationChecklist'
-import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { numberWithCommas, pluralize } from '../../../shared/src/util/strings'
@@ -128,7 +121,6 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                         <>
                             {this.props.activation && this.props.activation.completed && (
                                 <OverviewItem
-                                    icon={RocketIcon}
                                     title={`${setupPercentage < 100 ? 'Setup Sourcegraph' : 'Status'}`}
                                     defaultExpanded={setupPercentage < 100}
                                 >
@@ -143,30 +135,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     </div>
                                 </OverviewItem>
                             )}
-                            <OverviewItem
-                                link="/explore"
-                                icon={PackageVariantIcon}
-                                actions={
-                                    <Link to="/explore" className="btn btn-secondary btn-sm">
-                                        <OpenInNewIcon className="icon-inline" /> Explore
-                                    </Link>
-                                }
-                                title="Explore"
-                                isBlock={true}
-                            />
+                            <OverviewItem link="/explore" actions="Jump tp explore page" title="Explore" />
                             <OverviewItem
                                 link="/site-admin/repositories"
-                                icon={RepositoryIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/site-admin/external-services" className="pr-2">
-                                            Configure external services
-                                        </Link>
-                                    </>
-                                }
+                                actions="View all repositories"
                                 title={`${numberWithCommas(this.state.info.repositories)} ${
                                     this.state.info.repositories !== null
                                         ? pluralize('repository', this.state.info.repositories, 'repositories')
@@ -175,17 +147,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             />
                             <OverviewItem
                                 link="/site-admin/users"
-                                icon={UserIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/site-admin/users/new" className="pr-2">
-                                            Create user account
-                                        </Link>
-                                    </>
-                                }
+                                actions="View or create users"
                                 title={`${numberWithCommas(this.state.info.users)} ${pluralize(
                                     'user',
                                     this.state.info.users
@@ -193,17 +155,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             />
                             <OverviewItem
                                 link="/site-admin/organizations"
-                                icon={CityIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/organizations/new" className="pr-2">
-                                            Create organization
-                                        </Link>
-                                    </>
-                                }
+                                actions="View or create organizations"
                                 title={`${numberWithCommas(this.state.info.orgs)} ${pluralize(
                                     'organization',
                                     this.state.info.orgs
@@ -211,12 +163,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             />
                             <OverviewItem
                                 link="/site-admin/surveys"
-                                icon={EmoticonIcon}
-                                actions={
-                                    <Link to="/site-admin/surveys" className="btn btn-secondary btn-sm">
-                                        <OpenInNewIcon className="icon-inline" /> View all
-                                    </Link>
-                                }
+                                actions="View all user surveys"
                                 title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
                                     'user survey response',
                                     this.state.info.surveyResponses.totalCount
@@ -226,7 +173,6 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                     )}
                     {this.state.stats && (
                         <OverviewItem
-                            icon={ChartLineIcon}
                             title={`${this.state.stats.waus[1].userCount} ${pluralize(
                                 'active user',
                                 this.state.stats.waus[1].userCount
