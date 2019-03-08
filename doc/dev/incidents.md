@@ -17,21 +17,26 @@ Operational incidents can be reported by anyone (e.g. customers, Sourcegraph tea
 
 1. If the incident was reported by someone outside of Sourcegraph, acknowledge that the incident is being handled.
 2. Start an internal communication thread about this incident in the #incidents channel in Slack.
-3. Find an engineer to acknowledge ownership of the incident.
-    - If you are an engineer and are available/working, or if you are on-call, then you should immediately acknowledge the incident and start working to resolve it.
-    - If you are not an engineer, or if you are not available/working and not on-call, then you should message (in-person, Slack, phone call) available/working engineers until one acknowledges ownership. If you are unable to quickly find an owner, default to calling [the engineer who is on-call](https://app.opsgenie.com/schedule/detail/190e2873-1e3b-4350-b67b-2e681d542970).
+3. Notify the on-call engineer of the new incident.
+    - You can find out who this is by typing `/genie whoisoncall` in Slack.
+    - If you are not able to immediately get in contact with the on-call engineer then manually create a new OpsGenie alert by typing `/genie <description of incident and link to Slack thread> with ops_team`
 
 ## Owning the incident
 
-If you are owning or asked to own an incident, it is critical that you acknowledge ownership in the #incidents thread in Slack (i.e. "I am on it"), communicate your intended next steps, and post regular updates on your progress.
+The on-call engineer is the default owner of new incidents and should make an effort to resolve the incident without needing to interrupt the work of others on the team.
 
-The owner of the incident may delegate tasks to other available/working engineers. This delegated work preempts work unrelated to operational incidents.
+Incident owners MUST:
+- Acknowledge ownership of the incident in the relevant Slack thread in the #incidents channel (i.e. "I'm on it").
+- Communicate intended next steps.
+- Post regular updates on progress.
 
-If the issue can not be quickly resolved (via rollback or other means) and if it is a severe problem with sourcegraph.com, then create an issue on sourcegraph/sourcegraph and tweet from the Sourcegraph account (e.g. https://twitter.com/srcgraph/status/1101603205203484672, https://twitter.com/srcgraph/status/1101606401753792512, https://twitter.com/srcgraph/status/1101621105620529153)
+The owner of the incident may delegate tasks to other available/working engineers if necessary. This delegated work preempts work unrelated to operational incidents.
+
+If the issue can not be quickly resolved (via rollback or other means) and if it is a severe problem with sourcegraph.com, then create an issue on sourcegraph/sourcegraph and tweet from the Sourcegraph account (e.g. https://twitter.com/srcgraph/status/1101603205203484672, https://twitter.com/srcgraph/status/1101606401753792512, https://twitter.com/srcgraph/status/1101621105620529153).
 
 ## Resolving the incident
 
-The goal is to resolve the incident as quickly and safely as possible. Your default action should be to rollback to a known good state instead of trying to identify the exact issue and fixing it.
+The goal is to resolve the incident as quickly and safely as possible. Your default action should be to rollback to a known good state instead of trying to identify and fix the exact issue.
 
 Here are some useful procedures:
 
@@ -46,6 +51,8 @@ Here are some useful procedures:
 
 After the incident is resolved:
 
+- Update and close and relevant public GitHub issues.
+- If the Sourcegraph account Tweeted about the incident, Tweet that the incident has been resolved.
 - Document the incident in the [ops log](https://docs.google.com/document/d/1dtrOHs5STJYKvyjigL1kMm6u-W0mlyRSyVxPfKIOfEw/edit).
 - Create GitHub issues for any appropriate followup work.
 - Schedule a [retrospective](retrospectives/index.md) if you think it would be valuable.
