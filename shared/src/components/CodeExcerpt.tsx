@@ -92,8 +92,16 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             for (const highlight of this.props.highlightRanges) {
-                const code = visibleRows[highlight.line - this.getFirstLine()].lastChild as HTMLTableDataCellElement
-                highlightNode(code, highlight.character, highlight.highlightLength)
+                // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
+                // `highlight.line` is the 1-indexed line number in the code file, and this.getFirstLine() returns the
+                // 1-indexed line number of the first visible line in the excerpt. So, subtract this.getFirstLine()
+                // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
+                const tableRow = visibleRows[highlight.line - this.getFirstLine()]
+                if (tableRow) {
+                    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
+                    const code = tableRow.lastChild as HTMLTableDataCellElement
+                    highlightNode(code, highlight.character, highlight.highlightLength)
+                }
             }
         }
     }
