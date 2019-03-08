@@ -248,6 +248,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     icon={RepositoryIcon}
                     isLightTheme={this.props.isLightTheme}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                    settingsCascade={this.props.settingsCascade}
                 />
             </div>
         )
