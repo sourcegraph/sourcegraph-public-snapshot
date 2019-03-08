@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed an issue where search results loading slowly would display a `Cannot read property "lastChild" of undefined` error.
+
 ### Removed
 
 - The `"updateScheduler2"` experiment is now the default and it's no longer possible to configure.
