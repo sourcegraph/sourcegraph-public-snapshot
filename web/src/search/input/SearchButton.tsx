@@ -35,7 +35,7 @@ export class SearchButton extends React.Component<Props, State> {
             <div className="search-button d-flex">
                 <button className="btn btn-primary search-button__btn" type="submit" onClick={this.onClick}>
                     <SearchIcon className="icon-inline" />
-                    {!this.props.noLabel && <span className="search-button__label">Search</span>}
+                    {!this.props.noLabel && <span className="search-button__label">Search2</span>}
                 </button>
                 <Dropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="d-flex">
                     {!this.props.noHelp && (
