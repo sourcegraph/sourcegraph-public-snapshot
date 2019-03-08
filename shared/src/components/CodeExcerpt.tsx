@@ -111,11 +111,19 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private getFirstLine(): number {
-        return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - (this.props.context || 1))
+        const contextLines = this.props.context || this.props.context === 0 ? this.props.context : 1
+        // Of the matches in this excerpt, pick the one with the lowest line number.
+        // Take the maximum between the (lowest line number - the lines of context) and 0,
+        // so we don't try and display a negative line index.
+        return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - contextLines)
     }
 
     private getLastLine(): number {
-        const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + (this.props.context || 1)
+        const contextLines = this.props.context || this.props.context === 0 ? this.props.context : 1
+        // Of the matches in this excerpt, pick the one with the highest line number + lines of context.
+        const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + contextLines
+        // If there are lines, take the minimum of lastLine and the number of lines in the file,
+        // so we don't try to display a line index beyond the maximum line number in the file.
         return this.state.blobLines ? Math.min(lastLine, this.state.blobLines.length) : lastLine
     }
 
@@ -130,6 +138,12 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             // excerpt).
             return null
         }
+
+        // If the search.contextLines value is 0, we need to add 1 to the
+        // last line value so that `range(firstLine, lastLine)` is a non-empty array
+        // since range is exclusive of the lastLine value, and this.getFirstLine() and this.getLastLine()
+        // will return the same value.
+        const additionalLine = this.props.context === 0 ? 1 : 0
 
         return (
             <VisibilitySensor
@@ -147,7 +161,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     {!this.state.blobLines && (
                         <table>
                             <tbody>
-                                {range(this.getFirstLine(), this.getLastLine()).map(i => (
+                                {range(this.getFirstLine(), this.getLastLine() + additionalLine).map(i => (
                                     <tr key={i}>
                                         <td className="line">{i + 1}</td>
                                         {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}

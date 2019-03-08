@@ -1,5 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -9,6 +10,7 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxj
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
 import { VirtualList } from '../../components/VirtualList'
+import { SettingsCascadeProps } from '../../settings/settings'
 import { asError } from '../../util/errors'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { propertyIsDefined } from '../../util/types'
@@ -26,7 +28,8 @@ export const FileLocationsNotFound: React.FunctionComponent = () => (
     </div>
 )
 
-interface Props {
+interface Props extends SettingsCascadeProps {
+    location: H.Location
     /**
      * The observable that emits the locations.
      */
@@ -133,6 +136,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     items={orderedURIs.map(({ uri, repo }, i) => (
                         <FileMatch
                             key={i}
+                            location={this.props.location}
                             expanded={true}
                             result={refsToFileMatch(uri, locationsByURI.get(uri)!)}
                             icon={this.props.icon}
@@ -140,6 +144,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                             showAllMatches={true}
                             isLightTheme={this.props.isLightTheme}
                             fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                            settingsCascade={this.props.settingsCascade}
                         />
                     ))}
                 />
