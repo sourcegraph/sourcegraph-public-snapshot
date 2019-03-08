@@ -247,9 +247,9 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		ghrepo := r.Metadata.(*github.Repository)
 		info.Links = &protocol.RepoLinks{
 			Root:   ghrepo.URL,
-			Tree:   ghrepo.URL + "/tree/{rev}/{path}",
-			Blob:   ghrepo.URL + "/blob/{rev}/{path}",
-			Commit: ghrepo.URL + "/commit/{commit}",
+			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
 		}
 	}
 
@@ -275,4 +275,11 @@ func isUnauthorized(err error) bool {
 
 func isTemporarilyUnavailable(err error) bool {
 	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
+}
+
+func pathAppend(base, p string) string {
+	if strings.HasPrefix(p, "/") {
+		return strings.TrimRight(base, "/") + p
+	}
+	return strings.TrimRight(base, "/") + "/" + p
 }
