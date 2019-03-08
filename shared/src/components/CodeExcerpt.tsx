@@ -137,7 +137,6 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         // will return the same value.
         const additionalLine = this.props.context === 0 ? 1 : 0
 
-        console.log(this.getFirstLine(), this.getLastLine())
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
