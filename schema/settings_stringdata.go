@@ -61,9 +61,10 @@ const SettingsSchemaJSON = `{
       }
     },
     "search.defaultContextLines": {
-      "description": "The default number of lines to show as context below and above search results.",
+      "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "default": 1
     },
     "notifications.slack": {
       "$ref": "#/definitions/SlackNotificationsConfig"
