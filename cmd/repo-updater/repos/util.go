@@ -44,18 +44,29 @@ func CachedRoundTripper(rt http.RoundTripper) http.RoundTripper {
 	}
 }
 
+// NewCertPool returns an x509.CertPool with the given certificates added to it.
+func NewCertPool(certs ...string) (*x509.CertPool, error) {
+	pool := x509.NewCertPool()
+	for _, cert := range certs {
+		if ok := pool.AppendCertsFromPEM([]byte(cert)); !ok {
+			return nil, errors.New("invalid certificate")
+		}
+	}
+	return pool, nil
+}
+
 // cachedTransportWithCertTrusted returns an http.Transport that trusts the
 // provided PEM cert, or http.DefaultTransport if it is empty. The transport
 // is also using our redis backed cache.
 func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
 	transport := http.DefaultTransport
 	if cert != "" {
-		certPool := x509.NewCertPool()
-		if ok := certPool.AppendCertsFromPEM([]byte(cert)); !ok {
-			return nil, errors.New("invalid certificate value")
+		pool, err := NewCertPool(cert)
+		if err != nil {
+			return nil, err
 		}
 		transport = &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: certPool},
+			TLSClientConfig: &tls.Config{RootCAs: pool},
 		}
 	}
 	return CachedRoundTripper(transport), nil
