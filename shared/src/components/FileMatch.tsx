@@ -1,8 +1,11 @@
+import H from 'history'
 import { flatMap } from 'lodash'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { pluralize } from '../../../shared/src/util/strings'
+import { Settings } from '../../../web/src/schema/settings.schema'
 import * as GQL from '../graphql/schema'
+import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash } from '../util/url'
 import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
@@ -31,7 +34,8 @@ interface IMatchItem {
     line: number
 }
 
-interface Props {
+interface Props extends SettingsCascadeProps {
+    location: H.Location
     /**
      * The file match search result.
      */
@@ -163,7 +167,19 @@ export class FileMatch extends React.PureComponent<Props> {
         }
 
         // The number of lines of context to show before and after each match.
-        const context = 1
+        let context = 1
+
+        if (this.props.location.pathname === '/search') {
+            // Check if search.contextLines is configured in settings.
+            const contextLinesSetting =
+                isSettingsValid<Settings>(this.props.settingsCascade) &&
+                this.props.settingsCascade.final &&
+                this.props.settingsCascade.final['search.contextLines']
+
+            if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
+                context = contextLinesSetting
+            }
+        }
 
         const groupsOfItems = mergeContext(
             context,

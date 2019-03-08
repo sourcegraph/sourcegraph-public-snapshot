@@ -1,5 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import H from 'history'
 import { merge } from 'lodash'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
@@ -18,6 +19,7 @@ import { FileLocations, FileLocationsError, FileLocationsNotFound } from './File
 import { groupLocations } from './locations'
 
 export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
+    location: H.Location
     /**
      * The observable that emits the locations.
      */
@@ -237,11 +239,13 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     )}
                 <FileLocations
                     className="hierarchical-locations-view__content"
+                    location={this.props.location}
                     locations={of(visibleLocations)}
                     onSelect={this.props.onSelectLocation}
                     icon={RepositoryIcon}
                     isLightTheme={this.props.isLightTheme}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                    settingsCascade={this.props.settingsCascade}
                 />
             </div>
         )

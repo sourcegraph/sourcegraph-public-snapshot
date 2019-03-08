@@ -4,6 +4,7 @@
 jest.mock('react-visibility-sensor', () => 'VisibilitySensor')
 
 import { Location } from '@sourcegraph/extension-api-types'
+import H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, NEVER, of } from 'rxjs'
@@ -33,9 +34,17 @@ describe('<HierarchicalLocationsView />', () => {
             subjects: null,
             final: null,
         }
+        const location: H.Location = {
+            hash: '#L36:18&tab=references',
+            pathname: '/github.com/sourcegraph/sourcegraph/-/blob/client/browser/src/libs/phabricator/index.tsx',
+            search: '',
+            state: {},
+        }
+
         const props: HierarchicalLocationsViewProps = {
             extensionsController,
             settingsCascade,
+            location,
             locations: NEVER,
             defaultGroup: 'git://github.com/foo/bar',
             isLightTheme: true,

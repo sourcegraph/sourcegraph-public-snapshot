@@ -473,6 +473,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
+                        location={this.props.location}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
@@ -482,6 +483,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         allExpanded={this.props.allExpanded}
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         repoDisplayName={this.state.fileMatchRepoDisplayNames.get(result.repository.name)}
+                        settingsCascade={this.props.settingsCascade}
                     />
                 )
         }
