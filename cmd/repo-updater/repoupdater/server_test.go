@@ -279,7 +279,7 @@ func TestRepoLookup_syncer(t *testing.T) {
 	now := time.Now().UTC()
 	ctx := context.Background()
 	s := Server{
-		OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil),
+		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
 		Syncer:           &repos.Syncer{},
 		Store: repos.NewFakeStore(nil, nil, nil,
 			&repos.Repo{
