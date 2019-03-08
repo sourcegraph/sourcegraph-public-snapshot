@@ -42,8 +42,8 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !calledRepoLookup {
-		t.Error("!calledRepoLookup")
+	if calledRepoLookup {
+		t.Error("calledRepoLookup")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -81,8 +81,8 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !calledRepoLookup {
-		t.Error("!calledRepoLookup")
+	if calledRepoLookup {
+		t.Error("calledRepoLookup")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -120,8 +120,8 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !calledRepoLookup {
-		t.Error("!calledRepoLookup")
+	if calledRepoLookup {
+		t.Error("calledRepoLookup")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -159,8 +159,8 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	if !reflect.DeepEqual(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
-	if !calledRepoLookup {
-		t.Error("!calledRepoLookup")
+	if calledRepoLookup {
+		t.Error("calledRepoLookup")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -193,8 +193,8 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !calledRepoLookup {
-		t.Error("!calledRepoLookup")
+	if calledRepoLookup {
+		t.Error("calledRepoLookup")
 	}
 	if !calledVCSRepoGetCommit {
 		t.Error("!calledVCSRepoGetCommit")

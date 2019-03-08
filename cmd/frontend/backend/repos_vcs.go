@@ -158,13 +158,23 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
-	// Try to get latest remote URL, but continue even if that fails.
-	grepo, err := GitRepo(ctx, repo)
+	// We start out by using a CachedGitRepo which doesn't have a remote URL.
+	// If we need the remote URL, git.ResolveRevision will ask for it via
+	// remoteURLFunc (which is costly as it e.g. consumes code host API
+	// requests).
+	gitserverRepo, err := CachedGitRepo(ctx, repo)
 	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
-	return git.ResolveRevision(ctx, grepo, nil, rev, nil)
+	remoteURLFunc := func() (string, error) {
+		grepo, err := GitRepo(ctx, repo)
+		if err != nil {
+			return "", err
+		}
+		return grepo.URL, nil
+	}
+	return git.ResolveRevision(ctx, *gitserverRepo, remoteURLFunc, rev, nil)
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
@@ -181,13 +191,23 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	// Try to get latest remote URL, but continue even if that fails.
-	gitserverRepo, err := GitRepo(ctx, repo)
+	// We start out by using a CachedGitRepo which doesn't have a remote URL.
+	// If we need the remote URL, git.ResolveRevision will ask for it via
+	// remoteURLFunc (which is costly as it e.g. consumes code host API
+	// requests).
+	gitserverRepo, err := CachedGitRepo(ctx, repo)
 	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
-	return git.GetCommit(ctx, gitserverRepo, nil, commitID)
+	remoteURLFunc := func() (string, error) {
+		grepo, err := GitRepo(ctx, repo)
+		if err != nil {
+			return "", err
+		}
+		return grepo.URL, nil
+	}
+	return git.GetCommit(ctx, *gitserverRepo, remoteURLFunc, commitID)
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {
