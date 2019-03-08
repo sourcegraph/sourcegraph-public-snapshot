@@ -57,16 +57,13 @@ func main() {
 	)
 
 	if !isBextReleaseBranch {
-		pipeline.AddStep(":chromium:",
+		pipeline.AddStep(":docker:",
 			bk.Cmd("pushd enterprise"),
 			bk.Cmd("./cmd/server/pre-build.sh"),
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
 			bk.Env("VERSION", version),
 			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("./dev/ci/e2e.sh"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+			bk.Cmd("popd"))
 
 		pipeline.AddStep(":white_check_mark:",
 			bk.Cmd("./dev/check/all.sh"))
@@ -115,6 +112,22 @@ func main() {
 		pipeline.AddStep(":docker:",
 			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
 			bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+	}
+
+	pipeline.AddWait()
+
+	if !isBextReleaseBranch {
+		pipeline.AddStep(":chromium:",
+			// Avoid crashing the sourcegraph/server containers. See
+			// https://github.com/sourcegraph/sourcegraph/issues/2657
+			bk.ConcurrencyGroup("e2e"),
+			bk.Concurrency(1),
+
+			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+			bk.Env("VERSION", version),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Cmd("./dev/ci/e2e.sh"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 
 	pipeline.AddWait()
