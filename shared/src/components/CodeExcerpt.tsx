@@ -131,6 +131,11 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             return null
         }
 
+        // If the search.contextLines value is 0, we need to add 1 to the
+        // last line value so that `range(firstLine, lastLine)` is a non-empty array
+        // since range is exclusive of the lastLine value.
+        const additionalLine = this.props.context === 0 ? 1 : 0
+
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
@@ -147,7 +152,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     {!this.state.blobLines && (
                         <table>
                             <tbody>
-                                {range(this.getFirstLine(), this.getLastLine() + 1).map(i => (
+                                {range(this.getFirstLine(), this.getLastLine() + additionalLine).map(i => (
                                     <tr key={i}>
                                         <td className="line">{i + 1}</td>
                                         {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}

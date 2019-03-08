@@ -1,5 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -28,6 +29,7 @@ export const FileLocationsNotFound: React.FunctionComponent = () => (
 )
 
 interface Props extends SettingsCascadeProps {
+    location: H.Location
     /**
      * The observable that emits the locations.
      */
@@ -134,6 +136,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     items={orderedURIs.map(({ uri, repo }, i) => (
                         <FileMatch
                             key={i}
+                            location={this.props.location}
                             expanded={true}
                             result={refsToFileMatch(uri, locationsByURI.get(uri)!)}
                             icon={this.props.icon}

@@ -473,6 +473,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
+                        location={this.props.location}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
