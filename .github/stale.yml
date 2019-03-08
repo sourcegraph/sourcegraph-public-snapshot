@@ -14,9 +14,9 @@ staleLabel: stale
 
 # Comment to post when marking an issue as stale. Set to `false` to disable
 markComment: >
-  Please post an update to this issue or close the issue with an explanation if it is no longer relevant.
+  Please post an update or close this with an explanation if it is no longer relevant.
 
-  If this issue receives no more activity it will be closed automatically.
+  This will be closed automatically if there is no more activity.
 
 # Comment to post when closing a stale issue. Set to `false` to disable
 # This makes it possible to search for issues that were closed by stalebot.
