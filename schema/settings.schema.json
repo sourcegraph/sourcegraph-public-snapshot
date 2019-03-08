@@ -55,6 +55,11 @@
         "items": { "type": "string" }
       }
     },
+    "search.defaultContextLines": {
+      "description": "The default number of lines to show as context around search results.",
+      "type": "integer",
+      "minimum": 0
+    },
     "notifications.slack": {
       "$ref": "#/definitions/SlackNotificationsConfig"
     },

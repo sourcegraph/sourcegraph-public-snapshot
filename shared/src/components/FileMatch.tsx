@@ -3,6 +3,7 @@ import React from 'react'
 import { Observable } from 'rxjs'
 import { pluralize } from '../../../shared/src/util/strings'
 import * as GQL from '../graphql/schema'
+import { SettingsCascadeProps, isSettingsValid } from '../settings/settings';
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash } from '../util/url'
 import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
@@ -11,6 +12,7 @@ import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
+import { Settings } from '../../../web/src/schema/settings.schema';
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
@@ -31,7 +33,7 @@ interface IMatchItem {
     line: number
 }
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     /**
      * The file match search result.
      */
@@ -162,8 +164,9 @@ export class FileMatch extends React.PureComponent<Props> {
             )
         }
 
+        const defaultContextLinesSetting = isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final && this.props.settingsCascade.final['search.defaultContextLines'])
         // The number of lines of context to show before and after each match.
-        const context = 1
+        const context = typeof defaultContextLinesSetting === 'number' && defaultContextLinesSetting > 0 ? defaultContextLinesSetting : 1
 
         const groupsOfItems = mergeContext(
             context,

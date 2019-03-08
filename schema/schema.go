@@ -360,12 +360,13 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	Extensions             map[string]bool           `json:"extensions,omitempty"`
-	Motd                   []string                  `json:"motd,omitempty"`
-	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
-	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
-	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
+	Extensions                map[string]bool           `json:"extensions,omitempty"`
+	Motd                      []string                  `json:"motd,omitempty"`
+	NotificationsSlack        *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
+	SearchDefaultContextLines int                       `json:"search.defaultContextLines,omitempty"`
+	SearchRepositoryGroups    map[string][]string       `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries        []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
+	SearchScopes              []*SearchScope            `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
