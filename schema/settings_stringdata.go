@@ -57,13 +57,11 @@ const SettingsSchemaJSON = `{
       "type": "object",
       "additionalProperties": {
         "type": "array",
-        "items": {
-          "type": "string"
-        }
+        "items": { "type": "string" }
       }
     },
     "search.defaultContextLines": {
-      "description": "The default number of lines to show as context around search results.",
+      "description": "The default number of lines to show as context below and above search results.",
       "type": "integer",
       "minimum": 0
     },
@@ -73,9 +71,7 @@ const SettingsSchemaJSON = `{
     "motd": {
       "description": "An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": { "type": "string" }
     },
     "extensions": {
       "description": "The Sourcegraph extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",

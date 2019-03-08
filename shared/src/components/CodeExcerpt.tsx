@@ -103,11 +103,18 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private getFirstLine(): number {
-        return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - (this.props.context || 1))
+        const context = this.props.context || this.props.context === 0 ? this.props.context : 1
+        // Of the matches in this excerpt, pick the one with the lowest line number.
+        // Take the maximum between the (lowest line number - the lines of context) and 0,
+        // so we don't try and display a negative line index.
+        return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - context)
     }
 
     private getLastLine(): number {
+        // Of the matches in this excerpt, pick the one with the highest line number + lines of context.
         const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + (this.props.context || 1)
+        // If there lines, take the minimum of lastLine or the number of lines in the file,
+        // so we don't try to display a line index beyond the maximum line number in the file.
         return this.state.blobLines ? Math.min(lastLine, this.state.blobLines.length) : lastLine
     }
 
@@ -159,8 +166,12 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private makeTableHTML(): string {
+        // If there is a context value, this.getLastLine() will output the correct 0-indexed last line value.
+        const additionalLine = this.props.context === 0 ? 0 : 1
         return (
-            '<table>' + this.state.blobLines!.slice(this.getFirstLine(), this.getLastLine() + 1).join('') + '</table>'
+            '<table>' +
+            this.state.blobLines!.slice(this.getFirstLine(), this.getLastLine() + additionalLine).join('') +
+            '</table>'
         )
     }
 }

@@ -56,7 +56,7 @@
       }
     },
     "search.defaultContextLines": {
-      "description": "The default number of lines to show as context around search results.",
+      "description": "The default number of lines to show as context below and above search results.",
       "type": "integer",
       "minimum": 0
     },
