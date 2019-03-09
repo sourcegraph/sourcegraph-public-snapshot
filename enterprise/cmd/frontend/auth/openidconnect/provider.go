@@ -30,8 +30,8 @@ type provider struct {
 }
 
 // ConfigID implements providers.Provider.
-func (p *provider) ConfigID() providers.ProviderConfigID {
-	return providers.ProviderConfigID{
+func (p *provider) ConfigID() providers.ConfigID {
+	return providers.ConfigID{
 		Type: providerType,
 		ID:   providerConfigID(&p.config),
 	}
@@ -50,8 +50,8 @@ func (p *provider) Refresh(ctx context.Context) error {
 	return p.refreshErr
 }
 
-func (p *provider) getCachedInfoAndError() (*providers.ProviderInfo, error) {
-	info := providers.ProviderInfo{
+func (p *provider) getCachedInfoAndError() (*providers.Info, error) {
+	info := providers.Info{
 		ServiceID:   p.config.Issuer,
 		ClientID:    p.config.ClientID,
 		DisplayName: p.config.DisplayName,
@@ -76,7 +76,7 @@ func (p *provider) getCachedInfoAndError() (*providers.ProviderInfo, error) {
 }
 
 // CachedInfo implements providers.Provider.
-func (p *provider) CachedInfo() *providers.ProviderInfo {
+func (p *provider) CachedInfo() *providers.Info {
 	info, _ := p.getCachedInfoAndError()
 	return info
 }

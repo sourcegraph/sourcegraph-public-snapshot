@@ -72,7 +72,7 @@ func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
 	return oauth.SessionData{
-		ID: providers.ProviderConfigID{
+		ID: providers.ConfigID{
 			ID:   s.ServiceID(),
 			Type: s.ServiceType(),
 		},

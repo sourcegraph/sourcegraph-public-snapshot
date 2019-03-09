@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	permgl "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
@@ -105,7 +105,7 @@ func gitlabProvider(cfg *conf.Unified, gl *schema.GitLabConnection) (authz.Provi
 			if foundMatchingSAML || foundMatchingOIDC {
 				return NewGitLabSudoProvider(permgl.SudoProviderOp{
 					BaseURL: glURL,
-					AuthnConfigID: auth.ProviderConfigID{
+					AuthnConfigID: providers.ConfigID{
 						Type: ext.AuthProviderType,
 						ID:   ext.AuthProviderID,
 					},

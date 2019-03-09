@@ -27,7 +27,7 @@ func getProvider(pcID string) *provider {
 		return mockGetProviderValue
 	}
 
-	p, _ := providers.GetProviderByConfigID(providers.ProviderConfigID{Type: providerType, ID: pcID}).(*provider)
+	p, _ := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType, ID: pcID}).(*provider)
 	if p != nil {
 		return p
 	}

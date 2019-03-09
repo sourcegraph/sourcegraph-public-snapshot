@@ -15,7 +15,7 @@ import (
 )
 
 type SessionData struct {
-	ID providers.ProviderConfigID
+	ID providers.ConfigID
 
 	// Store only the oauth2.Token fields we need, to avoid hitting the ~4096-byte session data
 	// limit.

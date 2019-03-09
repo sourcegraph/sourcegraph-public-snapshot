@@ -36,7 +36,7 @@ func init() {
 					}
 				}(p)
 			}
-			providers.UpdateProviders("openidconnect", ps)
+			providers.Update("openidconnect", ps)
 		})
 	}()
 }

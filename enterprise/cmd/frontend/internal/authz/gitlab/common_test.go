@@ -291,11 +291,11 @@ func (m mockCache) Delete(key string) {
 }
 
 type mockAuthnProvider struct {
-	configID  providers.ProviderConfigID
+	configID  providers.ConfigID
 	serviceID string
 }
 
-func (m mockAuthnProvider) ConfigID() providers.ProviderConfigID {
+func (m mockAuthnProvider) ConfigID() providers.ConfigID {
 	return m.configID
 }
 
@@ -308,8 +308,8 @@ func (m mockAuthnProvider) Config() schema.AuthProviders {
 	}
 }
 
-func (m mockAuthnProvider) CachedInfo() *providers.ProviderInfo {
-	return &providers.ProviderInfo{ServiceID: m.serviceID}
+func (m mockAuthnProvider) CachedInfo() *providers.Info {
+	return &providers.Info{ServiceID: m.serviceID}
 }
 
 func (m mockAuthnProvider) Refresh(ctx context.Context) error {

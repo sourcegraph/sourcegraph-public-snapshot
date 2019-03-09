@@ -39,7 +39,7 @@ type SudoProvider struct {
 	clientURL         *url.URL
 	codeHost          *gitlab.CodeHost
 	gitlabProvider    string
-	authnConfigID     providers.ProviderConfigID
+	authnConfigID     providers.ConfigID
 	useNativeUsername bool
 	cache             pcache
 	cacheTTL          time.Duration
@@ -53,7 +53,7 @@ type SudoProviderOp struct {
 
 	// AuthnConfigID identifies the authn provider to use to lookup users on the GitLab instance.
 	// This should be the authn provider that's used to sign into the GitLab instance.
-	AuthnConfigID providers.ProviderConfigID
+	AuthnConfigID providers.ConfigID
 
 	// GitLabProvider is the id of the authn provider to GitLab. It will be used in the
 	// `users?extern_uid=$uid&provider=$provider` API query.

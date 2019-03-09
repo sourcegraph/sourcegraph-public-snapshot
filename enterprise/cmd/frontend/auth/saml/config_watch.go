@@ -37,7 +37,7 @@ func init() {
 					}
 				}(p)
 			}
-			providers.UpdateProviders("saml", ps)
+			providers.Update("saml", ps)
 		})
 	}()
 }

@@ -288,7 +288,7 @@ func Test_providersFromConfig(t *testing.T) {
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
 						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						AuthnConfigID: providers.ProviderConfigID{
+						AuthnConfigID: providers.ConfigID{
 							Type: "saml",
 							ID:   "okta",
 						},

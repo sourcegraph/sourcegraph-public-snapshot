@@ -13,13 +13,13 @@ func init() {
 		conf.Watch(func() {
 			newProviders, _ := parseConfig(conf.Get())
 			if len(newProviders) == 0 {
-				providers.UpdateProviders(pkgName, nil)
+				providers.Update(pkgName, nil)
 			} else {
 				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
 					newProvidersList = append(newProvidersList, p)
 				}
-				providers.UpdateProviders(pkgName, newProvidersList)
+				providers.Update(pkgName, newProvidersList)
 			}
 		})
 		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {

@@ -11,10 +11,10 @@ func init() {
 		conf.Watch(func() {
 			newPC, _ := getProviderConfig()
 			if newPC == nil {
-				providers.UpdateProviders("builtin", nil)
+				providers.Update("builtin", nil)
 				return
 			}
-			providers.UpdateProviders("builtin", []providers.Provider{&provider{c: newPC}})
+			providers.Update("builtin", []providers.Provider{&provider{c: newPC}})
 		})
 	}()
 }

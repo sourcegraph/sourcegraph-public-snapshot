@@ -23,7 +23,7 @@ type Provider interface {
 	//
 	// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
 	// and anonymous clients.
-	ConfigID() ProviderConfigID
+	ConfigID() ConfigID
 
 	// Config is the entry in the site configuration "auth.providers" array that this provider
 	// represents.
@@ -33,18 +33,18 @@ type Provider interface {
 	Config() schema.AuthProviders
 
 	// CachedInfo returns cached information about the provider.
-	CachedInfo() *ProviderInfo
+	CachedInfo() *Info
 
 	// Refresh refreshes the provider's information with an external service, if any.
 	Refresh(ctx context.Context) error
 }
 
-// ProviderConfigID identifies a provider config object in the auth.providers site configuration
+// ConfigID identifies a provider config object in the auth.providers site configuration
 // array.
 //
 // 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated and
 // anonymous clients.
-type ProviderConfigID struct {
+type ConfigID struct {
 	// Type is the type of this auth provider (equal to its "type" property in its entry in the
 	// auth.providers array in site configuration).
 	Type string
@@ -61,8 +61,8 @@ type ProviderConfigID struct {
 	ID string
 }
 
-// ProviderInfo contains information about an authentication provider.
-type ProviderInfo struct {
+// Info contains information about an authentication provider.
+type Info struct {
 	// ServiceID identifies the external service that this authentication provider represents. It is
 	// a stable identifier.
 	ServiceID string
@@ -93,9 +93,9 @@ var (
 	MockProviders []Provider
 )
 
-// UpdateProviders updates the set of active authentication provider instances. It replaces the
+// Update updates the set of active authentication provider instances. It replaces the
 // current set of Providers under the specified pkgName with the new set.
-func UpdateProviders(pkgName string, providers []Provider) {
+func Update(pkgName string, providers []Provider) {
 	curProvidersMu.Lock()
 	defer curProvidersMu.Unlock()
 
@@ -170,7 +170,7 @@ func (p sortProviders) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 }
 
-func GetProviderByConfigID(id ProviderConfigID) Provider {
+func GetProviderByConfigID(id ConfigID) Provider {
 	if MockProviders != nil {
 		for _, p := range MockProviders {
 			if p.ConfigID() == id {

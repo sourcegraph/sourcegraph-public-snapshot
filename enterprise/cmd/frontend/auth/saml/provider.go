@@ -38,8 +38,8 @@ type provider struct {
 }
 
 // ConfigID implements providers.Provider.
-func (p *provider) ConfigID() providers.ProviderConfigID {
-	return providers.ProviderConfigID{
+func (p *provider) ConfigID() providers.ConfigID {
+	return providers.ConfigID{
 		Type: providerType,
 		ID:   providerConfigID(&p.config, p.multiple),
 	}
@@ -65,8 +65,8 @@ func providerIDQuery(pc *schema.SAMLAuthProvider, multiple bool) url.Values {
 	return url.Values{}
 }
 
-func (p *provider) getCachedInfoAndError() (*providers.ProviderInfo, error) {
-	info := providers.ProviderInfo{
+func (p *provider) getCachedInfoAndError() (*providers.Info, error) {
+	info := providers.Info{
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
 			Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
@@ -93,7 +93,7 @@ func (p *provider) getCachedInfoAndError() (*providers.ProviderInfo, error) {
 }
 
 // CachedInfo implements providers.Provider.
-func (p *provider) CachedInfo() *providers.ProviderInfo {
+func (p *provider) CachedInfo() *providers.Info {
 	info, _ := p.getCachedInfoAndError()
 	return info
 }

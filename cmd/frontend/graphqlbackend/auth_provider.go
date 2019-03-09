@@ -6,7 +6,7 @@ import "github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 type authProviderResolver struct {
 	authProvider providers.Provider
 
-	info *providers.ProviderInfo // == authProvider.CachedInfo()
+	info *providers.Info // == authProvider.CachedInfo()
 }
 
 func (r *authProviderResolver) ServiceType() string { return r.authProvider.ConfigID().Type }

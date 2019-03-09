@@ -69,13 +69,13 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			description: "1 authn provider, basic authz provider",
 			authnProviders: []providers.Provider{
 				mockAuthnProvider{
-					configID:  providers.ProviderConfigID{ID: "okta.mine", Type: "saml"},
+					configID:  providers.ConfigID{ID: "okta.mine", Type: "saml"},
 					serviceID: "https://okta.mine/",
 				},
 			},
 			op: SudoProviderOp{
 				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     providers.ProviderConfigID{ID: "okta.mine", Type: "saml"},
+				AuthnConfigID:     providers.ConfigID{ID: "okta.mine", Type: "saml"},
 				GitLabProvider:    "okta.mine",
 				UseNativeUsername: false,
 			},
@@ -139,7 +139,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			authnProviders: nil,
 			op: SudoProviderOp{
 				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     providers.ProviderConfigID{ID: "okta.mine", Type: "saml"},
+				AuthnConfigID:     providers.ConfigID{ID: "okta.mine", Type: "saml"},
 				GitLabProvider:    "okta.mine",
 				UseNativeUsername: false,
 			},
@@ -155,17 +155,17 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			description: "2 authn providers, basic authz provider",
 			authnProviders: []providers.Provider{
 				mockAuthnProvider{
-					configID:  providers.ProviderConfigID{ID: "okta.mine", Type: "saml"},
+					configID:  providers.ConfigID{ID: "okta.mine", Type: "saml"},
 					serviceID: "https://okta.mine/",
 				},
 				mockAuthnProvider{
-					configID:  providers.ProviderConfigID{ID: "onelogin.mine", Type: "openidconnect"},
+					configID:  providers.ConfigID{ID: "onelogin.mine", Type: "openidconnect"},
 					serviceID: "https://onelogin.mine/",
 				},
 			},
 			op: SudoProviderOp{
 				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     providers.ProviderConfigID{ID: "onelogin.mine", Type: "openidconnect"},
+				AuthnConfigID:     providers.ConfigID{ID: "onelogin.mine", Type: "openidconnect"},
 				GitLabProvider:    "onelogin.mine",
 				UseNativeUsername: false,
 			},

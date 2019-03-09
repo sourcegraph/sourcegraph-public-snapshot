@@ -27,15 +27,15 @@ type Provider struct {
 var _ providers.Provider = (*Provider)(nil)
 
 func getProvider(serviceType, id string) *Provider {
-	p, ok := providers.GetProviderByConfigID(providers.ProviderConfigID{Type: serviceType, ID: id}).(*Provider)
+	p, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: serviceType, ID: id}).(*Provider)
 	if !ok {
 		return nil
 	}
 	return p
 }
 
-func (p *Provider) ConfigID() providers.ProviderConfigID {
-	return providers.ProviderConfigID{
+func (p *Provider) ConfigID() providers.ConfigID {
+	return providers.ConfigID{
 		ID:   p.ServiceID,
 		Type: p.ServiceType,
 	}
@@ -45,7 +45,7 @@ func (p *Provider) Config() schema.AuthProviders {
 	return p.SourceConfig
 }
 
-func (p *Provider) CachedInfo() *providers.ProviderInfo {
+func (p *Provider) CachedInfo() *providers.Info {
 	displayName := p.ServiceID
 	switch {
 	case p.SourceConfig.Github != nil && p.SourceConfig.Github.DisplayName != "":
@@ -53,7 +53,7 @@ func (p *Provider) CachedInfo() *providers.ProviderInfo {
 	case p.SourceConfig.Gitlab != nil && p.SourceConfig.Gitlab.DisplayName != "":
 		displayName = p.SourceConfig.Gitlab.DisplayName
 	}
-	return &providers.ProviderInfo{
+	return &providers.Info{
 		ServiceID:   p.ServiceID,
 		ClientID:    p.OAuth2Config.ClientID,
 		DisplayName: displayName,

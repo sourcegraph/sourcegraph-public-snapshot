@@ -11,10 +11,10 @@ func init() {
 		conf.Watch(func() {
 			newPC, _ := getProviderConfig()
 			if newPC == nil {
-				providers.UpdateProviders("httpheader", nil)
+				providers.Update("httpheader", nil)
 				return
 			}
-			providers.UpdateProviders("httpheader", []providers.Provider{&provider{c: newPC}})
+			providers.Update("httpheader", []providers.Provider{&provider{c: newPC}})
 		})
 	}()
 }
