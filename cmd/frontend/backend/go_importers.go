@@ -9,13 +9,13 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/golang/groupcache/lru"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
 )
@@ -23,8 +23,7 @@ import (
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
 
 var (
-	goImportersCountCacheMu sync.Mutex
-	goImportersCountCache   = lru.New(1000) // 1000 is arbitrarily chosen
+	goImportersCountCache = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
 
 	countGoImportersHTTPClient *http.Client // mockable in tests
 )
@@ -44,23 +43,24 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 		return 0, errors.New("counting Go importers is not supported on self-hosted instances")
 	}
 
-	goImportersCountCacheMu.Lock()
-	v, ok := goImportersCountCache.Get(repo)
-	goImportersCountCacheMu.Unlock()
+	cacheKey := string(repo)
+	b, ok := goImportersCountCache.Get(cacheKey)
 	if ok {
-		return v.(int), nil // cache hit
+		count, err = strconv.Atoi(string(b))
+		if err == nil {
+			return count, nil // cache hit
+		}
+		goImportersCountCache.Delete(cacheKey) // remove unexpectedly invalid cache value
 	}
 
 	defer func() {
 		if err == nil {
 			// Store in cache.
-			goImportersCountCacheMu.Lock()
-			defer goImportersCountCacheMu.Unlock()
-			goImportersCountCache.Add(repo, count)
+			goImportersCountCache.Set(cacheKey, []byte(strconv.Itoa(count)))
 		}
 	}()
 
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second) // avoid tying up resources unduly
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second) // avoid tying up resources unduly
 	defer cancel()
 
 	// Find all (possible) Go packages in the repository.
