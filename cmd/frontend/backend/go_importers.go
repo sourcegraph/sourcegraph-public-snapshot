@@ -146,7 +146,7 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 
 	importPaths := make([]string, 0, len(subpaths))
 	for subpath := range subpaths {
-		importPaths = append(importPaths, string(repo.Name)+"/"+subpath)
+		importPaths = append(importPaths, path.Join(string(repo.Name), subpath))
 	}
 	sort.Strings(importPaths)
 	return importPaths, nil
