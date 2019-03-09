@@ -330,7 +330,7 @@ func Test_providersFromConfig(t *testing.T) {
 		t.Logf("Test %q", test.description)
 
 		store := fakeStore{gitlabs: test.gitlabConnections}
-		allowAccessByDefault, authzProviders, seriousProblems, _ := providersFromConfig(context.Background(), &test.cfg, &store)
+		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(context.Background(), &test.cfg, &store)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
