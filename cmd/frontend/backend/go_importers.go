@@ -74,6 +74,11 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 	}
 
 	// Count importers for each of the repository's Go packages.
+	//
+	// TODO: The count sums together the user counts of all of the repository's subpackages. This
+	// overcounts the number of users, because if another project uses multiple subpackages in this
+	// repository, it is counted multiple times. This limitation is now documented and will be
+	// addressed in the future. See https://github.com/sourcegraph/sourcegraph/issues/2663.
 	for _, pkg := range goPackages {
 		// Assumes the import path is the same as the repo name - not always true!
 		response, err := ctxhttp.Get(ctx, countGoImportersHTTPClient, "https://api.godoc.org/importers/"+string(pkg))
