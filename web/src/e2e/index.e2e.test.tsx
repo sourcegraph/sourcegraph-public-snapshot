@@ -118,6 +118,7 @@ describe('e2e test suite', function(this: any): void {
                     'sourcegraph/jsonrpc2',
                     'sourcegraph/checkup',
                     'sourcegraph/go-diff',
+                    'sourcegraph/vcsstore',
                     'sourcegraph/go-vcs',
                 ],
             })
@@ -278,16 +279,16 @@ describe('e2e test suite', function(this: any): void {
             )
         }
         const assertHoverContentContains = async (val: string, count?: number) => {
-            expect(await getHoverContents(count)).toContain(val)
+            expect(await getHoverContents(count)).toEqual(expect.arrayContaining([expect.stringContaining(val)]))
         }
 
         const clickHoverJ2D = async (): Promise<void> => {
-            const selector = '.e2e-tooltip-j2d'
+            const selector = '.e2e-tooltip-go-to-definition'
             await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
         }
         const clickHoverFindRefs = async (): Promise<void> => {
-            const selector = '.e2e-tooltip-find-refs'
+            const selector = '.e2e-tooltip-find-references'
             await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
         }
@@ -501,45 +502,31 @@ describe('e2e test suite', function(this: any): void {
 
         describe('hovers', () => {
             describe(`Blob`, () => {
-                // Temporarely skipped because of flakiness. TODO find cause
-                test.skip('gets displayed and updates URL when clicking on a token', async () => {
+                test('gets displayed and updates URL when clicking on a token', async () => {
                     await page.goto(
-                        baseURL +
-                            '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
+                        baseURL + '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
                     )
                     await enableOrAddRepositoryIfNeeded()
                     await page.waitForSelector(blobTableSelector)
-                    await clickToken(23, 2)
+                    await clickToken(151, 6)
                     await assertWindowLocation(
-                        '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
+                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L151:23'
                     )
                     await getHoverContents() // verify there is a hover
                 })
 
-                // Skipped until the Go language server is capable of being run locally (without needing
-                // access to sourcegraph-frontend's internal API)
-                // TODO@ggilmore
-                // TODO@chrismwendt
-                test.skip('gets displayed when navigating to a URL with a token position', async () => {
+                test('gets displayed when navigating to a URL with a token position', async () => {
                     await page.goto(
                         baseURL +
-                            '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
+                            '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L151:23'
                     )
                     await enableOrAddRepositoryIfNeeded()
-                    await retry(
-                        async () =>
-                            await assertHoverContentContains(
-                                `The name of the program. Defaults to path.Base(os.Args[0]) \n`,
-                                2
-                            )
+                    await assertHoverContentContains(
+                        `ErrMethodMismatch is returned when the method in the request does not match`
                     )
                 })
 
-                // Skipped until the Go language server is capable of being run locally (without needing
-                // access to sourcegraph-frontend's internal API)
-                // TODO@ggilmore
-                // TODO@chrismwendt
-                describe.skip('jump to definition', () => {
+                describe('jump to definition', () => {
                     test('noops when on the definition', async () => {
                         await page.goto(
                             baseURL +
@@ -578,7 +565,8 @@ describe('e2e test suite', function(this: any): void {
                         return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]')
                     })
 
-                    test('does navigation (external repo)', async () => {
+                    // basic code intel doesn't support cross-repo jump-to-definition yet.
+                    test.skip('does navigation (external repo)', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
@@ -592,11 +580,7 @@ describe('e2e test suite', function(this: any): void {
                 })
 
                 describe('find references', () => {
-                    // Skipped until the Go language server is capable of being run locally (without needing
-                    // access to sourcegraph-frontend's internal API)
-                    // TODO@ggilmore
-                    // TODO@chrismwendt
-                    test.skip('opens widget and fetches local references', async (): Promise<void> => {
+                    test('opens widget and fetches local references', async (): Promise<void> => {
                         jest.setTimeout(120000)
 
                         await page.goto(
@@ -619,8 +603,8 @@ describe('e2e test suite', function(this: any): void {
                                     () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
                                 )
                             ).toEqual(
-                                // 4 references, two of which got merged into one because their context overlaps
-                                3
+                                // Basic code intel finds 8 references with some overlapping context, resulting in 4 hunks.
+                                4
                             )
                         )
 
