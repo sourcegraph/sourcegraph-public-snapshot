@@ -251,7 +251,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Could not parse time duration \"invalid\"."},
+			expSeriousProblems:           []string{"authorization.ttl: time: invalid duration invalid"},
 		},
 		{
 			description: "external auth provider",

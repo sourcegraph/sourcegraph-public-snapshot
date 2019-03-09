@@ -16,6 +16,8 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -65,7 +67,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
-func (e *externalServices) validateConfig(kind, config string) error {
+func (e *externalServices) validateConfig(kind, config string, ps []schema.AuthProviders) error {
 	ext, ok := ExternalServiceKinds[kind]
 	if !ok {
 		return fmt.Errorf("invalid external service kind: %s", kind)
@@ -103,14 +105,14 @@ func (e *externalServices) validateConfig(kind, config string) error {
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = validateGithubConnection(&c)
+		err = authz.ValidateGitHub(c.Authorization, c.Url, c.Token)
 
 	case "GITLAB":
 		var c schema.GitLabConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = validateGitlabConnection(&c)
+		err = authz.ValidateGitLab(c.Authorization, c.Url, c.Token, ps)
 
 	case "OTHER":
 		var c schema.OtherExternalServiceConnection
@@ -152,35 +154,12 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func validateGithubConnection(c *schema.GitHubConnection) (err error) {
-	if c.Authorization != nil {
-		err = validateTTL("authorization.ttl", c.Authorization.Ttl, "3h")
-	}
-	return err
-}
-
-func validateGitlabConnection(c *schema.GitLabConnection) (err error) {
-	if c.Authorization != nil {
-		err = validateTTL("authorization.ttl", c.Authorization.Ttl, "3h")
-	}
-	return err
-}
-
-func validateTTL(field, ttl, def string) error {
-	if ttl == "" {
-		ttl = def
-	}
-	if _, err := time.ParseDuration(ttl); err != nil {
-		return fmt.Errorf("%s: %s", field, err)
-	}
-	return nil
-}
-
 // Create creates a external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *externalServices) Create(ctx context.Context, externalService *types.ExternalService) error {
-	if err := c.validateConfig(externalService.Kind, externalService.Config); err != nil {
+	ps := conf.Get().Critical.AuthProviders
+	if err := c.validateConfig(externalService.Kind, externalService.Config, ps); err != nil {
 		return err
 	}
 
@@ -211,7 +190,8 @@ func (c *externalServices) Update(ctx context.Context, id int64, update *Externa
 			return err
 		}
 
-		if err := c.validateConfig(externalService.Kind, *update.Config); err != nil {
+		ps := conf.Get().Critical.AuthProviders
+		if err := c.validateConfig(externalService.Kind, *update.Config, ps); err != nil {
 			return err
 		}
 	}

@@ -7,6 +7,8 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExternalServices_ValidateConfig(t *testing.T) {
@@ -60,6 +62,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		desc   string
 		ext    externalServices
 		config string
+		ps     []schema.AuthProviders
 		assert func(testing.TB, []string)
 	}{
 		{
@@ -303,6 +306,51 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: excludes(`authorization.ttl: time: invalid duration 0`),
 		},
 		{
+			kind: "GITLAB",
+			desc: "missing oauth provider",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": { "identityProvider": { "type": "oauth" } }
+			}
+			`,
+			assert: includes(`Did not find authentication provider matching "https://gitlab.foo.bar"`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "missing external provider",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": {
+					"identityProvider": {
+						"type": "external",
+						"authProviderID": "foo",
+						"authProviderType": "bar",
+						"gitlabProvider": "baz"
+					}
+				}
+			}
+			`,
+			assert: includes(`Did not find authentication provider matching type bar and configID foo`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "username identity provider",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"token": "super-secret-token",
+				"authorization": {
+					"identityProvider": {
+						"type": "username",
+					}
+				}
+			}
+			`,
+			assert: equals("<nil>"),
+		},
+		{
 			kind:   "PHABRICATOR",
 			desc:   "without repos nor token",
 			config: `{}`,
@@ -417,13 +465,20 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string
-			switch e := tc.ext.validateConfig(tc.kind, tc.config).(type) {
+			if tc.ps == nil {
+				tc.ps = conf.Get().Critical.AuthProviders
+			}
+
+			err := tc.ext.validateConfig(tc.kind, tc.config, tc.ps)
+			switch e := err.(type) {
 			case nil:
 				have = append(have, "<nil>")
 			case *multierror.Error:
 				for _, err := range e.Errors {
 					have = append(have, err.Error())
 				}
+			default:
+				have = append(have, err.Error())
 			}
 
 			tc.assert(t, have)
