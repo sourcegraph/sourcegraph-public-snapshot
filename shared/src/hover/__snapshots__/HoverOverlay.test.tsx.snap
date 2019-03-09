@@ -110,7 +110,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      className="btn btn-secondary hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -261,9 +261,10 @@ exports[`HoverOverlay actions present 1`] = `
         Object {
           "command": "c",
           "id": "a",
+          "title": "Some title",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      className="btn btn-secondary hover-overlay__action e2e-tooltip-some-title"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -324,7 +325,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      className="btn btn-secondary hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -439,7 +440,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      className="btn btn-secondary hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
