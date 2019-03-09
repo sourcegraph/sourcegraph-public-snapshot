@@ -104,14 +104,15 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 	return count, nil
 }
 
-// listGoPackagesInRepo returns a list of import paths for all (probable) Go packages in the
-// repository. It computes the list based solely on the repository name (as a prefix) and filenames
-// in the repository; it does not parse or build the Go files to determine the list precisely.
+// listGoPackagesInRepoImprecise returns a list of import paths for all (probable) Go packages in
+// the repository. It computes the list based solely on the repository name (as a prefix) and
+// filenames in the repository; it does not parse or build the Go files to determine the list
+// precisely.
 func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) ([]string, error) {
 	if !envvar.SourcegraphDotComMode() {
 		// 🚨 SECURITY: Avoid leaking information about private repositories that the viewer is not
 		// allowed to access.
-		return nil, errors.New("listGoPackagesInRepo is only supported on Sourcegraph.com for public repositories")
+		return nil, errors.New("listGoPackagesInRepoImprecise is only supported on Sourcegraph.com for public repositories")
 	}
 
 	repo, err := Repos.GetByName(ctx, repoName)
