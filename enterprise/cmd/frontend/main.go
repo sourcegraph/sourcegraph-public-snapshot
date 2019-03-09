@@ -10,9 +10,10 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
-	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/httpapi"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
@@ -20,6 +21,8 @@ import (
 )
 
 func main() {
+	authz.Init(db.ExternalServices)
+
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")

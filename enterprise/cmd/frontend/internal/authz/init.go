@@ -9,14 +9,19 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func init() {
+type ExternalServicesStore interface {
+	ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error)
+	ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error)
+}
+
+func Init(s ExternalServicesStore) {
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.
@@ -31,7 +36,7 @@ func init() {
 		var authzTypes []string
 		ctx := context.Background()
 
-		githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
+		githubs, err := s.ListGitHubConnections(ctx)
 		if err != nil {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
@@ -45,7 +50,7 @@ func init() {
 			}
 		}
 
-		gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
+		gitlabs, err := s.ListGitLabConnections(ctx)
 		if err != nil {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
@@ -67,9 +72,7 @@ func init() {
 		}
 		return nil
 	})
-}
 
-func init() {
 	path, _ := os.Executable()
 	isTest := filepath.Ext(path) == ".test"
 	if isTest {
@@ -80,7 +83,7 @@ func init() {
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _ := providersFromConfig(ctx, conf.Get())
+			allowAccessByDefault, authzProviders, _, _ := providersFromConfig(ctx, conf.Get(), s)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -90,7 +93,11 @@ func init() {
 // It also returns any validation problems with the config, separating these into "serious problems"
 // and "warnings".  "Serious problems" are those that should make Sourcegraph set
 // authz.allowAccessByDefault to false. "Warnings" are all other validation problems.
-func providersFromConfig(ctx context.Context, cfg *conf.Unified) (
+func providersFromConfig(
+	ctx context.Context,
+	cfg *conf.Unified,
+	s ExternalServicesStore,
+) (
 	allowAccessByDefault bool,
 	authzProviders []authz.Provider,
 	seriousProblems []string,
@@ -104,15 +111,23 @@ func providersFromConfig(ctx context.Context, cfg *conf.Unified) (
 		}
 	}()
 
-	glp, glproblems, glwarnings := gitlabProviders(ctx, cfg)
-	authzProviders = append(authzProviders, glp...)
-	seriousProblems = append(seriousProblems, glproblems...)
-	warnings = append(warnings, glwarnings...)
+	if gitlabs, err := s.ListGitLabConnections(ctx); err != nil {
+		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitLab external service configs: %s", err))
+	} else {
+		glp, glproblems, glwarnings := gitlabProviders(ctx, cfg, gitlabs)
+		authzProviders = append(authzProviders, glp...)
+		seriousProblems = append(seriousProblems, glproblems...)
+		warnings = append(warnings, glwarnings...)
+	}
 
-	ghp, ghproblems, ghwarnings := githubProviders(ctx)
-	authzProviders = append(authzProviders, ghp...)
-	seriousProblems = append(seriousProblems, ghproblems...)
-	warnings = append(warnings, ghwarnings...)
+	if githubs, err := s.ListGitHubConnections(ctx); err != nil {
+		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitHub external service configs: %s", err))
+	} else {
+		ghp, ghproblems, ghwarnings := githubProviders(ctx, githubs)
+		authzProviders = append(authzProviders, ghp...)
+		seriousProblems = append(seriousProblems, ghproblems...)
+		warnings = append(warnings, ghwarnings...)
+	}
 
 	return allowAccessByDefault, authzProviders, seriousProblems, warnings
 }
