@@ -118,6 +118,9 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 	if err != nil {
 		return nil, err
 	}
+	if !repo.Enabled {
+		return nil, errors.New("repository is not enabled")
+	}
 	gitRepo, err := CachedGitRepo(ctx, repo)
 	if err != nil {
 		return nil, err
