@@ -9,7 +9,8 @@ ignoreDisconnectedPageCheck: true
 In Sourcegraph 3.0+, [NGINX](https://www.nginx.com/resources/glossary/nginx/) acts as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and HTTPS) requests to the Sourcegraph front-end.
 
 ![NGINX and Sourcegraph architecture](img/sourcegraph-nginx.svg)
-<p class="text-center small">Note: Non-sighted users can view a [text-representation of this diagram](img/sourcegraph-nginx.mermaid)</p>
+
+**Note**: Non-sighted users can view a [text-representation of the NGINX and Sourcegraph front-end HTTP flow diagram](img/sourcegraph-nginx.mermaid) in [Mermaid.js format](https://mermaidjs.github.io/).
 
 The [quickstart docker run command](https://docs.sourcegraph.com/#quickstart-guide) assumes it's for local and/or internal usage which is why SSL is not pre-configured.
 
