@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -288,7 +288,7 @@ func Test_providersFromConfig(t *testing.T) {
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
 						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						AuthnConfigID: auth.ProviderConfigID{
+						AuthnConfigID: providers.ProviderConfigID{
 							Type: "saml",
 							ID:   "okta",
 						},

@@ -3,19 +3,19 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnectionResolver, error) {
 	return &authProviderConnectionResolver{
-		authProviders: auth.Providers(),
+		authProviders: providers.Providers(),
 	}, nil
 }
 
 // authProviderConnectionResolver resolves a list of auth providers.
 type authProviderConnectionResolver struct {
-	authProviders []auth.Provider
+	authProviders []providers.Provider
 }
 
 func (r *authProviderConnectionResolver) Nodes(ctx context.Context) ([]*authProviderResolver, error) {

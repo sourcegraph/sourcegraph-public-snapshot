@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -39,7 +39,7 @@ type SudoProvider struct {
 	clientURL         *url.URL
 	codeHost          *gitlab.CodeHost
 	gitlabProvider    string
-	authnConfigID     auth.ProviderConfigID
+	authnConfigID     providers.ProviderConfigID
 	useNativeUsername bool
 	cache             pcache
 	cacheTTL          time.Duration
@@ -53,7 +53,7 @@ type SudoProviderOp struct {
 
 	// AuthnConfigID identifies the authn provider to use to lookup users on the GitLab instance.
 	// This should be the authn provider that's used to sign into the GitLab instance.
-	AuthnConfigID auth.ProviderConfigID
+	AuthnConfigID providers.ProviderConfigID
 
 	// GitLabProvider is the id of the authn provider to GitLab. It will be used in the
 	// `users?extern_uid=$uid&provider=$provider` API query.
@@ -365,4 +365,4 @@ func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username stri
 	return glUsers[0], nil
 }
 
-var getProviderByConfigID = auth.GetProviderByConfigID
+var getProviderByConfigID = providers.GetProviderByConfigID

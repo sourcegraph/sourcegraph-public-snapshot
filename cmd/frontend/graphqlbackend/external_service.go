@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"time"
+
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"time"
 )
 
 type externalServiceResolver struct {

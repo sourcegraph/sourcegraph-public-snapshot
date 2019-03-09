@@ -20,6 +20,7 @@ import (
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
@@ -36,20 +37,20 @@ type provider struct {
 	refreshErr error
 }
 
-// ConfigID implements auth.Provider.
-func (p *provider) ConfigID() auth.ProviderConfigID {
-	return auth.ProviderConfigID{
+// ConfigID implements providers.Provider.
+func (p *provider) ConfigID() providers.ProviderConfigID {
+	return providers.ProviderConfigID{
 		Type: providerType,
 		ID:   providerConfigID(&p.config, p.multiple),
 	}
 }
 
-// Config implements auth.Provider.
+// Config implements providers.Provider.
 func (p *provider) Config() schema.AuthProviders {
 	return schema.AuthProviders{Saml: &p.config}
 }
 
-// Refresh implements auth.Provider.
+// Refresh implements providers.Provider.
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -64,8 +65,8 @@ func providerIDQuery(pc *schema.SAMLAuthProvider, multiple bool) url.Values {
 	return url.Values{}
 }
 
-func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
-	info := auth.ProviderInfo{
+func (p *provider) getCachedInfoAndError() (*providers.ProviderInfo, error) {
+	info := providers.ProviderInfo{
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
 			Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
@@ -91,8 +92,8 @@ func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
 	return &info, err
 }
 
-// CachedInfo implements auth.Provider.
-func (p *provider) CachedInfo() *auth.ProviderInfo {
+// CachedInfo implements providers.Provider.
+func (p *provider) CachedInfo() *providers.ProviderInfo {
 	info, _ := p.getCachedInfoAndError()
 	return info
 }

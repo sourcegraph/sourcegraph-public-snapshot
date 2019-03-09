@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -27,13 +27,13 @@ func getProvider(pcID string) *provider {
 		return mockGetProviderValue
 	}
 
-	p, _ := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: providerType, ID: pcID}).(*provider)
+	p, _ := providers.GetProviderByConfigID(providers.ProviderConfigID{Type: providerType, ID: pcID}).(*provider)
 	if p != nil {
 		return p
 	}
 
 	// Special case: if there is only a single SAML auth provider, return it regardless of the pcID.
-	for _, ap := range auth.Providers() {
+	for _, ap := range providers.Providers() {
 		if ap.Config().Saml != nil {
 			if p != nil {
 				return nil // multiple SAML providers, can't use this special case

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -21,7 +21,7 @@ func getProvider(id string) *provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
-	p, _ := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: providerType, ID: id}).(*provider)
+	p, _ := providers.GetProviderByConfigID(providers.ProviderConfigID{Type: providerType, ID: id}).(*provider)
 	return p
 }
 

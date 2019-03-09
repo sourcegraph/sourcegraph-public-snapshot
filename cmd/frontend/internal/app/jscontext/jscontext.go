@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -112,7 +112,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	// Auth providers
 	var authProviders []authProviderInfo
-	for _, p := range auth.Providers() {
+	for _, p := range providers.Providers() {
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{

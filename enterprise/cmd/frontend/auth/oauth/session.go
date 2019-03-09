@@ -7,6 +7,7 @@ import (
 
 	goauth2 "github.com/dghubble/gologin/oauth2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"golang.org/x/oauth2"
@@ -14,7 +15,7 @@ import (
 )
 
 type SessionData struct {
-	ID auth.ProviderConfigID
+	ID providers.ProviderConfigID
 
 	// Store only the oauth2.Token fields we need, to avoid hitting the ~4096-byte session data
 	// limit.

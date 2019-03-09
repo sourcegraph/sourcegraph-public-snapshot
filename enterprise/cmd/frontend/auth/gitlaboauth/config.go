@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -16,13 +16,13 @@ func init() {
 		conf.Watch(func() {
 			newProviders, _ := parseConfig(conf.Get())
 			if len(newProviders) == 0 {
-				auth.UpdateProviders(PkgName, nil)
+				providers.UpdateProviders(PkgName, nil)
 			} else {
-				newProvidersList := make([]auth.Provider, 0, len(newProviders))
+				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
 					newProvidersList = append(newProvidersList, p)
 				}
-				auth.UpdateProviders(PkgName, newProvidersList)
+				providers.UpdateProviders(PkgName, newProvidersList)
 			}
 		})
 		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
@@ -32,8 +32,8 @@ func init() {
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (providers map[schema.GitLabAuthProvider]auth.Provider, problems []string) {
-	providers = make(map[schema.GitLabAuthProvider]auth.Provider)
+func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, problems []string) {
+	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
 	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Gitlab == nil {
 			continue
@@ -54,8 +54,8 @@ func parseConfig(cfg *conf.Unified) (providers map[schema.GitLabAuthProvider]aut
 		provider, providerProblems := parseProvider(callbackURL.String(), pr.Gitlab, pr)
 		problems = append(problems, providerProblems...)
 		if provider != nil {
-			providers[*pr.Gitlab] = provider
+			ps[*pr.Gitlab] = provider
 		}
 	}
-	return providers, problems
+	return ps, problems
 }
