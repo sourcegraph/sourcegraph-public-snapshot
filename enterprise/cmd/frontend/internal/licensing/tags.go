@@ -2,15 +2,7 @@ package licensing
 
 import (
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
-
-// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
-// proper product name.
-func init() {
-	graphqlbackend.GetProductNameWithBrand = productNameWithBrand
-}
 
 const (
 	// EnterpriseStarterTag is the license tag for Enterprise Starter (which includes only a subset
@@ -31,9 +23,9 @@ var (
 	EnterpriseTags = []string{}
 )
 
-// productNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
+// ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
 // on the license info.
-func productNameWithBrand(hasLicense bool, licenseTags []string) string {
+func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	if !hasLicense {
 		return "Sourcegraph Core"
 	}
