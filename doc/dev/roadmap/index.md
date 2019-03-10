@@ -33,7 +33,7 @@ Code navigation:
 
 - [Integrations quality](https://github.com/sourcegraph/sourcegraph/issues/2380)
 - [Code intelligence](https://github.com/sourcegraph/sourcegraph/issues/2452)
-- [Sentry Extension](https://github.com/sourcegraph/sourcegraph/issues/2628)
+- [Sentry extension](https://github.com/sourcegraph/sourcegraph/issues/2628)
 
 ### 3.3
 
