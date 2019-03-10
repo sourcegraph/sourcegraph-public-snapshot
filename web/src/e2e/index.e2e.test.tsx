@@ -508,11 +508,13 @@ describe('e2e test suite', function(this: any): void {
                     )
                     await enableOrAddRepositoryIfNeeded()
                     await page.waitForSelector(blobTableSelector)
-                    await clickToken(151, 6)
+                    await clickToken(24, 5)
                     await assertWindowLocation(
-                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L151:23'
+                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L24:19'
                     )
                     await getHoverContents() // verify there is a hover
+                    await page.screenshot({ path: '/tmp/sscreen.png' })
+                    await percySnapshot(page, 'Code intel hover tooltip')
                 })
 
                 test('gets displayed when navigating to a URL with a token position', async () => {
