@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -295,24 +294,6 @@ func (c *internalClient) ReposGetByName(ctx context.Context, repoName RepoName) 
 		return nil, err
 	}
 	return &repo, nil
-}
-
-func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
-	var inv inventory.Inventory
-	err := c.postInternal(ctx, "repos/inventory-uncached", ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID}, &inv)
-	if err != nil {
-		return nil, err
-	}
-	return &inv, nil
-}
-
-func (c *internalClient) ReposGetInventory(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
-	var inv inventory.Inventory
-	err := c.postInternal(ctx, "repos/inventory", ReposGetInventoryRequest{Repo: repo, CommitID: commitID}, &inv)
-	if err != nil {
-		return nil, err
-	}
-	return &inv, nil
 }
 
 func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoName, callsign, url string) error {

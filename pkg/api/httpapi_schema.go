@@ -36,21 +36,11 @@ type RepoCreateOrUpdateRequest struct {
 	Archived bool `json:"archived"`
 }
 
-type ReposGetInventoryUncachedRequest struct {
-	Repo RepoID
-	CommitID
-}
-
 type ReposUpdateMetadataRequest struct {
 	RepoName    `json:"repo"`
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
 	Archived    bool   `json:"Archived"`
-}
-
-type ReposGetInventoryRequest struct {
-	Repo RepoID
-	CommitID
 }
 
 type PhabricatorRepoCreateRequest struct {
