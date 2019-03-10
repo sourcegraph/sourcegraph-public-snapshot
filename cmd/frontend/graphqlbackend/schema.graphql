@@ -1868,6 +1868,47 @@ type GitTree implements TreeEntry {
         # Recurse into sub-trees.
         recursive: Boolean = false
     ): Boolean!
+    # A summary of the programming/markup languages and other file types of the files in this tree. This can be used to
+    # determine all of the programming languages, or the top programming language, of files in this
+    # tree.
+    inventory: Inventory!
+}
+
+# A summary of the programming/markup languages and other file types of a set of files (e.g., in a
+# repository or tree).
+type Inventory {
+    # The languages in use.
+    languages: [InventoryLanguage!]!
+}
+
+# A language used in a set of files, with associated statistics.
+type InventoryLanguage {
+    # The language.
+    language: Language!
+    # The total number of bytes of content in this language.
+    totalBytes: Int!
+}
+
+# A programming language.
+type Language {
+    # The human-readable name of the language, such as "Go", "Python", or "Markdown".
+    name: String!
+    # The type of language, to differentiate between programming languages, markup languages, etc.
+    type: LanguageType!
+}
+
+# The type of a language, to differentiate between programming languages, markup languages, etc.
+enum LanguageType {
+    # A language that represents data (such as JSON or YAML).
+    DATA
+    # A programming language (such as Go or Python).
+    PROGRAMMING
+    # A markup language (such as Markdown or HTML).
+    MARKUP
+    # A prose format for text (such as a plain text file).
+    PROSE
+    # Some other type of language.
+    OTHER
 }
 
 # A file.

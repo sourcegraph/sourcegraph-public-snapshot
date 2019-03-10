@@ -1861,6 +1861,8 @@ type GitTree implements TreeEntry {
         # Recurse into sub-trees.
         recursive: Boolean = false
     ): Boolean!
+    # A summary of the programming languages and other file types of the files in this tree. This can be used to determine all of the programming languages, or the top programming language, of files in this tree.
+    inventory: Inventory!
 }
 
 # A file.
