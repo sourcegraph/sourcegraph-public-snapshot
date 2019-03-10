@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	goon "github.com/shurcooL/go-goon"
-	"github.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"gopkg.in/yaml.v2"
 )
 
