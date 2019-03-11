@@ -334,13 +334,13 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	return repos, nil
 }
 
-// ListViewerRepositories lists GitHub repositories affiliated with the viewer
-// (the currently authenticated user). page is the page of results to
-// return. Pages are 1-indexed (so the first call should be for page 1).
-func (c *Client) ListViewerRepositories(ctx context.Context, token string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+// ListUserRepositories lists GitHub repositories affiliated with the client
+// token. page is the page of results to return. Pages are 1-indexed (so the
+// first call should be for page 1).
+func (c *Client) ListUserRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	var restRepos []restRepository
 	path := fmt.Sprintf("user/repos?sort=pushed&page=%d&per_page=100", page)
-	if err := c.requestGet(ctx, token, path, &restRepos); err != nil {
+	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
 		return nil, false, 1, err
 	}
 	repos = make([]*Repository, 0, len(restRepos))
@@ -348,7 +348,7 @@ func (c *Client) ListViewerRepositories(ctx context.Context, token string, page 
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	// 🚨 SECURITY: must forward token here to ensure caching by token
-	c.addRepositoriesToCache(token, repos)
+	c.addRepositoriesToCache("", repos)
 	return repos, len(repos) > 0, 1, nil
 }
 
