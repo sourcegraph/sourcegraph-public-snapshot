@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// This test lives in cmd/enterprise because it tests a proprietary
+// super-set of the validation performed by the OSS version.
 func TestExternalServices_ValidateConfig(t *testing.T) {
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {
@@ -60,7 +62,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 	for _, tc := range []struct {
 		kind   string
 		desc   string
-		ext    externalServices
 		config string
 		ps     []schema.AuthProviders
 		assert func(testing.TB, []string)
@@ -318,6 +319,20 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind: "GITLAB",
+			desc: "valid oauth provider",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": { "identityProvider": { "type": "oauth" } }
+			}
+			`,
+			ps: []schema.AuthProviders{
+				{Gitlab: &schema.GitLabAuthProvider{Url: "https://gitlab.foo.bar"}},
+			},
+			assert: excludes(`Did not find authentication provider matching "https://gitlab.foo.bar"`),
+		},
+		{
+			kind: "GITLAB",
 			desc: "missing external provider",
 			config: `
 			{
@@ -333,6 +348,58 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 			`,
 			assert: includes(`Did not find authentication provider matching type bar and configID foo`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "valid external provider with SAML",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": {
+					"identityProvider": {
+						"type": "external",
+						"authProviderID": "foo",
+						"authProviderType": "bar",
+						"gitlabProvider": "baz"
+					}
+				}
+			}
+			`,
+			ps: []schema.AuthProviders{
+				{
+					Saml: &schema.SAMLAuthProvider{
+						ConfigID: "foo",
+						Type:     "bar",
+					},
+				},
+			},
+			assert: excludes(`Did not find authentication provider matching type bar and configID foo`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "valid external provider with OIDC",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": {
+					"identityProvider": {
+						"type": "external",
+						"authProviderID": "foo",
+						"authProviderType": "bar",
+						"gitlabProvider": "baz"
+					}
+				}
+			}
+			`,
+			ps: []schema.AuthProviders{
+				{
+					Openidconnect: &schema.OpenIDConnectAuthProvider{
+						ConfigID: "foo",
+						Type:     "bar",
+					},
+				},
+			},
+			assert: excludes(`Did not find authentication provider matching type bar and configID foo`),
 		},
 		{
 			kind: "GITLAB",
@@ -469,7 +536,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				tc.ps = conf.Get().Critical.AuthProviders
 			}
 
-			err := tc.ext.validateConfig(tc.kind, tc.config, tc.ps)
+			s := NewExternalServicesStore()
+			err := s.ValidateConfig(tc.kind, tc.config, tc.ps)
 			switch e := err.(type) {
 			case nil:
 				have = append(have, "<nil>")

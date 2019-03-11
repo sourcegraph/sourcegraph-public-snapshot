@@ -46,9 +46,9 @@ func githubProvider(a *schema.GitHubAuthorization, instanceURL, token string) (a
 	return permgh.NewProvider(ghURL, token, ttl, nil), nil
 }
 
-// ValidateGitHubAuthz validates the given GitHub authorization config against the provided
-// instance url and token.
-func ValidateGitHubAuthz(a *schema.GitHubAuthorization, instanceURL, token string) error {
-	_, err := githubProvider(a, instanceURL, token)
+// ValidateGitHubAuthz validates the authorization fields of the given GitHub external
+// service config.
+func ValidateGitHubAuthz(cfg *schema.GitHubConnection) error {
+	_, err := githubProvider(cfg.Authorization, cfg.Url, cfg.Token)
 	return err
 }

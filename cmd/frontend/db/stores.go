@@ -2,7 +2,7 @@ package db
 
 var (
 	AccessTokens              = &accessTokens{}
-	ExternalServices          = &externalServices{}
+	ExternalServices          = &ExternalServicesStore{}
 	DiscussionThreads         = &discussionThreads{}
 	DiscussionComments        = &discussionComments{}
 	DiscussionMailReplyTokens = &discussionMailReplyTokens{}

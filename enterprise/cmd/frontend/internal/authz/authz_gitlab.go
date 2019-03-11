@@ -129,9 +129,9 @@ var NewGitLabSudoProvider = func(op permgl.SudoProviderOp) authz.Provider {
 	return permgl.NewSudoProvider(op)
 }
 
-// ValidateGitLabAuthz validates the given GitLab authorization config against the provided instance
-// url, token and auth providers.
-func ValidateGitLabAuthz(a *schema.GitLabAuthorization, instanceURL, token string, ps []schema.AuthProviders) error {
-	_, err := gitlabProvider(a, instanceURL, token, ps)
+// ValidateGitLabAuthz validates the authorization fields of the given GitLab external
+// service config.
+func ValidateGitLabAuthz(cfg *schema.GitLabConnection, ps []schema.AuthProviders) error {
+	_, err := gitlabProvider(cfg.Authorization, cfg.Url, cfg.Token, ps)
 	return err
 }
