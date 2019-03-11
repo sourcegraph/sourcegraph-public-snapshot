@@ -1,20 +1,25 @@
 # Number of days of inactivity before an issue becomes stale
-daysUntilStale: 60
+daysUntilStale: 150
+
 # Number of days of inactivity before a stale issue is closed
 daysUntilClose: 30
-# Issues with these labels will never be considered stale
-exemptLabels:
-  - pinned
-  - security
-  - important
+
+# No labels should be exempt from becoming stale because either
+# the issue is actually stale/obsolete and should be closed, or
+# the issue is important and the stale notification is a good reminder to take action.
+# exemptLabels:
+
 # Label to use when marking an issue as stale
 staleLabel: stale
+
 # Comment to post when marking an issue as stale. Set to `false` to disable
 markComment: >
-  This issue has not had any recent activity.
-  To keep our open issue list representative of our actual priorities,
-  it will be closed if no further activity occurs.
-  If this issue should stay open, simply remove the stale label.
-  Thank you for your contributions.
+  Please post an update or close this with an explanation if it is no longer relevant.
+
+  This will be closed automatically if there is no more activity.
+
 # Comment to post when closing a stale issue. Set to `false` to disable
-closeComment: false
+# This makes it possible to search for issues that were closed by stalebot.
+# https://github.com/sourcegraph/sourcegraph/issues?utf8=%E2%9C%93&q=is%3Aclosed+is%3Aissue+in%3Acomments+%22Stalebot+is+closing+this+due+to+inactivity.%22
+closeComment: >
+  Stalebot is closing this due to inactivity.
