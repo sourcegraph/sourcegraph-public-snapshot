@@ -116,6 +116,10 @@ func main() {
 
 	pipeline.AddWait()
 
+/**
+ * TODO: Renable once we solve what is causing random test failures (ex:
+ * https://buildkite.com/sourcegraph/sourcegraph/builds/29205#afeaafc5-4056-4a7b-b287-282b24f11181)
+ *
 	if !isBextReleaseBranch {
 		pipeline.AddStep(":chromium:",
 			// Avoid crashing the sourcegraph/server containers. See
@@ -129,6 +133,7 @@ func main() {
 			bk.Cmd("./dev/ci/e2e.sh"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
+ */
 
 	pipeline.AddWait()
 
