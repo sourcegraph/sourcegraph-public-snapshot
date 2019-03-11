@@ -278,8 +278,5 @@ func isTemporarilyUnavailable(err error) bool {
 }
 
 func pathAppend(base, p string) string {
-	if strings.HasPrefix(p, "/") {
-		return strings.TrimRight(base, "/") + p
-	}
-	return strings.TrimRight(base, "/") + "/" + p
+	return strings.TrimRight(base, "/") + p
 }
