@@ -19,7 +19,11 @@ var (
 	started bool
 )
 
+// A UsersStore captures the necessary methods for the licensing
+// package to query Sourcegraph users. It allows decoupling this package
+// from the OSS db package.
 type UsersStore interface {
+	// Count returns the total count of active Sourcegraph users.
 	Count(context.Context) (int, error)
 }
 
