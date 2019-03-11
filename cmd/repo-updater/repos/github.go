@@ -440,13 +440,13 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
-					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, page)
+					repos, hasNextPage, rateLimitCost, err = c.client.ListUserRepositories(ctx, page)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing viewer's affiliated GitHub repositories page %d", page)}
+						ch <- batch{err: errors.Wrapf(err, "Error listing affiliated GitHub repositories page %d", page)}
 						break
 					}
 					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
-					log15.Debug("github sync: ListViewerRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
+					log15.Debug("github sync: ListUserRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
 
 					var b batch
 					for _, r := range repos {

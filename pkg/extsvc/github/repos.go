@@ -334,10 +334,10 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	return repos, nil
 }
 
-// ListViewerRepositories lists GitHub repositories affiliated with the viewer
-// (the currently authenticated user). page is the page of results to
-// return. Pages are 1-indexed (so the first call should be for page 1).
-func (c *Client) ListViewerRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+// ListUserRepositories lists GitHub repositories affiliated with the client
+// token. page is the page of results to return. Pages are 1-indexed (so the
+// first call should be for page 1).
+func (c *Client) ListUserRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	var restRepos []restRepository
 	path := fmt.Sprintf("user/repos?sort=pushed&page=%d&per_page=100", page)
 	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
