@@ -1,6 +1,12 @@
 # Administration of Sourcegraph extensions and the extension registry
 
-[Sourcegraph extensions](../../extensions/index.md) add features to Sourcegraph. Sourcegraph Core and Enterprise instances allow users to view and enable extensions from the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions). Site admins have the ability to customize this behavior.
+[Sourcegraph extensions](../../extensions/index.md) add features to Sourcegraph. Sourcegraph Core and Enterprise instances allow users to view and enable extensions from the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions).
+
+Site administrators can customize how Sourcegraph extensions are used on their instance, with options for:
+
+- a private extension registry on their instance,
+- allowing only specific extensions to be enabled by users, and
+- preventing users from enabling any extension from Sourcegraph.com.
 
 > WARNING: Sourcegraph does not verify the authenticity or security of extensions published to Sourcegraph.com. You (and your users) are should take care when enabling new extensions, just as you would for any other programs installed from the web (such as editor extensions or browser extensions). The configuration options on this page allow site admins to lock down usage of extensions.
 
@@ -56,3 +62,7 @@ On Sourcegraph Enterprise, you can set [`extensions.allowRemoteExtensions`](../c
   "extensions": { "allowRemoteExtensions": ["chris/token-highlights"] }
 }
 ```
+
+## [Client-side security and privacy](../../extensions/security.md)
+
+See "[Security and privacy of Sourcegraph extensions](../../extensions/security.md)" for information on the client-side security and privacy implications of Sourcegraph extensions.

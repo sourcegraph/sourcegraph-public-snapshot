@@ -2,9 +2,7 @@
 
 A [Sourcegraph extension](../index.md) is a single JavaScript file that runs in users' web browsers in a Web Worker and has an exported `activate` function. The JavaScript file is usually produced by compiling and bundling one or more TypeScript source files.
 
-The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.html) (generated from [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/packages/sourcegraph-extension-api/src/sourcegraph.d.ts)) is available to extensions by importing the `sourcegraph` module (`import * as sourcegraph from 'sourcegraph'` or `require('sourcegraph')`).
-
-Writing a Sourcegraph extension is very similar to writing an editor extension for [VS Code](https://code.visualstudio.com/docs/extensions/overview). See the [Sourcegraph extension samples](https://github.com/sourcegraph/sourcegraph-extension-samples) repository for some examples.
+The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.html) (generated from [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/packages/sourcegraph-extension-api/src/sourcegraph.d.ts)) is available to extensions by importing the `sourcegraph` module (`import * as sourcegraph from 'sourcegraph'` or `require('sourcegraph')`). Writing a Sourcegraph extension is very similar to writing an editor extension for [VS Code](https://code.visualstudio.com/docs/extensions/overview).
 
 ## Topics
 
@@ -28,4 +26,8 @@ Writing a Sourcegraph extension is very similar to writing an editor extension f
 - [Buttons and custom commands](tutorials/button_custom_commands.md)
 - [Building a language specific extension](tutorials/lang_specific_extension_tutorial.md)
 
-The [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) is also a helpful source of inspiration and working code samples from existing extensions.
+## Examples and inspiration
+
+- [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (most extensions link to their source repository)
+- [Sample Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph-extension-samples) (with source code)
+- [Issues labeled `extension-request`](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request)
