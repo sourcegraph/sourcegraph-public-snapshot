@@ -6,22 +6,15 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	permgh "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func githubProviders(ctx context.Context) (
+func githubProviders(ctx context.Context, githubs []*schema.GitHubConnection) (
 	authzProviders []authz.Provider,
 	seriousProblems []string,
 	warnings []string,
 ) {
-	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
-	if err != nil {
-		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitHub external service configs: %s", err))
-		return
-	}
-
 	for _, g := range githubs {
 		p, err := githubProvider(g)
 		if err != nil {

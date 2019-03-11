@@ -7,7 +7,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -29,7 +29,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 		description string
 
 		// authnProviders is the list of auth providers that are mocked
-		authnProviders []auth.Provider
+		authnProviders []providers.Provider
 
 		// op configures the SudoProvider instance
 		op SudoProviderOp
@@ -67,15 +67,15 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 	tests := []test{
 		{
 			description: "1 authn provider, basic authz provider",
-			authnProviders: []auth.Provider{
+			authnProviders: []providers.Provider{
 				mockAuthnProvider{
-					configID:  auth.ProviderConfigID{ID: "okta.mine", Type: "saml"},
+					configID:  providers.ConfigID{ID: "okta.mine", Type: "saml"},
 					serviceID: "https://okta.mine/",
 				},
 			},
 			op: SudoProviderOp{
 				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     auth.ProviderConfigID{ID: "okta.mine", Type: "saml"},
+				AuthnConfigID:     providers.ConfigID{ID: "okta.mine", Type: "saml"},
 				GitLabProvider:    "okta.mine",
 				UseNativeUsername: false,
 			},
@@ -139,7 +139,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			authnProviders: nil,
 			op: SudoProviderOp{
 				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     auth.ProviderConfigID{ID: "okta.mine", Type: "saml"},
+				AuthnConfigID:     providers.ConfigID{ID: "okta.mine", Type: "saml"},
 				GitLabProvider:    "okta.mine",
 				UseNativeUsername: false,
 			},
@@ -153,19 +153,19 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 		},
 		{
 			description: "2 authn providers, basic authz provider",
-			authnProviders: []auth.Provider{
+			authnProviders: []providers.Provider{
 				mockAuthnProvider{
-					configID:  auth.ProviderConfigID{ID: "okta.mine", Type: "saml"},
+					configID:  providers.ConfigID{ID: "okta.mine", Type: "saml"},
 					serviceID: "https://okta.mine/",
 				},
 				mockAuthnProvider{
-					configID:  auth.ProviderConfigID{ID: "onelogin.mine", Type: "openidconnect"},
+					configID:  providers.ConfigID{ID: "onelogin.mine", Type: "openidconnect"},
 					serviceID: "https://onelogin.mine/",
 				},
 			},
 			op: SudoProviderOp{
 				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     auth.ProviderConfigID{ID: "onelogin.mine", Type: "openidconnect"},
+				AuthnConfigID:     providers.ConfigID{ID: "onelogin.mine", Type: "openidconnect"},
 				GitLabProvider:    "onelogin.mine",
 				UseNativeUsername: false,
 			},
@@ -189,8 +189,8 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.description, func(t *testing.T) {
-			auth.MockProviders = test.authnProviders
-			defer func() { auth.MockProviders = nil }()
+			providers.MockProviders = test.authnProviders
+			defer func() { providers.MockProviders = nil }()
 
 			ctx := context.Background()
 			authzProvider := NewSudoProvider(test.op)

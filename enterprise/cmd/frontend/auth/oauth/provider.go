@@ -11,7 +11,7 @@ import (
 
 	"github.com/dghubble/gologin"
 	goauth2 "github.com/dghubble/gologin/oauth2"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -24,18 +24,18 @@ type Provider struct {
 	Callback http.Handler
 }
 
-var _ auth.Provider = (*Provider)(nil)
+var _ providers.Provider = (*Provider)(nil)
 
 func getProvider(serviceType, id string) *Provider {
-	p, ok := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: serviceType, ID: id}).(*Provider)
+	p, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: serviceType, ID: id}).(*Provider)
 	if !ok {
 		return nil
 	}
 	return p
 }
 
-func (p *Provider) ConfigID() auth.ProviderConfigID {
-	return auth.ProviderConfigID{
+func (p *Provider) ConfigID() providers.ConfigID {
+	return providers.ConfigID{
 		ID:   p.ServiceID,
 		Type: p.ServiceType,
 	}
@@ -45,7 +45,7 @@ func (p *Provider) Config() schema.AuthProviders {
 	return p.SourceConfig
 }
 
-func (p *Provider) CachedInfo() *auth.ProviderInfo {
+func (p *Provider) CachedInfo() *providers.Info {
 	displayName := p.ServiceID
 	switch {
 	case p.SourceConfig.Github != nil && p.SourceConfig.Github.DisplayName != "":
@@ -53,7 +53,7 @@ func (p *Provider) CachedInfo() *auth.ProviderInfo {
 	case p.SourceConfig.Gitlab != nil && p.SourceConfig.Gitlab.DisplayName != "":
 		displayName = p.SourceConfig.Gitlab.DisplayName
 	}
-	return &auth.ProviderInfo{
+	return &providers.Info{
 		ServiceID:   p.ServiceID,
 		ClientID:    p.OAuth2Config.ClientID,
 		DisplayName: displayName,
