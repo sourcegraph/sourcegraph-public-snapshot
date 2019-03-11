@@ -15,6 +15,10 @@ import (
 var errRollback = errors.New("tx: rollback")
 
 func TestIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx := context.Background()
