@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/httpapi"
@@ -31,7 +32,6 @@ import (
 )
 
 func main() {
-
 	initLicensing()
 	initAuthz()
 
@@ -86,10 +86,11 @@ func initLicensing() {
 			ExpiresAtValue: info.ExpiresAt,
 		}, nil
 	}
-
 }
 
 func initAuthz() {
+	db.ExternalServices = edb.NewExternalServicesStore()
+
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.
@@ -159,7 +160,6 @@ func initAuthz() {
 			next.ServeHTTP(w, r)
 		})
 	}
-
 }
 
 type usersStore struct{}

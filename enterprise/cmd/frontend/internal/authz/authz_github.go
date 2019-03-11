@@ -16,7 +16,7 @@ func githubProviders(ctx context.Context, githubs []*schema.GitHubConnection) (
 	warnings []string,
 ) {
 	for _, g := range githubs {
-		p, err := githubProvider(g)
+		p, err := githubProvider(g.Authorization, g.Url, g.Token)
 		if err != nil {
 			seriousProblems = append(seriousProblems, err.Error())
 			continue
@@ -28,20 +28,27 @@ func githubProviders(ctx context.Context, githubs []*schema.GitHubConnection) (
 	return authzProviders, seriousProblems, warnings
 }
 
-func githubProvider(g *schema.GitHubConnection) (authz.Provider, error) {
-	if g.Authorization == nil {
+func githubProvider(a *schema.GitHubAuthorization, instanceURL, token string) (authz.Provider, error) {
+	if a == nil {
 		return nil, nil
 	}
 
-	ghURL, err := url.Parse(g.Url)
+	ghURL, err := url.Parse(instanceURL)
 	if err != nil {
-		return nil, fmt.Errorf("Could not parse URL for GitHub instance %q: %s", g.Url, err)
+		return nil, fmt.Errorf("Could not parse URL for GitHub instance %q: %s", instanceURL, err)
 	}
 
-	ttl, err := parseTTL(g.Authorization.Ttl)
+	ttl, err := parseTTL(a.Ttl)
 	if err != nil {
 		return nil, err
 	}
 
-	return permgh.NewProvider(ghURL, g.Token, ttl, nil), nil
+	return permgh.NewProvider(ghURL, token, ttl, nil), nil
+}
+
+// ValidateGitHubAuthz validates the authorization fields of the given GitHub external
+// service config.
+func ValidateGitHubAuthz(cfg *schema.GitHubConnection) error {
+	_, err := githubProvider(cfg.Authorization, cfg.Url, cfg.Token)
+	return err
 }
