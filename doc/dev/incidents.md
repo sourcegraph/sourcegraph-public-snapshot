@@ -34,7 +34,7 @@ The goal of triage is to either quickly resolve the incident using basic procedu
         - Tag the owner of the reverted commit as a reviewer of the PR.
         - Merge the PR as soon as CI passes (don't block on review).
     - [Fix failed database migration on sourcegraph.com](https://github.com/sourcegraph/sourcegraph/tree/master/migrations#dirty-db-schema)
-3. If you can not quickly resolve the incident (i.e. <30 minutes), identify the most logical [resolution owner](#ownership) given what you know (this may be yourself) and have that person **acknowledge ownership** in the Slack thread (i.e. "I'm on it").
+3. If rolling back and or reverting commits doesn't resolve the incident, then identify the most logical [resolution owner](#ownership) given what you know (this may be yourself) and have that person **acknowledge ownership** in the Slack thread (i.e. "I'm on it").
     - The person who has made recent changes to the affected product/code/system.
     - The person who owns the affected product/code/system.
     - The on-call engineer.
