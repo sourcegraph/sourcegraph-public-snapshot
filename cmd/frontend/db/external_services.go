@@ -26,9 +26,10 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// An ExternalServicesStore allows stores external services and their configuration.
+// An ExternalServicesStore stores external services and their configuration.
 // Before updating or creating a new external service, validation is performed.
-// The enterprise code registers additional validators at run-time.
+// The enterprise code registers additional validators at run-time and sets the
+// global instance in stores.go
 type ExternalServicesStore struct {
 	GitHubValidators []func(*schema.GitHubConnection) error
 	GitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error
