@@ -266,10 +266,9 @@ func (c *commandRetryer) run() error {
 			return true // The repository doesn't exist yet, so retry after pulling.
 		}
 		if IsRevisionNotFound(err) {
-			if c.cmd.EnsureRevision == "HEAD" {
-				return false // We didn't find HEAD, so the repo is empty: nothing to do.
-			}
-			return true // The revision wasn't found, so we try again.
+			// If we didn't find HEAD, the repo is empty and there is no reason to retry.
+			// Otherwise, the revision wasn't found, so we try again.
+			return c.cmd.EnsureRevision != "HEAD"
 		}
 		return false // All other error types (e.g. network failure).
 	}
