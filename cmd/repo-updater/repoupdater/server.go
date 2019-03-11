@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -116,7 +117,17 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
-func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
+	tr, ctx := trace.New(ctx, "repoLookup", args.String())
+	defer func() {
+		log15.Debug("repoLookup", "result", result, "error", err)
+		if result != nil {
+			tr.LazyPrintf("result: %s", result)
+		}
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	if args.Repo == "" && args.ExternalRepo == nil {
 		return nil, errors.New("at least one of Repo and ExternalRepo must be set (both are empty)")
 	}
@@ -126,10 +137,8 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	}
 
 	var (
-		result        protocol.RepoLookupResult
 		repo          *protocol.RepoInfo
 		authoritative bool
-		err           error
 	)
 
 	type getfn func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
@@ -156,6 +165,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 	}
 
+	result = &protocol.RepoLookupResult{}
 	if authoritative {
 		if isNotFound(err) {
 			result.ErrorNotFound = true
@@ -182,12 +192,12 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 		result.Repo = repo
-		return &result, nil
+		return result, nil
 	}
 
 	// No configured code hosts are authoritative for this repository.
 	result.ErrorNotFound = true
-	return &result, nil
+	return result, nil
 }
 
 func isNotFound(err error) bool {

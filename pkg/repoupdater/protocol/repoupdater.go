@@ -71,6 +71,9 @@ func (r *RepoLookupResult) String() string {
 	if r.ErrorUnauthorized {
 		parts = append(parts, "unauthorized")
 	}
+	if r.ErrorTemporarilyUnavailable {
+		parts = append(parts, "tempunavailable")
+	}
 	return fmt.Sprintf("RepoLookupResult{%s}", strings.Join(parts, " "))
 }
 
