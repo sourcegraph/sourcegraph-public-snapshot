@@ -440,7 +440,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
-					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, "", page)
+					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, page)
 					if err != nil {
 						ch <- batch{err: errors.Wrapf(err, "Error listing viewer's affiliated GitHub repositories page %d", page)}
 						break
