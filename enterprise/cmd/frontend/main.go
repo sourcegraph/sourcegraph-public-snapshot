@@ -31,6 +31,36 @@ import (
 )
 
 func main() {
+
+	initLicensing()
+	initAuthz()
+
+	hooks.AfterDBInit = func() {
+		ctx := context.Background()
+		go func() {
+			t := time.NewTicker(5 * time.Second)
+			for range t.C {
+				allowAccessByDefault, authzProviders, _, _ :=
+					iauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
+				authz.SetProviders(allowAccessByDefault, authzProviders)
+			}
+		}()
+		go licensing.StartMaxUserCount(&usersStore{})
+	}
+
+	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
+	if debug {
+		log.Println("enterprise edition")
+	}
+
+	shared.Main()
+}
+
+func initLicensing() {
+	// Enforce the license's max user count by preventing the creation of new users when the max is
+	// reached.
+	db.Users.PreCreateUser = licensing.NewPreCreateUserHook(&usersStore{})
+
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
@@ -57,6 +87,9 @@ func main() {
 		}, nil
 	}
 
+}
+
+func initAuthz() {
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.
@@ -127,30 +160,6 @@ func main() {
 		})
 	}
 
-	hooks.AfterDBInit = func() {
-		ctx := context.Background()
-		go func() {
-			t := time.NewTicker(5 * time.Second)
-			for range t.C {
-				allowAccessByDefault, authzProviders, _, _ :=
-					iauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
-				authz.SetProviders(allowAccessByDefault, authzProviders)
-			}
-		}()
-
-		// Enforce the license's max user count by preventing the creation of new users when the max is
-		// reached.
-		db.Users.PreCreateUser = licensing.NewPreCreateUserHook(&usersStore{})
-
-		go licensing.StartMaxUserCount(&usersStore{})
-	}
-
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		log.Println("enterprise edition")
-	}
-
-	shared.Main()
 }
 
 type usersStore struct{}
