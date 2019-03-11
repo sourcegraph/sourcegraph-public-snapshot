@@ -80,56 +80,29 @@ func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc fun
 		spec = spec + "^0"
 	}
 
+	var (
+		commit api.CommitID
+		err    error
+	)
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec)
 	cmd.Repo = repo
-	commit, err := runRevParse(ctx, cmd, spec)
-	if err == nil {
-		return commit, nil
+	cmd.EnsureRevision = spec
+	retryer := &commandRetryer{
+		cmd:           cmd,
+		remoteURLFunc: remoteURLFunc,
+		exec: func() error {
+			commit, err = runRevParse(ctx, cmd, spec)
+			return err
+		},
 	}
-
-	tryAgain := func(err error) bool {
-		// We need to try again with remote URL set so we can clone.
-		if vcs.IsRepoNotExist(err) {
-			return true
-		}
-
-		// We need to try again with the remote URL set so we can fetch.
-		if IsRevisionNotFound(err) {
-			// If we didn't find HEAD, then the repo is empty.
-			if spec == "HEAD" {
-				return false
-			}
-
-			// We can also disable enqueuing an update.
-			if opt != nil && opt.NoEnsureRevision {
-				return false
-			}
-
-			return true
-		}
-
-		return false
+	if opt != nil && opt.NoEnsureRevision {
+		// Make the commandRetryer no-op so that gitserver does not try to
+		// update the repository.
+		cmd.EnsureRevision = ""
+		retryer.remoteURLFunc = nil
 	}
-
-	if !tryAgain(err) {
-		return "", err
-	}
-	doEnsureRevision := IsRevisionNotFound(err)
-
-	var remoteURL string
-	if remoteURLFunc != nil {
-		remoteURL, err = remoteURLFunc()
-		if err != nil {
-			return "", err
-		}
-	}
-
-	cmd = gitserver.DefaultClient.Command("git", "rev-parse", spec)
-	cmd.Repo = gitserver.Repo{Name: repo.Name, URL: remoteURL}
-	if doEnsureRevision {
-		cmd.EnsureRevision = spec
-	}
-	return runRevParse(ctx, cmd, spec)
+	err = retryer.run()
+	return commit, err
 }
 
 // runRevParse sends the git rev-parse command to gitserver. It interprets

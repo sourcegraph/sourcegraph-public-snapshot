@@ -12,6 +12,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -189,4 +190,103 @@ type cmdFunc func(args []string) cmd
 type cmd interface {
 	Output(context.Context) ([]byte, error)
 	String() string
+}
+
+// commandRetryer executes a gitserver command first without a remote URL and
+// ensured revision, then secondarily retries with a remote URL and ensured
+// revision.
+//
+// This is such that gitserver commands invoked very often do not need to
+// lookup the remote URL through repo-updater (an expensive process which
+// consumes 2 code host API requests), unless the revision is actually missing
+// and gitserver would want to try fetching it.
+type commandRetryer struct {
+	// cmd is the gitserver command to execute. It is never modified, except
+	// when setting cmd.Repo.URL in the case that remoteURLFunc is called.
+	cmd *gitserver.Cmd
+
+	// remoteURLFunc is called to get the Git remote URL if it's not set in
+	// repo and if it is needed. The Git remote URL is only required if the
+	// gitserver doesn't already contain a clone of the repository or if the
+	// commit must be fetched from the remote.
+	//
+	// If cmd.EnsureRevision == "", this field is ignored.
+	remoteURLFunc func() (string, error)
+
+	// exec is called when the cmd should be executed. It is expected to run
+	// the gitserver command and return errors (e.g. RevisionNotFoundError),
+	// which will be handled by the retryer by invoking exec again.
+	//
+	// For basic usage, see the implementation of DividedOutput.
+	//
+	// Any case involving the need to parse out missing revision errors from
+	// the Git command output yourself will need to use this instead of the
+	// DividedOutput helper.
+	exec func() error
+}
+
+// DividedOutput is a helper which sets c.exec to a function which invokes
+// c.cmd.DividedOutput and returns the result after calling c.run.
+//
+// It is the most basic usage of c.exec and c.run, and more complex usage
+// patterns can be based on this implementation.
+func (c *commandRetryer) DividedOutput(ctx context.Context) (data []byte, stderr []byte, err error) {
+	c.exec = func() error {
+		data, stderr, err = c.cmd.DividedOutput(ctx)
+		return err
+	}
+	err = c.run()
+	return
+}
+
+func (c *commandRetryer) run() error {
+	// First, we try executing the command but without any EnsureRevision or
+	// URL. The command most likely did not have either of these, but we zero
+	// them just to make the code flow here more straightforward.
+	cpy := *c.cmd
+	cpy.EnsureRevision = ""
+	cpy.Repo.URL = ""
+	err := c.exec()
+	if err == nil {
+		// We didn't encounter any error, so gitserver did not need to fetch
+		// the repository in order to fulfill the request.
+		return nil
+	}
+
+	// Second, we retry the request if we can determine a URL and have a
+	// revision we want to ensure exists, etc.
+	tryAgain := func(err error) bool {
+		haveURL := c.cmd.Repo.URL != "" || c.remoteURLFunc != nil
+		if !haveURL || c.cmd.EnsureRevision == "" {
+			// We don't have a repository URL or know the revision in question,
+			// so we cannot retry the request.
+			return false
+		}
+		if vcs.IsRepoNotExist(err) {
+			return true // The repository doesn't exist yet, so retry after pulling.
+		}
+		if IsRevisionNotFound(err) {
+			if c.cmd.EnsureRevision == "HEAD" {
+				return false // We didn't find HEAD, so the repo is empty: nothing to do.
+			}
+			return true // The revision wasn't found, so we try again.
+		}
+		return false // All other error types (e.g. network failure).
+	}
+	if !tryAgain(err) {
+		return err
+	}
+
+	// Determine the remote URL, if needed, then retry the command.
+	if c.cmd.Repo.URL == "" {
+		// We do modify c.cmd here because the caller may want to reuse this
+		// information.
+		c.cmd.Repo.URL, err = c.remoteURLFunc()
+		if err != nil {
+			return err
+		}
+	}
+	cpy.EnsureRevision = c.cmd.EnsureRevision
+	cpy.Repo.URL = c.cmd.Repo.URL
+	return c.exec()
 }
