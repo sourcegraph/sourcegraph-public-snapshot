@@ -10,6 +10,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -24,11 +25,12 @@ type Sourcer interface {
 // may yield different Sources depending on what the user configured at a given point in time.
 type ExternalServicesSourcer struct {
 	api InternalAPI
+	cf  httpcli.Factory
 }
 
 // NewExternalServicesSourcer returns a new ExternalServicesSourcer with the given Frontend API.
-func NewExternalServicesSourcer(api InternalAPI) *ExternalServicesSourcer {
-	return &ExternalServicesSourcer{api: api}
+func NewExternalServicesSourcer(api InternalAPI, cf httpcli.Factory) *ExternalServicesSourcer {
+	return &ExternalServicesSourcer{api: api, cf: cf}
 }
 
 // ListSources lists all configured repository yielding Sources of the given kinds,
@@ -42,7 +44,7 @@ func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...strin
 	srcs := make([]Source, 0, len(svcs)+1)
 	errs := new(multierror.Error)
 	for _, svc := range svcs {
-		if src, err := NewSource(svc); err != nil {
+		if src, err := NewSource(svc, s.cf); err != nil {
 			errs = multierror.Append(errs, err)
 		} else {
 			srcs = append(srcs, src)
@@ -54,7 +56,7 @@ func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...strin
 		// paths like /github.com/foo/bar to auto-add that repository. This
 		// source returns nothing for ListRepos. However, in the future we
 		// intend to use it in repoLookup.
-		src, err := NewGithubDotComSource()
+		src, err := NewGithubDotComSource(s.cf)
 		srcs, errs = append(srcs, src), multierror.Append(errs, err)
 	}
 
@@ -62,10 +64,10 @@ func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...strin
 }
 
 // NewSource returns a repository yielding Source from the given api.ExternalService configuration.
-func NewSource(svc *api.ExternalService) (Source, error) {
+func NewSource(svc *api.ExternalService, cf httpcli.Factory) (Source, error) {
 	switch svc.Kind {
 	case "GITHUB":
-		return NewGithubSource(svc)
+		return NewGithubSource(svc, cf)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
@@ -99,28 +101,28 @@ type GithubSource struct {
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *api.ExternalService) (*GithubSource, error) {
+func NewGithubSource(svc *api.ExternalService, cf httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c)
+	return newGithubSource(svc, &c, cf)
 }
 
 // NewGithubDotComSource returns a GithubSource for github.com, meant to be added
 // to the list of sources in Sourcer when one isn't already configured in order to
 // support navigating to URL paths like /github.com/foo/bar to auto-add that repository.
-func NewGithubDotComSource() (*GithubSource, error) {
+func NewGithubDotComSource(cf httpcli.Factory) (*GithubSource, error) {
 	svc := api.ExternalService{Kind: "GITHUB"}
 	return newGithubSource(&svc, &schema.GitHubConnection{
 		RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
 		Url:                         "https://github.com",
 		InitialRepositoryEnablement: true,
-	})
+	}, cf)
 }
 
-func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection) (*GithubSource, error) {
-	conn, err := newGitHubConnection(c)
+func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection, cf httpcli.Factory) (*GithubSource, error) {
+	conn, err := newGitHubConnection(c, cf)
 	if err != nil {
 		return nil, err
 	}

@@ -23,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -114,7 +116,14 @@ func main() {
 		}
 
 		diffs := make(chan repos.Diff)
-		src := repos.NewExternalServicesSourcer(frontendAPI)
+
+		cliFactory := httpcli.NewFactory(
+			nil, // No middleware for now. Use this for Prometheus instrumentation later.
+			httpcli.TracedTransportOpt,
+			httpcli.NewCachedTransportOpt(httputil.Cache, true),
+		)
+
+		src := repos.NewExternalServicesSourcer(frontendAPI, cliFactory)
 
 		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
