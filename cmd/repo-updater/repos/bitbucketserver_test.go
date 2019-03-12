@@ -18,7 +18,7 @@ import (
 var update = flag.Bool("update", false, "update golden files")
 
 func TestBitbucketServerRepoInfo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("test-fixtures", "bitbucketserver-repos.json"))
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			golden := filepath.Join("test-fixtures", "bitbucketserver-repos-"+name+".golden")
+			golden := filepath.Join("testdata", "bitbucketserver-repos-"+name+".golden")
 			if *update {
 				err := ioutil.WriteFile(golden, actual, 0644)
 				if err != nil {
