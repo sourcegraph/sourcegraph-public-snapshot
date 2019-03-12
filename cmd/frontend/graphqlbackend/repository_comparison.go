@@ -50,7 +50,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 			return nil, err
 		}
 
-		commit, err := git.GetCommit(ctx, repo, commitID)
+		commit, err := git.GetCommit(ctx, repo, nil, commitID)
 		if err != nil {
 			return nil, err
 		}
