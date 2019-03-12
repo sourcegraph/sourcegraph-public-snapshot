@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/time/rate"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var requestCounter = metrics.NewRequestCounter("bitbucket", "Total number of requests sent to the Bitbucket API.")
@@ -133,8 +135,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
 		return err
+	}
+	if d := time.Since(startWait); d > 200*time.Millisecond {
+		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 	resp, err := ctxhttp.Do(ctx, c.HTTPClient, req)
 	if err != nil {
