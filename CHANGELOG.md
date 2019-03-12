@@ -13,7 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
   To enable, open the user menu in the top right and make sure the theme dropdown is set to "System".
   This is currently supported on macOS Mojave with Safari Technology Preview 68 and later.
 - The `search.contextLines` setting was added to allow configuration of the number of lines of context to be displayed around search results.
-- The `github.exclude` external service was added to allow excluding repositories yielded by `github.repos` or `github.repositoryQuery` from being synced.
+- The `github.exclude` setting was added to the GitHub external service config to allow excluding repositories yielded by `github.repos` or `github.repositoryQuery` from being synced.
 
 ### Changed
 
