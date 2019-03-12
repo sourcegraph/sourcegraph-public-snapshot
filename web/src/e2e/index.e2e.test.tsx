@@ -230,7 +230,7 @@ describe('e2e test suite', function(this: any): void {
             await percySnapshot(page, 'Repositories list')
         })
 
-        test('Search results - repo', async () => {
+        test('Search results repo', async () => {
             await page.goto(baseURL + '/github.com/gorilla/mux')
             await enableOrAddRepositoryIfNeeded()
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
@@ -238,7 +238,7 @@ describe('e2e test suite', function(this: any): void {
             await percySnapshot(page, 'Search test')
         })
 
-        test('Search results - file', async () => {
+        test('Search results file', async () => {
             await page.goto(baseURL + '/github.com/gorilla/mux')
             await enableOrAddRepositoryIfNeeded()
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
@@ -246,7 +246,7 @@ describe('e2e test suite', function(this: any): void {
             await percySnapshot(page, 'Search test')
         })
 
-        test('Search results - code', async () => {
+        test('Search results code', async () => {
             await page.goto(baseURL + '/github.com/gorilla/mux')
             await enableOrAddRepositoryIfNeeded()
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
