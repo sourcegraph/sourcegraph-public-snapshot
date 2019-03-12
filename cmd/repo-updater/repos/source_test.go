@@ -3,16 +3,28 @@ package repos_test
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
+	"net/http"
+	"net/http/httputil"
+	"os"
 	"reflect"
+	"sort"
 	"testing"
 
+	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var record = flag.Bool("record", false, "Record HTTP interactions and save them to cassete files")
+
+func init() {
+	flag.Parse()
+}
 
 func TestGithubSource_ListRepos(t *testing.T) {
 	config := func(cfg *schema.GitHubConnection) string {
@@ -25,14 +37,14 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		name  string
-		ctx   context.Context
-		svc   api.ExternalService
-		repos []*repos.Repo
-		err   string
+		name   string
+		ctx    context.Context
+		svc    api.ExternalService
+		assert func(testing.TB, repos.Repos)
+		err    string
 	}{
 		{
-			name: "blacklisted repos are never returned",
+			name: "excluded repos are never yielded",
 			svc: api.ExternalService{
 				Kind: "GITHUB",
 				Config: config(&schema.GitHubConnection{
@@ -44,28 +56,41 @@ func TestGithubSource_ListRepos(t *testing.T) {
 						"sourcegraph/sourcegraph",
 						"tsenart/vegeta",
 					},
-					Blacklist: []*schema.Blacklist{
+					Exclude: []*schema.Exclude{
 						{Name: "tsenart/vegeta"},
-						// {Id: "tsenart/vegeta"}, patrol's id
+						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
 					},
 				}),
 			},
-			repos: []*repos.Repo{
-				{
-					Name: "github.com/sourcegraph/sourcegraph",
-				},
+			assert: func(t testing.TB, rs repos.Repos) {
+				t.Helper()
+
+				have := rs.Names()
+				want := []string{"sourcegraph/sourcegraph"}
+
+				sort.Strings(have)
+				sort.Strings(want)
+
+				if !reflect.DeepEqual(have, want) {
+					t.Errorf("\nhave: %s\nwant: %s", have, want)
+				}
 			},
+			err: "<nil>",
 		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			r, err := recorder.New("fixtures/github-source")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer r.Stop()
+			rec := newRecorder(t, "testdata/github-source", *record)
+			defer save(t, rec)
 
-			s, err := repos.NewGithubSource(&tc.svc)
+			mw := httpcli.NewMiddleware(
+				redirect(map[string]string{"github-proxy": "api.github.com"}),
+				auth(os.Getenv("GITHUB_ACCESS_TOKEN")),
+			)
+
+			cf := httpcli.NewFactory(mw, newRecorderOpt(t, rec))
+
+			s, err := repos.NewGithubSource(&tc.svc, cf)
 			if err != nil {
 				t.Error(err)
 				return // Let defers run
@@ -81,9 +106,119 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
-			if have, want := repos, tc.repos; !reflect.DeepEqual(have, want) {
-				t.Errorf("repos: %s", cmp.Diff(have, want))
+			if tc.assert != nil {
+				tc.assert(t, repos)
 			}
 		})
 	}
+}
+
+func redirect(rules map[string]string) httpcli.Middleware {
+	return func(cli httpcli.Doer) httpcli.Doer {
+		return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+			if host, ok := rules[req.URL.Hostname()]; ok {
+				req.URL.Host = host
+			}
+			return cli.Do(req)
+		})
+	}
+}
+
+func auth(token string) httpcli.Middleware {
+	return func(cli httpcli.Doer) httpcli.Doer {
+		return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+			if token != "" {
+				req.Header.Set("Authorization", "bearer "+token)
+			}
+			return cli.Do(req)
+		})
+	}
+}
+
+func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
+	mode := recorder.ModeReplaying
+	if record {
+		mode = recorder.ModeRecording
+	}
+
+	rec, err := recorder.NewAsMode("testdata/github-source", mode, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec.AddFilter(func(i *cassette.Interaction) error {
+		delete(i.Request.Headers, "Authorization")
+		for _, name := range [...]string{
+			"X-RateLimit-Reset",
+			"X-RateLimit-Remaining",
+			"X-RateLimit-Limit",
+		} {
+			i.Response.Headers.Del(name)
+		}
+		return nil
+	})
+
+	rec.AddFilter(func(i *cassette.Interaction) error {
+		return nil
+	})
+
+	return rec
+}
+
+func save(t testing.TB, rec *recorder.Recorder) {
+	if err := rec.Stop(); err != nil {
+		t.Errorf("failed to update test data: %s", err)
+	}
+}
+
+func newRecorderOpt(t testing.TB, rec *recorder.Recorder) httpcli.Opt {
+	return func(c *http.Client) error {
+		tr := c.Transport
+		if tr == nil {
+			tr = http.DefaultTransport
+		}
+
+		if testing.Verbose() {
+			rec.SetTransport(logged(t, "transport")(tr))
+			c.Transport = logged(t, "recorder")(rec)
+		} else {
+			rec.SetTransport(tr)
+			c.Transport = rec
+		}
+
+		return nil
+	}
+}
+
+func logged(t testing.TB, prefix string) func(http.RoundTripper) http.RoundTripper {
+	return func(rt http.RoundTripper) http.RoundTripper {
+		return roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			bs, err := httputil.DumpRequestOut(req, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			t.Logf("[%s] request\n%s", prefix, bs)
+
+			res, err := rt.RoundTrip(req)
+			if err != nil {
+				return res, err
+			}
+
+			bs, err = httputil.DumpResponse(res, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			t.Logf("[%s] response\n%s", prefix, bs)
+
+			return res, nil
+		})
+	}
+}
+
+type roundTripFunc httpcli.DoerFunc
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }
