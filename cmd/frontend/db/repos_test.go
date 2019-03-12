@@ -153,8 +153,16 @@ func TestRepos_Upsert(t *testing.T) {
 	if rp.Name != "myrepo" {
 		t.Fatalf("rp.Name: %s != %s", rp.Name, "myrepo")
 	}
+	if rp.ExternalRepo != nil {
+		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, "<nil>")
+	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true}); err != nil {
+	ext := &api.ExternalRepoSpec{
+		ID:          "ext:id",
+		ServiceType: "test",
+		ServiceID:   "ext:test",
+	}
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -168,5 +176,35 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 	if rp.Description != "asdfasdf" {
 		t.Fatalf("rp.Name: %q != %q", rp.Description, "asdfasdf")
+	}
+	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
+		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
+	}
+
+	// Rename. Detected by external repo
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+		if err == nil {
+			t.Fatal("myrepo should be renamed, but still present as myrepo")
+		} else {
+			t.Fatal(err)
+		}
+	}
+
+	rp, err = Repos.GetByName(ctx, "myrepo/renamed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rp.Name != "myrepo/renamed" {
+		t.Fatalf("rp.Name: %s != %s", rp.Name, "myrepo/renamed")
+	}
+	if rp.Description != "asdfasdf" {
+		t.Fatalf("rp.Name: %q != %q", rp.Description, "asdfasdf")
+	}
+	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
+		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
 	}
 }
