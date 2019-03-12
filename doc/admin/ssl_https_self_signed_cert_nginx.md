@@ -1,6 +1,8 @@
 # Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate
 
-This is for instances that need a self-signed certificate because they don't yet have certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers). It works for local and remote/cloud instances and instructions includes how to get the self-signed certificate trusted by your browser.
+This is for external Sourcegraph instances that need a self-signed certificate because they don't yet have certificate from a [globally trusted Certificate Authority (CA)](https://en.wikipedia.org/wiki/Certificate_authority#Providers). It includes how to get the self-signed certificate trusted by your browser.
+
+> NOTE: Using an IP address also works, including the browser being able to trust (validate) the SSL certificate.
 
 Configuring NGINX to support SSL requires:
 
@@ -10,10 +12,6 @@ Configuring NGINX to support SSL requires:
 1. [Changing the Sourcegraph container to listen on port 443](#4-changing-the-quickstart-command-to-listen-on-port-for-ssl)
 1. [5. Getting the self-signed certificate to be trusted (valid) on external instances](#5)
 
-<!-- TODO(ryan): Not sure this is necessary
-> NOTE: [Terraform](https://www.terraform.io/intro/index.html) plans are being developed for [AWS](https://github.com/sourcegraph/deploy-sourcegraph-aws), GCP, Azure and DigitalOcean which will be pre-configured to support HTTPS ([Secure by default](https://en.wikipedia.org/wiki/Secure_by_default)). 
--->
-
 ## 1. Installing mkcert
 
 While the [OpenSSL](https://wiki.openssl.org/index.php/Command_Line_Utilities) CLI can can generate self-signed certificates, its API is challenging unless you're well versed in SSL.
@@ -22,9 +20,9 @@ A better alternative is [mkcert](https://github.com/FiloSottile/mkcert#mkcert), 
 
 > NOTE: The following commands are to be run on the Docker host, **not** inside the Sourcegraph container.
 
-To set up mkcert for issuing certificates:
+To set up mkcert on the Sourcegraph instance:
 
-1. [Install mkcert for your OS](https://github.com/FiloSottile/mkcert#installation)
+1. [Install mkcert](https://github.com/FiloSottile/mkcert#installation)
 1. Create the root [CA](https://en.wikipedia.org/wiki/Certificate_authority) by running:
 
 ```shell
@@ -95,7 +93,7 @@ docker container run \
 
 > NOTE: We recommend removing `--publish 7080:7080` as it's not needed and traffic sent to that port is un-encrypted.
 
-Validate by changing the Sourcegraph URL in your browser to be `https`.
+Run the new Docker command, then validate by opening your browser at `https://$HOSTNAME_OR_IP`.
 
 If running Sourcegraph locally, the certificate will be valid because `mkcert` added the root CA to the list trusted by your OS.
 
@@ -128,10 +126,16 @@ scp user@example.com:~/.sourcegraph/config/root* "$(mkcert -CAROOT)"
 mkcert -install
 ```
 
-**TODO(ryan): Change below instructions to put the root CA files in mkcert's default location for the OS.**
-**TODO(ryan): Sample code for downloading from cloud VM to local mkcert default directory.**
-
 Open your browser again at `https://$HOSTNAME_OR_IP` and this time, your certificate should be validated.
+
+## Sharing with your team
+
+For your team members to trust the certificate, they need to:
+
+- [Install mkcert](https://github.com/FiloSottile/mkcert#installation).
+- Download the `rootCA-key.pem` and `rootCA.pem` from Slack or other internal system.
+- Move the files into the `mkcert -CAROOT` directory.
+- Run `mkcert -install`.
 
 ## Next steps
 
