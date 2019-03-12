@@ -436,9 +436,21 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                     <div className="pb-4" />
                     {this.props.resultsOrError !== undefined && (
-                        <Link className="mb-2" to="/help/user/search">
-                            Not seeing expected results?
-                        </Link>
+                        <div>
+                            Not seeing expected results?{' '}
+                            <Link className="mb-2" to="/help/user/search">
+                                View search documentation
+                            </Link>
+                            {' or '}
+                            <a
+                                className="mb-2"
+                                href="https://github.com/sourcegraph/sourcegraph/issues/new/choose"
+                                target="_blank"
+                            >
+                                file an issue
+                            </a>
+                            .
+                        </div>
                     )}
                 </div>
             </React.Fragment>
