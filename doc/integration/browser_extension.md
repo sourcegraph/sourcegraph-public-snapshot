@@ -48,17 +48,6 @@ To use the browser extension with a different Sourcegraph instance:
 1.  Click **Update** and enter the URL of a Sourcegraph instance (such as `https://sourcegraph.example.com` or `https://sourcegraph.com`).
 1.  Click **Save**.
 
-> NOTE: The Sourcegraph instance's site admin must [update the `corsOrigin` site config property](../admin/config/site_config.md) to allow the extension to communicate with it from all of the code hosts and other sites it will be used on. For example:
-
-```json
-{
-  // ...
-  "corsOrigin":
-    "https://github.example.com https://gitlab.example.com"
-  // ...
-}
-```
-
 ### Troubleshooting
 
 The most common problem is:
@@ -70,7 +59,6 @@ Try the following:
 1.  Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
     - Ensure that the Sourcegraph URL is correct. It must point to your own Sourcegraph instance to work on private code.
     - Check whether any permissions must be granted. If so, the settings page will display an alert with a **Grant permissions** button.
-    - Confirm with your Sourcegraph instance's site admin that the [site config](../admin/config/site_config.md) `corsOrigin` property contains the URL of the external site on which you are trying to use the browser extension.
 1. On some code hosts, you need to be signed in (to the code host) to use the browser extension. Try signing in.
 
 ## Privacy

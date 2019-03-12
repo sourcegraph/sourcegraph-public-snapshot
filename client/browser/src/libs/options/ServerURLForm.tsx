@@ -149,20 +149,14 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                             </p>
                         )}
                         <p>
-                            <b>If you are an admin,</b> please ensure that{' '}
+                            <b>Site admins:</b> ensure that{' '}
                             <a
                                 href="https://docs.sourcegraph.com/admin/site_config/all#auth-accesstokens-object"
                                 target="_blank"
                             >
                                 all users can create access tokens
-                            </a>{' '}
-                            or you have added your code hosts to your{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/admin/site_config/all#corsorigin-string"
-                                target="_blank"
-                            >
-                                corsOrigin setting.
                             </a>
+                            .
                         </p>
                     </div>
                 )}
