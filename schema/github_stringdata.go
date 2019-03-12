@@ -51,10 +51,7 @@ const GitHubSchemaJSON = `{
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "anyOf": [
-          { "required": ["name"] },
-          { "required": ["id"] }
-        ],
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
           "name": {
             "description": "The name of a GitHub repo (\"owner/name\") to exclude from mirroring.",
