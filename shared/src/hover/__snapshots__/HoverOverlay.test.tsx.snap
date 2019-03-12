@@ -138,23 +138,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
 </div>
 `;
 
-exports[`HoverOverlay actions and hover undefined 1`] = `
-<div
-  className="hover-overlay card "
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hover-overlay__contents"
-  />
-</div>
-`;
+exports[`HoverOverlay actions and hover undefined 1`] = `null`;
 
 exports[`HoverOverlay actions empty 1`] = `
 <div
@@ -174,23 +158,7 @@ exports[`HoverOverlay actions empty 1`] = `
 </div>
 `;
 
-exports[`HoverOverlay actions error 1`] = `
-<div
-  className="hover-overlay card "
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hover-overlay__contents"
-  />
-</div>
-`;
+exports[`HoverOverlay actions error 1`] = `null`;
 
 exports[`HoverOverlay actions error, hover present 1`] = `
 <div
@@ -353,23 +321,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
 </div>
 `;
 
-exports[`HoverOverlay hover empty 1`] = `
-<div
-  className="hover-overlay card "
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hover-overlay__contents"
-  />
-</div>
-`;
+exports[`HoverOverlay hover empty 1`] = `null`;
 
 exports[`HoverOverlay hover error 1`] = `
 <div
