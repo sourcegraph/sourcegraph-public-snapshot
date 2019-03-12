@@ -3,8 +3,8 @@ import * as os from 'os'
 import * as path from 'path'
 import puppeteer, { LaunchOptions } from 'puppeteer'
 import { Key } from 'ts-key-enum'
+import { ensureLoggedIn, readEnvBoolean, readEnvString, retry } from '../../../shared/src/util/e2e-test-utils'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -38,8 +38,7 @@ describe('e2e test suite', function(this: any): void {
     let page: puppeteer.Page
 
     async function init(): Promise<void> {
-        await ensureLoggedIn()
-
+        await ensureLoggedIn({ page, baseURL })
         const repoSlugs = [
             'gorilla/mux',
             'gorilla/securecookie',
@@ -86,28 +85,6 @@ describe('e2e test suite', function(this: any): void {
             await browser.close()
         }
     })
-
-    async function ensureLoggedIn(): Promise<void> {
-        await page.goto(baseURL)
-        await page.evaluate(() => {
-            localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
-            localStorage.setItem('has-dismissed-integrations-toast', 'true')
-            localStorage.setItem('has-dismissed-survey-toast', 'true')
-        })
-        const url = new URL(await page.url())
-        if (url.pathname === '/site-admin/init') {
-            await page.type('input[name=email]', 'test@test.com')
-            await page.type('input[name=username]', 'test')
-            await page.type('input[name=password]', 'test')
-            await page.click('button[type=submit]')
-            await page.waitForNavigation()
-        } else if (url.pathname === '/sign-in') {
-            await page.type('input', 'test')
-            await page.type('input[name=password]', 'test')
-            await page.click('button[type=submit]')
-            await page.waitForNavigation()
-        }
-    }
 
     /**
      * Specifies how `replaceText` will select the content of the element. No

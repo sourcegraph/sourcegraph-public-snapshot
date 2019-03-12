@@ -1,4 +1,5 @@
 import pRetry from 'p-retry'
+import puppeteer from 'puppeteer'
 import { OperationOptions } from 'retry'
 
 /**
@@ -51,4 +52,33 @@ export function readEnvString({ variable, defaultValue }: { variable: string; de
         return defaultValue
     }
     return value
+}
+
+export async function ensureLoggedIn({
+    page,
+    baseURL,
+    email = 'test@test.com',
+    username = 'test',
+    password = 'test',
+}: {
+    page: puppeteer.Page
+    baseURL: string
+    email?: string
+    username?: string
+    password?: string
+}): Promise<void> {
+    await page.goto(baseURL)
+    const url = new URL(await page.url())
+    if (url.pathname === '/site-admin/init') {
+        await page.type('input[name=email]', email)
+        await page.type('input[name=username]', username)
+        await page.type('input[name=password]', password)
+        await page.click('button[type=submit]')
+        await page.waitForNavigation()
+    } else if (url.pathname === '/sign-in') {
+        await page.type('input', username)
+        await page.type('input[name=password]', password)
+        await page.click('button[type=submit]')
+        await page.waitForNavigation()
+    }
 }
