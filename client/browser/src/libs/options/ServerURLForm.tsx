@@ -115,6 +115,9 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         value={this.props.value}
                         className="server-url-form__input-container__input"
                         onChange={this.handleChange}
+                        spellCheck={false}
+                        autoCapitalize="off"
+                        autoCorrect="off"
                     />
                 </div>
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
