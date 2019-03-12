@@ -61,3 +61,11 @@ After the incident is resolved:
 1. Document the incident in the [ops log](https://docs.google.com/document/d/1dtrOHs5STJYKvyjigL1kMm6u-W0mlyRSyVxPfKIOfEw/edit).
 1. Create GitHub issues for any appropriate followup work.
 1. Schedule a [retrospective](retrospectives/index.md) if you think it would be valuable.
+
+## Flowchart
+
+Here is the high level flow:
+
+![flowchart](img/incident-flow.svg)
+
+Source: https://drive.google.com/file/d/1kTZ-_N1ulx9Kf0vZyn5BWTrtipbvN9jH/view?usp=sharing
