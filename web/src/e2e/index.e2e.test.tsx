@@ -249,7 +249,7 @@ describe('e2e test suite', function(this: any): void {
         test('Search results code', async () => {
             await page.goto(baseURL + '/github.com/gorilla/mux')
             await enableOrAddRepositoryIfNeeded()
-            await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
+            await page.goto(baseURL + 'repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
             await percySnapshot(page, 'Search results code')
         })
