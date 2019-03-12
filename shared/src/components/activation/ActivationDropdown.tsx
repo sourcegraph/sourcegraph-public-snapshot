@@ -21,7 +21,7 @@ interface State {
     animate: boolean
 }
 
-const animationDurationMillis = 5700
+const animationDurationMillis = 3260
 
 /**
  * Renders the activation status navlink item, a dropdown button that shows activation
@@ -72,7 +72,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
         const confettiConfig = {
             spread: 68,
-            startVelocity: 23,
+            startVelocity: 12,
             elementCount: 81,
             dragFriction: 0.09,
             duration: animationDurationMillis,
