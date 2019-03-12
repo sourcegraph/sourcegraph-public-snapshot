@@ -66,7 +66,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				t.Helper()
 
 				have := rs.Names()
-				want := []string{"sourcegraph/sourcegraph"}
+				want := []string{"github.com/sourcegraph/sourcegraph"}
 
 				sort.Strings(have)
 				sort.Strings(want)
