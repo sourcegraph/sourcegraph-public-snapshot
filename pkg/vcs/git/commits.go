@@ -44,8 +44,6 @@ type CommitsOptions struct {
 
 	Path string // only commits modifying the given path are selected (optional)
 
-	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
-
 	// RemoteURLFunc is called to get the Git remote URL if it's not set in
 	// repo and if it is needed. The Git remote URL is only required if the
 	// gitserver doesn't already contain a clone of the repository or if the
