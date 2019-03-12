@@ -6,7 +6,7 @@ import CircularProgressbar from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { concat, of, Subject, Subscription } from 'rxjs'
-import { concatMap, delay, filter, map, pairwise, startWith } from 'rxjs/operators'
+import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklistItem } from './ActivationChecklist'
 
@@ -16,6 +16,7 @@ interface Props {
 }
 
 interface State {
+    shouldRemain: boolean
     isOpen: boolean
     animate: boolean
 }
@@ -27,7 +28,7 @@ const animationDurationMillis = 5700
  * status in the navbar.
  */
 export class ActivationDropdown extends React.PureComponent<Props, State> {
-    public state: State = { isOpen: false, animate: false }
+    public state: State = { isOpen: false, animate: false, shouldRemain: false }
     private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -45,6 +46,11 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         }
                         return percentageDone(cur) > percentageDone(prev)
                     }),
+                    tap(didIncrease => {
+                        if (didIncrease) {
+                            this.setState({ shouldRemain: true })
+                        }
+                    }),
                     concatMap(() => concat(of(true), of(false).pipe(delay(animationDurationMillis))))
                 )
                 .subscribe(animate => this.setState({ animate }))
@@ -60,7 +66,10 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const show = this.state.animate || percentageDone(this.props.activation.completed) < 100
+        const show =
+            this.state.shouldRemain ||
+            this.state.animate ||
+            (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
         const confettiConfig = {
             spread: 68,
             startVelocity: 23,
