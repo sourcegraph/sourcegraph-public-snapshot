@@ -38,11 +38,13 @@
             margin-bottom: 0;
         }
 
-        border-bottom: 1px solid #2a3a51;
+        &:not(:only-of-type) {
+            border-bottom: 1px solid #2a3a51;
+        }
 
         .theme-light & {
             background-color: $color-light-bg-1;
-            border-bottom: 1px solid $color-light-border;
+            border-color: $color-light-border;
         }
     }
 
