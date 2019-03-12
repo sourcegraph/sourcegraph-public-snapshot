@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Symbols search is much faster now. After the initial indexing, you can expect code intelligence to be nearly instant no matter the size of your repository.
+- Massively reduced the number of code host API requests Sourcegraph performs, which caused rate limiting issues such as slow search result loading to appear.
 
 ### Fixed
 

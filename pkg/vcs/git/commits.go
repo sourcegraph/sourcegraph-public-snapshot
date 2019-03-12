@@ -43,6 +43,12 @@ type CommitsOptions struct {
 	After  string // include only commits after this date
 
 	Path string // only commits modifying the given path are selected (optional)
+
+	// RemoteURLFunc is called to get the Git remote URL if it's not set in
+	// repo and if it is needed. The Git remote URL is only required if the
+	// gitserver doesn't already contain a clone of the repository or if the
+	// commit must be fetched from the remote.
+	RemoteURLFunc func() (string, error)
 }
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
@@ -50,7 +56,7 @@ type CommitsOptions struct {
 var logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+(.*)$`)
 
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID) (*Commit, error) {
+func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID) (*Commit, error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
 	}
@@ -59,7 +65,7 @@ func getCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID) (*Comm
 		return nil, err
 	}
 
-	commits, err := commitLog(ctx, repo, CommitsOptions{Range: string(id), N: 1})
+	commits, err := commitLog(ctx, repo, CommitsOptions{Range: string(id), N: 1, RemoteURLFunc: remoteURLFunc})
 	if err != nil {
 		return nil, err
 	}
@@ -73,12 +79,16 @@ func getCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID) (*Comm
 
 // GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
 // exists.
-func GetCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID) (*Commit, error) {
+//
+// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
+// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
+// the repository or if the commit must be fetched from the remote.
+func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID) (*Commit, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
-	return getCommit(ctx, repo, id)
+	return getCommit(ctx, repo, remoteURLFunc, id)
 }
 
 // Commits returns all commits matching the options.
@@ -105,7 +115,7 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error) {
+func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (commits []*Commit, err error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -113,11 +123,27 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
+	cmd.EnsureRevision = string(opt.Range)
+	retryer := &commandRetryer{
+		cmd:           cmd,
+		remoteURLFunc: opt.RemoteURLFunc,
+		exec: func() error {
+			commits, err = runCommitLog(ctx, cmd, opt)
+			return err
+		},
+	}
+	err = retryer.run()
+	return
+}
+
+// runCommitLog sends the git command to gitserver. It interprets missing
+// revision responses and converts them into RevisionNotFoundError.
+func runCommitLog(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*Commit, error) {
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), string(opt.Range)) {
-			return nil, &RevisionNotFoundError{Repo: repo.Name, Spec: string(opt.Range)}
+			return nil, &RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: string(opt.Range)}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}
@@ -134,7 +160,6 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]
 		}
 		commits = append(commits, commit)
 	}
-
 	return commits, nil
 }
 
