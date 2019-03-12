@@ -231,26 +231,26 @@ describe('e2e test suite', function(this: any): void {
         })
     })
 
-	describe('Visual tests', () => {
+    describe('Visual tests', () => {
         test('Repositories list', async () => {
             await page.goto(baseURL + '/site-admin/repositories')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
             await percySnapshot(page, 'Repositories list')
         })
 
-		test('Search results - repo', async () => {
+        test('Search results - repo', async () => {
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
             await percySnapshot(page, 'Search test')
         })
 
-		test('Search results - file', async () => {
+        test('Search results - file', async () => {
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
             await percySnapshot(page, 'Search test')
         })
 
-		test('Search results - code', async () => {
+        test('Search results - code', async () => {
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
             await percySnapshot(page, 'Search test')
