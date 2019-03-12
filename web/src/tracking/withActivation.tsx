@@ -36,6 +36,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                           usageStatistics {
                               searchQueries
                               findReferencesActions
+                              codeIntelligenceActions
                           }
                       }
                   }
@@ -46,6 +47,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                           usageStatistics {
                               searchQueries
                               findReferencesActions
+                              codeIntelligenceActions
                           }
                       }
                   }
@@ -54,9 +56,13 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
         map(dataOrThrowErrors),
         map(data => {
             const authProviders = window.context.authProviders
+            const usageStats = !!data.currentUser && data.currentUser.usageStatistics
             const completed: ActivationCompletionStatus = {
-                DidSearch: !!data.currentUser && data.currentUser.usageStatistics.searchQueries > 0,
-                FoundReferences: !!data.currentUser && data.currentUser.usageStatistics.findReferencesActions > 0,
+                DidSearch: usageStats && usageStats.searchQueries > 0,
+                FoundReferences:
+                    // TODO(beyang): revert this to usageStats.findReferencesActions > 0 in 3.3 or later.
+                    // Remove codeIntelligenceActions from the GraphQL query above, as well.
+                    usageStats && (usageStats.findReferencesActions > 0 || usageStats.codeIntelligenceActions > 10),
             }
             if (isSiteAdmin) {
                 completed.ConnectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
