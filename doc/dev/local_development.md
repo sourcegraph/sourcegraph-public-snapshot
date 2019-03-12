@@ -69,7 +69,7 @@ This is a streamlined setup for Mac machines.
 4.  Configure PostgreSQL and Redis to start automatically
 
     ```
-    brew services start postgresql@9.6
+    brew services start postgresql@11
     brew services start redis
     ```
 
