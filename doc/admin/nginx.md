@@ -6,7 +6,7 @@ In Sourcegraph 3.0+, [NGINX](https://www.nginx.com/resources/glossary/nginx/) ac
 
 ![NGINX and Sourcegraph architecture](img/sourcegraph-nginx.svg)
 
-**Note**: Non-sighted users can view a [text-representation of the NGINX and Sourcegraph front-end HTTP flow diagram](img/sourcegraph-nginx.mermaid) in [Mermaid.js format](https://mermaidjs.github.io/).
+**Note**: Non-sighted users can view a [text-representation of this diagram](sourcegraph-nginx-mermaid.md).
 
 ## NGINX for Sourcegraph single instance (Docker)
 

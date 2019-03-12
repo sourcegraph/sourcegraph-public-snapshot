@@ -9,8 +9,8 @@ Configuring NGINX to support SSL requires:
 1. [Installing mkcert](#1-installing-mkcert).
 1. [Creating the self-signed certificate](#2-creating-the-self-signed-certificate)
 1. [Configuring NGINX for SSL](#3-adding-ssl-support-to-nginx)
-1. [Changing the Sourcegraph container to listen on port 443](#4-changing-the-quickstart-command-to-listen-on-port-for-ssl)
-1. [5. Getting the self-signed certificate to be trusted (valid) on external instances](#5)
+1. [4. Changing the Sourcegraph container to listen on port 443](#4-changing-the-quickstart-command-to-listen-on-port-for-ssl)
+1. [5. Getting the self-signed certificate to be trusted (valid) on external instances](#5-getting-the-self-signed-certificate-to-be-trusted-valid-on-external-instances)
 
 ## 1. Installing mkcert
 
@@ -140,7 +140,7 @@ For your team members to trust the certificate, they need to:
 ## Next steps
 
 - [Configure Sourcegraph's `externalURL`](config/critical_config.md)
-- [Redirect to external HTTPS URL](nginx#redirect-to-external-https-url)
+- [Redirect to external HTTPS URL](nginx.md#redirect-to-external-https-url)
 - [NGINX HTTP Strict Transport Security](nginx.md#redirect-to-external-https-url)
 - [NGINX SSL Termination guide](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/)
 - [NGINX HTTPS Servers guide](https://nginx.org/en/docs/http/configuring_https_servers.html).
