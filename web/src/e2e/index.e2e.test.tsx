@@ -513,7 +513,6 @@ describe('e2e test suite', function(this: any): void {
                         '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L24:19'
                     )
                     await getHoverContents() // verify there is a hover
-                    await page.screenshot({ path: '/tmp/sscreen.png' })
                     await percySnapshot(page, 'Code intel hover tooltip')
                 })
 
