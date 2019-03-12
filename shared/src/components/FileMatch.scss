@@ -1,4 +1,8 @@
 .file-match {
+    &__list {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-top: -1px;
+    }
     &__item {
         text-decoration: none; // don't use cascading link style
         display: flex;

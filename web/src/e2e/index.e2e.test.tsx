@@ -160,11 +160,7 @@ describe('e2e test suite', function(this: any): void {
 
             // Add or enable repository.
             (async () => {
-                try {
-                    await page.waitForSelector('.repository-error-page__btn:not([disabled])')
-                } catch {
-                    return
-                }
+                await page.waitForSelector('.repository-error-page__btn:not([disabled])')
                 await page.click('.repository-error-page__btn:not([disabled])')
                 await page.waitForSelector('.repo-rev-container')
             })(),
@@ -228,6 +224,26 @@ describe('e2e test suite', function(this: any): void {
             await page.goto(baseURL + '/site-admin/repositories')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
             await percySnapshot(page, 'Repositories list')
+        })
+
+        test('Search results repo', async () => {
+            await page.goto(baseURL + '/github.com/gorilla/mux')
+            await enableOrAddRepositoryIfNeeded()
+            await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            await percySnapshot(page, 'Search results repo')
+        })
+
+        test('Search results file', async () => {
+            await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            await percySnapshot(page, 'Search results file')
+        })
+
+        test('Search results code', async () => {
+            await page.goto(baseURL + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            await percySnapshot(page, 'Search results code')
         })
     })
 
