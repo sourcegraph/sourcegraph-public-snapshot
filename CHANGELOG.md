@@ -12,21 +12,31 @@ All notable changes to Sourcegraph are documented in this file.
 - Sourcegraph can now automatically use the system's theme.
   To enable, open the user menu in the top right and make sure the theme dropdown is set to "System".
   This is currently supported on macOS Mojave with Safari Technology Preview 68 and later.
-- The `search.contextLines` setting was added to allow configuration of the number of lines of context to be displayed around search results.
 
 ### Changed
 
 - Symbols search is much faster now. After the initial indexing, you can expect code intelligence to be nearly instant no matter the size of your repository.
+
+### Fixed
+
+### Removed
+
+- The `"updateScheduler2"` experiment is now the default and it's no longer possible to configure.
+
+## 3.1.2
+
+### Added
+
+- The `search.contextLines` setting was added to allow configuration of the number of lines of context to be displayed around search results.
+
+### Changed
+
 - Massively reduced the number of code host API requests Sourcegraph performs, which caused rate limiting issues such as slow search result loading to appear.
 - Improved logging in various situations where Sourcegraph would potentially hit code host API rate limits.
 
 ### Fixed
 
 - Fixed an issue where search results loading slowly would display a `Cannot read property "lastChild" of undefined` error.
-
-### Removed
-
-- The `"updateScheduler2"` experiment is now the default and it's no longer possible to configure.
 
 ## 3.1.1
 
