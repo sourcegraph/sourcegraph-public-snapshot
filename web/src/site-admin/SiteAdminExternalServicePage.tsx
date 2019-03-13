@@ -10,6 +10,8 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { ExternalServiceCard } from './ExternalServiceCard'
+import { getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
@@ -104,21 +106,30 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 this.state.externalServiceOrError) ||
             undefined
 
+        const externalServiceCategory = externalService && getExternalService(externalService.kind)
+
         return (
-            <div className="site-admin-configuration-page">
+            <div className="site-admin-configuration-page mt-3">
                 {externalService ? (
                     <PageTitle title={`External service - ${externalService.displayName}`} />
                 ) : (
                     <PageTitle title="External service" />
                 )}
-                <h2>External service</h2>
+                <h2>Update external service</h2>
                 {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {isErrorLike(this.state.externalServiceOrError) && (
                     <p className="alert alert-danger">{upperFirst(this.state.externalServiceOrError.message)}</p>
                 )}
                 {externalService && (
+                    <p>
+                        <ExternalServiceCard {...getExternalService(externalService.kind)} />
+                    </p>
+                )}
+                {externalService && externalServiceCategory && (
                     <SiteAdminExternalServiceForm
                         input={externalService}
+                        editorActions={externalServiceCategory.editorActions}
+                        jsonSchema={externalServiceCategory.jsonSchema}
                         error={error}
                         mode="edit"
                         loading={this.state.updatedOrError === LOADING}
