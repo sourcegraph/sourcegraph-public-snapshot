@@ -595,7 +595,7 @@ func (s *repos) UpdateRepositoryMetadata(ctx context.Context, name api.RepoName,
 }
 
 const upsertSQL = `
-WITH UPSERT AS (
+WITH upsert AS (
   UPDATE repo
   SET
     name                  = $1,
@@ -606,9 +606,18 @@ WITH UPSERT AS (
     external_service_type = NULLIF(BTRIM($6), ''),
     external_service_id   = NULLIF(BTRIM($7), ''),
     archived              = $9
-  WHERE
-    name = $1
-  RETURNING name
+  WHERE name = $1 OR (
+    external_id IS NOT NULL
+    AND external_service_type IS NOT NULL
+    AND external_service_id IS NOT NULL
+    AND NULLIF(BTRIM($5), '') IS NOT NULL
+    AND NULLIF(BTRIM($6), '') IS NOT NULL
+    AND NULLIF(BTRIM($7), '') IS NOT NULL
+    AND external_id = NULLIF(BTRIM($5), '')
+    AND external_service_type = NULLIF(BTRIM($6), '')
+    AND external_service_id = NULLIF(BTRIM($7), '')
+  )
+  RETURNING repo.name
 )
 
 INSERT INTO repo (
@@ -632,8 +641,7 @@ INSERT INTO repo (
     NULLIF(BTRIM($6), '') AS external_service_type,
     NULLIF(BTRIM($7), '') AS external_service_id,
     $9 AS archived
-  WHERE
-    $1 NOT IN (SELECT name FROM upsert)
+  WHERE NOT EXISTS (SELECT 1 FROM upsert)
 )`
 
 // Upsert updates the repository if it already exists (keyed on name) and
