@@ -58,11 +58,6 @@ func main() {
 
 	if !isBextReleaseBranch {
 		pipeline.AddStep(":docker:",
-			// Avoid crashing the sourcegraph/server containers running on the
-			// same dind pod. See
-			// https://github.com/sourcegraph/sourcegraph/issues/2657
-			bk.ConcurrencyGroup("docker"),
-			bk.Concurrency(1),
 			bk.Cmd("pushd enterprise"),
 			bk.Cmd("./cmd/server/pre-build.sh"),
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
@@ -123,10 +118,9 @@ func main() {
 
 	if !isBextReleaseBranch {
 		pipeline.AddStep(":chromium:",
-			// Avoid crashing the sourcegraph/server containers running on the
-			// same dind pod. See
+			// Avoid crashing the sourcegraph/server containers. See
 			// https://github.com/sourcegraph/sourcegraph/issues/2657
-			bk.ConcurrencyGroup("docker"),
+			bk.ConcurrencyGroup("e2e"),
 			bk.Concurrency(1),
 
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
@@ -148,11 +142,6 @@ func main() {
 	addDockerImageStep := func(app string, insiders bool) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
-			// Avoid crashing the sourcegraph/server containers running on the
-			// same dind pod. See
-			// https://github.com/sourcegraph/sourcegraph/issues/2657
-			bk.ConcurrencyGroup("docker"),
-			bk.Concurrency(1),
 		}
 
 		cmdDir := "cmd/" + app
