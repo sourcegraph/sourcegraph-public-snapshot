@@ -1,16 +1,16 @@
 # Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate
 
-This is for external Sourcegraph instances that need a self-signed certificate because they don't yet have certificate from a [globally trusted Certificate Authority (CA)](https://en.wikipedia.org/wiki/Certificate_authority#Providers). It includes how to get the self-signed certificate trusted by your browser.
+This is for external Sourcegraph instances that need a self-signed certificate because they don't yet have a certificate from a [globally trusted Certificate Authority (CA)](https://en.wikipedia.org/wiki/Certificate_authority#Providers). It includes how to get the self-signed certificate trusted by your browser.
 
 > NOTE: Using an IP address also works, including the browser being able to trust (validate) the SSL certificate.
 
-Configuring NGINX to support SSL requires:
+Configuring NGINX with a self-signed certificate to support SSL requires:
 
 1. [Installing mkcert](#1-installing-mkcert).
 1. [Creating the self-signed certificate](#2-creating-the-self-signed-certificate)
 1. [Configuring NGINX for SSL](#3-adding-ssl-support-to-nginx)
-1. [4. Changing the Sourcegraph container to listen on port 443](#4-changing-the-quickstart-command-to-listen-on-port-for-ssl)
-1. [5. Getting the self-signed certificate to be trusted (valid) on external instances](#5-getting-the-self-signed-certificate-to-be-trusted-valid-on-external-instances)
+1. [Changing the Sourcegraph container to listen on port 443](#4-changing-the-quickstart-command-to-listen-on-port-for-ssl)
+1. [Getting the self-signed certificate to be trusted (valid) on external instances](#5-getting-the-self-signed-certificate-to-be-trusted-valid-on-external-instances)
 
 ## 1. Installing mkcert
 
@@ -32,8 +32,6 @@ sudo CAROOT=~/.sourcegraph/config mkcert -install
 ## 2. Creating the self-signed certificate
 
 Now that the root CA has been created, mkcert can issue a self-signed certificate (`sourcegraph.crt`) and key (`sourcegraph.key`).
-
-> NOTE: Replace `$HOSTNAME_OR_IP` in the code below with the external hostname or IP address of the Sourcegraph host.
 
 ```shell
 sudo CAROOT=~/.sourcegraph/config mkcert \
@@ -111,12 +109,12 @@ mkdir -p "$(mkcert -CAROOT)"
 ```
 
 ```shell
-# Run on Sourcegraph host: Ensure `scp` user` can read (and therefore download) the root CA files
+# Run on Sourcegraph host: Ensure `scp` user can read (and therefore download) the root CA files
 sudo chown $USER ~/.sourcegraph/config/root*
 ```
 
 ```shell
-# Run locally: Download the files
+# Run locally: Download the files (change username and hostname)
 scp user@example.com:~/.sourcegraph/config/root* "$(mkcert -CAROOT)"
 ```
 
@@ -126,16 +124,16 @@ scp user@example.com:~/.sourcegraph/config/root* "$(mkcert -CAROOT)"
 mkcert -install
 ```
 
-Open your browser again at `https://$HOSTNAME_OR_IP` and this time, your certificate should be validated.
+Open your browser again at `https://$HOSTNAME_OR_IP` and this time, your certificate should be valid.
 
-## Sharing with your team
+### Getting the self-signed cert trusted on other developer machines
 
-For your team members to trust the certificate, they need to:
+This is largely the same as step 5, except easier. For other developer machines to trust the self-signed cert:
 
 - [Install mkcert](https://github.com/FiloSottile/mkcert#installation).
 - Download the `rootCA-key.pem` and `rootCA.pem` from Slack or other internal system.
-- Move the files into the `mkcert -CAROOT` directory.
-- Run `mkcert -install`.
+- Move the `rootCA-key.pem` and `rootCA.pem` files into the `mkcert -CAROOT` directory on their machine.
+- Run `mkcert -install` on their machine.
 
 ## Next steps
 
