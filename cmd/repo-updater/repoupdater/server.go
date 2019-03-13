@@ -21,11 +21,17 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// InternalAPI captures the internal API methods needed for repo-updater handler.
+type InternalAPI interface {
+	ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error
+}
+
 // Server is a repoupdater server.
 type Server struct {
 	repos.Store
 	*repos.Syncer
 	*repos.OtherReposSyncer
+	InternalAPI
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -220,7 +226,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 		if repo != nil {
 			go func() {
-				err := api.InternalClient.ReposUpdateMetadata(context.Background(), repo.Name, repo.Description, repo.Fork, repo.Archived)
+				err := s.InternalAPI.ReposUpdateMetadata(context.Background(), repo.Name, repo.Description, repo.Fork, repo.Archived)
 				if err != nil {
 					log15.Warn("Error updating repo metadata", "repo", repo.Name, "err", err)
 				}
