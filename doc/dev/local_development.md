@@ -66,23 +66,23 @@ This is a streamlined setup for Mac machines.
 3.  Install Go, Node, PostgreSQL 9.6, Redis, Git, nginx, and SQLite tools with the following command:
 
     ```
-    brew install go node redis postgresql@11 git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go node redis postgresql@9.6 git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically
 
     ```
-    brew services start postgresql@11
+    brew services start postgresql@9.6
     brew services start redis
     ```
 
     (You can stop them later by calling `stop` instead of `start` above.)
 
 5.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
-    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@11`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
+    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@9.6`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
     ```bash
-    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@11/bin:$PATH"' >> ~/.bash_profile }
+    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@9.6/bin:$PATH"' >> ~/.bash_profile }
     source ~/.bash_profile
     ```
 
