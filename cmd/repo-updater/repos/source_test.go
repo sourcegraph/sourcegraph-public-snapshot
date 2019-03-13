@@ -141,7 +141,7 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 		mode = recorder.ModeRecording
 	}
 
-	rec, err := recorder.NewAsMode("testdata/github-source", mode, nil)
+	rec, err := recorder.NewAsMode(file, mode, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
