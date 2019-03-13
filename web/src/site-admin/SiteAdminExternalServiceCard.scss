@@ -1,0 +1,41 @@
+.external-service-card {
+    display: flex;
+    border-top: 1px solid $color-light-border;
+    border-right: 1px solid $color-light-border;
+    border-bottom: 1px solid $color-light-border;
+
+    &__logo {
+        flex: 0 0 0;
+        padding: 0.25rem;
+        display: flex;
+        align-items: center;
+    }
+    &__main {
+        flex: 1 1 0;
+        margin-top: 0.25rem;
+        margin-left: 0.25rem;
+    }
+    &__main-header {
+        margin: 0;
+        padding: 0;
+        font-size: 1.25em;
+    }
+    &__main-body {
+        margin: 0;
+        padding: 0;
+        font-size: 0.75em;
+    }
+
+    .theme-dark & {
+        background-image: linear-gradient(116deg, #0c1e41, #171941);
+        border-color: #184bb1;
+        .mdi-icon {
+            fill: $color-text;
+        }
+    }
+
+    .theme-light & {
+        background-image: linear-gradient(116deg, #ffffff, #fdfdfe);
+        border-color: $border-color;
+    }
+}
