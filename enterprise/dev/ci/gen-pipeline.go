@@ -293,4 +293,8 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 		pipeline.AddWait()
 	}
+
+	// Clean up to help avoid running out of disk.
+	pipeline.AddStep(":sparkles:",
+		bk.Cmd("docker image rm -f sourcegraph/server:"+version+"_candidate"))
 }
