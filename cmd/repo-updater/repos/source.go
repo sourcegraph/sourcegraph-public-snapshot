@@ -96,9 +96,8 @@ type Source interface {
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	svc     *api.ExternalService
-	conn    *githubConnection
-	exclude map[string]bool
+	svc  *api.ExternalService
+	conn *githubConnection
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
@@ -127,19 +126,7 @@ func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection, cf ht
 	if err != nil {
 		return nil, err
 	}
-
-	exclude := make(map[string]bool, len(c.Exclude))
-	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[r.Name] = true
-		}
-
-		if r.Id != "" {
-			exclude[r.Id] = true
-		}
-	}
-
-	return &GithubSource{svc: svc, conn: conn, exclude: exclude}, nil
+	return &GithubSource{svc: svc, conn: conn}, nil
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
@@ -147,9 +134,6 @@ func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection, cf ht
 func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
 	rs, err := s.conn.listAllRepositories(ctx)
 	for _, r := range rs {
-		if s.exclude[r.NameWithOwner] || s.exclude[r.ID] {
-			continue
-		}
 		repos = append(repos, githubRepoToRepo(s.svc, r, s.conn))
 	}
 	return repos, err

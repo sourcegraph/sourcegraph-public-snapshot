@@ -350,8 +350,20 @@ func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*
 		return nil, err
 	}
 
+	exclude := make(map[string]bool, len(config.Exclude))
+	for _, r := range config.Exclude {
+		if r.Name != "" {
+			exclude[r.Name] = true
+		}
+
+		if r.Id != "" {
+			exclude[r.Id] = true
+		}
+	}
+
 	return &githubConnection{
 		config:           config,
+		exclude:          exclude,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, config.Token, cli),
@@ -362,6 +374,7 @@ func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*
 
 type githubConnection struct {
 	config       *schema.GitHubConnection
+	exclude      map[string]bool
 	githubDotCom bool
 	baseURL      *url.URL
 	client       *github.Client
@@ -392,6 +405,10 @@ func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) strin
 	}
 	u.User = url.User(c.config.Token)
 	return u.String()
+}
+
+func (c *githubConnection) excludes(r *github.Repository) bool {
+	return c.exclude[r.NameWithOwner] || c.exclude[r.ID]
 }
 
 func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.Repository, error) {
@@ -560,7 +577,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 		}
 
 		for _, repo := range r.repos {
-			if !seen[repo.URL] {
+			if !seen[repo.URL] && !c.excludes(repo) {
 				repos = append(repos, repo)
 				seen[repo.URL] = true
 			}
