@@ -17,17 +17,20 @@ The sections below describe the the dependencies that you need to have to be abl
 
 ## Step 1: Get the code
 
-Run this command to get the Sourcegraph source code on your local machine:
+> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
 
-Using Go:
+On Mac with homebrew, you can run
+```
+brew install golang
+```
+
+Run this command to get the Sourcegraph source code on your local machine:
 
 ```
 go get github.com/sourcegraph/sourcegraph
 ```
 
-> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
-
-This is your "Sourcegraph repository directory".
+This downloads your "Sourcegraph repository directory".
 
 ## Step 2: Install dependencies
 
