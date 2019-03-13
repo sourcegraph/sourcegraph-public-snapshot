@@ -8,9 +8,26 @@ if [ -z "$IMAGE" ]; then
     exit 1
 fi
 
+# Switch the default Docker host to the dedicated e2e testing host
+BUILD_DOCKER_HOST="DOCKER_HOST"
+BUILD_DOCKER_PASSWORD="DOCKER_PASSWORD"
+BUILD_DOCKER_USERNAME="DOCKER_USERNAME"
+export DOCKER_HOST="E2E_DOCKER_HOST"
+export DOCKER_PASSWORD="E2E_DOCKER_PASSWORD"
+export DOCKER_USERNAME="E2E_DOCKER_USERNAME"
+
+echo "Copying $IMAGE to the dedicated e2e testing node..."
+env \
+    DOCKER_HOST="$BUILD_DOCKER_HOST" \
+    DOCKER_PASSWORD="$BUILD_DOCKER_PASSWORD" \
+    DOCKER_USERNAME="$BUILD_DOCKER_USERNAME" \
+    docker save "$IMAGE" \
+    | docker load
+echo "Copying $IMAGE to the dedicated e2e testing node... done"
+
 echo "Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d $IMAGE)"
-trap 'kill $(jobs -p)'" ; docker container rm -f $CONTAINER" EXIT
+trap 'kill $(jobs -p)'" ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
 # Connect the server container's port 7080 to localhost:7080 so that e2e tests
