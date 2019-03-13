@@ -51,12 +51,6 @@ export const requestGraphQL: typeof performRequest = (args: GraphQLRequestArgs) 
         return performRequest(args)
     }
 
-    // Check if it's a private repo - if so don't make a request to Sourcegraph.com.
-    const nameMatch = args.request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    if (privateRepoPublicSourcegraph(args)) {
-        return throwError(new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '<unnamed>'))
-    }
-
     return from(
         new Promise<any>((resolve, reject) => {
             chrome.runtime.sendMessage(
@@ -83,7 +77,7 @@ function performRequest<T extends GQL.IGraphQLResponseRoot>({
     const queryName = nameMatch ? '?' + nameMatch[1] : ''
 
     // Check if it's a private repo - if so don't make a request to Sourcegraph.com.
-    if (isInPage && privateRepoPublicSourcegraph({ url, requestMightContainPrivateInfo })) {
+    if (privateRepoPublicSourcegraph({ url, requestMightContainPrivateInfo })) {
         return throwError(new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '<unnamed>'))
     }
 
