@@ -353,7 +353,7 @@ func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*
 	exclude := make(map[string]bool, len(config.Exclude))
 	for _, r := range config.Exclude {
 		if r.Name != "" {
-			exclude[r.Name] = true
+			exclude[strings.ToLower(r.Name)] = true
 		}
 
 		if r.Id != "" {
@@ -408,7 +408,7 @@ func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) strin
 }
 
 func (c *githubConnection) excludes(r *github.Repository) bool {
-	return c.exclude[r.NameWithOwner] || c.exclude[r.ID]
+	return c.exclude[strings.ToLower(r.NameWithOwner)] || c.exclude[r.ID]
 }
 
 func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.Repository, error) {

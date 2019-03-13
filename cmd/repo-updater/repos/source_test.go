@@ -45,11 +45,11 @@ func TestGithubSource_ListRepos(t *testing.T) {
 						"user:tsenart in:name patrol",
 					},
 					Repos: []string{
-						"sourcegraph/sourcegraph",
-						"tsenart/vegeta",
+						"sourcegraph/Sourcegraph",
+						"tsenart/VEGETA",
 					},
 					Exclude: []*schema.Exclude{
-						{Name: "tsenart/vegeta"},
+						{Name: "tsenart/Vegeta"},
 						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
 					},
 				}),
