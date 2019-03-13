@@ -1,9 +1,8 @@
-package repos_test
+package repos
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -14,17 +13,10 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var record = flag.Bool("record", false, "Record HTTP interactions and save them to cassete files")
-
-func init() {
-	flag.Parse()
-}
 
 func TestGithubSource_ListRepos(t *testing.T) {
 	config := func(cfg *schema.GitHubConnection) string {
@@ -40,7 +32,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		name   string
 		ctx    context.Context
 		svc    api.ExternalService
-		assert func(testing.TB, repos.Repos)
+		assert func(testing.TB, Repos)
 		err    string
 	}{
 		{
@@ -62,7 +54,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			assert: func(t testing.TB, rs repos.Repos) {
+			assert: func(t testing.TB, rs Repos) {
 				t.Helper()
 
 				have := rs.Names()
@@ -80,7 +72,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			rec := newRecorder(t, "testdata/github-source", *record)
+			rec := newRecorder(t, "testdata/github-source", *update)
 			defer save(t, rec)
 
 			mw := httpcli.NewMiddleware(
@@ -90,7 +82,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 			cf := httpcli.NewFactory(mw, newRecorderOpt(t, rec))
 
-			s, err := repos.NewGithubSource(&tc.svc, cf)
+			s, err := NewGithubSource(&tc.svc, cf)
 			if err != nil {
 				t.Error(err)
 				return // Let defers run
@@ -148,6 +140,11 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 
 	rec.AddFilter(func(i *cassette.Interaction) error {
 		delete(i.Request.Headers, "Authorization")
+		// The ratelimit.Monitor type resets its internal timestamp if it's
+		// updated with a timestamp in the past. This makes tests ran with
+		// recorded interations just wait for a very long time. Removing
+		// these headers from the casseste effectively disables rate-limiting
+		// in tests which replay HTTP interactions, which is desired behaviour.
 		for _, name := range [...]string{
 			"X-RateLimit-Reset",
 			"X-RateLimit-Remaining",

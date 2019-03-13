@@ -3,7 +3,6 @@ package repos
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -14,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var update = flag.Bool("update", false, "update golden files")
 
 func TestBitbucketServerRepoInfo(t *testing.T) {
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
