@@ -15,7 +15,7 @@ on how to extend NGINX configuration without (in most cases), editing the `nginx
 
 The first time Sourcegraph is run, it will create an [`nginx.conf`](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf) file at:
 
-- `~/.sourcegraph/config/nginx.conf` on the Docker/Sourcegraph host (presuming you're using the [quickstart `docker run` command](../index.md#quickstart)))
+- `~/.sourcegraph/config/nginx.conf` on the Docker/Sourcegraph host (presuming you're using the [quickstart `docker run` command](../index.md#quickstart))
 - `/etc/sourcegraph/nginx.conf` inside the container
 
 [SSL support requires manual editing](#nginx-ssl-https-configuration) of the NGINX configuration file if using the [quickstart docker run command](../index.md#quickstart) as it presumes local or internal usage.
@@ -36,14 +36,14 @@ If NGINX is your preferred reverse proxy, we suggest using [the official NGINX d
 
 **1.** Copy your SSL certificate and key to `~/.sourcegraph/config` (where the `nginx.conf` file is).
 
-**2.** Edit `nginx.conf`, replacing `listen 7080;` with `listen 7080 ssl;`, then add the following two lines below the `listen 7080 ssl;` statement (names of cert and key don't matter).
+**2.** Edit `nginx.conf`, replacing `listen 7080;` with `listen 7080 ssl;`, then add the following two lines below the `listen 7080 ssl;` statement.
 
 ```nginx
 ssl_certificate         sourcegraph.crt;
 ssl_certificate_key     sourcegraph.key;
 ```
 
-The `nginx.conf` should now look like:
+The `nginx.conf` should now look like this (names of cert and key can be anything):
 
 ```nginx
 ...
