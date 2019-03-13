@@ -4,6 +4,9 @@ import { SiteAdminAreaRoute } from './SiteAdminArea'
 const SiteAdminAddExternalServicePage = React.lazy(async () => ({
     default: (await import('./SiteAdminAddExternalServicePage')).SiteAdminAddExternalServicePage,
 }))
+const SiteAdminAddExternalServicesPage = React.lazy(async () => ({
+    default: (await import('./SiteAdminAddExternalServicesPage')).SiteAdminAddExternalServicesPage,
+}))
 const SiteAdminAllUsersPage = React.lazy(async () => ({
     default: (await import('./SiteAdminAllUsersPage')).SiteAdminAllUsersPage,
 }))
@@ -69,7 +72,7 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     },
     {
         path: '/external-services/add',
-        render: props => <SiteAdminAddExternalServicePage {...props} eventLogger={eventLogger} />,
+        render: props => <SiteAdminAddExternalServicesPage {...props} eventLogger={eventLogger} />,
         exact: true,
     },
     {
