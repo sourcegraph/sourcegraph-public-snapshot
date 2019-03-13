@@ -43,10 +43,9 @@ const SiteSchemaJSON = `{
       "hide": true
     },
     "corsOrigin": {
-      "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
+      "description": "Only required when using the Phabricator integration for Sourcegraph (https://docs.sourcegraph.com/integration/phabricator). This value is the space-separated list of allowed origins for cross-origin HTTP requests to Sourcegraph. Usually it contains the base URL for your Phabricator instance.\n\nPreviously, this value was also used for the GitHub, GitLab, etc., integrations. It is no longer necessary for those. You may remove this setting if you are not using the Phabricator integration.",
       "type": "string",
-      "default": "github.com",
-      "examples": ["github.com github-enterprise.example.com gitlab.com"],
+      "examples": ["https://my-phabricator.example.com"],
       "group": "Security"
     },
     "disableAutoGitUpdates": {
