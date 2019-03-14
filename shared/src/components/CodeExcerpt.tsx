@@ -1,4 +1,5 @@
 import { range } from 'lodash'
+import ErrorIcon from 'mdi-react/ErrorIcon'
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
@@ -6,7 +7,6 @@ import { catchError, filter, switchMap } from 'rxjs/operators'
 import { highlightNode } from '../util/dom'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 
 export interface FetchFileCtx {
     repoName: string
