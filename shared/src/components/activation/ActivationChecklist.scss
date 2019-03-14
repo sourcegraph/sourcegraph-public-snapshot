@@ -15,12 +15,12 @@
         @include hover-focus {
             color: $dropdown-link-hover-color;
             text-decoration: none;
-            border-color: var(--theme-bg-plain);
-            background-color: var(--theme-bg-plain);
+            border-color: var(--card-cap-bg);
+            background-color: var(--card-cap-bg);
             margin-bottom: -1px;
             z-index: 20;
 
-            box-shadow: 0 0 14px 14px rgba(2, 3, 3, 0.4);
+            box-shadow: 0 0 14px 12px rgba(43, 55, 80, 0.4);
         }
     }
 }
