@@ -8,7 +8,7 @@ import { ThemeProps } from '../theme'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import {
     AddExternalServiceMetadata,
-    ALL_ADD_EXTERNAL_SERVICES,
+    ALL_EXTERNAL_SERVICE_ADD_VARIANTS,
     ExternalServiceVariant,
     getExternalService,
     isExternalServiceVariant,
@@ -30,7 +30,10 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
     /**
      * Gets the external service kind and add-service kind from the URL paramsters
      */
-    private getExternalServiceKind(): [GQL.ExternalServiceKind | null, ExternalServiceVariant | null] {
+    private getExternalServiceKind(): {
+        kind: GQL.ExternalServiceKind | null
+        variant: ExternalServiceVariant | undefined
+    } {
         const params = new URLSearchParams(this.props.history.location.search)
         let kind = params.get('kind') || undefined
         if (kind) {
@@ -40,38 +43,36 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
             !!getExternalService(kind as GQL.ExternalServiceKind)
 
         const q = params.get('variant')
-        const variant = q && isExternalServiceVariant(q) ? q : null
-
-        return [kind && isKnownKind(kind) ? kind : null, variant]
+        const variant = q && isExternalServiceVariant(q) ? q : undefined
+        return { kind: kind && isKnownKind(kind) ? kind : null, variant }
     }
 
-    private static getAddURL(addService: AddExternalServiceMetadata): string {
-        const components: { [key: string]: string } = {
-            kind: encodeURIComponent(addService.serviceKind.toLowerCase()),
+    private static getAddURL(serviceToAdd: AddExternalServiceMetadata): string {
+        const params = new URLSearchParams()
+        params.append('kind', serviceToAdd.serviceKind.toLowerCase())
+        if (serviceToAdd.variant) {
+            params.append('variant', serviceToAdd.variant)
         }
-        if (addService.variant) {
-            components.variant = encodeURIComponent(addService.variant)
-        }
-        return '?' + lodashMap(components, (v, k) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+        return `?${params.toString()}`
     }
 
     public render(): JSX.Element | null {
-        const [kind, variant] = this.getExternalServiceKind()
+        const { kind, variant } = this.getExternalServiceKind()
         if (kind) {
-            return <SiteAdminAddExternalServicePage {...this.props} kind={kind} variant={variant || undefined} />
+            return <SiteAdminAddExternalServicePage {...this.props} kind={kind} variant={variant} />
         } else {
             return (
                 <div className="add-external-services-page">
                     <PageTitle title="Choose an external service type to add" />
                     <h1>Add external service</h1>
                     <p>Choose an external service to add to Sourcegraph.</p>
-                    {ALL_ADD_EXTERNAL_SERVICES.map((addService, i) => (
+                    {ALL_EXTERNAL_SERVICE_ADD_VARIANTS.map((service, i) => (
                         <LinkOrButton
                             className="add-external-services-page__active-card"
                             key={i}
-                            to={SiteAdminAddExternalServicesPage.getAddURL(addService)}
+                            to={SiteAdminAddExternalServicesPage.getAddURL(service)}
                         >
-                            <ExternalServiceCard {...addService} />
+                            <ExternalServiceCard {...service} />
                         </LinkOrButton>
                     ))}
                 </div>

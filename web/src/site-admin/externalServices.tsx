@@ -21,7 +21,7 @@ import { EditorAction } from './configHelpers.js'
 /**
  * Metadata associated with a given external service.
  */
-export interface ExternalServiceCategory {
+export interface ExternalServiceKindMetadata {
     /**
      * Title to show in the external service "button"
      */
@@ -33,9 +33,9 @@ export interface ExternalServiceCategory {
     icon: JSX.Element | string
 
     /**
-     * Color to display in the external service "button"
+     * Color to display next to the icon in the external service "button"
      */
-    color: string
+    iconBrandColor: 'github' | 'aws' | 'bitbucket' | 'gitlab' | 'gitolite' | 'phabricator' | 'git'
 
     /**
      * A short description that will appear in the external service "button" under the title
@@ -109,12 +109,12 @@ const githubEditorActions: EditorAction[] = [
     },
 ]
 
-export const GITHUB_EXTERNAL_SERVICE: ExternalServiceCategory = {
+export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     title: 'GitHub repositories',
     icon: <GithubCircleIcon size={iconSize} />,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions,
-    color: '#2ebc4f',
+    iconBrandColor: 'github',
     shortDescription: 'Add GitHub repositories.',
     longDescription: (
         <span>
@@ -151,12 +151,12 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceCategory = {
 }`,
 }
 
-export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServiceCategory> = {
+export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {
     [GQL.ExternalServiceKind.GITHUB]: GITHUB_EXTERNAL_SERVICE,
     [GQL.ExternalServiceKind.AWSCODECOMMIT]: {
         title: 'AWS CodeCommit repositories',
         icon: <AmazonIcon size={iconSize} />,
-        color: '#f8991d',
+        iconBrandColor: 'aws',
         shortDescription: 'Add AWS CodeCommit repositories.',
         jsonSchema: awsCodeCommitSchemaJSON,
         defaultDisplayName: 'AWS CodeCommit',
@@ -173,7 +173,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     [GQL.ExternalServiceKind.BITBUCKETSERVER]: {
         title: 'Bitbucket Server repositories',
         icon: <BitbucketIcon size={iconSize} />,
-        color: '#2684ff',
+        iconBrandColor: 'bitbucket',
         shortDescription: 'Add Bitbucket Server repositories.',
         jsonSchema: bitbucketServerSchemaJSON,
         defaultDisplayName: 'Bitbucket Server',
@@ -192,7 +192,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     [GQL.ExternalServiceKind.GITLAB]: {
         title: 'GitLab projects',
         icon: <GitLabIcon size={iconSize} />,
-        color: '#fc6e26',
+        iconBrandColor: 'gitlab',
         shortDescription: 'Add GitLab projects.',
         jsonSchema: gitlabSchemaJSON,
         defaultDisplayName: 'GitLab',
@@ -211,7 +211,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     [GQL.ExternalServiceKind.GITOLITE]: {
         title: 'Gitolite repositories',
         icon: <GitIcon size={iconSize} />,
-        color: '#e0e0e0',
+        iconBrandColor: 'gitolite',
         shortDescription: 'Add Gitolite repositories.',
         jsonSchema: gitoliteSchemaJSON,
         defaultDisplayName: 'Gitolite',
@@ -227,7 +227,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     [GQL.ExternalServiceKind.PHABRICATOR]: {
         title: 'Phabricator connection',
         icon: <PhabricatorIcon size={iconSize} />,
-        color: '#4a5f88',
+        iconBrandColor: 'phabricator',
         shortDescription: 'Add links to Phabricator from Sourcegraph.',
         jsonSchema: phabricatorSchemaJSON,
         defaultDisplayName: 'Phabricator',
@@ -244,7 +244,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     [GQL.ExternalServiceKind.OTHER]: {
         title: 'Single Git repositories',
         icon: <GitIcon size={iconSize} />,
-        color: '#f14e32',
+        iconBrandColor: 'git',
         shortDescription: 'Add single Git repositories by clone URL.',
         jsonSchema: otherExternalServiceSchemaJSON,
         defaultDisplayName: 'Git repositories',
@@ -262,10 +262,6 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
 }
 
-export function getExternalService(kind: GQL.ExternalServiceKind): ExternalServiceCategory {
-    return ALL_EXTERNAL_SERVICES[kind]
-}
-
 /**
  * Some external services have variants that should be presented in the UI in a different way
  * but are not fundamentally different from one another. This type defines the allowed variant
@@ -277,7 +273,7 @@ export function isExternalServiceVariant(s: string): s is ExternalServiceVariant
     return s === 'dotcom' || s === 'enterprise'
 }
 
-export interface AddExternalServiceMetadata extends ExternalServiceCategory {
+export interface AddExternalServiceMetadata extends ExternalServiceKindMetadata {
     serviceKind: GQL.ExternalServiceKind
     variant?: ExternalServiceVariant
 }
@@ -286,8 +282,8 @@ export interface AddExternalServiceMetadata extends ExternalServiceCategory {
  * We want to have more than one "add" option for some external services (e.g., GitHub.com vs. GitHub Enterprise).
  * These patches define the overrides that should be applied to certain external services.
  */
-const addPatches: Partial<
-    Record<GQL.ExternalServiceKind, Partial<Record<ExternalServiceVariant, Partial<ExternalServiceCategory>>>>
+const externalServiceAddVariants: Partial<
+    Record<GQL.ExternalServiceKind, Partial<Record<ExternalServiceVariant, Partial<ExternalServiceKindMetadata>>>>
 > = {
     [GQL.ExternalServiceKind.GITHUB]: {
         dotcom: {
@@ -313,16 +309,16 @@ const addPatches: Partial<
     },
 }
 
-export const ALL_ADD_EXTERNAL_SERVICES: AddExternalServiceMetadata[] = flatMap(
+export const ALL_EXTERNAL_SERVICE_ADD_VARIANTS: AddExternalServiceMetadata[] = flatMap(
     map(
         ALL_EXTERNAL_SERVICES,
         (
-            service: ExternalServiceCategory,
+            service: ExternalServiceKindMetadata,
             kindString: string
         ): AddExternalServiceMetadata | AddExternalServiceMetadata[] => {
             const kind = kindString as GQL.ExternalServiceKind
-            if (addPatches[kind]) {
-                const patches = addPatches[kind]
+            if (externalServiceAddVariants[kind]) {
+                const patches = externalServiceAddVariants[kind]
                 return map(patches, (patch, variantString) => {
                     const variant = variantString as ExternalServiceVariant
                     return {
@@ -345,4 +341,17 @@ const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
     insertSpaces: true,
     tabSize: 2,
+}
+
+export function getExternalService(
+    kind: GQL.ExternalServiceKind,
+    variantForAdd?: ExternalServiceVariant
+): ExternalServiceKindMetadata {
+    const foundVariants = ALL_EXTERNAL_SERVICE_ADD_VARIANTS.filter(
+        serviceVariant => serviceVariant.serviceKind === kind && serviceVariant.variant === variantForAdd
+    )
+    if (foundVariants.length > 0) {
+        return foundVariants[0]
+    }
+    return ALL_EXTERNAL_SERVICES[kind]
 }

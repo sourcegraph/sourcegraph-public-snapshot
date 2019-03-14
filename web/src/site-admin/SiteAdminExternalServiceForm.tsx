@@ -6,9 +6,9 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ExternalServiceCategory } from './externalServices'
+import { ExternalServiceKindMetadata } from './externalServices'
 
-interface Props extends Pick<ExternalServiceCategory, 'jsonSchema' | 'editorActions'> {
+interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editorActions'> {
     history: H.History
     input: GQL.IAddExternalServiceInput
     isLightTheme: boolean

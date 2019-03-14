@@ -89,15 +89,15 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 
     public render(): JSX.Element | null {
-        const externalService = getExternalService(this.props.kind)
+        const externalService = getExternalService(this.props.kind, this.props.variant)
         return (
             <div className="add-external-service-page">
                 <PageTitle title="Add external service" />
                 <h1>Add external service</h1>
-                <p>
+                <div className="mb-3">
                     <ExternalServiceCard {...externalService} />
-                </p>
-                <p>{externalService.longDescription}</p>
+                </div>
+                <div className="mb-4">{externalService.longDescription}</div>
                 <SiteAdminExternalServiceForm
                     {...this.props}
                     error={this.state.error}

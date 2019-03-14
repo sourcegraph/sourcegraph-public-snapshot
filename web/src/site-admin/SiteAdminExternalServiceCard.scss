@@ -4,11 +4,33 @@
     border-right: 1px solid $color-light-border;
     border-bottom: 1px solid $color-light-border;
 
-    &__logo {
+    &__icon {
         flex: 0 0 0;
         padding: 0.25rem;
         display: flex;
         align-items: center;
+
+        &--github {
+            border-left: 2px solid #2ebc4f;
+        }
+        &--aws {
+            border-left: 2px solid #f8991d;
+        }
+        &--bitbucket {
+            border-left: 2px solid #2684ff;
+        }
+        &--gitlab {
+            border-left: 2px solid #fc6e26;
+        }
+        &--gitolite {
+            border-left: 2px solid #e0e0e0;
+        }
+        &--phabricator {
+            border-left: 2px solid #4a5f88;
+        }
+        &--git {
+            border-left: 2px solid #f14e32;
+        }
     }
     &__main {
         flex: 1 1 0;
