@@ -56,7 +56,7 @@ A typical message to the team looks like:
 
 >Team
 >
->I set up Sourcegraph as a <span style="color:#FF0000">[solution for searching across all of our code | replacement for OpenGrok/Hound/etc.]</span>! It provides regex search across all of our repositories, with IDE-like features (hover tooltips, go-to-definition, find-references) on code views. <span style="color:#FF0000;">[Describe the benefits vs. that are most relevant to your organization.]</span>
+>I set up Sourcegraph as a <span style="color:#FF0000">[solution for searching across all of our code | replacement for OpenGrok/Hound/etc.]</span>! It provides regexp search across all of our repositories, with IDE-like features (hover tooltips, go-to-definition, find-references) on code views. <span style="color:#FF0000;">[Describe the benefits vs. that are most relevant to your organization.]</span>
 >
 >Try it out:<br/>
 >	- Search: <span style="color:#FF0000;">[URL to an example search results page on your Sourcegraph instance]</span><br/>
