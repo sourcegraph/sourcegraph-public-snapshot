@@ -23,6 +23,8 @@ a.overview-item {
     border-radius: 0.125rem;
     position: relative;
 
+    transition: all 250ms ease;
+
     .icon-click-area {
         margin: 0;
         padding: 0;
@@ -74,11 +76,18 @@ a.overview-item {
     &__children {
         width: 100%;
     }
+    &:not(.list):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px 2px rgba(13, 108, 255, 0.125);
+    }
 }
 
 .theme-light {
     .overview-item {
         border-color: $color-light-border;
+        &:not(.list):hover {
+            box-shadow: 0 6px 10px 0 rgba(7, 61, 144, 0.05);
+        }
         &__header {
             &-link {
                 color: $color-light-text-1;

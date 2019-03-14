@@ -31,6 +31,12 @@ export interface Props {
      * Whether the item's children are expanded and visible by default.
      */
     defaultExpanded?: boolean
+
+    /**
+     * Whether the item is a list.
+     * Currently only used for onboarding.
+     */
+    list?: boolean
 }
 
 export interface State {
@@ -94,7 +100,7 @@ export class OverviewItem extends React.Component<Props, State> {
             )
         } else {
             return (
-                <div className="overview-item">
+                <div className={`overview-item ${this.props.list && 'list'}`}>
                     <div className="overview-item__header">{e}</div>
                     {actions}
                     {this.props.children && this.state.expanded && (

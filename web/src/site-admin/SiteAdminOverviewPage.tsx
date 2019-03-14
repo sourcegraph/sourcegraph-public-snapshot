@@ -123,6 +123,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 <OverviewItem
                                     title={`${setupPercentage < 100 ? 'Setup Sourcegraph' : 'Status'}`}
                                     defaultExpanded={setupPercentage < 100}
+                                    list={true}
                                 >
                                     <div>
                                         {this.props.activation.completed && (
