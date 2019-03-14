@@ -109,7 +109,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         const externalServiceCategory = externalService && getExternalService(externalService.kind)
 
         return (
-            <div className="site-admin-configuration-page">
+            <div className="site-admin-configuration-page mt-3">
                 {externalService ? (
                     <PageTitle title={`External service - ${externalService.displayName}`} />
                 ) : (

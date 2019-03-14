@@ -62,7 +62,7 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
             return <SiteAdminAddExternalServicePage {...this.props} kind={kind} variant={variant} />
         } else {
             return (
-                <div className="add-external-services-page">
+                <div className="add-external-services-page mt-3">
                     <PageTitle title="Choose an external service type to add" />
                     <h1>Add external service</h1>
                     <p>Choose an external service to add to Sourcegraph.</p>
