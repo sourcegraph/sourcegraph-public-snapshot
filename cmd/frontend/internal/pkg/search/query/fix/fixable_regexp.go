@@ -1,7 +1,6 @@
 package fix
 
 import (
-	"fmt"
 	"regexp/syntax"
 	"strconv"
 	"strings"
@@ -114,6 +113,10 @@ func (fr *FixableRegexp) fixupCompileErrors() {
 	fr.Err = nil
 }
 
+// Converts the corrected regexp back to a string. If there was an error during
+// the attempt at fixing the regular expression, the string returned is the original input.
+//
+// This function is derived from `regexp/syntax.Regexp.String()`.
 func (fr *FixableRegexp) String() string {
 	if fr.Err != nil {
 		return fr.value
@@ -164,8 +167,6 @@ func writeRegexp(b *strings.Builder, re *syntax.Regexp) {
 				}
 			}
 		} else {
-			fmt.Println(1, re.Rune)
-
 			for i := 0; i < len(re.Rune); i += 2 {
 				lo, hi := re.Rune[i], re.Rune[i+1]
 				escape(b, lo, lo == '-')
