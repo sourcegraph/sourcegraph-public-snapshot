@@ -1,9 +1,11 @@
+import * as H from 'history'
 import React from 'react'
+import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
 import { ExternalServiceKindMetadata } from './externalServices'
 
-interface Props extends ExternalServiceKindMetadata {}
-
-export const ExternalServiceCard: React.FunctionComponent<Props> = (service: ExternalServiceKindMetadata) => (
+export const ExternalServiceCard: React.FunctionComponent<ExternalServiceKindMetadata> = (
+    service: ExternalServiceKindMetadata
+) => (
     <div className="external-service-card">
         <div className={`external-service-card__icon external-service-card__icon--${service.iconBrandColor}`}>
             {service.icon}
@@ -13,4 +15,17 @@ export const ExternalServiceCard: React.FunctionComponent<Props> = (service: Ext
             <p className="external-service-card__main-body">{service.shortDescription}</p>
         </div>
     </div>
+)
+
+interface LinkedProps extends ExternalServiceKindMetadata {
+    to: H.LocationDescriptor
+}
+
+export const LinkedExternalServiceCard: React.FunctionComponent<LinkedProps> = (props: LinkedProps) => (
+    <LinkOrButton
+        className={`linked-external-service-card linked-external-service-card--${props.iconBrandColor}`}
+        to={props.to}
+    >
+        <ExternalServiceCard {...props} />
+    </LinkOrButton>
 )

@@ -1,10 +1,9 @@
 import * as H from 'history'
 import React from 'react'
-import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
 import { ThemeProps } from '../theme'
-import { ExternalServiceCard } from './ExternalServiceCard'
+import { LinkedExternalServiceCard } from './ExternalServiceCard'
 import {
     AddExternalServiceMetadata,
     ALL_EXTERNAL_SERVICE_ADD_VARIANTS,
@@ -66,13 +65,12 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
                     <h1>Add external service</h1>
                     <p>Choose an external service to add to Sourcegraph.</p>
                     {ALL_EXTERNAL_SERVICE_ADD_VARIANTS.map((service, i) => (
-                        <LinkOrButton
-                            className="add-external-services-page__active-card"
-                            key={i}
-                            to={SiteAdminAddExternalServicesPage.getAddURL(service)}
-                        >
-                            <ExternalServiceCard {...service} />
-                        </LinkOrButton>
+                        <div className="add-external-services-page__card" key={i}>
+                            <LinkedExternalServiceCard
+                                to={SiteAdminAddExternalServicesPage.getAddURL(service)}
+                                {...service}
+                            />
+                        </div>
                     ))}
                 </div>
             )
