@@ -6,7 +6,7 @@
 
     &__icon {
         flex: 0 0 0;
-        padding: 0.25rem;
+        padding: 0.25rem 0.5rem;
         display: flex;
         align-items: center;
 
@@ -34,8 +34,7 @@
     }
     &__main {
         flex: 1 1 0;
-        margin-top: 0.25rem;
-        margin-left: 0.25rem;
+        margin-top: 0.5rem;
     }
     &__main-header {
         margin: 0;

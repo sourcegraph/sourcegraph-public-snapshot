@@ -9,7 +9,7 @@ export const ExternalServiceCard: React.FunctionComponent<Props> = (service: Ext
             {service.icon}
         </div>
         <div className="external-service-card__main">
-            <h2 className="external-service-card__main-header">{service.title}</h2>
+            <h3 className="external-service-card__main-header">{service.title}</h3>
             <p className="external-service-card__main-body">{service.shortDescription}</p>
         </div>
     </div>

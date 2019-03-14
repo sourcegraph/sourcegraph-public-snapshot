@@ -68,7 +68,7 @@ export interface ExternalServiceKindMetadata {
     defaultConfig: string
 }
 
-const iconSize = 50
+const iconSize = 45
 
 const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',

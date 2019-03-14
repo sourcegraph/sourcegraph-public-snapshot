@@ -28,7 +28,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
                 {this.props.error && <p className="alert alert-danger">{upperFirst(this.props.error.message)}</p>}
                 <div className="form-group">
-                    <label htmlFor="e2e-external-service-form-display-name">Display name</label>
+                    <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
+                        Display name:
+                    </label>
                     <input
                         id="e2e-external-service-form-display-name"
                         type="text"
