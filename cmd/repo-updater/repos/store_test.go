@@ -38,31 +38,28 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			want := make(repos.Repos, 0, 512) // Test more than one page load
-			for i := 0; i < cap(want); i++ {
-				id := strconv.Itoa(i)
-				want = append(want, &repos.Repo{
-					Name:        "github.com/foo/bar" + id,
-					Description: "The description",
-					Language:    "barlang",
-					Enabled:     true,
-					Archived:    false,
-					Fork:        false,
-					CreatedAt:   now,
-					ExternalRepo: api.ExternalRepoSpec{
-						ID:          id,
-						ServiceType: "github",
-						ServiceID:   "http://github.com",
+			// Test more than one page load
+			want := mkRepos(512, &repos.Repo{
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				Language:    "barlang",
+				Enabled:     true,
+				Archived:    false,
+				Fork:        false,
+				CreatedAt:   now,
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "AAAAA==",
+					ServiceType: "github",
+					ServiceID:   "http://github.com",
+				},
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:123": {
+						ID:       "extsvc:123",
+						CloneURL: "git@github.com:foo/bar.git",
 					},
-					Sources: map[string]*repos.SourceInfo{
-						"extsvc:123": {
-							ID:       "extsvc:123",
-							CloneURL: "git@github.com:foo/bar.git",
-						},
-					},
-					Metadata: []byte("{}"),
-				})
-			}
+				},
+				Metadata: []byte("{}"),
+			})
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
@@ -147,6 +144,28 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 		},
 	}
 
+	equal := func(rs ...*repos.Repo) func(testing.TB, repos.Repos) {
+		want := repos.Repos(rs)
+		return func(t testing.TB, have repos.Repos) {
+			have.Apply(repos.Opt.ID(0)) // Exclude auto-generated IDs from equality tests
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("repos: %s", cmp.Diff(have, want))
+			}
+		}
+	}
+
+	orderedBy := func(ord func(a, b *repos.Repo) bool) func(testing.TB, repos.Repos) {
+		return func(t testing.TB, have repos.Repos) {
+			want := have.Clone()
+			sort.Slice(want, func(i, j int) bool {
+				return ord(want[i], want[j])
+			})
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("repos: %s", cmp.Diff(have, want))
+			}
+		}
+	}
+
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -154,7 +173,7 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 			name   string
 			kinds  []string
 			stored repos.Repos
-			repos  repos.Repos
+			repos  func(testing.TB, repos.Repos)
 			err    error
 		}{
 			{
@@ -163,21 +182,29 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 				stored: repos.Repos{foo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
 				})},
-				repos: repos.Repos{foo.With(func(r *repos.Repo) {
+				repos: equal(foo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
-				})},
+				})),
 			},
 			{
 				name:   "ignores unmanaged",
 				kinds:  []string{"github"},
 				stored: repos.Repos{&foo, &unmanaged}.Clone(),
-				repos:  repos.Repos{&foo}.Clone(),
+				repos:  equal(&foo),
 			},
 			{
 				name:   "returns soft deleted repos",
 				kinds:  []string{"github"},
 				stored: repos.Repos{foo.With(repos.Opt.DeletedAt(now))},
-				repos:  repos.Repos{foo.With(repos.Opt.DeletedAt(now))},
+				repos:  equal(foo.With(repos.Opt.DeletedAt(now))),
+			},
+			{
+				name:   "returns repos in ascending order by id",
+				kinds:  []string{"github"},
+				stored: mkRepos(512, &foo),
+				repos: orderedBy(func(a, b *repos.Repo) bool {
+					return a.ID < b.ID
+				}),
 			},
 		} {
 			tc := tc
@@ -195,10 +222,8 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				have := repos.Repos(rs)
-				have.Apply(repos.Opt.ID(0)) // Exclude auto-generated IDs from equality tests
-				if want := tc.repos; !reflect.DeepEqual(have, want) {
-					t.Errorf("repos: %s", cmp.Diff(have, want))
+				if tc.repos != nil {
+					tc.repos(t, rs)
 				}
 			}))
 		}
@@ -291,6 +316,18 @@ func testDBStoreTransact(db *sql.DB) func(*testing.T) {
 			t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 		}
 	}
+}
+
+func mkRepos(n int, base *repos.Repo) repos.Repos {
+	rs := make(repos.Repos, 0, n)
+	for i := 0; i < n; i++ {
+		id := strconv.Itoa(i)
+		r := base.Clone()
+		r.Name += id
+		r.ExternalRepo.ID += id
+		rs = append(rs, r)
+	}
+	return rs
 }
 
 func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.Store)) func(*testing.T) {
