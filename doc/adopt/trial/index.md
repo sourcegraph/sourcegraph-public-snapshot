@@ -6,11 +6,11 @@ Sourcegraph has been deployed inside of thousands of organizations. From our exp
 
 ## 1. Define trial success
 
-What? You shouldn't start with [`docker run...`](/#quickstart-guide)?
+What? You shouldn't start with [`docker run...`](../../index.md#quickstart-guide)?
 
 The single most important predictor of a successful trial is deciding and agreeing up-front why your organization needs Sourcegraph, and how you'll judge the results.
 
-Trials typically last **2 to 4 weeks**, and include **25 to 500 initial users (i.e., one full team or organization).** 
+Trials typically last **2 to 4 weeks**, and include **25 to 500 initial users (i.e., one full team or organization).**
 
 For measuring a trial, each company will be different. Common examples we find include:
 
@@ -20,8 +20,8 @@ For measuring a trial, each company will be different. Common examples we find i
 
 * ### User engagement
 
-    Sourcegraph provides usage statistics to site admins, at https://sourcegraph.example.com/site-admin/usage-stats. This page will show you how many unique users used the product per day, week, and month, along with per-user metrics so you can validate the numbers. 
-  
+    Sourcegraph provides usage statistics to site admins, at https://sourcegraph.example.com/site-admin/usage-stats. This page will show you how many unique users used the product per day, week, and month, along with per-user metrics so you can validate the numbers.
+
     Many larger customers rely on usage metrics, such as the percentage of trial users that come back to use Sourcegraph per week or day, to determine whether it was successful.
 
 * ### User surveys
@@ -38,7 +38,7 @@ Interested in learning how Sourcegraph can help your team? [Please reach out](ht
 
 ## 2. Deploy Sourcegraph
 
-Identify the correct site admin(s) — the person or team responsible for owning the technical deployment — so they can [deploy Sourcegraph internally](/#quickstart-guide).
+Identify the correct site admin(s) — the person or team responsible for owning the technical deployment — so they can [deploy Sourcegraph internally](../../index.md#quickstart-guide).
 
 Site admins can get direct support from Sourcegraph Engineers in our open source repository's [public issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 
@@ -50,7 +50,7 @@ As mentioned above, Sourcegraph trials are most successful when they start with 
   (1) investing in the product and exploring features, as they don't expect it to stick around, and;
   (2) sharing links, telling others about it, posting search results, and other socializing.
 
-If you want to run a trial with more than 100 users on your instance, just [reach out](/contact) and we'll provide an unlimited license key for up to a month, no questions asked. 
+If you want to run a trial with more than 100 users on your instance, just [reach out](https://about.sourcegraph.com/contact) and we'll provide an unlimited license key for up to a month, no questions asked.
 
 A typical message to the team looks like:
 
@@ -63,15 +63,15 @@ A typical message to the team looks like:
 >	- Code browsing: <span style="color:#FF0000;">[URL to a code file page on your Sourcegraph instance]</span>
 >
 ><span style="color:#FF0000;">[Include screenshots/gif of your Sourcegraph instance here or use sample below]</span>
->![Sourcegraph code search](/product/img/SourcegraphCodeSearch.gif)
+>![Sourcegraph code search](../img/SourcegraphCodeSearch.gif)
 
 ## 4. Deploy integrations
 
-Sourcegraph is most useful when it's at your fingertips. Our [integrations](/integration), including our [Chrome and Firefox extensions](integration/browser_extension) which provide code intelligence in GitHub, GitLab, Bitbucket, Phabricator, and more, and also provide a search shortcut from the browser URL bar:
+Sourcegraph is most useful when it's at your fingertips. Our [integrations](../../integration/index.md), including our [Chrome and Firefox extensions](../../integration/browser_extension/index.md) which provide code intelligence in GitHub, GitLab, Bitbucket, Phabricator, and more, and also provide a search shortcut from the browser URL bar:
 
-![Sourcegraph browser extension](/integration/img/BrowserExtension.gif)
+![Sourcegraph browser extension](../../integration/img/BrowserExtension.gif)
 
-For short trials, however, companies often choose to only set up our search shortcut (or "omnibox") integration (though it provides less functionality, it may require fewer internal approvals). See [our guide for setting up search shortcuts](/integration/browser_search_engine).
+For short trials, however, companies often choose to only set up our search shortcut (or "omnibox") integration (though it provides less functionality, it may require fewer internal approvals). See [our guide for setting up search shortcuts](../../integration/browser_search_engine/index.md).
 
 ## 5. Measure success
 
@@ -79,6 +79,6 @@ Like step 1, this looks different for every company. If you've defined success a
 
 ## Let us know!
 
-Whether your team found Sourcegraph to be successful or not, please let us know! If so, we'd love to talk about how to grow Sourcegraph internally on a plan that's right for you, and if not, we need to know how to improve. 
+Whether your team found Sourcegraph to be successful or not, please let us know! If so, we'd love to talk about how to grow Sourcegraph internally on a plan that's right for you, and if not, we need to know how to improve.
 
 [Contact us directly](https://about.sourcegraph.com/contact), [file an issue](https://github.com/sourcegraph/sourcegraph) with product feedback/problems/questions, or [tweet at us](https://twitter.com/srcgraph)!
