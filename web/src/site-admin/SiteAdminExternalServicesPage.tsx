@@ -6,6 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -111,7 +112,8 @@ function deleteExternalService(externalService: GQL.ID): Observable<void> {
     )
 }
 
-interface Props extends RouteComponentProps<{}> {}
+interface Props extends RouteComponentProps<{}>, ActivationProps {}
+
 class FilteredExternalServiceConnection extends FilteredConnection<
     GQL.IExternalService,
     Pick<ExternalServiceNodeProps, 'onDidUpdate'>
@@ -126,6 +128,39 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminExternalServices')
     }
+
+    private queryExternalServices = (args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> =>
+        queryGraphQL(
+            gql`
+                query ExternalServices($first: Int) {
+                    externalServices(first: $first) {
+                        nodes {
+                            id
+                            kind
+                            displayName
+                            config
+                        }
+                        totalCount
+                        pageInfo {
+                            hasNextPage
+                        }
+                    }
+                }
+            `,
+            {
+                first: args.first,
+            }
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.externalServices || errors) {
+                    throw createAggregateError(errors)
+                }
+                if (data.externalServices.totalCount > 0 && this.props.activation) {
+                    this.props.activation.update({ ConnectedCodeHost: true })
+                }
+                return data.externalServices
+            })
+        )
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<ExternalServiceNodeProps, 'onDidUpdate'> = {
@@ -151,7 +186,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
                     className="list-group list-group-flush mt-3"
                     noun="external service"
                     pluralNoun="external services"
-                    queryConnection={queryExternalServices}
+                    queryConnection={this.queryExternalServices}
                     nodeComponent={ExternalServiceNode}
                     nodeComponentProps={nodeProps}
                     hideSearch={true}
@@ -165,35 +200,4 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
     }
 
     private onDidUpdateExternalServices = () => this.updates.next()
-}
-
-function queryExternalServices(args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> {
-    return queryGraphQL(
-        gql`
-            query ExternalServices($first: Int) {
-                externalServices(first: $first) {
-                    nodes {
-                        id
-                        kind
-                        displayName
-                        config
-                    }
-                    totalCount
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
-            }
-        `,
-        {
-            first: args.first,
-        }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.externalServices
-        })
-    )
 }
