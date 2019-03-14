@@ -22,7 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -59,9 +62,6 @@ func (r *schemaResolver) Search(args *struct {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 }, error) {
-	if strings.HasPrefix(args.Query, "!hier!") {
-		return newSearcherResolver(strings.TrimPrefix(args.Query, "!hier!"))
-	}
 
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
@@ -712,3 +712,72 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev search.Reposito
 }
 
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
+
+// SearchProviders contains instances of our search providers.
+type SearchProviders struct {
+	// Text is our root text searcher.
+	Text *backend.Text
+
+	// SearcherURLs is an endpoint map to our searcher service replicas.
+	//
+	// Note: This field will be removed once we have removed our old search
+	// code paths.
+	SearcherURLs *endpoint.Map
+
+	// Index is a search.Searcher for Zoekt.
+	Index *backend.Zoekt
+}
+
+var (
+	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
+	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
+
+	searchOnce sync.Once
+	searchP    *SearchProviders
+)
+
+// Search returns instances of our search providers.
+func Search() *SearchProviders {
+	searchOnce.Do(func() {
+		// Zoekt
+		index := &backend.Zoekt{}
+		if zoektAddr != "" {
+			index.Client = zoektrpc.Client(zoektAddr)
+		}
+		go func() {
+			conf.Watch(func() {
+				index.SetEnabled(conf.SearchIndexEnabled())
+			})
+		}()
+
+		// Searcher
+		var searcherURLs *endpoint.Map
+		if len(strings.Fields(searcherURL)) == 0 {
+			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+		} else {
+			searcherURLs = endpoint.New(searcherURL)
+		}
+
+		text := &backend.Text{
+			Index: index,
+			Fallback: &backend.TextJIT{
+				Endpoints: searcherURLs,
+				Resolve: func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error) {
+					// Do not trigger a repo-updater lookup (e.g.,
+					// backend.{GitRepo,Repos.ResolveRev}) because that would
+					// slow this operation down by a lot (if we're looping
+					// over many repos). This means that it'll fail if a repo
+					// is not on gitserver.
+					return git.ResolveRevision(ctx, gitserver.Repo{Name: name}, nil, spec, &git.ResolveRevisionOptions{NoEnsureRevision: true})
+				},
+			},
+		}
+
+		searchP = &SearchProviders{
+			Text:         text,
+			SearcherURLs: searcherURLs,
+			Index:        index,
+		}
+	})
+	return searchP
+}
