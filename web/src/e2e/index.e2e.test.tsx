@@ -231,19 +231,22 @@ describe('e2e test suite', function(this: any): void {
             await enableOrAddRepositoryIfNeeded()
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
-            await percySnapshot(page, 'Search results repo')
+            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
+            // await percySnapshot(page, 'Search results repo')
         })
 
         test('Search results file', async () => {
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
-            await percySnapshot(page, 'Search results file')
+            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
+            // await percySnapshot(page, 'Search results file')
         })
 
         test('Search results code', async () => {
             await page.goto(baseURL + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
-            await percySnapshot(page, 'Search results code')
+            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
+            // await percySnapshot(page, 'Search results code')
         })
     })
 

@@ -76,6 +76,9 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
             location,
         } = this.props
 
+        if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
+            return null
+        }
         return (
             <div
                 className={`hover-overlay card ${className}`}

@@ -43,12 +43,10 @@ function privateRepoPublicSourcegraph({
  * @return Observable That emits the result or errors if the HTTP request failed
  */
 export const requestGraphQL: typeof performRequest = (args: GraphQLRequestArgs) => {
-    // https://github.com/sourcegraph/sourcegraph/issues/1945
-    // make sure all GraphQL API requests are sent
-    // from the background page, so as to bypass CORS restrictions
-    // when running on private code hosts with the public Sourcegraph instance.
-    // This allows us to run extensions on private code hosts without
-    // needing a private Sourcegraph instance.
+    // Make sure all GraphQL API requests are sent from the background page, so as to bypass CORS
+    // restrictions when running on private code hosts with the public Sourcegraph instance.  This
+    // allows us to run extensions on private code hosts without needing a private Sourcegraph
+    // instance. See https://github.com/sourcegraph/sourcegraph/issues/1945.
     if (isBackground || isInPage) {
         return performRequest(args)
     }

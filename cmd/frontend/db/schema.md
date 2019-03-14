@@ -21,22 +21,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.cert_cache"
-```
-   Column   |           Type           |                        Modifiers                        
-------------+--------------------------+---------------------------------------------------------
- id         | bigint                   | not null default nextval('cert_cache_id_seq'::regclass)
- cache_key  | text                     | not null
- b64data    | text                     | not null
- created_at | timestamp with time zone | not null default now()
- updated_at | timestamp with time zone | not null default now()
- deleted_at | timestamp with time zone | 
-Indexes:
-    "cert_cache_pkey" PRIMARY KEY, btree (id)
-    "cert_cache_key_idx" UNIQUE, btree (cache_key)
-
-```
-
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           |                               Modifiers                               

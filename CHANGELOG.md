@@ -12,10 +12,13 @@ All notable changes to Sourcegraph are documented in this file.
 - Sourcegraph can now automatically use the system's theme.
   To enable, open the user menu in the top right and make sure the theme dropdown is set to "System".
   This is currently supported on macOS Mojave with Safari Technology Preview 68 and later.
+- The `github.exclude` setting was added to the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) to allow excluding repositories yielded by `github.repos` or `github.repositoryQuery` from being synced.
 
 ### Changed
 
 - Symbols search is much faster now. After the initial indexing, you can expect code intelligence to be nearly instant no matter the size of your repository.
+- Massively reduced the number of code host API requests Sourcegraph performs, which caused rate limiting issues such as slow search result loading to appear.
+- The [`corsOrigin`](https://docs.sourcegraph.com/admin/config/site_config) site config property is no longer needed for integration with GitHub, GitLab, etc., via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension). Only the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension) requires it.
 
 ### Fixed
 

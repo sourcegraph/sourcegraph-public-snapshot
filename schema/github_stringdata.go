@@ -44,6 +44,28 @@ const GitHubSchemaJSON = `{
       "type": "array",
       "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" }
     },
+    "exclude": {
+      "description": "A list of repos to never mirror from this GitHub instance. Takes precedence over \"repos\" and \"repositoryQuery\" configuration.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a GitHub repo (\"owner/name\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          },
+          "id": {
+            "description": "The id of a GitHub repo (as returned by the GitHub instance's API) to exclude from mirroring.",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "repositoryQuery": {
       "description": "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:\n\n- ` + "`" + `public` + "`" + ` mirrors all public repositories for GitHub Enterprise and is the equivalent of ` + "`" + `none` + "`" + ` for GitHub\n\n- ` + "`" + `affiliated` + "`" + ` mirrors all repositories affiliated with the configured token's user:\n\t- Private repositories with read access\n\t- Public repositories owned by the user or their orgs\n\t- Public repositories with write access\n\n- ` + "`" + `none` + "`" + ` mirrors no repositories (except those specified in the ` + "`" + `repos` + "`" + ` configuration property or added manually)\n\n- All other values are executed as a GitHub advanced repository search as described at https://github.com/search/advanced. Example: to sync all repositories from the \"sourcegraph\" organization including forks the query would be \"org:sourcegraph fork:true\".\n\nIf multiple values are provided, their results are unioned.\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
       "type": "array",

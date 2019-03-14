@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -55,6 +56,34 @@ func main() {
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Env("ENTERPRISE", "1"),
 	)
+
+	isPR := !isBextReleaseBranch &&
+		!releaseBranch &&
+		!taggedRelease &&
+		branch != "master" &&
+		!strings.HasPrefix(branch, "master-dry-run/") &&
+		!strings.HasPrefix(branch, "docker-images-patch/")
+	if isPR {
+		output, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
+		if err != nil {
+			panic(err)
+		}
+
+		onlyDocsChange := true
+		for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+			if !strings.HasPrefix(line, "doc") {
+				onlyDocsChange = false
+				break
+			}
+		}
+
+		if onlyDocsChange {
+			pipeline.AddStep(":memo:",
+				bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
+				bk.Cmd("./dev/check/docsite.sh"))
+			return
+		}
+	}
 
 	if !isBextReleaseBranch {
 		pipeline.AddStep(":docker:",
@@ -282,4 +311,8 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 		pipeline.AddWait()
 	}
+
+	// Clean up to help avoid running out of disk.
+	pipeline.AddStep(":sparkles:",
+		bk.Cmd("docker image rm -f sourcegraph/server:"+version+"_candidate"))
 }

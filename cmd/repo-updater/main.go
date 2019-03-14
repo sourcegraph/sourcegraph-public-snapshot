@@ -154,6 +154,7 @@ func main() {
 		Store:            store,
 		Syncer:           syncer,
 		OtherReposSyncer: otherSyncer,
+		InternalAPI:      frontendAPI,
 	}
 
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
