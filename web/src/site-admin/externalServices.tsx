@@ -70,6 +70,12 @@ export interface ExternalServiceKindMetadata {
 
 const iconSize = 50
 
+const defaultFormattingOptions: FormattingOptions = {
+    eol: '\n',
+    insertSpaces: true,
+    tabSize: 2,
+}
+
 const githubEditorActions: EditorAction[] = [
     {
         id: 'setAccessToken',
@@ -336,12 +342,6 @@ export const ALL_EXTERNAL_SERVICE_ADD_VARIANTS: AddExternalServiceMetadata[] = f
         }
     )
 )
-
-const defaultFormattingOptions: FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
-}
 
 export function getExternalService(
     kind: GQL.ExternalServiceKind,

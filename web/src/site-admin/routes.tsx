@@ -1,9 +1,6 @@
 import React from 'react'
 import { eventLogger } from '../tracking/eventLogger'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
-const SiteAdminAddExternalServicePage = React.lazy(async () => ({
-    default: (await import('./SiteAdminAddExternalServicePage')).SiteAdminAddExternalServicePage,
-}))
 const SiteAdminAddExternalServicesPage = React.lazy(async () => ({
     default: (await import('./SiteAdminAddExternalServicesPage')).SiteAdminAddExternalServicesPage,
 }))

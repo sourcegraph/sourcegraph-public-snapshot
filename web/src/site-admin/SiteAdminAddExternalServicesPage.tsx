@@ -1,5 +1,4 @@
 import * as H from 'history'
-import { map as lodashMap } from 'lodash'
 import React from 'react'
 import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../shared/src/graphql/schema'
