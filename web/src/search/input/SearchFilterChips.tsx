@@ -19,6 +19,7 @@ interface Props extends SettingsCascadeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
+    isSourcegraphDotCom: boolean
 
     /**
      * The current query.
@@ -161,7 +162,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
         })
 
         let newQuery = toggleSearchFilter(this.props.query, value)
-        if (value.match(/\brepogroup:/) && newQuery.match(/\brepogroup:sample\b/)) {
+        if (this.props.isSourcegraphDotCom && value.match(/\brepogroup:/) && newQuery.match(/\brepogroup:sample\b/)) {
             newQuery = newQuery.replace(/\s*repogroup:sample\s*/, '')
         }
 

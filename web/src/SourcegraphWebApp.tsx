@@ -260,6 +260,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         // Extensions
                                         platformContext={this.state.platformContext}
                                         extensionsController={this.state.extensionsController}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     />
                                 )}
                             />

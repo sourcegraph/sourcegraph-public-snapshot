@@ -28,6 +28,7 @@ interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeP
     location: H.Location
     history: H.History
     navbarSearchQuery: string
+    isSourcegraphDotCom: boolean
 }
 
 interface SearchScope {
@@ -318,7 +319,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         })
 
         let newQuery = toggleSearchFilter(this.props.navbarSearchQuery, value)
-        if (value.match(/\brepogroup:/) && newQuery.match(/\brepogroup:sample\b/)) {
+        if (this.props.isSourcegraphDotCom && value.match(/\brepogroup:/) && newQuery.match(/\brepogroup:sample\b/)) {
             newQuery = newQuery.replace(/\s*repogroup:sample\s*/, '')
         }
 

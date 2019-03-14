@@ -20,6 +20,7 @@ interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, 
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean
 }
 
 interface State {
@@ -89,6 +90,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     query={this.state.userQuery}
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
+                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
                             <QueryBuilder
@@ -109,6 +111,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     query={this.state.userQuery}
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
+                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
                         </>
