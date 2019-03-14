@@ -153,7 +153,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                         />
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
-                        <div className="alert alert-danger code-excerpt-alert">
+                        <div className="code-excerpt-alert">
                             <ErrorIcon className="icon-inline mr-2" />
                             {this.state.blobLinesOrError.message}
                         </div>
