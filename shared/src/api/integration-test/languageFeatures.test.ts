@@ -86,10 +86,12 @@ describe('LanguageFeatures (integration)', () => {
                 provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => run(doc, pos),
             } as sourcegraph.LocationProvider),
         getResult: services =>
-            services.textDocumentLocations.getLocations('x', {
-                textDocument: { uri: 'file:///f' },
-                position: { line: 1, character: 2 },
-            }),
+            services.textDocumentLocations
+                .getLocations('x', {
+                    textDocument: { uri: 'file:///f' },
+                    position: { line: 1, character: 2 },
+                })
+                .pipe(switchMap(x => x)),
     })
 })
 
