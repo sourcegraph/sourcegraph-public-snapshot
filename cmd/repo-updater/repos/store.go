@@ -97,7 +97,7 @@ func (s *DBStore) Done(errs ...*error) {
 // GetRepoByName looks up the repo with the given name.
 func (s DBStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) {
 	var r Repo
-	_, err := s.list(ctx, getRepoByNameQuery(name), func(s scanner) (int64, error) {
+	id, err := s.list(ctx, getRepoByNameQuery(name), func(s scanner) (int64, error) {
 		err := scanRepo(&r, s)
 		return int64(r.ID), err
 	})
@@ -105,7 +105,7 @@ func (s DBStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) 
 	switch {
 	case err != nil:
 		return nil, err
-	case r.ID == 0:
+	case id == -1:
 		return nil, ErrNoResults
 	default:
 		return &r, nil
@@ -505,6 +505,7 @@ type scanFunc func(scanner) (last int64, err error)
 func scanAll(rows *sql.Rows, scan scanFunc) (last int64, err error) {
 	defer closeErr(rows, &err)
 
+	last = -1
 	for rows.Next() {
 		if last, err = scan(rows); err != nil {
 			return last, err
