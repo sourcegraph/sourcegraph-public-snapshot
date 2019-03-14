@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/fix"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 )
 
@@ -123,11 +124,12 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 	case StringType:
 		dst.String = &valueString
 	case RegexpType:
-		r, err := autoCorrectRegexp(valueString)
-		if err != nil {
-			return err
+		r := fix.NewFixableRegexp(valueString)
+		r.Fix()
+		if r.Err != nil {
+			return r.Err
 		}
-		p, err := regexp.Compile(r)
+		p, err := regexp.Compile(r.String())
 		if err != nil {
 			return err
 		}
