@@ -40,7 +40,7 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
                         {checkboxElem}
                     </Link>
                 ) : (
-                    checkboxElem
+                    <span className="activation-item__link">{checkboxElem}</span>
                 )}
             </div>
         )

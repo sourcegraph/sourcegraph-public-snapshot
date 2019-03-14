@@ -28,8 +28,8 @@
     .activation-checklist__item {
         @include hover-focus {
             box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
-			border-color: var(--theme-bg-plain);
-			background-color: var(--theme-bg-plain);
+            border-color: var(--theme-bg-plain);
+            background-color: var(--theme-bg-plain);
         }
     }
 }
@@ -50,8 +50,10 @@
 
     &__link {
         display: block;
+        color: var(--link-color);
         &:hover {
             text-decoration: none;
+            color: var(--link-hover-color);
         }
     }
 }
