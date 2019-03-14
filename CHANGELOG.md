@@ -22,6 +22,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed a bug where adding a search scope that adds a `repogroup` filter would cause invalid queries if `repogroup:sample` was already part of the query.
+
 ### Removed
 
 - The `"updateScheduler2"` experiment is now the default and it's no longer possible to configure.

@@ -316,6 +316,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         eventLogger.log('DynamicFilterClicked', {
             search_filter: { value },
         })
-        submitSearch(this.props.history, toggleSearchFilter(this.props.navbarSearchQuery, value), 'filter')
+
+        let newQuery = toggleSearchFilter(this.props.navbarSearchQuery, value)
+        if (value.match(/\brepogroup:/) && newQuery.match(/\brepogroup:sample\b/)) {
+            newQuery = newQuery.replace(/\s*repogroup:sample\s*/, '')
+        }
+
+        submitSearch(this.props.history, newQuery, 'filter')
     }
 }

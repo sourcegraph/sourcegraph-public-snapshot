@@ -159,7 +159,13 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                 value,
             },
         })
-        submitSearch(this.props.history, toggleSearchFilter(this.props.query, value), 'filter')
+
+        let newQuery = toggleSearchFilter(this.props.query, value)
+        if (value.match(/\brepogroup:/) && newQuery.match(/\brepogroup:sample\b/)) {
+            newQuery = newQuery.replace(/\s*repogroup:sample\s*/, '')
+        }
+
+        submitSearch(this.props.history, newQuery, 'filter')
     }
 }
 
