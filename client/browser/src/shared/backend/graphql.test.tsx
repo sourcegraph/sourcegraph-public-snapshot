@@ -1,4 +1,5 @@
 import { of, throwError } from 'rxjs'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 import { RequestContext } from './context'
 import { ERAUTHREQUIRED, ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from './errors'
@@ -49,7 +50,7 @@ describe('requestGraphQL()', () => {
 
     it('makes a simple request to Sourcegraph.com', async () => {
         const ajaxRequest = existsOnSourcegraphDotCom()
-        const response = await requestGraphQL({
+        const response = await requestGraphQL<GQL.IGraphQLResponseRoot>({
             ctx: MOCK_CONTEXT,
             request: MOCK_RESOLVE_REV_REQUEST,
             ajaxRequest: ajaxRequest as any,
@@ -75,7 +76,7 @@ describe('requestGraphQL()', () => {
 
     it('falls back to the public Sourcegraph.com if a public repository is not found on the private instance', async () => {
         const ajaxRequest = existsOnSourcegraphDotCom()
-        const response = await requestGraphQL({
+        const response = await requestGraphQL<GQL.IGraphQLResponseRoot>({
             ctx: MOCK_CONTEXT,
             request: MOCK_RESOLVE_REV_REQUEST,
             url: 'https://sourcegraph.private.org',
@@ -87,7 +88,7 @@ describe('requestGraphQL()', () => {
 
     it('falls back to the public Sourcegraph.com if the user is logged out of his private instance and the repository is public', async () => {
         const ajaxRequest = existsOnSourcegraphDotCom()
-        const response = await requestGraphQL({
+        const response = await requestGraphQL<GQL.IGraphQLResponseRoot>({
             ctx: MOCK_CONTEXT,
             request: MOCK_RESOLVE_REV_REQUEST,
             url: 'https://sourcegraph.private.org',
