@@ -14,7 +14,7 @@ See [release_issue_template.md](release_issue_template.md) for the monthly relea
 
 ## Release sourcegraph/server
 
-- [ ] Create an annotated git tag using `git tag -a $VERSION -m $VERSION`, where `$VERSION` is the patch version number (e.g. `v3.1.1`).
+- [ ] Create an annotated git tag using `VERSION=v3.1.1 git tag -a $VERSION -m $VERSION`.
 - [ ] `git push origin $VERSION`. This publishes the new tag, triggering the Docker image for the new version to start building.
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
 
