@@ -43,6 +43,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 
 - [Overview](user/index.md): What is Sourcegraph?
 - [Tour](user/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
+- [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
 - [Query syntax reference](user/search/queries.md)
