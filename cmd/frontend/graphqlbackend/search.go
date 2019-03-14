@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -26,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -716,16 +718,13 @@ var errMultipleRevsNotSupported = errors.New("not yet supported: searching multi
 // SearchProviders contains instances of our search providers.
 type SearchProviders struct {
 	// Text is our root text searcher.
-	Text *backend.Text
+	Text *searchbackend.Text
 
 	// SearcherURLs is an endpoint map to our searcher service replicas.
-	//
-	// Note: This field will be removed once we have removed our old search
-	// code paths.
 	SearcherURLs *endpoint.Map
 
 	// Index is a search.Searcher for Zoekt.
-	Index *backend.Zoekt
+	Index *searchbackend.Zoekt
 }
 
 var (
@@ -740,7 +739,7 @@ var (
 func Search() *SearchProviders {
 	searchOnce.Do(func() {
 		// Zoekt
-		index := &backend.Zoekt{}
+		index := &searchbackend.Zoekt{}
 		if zoektAddr != "" {
 			index.Client = zoektrpc.Client(zoektAddr)
 		}
@@ -758,9 +757,9 @@ func Search() *SearchProviders {
 			searcherURLs = endpoint.New(searcherURL)
 		}
 
-		text := &backend.Text{
+		text := &searchbackend.Text{
 			Index: index,
-			Fallback: &backend.TextJIT{
+			Fallback: &searchbackend.TextJIT{
 				Endpoints: searcherURLs,
 				Resolve: func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error) {
 					// Do not trigger a repo-updater lookup (e.g.,
