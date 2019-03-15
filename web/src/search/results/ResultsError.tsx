@@ -20,7 +20,7 @@ export class ResultsError extends React.Component<Props> {
     }
 
     private renderMessage(): React.ReactNode {
-        let {
+        const {
             error: { message },
         } = this.props
 
