@@ -100,7 +100,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
-			want.Apply(repos.Opt.DeletedAt(now))
+			want.Apply(repos.Opt.RepoDeletedAt(now))
 
 			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
@@ -147,7 +147,7 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 	equal := func(rs ...*repos.Repo) func(testing.TB, repos.Repos) {
 		want := repos.Repos(rs)
 		return func(t testing.TB, have repos.Repos) {
-			have.Apply(repos.Opt.ID(0)) // Exclude auto-generated IDs from equality tests
+			have.Apply(repos.Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("repos: %s", cmp.Diff(have, want))
 			}
@@ -195,8 +195,8 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 			{
 				name:   "returns soft deleted repos",
 				kinds:  []string{"github"},
-				stored: repos.Repos{foo.With(repos.Opt.DeletedAt(now))},
-				repos:  equal(foo.With(repos.Opt.DeletedAt(now))),
+				stored: repos.Repos{foo.With(repos.Opt.RepoDeletedAt(now))},
+				repos:  equal(foo.With(repos.Opt.RepoDeletedAt(now))),
 			},
 			{
 				name:   "returns repos in ascending order by id",

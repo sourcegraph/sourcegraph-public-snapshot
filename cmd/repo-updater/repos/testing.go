@@ -68,7 +68,7 @@ func NewFakeSource(urn, kind string, err error, rs ...*Repo) *FakeSource {
 func (s FakeSource) ListRepos(context.Context) ([]*Repo, error) {
 	repos := make([]*Repo, len(s.repos))
 	for i, r := range s.repos {
-		repos[i] = r.With(Opt.Sources(s.urn))
+		repos[i] = r.With(Opt.RepoSources(s.urn))
 	}
 	return repos, s.err
 }
@@ -215,25 +215,25 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 }
 
 //
-// Repo functional options
+// Functional options
 //
 
-// Opt contains functional options for Repos to be used in tests.
+// Opt contains functional options to be used in tests.
 var Opt = struct {
-	ID         func(uint32) func(*Repo)
-	CreatedAt  func(time.Time) func(*Repo)
-	ModifiedAt func(time.Time) func(*Repo)
-	DeletedAt  func(time.Time) func(*Repo)
-	Sources    func(...string) func(*Repo)
-	Metadata   func(interface{}) func(*Repo)
-	ExternalID func(string) func(*Repo)
+	RepoID         func(uint32) func(*Repo)
+	RepoCreatedAt  func(time.Time) func(*Repo)
+	RepoModifiedAt func(time.Time) func(*Repo)
+	RepoDeletedAt  func(time.Time) func(*Repo)
+	RepoSources    func(...string) func(*Repo)
+	RepoMetadata   func(interface{}) func(*Repo)
+	RepoExternalID func(string) func(*Repo)
 }{
-	ID: func(n uint32) func(*Repo) {
+	RepoID: func(n uint32) func(*Repo) {
 		return func(r *Repo) {
 			r.ID = n
 		}
 	},
-	CreatedAt: func(ts time.Time) func(*Repo) {
+	RepoCreatedAt: func(ts time.Time) func(*Repo) {
 		return func(r *Repo) {
 			r.CreatedAt = ts
 			r.UpdatedAt = ts
@@ -241,14 +241,14 @@ var Opt = struct {
 			r.Enabled = true
 		}
 	},
-	ModifiedAt: func(ts time.Time) func(*Repo) {
+	RepoModifiedAt: func(ts time.Time) func(*Repo) {
 		return func(r *Repo) {
 			r.UpdatedAt = ts
 			r.DeletedAt = time.Time{}
 			r.Enabled = true
 		}
 	},
-	DeletedAt: func(ts time.Time) func(*Repo) {
+	RepoDeletedAt: func(ts time.Time) func(*Repo) {
 		return func(r *Repo) {
 			r.UpdatedAt = ts
 			r.DeletedAt = ts
@@ -256,7 +256,7 @@ var Opt = struct {
 			r.Enabled = false
 		}
 	},
-	Sources: func(srcs ...string) func(*Repo) {
+	RepoSources: func(srcs ...string) func(*Repo) {
 		return func(r *Repo) {
 			r.Sources = map[string]*SourceInfo{}
 			for _, src := range srcs {
@@ -264,12 +264,12 @@ var Opt = struct {
 			}
 		}
 	},
-	Metadata: func(md interface{}) func(*Repo) {
+	RepoMetadata: func(md interface{}) func(*Repo) {
 		return func(r *Repo) {
 			r.Metadata = md
 		}
 	},
-	ExternalID: func(id string) func(*Repo) {
+	RepoExternalID: func(id string) func(*Repo) {
 		return func(r *Repo) {
 			r.ExternalRepo.ID = id
 		}

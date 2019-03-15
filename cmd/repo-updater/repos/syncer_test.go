@@ -81,7 +81,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				stored:  repos.Repos{},
 				now:     clock.Now,
 				diff: repos.Diff{Added: repos.Repos{
-					foo.With(repos.Opt.CreatedAt(clock.Time(1)), repos.Opt.Sources("a")),
+					foo.With(repos.Opt.RepoCreatedAt(clock.Time(1)), repos.Opt.RepoSources("a")),
 				}},
 				err: "<nil>",
 			})
@@ -93,12 +93,12 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				name:    "had name and got external_id",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
 				store:   s,
-				stored: repos.Repos{foo.With(repos.Opt.Sources("a"), func(r *repos.Repo) {
+				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"), func(r *repos.Repo) {
 					r.ExternalRepo.ID = ""
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.ModifiedAt(clock.Time(1)), repos.Opt.Sources("a")),
+					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)), repos.Opt.RepoSources("a")),
 				}},
 				err: "<nil>",
 			})
@@ -113,10 +113,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					repos.NewFakeSource("b", "github", nil, foo.Clone()),
 				),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.Sources("a"))},
+				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"))},
 				now:    clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.ModifiedAt(clock.Time(1)), repos.Opt.Sources("a", "b")),
+					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)), repos.Opt.RepoSources("a", "b")),
 				}},
 				err: "<nil>",
 			})
@@ -130,9 +130,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					r.Enabled = !r.Enabled
 				}))),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.Sources("a"))},
+				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"))},
 				now:    clock.Now,
-				diff:   repos.Diff{Unmodified: repos.Repos{foo.With(repos.Opt.Sources("a"))}},
+				diff:   repos.Diff{Unmodified: repos.Repos{foo.With(repos.Opt.RepoSources("a"))}},
 				err:    "<nil>",
 			})
 		}
@@ -145,10 +145,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					r.Enabled = !r.Enabled
 				}))),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.Sources("a"), repos.Opt.DeletedAt(clock.Time(0)))},
+				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"), repos.Opt.RepoDeletedAt(clock.Time(0)))},
 				now:    clock.Now,
 				diff: repos.Diff{Added: repos.Repos{
-					foo.With(repos.Opt.Sources("a"), repos.Opt.CreatedAt(clock.Time(1))),
+					foo.With(repos.Opt.RepoSources("a"), repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			})
@@ -162,10 +162,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					repos.NewFakeSource("a", "github", nil, foo.Clone()),
 				),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.Sources("a", "b"))},
+				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a", "b"))},
 				now:    clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.ModifiedAt(clock.Time(1)), repos.Opt.Sources("a")),
+					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)), repos.Opt.RepoSources("a")),
 				}},
 				err: "<nil>",
 			})
@@ -177,10 +177,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				name:    "deleted ALL repo sources",
 				sourcer: repos.NewFakeSourcer(nil),
 				store:   s,
-				stored:  repos.Repos{foo.With(repos.Opt.Sources("a", "b"))},
+				stored:  repos.Repos{foo.With(repos.Opt.RepoSources("a", "b"))},
 				now:     clock.Now,
 				diff: repos.Diff{Deleted: repos.Repos{
-					foo.With(repos.Opt.DeletedAt(clock.Time(1))),
+					foo.With(repos.Opt.RepoDeletedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			})
@@ -192,12 +192,12 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				name:    "renamed repo is detected via external_id",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
 				store:   s,
-				stored: repos.Repos{foo.With(repos.Opt.Sources("a"), func(r *repos.Repo) {
+				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"), func(r *repos.Repo) {
 					r.Name = "old-name"
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.Sources("a"), repos.Opt.ModifiedAt(clock.Time(1))),
+					foo.With(repos.Opt.RepoSources("a"), repos.Opt.RepoModifiedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			})
@@ -216,7 +216,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Added: repos.Repos{
-					foo.With(repos.Opt.Sources("a"), repos.Opt.CreatedAt(clock.Time(1))),
+					foo.With(repos.Opt.RepoSources("a"), repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			})
@@ -227,17 +227,17 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			testCases = append(testCases, testCase{
 				name: "metadata update",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil,
-					foo.With(repos.Opt.ModifiedAt(clock.Time(1)),
-						repos.Opt.Sources("a"),
-						repos.Opt.Metadata(&github.Repository{IsArchived: true})),
+					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)),
+						repos.Opt.RepoSources("a"),
+						repos.Opt.RepoMetadata(&github.Repository{IsArchived: true})),
 				)),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.Sources("a"))},
+				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"))},
 				now:    clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.ModifiedAt(clock.Time(1)),
-						repos.Opt.Sources("a"),
-						repos.Opt.Metadata(&github.Repository{IsArchived: true})),
+					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)),
+						repos.Opt.RepoSources("a"),
+						repos.Opt.RepoMetadata(&github.Repository{IsArchived: true})),
 				}},
 				err: "<nil>",
 			})
@@ -278,7 +278,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 				var want repos.Repos
 				want.Concat(diff.Added, diff.Modified, diff.Unmodified, diff.Deleted)
-				want.Apply(repos.Opt.ID(0)) // Exclude auto-generated ID from comparisons
+				want.Apply(repos.Opt.RepoID(0)) // Exclude auto-generated ID from comparisons
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
