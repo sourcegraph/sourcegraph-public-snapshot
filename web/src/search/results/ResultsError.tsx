@@ -20,21 +20,24 @@ export class ResultsError extends React.Component<Props> {
     }
 
     private renderMessage(): React.ReactNode {
-        let { error: { message } } = this.props
+        let {
+            error: { message },
+        } = this.props
 
-        const match = message.match(/Did you mean `.*`?/)
+        const match = message.match(/Did you mean `(.*?)`/)
         if (!match) {
             return upperFirst(message)
         }
 
-        const error = message.slice(0, match.index)
-        const suggestion = message.slice(match.index)
+        const suggestion = match[1]
+        const [before, after] = message.split(suggestion)
         const query = buildSearchURLQuery(suggestion)
 
         return (
             <>
-                {error}
+                {before}
                 <Link to={`/search?${query}`}>{suggestion}</Link>
+                {after}
             </>
         )
     }
