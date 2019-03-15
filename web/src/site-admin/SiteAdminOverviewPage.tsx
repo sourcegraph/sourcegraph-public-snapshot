@@ -187,6 +187,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                         this.state.stats.waus[1].userCount
                                     )} last week`}
                                     defaultExpanded={true}
+                                    list={true}
                                 >
                                     {this.state.error && (
                                         <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
@@ -203,10 +204,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                                     <h3>
                                                         <Link
                                                             to="/site-admin/usage-statistics"
-                                                            className="btn btn-secondary btn-sm"
+                                                            className="btn btn-secondary"
                                                         >
-                                                            <OpenInNewIcon className="icon-inline" /> View all usage
-                                                            statistics
+                                                            View all usage statistics{' '}
+                                                            <OpenInNewIcon className="icon-inline" />
                                                         </Link>
                                                     </h3>
                                                 </div>
