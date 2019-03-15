@@ -17,7 +17,12 @@ import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from '../backend'
 import { FilterChip } from '../FilterChip'
-import { isSearchResults, submitSearch, toggleSearchFilter } from '../helpers'
+import {
+    isSearchResults,
+    submitSearch,
+    toggleSearchFilter,
+    toggleSearchFilterAndReplaceSampleRepogroup,
+} from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
 
@@ -28,6 +33,7 @@ interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeP
     location: H.Location
     history: H.History
     navbarSearchQuery: string
+    isSourcegraphDotCom: boolean
 }
 
 interface SearchScope {
@@ -316,6 +322,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         eventLogger.log('DynamicFilterClicked', {
             search_filter: { value },
         })
-        submitSearch(this.props.history, toggleSearchFilter(this.props.navbarSearchQuery, value), 'filter')
+
+        const newQuery = this.props.isSourcegraphDotCom
+            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQuery, value)
+            : toggleSearchFilter(this.props.navbarSearchQuery, value)
+
+        submitSearch(this.props.history, newQuery, 'filter')
     }
 }
