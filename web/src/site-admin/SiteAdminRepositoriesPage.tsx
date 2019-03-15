@@ -43,7 +43,11 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
 
     public render(): JSX.Element | null {
         return (
-            <li className="repository-node list-group-item py-2">
+            <li
+                className="repository-node list-group-item py-2"
+                data-e2e-repository={this.props.node.name}
+                data-e2e-enabled={this.props.node.enabled}
+            >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <RepoLink repoName={this.props.node.name} to={this.props.node.url} />
@@ -101,7 +105,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                             </button>
                         ) : (
                             <button
-                                className="btn btn-success btn-sm"
+                                className="btn btn-success btn-sm e2e-enable-repository"
                                 onClick={this.enableRepository}
                                 disabled={this.state.loading}
                                 data-tooltip="Enable access to the repository. Users will be able to view and search it."
