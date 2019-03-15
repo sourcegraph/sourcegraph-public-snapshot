@@ -68,7 +68,7 @@ export interface ExternalServiceKindMetadata {
     defaultConfig: string
 }
 
-const iconSize = 45
+const ICON_SIZE = 45
 
 const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
@@ -117,7 +117,7 @@ const githubEditorActions: EditorAction[] = [
 
 export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     title: 'GitHub repositories',
-    icon: <GithubCircleIcon size={iconSize} />,
+    icon: <GithubCircleIcon size={ICON_SIZE} />,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions,
     iconBrandColor: 'github',
@@ -161,7 +161,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     [GQL.ExternalServiceKind.GITHUB]: GITHUB_EXTERNAL_SERVICE,
     [GQL.ExternalServiceKind.AWSCODECOMMIT]: {
         title: 'AWS CodeCommit repositories',
-        icon: <AmazonIcon size={iconSize} />,
+        icon: <AmazonIcon size={ICON_SIZE} />,
         iconBrandColor: 'aws',
         shortDescription: 'Add AWS CodeCommit repositories.',
         jsonSchema: awsCodeCommitSchemaJSON,
@@ -178,7 +178,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.BITBUCKETSERVER]: {
         title: 'Bitbucket Server repositories',
-        icon: <BitbucketIcon size={iconSize} />,
+        icon: <BitbucketIcon size={ICON_SIZE} />,
         iconBrandColor: 'bitbucket',
         shortDescription: 'Add Bitbucket Server repositories.',
         jsonSchema: bitbucketServerSchemaJSON,
@@ -197,7 +197,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.GITLAB]: {
         title: 'GitLab projects',
-        icon: <GitLabIcon size={iconSize} />,
+        icon: <GitLabIcon size={ICON_SIZE} />,
         iconBrandColor: 'gitlab',
         shortDescription: 'Add GitLab projects.',
         jsonSchema: gitlabSchemaJSON,
@@ -216,7 +216,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.GITOLITE]: {
         title: 'Gitolite repositories',
-        icon: <GitIcon size={iconSize} />,
+        icon: <GitIcon size={ICON_SIZE} />,
         iconBrandColor: 'gitolite',
         shortDescription: 'Add Gitolite repositories.',
         jsonSchema: gitoliteSchemaJSON,
@@ -232,7 +232,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.PHABRICATOR]: {
         title: 'Phabricator connection',
-        icon: <PhabricatorIcon size={iconSize} />,
+        icon: <PhabricatorIcon size={ICON_SIZE} />,
         iconBrandColor: 'phabricator',
         shortDescription: 'Add links to Phabricator from Sourcegraph.',
         jsonSchema: phabricatorSchemaJSON,
@@ -249,7 +249,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.OTHER]: {
         title: 'Single Git repositories',
-        icon: <GitIcon size={iconSize} />,
+        icon: <GitIcon size={ICON_SIZE} />,
         iconBrandColor: 'git',
         shortDescription: 'Add single Git repositories by clone URL.',
         jsonSchema: otherExternalServiceSchemaJSON,
