@@ -21,4 +21,13 @@
         white-space: pre;
         padding-left: 1rem;
     }
+
+    &-error {
+        width: 100%;
+    }
+
+    &-alert {
+        margin-bottom: 0;
+        color: $red;
+    }
 }
