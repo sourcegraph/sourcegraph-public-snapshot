@@ -53,7 +53,13 @@ func (c *Config) Check(query *syntax.Query) (*Query, error) {
 		field, fieldType, value, err := c.checkExpr(expr)
 		if err != nil {
 			errCount++
-			fx = `"` + fx + `"`
+if err != nil {
+	if expr.ValueType != syntax.TokenPattern {
+		return err
+	}
+	errCount++
+	fx = `"` + fx + `"`
+}
 		}
 		fixedExprs = append(fixedExprs, fx)
 		if fieldType.Singular && len(checkedQuery.Fields[field]) >= 1 {
