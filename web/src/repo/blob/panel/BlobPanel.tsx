@@ -128,18 +128,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                             context: { includeDeclaration: false },
                         }
                     ),
-                    entryForViewProviderRegistration(
-                        'impl',
-                        'Implementation',
-                        160,
-                        this.props.extensionsController.services.textDocumentImplementation
-                    ),
-                    entryForViewProviderRegistration(
-                        'typedef',
-                        'Type definition',
-                        150,
-                        this.props.extensionsController.services.textDocumentTypeDefinition
-                    ),
 
                     {
                         // File history view.

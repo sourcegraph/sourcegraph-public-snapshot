@@ -22,18 +22,6 @@ export interface ClientLanguageFeaturesAPI extends ProxyValue {
             ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue
-    $registerTypeDefinitionProvider(
-        selector: DocumentSelector,
-        providerFunction: ProxyResult<
-            ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
-        >
-    ): Unsubscribable & ProxyValue
-    $registerImplementationProvider(
-        selector: DocumentSelector,
-        providerFunction: ProxyResult<
-            ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
-        >
-    ): Unsubscribable & ProxyValue
     $registerReferenceProvider(
         selector: DocumentSelector,
         providerFunction: ProxyResult<((params: ReferenceParams) => ProxySubscribable<Location[]>) & ProxyValue>
@@ -62,8 +50,6 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
             ProvideTextDocumentHoverSignature
         >,
         private definitionRegistry: TextDocumentLocationProviderRegistry,
-        private typeDefinitionRegistry: TextDocumentLocationProviderRegistry,
-        private implementationRegistry: TextDocumentLocationProviderRegistry,
         private referencesRegistry: TextDocumentLocationProviderRegistry<ReferenceParams>,
         private locationRegistry: TextDocumentLocationProviderIDRegistry
     ) {}
@@ -89,32 +75,6 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
     ): Unsubscribable & ProxyValue {
         return proxyValue(
             this.definitionRegistry.registerProvider({ documentSelector }, params =>
-                wrapRemoteObservable(providerFunction(params))
-            )
-        )
-    }
-
-    public $registerTypeDefinitionProvider(
-        documentSelector: DocumentSelector,
-        providerFunction: ProxyResult<
-            ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
-        >
-    ): Unsubscribable & ProxyValue {
-        return proxyValue(
-            this.typeDefinitionRegistry.registerProvider({ documentSelector }, params =>
-                wrapRemoteObservable(providerFunction(params))
-            )
-        )
-    }
-
-    public $registerImplementationProvider(
-        documentSelector: DocumentSelector,
-        providerFunction: ProxyResult<
-            ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
-        >
-    ): Unsubscribable & ProxyValue {
-        return proxyValue(
-            this.implementationRegistry.registerProvider({ documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
             )
         )
