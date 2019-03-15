@@ -74,13 +74,17 @@ export const isSearchResults = (val: any): val is GQL.ISearchResults =>
  * from the query if it exists in the query, and the search scope being added contains a `repogroup:` filter.
  *
  * @param query the current user query
- * @param searchFilter the search scope (sbu query) or dynamic filter to toggle (add/remove from the current user query)
+ * @param searchFilter the search scope (sub query) or dynamic filter to toggle (add/remove from the current user query)
  * @returns The new query
  */
 export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searchFilter: string): string => {
     const newQuery = toggleSearchFilter(query, searchFilter)
-    const sampleRepogroupRegexp = /\brepogroup:sample(\s|^)/
-    if (/\brepogroup:/.test(searchFilter) && sampleRepogroupRegexp.test(newQuery)) {
+    const sampleRepogroupRegexp = /(\b|^)repogroup:sample(\s|$)/
+    if (
+        /\brepogroup:/.test(searchFilter) &&
+        sampleRepogroupRegexp.test(newQuery) &&
+        !sampleRepogroupRegexp.test(searchFilter)
+    ) {
         return newQuery.replace(sampleRepogroupRegexp, '')
     }
     return newQuery
