@@ -46,7 +46,7 @@ $icon-colors: (
     .theme-dark & {
         background-image: linear-gradient(116deg, #0c1e41, #171941);
         border-color: #184bb1;
-        .mdi-icon {
+        .phabricator-icon.mdi-icon {
             fill: $color-text;
         }
     }

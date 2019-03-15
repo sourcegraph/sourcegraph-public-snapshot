@@ -68,7 +68,7 @@ export const PhabricatorIcon: React.FunctionComponent<Props> = props => (
     <svg
         {...props}
         {...sizeProps(props)}
-        className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
+        className={`phabricator-icon mdi-icon${props.className ? ' ' + props.className : ''}`}
         viewBox="0 0 64 64"
     >
         <g>
