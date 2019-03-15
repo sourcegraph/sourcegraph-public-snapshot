@@ -71,7 +71,7 @@ func main() {
 
 		onlyDocsChange := true
 		for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-			if !strings.HasPrefix(line, "doc") {
+			if !strings.HasPrefix(line, "doc") && line != "CHANGELOG.md" {
 				onlyDocsChange = false
 				break
 			}
