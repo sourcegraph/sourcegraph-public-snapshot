@@ -555,12 +555,12 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opts.TitleQuery != nil && strings.TrimSpace(*opts.TitleQuery) != "" {
-		conds = append(conds, sqlf.Sprintf("UPPER(title) LIKE UPPER(%v)", extraFuzzy(*opts.TitleQuery)))
+		conds = append(conds, sqlf.Sprintf("title ILIKE %v", extraFuzzy(*opts.TitleQuery)))
 	}
 	if opts.NotTitleQuery != nil && strings.TrimSpace(*opts.NotTitleQuery) != "" {
 		// Using extraFuzzy here would exclude too many results, so instead we
 		// just do prefix/suffix fuzziness for now.
-		conds = append(conds, sqlf.Sprintf("UPPER(title) NOT LIKE UPPER(%v)", "%"+*opts.NotTitleQuery+"%"))
+		conds = append(conds, sqlf.Sprintf("title NOT ILIKE %v", "%"+*opts.NotTitleQuery+"%"))
 	}
 	if len(opts.ThreadIDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(opts.ThreadIDs)))
