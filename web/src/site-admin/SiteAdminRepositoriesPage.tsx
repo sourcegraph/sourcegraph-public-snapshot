@@ -47,6 +47,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                 className="repository-node list-group-item py-2"
                 data-e2e-repository={this.props.node.name}
                 data-e2e-enabled={this.props.node.enabled}
+                data-e2e-cloned={this.props.node.mirrorInfo.cloned}
             >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
