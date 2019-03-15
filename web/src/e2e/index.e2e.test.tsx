@@ -48,7 +48,6 @@ describe('e2e test suite', function(this: any): void {
 
     beforeEach(async () => {
         if (page.isClosed()) {
-            console.log('creating new page')
             page = await browser.newPage()
         }
     })
