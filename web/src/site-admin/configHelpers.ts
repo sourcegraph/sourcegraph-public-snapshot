@@ -9,6 +9,11 @@ const defaultFormattingOptions: FormattingOptions = {
     tabSize: 2,
 }
 
+const setSearchContextLines: ConfigInsertionFunction = config => {
+    const DEFAULT = 3 // a reasonable value that will be clearly different from the default 1
+    return { edits: setProperty(config, ['search.contextLines'], DEFAULT, defaultFormattingOptions) }
+}
+
 const addSearchScopeToSettings: ConfigInsertionFunction = config => {
     const value: { name: string; value: string } = {
         name: '<name>',
@@ -33,6 +38,11 @@ export interface EditorAction {
 }
 
 export const settingsActions: EditorAction[] = [
+    {
+        id: 'sourcegraph.settings.search.contextLines',
+        label: 'Search: show # before/after lines',
+        run: setSearchContextLines,
+    },
     { id: 'sourcegraph.settings.searchScopes', label: 'Add search scope', run: addSearchScopeToSettings },
     { id: 'sourcegraph.settings.addSlackWebhook', label: 'Add Slack webhook', run: addSlackWebhook },
 ]
