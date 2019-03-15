@@ -46,20 +46,17 @@ func (c *Config) Check(query *syntax.Query) (*Query, error) {
 	}
 
 	fixedExprs := []string{}
-	errCount := 0
+	errStrs := []string{}
 
 	for _, expr := range query.Expr {
 		fx := expr.String()
 		field, fieldType, value, err := c.checkExpr(expr)
 		if err != nil {
-			errCount++
-if err != nil {
-	if expr.ValueType != syntax.TokenPattern {
-		return err
-	}
-	errCount++
-	fx = `"` + fx + `"`
-}
+			errStrs = append(errStrs, err.Error())
+			if !strings.Contains(err.Error(), "regexp") {
+				return nil, err
+			}
+			fx = `"` + fx + `"`
 		}
 		fixedExprs = append(fixedExprs, fx)
 		if fieldType.Singular && len(checkedQuery.Fields[field]) >= 1 {
@@ -68,12 +65,17 @@ if err != nil {
 		checkedQuery.Fields[field] = append(checkedQuery.Fields[field], value)
 	}
 
-	if errCount > 0 {
+	switch len(errStrs) {
+	case 0:
+		return &checkedQuery, nil
+	case 1:
 		s := strings.Join(fixedExprs, " ")
-		return nil, fmt.Errorf("Error encountered while parsing regular expression. Did you mean `%s`?", s)
+		return nil, fmt.Errorf("Error encountered while parsing regular expression: %s. Did you mean `%s`?", errStrs[0], s)
+	default:
+		s := strings.Join(fixedExprs, " ")
+		return nil, fmt.Errorf("Errors encountered while parsing regular expressions: %s. Did you mean `%s`?", strings.Join(errStrs, ", "), s)
 	}
 
-	return &checkedQuery, nil
 }
 
 func (c *Config) resolveField(field string, not bool) (resolvedField string, typ FieldType, err error) {

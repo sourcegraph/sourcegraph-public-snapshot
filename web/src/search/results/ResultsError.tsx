@@ -24,20 +24,28 @@ export class ResultsError extends React.Component<Props> {
             error: { message },
         } = this.props
 
+        // TODO: Send more robust error response from backend to prevent the need to string match.
         const match = message.match(/Did you mean `(.*?)`/)
         if (!match) {
             return upperFirst(message)
         }
 
         const suggestion = match[1]
-        const [before, after] = message.split(suggestion)
+
+        const [before] = message.split(suggestion)
+
         const query = buildSearchURLQuery(suggestion)
+
+        const [firstLine] = before.split('Did you mean')
 
         return (
             <>
-                {before}
+                {firstLine}
+                <br />
+                <br />
+                {'Did you mean `'}
                 <Link to={`/search?${query}`}>{suggestion}</Link>
-                {after}
+                {'`?'}
             </>
         )
     }

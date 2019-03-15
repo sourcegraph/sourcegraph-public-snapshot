@@ -6,6 +6,7 @@ import (
 	"errors"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
@@ -112,8 +113,8 @@ func TestCheck(t *testing.T) {
 				t.Fatal(err)
 			} else if err == nil && test.wantErr != nil {
 				t.Fatalf("got err == nil, want %q", test.wantErr)
-			} else if test.wantErr != nil && err.Error() != test.wantErr.Error() {
-				t.Fatalf("got err == %q, want %q", err, test.wantErr)
+			} else if test.wantErr != nil && !strings.Contains(err.Error(), test.wantErr.Error()) {
+				t.Fatalf("got err == %q, want it to contain %q", err, test.wantErr)
 			}
 			if err != nil {
 				return
