@@ -13,7 +13,6 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -31,13 +30,13 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		ctx    context.Context
-		svc    api.ExternalService
+		svc    ExternalService
 		assert func(testing.TB, Repos)
 		err    string
 	}{
 		{
 			name: "excluded repos are never yielded",
-			svc: api.ExternalService{
+			svc: ExternalService{
 				Kind: "GITHUB",
 				Config: config(&schema.GitHubConnection{
 					Url: "https://github.com",
