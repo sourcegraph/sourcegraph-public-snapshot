@@ -144,9 +144,15 @@ describe('e2e test suite', function(this: any): void {
             await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`)
             if (await page.$(`.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='false']`)) {
                 await page.click(`.repository-node[data-e2e-repository='github.com/${slug}'] .e2e-enable-repository`)
-                await page.waitForSelector(
-                    `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`
-                )
+                if (slug === 'sourcegraphtest/AlwaysCloningTest') {
+                    await page.waitForSelector(
+                        `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`
+                    )
+                } else {
+                    await page.waitForSelector(
+                        `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true'][data-e2e-cloned='true']`
+                    )
+                }
             }
         }
     }
