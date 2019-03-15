@@ -17,7 +17,12 @@ import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from '../backend'
 import { FilterChip } from '../FilterChip'
-import { isSearchResults, submitSearch, toggleSearchFilter } from '../helpers'
+import {
+    isSearchResults,
+    submitSearch,
+    toggleSearchFilter,
+    toggleSearchFilterAndReplaceSampleRepogroup,
+} from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
 
@@ -318,10 +323,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             search_filter: { value },
         })
 
-        let newQuery = toggleSearchFilter(this.props.navbarSearchQuery, value)
-        if (this.props.isSourcegraphDotCom && value.match(/\brepogroup:/) && newQuery.match(/\brepogroup:sample\b/)) {
-            newQuery = newQuery.replace(/\s*repogroup:sample\s*/, '')
-        }
+        const newQuery = this.props.isSourcegraphDotCom
+            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQuery, value)
+            : toggleSearchFilter(this.props.navbarSearchQuery, value)
 
         submitSearch(this.props.history, newQuery, 'filter')
     }

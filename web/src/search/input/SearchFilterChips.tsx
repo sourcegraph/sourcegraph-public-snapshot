@@ -13,7 +13,7 @@ import { routes } from '../../routes'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
-import { submitSearch, toggleSearchFilter } from '../helpers'
+import { submitSearch, toggleSearchFilter, toggleSearchFilterAndReplaceSampleRepogroup } from '../helpers'
 
 interface Props extends SettingsCascadeProps {
     location: H.Location
@@ -161,10 +161,9 @@ export class SearchFilterChips extends React.PureComponent<Props> {
             },
         })
 
-        let newQuery = toggleSearchFilter(this.props.query, value)
-        if (this.props.isSourcegraphDotCom && value.match(/\brepogroup:/) && newQuery.match(/\brepogroup:sample\b/)) {
-            newQuery = newQuery.replace(/\s*repogroup:sample\s*/, '')
-        }
+        const newQuery = this.props.isSourcegraphDotCom
+            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.query, value)
+            : toggleSearchFilter(this.props.query, value)
 
         submitSearch(this.props.history, newQuery, 'filter')
     }
