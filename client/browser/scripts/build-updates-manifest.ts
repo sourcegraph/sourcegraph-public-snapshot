@@ -30,7 +30,7 @@ function addVersionsToManifest(links: string[]): void {
 
     ;(updatesManifest.addons['sourcegraph-for-firefox@sourcegraph.com'].updates as Update[]) = updates
 
-    fs.writeFileSync(updatesManifestPath, JSON.stringify(updatesManifest, null, 4), 'utf8')
+    fs.writeFileSync(updatesManifestPath, JSON.stringify(updatesManifest, null, 2), 'utf8')
 }
 
 const links = process.argv.slice(2).filter(l => !l.match(/latest.xpi$/) && !l.match(/updates.json$/))

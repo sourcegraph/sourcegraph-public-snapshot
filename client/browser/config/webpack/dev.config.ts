@@ -16,7 +16,7 @@ const config: webpack.Configuration = {
     ...base,
     entry: process.env.AUTO_RELOAD === 'false' ? entries : entriesWithAutoReload,
     mode: 'development',
-    devtool: 'cheap-module-source-map',
+    devtool: 'inline-cheap-module-source-map',
     plugins: (plugins || []).concat(
         ...[
             new webpack.DefinePlugin({
