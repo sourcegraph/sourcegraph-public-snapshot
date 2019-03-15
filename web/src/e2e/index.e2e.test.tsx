@@ -6,7 +6,11 @@ import { Key } from 'ts-key-enum'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
-jest.setTimeout(30000)
+// 1 minute test timeout. This must be greater than the default Puppeteer
+// command timeout of 30s in order to get the stack trace to point to the
+// Puppeteer command that failed instead of a cryptic Jest test timeout
+// location.
+jest.setTimeout(1 * 60 * 1000)
 
 // tslint:disable-next-line: no-empty
 const noopPercySnapshot: typeof realPercySnapshot = async () => {}
