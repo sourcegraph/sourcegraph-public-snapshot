@@ -109,15 +109,13 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     </span>
                 </DropdownToggle>
                 <DropdownMenu className={'activation-dropdown'} right={true}>
-                    <DropdownItem header={true} className="py-1">
-                        <div className="activation-dropdown-header">
-                            <h3>
-                                Get started with Sourcegraph
-                            </h3>
-                            <div>Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.</div>
-                        </div>
-                    </DropdownItem>
-                    <DropdownItem divider={true} />
+                    <div className="activation-dropdown-background" />
+                    <div className="activation-dropdown-header">
+                        <h3 className="activation-dropdown-header__title">Get started with Sourcegraph</h3>
+                        <p className="activation-dropdown-header__copy">
+                            Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
+                        </p>
+                    </div>
                     {this.props.activation && this.props.activation.completed ? (
                         this.props.activation.steps.map(step => (
                             <div

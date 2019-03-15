@@ -1,26 +1,46 @@
 .activation-checklist {
-    padding-bottom: 0.125rem;
-
     &__item {
         box-sizing: content-box;
         position: relative;
-        border-top: 1px solid $dropdown-border-color;
         margin-top: -1px;
         margin-bottom: -1px;
         z-index: 10;
         transition: all 250ms ease;
-        border-left: 0.75rem solid var(--body-bg);
-        border-right: 0.75rem solid var(--body-bg);
+
+        &:before,
+        &:after {
+            position: absolute;
+            width: calc(100% - 1.5rem);
+            height: 1px;
+            left: 0.75rem;
+            background-color: $dropdown-border-color;
+            content: '';
+            transition: all 250ms ease;
+            z-index: 19;
+        }
+        &:before {
+            top: 0;
+        }
+        &:after {
+            bottom: 0;
+        }
 
         @include hover-focus {
             color: $dropdown-link-hover-color;
             text-decoration: none;
-            border-color: var(--card-cap-bg);
             background-color: var(--card-cap-bg);
             margin-bottom: -1px;
             z-index: 20;
 
+            z-index: 997;
+
             box-shadow: 0 0 14px 12px rgba(43, 55, 80, 0.4);
+            &:before,
+            &:after {
+                background-color: var(--card-cap-bg);
+                z-index: 20;
+                opacity: 0;
+            }
         }
     }
 }
@@ -28,24 +48,26 @@
     .activation-checklist__item {
         @include hover-focus {
             box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
-            border-color: var(--theme-bg-plain);
             background-color: var(--theme-bg-plain);
         }
     }
 }
 .activation-item {
     cursor: pointer;
-    padding: 0.5rem 0.5rem;
+    // Padding-right prevents text from overlapping icon.
+    padding: 0.5rem 2.25rem 0.5rem 1.25rem;
 
     &__checkbox--done {
         color: $oc-green-6;
         position: absolute;
-        right: 0.25rem;
+        right: 1rem;
+        top: calc(50% - 10.5px);
     }
     &__checkbox--todo {
         color: $dropdown-border-color;
         position: absolute;
-        right: 0.25rem;
+        right: 1rem;
+        top: calc(50% - 10.5px);
     }
 
     &__link {
