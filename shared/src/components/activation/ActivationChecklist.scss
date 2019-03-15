@@ -16,9 +16,6 @@
 }
 
 .activation-item {
-    cursor: pointer;
-    padding: 0.5rem 0.5rem;
-
     &__checkbox {
         &--done {
             color: $oc-green-6;

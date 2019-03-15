@@ -7,6 +7,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs'
+import { Activation, ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
 import {
@@ -25,7 +26,7 @@ import {
     updateMirrorRepository,
 } from './backend'
 
-interface RepositoryNodeProps {
+interface RepositoryNodeProps extends ActivationProps {
     node: GQL.IRepository
     onDidUpdate?: () => void
 }
@@ -42,7 +43,12 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
 
     public render(): JSX.Element | null {
         return (
-            <li className="repository-node list-group-item py-2">
+            <li
+                className="repository-node list-group-item py-2"
+                data-e2e-repository={this.props.node.name}
+                data-e2e-enabled={this.props.node.enabled}
+                data-e2e-cloned={this.props.node.mirrorInfo.cloned}
+            >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <RepoLink repoName={this.props.node.name} to={this.props.node.url} />
@@ -100,7 +106,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                             </button>
                         ) : (
                             <button
-                                className="btn btn-success btn-sm"
+                                className="btn btn-success btn-sm e2e-enable-repository"
                                 onClick={this.enableRepository}
                                 disabled={this.state.loading}
                                 data-tooltip="Enable access to the repository. Users will be able to view and search it."
@@ -136,15 +142,16 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                     this.props.onDidUpdate()
                 }
                 this.setState({ loading: false })
+                activate(this.props.activation)
             },
             err => this.setState({ loading: false, errorDescription: err.message })
         )
     }
 }
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<any>, ActivationProps {}
 
-class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
+class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository, ActivationProps> {}
 
 /**
  * A page displaying the repositories on this site.
@@ -214,8 +221,9 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<RepositoryNodeProps, 'onDidUpdate'> = {
+        const nodeProps: Pick<RepositoryNodeProps, 'onDidUpdate' | 'activation'> = {
             onDidUpdate: this.onDidUpdateRepository,
+            activation: this.props.activation,
         }
 
         return (
@@ -279,12 +287,21 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
             promises.push(updateAllMirrorRepositories().toPromise())
         }
         Promise.all(promises).then(
-            this.onDidUpdateRepository,
+            () => {
+                activate(this.props.activation)
+                this.onDidUpdateRepository()
+            },
             // If one (or more) repositories fail, still update the UI before re-throwing
             err => {
                 this.onDidUpdateRepository()
                 throw err
             }
         )
+    }
+}
+
+function activate(activation?: Activation): void {
+    if (activation) {
+        activation.update({ EnabledRepository: true })
     }
 }

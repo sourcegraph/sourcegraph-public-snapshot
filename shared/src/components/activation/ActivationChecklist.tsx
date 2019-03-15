@@ -4,6 +4,7 @@ import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutline
 import CheckboxMarkedCircleOutlineIcon from 'mdi-react/CheckboxMarkedCircleOutlineIcon'
 import * as React from 'react'
 import { Link } from '../Link'
+import { LinkOrButton } from '../LinkOrButton'
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 
 interface ActivationChecklistItemProps extends ActivationStep {
@@ -37,13 +38,15 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
 
         return (
             <div onClick={this.onClick} data-tooltip={this.props.detail}>
-                {this.props.link ? (
-                    <Link className={'activation-item__link'} {...this.props.link}>
-                        {checkboxElem}
-                    </Link>
-                ) : (
-                    checkboxElem
-                )}
+                <LinkOrButton>
+                    {this.props.link ? (
+                        <Link className={'activation-item__link'} {...this.props.link}>
+                            {checkboxElem}
+                        </Link>
+                    ) : (
+                        checkboxElem
+                    )}
+                </LinkOrButton>
             </div>
         )
     }

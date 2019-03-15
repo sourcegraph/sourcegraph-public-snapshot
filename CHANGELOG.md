@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a bug where adding a search scope that adds a `repogroup` filter would cause invalid queries if `repogroup:sample` was already part of the query.
+- An issue where errors during displaying search results would not be displayed.
 
 ### Removed
 
