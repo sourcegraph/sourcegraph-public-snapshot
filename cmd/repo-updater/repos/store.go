@@ -13,8 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
-// A Store exposes methods to read and write persistent repositories.
+// A Store exposes methods to read and write repos and external services.
 type Store interface {
+	ListExternalServices(ctx context.Context, kinds ...string) ([]*ExternalService, error)
+	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
+
 	GetRepoByName(ctx context.Context, name string) (*Repo, error)
 	ListRepos(ctx context.Context, kinds ...string) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
@@ -94,6 +97,120 @@ func (s *DBStore) Done(errs ...*error) {
 	}
 }
 
+// ListExternalServices lists all stored external services that are not deleted and have one of the
+// specified kinds.
+func (s DBStore) ListExternalServices(ctx context.Context, kinds ...string) (svcs []*ExternalService, _ error) {
+	return svcs, s.paginate(ctx, listExternalServicesQuery(kinds), func(sc scanner) (int64, error) {
+		var svc ExternalService
+		err := scanExternalService(&svc, sc)
+		if err != nil {
+			return 0, err
+		}
+		svcs = append(svcs, &svc)
+		return svc.ID, nil
+	})
+}
+
+const listExternalServicesQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.ListExternalServices
+SELECT
+  id,
+  LOWER(kind),
+  display_name,
+  config,
+  created_at,
+  updated_at,
+  deleted_at
+FROM external_services
+WHERE id > %s
+AND %s
+ORDER BY id ASC LIMIT %s
+`
+
+func listExternalServicesQuery(kinds []string) paginatedQuery {
+	kq := sqlf.Sprintf("TRUE")
+	if len(kinds) > 0 {
+		ks := make([]*sqlf.Query, 0, len(kinds))
+		for _, kind := range kinds {
+			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(kind)))
+		}
+		kq = sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ","))
+	}
+
+	return func(cursor, limit int64) *sqlf.Query {
+		return sqlf.Sprintf(
+			listExternalServicesQueryFmtstr,
+			cursor,
+			kq,
+			limit,
+		)
+	}
+}
+
+// UpsertExternalServices updates or inserts the given ExternalServices.
+func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error {
+	if len(svcs) == 0 {
+		return nil
+	}
+
+	q := upsertExternalServicesQuery(svcs)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+
+	i := -1
+	_, err = scanAll(rows, func(sc scanner) (int64, error) {
+		i++
+		err := scanExternalService(svcs[i], sc)
+		return int64(svcs[i].ID), err
+	})
+
+	return err
+}
+
+func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
+	vals := make([]*sqlf.Query, 0, len(svcs))
+	for _, s := range svcs {
+		vals = append(vals, sqlf.Sprintf(
+			"\t(NULLIF(%s, 0), %s, %s, %s, %s, %s, %s)",
+			s.ID,
+			s.Kind,
+			s.DisplayName,
+			s.Config,
+			s.CreatedAt,
+			s.UpdatedAt,
+			nullTime{&s.DeletedAt},
+		))
+	}
+	return sqlf.Join(vals, ",\n")
+}
+
+const upsertExternalServicesQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.UpsertExternalServices
+INSERT INTO external_services (
+  id,
+  kind,
+  display_name,
+  config,
+  created_at,
+  updated_at,
+  deleted_at
+)
+VALUES (
+  %s
+)
+ON CONFLICT(id) DO UPDATE
+SET
+  kind         = excluded.kind,
+  display_name = excluded.display_name,
+  config       = excluded.config,
+  created_at   = excluded.created_at,
+  updated_at   = excluded.updated_at,
+  deleted_at   = excluded.deleted_at
+RETURNING *
+`
+
 // GetRepoByName looks up the repo with the given name.
 func (s DBStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) {
 	var r Repo
@@ -141,10 +258,10 @@ func getRepoByNameQuery(name string) *sqlf.Query {
 
 // ListRepos lists all stored repos that are not deleted, have one of the
 // specified external service kind.
-func (s DBStore) ListRepos(ctx context.Context, kinds ...string) (repos []*Repo, err error) {
+func (s DBStore) ListRepos(ctx context.Context, kinds ...string) (repos []*Repo, _ error) {
 	return repos, s.paginate(ctx, listReposQuery(kinds), func(sc scanner) (int64, error) {
 		var r Repo
-		if err = scanRepo(&r, sc); err != nil {
+		if err := scanRepo(&r, sc); err != nil {
 			return 0, err
 		}
 		repos = append(repos, &r)
@@ -519,6 +636,18 @@ func closeErr(c io.Closer, err *error) {
 	if e := c.Close(); err != nil && *err == nil {
 		*err = e
 	}
+}
+
+func scanExternalService(svc *ExternalService, s scanner) error {
+	return s.Scan(
+		&svc.ID,
+		&svc.Kind,
+		&svc.DisplayName,
+		&svc.Config,
+		&svc.CreatedAt,
+		&nullTime{&svc.UpdatedAt},
+		&nullTime{&svc.DeletedAt},
+	)
 }
 
 func scanRepo(r *Repo, s scanner) error {

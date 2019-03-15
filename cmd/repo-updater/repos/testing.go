@@ -75,34 +75,79 @@ func (s FakeSource) ListRepos(context.Context) ([]*Repo, error) {
 
 // FakeStore is a fake implementation of Store to be used in tests.
 type FakeStore struct {
-	byName map[string]*Repo
-	byID   map[api.ExternalRepoSpec]*Repo
-	get    error // error to be returned in GetRepoByName
-	list   error // error to be returned in ListRepos
-	upsert error // error to be returned in UpsertRepos
+	ListExternalServicesError   error // error to be returned in ListExternalServices
+	UpsertExternalServicesError error // error to be returned in UpsertExternalServices
+	GetRepoByNameError          error // error to be returned in GetRepoByName
+	ListReposError              error // error to be returned in ListRepos
+	UpsertReposError            error // error to be returned in UpsertRepos
+
+	svcIDSeq   int64
+	svcByID    map[int64]*ExternalService
+	repoByName map[string]*Repo
+	repoByID   map[api.ExternalRepoSpec]*Repo
 }
 
-// NewFakeStore returns an instance of FakeStore with the given urn, error
-// and repos.
-func NewFakeStore(get, list, upsert error, rs ...*Repo) *FakeStore {
-	s := FakeStore{
-		byName: map[string]*Repo{},
-		byID:   map[api.ExternalRepoSpec]*Repo{},
-		get:    get,
-		list:   list,
-		upsert: upsert,
+// ListExternalServices lists all stored external services that are not deleted and have one of the
+// specified kinds.
+func (s FakeStore) ListExternalServices(ctx context.Context, kinds ...string) ([]*ExternalService, error) {
+	if s.ListExternalServicesError != nil {
+		return nil, s.ListExternalServicesError
 	}
-	_ = s.UpsertRepos(context.Background(), rs...)
-	return &s
+
+	if s.svcByID == nil {
+		s.svcByID = make(map[int64]*ExternalService)
+	}
+
+	kindset := make(map[string]bool, len(kinds))
+	for _, kind := range kinds {
+		kindset[kind] = true
+	}
+
+	svcs := make(ExternalServices, 0, len(s.svcByID))
+	for _, svc := range s.svcByID {
+		if len(kinds) == 0 || kindset[svc.Kind] {
+			svcs = append(svcs, svc)
+		}
+	}
+
+	sort.Sort(svcs)
+
+	return svcs, nil
+}
+
+// UpsertExternalServices updates or inserts the given ExternalServices.
+func (s *FakeStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error {
+	if s.UpsertExternalServicesError != nil {
+		return s.UpsertExternalServicesError
+	}
+
+	if s.svcByID == nil {
+		s.svcByID = make(map[int64]*ExternalService, len(svcs))
+	}
+
+	for _, svc := range svcs {
+		if old := s.svcByID[svc.ID]; old != nil {
+			old.Update(svc)
+		} else {
+			s.svcIDSeq++
+			s.svcByID[s.svcIDSeq] = svc
+		}
+	}
+
+	return nil
 }
 
 // GetRepoByName looks a repo by its name, returning it if found.
 func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) {
-	if s.get != nil {
-		return nil, s.get
+	if s.GetRepoByNameError != nil {
+		return nil, s.GetRepoByNameError
 	}
 
-	r := s.byName[name]
+	if s.repoByName == nil {
+		s.repoByName = make(map[string]*Repo)
+	}
+
+	r := s.repoByName[name]
 	if r == nil || !r.DeletedAt.IsZero() {
 		return nil, ErrNoResults
 	}
@@ -112,8 +157,12 @@ func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error
 
 // ListRepos lists all repos in the store that have one of the specified external service kinds.
 func (s FakeStore) ListRepos(ctx context.Context, kinds ...string) ([]*Repo, error) {
-	if s.list != nil {
-		return nil, s.list
+	if s.ListReposError != nil {
+		return nil, s.ListReposError
+	}
+
+	if s.repoByName == nil {
+		s.repoByName = make(map[string]*Repo)
 	}
 
 	kindset := make(map[string]bool, len(kinds))
@@ -121,9 +170,9 @@ func (s FakeStore) ListRepos(ctx context.Context, kinds ...string) ([]*Repo, err
 		kindset[kind] = true
 	}
 
-	set := make(map[*Repo]bool, len(s.byName))
-	repos := make(Repos, 0, len(s.byName))
-	for _, r := range s.byName {
+	set := make(map[*Repo]bool, len(s.repoByName))
+	repos := make(Repos, 0, len(s.repoByName))
+	for _, r := range s.repoByName {
 		if !set[r] && len(kinds) == 0 || kindset[r.ExternalRepo.ServiceType] {
 			repos = append(repos, r)
 			set[r] = true
@@ -137,27 +186,27 @@ func (s FakeStore) ListRepos(ctx context.Context, kinds ...string) ([]*Repo, err
 
 // UpsertRepos upserts all the given repos in the store.
 func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
-	if s.upsert != nil {
-		return s.upsert
+	if s.UpsertReposError != nil {
+		return s.UpsertReposError
 	}
 
-	if s.byName == nil {
-		s.byName = make(map[string]*Repo, len(upserts))
+	if s.repoByName == nil {
+		s.repoByName = make(map[string]*Repo, len(upserts))
 	}
 
-	if s.byID == nil {
-		s.byID = make(map[api.ExternalRepoSpec]*Repo, len(upserts))
+	if s.repoByID == nil {
+		s.repoByID = make(map[api.ExternalRepoSpec]*Repo, len(upserts))
 	}
 
 	for _, upsert := range upserts {
-		if repo := s.byID[upsert.ExternalRepo]; repo != nil {
+		if repo := s.repoByID[upsert.ExternalRepo]; repo != nil {
 			repo.Update(upsert)
-		} else if repo = s.byName[upsert.Name]; repo != nil {
+		} else if repo = s.repoByName[upsert.Name]; repo != nil {
 			repo.Update(upsert)
 		} else {
-			s.byName[upsert.Name] = upsert
+			s.repoByName[upsert.Name] = upsert
 			if upsert.ExternalRepo != (api.ExternalRepoSpec{}) {
-				s.byID[upsert.ExternalRepo] = upsert
+				s.repoByID[upsert.ExternalRepo] = upsert
 			}
 		}
 	}
@@ -342,7 +391,7 @@ func (a *FakeInternalAPI) ReposCreateIfNotExists(
 	return repo, nil
 }
 
-// ReposUpdateMetdata updates the metadata of repo with the given name.
+// ReposUpdateMetadata updates the metadata of repo with the given name.
 // Non-existent repos return an error.
 func (a *FakeInternalAPI) ReposUpdateMetadata(
 	ctx context.Context,

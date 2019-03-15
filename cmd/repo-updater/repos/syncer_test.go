@@ -16,7 +16,7 @@ import (
 
 func TestSyncer_Sync(t *testing.T) {
 	t.Parallel()
-	testSyncerSync(repos.NewFakeStore(nil, nil, nil))
+	testSyncerSync(new(repos.FakeStore))
 }
 
 func testSyncerSync(s repos.Store) func(*testing.T) {
@@ -58,13 +58,13 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{
 			name:    "store list error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
-			store:   repos.NewFakeStore(nil, errors.New("boom"), nil),
+			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
 			err:     "syncer.sync.store.list-repos: boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
-			store:   repos.NewFakeStore(nil, nil, errors.New("booya")),
+			store:   &repos.FakeStore{UpsertReposError: errors.New("booya")},
 			err:     "syncer.sync.store.upsert-repos: booya",
 		},
 	}
