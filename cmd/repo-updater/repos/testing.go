@@ -220,14 +220,27 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 
 // Opt contains functional options to be used in tests.
 var Opt = struct {
-	RepoID         func(uint32) func(*Repo)
-	RepoCreatedAt  func(time.Time) func(*Repo)
-	RepoModifiedAt func(time.Time) func(*Repo)
-	RepoDeletedAt  func(time.Time) func(*Repo)
-	RepoSources    func(...string) func(*Repo)
-	RepoMetadata   func(interface{}) func(*Repo)
-	RepoExternalID func(string) func(*Repo)
+	ExternalServiceID        func(int64) func(*ExternalService)
+	ExternalServiceDeletedAt func(time.Time) func(*ExternalService)
+	RepoID                   func(uint32) func(*Repo)
+	RepoCreatedAt            func(time.Time) func(*Repo)
+	RepoModifiedAt           func(time.Time) func(*Repo)
+	RepoDeletedAt            func(time.Time) func(*Repo)
+	RepoSources              func(...string) func(*Repo)
+	RepoMetadata             func(interface{}) func(*Repo)
+	RepoExternalID           func(string) func(*Repo)
 }{
+	ExternalServiceID: func(n int64) func(*ExternalService) {
+		return func(e *ExternalService) {
+			e.ID = n
+		}
+	},
+	ExternalServiceDeletedAt: func(ts time.Time) func(*ExternalService) {
+		return func(e *ExternalService) {
+			e.UpdatedAt = ts
+			e.DeletedAt = ts
+		}
+	},
 	RepoID: func(n uint32) func(*Repo) {
 		return func(r *Repo) {
 			r.ID = n

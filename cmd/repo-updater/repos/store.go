@@ -173,7 +173,7 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
 		vals = append(vals, sqlf.Sprintf(
-			"\t(NULLIF(%s, 0), %s, %s, %s, %s, %s, %s)",
+			upsertExternalServicesQueryValueFmtstr,
 			s.ID,
 			s.Kind,
 			s.DisplayName,
@@ -183,8 +183,16 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 			nullTime{&s.DeletedAt},
 		))
 	}
-	return sqlf.Join(vals, ",\n")
+
+	return sqlf.Sprintf(
+		upsertExternalServicesQueryFmtstr,
+		sqlf.Join(vals, ",\n"),
+	)
 }
+
+const upsertExternalServicesQueryValueFmtstr = `
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), %s, %s, %s, %s, %s, %s)
+`
 
 const upsertExternalServicesQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.UpsertExternalServices
@@ -197,9 +205,7 @@ INSERT INTO external_services (
   updated_at,
   deleted_at
 )
-VALUES (
-  %s
-)
+VALUES %s
 ON CONFLICT(id) DO UPDATE
 SET
   kind         = excluded.kind,

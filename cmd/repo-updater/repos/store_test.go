@@ -17,6 +17,175 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
+func testDBStoreListExternalServices(db *sql.DB) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	github := repos.ExternalService{
+		Kind:        "github",
+		DisplayName: "Github - Test",
+		Config:      `{"url": "https://github.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	equal := func(es ...*repos.ExternalService) func(testing.TB, repos.ExternalServices) {
+		want := repos.ExternalServices(es)
+		return func(t testing.TB, have repos.ExternalServices) {
+			have.Apply(repos.Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("external services: %s", cmp.Diff(have, want))
+			}
+		}
+	}
+
+	orderedBy := func(ord func(a, b *repos.ExternalService) bool) func(testing.TB, repos.ExternalServices) {
+		return func(t testing.TB, have repos.ExternalServices) {
+			want := have.Clone()
+			sort.Slice(want, func(i, j int) bool {
+				return ord(want[i], want[j])
+			})
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("external services: %s", cmp.Diff(have, want))
+			}
+		}
+	}
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name   string
+			kinds  []string
+			stored repos.ExternalServices
+			assert func(testing.TB, repos.ExternalServices)
+			err    error
+		}{
+			{
+				name:   "case-insensitive kinds",
+				kinds:  []string{"GiThUb"},
+				stored: repos.ExternalServices{&github},
+				assert: equal(&github),
+			},
+			{
+				name:  "returns soft deleted external services",
+				kinds: []string{"github"},
+				stored: repos.ExternalServices{
+					github.With(repos.Opt.ExternalServiceDeletedAt(now)),
+				},
+				assert: equal(github.With(repos.Opt.ExternalServiceDeletedAt(now))),
+			},
+			{
+				name:   "results are in ascending order by id",
+				kinds:  []string{"github"},
+				stored: mkExternalServices(512, &github),
+				assert: orderedBy(func(a, b *repos.ExternalService) bool {
+					return a.ID < b.ID
+				}),
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+			store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+					t.Errorf("failed to setup store: %v", err)
+					return
+				}
+
+				es, err := tx.ListExternalServices(ctx, tc.kinds...)
+				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, es)
+				}
+			}))
+		}
+	}
+}
+
+func testDBStoreUpsertExternalServices(db *sql.DB) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		kinds := []string{
+			"github",
+		}
+
+		ctx := context.Background()
+		store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+
+		t.Run("no external services", func(t *testing.T) {
+			if err := store.UpsertExternalServices(ctx); err != nil {
+				t.Fatalf("UpsertExternalServices error: %s", err)
+			}
+		})
+
+		t.Run("many external services", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			// Test more than one page load
+			want := mkExternalServices(512, &repos.ExternalService{
+				Kind:        "github",
+				DisplayName: "Github - Test",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			})
+
+			if err := tx.UpsertExternalServices(ctx, want...); err != nil {
+				t.Errorf("UpsertExternalServices error: %s", err)
+				return
+			}
+
+			sort.Sort(want)
+
+			have, err := tx.ListExternalServices(ctx, kinds...)
+			if err != nil {
+				t.Errorf("ListExternalServices error: %s", err)
+				return
+			}
+
+			if diff := pretty.Compare(have, want); diff != "" {
+				t.Errorf("ListExternalServices:\n%s", diff)
+				return
+			}
+
+			now := clock.Now()
+			suffix := "-updated"
+			for _, r := range want {
+				r.DisplayName += suffix
+				r.Kind += suffix
+				r.Config += suffix
+				r.UpdatedAt = now
+				r.CreatedAt = now
+			}
+
+			if err = tx.UpsertExternalServices(ctx, want.Clone()...); err != nil {
+				t.Errorf("UpsertExternalServices error: %s", err)
+			} else if have, err = tx.ListExternalServices(ctx); err != nil {
+				t.Errorf("ListExternalServices error: %s", err)
+			} else if diff := pretty.Compare(have, want); diff != "" {
+				t.Errorf("ListExternalServices:\n%s", diff)
+			}
+
+			want.Apply(repos.Opt.ExternalServiceDeletedAt(now))
+
+			if err = tx.UpsertExternalServices(ctx, want.Clone()...); err != nil {
+				t.Errorf("UpsertExternalServices error: %s", err)
+			} else if have, err = tx.ListExternalServices(ctx); err != nil {
+				t.Errorf("ListExternalServices error: %s", err)
+			} else if diff := pretty.Compare(have, want); diff != "" {
+				t.Errorf("ListExternalServices:\n%s", diff)
+			}
+		}))
+	}
+}
+
 func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -82,6 +251,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 			}
 
 			suffix := "-updated"
+			now := clock.Now()
 			for _, r := range want {
 				r.Name += suffix
 				r.Description += suffix
@@ -212,7 +382,7 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 			store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
-				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
+				if err := tx.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
 					t.Errorf("failed to setup store: %v", err)
 					return
 				}
@@ -328,6 +498,17 @@ func mkRepos(n int, base *repos.Repo) repos.Repos {
 		rs = append(rs, r)
 	}
 	return rs
+}
+
+func mkExternalServices(n int, base *repos.ExternalService) repos.ExternalServices {
+	es := make(repos.ExternalServices, 0, n)
+	for i := 0; i < n; i++ {
+		id := strconv.Itoa(i)
+		r := base.Clone()
+		r.DisplayName += id
+		es = append(es, r)
+	}
+	return es
 }
 
 func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.Store)) func(*testing.T) {
