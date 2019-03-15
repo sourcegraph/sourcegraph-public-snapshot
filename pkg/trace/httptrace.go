@@ -138,7 +138,7 @@ func Middleware(next http.Handler) http.Handler {
 		)
 
 		// If status code is not 2xx, notify Sentry
-		if m.Code/100 != 2 && m.Code/100 != 4 && m.Code/100 != 3 {
+		if m.Code/100 != 2 && m.Code/100 != 3 && m.Code/100 != 4 {
 			<-ravenReady
 			raven.CaptureError(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path}, map[string]string{
 				"method":        r.Method,
