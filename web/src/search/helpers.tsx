@@ -79,9 +79,9 @@ export const isSearchResults = (val: any): val is GQL.ISearchResults =>
  */
 export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searchFilter: string): string => {
     const newQuery = toggleSearchFilter(query, searchFilter)
-
-    if (/\brepogroup:/.test(searchFilter) && /\brepogroup:sample\b/.test(newQuery)) {
-        return newQuery.replace(/\brepogroup:sample\b/, '')
+    const sampleRepogroupRegexp = /\brepogroup:sample(\s|^)/
+    if (/\brepogroup:/.test(searchFilter) && sampleRepogroupRegexp.test(newQuery)) {
+        return newQuery.replace(sampleRepogroupRegexp, '')
     }
     return newQuery
 }
