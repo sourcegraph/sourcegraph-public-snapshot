@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -25,6 +25,7 @@ import { SearchResult } from '../../components/SearchResult'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
+import { ResultsError } from './ResultsError'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
@@ -230,16 +231,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     filter(isDefined),
                     filter((resultsOrError): resultsOrError is GQL.ISearchResults => !isErrorLike(resultsOrError)),
                     map(({ results }) => results),
-                    map(
-                        (results): GQL.IFileMatch[] =>
-                            results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
+                    map((results): GQL.IFileMatch[] =>
+                        results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
                     )
                 )
                 .subscribe(fileMatches => {
                     const fileMatchRepoDisplayNames = new Map<string, string>()
-                    for (const {
-                        repository: { name },
-                    } of fileMatches) {
+                    for (const { repository: { name } } of fileMatches) {
                         const displayName = displayRepoName(name)
                         fileMatchRepoDisplayNames.set(name, displayName)
                     }
@@ -317,10 +315,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         </div>
                     ) : isErrorLike(this.props.resultsOrError) ? (
                         /* GraphQL, network, query syntax error */
-                        <div className="alert alert-warning">
-                            <AlertCircleIcon className="icon-inline" />
-                            {upperFirst(this.props.resultsOrError.message)}
-                        </div>
+                        <ResultsError error={this.props.resultsOrError} />
                     ) : (
                         (() => {
                             const results = this.props.resultsOrError
@@ -351,14 +346,15 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     />
 
                                     {/* Show more button */}
-                                    {results.limitHit && results.results.length === this.state.resultsShown && (
-                                        <button
-                                            className="btn btn-secondary btn-block"
-                                            onClick={this.props.onShowMoreResultsClick}
-                                        >
-                                            Show more
-                                        </button>
-                                    )}
+                                    {results.limitHit &&
+                                        results.results.length === this.state.resultsShown && (
+                                            <button
+                                                className="btn btn-secondary btn-block"
+                                                onClick={this.props.onShowMoreResultsClick}
+                                            >
+                                                Show more
+                                            </button>
+                                        )}
 
                                     {/* Server-provided help message */}
                                     {results.alert ? (
@@ -455,11 +451,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         return (
             <>
                 <h4>Recommendations:</h4>
-                <ul>
-                    {recommendations.map((recommendation, i) => (
-                        <li key={i}>{recommendation}</li>
-                    ))}
-                </ul>
+                <ul>{recommendations.map((recommendation, i) => <li key={i}>{recommendation}</li>)}</ul>
             </>
         )
     }

@@ -44,16 +44,29 @@ func (c *Config) Check(query *syntax.Query) (*Query, error) {
 		Syntax: query,
 		Fields: map[string][]*Value{},
 	}
+
+	fixedExprs := []string{}
+	errCount := 0
+
 	for _, expr := range query.Expr {
+		fx := expr.String()
 		field, fieldType, value, err := c.checkExpr(expr)
 		if err != nil {
-			return nil, err
+			errCount++
+			fx = `"` + fx + `"`
 		}
+		fixedExprs = append(fixedExprs, fx)
 		if fieldType.Singular && len(checkedQuery.Fields[field]) >= 1 {
 			return nil, &TypeError{Pos: expr.Pos, Err: fmt.Errorf("field %q may not be used more than once", field)}
 		}
 		checkedQuery.Fields[field] = append(checkedQuery.Fields[field], value)
 	}
+
+	if errCount > 0 {
+		s := strings.Join(fixedExprs, " ")
+		return nil, fmt.Errorf("Error encountered while parsing regular expression. Did you mean `%s`?", s)
+	}
+
 	return &checkedQuery, nil
 }
 
