@@ -79,13 +79,16 @@ export const isSearchResults = (val: any): val is GQL.ISearchResults =>
  */
 export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searchFilter: string): string => {
     const newQuery = toggleSearchFilter(query, searchFilter)
-    const sampleRepogroupRegexp = /(\b|^)repogroup:sample(\s|$)/
+    // RegExp to replace `repogroup:sample` without removing leading whitespace.
+    const replaceSampleRepogroupRegexp = /(\b|^)repogroup:sample(\s|$)/
+    // RegExp to match `repogroup:sample` in any part of a query.
+    const matchSampleRepogroupRegexp = /(\s*|^)repogroup:sample(\s*|$)/
     if (
         /\brepogroup:/.test(searchFilter) &&
-        sampleRepogroupRegexp.test(newQuery) &&
-        !sampleRepogroupRegexp.test(searchFilter)
+        matchSampleRepogroupRegexp.test(newQuery) &&
+        !matchSampleRepogroupRegexp.test(searchFilter)
     ) {
-        return newQuery.replace(sampleRepogroupRegexp, '')
+        return newQuery.replace(replaceSampleRepogroupRegexp, '')
     }
     return newQuery
 }
