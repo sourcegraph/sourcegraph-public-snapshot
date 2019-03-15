@@ -22,6 +22,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- An issue where errors during displaying search results would not be displayed.
+
 ### Removed
 
 - The `"updateScheduler2"` experiment is now the default and it's no longer possible to configure.
