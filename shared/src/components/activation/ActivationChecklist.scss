@@ -51,6 +51,9 @@
             background-color: var(--theme-bg-plain);
         }
     }
+    .activation-item__checkbox--todo {
+        color: $dropdown-border-color;
+    }
 }
 .activation-item {
     cursor: pointer;
@@ -64,7 +67,7 @@
         top: calc(50% - 10.5px);
     }
     &__checkbox--todo {
-        color: $dropdown-border-color;
+        color: $oc-gray-5;
         position: absolute;
         right: 1rem;
         top: calc(50% - 10.5px);
