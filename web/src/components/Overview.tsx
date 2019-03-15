@@ -1,5 +1,6 @@
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -24,8 +25,7 @@ export interface Props {
      */
     children?: React.ReactNode | React.ReactNode[]
 
-    actions?: React.ReactFragment
-    icon?: React.ComponentType<{ className?: string }>
+    actions?: string
 
     /**
      * Whether the item's children are expanded and visible by default.
@@ -33,9 +33,10 @@ export interface Props {
     defaultExpanded?: boolean
 
     /**
-     * Wether the item should be a block link.
+     * Whether the item is a list.
+     * Currently only used for onboarding.
      */
-    isBlock?: boolean
+    list?: boolean
 }
 
 export interface State {
@@ -49,13 +50,17 @@ export class OverviewItem extends React.Component<Props, State> {
     public state: State = { expanded: this.props.defaultExpanded || false }
 
     public render(): JSX.Element | null {
-        let e: React.ReactFragment = (
-            <>
-                {this.props.icon && <this.props.icon className="icon-inline overview-item__header-icon" />}
-                {this.props.title}
-            </>
-        )
-        let actions = this.props.actions
+        let e: React.ReactFragment = <>{this.props.title}</>
+        let actions
+        if (this.props.actions !== undefined) {
+            actions = (
+                <div className="overview-item__actions" data-tooltip={this.props.actions}>
+                    <span className="overview-item__button">
+                        <OpenInNewIcon className="icon-inline" />
+                    </span>
+                </div>
+            )
+        }
         if (this.props.children !== undefined) {
             e = (
                 <div className="overview-item__header-link" onClick={this.toggleExpand}>
@@ -63,13 +68,13 @@ export class OverviewItem extends React.Component<Props, State> {
                 </div>
             )
             actions = (
-                <div>
+                <div className="overview-item__actions">
                     <span className="icon-click-area" onClick={this.toggleExpand} />
                     <div className="overview-item__toggle-icon">
                         {this.state.expanded ? (
-                            <ChevronUpIcon className="icon-inline" />
+                            <ChevronUpIcon className="icon-inline" aria-label="Close section" />
                         ) : (
-                            <ChevronDownIcon className="icon-inline" />
+                            <ChevronDownIcon className="icon-inline" aria-label="Expand section" />
                         )}
                     </div>
                     {actions}
@@ -83,28 +88,23 @@ export class OverviewItem extends React.Component<Props, State> {
             )
         }
 
-        if (this.props.link !== undefined && this.props.isBlock) {
+        if (this.props.link !== undefined && this.props.children === undefined) {
             return (
-                <Link to={this.props.link} className="overview-item__block">
-                    <div className="overview-item">
-                        <div className="overview-item__header">
-                            {this.props.icon && <this.props.icon className="icon-inline overview-item__header-icon" />}
-                            {this.props.title}
-                        </div>
-                        {actions && <div className="overview-item__actions">{actions}</div>}
-                        {this.props.children && this.state.expanded && (
-                            <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
-                        )}
-                    </div>
+                <Link to={this.props.link} className="overview-item">
+                    <div className="overview-item__header">{this.props.title}</div>
+                    {actions}
+                    {this.props.children && this.state.expanded && (
+                        <div className="overview-item__children">{this.props.children}</div>
+                    )}
                 </Link>
             )
         } else {
             return (
-                <div className="overview-item">
+                <div className={`overview-item ${this.props.list && 'list'}`}>
                     <div className="overview-item__header">{e}</div>
-                    {actions && <div className="overview-item__actions">{actions}</div>}
+                    {actions}
                     {this.props.children && this.state.expanded && (
-                        <div className="overview-item__children mt-4 mb-2">{this.props.children}</div>
+                        <div className="overview-item__children">{this.props.children}</div>
                     )}
                 </div>
             )

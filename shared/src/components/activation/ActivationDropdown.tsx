@@ -1,10 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import RocketIcon from 'mdi-react/RocketIcon'
 import React from 'react'
 import CircularProgressbar from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
@@ -117,16 +116,14 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         />
                     </span>
                 </DropdownToggle>
-                <DropdownMenu right={true}>
-                    <DropdownItem header={true} className="py-1">
-                        <div className="activation-dropdown-header">
-                            <h2>
-                                <RocketIcon className="icon-inline" /> Hi there!
-                            </h2>
-                            <div>Complete the steps below to finish onboarding to Sourcegraph.</div>
-                        </div>
-                    </DropdownItem>
-                    <DropdownItem divider={true} />
+                <DropdownMenu className={'activation-dropdown'} right={true}>
+                    <div className="activation-dropdown-background" />
+                    <div className="activation-dropdown-header">
+                        <h3 className="activation-dropdown-header__title">Get started with Sourcegraph</h3>
+                        <p className="activation-dropdown-header__copy">
+                            Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
+                        </p>
+                    </div>
                     {this.props.activation && this.props.activation.completed ? (
                         this.props.activation.steps.map(step => (
                             <div

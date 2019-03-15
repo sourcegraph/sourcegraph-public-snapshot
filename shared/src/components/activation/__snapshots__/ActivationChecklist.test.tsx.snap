@@ -11,17 +11,14 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
       data-tooltip="detail1"
       onClick={[Function]}
     >
-      <a
-        className="nav-link "
-        onAuxClick={[Function]}
-        onClick={[Function]}
-        onKeyPress={[Function]}
-        tabIndex={0}
+      <span
+        className="activation-item__link"
       >
         <div
           className="activation-item"
         >
-           
+          title1
+           
           <svg
             className="mdi-icon icon-inline activation-item__checkbox--todo"
             fill="currentColor"
@@ -30,14 +27,11 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
             width={24}
           >
             <path
-              d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+              d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
             />
           </svg>
-            
-          title1
-           
         </div>
-      </a>
+      </span>
     </div>
   </div>
 </div>
@@ -54,17 +48,14 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
       data-tooltip="detail1"
       onClick={[Function]}
     >
-      <a
-        className="nav-link "
-        onAuxClick={[Function]}
-        onClick={[Function]}
-        onKeyPress={[Function]}
-        tabIndex={0}
+      <span
+        className="activation-item__link"
       >
         <div
           className="activation-item"
         >
-           
+          title1
+           
           <svg
             className="mdi-icon icon-inline activation-item__checkbox--todo"
             fill="currentColor"
@@ -73,14 +64,11 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
             width={24}
           >
             <path
-              d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+              d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
             />
           </svg>
-            
-          title1
-           
         </div>
-      </a>
+      </span>
     </div>
   </div>
 </div>
@@ -97,17 +85,14 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
       data-tooltip="detail1"
       onClick={[Function]}
     >
-      <a
-        className="nav-link "
-        onAuxClick={[Function]}
-        onClick={[Function]}
-        onKeyPress={[Function]}
-        tabIndex={0}
+      <span
+        className="activation-item__link"
       >
         <div
           className="activation-item"
         >
-           
+          title1
+           
           <svg
             className="mdi-icon icon-inline activation-item__checkbox--done"
             fill="currentColor"
@@ -116,14 +101,11 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
             width={24}
           >
             <path
-              d="M20,12C20,16.42 16.42,20 12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C12.76,4 13.5,4.11 14.2,4.31L15.77,2.74C14.61,2.26 13.34,2 12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"
+              d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
             />
           </svg>
-            
-          title1
-           
         </div>
-      </a>
+      </span>
     </div>
   </div>
 </div>

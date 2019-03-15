@@ -22,6 +22,9 @@
         border-radius: 0.25rem;
 
         padding: 0.125rem 0.3rem;
+
+        background-color: var(--body-bg);
+
         &--link {
             text-decoration: none !important;
         }
@@ -53,12 +56,15 @@
         // Flip vertically so that it's a caret-up icon (not caret-down).
         transform: rotate(180deg) translateY(-1px);
     }
+    &--open#{&}__btn {
+        z-index: 101;
+    }
 
     &__popover {
         background-color: $color-bg-1;
         border: solid 1px $color-border;
 
-        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
 
         z-index: 100;
 
@@ -87,6 +93,7 @@
         &__popover {
             background-color: $color-light-bg-1;
             border-color: $color-light-border;
+            box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
         }
     }
 }

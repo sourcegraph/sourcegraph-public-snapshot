@@ -1,10 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CheckboxMarkedCircleOutlineIcon from 'mdi-react/CheckboxMarkedCircleOutlineIcon'
+import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
 import { Link } from '../Link'
-import { LinkOrButton } from '../LinkOrButton'
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 
 interface ActivationChecklistItemProps extends ActivationStep {
@@ -24,29 +23,25 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
     public render(): JSX.Element {
         const checkboxElem = (
             <div className={'activation-item'}>
-                {' '}
-                {this.props.done ? (
-                    <CheckboxMarkedCircleOutlineIcon className="icon-inline activation-item__checkbox--done" />
-                ) : (
-                    <CheckboxBlankCircleOutlineIcon className="icon-inline activation-item__checkbox--todo" />
-                )}
-                &nbsp;&nbsp;
                 {this.props.title}
                 &nbsp;
+                {this.props.done ? (
+                    <CheckIcon className="icon-inline activation-item__checkbox--done" />
+                ) : (
+                    <CheckboxBlankCircleIcon className="icon-inline activation-item__checkbox--todo" />
+                )}
             </div>
         )
 
         return (
             <div onClick={this.onClick} data-tooltip={this.props.detail}>
-                <LinkOrButton>
-                    {this.props.link ? (
-                        <Link className={'activation-item__link'} {...this.props.link}>
-                            {checkboxElem}
-                        </Link>
-                    ) : (
-                        checkboxElem
-                    )}
-                </LinkOrButton>
+                {this.props.link ? (
+                    <Link className={'activation-item__link'} {...this.props.link}>
+                        {checkboxElem}
+                    </Link>
+                ) : (
+                    <span className="activation-item__link">{checkboxElem}</span>
+                )}
             </div>
         )
     }

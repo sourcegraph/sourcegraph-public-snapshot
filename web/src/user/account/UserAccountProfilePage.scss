@@ -29,6 +29,26 @@
         border: 1px solid $dropdown-border-color;
         border-radius: 3px;
         margin-bottom: 1rem;
-        padding: 1rem;
+        overflow: hidden;
+    }
+
+    &__activation-header {
+        padding: 0.5rem 1rem;
+        white-space: normal;
+    }
+    &__activation-title {
+        position: relative;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 22px;
+        letter-spacing: normal;
+
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+    &__activation-copy {
+        position: relative;
+        margin-bottom: 0;
+        line-height: 20px;
     }
 }

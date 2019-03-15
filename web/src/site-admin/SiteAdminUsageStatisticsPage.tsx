@@ -35,13 +35,12 @@ interface UsageChartPageProps {
     isLightTheme: boolean
     stats: GQL.ISiteUsageStatistics
     chartID: keyof ChartOptions
-    className?: string
     header?: JSX.Element
     showLegend?: boolean
 }
 
 export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
-    <div className={props.className}>
+    <div className="site-admin-usage-statistics-page">
         {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
         <BarChart
             showLabels={true}
