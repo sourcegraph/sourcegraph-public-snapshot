@@ -6,7 +6,11 @@ import { Key } from 'ts-key-enum'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
-jest.setTimeout(30000)
+// 1 minute test timeout. This must be greater than the default Puppeteer
+// command timeout of 30s in order to get the stack trace to point to the
+// Puppeteer command that failed instead of a cryptic Jest test timeout
+// location.
+jest.setTimeout(1 * 60 * 1000)
 
 // tslint:disable-next-line: no-empty
 const noopPercySnapshot: typeof realPercySnapshot = async () => {}
@@ -48,7 +52,6 @@ describe('e2e test suite', function(this: any): void {
 
     beforeEach(async () => {
         if (page.isClosed()) {
-            console.log('creating new page')
             page = await browser.newPage()
         }
     })
@@ -106,29 +109,52 @@ describe('e2e test suite', function(this: any): void {
         await page.keyboard.press('a')
         await page.keyboard.up(modifier)
         await page.keyboard.press(Key.Backspace)
+        const repoSlugs = [
+            'gorilla/mux',
+            'gorilla/securecookie',
+            'sourcegraphtest/AlwaysCloningTest',
+            'sourcegraph/godockerize',
+            'sourcegraph/jsonrpc2',
+            'sourcegraph/checkup',
+            'sourcegraph/go-diff',
+            'sourcegraph/vcsstore',
+            'sourcegraph/go-vcs',
+        ]
         await page.keyboard.type(
             JSON.stringify({
                 url: 'https://github.com',
                 token: gitHubToken,
-                repos: [
-                    'gorilla/mux',
-                    'gorilla/securecookie',
-                    'sourcegraphtest/AlwaysCloningTest',
-                    'sourcegraph/godockerize',
-                    'sourcegraph/jsonrpc2',
-                    'sourcegraph/checkup',
-                    'sourcegraph/go-diff',
-                    'sourcegraph/go-vcs',
-                ],
+                repos: repoSlugs,
             })
         )
         await page.click('.e2e-add-external-service-button')
+
         // Wait for repositories to sync.
         await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
         await retry(async () => {
             await page.reload()
-            await page.waitForSelector('a[href="/github.com/gorilla/mux"]', { timeout: 5000 })
+            await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/gorilla/mux']`, {
+                timeout: 5000,
+            })
         })
+
+        // Clone the repositories
+        for (const slug of repoSlugs) {
+            await page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
+            await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`)
+            if (await page.$(`.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='false']`)) {
+                await page.click(`.repository-node[data-e2e-repository='github.com/${slug}'] .e2e-enable-repository`)
+                if (slug === 'sourcegraphtest/AlwaysCloningTest') {
+                    await page.waitForSelector(
+                        `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`
+                    )
+                } else {
+                    await page.waitForSelector(
+                        `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true'][data-e2e-cloned='true']`
+                    )
+                }
+            }
+        }
     }
 
     // Open page.
@@ -142,36 +168,6 @@ describe('e2e test suite', function(this: any): void {
         path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
         () => page
     )
-
-    const enableOrAddRepositoryIfNeeded = async (): Promise<any> => {
-        // Disable any toasts, which can interfere with clicking on the enable/add button.
-        try {
-            // The toast should appear fast, but not instant, so wait and use a short timeout
-            await page.waitForSelector('.toast__close-button', { timeout: 1000 })
-            await page.click('.toast__close-button')
-        } catch (e) {
-            // Probably no toast was showing.
-        }
-        // Wait for the repository container or a repository error page to be shown.
-        await Promise.race([
-            // Repository is already enabled and added; nothing to do.
-            page.waitForSelector('.repo-rev-container'),
-
-            // Add or enable repository.
-            (async () => {
-                try {
-                    await page.waitForSelector('.repository-error-page__btn:not([disabled])')
-                } catch {
-                    return
-                }
-                await page.click('.repository-error-page__btn:not([disabled])')
-                await page.waitForSelector('.repo-rev-container')
-            })(),
-
-            // Repository is cloning.
-            page.waitForSelector('.repository-cloning-in-progress-page'),
-        ])
-    }
 
     const assertWindowLocation = async (location: string, isAbsolute = false): Promise<any> => {
         const url = isAbsolute ? location : baseURL + location
@@ -224,16 +220,37 @@ describe('e2e test suite', function(this: any): void {
 
     describe('Visual tests', () => {
         test('Repositories list', async () => {
-            await page.goto(baseURL + '/site-admin/repositories')
+            await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
             await percySnapshot(page, 'Repositories list')
+        })
+
+        test('Search results repo', async () => {
+            await page.goto(baseURL + '/github.com/gorilla/mux')
+            await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
+            // await percySnapshot(page, 'Search results repo')
+        })
+
+        test('Search results file', async () => {
+            await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
+            // await percySnapshot(page, 'Search results file')
+        })
+
+        test('Search results code', async () => {
+            await page.goto(baseURL + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
+            // await percySnapshot(page, 'Search results code')
         })
     })
 
     describe('Theme switcher', () => {
         test('changes the theme', async () => {
             await page.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
-            await enableOrAddRepositoryIfNeeded()
             await page.waitForSelector('.theme')
             const currentThemes = await page.evaluate(() =>
                 Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
@@ -278,16 +295,16 @@ describe('e2e test suite', function(this: any): void {
             )
         }
         const assertHoverContentContains = async (val: string, count?: number) => {
-            expect(await getHoverContents(count)).toContain(val)
+            expect(await getHoverContents(count)).toEqual(expect.arrayContaining([expect.stringContaining(val)]))
         }
 
         const clickHoverJ2D = async (): Promise<void> => {
-            const selector = '.e2e-tooltip-j2d'
+            const selector = '.e2e-tooltip-go-to-definition'
             await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
         }
         const clickHoverFindRefs = async (): Promise<void> => {
-            const selector = '.e2e-tooltip-find-refs'
+            const selector = '.e2e-tooltip-find-references'
             await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
         }
@@ -297,7 +314,6 @@ describe('e2e test suite', function(this: any): void {
                 await page.goto(
                     baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector(`[data-tree-path="godockerize.go"]`)
                 await page.click(`[data-tree-path="godockerize.go"]`)
                 await assertWindowLocation(
@@ -307,7 +323,6 @@ describe('e2e test suite', function(this: any): void {
 
             test('expands directory on row click (no navigation)', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row-icon')
                 await page.click('.tree__row-icon')
                 await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]')
@@ -317,7 +332,6 @@ describe('e2e test suite', function(this: any): void {
 
             test('does navigation on directory row click', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row-label')
                 await page.click('.tree__row-label')
                 await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]')
@@ -332,7 +346,6 @@ describe('e2e test suite', function(this: any): void {
                     baseURL +
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row--active [data-tree-path="godockerize.go"]')
             })
 
@@ -341,7 +354,6 @@ describe('e2e test suite', function(this: any): void {
                     baseURL +
                         '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row')
                 expect(await page.evaluate(() => document.querySelectorAll('.tree__row').length)).toEqual(1)
             })
@@ -357,7 +369,6 @@ describe('e2e test suite', function(this: any): void {
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/.travis.yml'
                 )
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row') // waitForSelector for tree to render
 
                 await page.click('.tree')
@@ -424,7 +435,6 @@ describe('e2e test suite', function(this: any): void {
                 await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983', {
                     waitUntil: 'domcontentloaded',
                 })
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.git-commit-node__message')
                 await retry(async () =>
                     expect(
@@ -463,7 +473,6 @@ describe('e2e test suite', function(this: any): void {
         describe('rev resolution', () => {
             test('shows clone in progress interstitial page', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraphtest/AlwaysCloningTest')
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.hero-page__subtitle')
                 await retry(async () =>
                     expect(
@@ -474,7 +483,6 @@ describe('e2e test suite', function(this: any): void {
 
             test('resolves default branch when unspecified', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.repo-header__rev')
                 await retry(async () => {
                     expect(
@@ -487,7 +495,6 @@ describe('e2e test suite', function(this: any): void {
 
             test('updates rev with switcher', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
-                await enableOrAddRepositoryIfNeeded()
                 // Open rev switcher
                 await page.waitForSelector('.repo-header__rev')
                 await page.click('.repo-header__rev')
@@ -501,51 +508,35 @@ describe('e2e test suite', function(this: any): void {
 
         describe('hovers', () => {
             describe(`Blob`, () => {
-                // Temporarely skipped because of flakiness. TODO find cause
-                test.skip('gets displayed and updates URL when clicking on a token', async () => {
+                test('gets displayed and updates URL when clicking on a token', async () => {
                     await page.goto(
-                        baseURL +
-                            '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
+                        baseURL + '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
                     )
-                    await enableOrAddRepositoryIfNeeded()
                     await page.waitForSelector(blobTableSelector)
-                    await clickToken(23, 2)
+                    await clickToken(24, 5)
                     await assertWindowLocation(
-                        '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
+                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L24:19'
                     )
                     await getHoverContents() // verify there is a hover
+                    await percySnapshot(page, 'Code intel hover tooltip')
                 })
 
-                // Skipped until the Go language server is capable of being run locally (without needing
-                // access to sourcegraph-frontend's internal API)
-                // TODO@ggilmore
-                // TODO@chrismwendt
-                test.skip('gets displayed when navigating to a URL with a token position', async () => {
+                test('gets displayed when navigating to a URL with a token position', async () => {
                     await page.goto(
                         baseURL +
-                            '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
+                            '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L151:23'
                     )
-                    await enableOrAddRepositoryIfNeeded()
-                    await retry(
-                        async () =>
-                            await assertHoverContentContains(
-                                `The name of the program. Defaults to path.Base(os.Args[0]) \n`,
-                                2
-                            )
+                    await assertHoverContentContains(
+                        `ErrMethodMismatch is returned when the method in the request does not match`
                     )
                 })
 
-                // Skipped until the Go language server is capable of being run locally (without needing
-                // access to sourcegraph-frontend's internal API)
-                // TODO@ggilmore
-                // TODO@chrismwendt
-                describe.skip('jump to definition', () => {
+                describe('jump to definition', () => {
                     test('noops when on the definition', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                         )
-                        await enableOrAddRepositoryIfNeeded()
                         await clickHoverJ2D()
                         await assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
@@ -557,7 +548,6 @@ describe('e2e test suite', function(this: any): void {
                             baseURL +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L25:10'
                         )
-                        await enableOrAddRepositoryIfNeeded()
                         await clickHoverJ2D()
                         return await assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
@@ -569,7 +559,6 @@ describe('e2e test suite', function(this: any): void {
                             baseURL +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go#L13:31'
                         )
-                        await enableOrAddRepositoryIfNeeded()
                         await clickHoverJ2D()
                         await assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
@@ -578,12 +567,12 @@ describe('e2e test suite', function(this: any): void {
                         return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]')
                     })
 
-                    test('does navigation (external repo)', async () => {
+                    // basic code intel doesn't support cross-repo jump-to-definition yet.
+                    test.skip('does navigation (external repo)', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
                         )
-                        await enableOrAddRepositoryIfNeeded()
                         await clickHoverJ2D()
                         await assertWindowLocation(
                             '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go#L103:6'
@@ -592,18 +581,13 @@ describe('e2e test suite', function(this: any): void {
                 })
 
                 describe('find references', () => {
-                    // Skipped until the Go language server is capable of being run locally (without needing
-                    // access to sourcegraph-frontend's internal API)
-                    // TODO@ggilmore
-                    // TODO@chrismwendt
-                    test.skip('opens widget and fetches local references', async (): Promise<void> => {
+                    test('opens widget and fetches local references', async (): Promise<void> => {
                         jest.setTimeout(120000)
 
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                         )
-                        await enableOrAddRepositoryIfNeeded()
                         await clickHoverFindRefs()
                         await assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6&tab=references'
@@ -619,8 +603,8 @@ describe('e2e test suite', function(this: any): void {
                                     () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
                                 )
                             ).toEqual(
-                                // 4 references, two of which got merged into one because their context overlaps
-                                3
+                                // Basic code intel finds 8 references with some overlapping context, resulting in 4 hunks.
+                                4
                             )
                         )
 
@@ -635,7 +619,6 @@ describe('e2e test suite', function(this: any): void {
                             baseURL +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
                         )
-                        await enableOrAddRepositoryIfNeeded()
 
                         // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
                         // look like they're for the appropriate token)
@@ -652,7 +635,6 @@ describe('e2e test suite', function(this: any): void {
             test('resolves standard library function', async () => {
                 // https://godoc.org/bytes#Compare
                 await page.goto(baseURL + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
-                await enableOrAddRepositoryIfNeeded()
                 await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
                 await assertStickyHighlightedToken('Compare')
                 await assertNonemptyLocalRefs()
@@ -665,7 +647,6 @@ describe('e2e test suite', function(this: any): void {
                     baseURL +
                         '/-/godoc/refs?def=Compare&pkg=github.com%2Fgolang%2Fgo%2Fsrc%2Fbytes&repo=github.com%2Fgolang%2Fgo'
                 )
-                await enableOrAddRepositoryIfNeeded()
                 await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
                 await assertStickyHighlightedToken('Compare')
                 await assertNonemptyLocalRefs()
@@ -677,7 +658,6 @@ describe('e2e test suite', function(this: any): void {
                 await page.goto(
                     baseURL + '/-/godoc/refs?def=Router&pkg=github.com%2Fgorilla%2Fmux&repo=github.com%2Fgorilla%2Fmux'
                 )
-                await enableOrAddRepositoryIfNeeded()
                 await assertWindowLocationPrefix('/github.com/gorilla/mux/-/blob/mux.go')
                 await assertStickyHighlightedToken('Router')
                 await assertNonemptyLocalRefs()
@@ -692,7 +672,6 @@ describe('e2e test suite', function(this: any): void {
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19',
                     { waitUntil: 'domcontentloaded' }
                 )
-                await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.nav-link[href*="https://github"]')
                 await retry(async () =>
                     expect(
@@ -711,7 +690,6 @@ describe('e2e test suite', function(this: any): void {
     describe('Search component', () => {
         test('can execute search with search operators', async () => {
             await page.goto(baseURL + '/github.com/sourcegraph/go-diff')
-            await enableOrAddRepositoryIfNeeded()
 
             const operators: { [key: string]: string } = {
                 repo: '^github.com/sourcegraph/go-diff$',
@@ -738,7 +716,6 @@ describe('e2e test suite', function(this: any): void {
 
         test('renders results for sourcegraph/go-diff (no search group)', async () => {
             await page.goto(baseURL + '/github.com/sourcegraph/go-diff')
-            await enableOrAddRepositoryIfNeeded()
             await page.goto(
                 baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
             )

@@ -12,6 +12,7 @@ import (
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
@@ -28,20 +29,20 @@ type provider struct {
 	refreshErr error
 }
 
-// ConfigID implements auth.Provider.
-func (p *provider) ConfigID() auth.ProviderConfigID {
-	return auth.ProviderConfigID{
+// ConfigID implements providers.Provider.
+func (p *provider) ConfigID() providers.ConfigID {
+	return providers.ConfigID{
 		Type: providerType,
 		ID:   providerConfigID(&p.config),
 	}
 }
 
-// Config implements auth.Provider.
+// Config implements providers.Provider.
 func (p *provider) Config() schema.AuthProviders {
 	return schema.AuthProviders{Openidconnect: &p.config}
 }
 
-// Refresh implements auth.Provider.
+// Refresh implements providers.Provider.
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -49,8 +50,8 @@ func (p *provider) Refresh(ctx context.Context) error {
 	return p.refreshErr
 }
 
-func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
-	info := auth.ProviderInfo{
+func (p *provider) getCachedInfoAndError() (*providers.Info, error) {
+	info := providers.Info{
 		ServiceID:   p.config.Issuer,
 		ClientID:    p.config.ClientID,
 		DisplayName: p.config.DisplayName,
@@ -74,8 +75,8 @@ func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
 	return &info, err
 }
 
-// CachedInfo implements auth.Provider.
-func (p *provider) CachedInfo() *auth.ProviderInfo {
+// CachedInfo implements providers.Provider.
+func (p *provider) CachedInfo() *providers.Info {
 	info, _ := p.getCachedInfoAndError()
 	return info
 }

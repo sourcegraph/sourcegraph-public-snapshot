@@ -8,7 +8,7 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle nav-link"
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -113,38 +113,12 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
         data-tooltip="detail1"
         onClick={[Function]}
       >
-        <div
-          className="activation-item"
-        >
-           
-          <svg
-            className="mdi-icon icon-inline activation-item__checkbox--todo"
-            fill="currentColor"
-            height={24}
-            viewBox="0 0 24 24"
-            width={24}
-          >
-            <path
-              d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
-            />
-          </svg>
-            
-          title1
-           
-        </div>
-      </div>
-    </div>
-    <div
-      className="activation-dropdown-item dropdown-item"
-      onClick={[Function]}
-    >
-      <div
-        data-tooltip="detail2"
-        onClick={[Function]}
-      >
         <a
-          className="activation-item__link"
-          to="/some/url"
+          className="nav-link "
+          onAuxClick={[Function]}
+          onClick={[Function]}
+          onKeyPress={[Function]}
+          tabIndex={0}
         >
           <div
             className="activation-item"
@@ -162,9 +136,51 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
               />
             </svg>
               
-            title2
+            title1
              
           </div>
+        </a>
+      </div>
+    </div>
+    <div
+      className="activation-dropdown-item dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        data-tooltip="detail2"
+        onClick={[Function]}
+      >
+        <a
+          className="nav-link "
+          onAuxClick={[Function]}
+          onClick={[Function]}
+          onKeyPress={[Function]}
+          tabIndex={0}
+        >
+          <a
+            className="activation-item__link"
+            to="/some/url"
+          >
+            <div
+              className="activation-item"
+            >
+               
+              <svg
+                className="mdi-icon icon-inline activation-item__checkbox--todo"
+                fill="currentColor"
+                height={24}
+                viewBox="0 0 24 24"
+                width={24}
+              >
+                <path
+                  d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+                />
+              </svg>
+                
+              title2
+               
+            </div>
+          </a>
         </a>
       </div>
     </div>
@@ -180,7 +196,7 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle nav-link"
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -285,25 +301,33 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
         data-tooltip="detail1"
         onClick={[Function]}
       >
-        <div
-          className="activation-item"
+        <a
+          className="nav-link "
+          onAuxClick={[Function]}
+          onClick={[Function]}
+          onKeyPress={[Function]}
+          tabIndex={0}
         >
-           
-          <svg
-            className="mdi-icon icon-inline activation-item__checkbox--done"
-            fill="currentColor"
-            height={24}
-            viewBox="0 0 24 24"
-            width={24}
+          <div
+            className="activation-item"
           >
-            <path
-              d="M20,12C20,16.42 16.42,20 12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C12.76,4 13.5,4.11 14.2,4.31L15.77,2.74C14.61,2.26 13.34,2 12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"
-            />
-          </svg>
-            
-          title1
-           
-        </div>
+             
+            <svg
+              className="mdi-icon icon-inline activation-item__checkbox--done"
+              fill="currentColor"
+              height={24}
+              viewBox="0 0 24 24"
+              width={24}
+            >
+              <path
+                d="M20,12C20,16.42 16.42,20 12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C12.76,4 13.5,4.11 14.2,4.31L15.77,2.74C14.61,2.26 13.34,2 12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"
+              />
+            </svg>
+              
+            title1
+             
+          </div>
+        </a>
       </div>
     </div>
     <div
@@ -315,28 +339,36 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
         onClick={[Function]}
       >
         <a
-          className="activation-item__link"
-          to="/some/url"
+          className="nav-link "
+          onAuxClick={[Function]}
+          onClick={[Function]}
+          onKeyPress={[Function]}
+          tabIndex={0}
         >
-          <div
-            className="activation-item"
+          <a
+            className="activation-item__link"
+            to="/some/url"
           >
-             
-            <svg
-              className="mdi-icon icon-inline activation-item__checkbox--todo"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
+            <div
+              className="activation-item"
             >
-              <path
-                d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
-              />
-            </svg>
-              
-            title2
-             
-          </div>
+               
+              <svg
+                className="mdi-icon icon-inline activation-item__checkbox--todo"
+                fill="currentColor"
+                height={24}
+                viewBox="0 0 24 24"
+                width={24}
+              >
+                <path
+                  d="M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+                />
+              </svg>
+                
+              title2
+               
+            </div>
+          </a>
         </a>
       </div>
     </div>
@@ -346,13 +378,13 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
 
 exports[`ActivationDropdown render loading 1`] = `
 <div
-  className=" nav-link p-0 btn-group"
+  className="activation-dropdown-button--hidden nav-link p-0 btn-group"
   onKeyDown={[Function]}
 >
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle nav-link"
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
     href="#"
     onClick={[Function]}
   >

@@ -23,3 +23,10 @@ export function numberWithCommas(x: any): string {
 export function pluralize(str: string, n: number, plural = str + 's'): string {
     return n === 1 ? str : plural
 }
+
+/**
+ * Replaces all non alphabetic characters with `-` and lowercases the result.
+ */
+export function sanitizeClass(value: string): string {
+    return value.replace(/[^A-Za-z]/g, '-').toLowerCase()
+}

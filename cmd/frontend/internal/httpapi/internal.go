@@ -161,52 +161,6 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(services)
 }
 
-func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
-	var req api.ReposGetInventoryUncachedRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.Get(r.Context(), req.Repo)
-	if err != nil {
-		return err
-	}
-	inv, err := backend.Repos.GetInventoryUncached(r.Context(), repo, req.CommitID)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(inv)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
-}
-
-func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
-	var req api.ReposGetInventoryRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.Get(r.Context(), req.Repo)
-	if err != nil {
-		return err
-	}
-	inv, err := backend.Repos.GetInventory(r.Context(), repo, req.CommitID)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(inv)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
-}
-
 func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	raw, err := globals.ConfigurationServerFrontendOnly.Source.Read(r.Context())
 	if err != nil {

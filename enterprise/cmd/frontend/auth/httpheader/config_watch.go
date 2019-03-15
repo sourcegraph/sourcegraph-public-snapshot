@@ -1,7 +1,7 @@
 package httpheader
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -11,10 +11,10 @@ func init() {
 		conf.Watch(func() {
 			newPC, _ := getProviderConfig()
 			if newPC == nil {
-				auth.UpdateProviders("httpheader", nil)
+				providers.Update("httpheader", nil)
 				return
 			}
-			auth.UpdateProviders("httpheader", []auth.Provider{&provider{c: newPC}})
+			providers.Update("httpheader", []providers.Provider{&provider{c: newPC}})
 		})
 	}()
 }

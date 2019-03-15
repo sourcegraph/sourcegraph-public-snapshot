@@ -130,6 +130,10 @@ type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
 }
+type Exclude struct {
+	Id   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
@@ -168,6 +172,7 @@ type GitHubAuthorization struct {
 type GitHubConnection struct {
 	Authorization               *GitHubAuthorization `json:"authorization,omitempty"`
 	Certificate                 string               `json:"certificate,omitempty"`
+	Exclude                     []*Exclude           `json:"exclude,omitempty"`
 	GitURLType                  string               `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool                 `json:"initialRepositoryEnablement,omitempty"`
 	Repos                       []string             `json:"repos,omitempty"`
@@ -363,6 +368,7 @@ type Settings struct {
 	Extensions             map[string]bool           `json:"extensions,omitempty"`
 	Motd                   []string                  `json:"motd,omitempty"`
 	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
+	SearchContextLines     int                       `json:"search.contextLines,omitempty"`
 	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
 	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`

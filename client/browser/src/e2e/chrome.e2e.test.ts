@@ -101,7 +101,7 @@ describe('Sourcegraph Chrome extension', () => {
 
         await clickElement(page, element)
 
-        await page.waitForSelector('.e2e-tooltip-j2d')
+        await page.waitForSelector('.e2e-tooltip-go-to-definition')
     })
 
     const tokens = {
@@ -121,7 +121,7 @@ describe('Sourcegraph Chrome extension', () => {
                 await element.hover()
                 await page.waitForSelector('[data-path="regexp.go"] .code-view-toolbar .open-on-sourcegraph')
                 await clickElement(page, element)
-                await page.waitForSelector('.e2e-tooltip-j2d')
+                await page.waitForSelector('.e2e-tooltip-go-to-definition')
             })
         }
     }

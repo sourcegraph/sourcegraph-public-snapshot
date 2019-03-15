@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -25,6 +26,9 @@ type Server struct {
 	repos.Store
 	*repos.Syncer
 	*repos.OtherReposSyncer
+	InternalAPI interface {
+		ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error
+	}
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -128,7 +132,17 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
-func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
+	tr, ctx := trace.New(ctx, "repoLookup", args.String())
+	defer func() {
+		log15.Debug("repoLookup", "result", result, "error", err)
+		if result != nil {
+			tr.LazyPrintf("result: %s", result)
+		}
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	if args.Repo == "" && args.ExternalRepo == nil {
 		return nil, errors.New("at least one of Repo and ExternalRepo must be set (both are empty)")
 	}
@@ -179,20 +193,20 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	)
 
 	var (
-		result        protocol.RepoLookupResult
 		repo          *protocol.RepoInfo
 		authoritative bool
-		err           error
 	)
 
 	// Find the authoritative source of the repository being looked up.
 	for _, get := range fns {
 		if repo, authoritative, err = get.fn(ctx, args); authoritative {
 			log15.Debug("repoupdater.lookup-repo", "source", get.kind)
+			tr.LazyPrintf("authorative: %s", get.kind)
 			break
 		}
 	}
 
+	result = &protocol.RepoLookupResult{}
 	if authoritative {
 		if isNotFound(err) {
 			result.ErrorNotFound = true
@@ -209,7 +223,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 		if repo != nil {
 			go func() {
-				err := api.InternalClient.ReposUpdateMetadata(context.Background(), repo.Name, repo.Description, repo.Fork, repo.Archived)
+				err := s.InternalAPI.ReposUpdateMetadata(context.Background(), repo.Name, repo.Description, repo.Fork, repo.Archived)
 				if err != nil {
 					log15.Warn("Error updating repo metadata", "repo", repo.Name, "err", err)
 				}
@@ -219,12 +233,12 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 		result.Repo = repo
-		return &result, nil
+		return result, nil
 	}
 
 	// No configured code hosts are authoritative for this repository.
 	result.ErrorNotFound = true
-	return &result, nil
+	return result, nil
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
@@ -244,12 +258,12 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 
 	switch strings.ToLower(r.ExternalRepo.ServiceType) {
 	case "github":
-		baseURL := r.ExternalRepo.ServiceID
+		ghrepo := r.Metadata.(*github.Repository)
 		info.Links = &protocol.RepoLinks{
-			Root:   baseURL,
-			Tree:   baseURL + "/tree/{rev}/{path}",
-			Blob:   baseURL + "/blob/{rev}/{path}",
-			Commit: baseURL + "/commit/{commit}",
+			Root:   ghrepo.URL,
+			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
 		}
 	}
 
@@ -275,4 +289,8 @@ func isUnauthorized(err error) bool {
 
 func isTemporarilyUnavailable(err error) bool {
 	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
+}
+
+func pathAppend(base, p string) string {
+	return strings.TrimRight(base, "/") + p
 }

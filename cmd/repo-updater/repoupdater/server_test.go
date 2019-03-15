@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -62,7 +63,10 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 }
 
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
+	s := &Server{
+		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
+		InternalAPI:      &internalAPIFake{},
+	}
 	h := s.Handler()
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
@@ -159,7 +163,8 @@ func TestServer_handleRepoLookup(t *testing.T) {
 func TestRepoLookup(t *testing.T) {
 	s := Server{
 		Store:            repos.NewFakeStore(nil, nil, nil),
-		OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil),
+		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
+		InternalAPI:      &internalAPIFake{},
 	}
 
 	t.Run("no args", func(t *testing.T) {
@@ -218,60 +223,154 @@ func TestRepoLookup(t *testing.T) {
 				t.Errorf("got result %+v, want nil", result)
 			}
 		})
-
-		t.Run("found", func(t *testing.T) {
-			want := &protocol.RepoLookupResult{
-				Repo: &protocol.RepoInfo{
-					ExternalRepo: &api.ExternalRepoSpec{
-						ID:          "a",
-						ServiceType: github.ServiceType,
-						ServiceID:   "https://github.com/",
-					},
-					Name:        "github.com/c/d",
-					Description: "b",
-					Fork:        true,
-				},
-			}
-
-			metadataUpdate := make(chan *api.ReposUpdateMetadataRequest, 1)
-			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				var params api.ReposUpdateMetadataRequest
-				_ = json.NewDecoder(r.Body).Decode(&params)
-				metadataUpdate <- &params
-			}))
-			defer ts.Close()
-			api.InternalClient.URL = ts.URL
-
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return want.Repo, true, nil
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !reflect.DeepEqual(result, want) {
-				t.Errorf("got %+v, want %+v", result, want)
-			}
-
-			select {
-			case got := <-metadataUpdate:
-				want2 := &api.ReposUpdateMetadataRequest{
-					RepoName:    want.Repo.Name,
-					Description: want.Repo.Description,
-					Fork:        want.Repo.Fork,
-					Archived:    want.Repo.Archived,
-				}
-				if !reflect.DeepEqual(got, want2) {
-					t.Errorf("got %+v, want %+v", got, want2)
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("ReposUpdateMetadata was not called")
-			}
-		})
 	})
+}
+
+func TestRepoLookup_found(t *testing.T) {
+	fa := &internalAPIFake{
+		metadataUpdate: make(chan *api.ReposUpdateMetadataRequest, 1),
+	}
+	s := Server{
+		Store:            repos.NewFakeStore(nil, nil, nil),
+		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
+		InternalAPI:      fa,
+	}
+
+	want := &protocol.RepoLookupResult{
+		Repo: &protocol.RepoInfo{
+			ExternalRepo: &api.ExternalRepoSpec{
+				ID:          "a",
+				ServiceType: github.ServiceType,
+				ServiceID:   "https://github.com/",
+			},
+			Name:        "github.com/c/d",
+			Description: "b",
+			Fork:        true,
+		},
+	}
+
+	orig := repos.GetGitHubRepositoryMock
+	repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
+		return want.Repo, true, nil
+	}
+	defer func() { repos.GetGitHubRepositoryMock = orig }()
+
+	result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(result, want) {
+		t.Errorf("got %+v, want %+v", result, want)
+	}
+
+	select {
+	case got := <-fa.metadataUpdate:
+		want2 := &api.ReposUpdateMetadataRequest{
+			RepoName:    want.Repo.Name,
+			Description: want.Repo.Description,
+			Fork:        want.Repo.Fork,
+			Archived:    want.Repo.Archived,
+		}
+		if !reflect.DeepEqual(got, want2) {
+			t.Errorf("got %+v, want %+v", got, want2)
+		}
+	case <-time.After(5 * time.Second):
+		t.Error("ReposUpdateMetadata was not called")
+	}
+}
+
+func TestRepoLookup_syncer(t *testing.T) {
+	now := time.Now().UTC()
+	ctx := context.Background()
+	s := Server{
+		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
+		Syncer:           &repos.Syncer{},
+		Store: repos.NewFakeStore(nil, nil, nil,
+			&repos.Repo{
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				Language:    "barlang",
+				Enabled:     true,
+				Archived:    false,
+				Fork:        false,
+				CreatedAt:   now,
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:123": {
+						ID:       "extsvc:123",
+						CloneURL: "git@github.com:foo/bar.git",
+					},
+				},
+				Metadata: &github.Repository{
+					ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					URL:           "github.com/foo/bar",
+					DatabaseID:    1234,
+					Description:   "The description",
+					NameWithOwner: "foo/bar",
+				},
+			}),
+		InternalAPI: &internalAPIFake{},
+	}
+
+	t.Run("not found", func(t *testing.T) {
+		result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/a/b"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
+			t.Errorf("got result %+v, want nil", result)
+		}
+	})
+
+	t.Run("found", func(t *testing.T) {
+		want := &protocol.RepoLookupResult{
+			Repo: &protocol.RepoInfo{
+				ExternalRepo: &api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			},
+		}
+
+		result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/foo/bar"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := pretty.Compare(result, want); diff != "" {
+			t.Errorf("ListRepos:\n%s", diff)
+			return
+		}
+	})
+}
+
+type internalAPIFake struct {
+	metadataUpdate chan *api.ReposUpdateMetadataRequest
+}
+
+func (a *internalAPIFake) ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error {
+	if a.metadataUpdate != nil {
+		a.metadataUpdate <- &api.ReposUpdateMetadataRequest{
+			RepoName:    repo,
+			Description: description,
+			Fork:        fork,
+			Archived:    archived,
+		}
+	}
+	return nil
 }
 
 func init() {

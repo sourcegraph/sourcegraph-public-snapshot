@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
@@ -291,11 +291,11 @@ func (m mockCache) Delete(key string) {
 }
 
 type mockAuthnProvider struct {
-	configID  auth.ProviderConfigID
+	configID  providers.ConfigID
 	serviceID string
 }
 
-func (m mockAuthnProvider) ConfigID() auth.ProviderConfigID {
+func (m mockAuthnProvider) ConfigID() providers.ConfigID {
 	return m.configID
 }
 
@@ -308,8 +308,8 @@ func (m mockAuthnProvider) Config() schema.AuthProviders {
 	}
 }
 
-func (m mockAuthnProvider) CachedInfo() *auth.ProviderInfo {
-	return &auth.ProviderInfo{ServiceID: m.serviceID}
+func (m mockAuthnProvider) CachedInfo() *providers.Info {
+	return &providers.Info{ServiceID: m.serviceID}
 }
 
 func (m mockAuthnProvider) Refresh(ctx context.Context) error {

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daviddengcn/go-colortext"
+	ct "github.com/daviddengcn/go-colortext"
 )
 
 type clogger struct {

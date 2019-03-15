@@ -11,6 +11,7 @@ import { TelemetryContext } from '../telemetry/telemetryContext'
 import { TelemetryService } from '../telemetry/telemetryService'
 import { isErrorLike } from '../util/errors'
 import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
+import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
 
@@ -75,6 +76,9 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
             location,
         } = this.props
 
+        if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
+            return null
+        }
         return (
             <div
                 className={`hover-overlay card ${className}`}
@@ -168,7 +172,9 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
                             {actionsOrError.map((action, i) => (
                                 <ActionItem
                                     key={i}
-                                    className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+                                    className={`btn btn-secondary hover-overlay__action e2e-tooltip-${sanitizeClass(
+                                        action.action.title || 'untitled'
+                                    )}`}
                                     {...action}
                                     variant="actionItem"
                                     disabledDuringExecution={true}

@@ -4,6 +4,7 @@ import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
 import { Link } from '../Link'
+import { LinkOrButton } from '../LinkOrButton'
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 
 interface ActivationChecklistItemProps extends ActivationStep {

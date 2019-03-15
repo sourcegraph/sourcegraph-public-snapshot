@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -69,7 +71,7 @@ func SyncGitHubConnections(ctx context.Context) {
 
 		var conns []*githubConnection
 		for _, c := range githubConf {
-			conn, err := newGitHubConnection(c)
+			conn, err := newGitHubConnection(c, nil)
 			if err != nil {
 				log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
 				continue
@@ -316,7 +318,7 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	}
 }
 
-func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, error) {
+func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*githubConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -326,23 +328,53 @@ func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, er
 
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
-	transport, err := cachedTransportWithCertTrusted(config.Certificate)
+	if cf == nil {
+		cf = httpcli.NewFactory(
+			nil, // No middleware for now. Use this for Prometheus instrumentation later.
+			httpcli.TracedTransportOpt,
+			httpcli.NewCachedTransportOpt(httputil.Cache, true),
+		)
+	}
+
+	var opts []httpcli.Opt
+	if config.Certificate != "" {
+		pool, err := newCertPool(config.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+	}
+
+	cli, err := cf.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
 
+	exclude := make(map[string]bool, len(config.Exclude))
+	for _, r := range config.Exclude {
+		if r.Name != "" {
+			exclude[strings.ToLower(r.Name)] = true
+		}
+
+		if r.Id != "" {
+			exclude[r.Id] = true
+		}
+	}
+
 	return &githubConnection{
 		config:           config,
+		exclude:          exclude,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		client:           github.NewClient(apiURL, config.Token, transport),
-		searchClient:     github.NewClient(apiURL, config.Token, transport),
+		client:           github.NewClient(apiURL, config.Token, cli),
+		searchClient:     github.NewClient(apiURL, config.Token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }
 
 type githubConnection struct {
 	config       *schema.GitHubConnection
+	exclude      map[string]bool
 	githubDotCom bool
 	baseURL      *url.URL
 	client       *github.Client
@@ -373,6 +405,10 @@ func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) strin
 	}
 	u.User = url.User(c.config.Token)
 	return u.String()
+}
+
+func (c *githubConnection) excludes(r *github.Repository) bool {
+	return c.exclude[strings.ToLower(r.NameWithOwner)] || c.exclude[r.ID]
 }
 
 func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.Repository, error) {
@@ -440,13 +476,13 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
-					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, "", page)
+					repos, hasNextPage, rateLimitCost, err = c.client.ListUserRepositories(ctx, page)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing viewer's affiliated GitHub repositories page %d", page)}
+						ch <- batch{err: errors.Wrapf(err, "Error listing affiliated GitHub repositories page %d", page)}
 						break
 					}
 					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
-					log15.Debug("github sync: ListViewerRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
+					log15.Debug("github sync: ListUserRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
 
 					var b batch
 					for _, r := range repos {
@@ -541,7 +577,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 		}
 
 		for _, repo := range r.repos {
-			if !seen[repo.URL] {
+			if !seen[repo.URL] && !c.excludes(repo) {
 				repos = append(repos, repo)
 				seen[repo.URL] = true
 			}

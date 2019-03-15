@@ -1,8 +1,6 @@
 # Sourcegraph documentation
 
-> NOTE: Upgrading to `3.0.1+`? Read our [migration guide](admin/migration/3_0.md) for `2.x` and `3.0.0`.
-
-[Sourcegraph](https://sourcegraph.com) is used by developers at Uber, Lyft, Yelp, and more to help them search, navigate and review code at enterprise scale.
+[Sourcegraph](https://sourcegraph.com) is a web-based, open-source, self-hosted code search and navigation tool for developers, used by Uber, Lyft, Yelp, and more.
 
 ## Quickstart guide
 
@@ -17,7 +15,7 @@ It takes less than 5 minutes to install Sourcegraph using Docker. If you've got 
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.1.1</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.1.2</code></pre>
 
 Access the server on port `7080`, then the below screencast will show you how to configure Sourcegraph to search public and private repositories, and enable code intelligence on Sourcegraph and GitHub.com.
 
@@ -45,6 +43,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 
 - [Overview](user/index.md): What is Sourcegraph?
 - [Tour](user/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
+- [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
 - [Query syntax reference](user/search/queries.md)

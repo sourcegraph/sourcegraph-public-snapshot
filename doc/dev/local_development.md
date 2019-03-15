@@ -17,17 +17,20 @@ The sections below describe the the dependencies that you need to have to be abl
 
 ## Step 1: Get the code
 
-Run this command to get the Sourcegraph source code on your local machine:
+> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
 
-Using Go:
+On Mac with homebrew, you can run
+```
+brew install golang
+```
+
+Run this command to get the Sourcegraph source code on your local machine:
 
 ```
 go get github.com/sourcegraph/sourcegraph
 ```
 
-> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
-
-This is your "Sourcegraph repository directory".
+This downloads your "Sourcegraph repository directory".
 
 ## Step 2: Install dependencies
 
@@ -63,7 +66,7 @@ This is a streamlined setup for Mac machines.
 3.  Install Go, Node, PostgreSQL 9.6, Redis, Git, nginx, and SQLite tools with the following command:
 
     ```
-    brew install go node redis postgresql@11 git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go node redis postgresql@9.6 git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically
@@ -76,10 +79,10 @@ This is a streamlined setup for Mac machines.
     (You can stop them later by calling `stop` instead of `start` above.)
 
 5.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
-    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@11`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
+    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@9.6`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
     ```bash
-    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@11/bin:$PATH"' >> ~/.bash_profile }
+    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@9.6/bin:$PATH"' >> ~/.bash_profile }
     source ~/.bash_profile
     ```
 

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -65,7 +66,7 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-func newTestClient(t *testing.T, cli Doer) *Client {
+func newTestClient(t *testing.T, cli httpcli.Doer) *Client {
 	rcache.SetupForTest(t)
 	return &Client{
 		apiURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},

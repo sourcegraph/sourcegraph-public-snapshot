@@ -7,8 +7,12 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// This test lives in cmd/enterprise because it tests a proprietary
+// super-set of the validation performed by the OSS version.
 func TestExternalServices_ValidateConfig(t *testing.T) {
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {
@@ -58,8 +62,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 	for _, tc := range []struct {
 		kind   string
 		desc   string
-		ext    externalServices
 		config string
+		ps     []schema.AuthProviders
 		assert func(testing.TB, []string)
 	}{
 		{
@@ -255,6 +259,55 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: excludes(`authorization.ttl: time: invalid duration 0`),
 		},
 		{
+			kind:   "GITHUB",
+			desc:   "invalid empty exclude",
+			config: `{"exclude": []}`,
+			assert: includes(`exclude: Array must have at least 1 items`),
+		},
+		{
+			kind:   "GITHUB",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "GITHUB",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "GITHUB",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": "bar"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind:   "GITHUB",
+			desc:   "invalid empty exclude item id",
+			config: `{"exclude": [{"id": ""}]}`,
+			assert: includes(`exclude.0.id: String length must be greater than or equal to 1`),
+		},
+		{
+			kind:   "GITHUB",
+			desc:   "invalid additional exclude item properties",
+			config: `{"exclude": [{"id": "foo", "bar": "baz"}]}`,
+			assert: includes(`bar: Additional property bar is not allowed`),
+		},
+		{
+			kind: "GITHUB",
+			desc: "both name and id can be specified in exclude",
+			config: `
+			{
+				"url": "https://github.corp.com",
+				"token": "very-secret-token",
+				"exclude": [
+					{"name": "foo/bar", "id": "AAAAA="}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
 			kind:   "GITLAB",
 			desc:   "without url nor token",
 			config: `{}`,
@@ -301,6 +354,117 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "valid authorization ttl 0",
 			config: `{"authorization": {"ttl": "0"}}`,
 			assert: excludes(`authorization.ttl: time: invalid duration 0`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "missing oauth provider",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": { "identityProvider": { "type": "oauth" } }
+			}
+			`,
+			assert: includes(`Did not find authentication provider matching "https://gitlab.foo.bar"`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "valid oauth provider",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": { "identityProvider": { "type": "oauth" } }
+			}
+			`,
+			ps: []schema.AuthProviders{
+				{Gitlab: &schema.GitLabAuthProvider{Url: "https://gitlab.foo.bar"}},
+			},
+			assert: excludes(`Did not find authentication provider matching "https://gitlab.foo.bar"`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "missing external provider",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": {
+					"identityProvider": {
+						"type": "external",
+						"authProviderID": "foo",
+						"authProviderType": "bar",
+						"gitlabProvider": "baz"
+					}
+				}
+			}
+			`,
+			assert: includes(`Did not find authentication provider matching type bar and configID foo`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "valid external provider with SAML",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": {
+					"identityProvider": {
+						"type": "external",
+						"authProviderID": "foo",
+						"authProviderType": "bar",
+						"gitlabProvider": "baz"
+					}
+				}
+			}
+			`,
+			ps: []schema.AuthProviders{
+				{
+					Saml: &schema.SAMLAuthProvider{
+						ConfigID: "foo",
+						Type:     "bar",
+					},
+				},
+			},
+			assert: excludes(`Did not find authentication provider matching type bar and configID foo`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "valid external provider with OIDC",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"authorization": {
+					"identityProvider": {
+						"type": "external",
+						"authProviderID": "foo",
+						"authProviderType": "bar",
+						"gitlabProvider": "baz"
+					}
+				}
+			}
+			`,
+			ps: []schema.AuthProviders{
+				{
+					Openidconnect: &schema.OpenIDConnectAuthProvider{
+						ConfigID: "foo",
+						Type:     "bar",
+					},
+				},
+			},
+			assert: excludes(`Did not find authentication provider matching type bar and configID foo`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "username identity provider",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"token": "super-secret-token",
+				"authorization": {
+					"identityProvider": {
+						"type": "username",
+					}
+				}
+			}
+			`,
+			assert: equals("<nil>"),
 		},
 		{
 			kind:   "PHABRICATOR",
@@ -417,13 +581,21 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string
-			switch e := tc.ext.validateConfig(tc.kind, tc.config).(type) {
+			if tc.ps == nil {
+				tc.ps = conf.Get().Critical.AuthProviders
+			}
+
+			s := NewExternalServicesStore()
+			err := s.ValidateConfig(tc.kind, tc.config, tc.ps)
+			switch e := err.(type) {
 			case nil:
 				have = append(have, "<nil>")
 			case *multierror.Error:
 				for _, err := range e.Errors {
 					have = append(have, err.Error())
 				}
+			default:
+				have = append(have, err.Error())
 			}
 
 			tc.assert(t, have)

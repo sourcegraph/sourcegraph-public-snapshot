@@ -12,7 +12,7 @@ func parseTTL(ttl string) (time.Duration, error) {
 	}
 	d, err := time.ParseDuration(ttl)
 	if err != nil {
-		return defaultValue, fmt.Errorf("Could not parse time duration %q.", ttl)
+		return defaultValue, fmt.Errorf("authorization.ttl: %s", err)
 	}
 	return d, nil
 }

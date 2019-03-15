@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 )
 
 const sessionKey = "oidc@0"
 
 type sessionData struct {
-	ID auth.ProviderConfigID
+	ID providers.ConfigID
 
 	// Store only the oauth2.Token fields we need, to avoid hitting the ~4096-byte session data
 	// limit.

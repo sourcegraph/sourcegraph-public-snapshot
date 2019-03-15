@@ -35,26 +35,41 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
+// cachedRoundTripper wraps another http.RoundTripper with caching.
+func cachedRoundTripper(rt http.RoundTripper) http.RoundTripper {
+	return &httpcache.Transport{
+		Transport:           &nethttp.Transport{RoundTripper: rt},
+		Cache:               httputil.Cache,
+		MarkCachedResponses: true, // so we avoid using cached rate limit info
+	}
+}
+
+// newCertPool returns an x509.CertPool with the given certificates added to it.
+func newCertPool(certs ...string) (*x509.CertPool, error) {
+	pool := x509.NewCertPool()
+	for _, cert := range certs {
+		if ok := pool.AppendCertsFromPEM([]byte(cert)); !ok {
+			return nil, errors.New("invalid certificate")
+		}
+	}
+	return pool, nil
+}
+
 // cachedTransportWithCertTrusted returns an http.Transport that trusts the
 // provided PEM cert, or http.DefaultTransport if it is empty. The transport
 // is also using our redis backed cache.
 func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
 	transport := http.DefaultTransport
 	if cert != "" {
-		certPool := x509.NewCertPool()
-		if ok := certPool.AppendCertsFromPEM([]byte(cert)); !ok {
-			return nil, errors.New("invalid certificate value")
+		pool, err := newCertPool(cert)
+		if err != nil {
+			return nil, err
 		}
 		transport = &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: certPool},
+			TLSClientConfig: &tls.Config{RootCAs: pool},
 		}
 	}
-
-	return &httpcache.Transport{
-		Transport:           &nethttp.Transport{RoundTripper: transport},
-		Cache:               httputil.Cache,
-		MarkCachedResponses: true, // so we avoid using cached rate limit info
-	}, nil
+	return cachedRoundTripper(transport), nil
 }
 
 // A repoCreateOrUpdateRequest is a RepoCreateOrUpdateRequest, from the API,

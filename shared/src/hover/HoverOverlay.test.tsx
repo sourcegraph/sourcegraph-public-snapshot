@@ -66,7 +66,12 @@ describe('HoverOverlay', () => {
 
     test('actions present', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} actionsOrError={[{ action: { id: 'a', command: 'c' } }]} />)
+            renderShallow(
+                <HoverOverlay
+                    {...commonProps}
+                    actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' } }]}
+                />
+            )
         ).toMatchSnapshot()
     })
 

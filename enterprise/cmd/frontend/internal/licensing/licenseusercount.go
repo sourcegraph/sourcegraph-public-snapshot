@@ -7,9 +7,6 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -22,16 +19,12 @@ var (
 	started bool
 )
 
-func init() {
-	// Start counting max users on the instance on launch.
-	hooks.AfterDBInit = func() {
-		go startMaxUserCount()
-	}
-	// Make the Site.productSubscription.actualUserCount and Site.productSubscription.actualUserCountDate
-	// GraphQL fields return the proper max user count and timestamp on the current license.
-	graphqlbackend.ActualUserCount = actualUserCount
-	graphqlbackend.ActualUserCountDate = actualUserCountDate
-	graphqlbackend.NoLicenseMaximumAllowedUserCount = &noLicenseMaximumAllowedUserCount
+// A UsersStore captures the necessary methods for the licensing
+// package to query Sourcegraph users. It allows decoupling this package
+// from the OSS db package.
+type UsersStore interface {
+	// Count returns the total count of active Sourcegraph users.
+	Count(context.Context) (int, error)
 }
 
 // setMaxUsers sets the max users associated with a license key if the new max count is greater than the previous max.
@@ -88,13 +81,13 @@ func getMaxUsers(c redis.Conn, key string) (int, string, error) {
 
 // checkMaxUsers runs periodically, and if a license key is in use, updates the
 // record of maximum count of user accounts in use.
-func checkMaxUsers(ctx context.Context, signature string) error {
+func checkMaxUsers(ctx context.Context, s UsersStore, signature string) error {
 	if signature == "" {
 		// No license key is in use.
 		return nil
 	}
 
-	count, err := db.Users.Count(ctx, nil)
+	count, err := s.Count(ctx)
 	if err != nil {
 		log15.Error("licensing.checkMaxUsers: error getting user count", "error", err)
 		return err
@@ -115,9 +108,9 @@ func maxUsersTimeKey() string {
 	return keyPrefix + "max_time"
 }
 
-// actualUserCount returns the actual max number of users that have had accounts on the
+// ActualUserCount returns the actual max number of users that have had accounts on the
 // Sourcegraph instance, under the current license.
-func actualUserCount(ctx context.Context) (int32, error) {
+func ActualUserCount(ctx context.Context) (int32, error) {
 	_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
 	if err != nil || signature == "" {
 		return 0, err
@@ -127,9 +120,9 @@ func actualUserCount(ctx context.Context) (int32, error) {
 	return int32(count), err
 }
 
-// actualUserCountDate returns the timestamp when the actual max number of users that have
+// ActualUserCountDate returns the timestamp when the actual max number of users that have
 // had accounts on the Sourcegraph instance, under the current license, was reached.
-func actualUserCountDate(ctx context.Context) (string, error) {
+func ActualUserCountDate(ctx context.Context) (string, error) {
 	_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
 	if err != nil || signature == "" {
 		return "", err
@@ -139,8 +132,8 @@ func actualUserCountDate(ctx context.Context) (string, error) {
 	return date, err
 }
 
-// startMaxUserCount starts checking for a new count of max user accounts periodically.
-func startMaxUserCount() {
+// StartMaxUserCount starts checking for a new count of max user accounts periodically.
+func StartMaxUserCount(s UsersStore) {
 	if started {
 		panic("already started")
 	}
@@ -154,9 +147,14 @@ func startMaxUserCount() {
 			log15.Error("licensing.startMaxUserCount: error getting configured license info")
 		} else if signature != "" {
 			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-			_ = checkMaxUsers(ctx, signature) // updates global state on its own, can safely ignore return value
+			_ = checkMaxUsers(ctx, s, signature) // updates global state on its own, can safely ignore return value
 			cancel()
 		}
 		time.Sleep(delay)
 	}
 }
+
+// NoLicenseMaximumAllowedUserCount is the maximum number of user accounts that may exist on Sourcegraph Core
+// (i.e., when running without a license). Exceeding this number of user accounts requires a
+// license.
+const NoLicenseMaximumAllowedUserCount int32 = 100

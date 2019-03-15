@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -56,17 +57,42 @@ func main() {
 		bk.Env("ENTERPRISE", "1"),
 	)
 
+	isPR := !isBextReleaseBranch &&
+		!releaseBranch &&
+		!taggedRelease &&
+		branch != "master" &&
+		!strings.HasPrefix(branch, "master-dry-run/") &&
+		!strings.HasPrefix(branch, "docker-images-patch/")
+	if isPR {
+		output, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
+		if err != nil {
+			panic(err)
+		}
+
+		onlyDocsChange := true
+		for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+			if !strings.HasPrefix(line, "doc") {
+				onlyDocsChange = false
+				break
+			}
+		}
+
+		if onlyDocsChange {
+			pipeline.AddStep(":memo:",
+				bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
+				bk.Cmd("./dev/check/docsite.sh"))
+			return
+		}
+	}
+
 	if !isBextReleaseBranch {
-		pipeline.AddStep(":chromium:",
+		pipeline.AddStep(":docker:",
 			bk.Cmd("pushd enterprise"),
 			bk.Cmd("./cmd/server/pre-build.sh"),
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
 			bk.Env("VERSION", version),
 			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("./dev/ci/e2e.sh"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+			bk.Cmd("popd"))
 
 		pipeline.AddStep(":white_check_mark:",
 			bk.Cmd("./dev/check/all.sh"))
@@ -115,6 +141,22 @@ func main() {
 		pipeline.AddStep(":docker:",
 			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
 			bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+	}
+
+	pipeline.AddWait()
+
+	if !isBextReleaseBranch {
+		pipeline.AddStep(":chromium:",
+			// Avoid crashing the sourcegraph/server containers. See
+			// https://github.com/sourcegraph/sourcegraph/issues/2657
+			bk.ConcurrencyGroup("e2e"),
+			bk.Concurrency(1),
+
+			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+			bk.Env("VERSION", version),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Cmd("./dev/ci/e2e.sh"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 
 	pipeline.AddWait()
@@ -269,4 +311,8 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 		pipeline.AddWait()
 	}
+
+	// Clean up to help avoid running out of disk.
+	pipeline.AddStep(":sparkles:",
+		bk.Cmd("docker image rm -f sourcegraph/server:"+version+"_candidate"))
 }

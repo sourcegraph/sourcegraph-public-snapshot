@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -110,22 +109,6 @@ func GetConfiguredProductLicenseInfoWithSignature() (*license.Info, string, erro
 	}
 	// No license key.
 	return nil, "", nil
-}
-
-// Make the Site.productSubscription GraphQL field return the actual info about the product license,
-// if any.
-func init() {
-	graphqlbackend.GetConfiguredProductLicenseInfo = func() (*graphqlbackend.ProductLicenseInfo, error) {
-		info, err := GetConfiguredProductLicenseInfo()
-		if info == nil || err != nil {
-			return nil, err
-		}
-		return &graphqlbackend.ProductLicenseInfo{
-			TagsValue:      info.Tags,
-			UserCountValue: info.UserCount,
-			ExpiresAtValue: info.ExpiresAt,
-		}, nil
-	}
 }
 
 // licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for

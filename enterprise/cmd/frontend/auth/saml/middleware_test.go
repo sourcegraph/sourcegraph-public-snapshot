@@ -22,6 +22,7 @@ import (
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
@@ -191,8 +192,8 @@ func TestMiddleware(t *testing.T) {
 
 	mockGetProviderValue = &provider{config: *config}
 	defer func() { mockGetProviderValue = nil }()
-	auth.MockProviders = []auth.Provider{mockGetProviderValue}
-	defer func() { auth.MockProviders = nil }()
+	providers.MockProviders = []providers.Provider{mockGetProviderValue}
+	defer func() { providers.MockProviders = nil }()
 
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
