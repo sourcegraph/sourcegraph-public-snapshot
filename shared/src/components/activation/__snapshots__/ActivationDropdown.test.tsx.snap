@@ -8,7 +8,7 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle nav-link"
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -196,7 +196,7 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle nav-link"
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -384,7 +384,7 @@ exports[`ActivationDropdown render loading 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle nav-link"
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
     href="#"
     onClick={[Function]}
   >

@@ -91,7 +91,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     caret={false}
                     className={`${
                         this.state.animate ? 'animate' : ''
-                    } activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-user-nav-item-toggle`}
+                    } activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle`}
                     nav={true}
                 >
                     <Confetti
