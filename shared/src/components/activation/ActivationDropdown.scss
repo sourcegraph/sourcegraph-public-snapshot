@@ -9,7 +9,12 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background-image: url(/.assets/img/onboarding-bg.png);
+        background-image: -webkit-linear-gradient(top, rgba(14, 18, 27, 0), rgba(14, 18, 27, 1)),
+            url(/.assets/img/onboarding-bg-dark.png);
+        background-image: -moz-linear-gradient(top, rgba(14, 18, 27, 0), rgba(14, 18, 27, 1)),
+            url(/.assets/img/onboarding-bg-dark.png);
+        background-image: linear-gradient(to bottom, rgba(14, 18, 27, 0), rgba(14, 18, 27, 1)),
+            url(/.assets/img/onboarding-bg-dark.png);
         z-index: 995;
         background-position: center;
         background-size: 110%;
@@ -21,7 +26,7 @@
         position: relative;
         margin-top: -1px;
         margin-bottom: -1px;
-        padding: 0 0.75rem;
+        padding: 0;
         z-index: 10;
         transition: all 250ms ease;
         white-space: normal;
@@ -52,7 +57,7 @@
             margin-bottom: -1px;
             z-index: 997;
 
-            box-shadow: 0 0 14px 12px rgba(43, 55, 80, 0.4);
+            box-shadow: 0 0 14px 12px rgba(43, 55, 80, 0.2);
             &:before,
             &:after {
                 background-color: var(--card-cap-bg);
@@ -63,10 +68,20 @@
     }
 }
 .theme-light {
-    .activation-dropdown-item {
-        @include hover-focus {
-            box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
-            background-color: var(--theme-bg-plain);
+    .activation-dropdown {
+        &-background {
+            background-image: -webkit-linear-gradient(top, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)),
+                url(/.assets/img/onboarding-bg.png);
+            background-image: -moz-linear-gradient(top, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)),
+                url(/.assets/img/onboarding-bg.png);
+            background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)),
+                url(/.assets/img/onboarding-bg.png);
+        }
+        &-item {
+            @include hover-focus {
+                box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
+                background-color: var(--theme-bg-plain);
+            }
         }
     }
 }
@@ -94,25 +109,24 @@
     }
 }
 
-.activation-dropdown-item {
-    padding: 0;
-}
-
 .activation-dropdown-header {
-    color: var(--color-border);
     padding: 0.5rem 1rem;
     white-space: normal;
     &__title {
+        position: relative;
         font-size: 18px;
         font-weight: 600;
         line-height: 22px;
         letter-spacing: normal;
+        z-index: 997;
 
         padding-bottom: 0;
         margin-bottom: 0;
     }
     &__copy {
+        position: relative;
         margin-bottom: 0;
         line-height: 20px;
+        z-index: 997;
     }
 }
