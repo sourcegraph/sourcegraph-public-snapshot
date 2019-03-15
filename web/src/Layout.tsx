@@ -70,6 +70,8 @@ export interface LayoutProps
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
 
+    isSourcegraphDotCom: boolean
+
     children?: never
 }
 

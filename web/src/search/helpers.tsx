@@ -68,3 +68,27 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
 /** Returns true if the given value is of the GraphQL SearchResults type */
 export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'
+
+/**
+ * Toggles the given search scope by adding it or removing it from the current string, and removes `repogroup:sample`
+ * from the query if it exists in the query, and the search scope being added contains a `repogroup:` filter.
+ *
+ * @param query the current user query
+ * @param searchFilter the search scope (sub query) or dynamic filter to toggle (add/remove from the current user query)
+ * @returns The new query
+ */
+export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searchFilter: string): string => {
+    const newQuery = toggleSearchFilter(query, searchFilter)
+    // RegExp to replace `repogroup:sample` without removing leading whitespace.
+    const replaceSampleRepogroupRegexp = /(\b|^)repogroup:sample(\s|$)/
+    // RegExp to match `repogroup:sample` in any part of a query.
+    const matchSampleRepogroupRegexp = /(\s*|^)repogroup:sample(\s*|$)/
+    if (
+        /\brepogroup:/.test(searchFilter) &&
+        matchSampleRepogroupRegexp.test(newQuery) &&
+        !matchSampleRepogroupRegexp.test(searchFilter)
+    ) {
+        return newQuery.replace(replaceSampleRepogroupRegexp, '')
+    }
+    return newQuery
+}

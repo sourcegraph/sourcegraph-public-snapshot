@@ -21,9 +21,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
           >
             <svg
               className="mdi-icon icon-inline"
-              height="24"
+              height={24}
               viewBox="0 0 64 64"
-              width="24"
+              width={24}
             >
               <g>
                 <path
@@ -231,9 +231,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           >
             <svg
               className="mdi-icon icon-inline"
-              height="24"
+              height={24}
               viewBox="0 0 64 64"
-              width="24"
+              width={24}
             >
               <g>
                 <path
@@ -397,9 +397,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
           >
             <svg
               className="mdi-icon icon-inline"
-              height="24"
+              height={24}
               viewBox="0 0 64 64"
-              width="24"
+              width={24}
             >
               <g>
                 <path

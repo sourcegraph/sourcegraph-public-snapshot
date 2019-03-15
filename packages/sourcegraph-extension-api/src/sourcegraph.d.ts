@@ -916,43 +916,6 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A type definition provider implements the "go-to-type-definition" feature.
-     *
-     * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider} instead.
-     */
-    export interface TypeDefinitionProvider {
-        /**
-         * Provide the type definition of the symbol at the given position and document.
-         *
-         * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider}
-         * instead.
-         * @param document The document in which the command was invoked.
-         * @param position The position at which the command was invoked.
-         * @return A type definition location, or an array of definitions, or `null` if there is no type
-         *         definition.
-         */
-        provideTypeDefinition(document: TextDocument, position: Position): ProviderResult<Definition>
-    }
-
-    /**
-     * An implementation provider implements the "go-to-implementations" and "go-to-interfaces" features.
-     *
-     * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider} instead.
-     */
-    export interface ImplementationProvider {
-        /**
-         * Provide the implementations of the symbol at the given position and document.
-         *
-         * @deprecated Use {@link LocationProvider} and {@link sourcegraph.languages.registerLocationProvider}
-         * instead.
-         * @param document The document in which the command was invoked.
-         * @param position The position at which the command was invoked.
-         * @return Implementation locations, or `null` if there are none.
-         */
-        provideImplementation(document: TextDocument, position: Position): ProviderResult<Definition>
-    }
-
-    /**
      * Additional information and parameters for a references request.
      */
     export interface ReferenceContext {
@@ -1024,40 +987,6 @@ declare module 'sourcegraph' {
         export function registerDefinitionProvider(
             selector: DocumentSelector,
             provider: DefinitionProvider
-        ): Unsubscribable
-
-        /**
-         * Registers a type definition provider.
-         *
-         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
-         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
-         * operation to fail.
-         *
-         * @deprecated Use {@link LocationProvider} and {@link registerLocationProvider} instead.
-         * @param selector A selector that defines the documents this provider is applicable to.
-         * @param provider A type definition provider.
-         * @return An unsubscribable to unregister this provider.
-         */
-        export function registerTypeDefinitionProvider(
-            selector: DocumentSelector,
-            provider: TypeDefinitionProvider
-        ): Unsubscribable
-
-        /**
-         * Registers an implementation provider.
-         *
-         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
-         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
-         * operation to fail.
-         *
-         * @deprecated Use {@link LocationProvider} and {@link registerLocationProvider} instead.
-         * @param selector A selector that defines the documents this provider is applicable to.
-         * @param provider An implementation provider.
-         * @return An unsubscribable to unregister this provider.
-         */
-        export function registerImplementationProvider(
-            selector: DocumentSelector,
-            provider: ImplementationProvider
         ): Unsubscribable
 
         /**

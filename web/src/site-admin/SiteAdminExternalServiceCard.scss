@@ -1,0 +1,91 @@
+$icon-colors: (
+    github: #2ebc4f,
+    aws: #f8991d,
+    bitbucket: #2684ff,
+    gitlab: #fc6e26,
+    gitolite: #e0e0e0,
+    phabricator: #4a5f88,
+    git: #f14e32,
+);
+
+.external-service-card {
+    display: flex;
+    border-top: 1px solid $color-light-border;
+    border-right: 1px solid $color-light-border;
+    border-bottom: 1px solid $color-light-border;
+    border-radius: 2px;
+
+    &__icon {
+        flex: 0 0 0;
+        padding: 0.25rem 0.5rem;
+        display: flex;
+        align-items: center;
+
+        border-left: 2px solid $color-light-border;
+        @each $icon, $color in $icon-colors {
+            &--#{$icon} {
+                border-left: 2px solid $color;
+            }
+        }
+    }
+    &__main {
+        flex: 1 1 0;
+        margin-top: 0.5rem;
+    }
+    &__main-header {
+        margin: 0;
+        padding: 0;
+        font-size: 1.25em;
+    }
+    &__main-body {
+        margin: 0;
+        padding: 0;
+        font-size: 0.75em;
+    }
+
+    .theme-dark & {
+        background-image: linear-gradient(116deg, #0c1e41, #171941);
+        border-color: #184bb1;
+        .phabricator-icon.mdi-icon {
+            fill: $color-text;
+        }
+    }
+
+    .theme-light & {
+        background-image: linear-gradient(116deg, #ffffff, #fdfdfe);
+        border-color: $border-color;
+    }
+}
+
+.linked-external-service-card {
+    display: block;
+    transition: all 150ms ease;
+    &:hover {
+        text-decoration: none;
+        transform: translateY(-2px);
+    }
+
+    .theme-dark & {
+        color: $color-text;
+        &:hover {
+            box-shadow: 0 6px 12px 2px rgba(13, 108, 255, 0.125);
+        }
+        @each $icon, $color in $icon-colors {
+            &--#{$icon}:hover {
+                box-shadow: 0 6px 12px 2px transparentize($color, 0.875);
+            }
+        }
+    }
+
+    .theme-light & {
+        color: $color-light-text-1;
+        &:hover {
+            box-shadow: 0 6px 10px 0 rgba(7, 61, 144, 0.05);
+        }
+        @each $icon, $color in $icon-colors {
+            &--#{$icon}:hover {
+                box-shadow: 0 6px 12px 2px transparentize($color, 0.92);
+            }
+        }
+    }
+}

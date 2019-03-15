@@ -131,8 +131,6 @@ export async function createExtensionHostClientConnection(
     const clientLanguageFeatures = new ClientLanguageFeatures(
         services.textDocumentHover,
         services.textDocumentDefinition,
-        services.textDocumentTypeDefinition,
-        services.textDocumentImplementation,
         services.textDocumentReferences,
         services.textDocumentLocations
     )

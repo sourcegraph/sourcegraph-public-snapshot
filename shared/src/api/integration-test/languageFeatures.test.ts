@@ -44,42 +44,6 @@ describe('LanguageFeatures (integration)', () => {
                 })
                 .pipe(switchMap(locations => locations)),
     })
-    // tslint:disable deprecation The tests must remain until they are removed.
-    testLocationProvider({
-        name: 'registerTypeDefinitionProvider',
-        registerProvider: extensionAPI => extensionAPI.languages.registerTypeDefinitionProvider,
-        labeledProvider: label => ({
-            provideTypeDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
-                of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
-        }),
-        labeledProviderResults: labeledDefinitionResults,
-        providerWithImplementation: run => ({ provideTypeDefinition: run } as sourcegraph.TypeDefinitionProvider),
-        getResult: services =>
-            services.textDocumentTypeDefinition
-                .getLocations({
-                    textDocument: { uri: 'file:///f' },
-                    position: { line: 1, character: 2 },
-                })
-                .pipe(switchMap(locations => locations)),
-    })
-    testLocationProvider<sourcegraph.ImplementationProvider>({
-        name: 'registerImplementationProvider',
-        registerProvider: extensionAPI => extensionAPI.languages.registerImplementationProvider,
-        labeledProvider: label => ({
-            provideImplementation: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
-                of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
-        }),
-        labeledProviderResults: labeledDefinitionResults,
-        providerWithImplementation: run => ({ provideImplementation: run } as sourcegraph.ImplementationProvider),
-        getResult: services =>
-            services.textDocumentImplementation
-                .getLocations({
-                    textDocument: { uri: 'file:///f' },
-                    position: { line: 1, character: 2 },
-                })
-                .pipe(switchMap(locations => locations)),
-    })
-    // tslint:enable deprecation
     testLocationProvider<sourcegraph.ReferenceProvider>({
         name: 'registerReferenceProvider',
         registerProvider: extensionAPI => extensionAPI.languages.registerReferenceProvider,

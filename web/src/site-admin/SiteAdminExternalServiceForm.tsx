@@ -5,11 +5,10 @@ import * as React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
-import { Select } from '../components/Select'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ALL_EXTERNAL_SERVICES } from './externalServices'
+import { ExternalServiceKindMetadata } from './externalServices'
 
-interface Props {
+interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editorActions'> {
     history: H.History
     input: GQL.IAddExternalServiceInput
     isLightTheme: boolean
@@ -20,13 +19,18 @@ interface Props {
     onChange: (change: GQL.IAddExternalServiceInput) => void
 }
 
+/**
+ * Form for submitting a new or updated external service.
+ */
 export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
                 {this.props.error && <p className="alert alert-danger">{upperFirst(this.props.error.message)}</p>}
                 <div className="form-group">
-                    <label htmlFor="e2e-external-service-form-display-name">Display name</label>
+                    <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
+                        Display name:
+                    </label>
                     <input
                         id="e2e-external-service-form-display-name"
                         type="text"
@@ -41,36 +45,21 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         disabled={this.props.loading}
                     />
                 </div>
-                <div className="form-group">
-                    <label htmlFor="external-service-page-form-kind">Kind</label>
-                    <Select
-                        id="external-service-page-form-kind"
-                        onChange={this.onKindChange}
-                        required={true}
-                        disabled={this.props.loading || this.props.mode === 'edit'}
-                        value={this.props.input.kind}
-                    >
-                        {Object.entries(ALL_EXTERNAL_SERVICES).map(([kind, service]) => (
-                            <option key={kind} value={kind}>
-                                {service.displayName}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
+
                 <div className="form-group">
                     <DynamicallyImportedMonacoSettingsEditor
                         // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
                         // if it thinks the config is dirty. We want to always replace the config if the kind changes
                         // so the editor is keyed on the kind.
-                        key={this.props.input.kind}
                         value={this.props.input.config}
-                        jsonSchema={ALL_EXTERNAL_SERVICES[this.props.input.kind].jsonSchema}
+                        jsonSchema={this.props.jsonSchema}
                         canEdit={false}
                         loading={this.props.loading}
                         height={300}
                         isLightTheme={this.props.isLightTheme}
                         onChange={this.onConfigChange}
                         history={this.props.history}
+                        actions={this.props.editorActions}
                     />
                     <p className="form-text text-muted">
                         <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
@@ -90,10 +79,6 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
 
     private onDisplayNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         this.props.onChange({ ...this.props.input, displayName: event.currentTarget.value })
-    }
-
-    private onKindChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
-        this.props.onChange({ ...this.props.input, kind: event.currentTarget.value as GQL.ExternalServiceKind })
     }
 
     private onConfigChange = (config: string) => {

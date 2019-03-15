@@ -100,6 +100,10 @@ describe('e2e test suite', function(this: any): void {
             await deleteButton.click()
         }
         await (await page.waitForSelector('.e2e-goto-add-external-service-page')).click()
+
+        const githubButton = await await page.waitForSelector('.linked-external-service-card--github')
+        await githubButton.click()
+
         await (await page.waitForSelector('#e2e-external-service-form-display-name')).type('test-github')
 
         const editor = await page.waitForSelector('.view-line')

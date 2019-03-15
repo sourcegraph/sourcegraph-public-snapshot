@@ -13,12 +13,13 @@ import { routes } from '../../routes'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
-import { submitSearch, toggleSearchFilter } from '../helpers'
+import { submitSearch, toggleSearchFilter, toggleSearchFilterAndReplaceSampleRepogroup } from '../helpers'
 
 interface Props extends SettingsCascadeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
+    isSourcegraphDotCom: boolean
 
     /**
      * The current query.
@@ -159,7 +160,12 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                 value,
             },
         })
-        submitSearch(this.props.history, toggleSearchFilter(this.props.query, value), 'filter')
+
+        const newQuery = this.props.isSourcegraphDotCom
+            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.query, value)
+            : toggleSearchFilter(this.props.query, value)
+
+        submitSearch(this.props.history, newQuery, 'filter')
     }
 }
 
