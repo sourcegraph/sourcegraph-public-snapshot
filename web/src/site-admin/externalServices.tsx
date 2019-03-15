@@ -311,6 +311,20 @@ const externalServiceAddVariants: Partial<
         enterprise: {
             title: 'GitHub Enterprise repositories',
             shortDescription: 'Add GitHub Enterprise repositories.',
+            defaultDisplayName: 'GitHub Enterprise',
+            defaultConfig: `{
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+  // Configuration options are documented here:
+  // https://docs.sourcegraph.com/admin/site_config/all#githubconnection-object
+
+  // Set this to the URL for your GitHub Enterprise.
+  "url": "https://github.example.com",
+
+  // A token is required for access to private repos, but is also helpful for public repos
+  // because it grants a higher hourly rate limit to Sourcegraph.
+  // Create one with the repo scope at https://[your-github-instance]/settings/tokens/new
+  "token": ""
+}`,
         },
     },
 }

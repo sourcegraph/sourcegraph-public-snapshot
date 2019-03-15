@@ -45,11 +45,11 @@ interface State {
 export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        const externalServiceCategory = getExternalService(this.props.kind)
+        const serviceKindMetadata = getExternalService(this.props.kind, this.props.variant)
         this.state = {
             loading: false,
-            displayName: externalServiceCategory.defaultDisplayName,
-            config: externalServiceCategory.defaultConfig,
+            displayName: serviceKindMetadata.defaultDisplayName,
+            config: serviceKindMetadata.defaultConfig,
         }
     }
 
