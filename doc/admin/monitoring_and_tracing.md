@@ -20,19 +20,19 @@ The [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy
 
 ## Troubleshooting
 
-Sourcegraph provides tracing, metrics and logs to facilitate troubleshooting. When investigating an issue the best place to start is tracing if you have it setup. Followed by increasing the logging verbosity by setting the environment variable `SRC_LOG_LEVEL=dbug`. If that is too noisy, inspecting the Go net/trace page for individual services is valuable.
+Sourcegraph provides tracing, metrics and logs to facilitate troubleshooting. When investigating an issue, first [inspect traces](#tracing) (if you have tracing set up). Next, [increase the log verbosity](#logs) by setting the environment variable `SRC_LOG_LEVEL=dbug`. If that is too noisy, inspecting the Go net/trace page for individual services is valuable.
 
 ### Tracing
 
-If Jaeger or Lightstep is configured, every HTTP response will include an `X-Trace` header which links to the trace for that request. Inspecting the spans and logs attached to the trace will help quickly identify the problematic service or dependency.
+If Jaeger or LightStep is configured, every HTTP response will include an `X-Trace` header which links to the trace for that request. Inspecting the spans and logs attached to the trace will help quickly identify the problematic service or dependency.
 
 ### Logs
 
-A sourcegraph service log level is configured via the environment variable `SRC_LOG_LEVEL`. The valid values in decreasing order of verbosity:
+A Sourcegraph service log level is configured via the environment variable `SRC_LOG_LEVEL`. The valid values (from most to least verbose) are:
 
 * `dbug`: Debug. Output all logs. Default in cluster deployments.
 * `info`: Informational.
-* `warn`: Warning. Default in docker deployments.
+* `warn`: Warning. Default in Docker deployments.
 * `eror`: Error.
 * `crit`: Critical.
 
@@ -40,4 +40,4 @@ If you are having issues with repository syncing, view the output of `repo-updat
 
 ### Go net/trace
 
-If you are using Sourcegraph's Docker deployment we provide a convenient access to site admins via https://sourcegraph.example.com/-/debug/. If you are using Sourcegraph cluster you will need to `kubectl port-forward ${POD_NAME} 6060` to access the debug page. Once on the debug page of a service click `Requests` to view the traces for that service.
+If you are using Sourcegraph's Docker deployment, site admins can access `net/trace` information at https://sourcegraph.example.com/-/debug/. If you are using Sourcegraph cluster, you need to `kubectl port-forward ${POD_NAME} 6060` to access the debug page. Once on the debug page of a service, click **Requests** to view the traces for that service.
