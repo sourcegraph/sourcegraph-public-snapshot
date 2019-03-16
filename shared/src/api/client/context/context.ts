@@ -36,7 +36,11 @@ export type ContributionScope =
     | (Pick<ViewComponentData, 'type' | 'selections'> & {
           item: Pick<TextDocument, 'uri' | 'languageId'>
       })
-    | { type: 'panelView'; id: string }
+    | {
+          type: 'panelView'
+          id: string
+          hasLocations: boolean
+      }
 
 /**
  * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
@@ -122,6 +126,8 @@ export function getComputedContextProperty(
         switch (prop) {
             case 'id':
                 return component.id
+            case 'hasLocations':
+                return component.hasLocations
         }
     }
     if (key === 'context') {

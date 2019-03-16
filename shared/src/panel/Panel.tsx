@@ -41,6 +41,13 @@ interface PanelItem extends Tab<string> {
 
     /** The content element to display when the tab is active. */
     element: React.ReactElement<any>
+
+    /**
+     * Whether this panel contains a list of locations (from a location provider). This value is
+     * exposed to contributions as `panel.activeView.hasLocations`. It is true if there is a
+     * location provider (even if the result set is empty).
+     */
+    hasLocations?: boolean
 }
 
 /**
@@ -76,6 +83,7 @@ export class Panel extends React.PureComponent<Props, State> {
                           id: panelView.id,
                           priority: panelView.priority,
                           element: <PanelView {...this.props} panelView={panelView} />,
+                          hasLocations: !!panelView.locationProvider,
                       })
                   )
                   .sort(byPriority)
@@ -83,6 +91,7 @@ export class Panel extends React.PureComponent<Props, State> {
 
         const hasTabs = items.length > 0
         const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(this.props.location, items)
+        const activePanelView = items.find(item => item.id === activePanelViewID)
 
         return (
             <div className="panel">
@@ -112,6 +121,7 @@ export class Panel extends React.PureComponent<Props, State> {
                                         ? {
                                               type: 'panelView',
                                               id: activePanelViewID,
+                                              hasLocations: Boolean(activePanelView && activePanelView.hasLocations),
                                           }
                                         : undefined
                                 }
