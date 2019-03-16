@@ -4,14 +4,22 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { UserAvatar } from '../../user/UserAvatar'
 
 /**
+ * The subset of {@link GQL.ISignature} information needed by {@link GitCommitNodeByline}. Using the
+ * minimal subset makes testing easier.
+ */
+interface Signature extends Pick<GQL.ISignature, 'date'> {
+    person: Pick<GQL.IPerson, 'email' | 'name' | 'displayName' | 'avatarURL'>
+}
+
+/**
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
  */
 export const GitCommitNodeByline: React.FunctionComponent<{
-    author: GQL.ISignature
-    committer: GQL.ISignature | null
-    className: string
-    compact: boolean
-}> = ({ author, committer, className, compact }) => {
+    author: GQL.ISignature | Signature
+    committer: GQL.ISignature | Signature | null
+    className?: string
+    compact?: boolean
+}> = ({ author, committer, className = '', compact }) => {
     if (
         committer &&
         committer.person.email !== author.person.email &&
