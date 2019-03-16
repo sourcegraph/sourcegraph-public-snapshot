@@ -1,16 +1,10 @@
-# Sourcegraph style guide
+# Code style guide
 
-This file documents the style used in Sourcegraph's code and product.
+This file documents the style used in Sourcegraph's code. For non-code text, see the overall [style guide](style_guide.md).
 
 For all things not covered in this document, defer to
 [Go Code Review Comments](https://code.google.com/p/go-wiki/wiki/CodeReviewComments)
 and [Effective Go](http://golang.org/doc/effective_go.html).
-
-# English
-
-See https://sourcegraph.com/github.com/sourcegraph/about/-/blob/STYLEGUIDE.md.
-
-# Code
 
 ## Panics
 
