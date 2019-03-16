@@ -20,6 +20,12 @@ export const GitCommitNodeByline: React.FunctionComponent<{
     className?: string
     compact?: boolean
 }> = ({ author, committer, className = '', compact }) => {
+    // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
+    // include GitHub as a committer.)
+    if (committer && committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {
+        committer = null
+    }
+
     if (
         committer &&
         committer.person.email !== author.person.email &&

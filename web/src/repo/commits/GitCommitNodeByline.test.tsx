@@ -60,4 +60,26 @@ describe('GitCommitNodeByline', () => {
                 .create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_1} />)
                 .toJSON()
         ).toMatchSnapshot())
+
+    test('omit GitHub committer', () =>
+        expect(
+            renderer
+                .create(
+                    <GitCommitNodeByline
+                        author={FIXTURE_SIGNATURE_1}
+                        committer={{
+                            __typename: 'Signature',
+                            date: '1992-01-01',
+                            person: {
+                                __typename: 'Person',
+                                name: 'GitHub',
+                                email: 'noreply@github.com',
+                                displayName: 'GitHub',
+                                avatarURL: 'http://example.com/github.png',
+                            },
+                        }}
+                    />
+                )
+                .toJSON()
+        ).toMatchSnapshot())
 })

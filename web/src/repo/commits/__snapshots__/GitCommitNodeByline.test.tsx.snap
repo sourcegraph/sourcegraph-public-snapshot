@@ -122,6 +122,30 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
 </small>
 `;
 
+exports[`GitCommitNodeByline omit GitHub committer 1`] = `
+<small
+  className="git-commit-node-byline git-commit-node-byline--no-committer "
+>
+  <img
+    className="avatar-icon icon-inline mr-1"
+    data-tooltip="Alice Zhao"
+    src="http://example.com/alice.png"
+  />
+   
+  <strong>
+    Alice Zhao
+  </strong>
+   
+  committed 
+  <span
+    className="timestamp"
+    data-tooltip="1990-01-01"
+  >
+    about 16 years ago
+  </span>
+</small>
+`;
+
 exports[`GitCommitNodeByline same author and committer 1`] = `
 <small
   className="git-commit-node-byline git-commit-node-byline--no-committer "
