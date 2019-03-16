@@ -209,8 +209,18 @@ describe('getComputedContextProperty', () => {
                 getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id', {
                     type: 'panelView',
                     id: 'x',
+                    hasLocations: true,
                 })
             ).toBe('x'))
+
+        test('provides panel.activeView.hasLocations', () =>
+            expect(
+                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.hasLocations', {
+                    type: 'panelView',
+                    id: 'x',
+                    hasLocations: true,
+                })
+            ).toBe(true))
 
         test('returns null for panel.activeView.id when there is no panel', () =>
             expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id')).toBe(

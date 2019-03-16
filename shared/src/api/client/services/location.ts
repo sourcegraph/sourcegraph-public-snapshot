@@ -1,6 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { from, Observable } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Model, modelToTextDocumentPositionParams } from '../model'
@@ -98,14 +98,18 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
 
     /**
      * Gets locations from the provider with the given ID (i.e., the `id` parameter to
-     * {@link sourcegraph.languageFeatures.registerLocationProvider}).
+     * {@link sourcegraph.languageFeatures.registerLocationProvider}). Returns an observable that,
+     * initially and upon the provider changing, emits an observable of the provider's location
+     * results.
+     *
+     * Using a higher-order observable here lets the caller display a loading indicator when the
+     * inner observable has not yet completed. The outer observable never completes because
+     * providers may be registered and unregistered at any time.
      *
      * @param id The provider ID.
      */
-    public getLocations(id: string, params: TextDocumentPositionParams): Observable<Location[] | null> {
-        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params).pipe(
-            switchMap(locations => locations)
-        )
+    public getLocations(id: string, params: TextDocumentPositionParams): Observable<Observable<Location[] | null>> {
+        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params)
     }
 }
 
