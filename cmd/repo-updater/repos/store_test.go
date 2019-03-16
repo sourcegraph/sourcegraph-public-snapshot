@@ -2,7 +2,6 @@ package repos_test
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"reflect"
 	"sort"
@@ -17,7 +16,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
-func testDBStoreListExternalServices(db *sql.DB) func(*testing.T) {
+func TestFakeStore(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name string
+		test func(*testing.T)
+	}{
+		{"ListExternalServices", testStoreListExternalServices(new(repos.FakeStore))},
+		{"UpsertExternalServices", testStoreUpsertExternalServices(new(repos.FakeStore))},
+		{"GetRepoByName", testStoreGetRepoByName(new(repos.FakeStore))},
+		{"UpsertRepos", testStoreUpsertRepos(new(repos.FakeStore))},
+		{"ListRepos", testStoreListRepos(new(repos.FakeStore))},
+	} {
+		t.Run(tc.name, tc.test)
+	}
+}
+
+func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -86,7 +102,6 @@ func testDBStoreListExternalServices(db *sql.DB) func(*testing.T) {
 		} {
 			tc := tc
 			ctx := context.Background()
-			store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
@@ -107,7 +122,7 @@ func testDBStoreListExternalServices(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testDBStoreUpsertExternalServices(db *sql.DB) func(*testing.T) {
+func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -119,7 +134,6 @@ func testDBStoreUpsertExternalServices(db *sql.DB) func(*testing.T) {
 		}
 
 		ctx := context.Background()
-		store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
 		t.Run("no external services", func(t *testing.T) {
 			if err := store.UpsertExternalServices(ctx); err != nil {
@@ -186,7 +200,7 @@ func testDBStoreUpsertExternalServices(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
+func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -198,7 +212,6 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 		}
 
 		ctx := context.Background()
-		store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
 		t.Run("no repos", func(t *testing.T) {
 			if err := store.UpsertRepos(ctx); err != nil {
@@ -235,9 +248,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 				return
 			}
 
-			sort.Slice(want, func(i, j int) bool {
-				return want[i].ID < want[j].ID
-			})
+			sort.Sort(want)
 
 			have, err := tx.ListRepos(ctx, kinds...)
 			if err != nil {
@@ -284,7 +295,7 @@ func testDBStoreUpsertRepos(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
+func testStoreListRepos(store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -379,7 +390,6 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 		} {
 			tc := tc
 			ctx := context.Background()
-			store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
@@ -400,7 +410,7 @@ func testDBStoreListRepos(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
+func testStoreGetRepoByName(store repos.Store) func(*testing.T) {
 	foo := repos.Repo{
 		Name: "github.com/foo/bar",
 		Sources: map[string]*repos.SourceInfo{
@@ -443,7 +453,6 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 
 			tc := tc
 			ctx := context.Background()
-			store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 			t.Run(tc.test, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
@@ -468,10 +477,9 @@ func testDBStoreGetRepoByName(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testDBStoreTransact(db *sql.DB) func(*testing.T) {
+func testDBStoreTransact(store *repos.DBStore) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 		txstore, err := store.Transact(ctx)
 		if err != nil {
@@ -551,7 +559,7 @@ func (tx *noopTxStore) Done(errs ...*error) {
 		panic("no current transactions")
 	}
 	if len(errs) > 0 && *errs[0] != nil {
-		panic("unexpected error in noopTxStore")
+		panic(fmt.Sprintf("unexpected error in noopTxStore: %v", errs[0]))
 	}
 	tx.count--
 }

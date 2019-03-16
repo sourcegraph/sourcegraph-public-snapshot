@@ -16,7 +16,55 @@ import (
 
 func TestSyncer_Sync(t *testing.T) {
 	t.Parallel()
-	testSyncerSync(new(repos.FakeStore))
+
+	testSyncerSync(new(repos.FakeStore))(t)
+
+	for _, tc := range []struct {
+		name    string
+		sourcer repos.Sourcer
+		store   repos.Store
+		err     string
+	}{
+		{
+			name:    "sourcer error aborts sync",
+			sourcer: repos.NewFakeSourcer(errors.New("boom")),
+			err:     "syncer.sync.sourced: boom",
+		},
+		{
+			name: "sources partial errors aborts sync",
+			sourcer: repos.NewFakeSourcer(nil,
+				repos.NewFakeSource("a", "github", nil),
+				repos.NewFakeSource("b", "github", errors.New("boom")),
+			),
+			err: "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
+		},
+		{
+			name:    "store list error aborts sync",
+			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil)),
+			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
+			err:     "syncer.sync.store.list-repos: boom",
+		},
+		{
+			name:    "store upsert error aborts sync",
+			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil)),
+			store:   &repos.FakeStore{UpsertReposError: errors.New("booya")},
+			err:     "syncer.sync.store.upsert-repos: booya",
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			clock := repos.NewFakeClock(time.Now(), time.Second)
+			now := clock.Now
+			ctx := context.Background()
+
+			syncer := repos.NewSyncer(tc.store, tc.sourcer, nil, now)
+			_, err := syncer.Sync(ctx, "github")
+
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have error %q, want %q", have, want)
+			}
+		})
+	}
 }
 
 func testSyncerSync(s repos.Store) func(*testing.T) {
@@ -41,37 +89,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		err     string
 	}
 
-	testCases := []testCase{
-		{
-			name:    "sourcer error aborts sync",
-			sourcer: repos.NewFakeSourcer(errors.New("boom")),
-			err:     "syncer.sync.sourced: boom",
-		},
-		{
-			name: "sources partial errors aborts sync",
-			sourcer: repos.NewFakeSourcer(nil,
-				repos.NewFakeSource("a", "github", nil, foo.Clone()),
-				repos.NewFakeSource("b", "github", errors.New("boom")),
-			),
-			err: "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
-		},
-		{
-			name:    "store list error aborts sync",
-			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
-			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
-			err:     "syncer.sync.store.list-repos: boom",
-		},
-		{
-			name:    "store upsert error aborts sync",
-			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
-			store:   &repos.FakeStore{UpsertReposError: errors.New("booya")},
-			err:     "syncer.sync.store.upsert-repos: booya",
-		},
-	}
-
 	return func(t *testing.T) {
 		t.Helper()
 
+		var testCases []testCase
 		{
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{

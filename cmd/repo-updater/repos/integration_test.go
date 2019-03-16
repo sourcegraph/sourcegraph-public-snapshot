@@ -25,19 +25,21 @@ func TestIntegration(t *testing.T) {
 	db, cleanup := testDatabase(t)
 	defer cleanup()
 
+	store := repos.NewDBStore(ctx, db, sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	})
+
 	for _, tc := range []struct {
 		name string
 		test func(*testing.T)
 	}{
-		{"DBStore/Transact", testDBStoreTransact(db)},
-		{"DBStore/ListExternalServices", testDBStoreListExternalServices(db)},
-		{"DBStore/UpsertExternalServices", testDBStoreUpsertExternalServices(db)},
-		{"DBStore/GetRepoByName", testDBStoreGetRepoByName(db)},
-		{"DBStore/UpsertRepos", testDBStoreUpsertRepos(db)},
-		{"DBStore/ListRepos", testDBStoreListRepos(db)},
-		{"Syncer/Sync", testSyncerSync(
-			repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable}),
-		)},
+		{"DBStore/Transact", testDBStoreTransact(store)},
+		{"DBStore/ListExternalServices", testStoreListExternalServices(store)},
+		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices(store)},
+		{"DBStore/GetRepoByName", testStoreGetRepoByName(store)},
+		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
+		{"DBStore/ListRepos", testStoreListRepos(store)},
+		{"Syncer/Sync", testSyncerSync(store)},
 	} {
 		t.Run(tc.name, tc.test)
 	}

@@ -214,10 +214,13 @@ func (rs Repos) Swap(i, j int) {
 }
 
 func (rs Repos) Less(i, j int) bool {
-	if rs[i].Name == rs[j].Name {
-		return rs[i].ExternalRepo.Compare(rs[j].ExternalRepo) == -1
+	if rs[i].ID != rs[j].ID {
+		return rs[i].ID < rs[j].ID
 	}
-	return rs[i].Name < rs[j].Name
+	if rs[i].Name != rs[j].Name {
+		return rs[i].Name < rs[j].Name
+	}
+	return rs[i].ExternalRepo.Compare(rs[j].ExternalRepo) == -1
 }
 
 // Concat adds the given Repos to the end of rs.

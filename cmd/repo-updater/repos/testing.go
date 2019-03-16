@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -82,9 +83,46 @@ type FakeStore struct {
 	UpsertReposError            error // error to be returned in UpsertRepos
 
 	svcIDSeq   int64
+	repoIDSeq  uint32
 	svcByID    map[int64]*ExternalService
 	repoByName map[string]*Repo
 	repoByID   map[api.ExternalRepoSpec]*Repo
+}
+
+// Transact returns a TxStore whose methods operate within the context of a transaction.
+func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
+	svcByID := make(map[int64]*ExternalService, len(s.svcByID))
+	for id, svc := range s.svcByID {
+		svcByID[id] = svc.Clone()
+	}
+
+	repoByName := make(map[string]*Repo, len(s.repoByName))
+	repoByID := make(map[api.ExternalRepoSpec]*Repo, len(s.repoByID))
+	for name, r := range s.repoByName {
+		clone := r.Clone()
+		repoByName[name] = clone
+		repoByID[r.ExternalRepo] = clone
+	}
+
+	return &FakeStore{
+		ListExternalServicesError:   s.ListExternalServicesError,
+		UpsertExternalServicesError: s.UpsertExternalServicesError,
+		GetRepoByNameError:          s.GetRepoByNameError,
+		ListReposError:              s.ListReposError,
+		UpsertReposError:            s.UpsertReposError,
+
+		svcIDSeq:   s.svcIDSeq,
+		svcByID:    svcByID,
+		repoIDSeq:  s.repoIDSeq,
+		repoByName: repoByName,
+		repoByID:   repoByID,
+	}, nil
+}
+
+// Done fakes the implementation of a TxStore's Done method by always discarding all state
+// changes made during the transaction.
+func (s *FakeStore) Done(...*error) {
+	return
 }
 
 // ListExternalServices lists all stored external services that are not deleted and have one of the
@@ -100,12 +138,12 @@ func (s FakeStore) ListExternalServices(ctx context.Context, kinds ...string) ([
 
 	kindset := make(map[string]bool, len(kinds))
 	for _, kind := range kinds {
-		kindset[kind] = true
+		kindset[strings.ToLower(kind)] = true
 	}
 
 	svcs := make(ExternalServices, 0, len(s.svcByID))
 	for _, svc := range s.svcByID {
-		if len(kinds) == 0 || kindset[svc.Kind] {
+		if len(kinds) == 0 || kindset[strings.ToLower(svc.Kind)] {
 			svcs = append(svcs, svc)
 		}
 	}
@@ -130,7 +168,8 @@ func (s *FakeStore) UpsertExternalServices(ctx context.Context, svcs ...*Externa
 			old.Update(svc)
 		} else {
 			s.svcIDSeq++
-			s.svcByID[s.svcIDSeq] = svc
+			svc.ID = s.svcIDSeq
+			s.svcByID[svc.ID] = svc
 		}
 	}
 
@@ -167,13 +206,13 @@ func (s FakeStore) ListRepos(ctx context.Context, kinds ...string) ([]*Repo, err
 
 	kindset := make(map[string]bool, len(kinds))
 	for _, kind := range kinds {
-		kindset[kind] = true
+		kindset[strings.ToLower(kind)] = true
 	}
 
 	set := make(map[*Repo]bool, len(s.repoByName))
 	repos := make(Repos, 0, len(s.repoByName))
 	for _, r := range s.repoByName {
-		if !set[r] && len(kinds) == 0 || kindset[r.ExternalRepo.ServiceType] {
+		if !set[r] && len(kinds) == 0 || kindset[strings.ToLower(r.ExternalRepo.ServiceType)] {
 			repos = append(repos, r)
 			set[r] = true
 		}
@@ -204,6 +243,8 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		} else if repo = s.repoByName[upsert.Name]; repo != nil {
 			repo.Update(upsert)
 		} else {
+			s.repoIDSeq++
+			upsert.ID = s.repoIDSeq
 			s.repoByName[upsert.Name] = upsert
 			if upsert.ExternalRepo != (api.ExternalRepoSpec{}) {
 				s.repoByID[upsert.ExternalRepo] = upsert
