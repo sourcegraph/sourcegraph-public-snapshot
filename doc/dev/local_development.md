@@ -410,9 +410,9 @@ If you think a diff is erroneous, don't commit it. Add a tech debt
 item to the issue tracker and assign the person who you think is
 responsible (or ask).
 
-## Code style guide
+## [Code style guide](code_style_guide.md)
 
-See [docs/style.md](style.md).
+See "[Code style guide](code_style_guide.md)".
 
 ## Windows support
 
