@@ -63,6 +63,9 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             Discussions
                         </Link>
                     )}
+                    <Link to="/collectionsTODO(sqs)" className="dropdown-item">
+                        Collections
+                    </Link>
                     <Link to="/search/searches" className="dropdown-item">
                         Saved searches
                     </Link>

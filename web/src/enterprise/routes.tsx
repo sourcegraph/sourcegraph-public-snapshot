@@ -9,6 +9,9 @@ const NewProductSubscriptionPageOrRedirectUser = React.lazy(async () => ({
     default: (await import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'))
         .NewProductSubscriptionPageOrRedirectUser,
 }))
+const ChecksArea = React.lazy(async () => ({
+    default: (await import('./checks/global/ChecksArea')).ChecksArea,
+}))
 
 export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     {
@@ -33,6 +36,14 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/welcome',
         render: props => <WelcomeArea {...props} routes={welcomeAreaRoutes} />,
+    },
+    {
+        path: '/checks',
+        render: props => <ChecksArea {...props} />,
+    },
+    {
+        path: '/changes',
+        render: props => <p>CHANGES</p>,
     },
     ...routes,
 ]
