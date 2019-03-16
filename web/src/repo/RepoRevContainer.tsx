@@ -22,11 +22,13 @@ import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
+import { RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
 
+/** Props passed to sub-routes of {@link RepoRevContainer}. */
 export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
@@ -34,14 +36,20 @@ export interface RepoRevContainerContext
         PlatformContextProps,
         ThemeProps,
         EventLoggerProps,
-        ActivationProps {
+        ActivationProps,
+        Pick<
+            RepoContainerContext,
+            Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
+        > {
     repo: GQL.IRepository
     rev: string
-    authenticatedUser: GQL.IUser | null
     resolvedRev: ResolvedRev
+
+    /** The URL route match for {@link RepoRevContainer}. */
     routePrefix: string
 }
 
+/** A sub-route of {@link RepoRevContainer}. */
 export interface RepoRevContainerRoute extends RouteDescriptor<RepoRevContainerContext> {}
 
 interface RepoRevContainerProps
