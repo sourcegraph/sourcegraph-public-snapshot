@@ -17,6 +17,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [nginx HTTP server configuration](nginx.md)
   - [Setting the URL for your instance](url.md)
   - [Monitoring and tracing](monitoring_and_tracing.md)
+     - [Troubleshooting](monitoring_and_tracing.md#troubleshooting)
   - [Repository permissions](repo/permissions.md)
   - [Upgrading PostgreSQL](postgres.md)
   - [Using external databases (PostgreSQL and Redis)](external_database.md)
