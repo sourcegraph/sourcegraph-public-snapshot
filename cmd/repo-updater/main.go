@@ -43,6 +43,21 @@ func main() {
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
+	db, err := repos.NewDB(repos.NewDSNFromEnv())
+	if err != nil {
+		log.Fatalf("failed to initalise db store: %v", err)
+	}
+
+	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+
+	for _, m := range []repos.Migration{
+		repos.GithubSetDefaultRepositoryQueryMigration(),
+	} {
+		if err := m.Run(ctx, store); err != nil {
+			log.Fatalf("failed to run migration: %s", err)
+		}
+	}
+
 	var kinds []string
 	if syncerEnabled {
 		kinds = append(kinds, "GITHUB")
@@ -104,16 +119,9 @@ func main() {
 		}
 	}
 
-	var (
-		store  repos.Store
-		syncer *repos.Syncer
-	)
+	var syncer *repos.Syncer
 
 	if syncerEnabled {
-		db, err := repos.NewDB(repos.NewDSNFromEnv())
-		if err != nil {
-			log.Fatalf("failed to initalise db store: %v", err)
-		}
 
 		diffs := make(chan repos.Diff)
 
@@ -123,7 +131,6 @@ func main() {
 			httpcli.NewCachedTransportOpt(httputil.Cache, true),
 		)
 
-		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 		src := repos.NewExternalServicesSourcer(store, cliFactory)
 		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
 			return time.Now().UTC()
