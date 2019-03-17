@@ -181,6 +181,8 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         )
 
     private onCommentDelete = (comment: GQL.IDiscussionComment) =>
+        // TODO: Support deleting the whole thread, and/or fix this when it is deleting the 1st comment
+        // in a thread. See https://github.com/sourcegraph/sourcegraph/issues/429.
         updateComment({ commentID: comment.id, delete: true }).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => undefined)
