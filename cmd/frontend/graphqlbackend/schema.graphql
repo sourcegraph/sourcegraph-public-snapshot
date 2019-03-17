@@ -1471,6 +1471,8 @@ type Symbol {
     url: String!
     # The canonical URL to this symbol (using an immutable revision specifier).
     canonicalURL: String!
+    # Whether or not the symbol is local to the file it's defined in.
+    fileLocal: Boolean!
 }
 
 # A location inside a resource (in a repository at a specific commit).

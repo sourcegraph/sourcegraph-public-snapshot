@@ -67,7 +67,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 
 	cmd := exec.Command(ctagsCommand, "--_interactive="+opt, "--fields=*",
 		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,Tcl,typescript,Verilog,Vim",
-		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass", "--file-scope=no",
+		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass",
 		"--kinds-Go=-p", // omit because 1 symbol per `package` keyword (1 for each file in a package) is not useful
 	)
 	in, err := cmd.StdinPipe()
@@ -183,6 +183,7 @@ type reply struct {
 	Scope     string `json:"scope"`
 	ScopeKind string `json:"scopeKind"`
 	Access    string `json:"access"`
+	File      bool   `json:"file"`
 	Signature string `json:"signature"`
 	Pattern   string `json:"pattern"`
 }
@@ -209,15 +210,16 @@ func (p *ctagsProcess) Parse(name string, content []byte) (entries []Entry, err 
 		}
 
 		entries = append(entries, Entry{
-			Name:       rep.Name,
-			Path:       rep.Path,
-			Line:       rep.Line,
-			Kind:       rep.Kind,
-			Language:   rep.Language,
-			Parent:     rep.Scope,
-			ParentKind: rep.ScopeKind,
-			Pattern:    rep.Pattern,
-			Signature:  rep.Signature,
+			Name:        rep.Name,
+			Path:        rep.Path,
+			Line:        rep.Line,
+			Kind:        rep.Kind,
+			Language:    rep.Language,
+			Parent:      rep.Scope,
+			ParentKind:  rep.ScopeKind,
+			Pattern:     rep.Pattern,
+			Signature:   rep.Signature,
+			FileLimited: rep.File,
 		})
 	}
 
