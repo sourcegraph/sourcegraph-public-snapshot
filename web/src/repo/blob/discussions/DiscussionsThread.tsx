@@ -145,9 +145,14 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         return thread.target.__typename === 'DiscussionThreadTargetRepo' && thread.target.selection !== null
             ? formatHash(
                   {
-                      line: thread.target.selection.startLine,
+                      line: thread.target.selection.startLine + 1,
                       character: thread.target.selection.startCharacter,
-                      endLine: thread.target.selection.endLine,
+                      endLine:
+                          // The 0th character means the selection ended at the end of the previous
+                          // line.
+                          (thread.target.selection.endCharacter === 0
+                              ? thread.target.selection.endLine - 1
+                              : thread.target.selection.endLine) + 1,
                       endCharacter: thread.target.selection.endCharacter,
                   },
                   hash
