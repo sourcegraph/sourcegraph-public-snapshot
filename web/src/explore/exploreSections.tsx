@@ -1,8 +1,4 @@
 import React from 'react'
-import { isDiscussionsEnabled } from '../discussions'
-const DiscussionsExploreSection = React.lazy(async () => ({
-    default: (await import('../discussions/explore/DiscussionsExploreSection')).DiscussionsExploreSection,
-}))
 const ExtensionViewsExploreSection = React.lazy(async () => ({
     default: (await import('../extensions/explore/ExtensionViewsExploreSection')).ExtensionViewsExploreSection,
 }))
@@ -27,10 +23,6 @@ export const exploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
     { render: props => <IntegrationsExploreSection {...props} /> },
     {
         render: props => <RepositoriesExploreSection {...props} />,
-    },
-    {
-        render: props => <DiscussionsExploreSection {...props} />,
-        condition: ({ settingsCascade }) => isDiscussionsEnabled(settingsCascade),
     },
     {
         render: props => <SavedSearchesExploreSection {...props} />,
