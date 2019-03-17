@@ -10,12 +10,91 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestExternalServicesSourcer(t *testing.T) {
+	now := time.Now()
+
+	github := ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "Github - Test",
+		Config:      `{"url": "https://github.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	githubDotCom := ExternalService{Kind: "GITHUB"}
+
+	gitlab := ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "Github - Test",
+		Config:      `{"url": "https://github.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		DeletedAt:   now,
+	}
+
+	sources := func(es ...*ExternalService) []Source {
+		t.Helper()
+
+		srcs, err := NewSources(nil, es...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return srcs
+	}
+
+	for _, tc := range []struct {
+		name   string
+		stored ExternalServices
+		kinds  []string
+		srcs   []Source
+		err    string
+	}{
+		{
+			name:   "deleted external services are excluded",
+			stored: ExternalServices{&github, &gitlab},
+			srcs:   sources(&github),
+			err:    "<nil>",
+		},
+		{
+			name:   "github.com is added when not existent",
+			stored: ExternalServices{},
+			srcs:   sources(&githubDotCom),
+			err:    "<nil>",
+		},
+	} {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			store := new(FakeStore)
+			if err := store.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+				t.Errorf("failed to prepare store: %v", err)
+			}
+
+			srcs, err := NewExternalServicesSourcer(store, nil).ListSources(ctx, tc.kinds...)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			have := ExternalServicesFromSources(srcs...).With(Opt.ExternalServiceID(0))
+			want := ExternalServicesFromSources(tc.srcs...)
+
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("sources:\n%s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
 
 func TestGithubSource_ListRepos(t *testing.T) {
 	config := func(cfg *schema.GitHubConnection) string {

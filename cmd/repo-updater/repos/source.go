@@ -40,15 +40,9 @@ func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...strin
 		return nil, err
 	}
 
-	srcs := make([]Source, 0, len(svcs)+1)
 	errs := new(multierror.Error)
-	for _, svc := range svcs {
-		if src, err := NewSource(svc, s.cf); err != nil {
-			errs = multierror.Append(errs, err)
-		} else {
-			srcs = append(srcs, src)
-		}
-	}
+	srcs, err := NewSources(s.cf, svcs...)
+	errs = multierror.Append(errs, err)
 
 	if !includesGitHubDotComSource(srcs) {
 		// add a GitHub.com source by default, to support navigating to URL
@@ -64,12 +58,40 @@ func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...strin
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
 func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
-	switch svc.Kind {
-	case "GITHUB":
+	switch strings.ToLower(svc.Kind) {
+	case "github":
 		return NewGithubSource(svc, cf)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
+}
+
+// NewSources returns a list of repository yielding Sources from the given ExternalServices.
+func NewSources(cf httpcli.Factory, svcs ...*ExternalService) ([]Source, error) {
+	srcs := make([]Source, 0, len(svcs))
+	errs := new(multierror.Error)
+	for _, svc := range svcs {
+		if svc.IsDeleted() {
+			continue
+		} else if src, err := NewSource(svc, cf); err != nil {
+			errs = multierror.Append(errs, err)
+		} else {
+			srcs = append(srcs, src)
+		}
+	}
+	return srcs, errs.ErrorOrNil()
+}
+
+// ExternalServicesFromSources returns the ExternalServices from the given Sources.
+func ExternalServicesFromSources(srcs ...Source) ExternalServices {
+	es := make(ExternalServices, 0, len(srcs))
+	for _, src := range srcs {
+		switch s := src.(type) {
+		case *GithubSource:
+			es = append(es, s.svc)
+		}
+	}
+	return es
 }
 
 func includesGitHubDotComSource(srcs []Source) bool {

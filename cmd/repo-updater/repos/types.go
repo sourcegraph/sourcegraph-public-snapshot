@@ -18,6 +18,9 @@ type ExternalService struct {
 	DeletedAt   time.Time
 }
 
+// IsDeleted returns true if the external service is deleted.
+func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
+
 // Update updates ExternalService r with the fields from the given newer ExternalService n,
 // returning true if modified.
 func (e *ExternalService) Update(n *ExternalService) (modified bool) {
@@ -285,4 +288,11 @@ func (es ExternalServices) Apply(opts ...func(*ExternalService)) {
 	for _, r := range es {
 		r.Apply(opts...)
 	}
+}
+
+// With returns a clone of the given external services with the given functional options applied.
+func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices {
+	clone := es.Clone()
+	clone.Apply(opts...)
+	return clone
 }
