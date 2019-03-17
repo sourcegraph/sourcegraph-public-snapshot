@@ -1,5 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Redirect } from 'react-router'
@@ -87,7 +88,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         // reflect the line that the discussion was created on.
         if (thread) {
             const desiredHash = this.urlHashWithLine(thread, commentID)
-            if (desiredHash !== location.hash) {
+            if (!hashesEqual(desiredHash, location.hash)) {
                 const discussionURL = location.pathname + location.search + desiredHash
                 return <Redirect to={discussionURL} />
             }
@@ -186,4 +187,22 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
             tap(thread => this.setState({ thread })),
             map(thread => undefined)
         )
+}
+
+/**
+ * @returns Whether the 2 URI fragments contain the same keys and values (assuming they contain a
+ * `#` then HTML-form-encoded keys and values like `a=b&c=d`).
+ */
+function hashesEqual(a: string, b: string): boolean {
+    if (a.startsWith('#')) {
+        a = a.slice(1)
+    }
+    if (b.startsWith('#')) {
+        b = b.slice(1)
+    }
+    const canonicalize = (hash: string): string[] =>
+        Array.from(new URLSearchParams(hash).entries())
+            .map(([key, value]) => `${key}=${value}`)
+            .sort()
+    return isEqual(canonicalize(a), canonicalize(b))
 }
