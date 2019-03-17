@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -61,5 +60,5 @@ func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.Discus
 	default:
 		return nil, nil // can't generate a link to this target type
 	}
-	return globals.ExternalURL.ResolveReference(u), nil
+	return u, nil
 }

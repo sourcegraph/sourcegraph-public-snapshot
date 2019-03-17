@@ -303,6 +303,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         pluralNoun="discussions in this tree"
                                         defaultFirst={2}
                                         hideSearch={true}
+                                        compact={false}
                                     />
                                 </div>
                             )}

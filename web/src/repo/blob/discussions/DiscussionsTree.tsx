@@ -14,6 +14,7 @@ interface Props {
     history: H.History
     location: H.Location
     authenticatedUser: GQL.IUser | null
+    compact: boolean
 }
 
 export class DiscussionsTree extends React.PureComponent<Props> {
