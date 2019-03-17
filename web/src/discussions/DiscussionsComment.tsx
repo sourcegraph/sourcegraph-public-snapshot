@@ -156,7 +156,6 @@ export class DiscussionsComment extends React.PureComponent<Props> {
             return
         }
         eventLogger.log('ShareCommentButtonClicked')
-        event.preventDefault()
         copy(window.context.externalURL + this.props.comment.inlineURL!) // ! because this method is only called when inlineURL exists
         this.setState({ copiedLink: true })
         setTimeout(() => {
