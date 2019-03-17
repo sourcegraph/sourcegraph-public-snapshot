@@ -21,4 +21,4 @@ addr=''
 if [[ "${INSECURE_DEV:-}" == '1' ]]; then
     addr='-e ROCKET_ADDRESS=0.0.0.0'
 fi
-exec docker run --name=syntect_server --rm -p9238:9238 ${addr} sourcegraph/syntect_server:393a538
+exec docker run --name=syntect_server --rm -p9238:9238 ${addr} sourcegraph/syntect_server:056c730
