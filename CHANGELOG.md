@@ -11,6 +11,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The default `github.repositoryQuery` of a [GitHub external service configuration](https://docs.sourcegraph.com/admin/external_service/github#configuration) has been changed to `["none"]`. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["affiliated", "public"]`).
+
 ### Fixed
 
 ### Removed
