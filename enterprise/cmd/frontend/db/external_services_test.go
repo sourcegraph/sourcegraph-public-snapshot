@@ -244,6 +244,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITHUB",
 			desc:   "empty repositoryQuery",
 			config: `{"repositoryQuery": []}`,
+			assert: includes(`repositoryQuery: Array must have at least 1 items`),
+		},
+		{
+			kind:   "GITHUB",
+			desc:   "empty repositoryQuery item",
+			config: `{"repositoryQuery": [""]}`,
 			assert: includes(`repositoryQuery.0: String length must be greater than or equal to 1`),
 		},
 		{
