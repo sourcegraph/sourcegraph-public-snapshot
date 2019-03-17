@@ -178,9 +178,9 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 			s.Kind,
 			s.DisplayName,
 			s.Config,
-			s.CreatedAt,
-			s.UpdatedAt,
-			nullTime{&s.DeletedAt},
+			s.CreatedAt.UTC(),
+			s.UpdatedAt.UTC(),
+			nullTimeColumn(s.DeletedAt.UTC()),
 		))
 	}
 
