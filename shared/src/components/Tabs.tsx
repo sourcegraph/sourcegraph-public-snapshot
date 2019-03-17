@@ -263,7 +263,13 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
             hash.delete('threadID')
             hash.delete('commentID')
         }
-        return { ...location, hash: hash.toString().replace(/%3A/g, ':') }
+        return {
+            ...location,
+            hash: hash
+                .toString()
+                .replace(/%3A/g, ':')
+                .replace(/=$/, ''), // remove needless trailing `=` as in `#L12=`,
+        }
     }
 
     public static readFromURL<ID extends string, T extends Tab<ID>>(location: H.Location, tabs: T[]): ID | undefined {
