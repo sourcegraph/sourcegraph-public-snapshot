@@ -21,11 +21,6 @@ interface Props {
     location: H.Location
 
     /**
-     * Whether or not the user is a site administrator.
-     */
-    isSiteAdmin: boolean
-
-    /**
      * When specified, a report icon will be displayed inline and this function
      * will be called when a report has been submitted.
      */
@@ -62,7 +57,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
-        const { location, comment, isSiteAdmin, onReport, onClearReports, onDelete } = this.props
+        const { location, comment, onReport, onClearReports, onDelete } = this.props
         const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.id
 
         // TODO(slimsag:discussions): ASAP: markdown links, headings, etc lead to #
@@ -109,7 +104,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                 <FlagVariantIcon className="icon-inline" />
                             </button>
                         )}
-                        {isSiteAdmin && (
+                        {(comment.canClearReports || comment.reports.length > 0 || comment.canDelete) && (
                             <span className="discussions-comment__admin">
                                 <SecurityLockIcon className="icon-inline icon-sm" data-tooltip="Admin area" />
                                 {comment.reports.length > 0 && (

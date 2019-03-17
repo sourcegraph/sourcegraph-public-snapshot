@@ -180,7 +180,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                                   filePath={subject.filePath}
                                                   history={this.props.history}
                                                   location={this.props.location}
-                                                  authenticatedUser={this.props.authenticatedUser}
                                                   compact={true}
                                               />
                                           ),

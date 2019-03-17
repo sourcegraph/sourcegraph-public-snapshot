@@ -13,7 +13,6 @@ interface Props {
     filePath: string
     history: H.History
     location: H.Location
-    authenticatedUser: GQL.IUser | null
     compact: boolean
 }
 
