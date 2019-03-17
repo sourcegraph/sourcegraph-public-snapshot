@@ -31,7 +31,7 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
             onClick={openDiscussion}
         >
             <div className="discussions-list__row-top-line">
-                <h3 className="discussions-list__row-title ">
+                <h3 className="discussions-list__row-title">
                     <a href="#" onClick={preventDefault}>
                         {node.title}
                     </a>
