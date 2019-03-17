@@ -242,6 +242,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITHUB",
+			desc:   "empty repositoryQuery",
+			config: `{"repositoryQuery": []}`,
+			assert: includes(`repositoryQuery.0: String length must be greater than or equal to 1`),
+		},
+		{
+			kind:   "GITHUB",
 			desc:   "invalid repos",
 			config: `{"repos": [""]}`,
 			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
