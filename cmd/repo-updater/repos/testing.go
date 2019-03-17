@@ -121,9 +121,7 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 
 // Done fakes the implementation of a TxStore's Done method by always discarding all state
 // changes made during the transaction.
-func (s *FakeStore) Done(...*error) {
-	return
-}
+func (s *FakeStore) Done(...*error) {}
 
 // ListExternalServices lists all stored external services that are not deleted and have one of the
 // specified kinds.
