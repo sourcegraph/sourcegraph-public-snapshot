@@ -15,7 +15,7 @@ interface Props {
 }
 
 interface State {
-    shouldRemain: boolean
+    displayEvenIfFullyCompleted: boolean
     isOpen: boolean
     animate: boolean
 }
@@ -27,7 +27,7 @@ const animationDurationMillis = 3260
  * status in the navbar.
  */
 export class ActivationDropdown extends React.PureComponent<Props, State> {
-    public state: State = { isOpen: false, animate: false, shouldRemain: false }
+    public state: State = { isOpen: false, animate: false, displayEvenIfFullyCompleted: false }
     private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -47,7 +47,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     }),
                     tap(didIncrease => {
                         if (didIncrease) {
-                            this.setState({ shouldRemain: true })
+                            this.setState({ displayEvenIfFullyCompleted: true })
                         }
                     }),
                     concatMap(() => concat(of(true), of(false).pipe(delay(animationDurationMillis))))
@@ -66,7 +66,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const show =
-            this.state.shouldRemain ||
+            this.state.displayEvenIfFullyCompleted ||
             this.state.animate ||
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
         const confettiConfig = {
