@@ -121,9 +121,9 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     <p className="alert alert-danger">{upperFirst(this.state.externalServiceOrError.message)}</p>
                 )}
                 {externalService && (
-                    <p>
+                    <div className="mb-3">
                         <ExternalServiceCard {...getExternalService(externalService.kind)} />
-                    </p>
+                    </div>
                 )}
                 {externalService && externalServiceCategory && (
                     <SiteAdminExternalServiceForm
