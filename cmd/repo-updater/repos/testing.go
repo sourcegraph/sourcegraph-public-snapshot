@@ -29,7 +29,7 @@ func NewFakeSourcer(err error, srcs ...Source) *FakeSourcer {
 
 // ListSources returns the Sources that FakeSourcer was instantiated with that have one
 // of the given kinds as well the error, if any.
-func (s FakeSourcer) ListSources(_ context.Context, kinds ...string) (srcs []Source, err error) {
+func (s FakeSourcer) ListSources(_ context.Context, kinds ...string) (srcs Sources, err error) {
 	if s.err != nil {
 		return nil, s.err
 	}
