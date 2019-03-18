@@ -250,6 +250,16 @@ func (rs Repos) Apply(opts ...func(*Repo)) {
 	}
 }
 
+// Filter returns all the Repos that match the given predicate.
+func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
+	for _, r := range rs {
+		if pred(r) {
+			fs = append(fs, r)
+		}
+	}
+	return fs
+}
+
 // ExternalServices is an utility type with
 // convenience methods for operating on lists of ExternalServices.
 type ExternalServices []*ExternalService
