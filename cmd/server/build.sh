@@ -46,4 +46,7 @@ echo "--- build sqlite for symbols"
 env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
 
 echo "--- docker build"
-docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" --label "org.opencontainers.image.revision=$COMMIT_SHA" --label="org.opencontainers.image.created=$DATE" --label "org.opencontainers.image.version=$VERSION"
+docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION

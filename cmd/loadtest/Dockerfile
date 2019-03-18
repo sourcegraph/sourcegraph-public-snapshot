@@ -4,5 +4,15 @@
 # ignores.
 
 FROM sourcegraph/alpine:3.9
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/loadtest"]
 COPY loadtest /usr/local/bin/
