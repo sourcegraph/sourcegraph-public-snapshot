@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
@@ -20,6 +21,161 @@ type Migration func(context.Context, Store) error
 // Run is an utility method to aid readability of calling code.
 func (m Migration) Run(ctx context.Context, s Store) error {
 	return m(ctx, s)
+}
+
+// GithubReposMigrationToNewSyncer returns a Migration that performs three things:
+//  1. Explicitly adds enabled repos that would have been deleted to github.repos
+//  2. Explicitly adds disabled repos that would have been added to github.exclude
+//  3. Removes the deprecated github.initialRepositoryEnablement field.
+func GithubReposMigrationToNewSyncer(src Sourcer, now func() time.Time) Migration {
+	return transactional(func(ctx context.Context, s Store) error {
+		const prefix = "migrate.github-repos-to-new-syncer"
+
+		srcs, err := src.ListSources(ctx, "github")
+		if err != nil {
+			return errors.Wrapf(err, "%s.list-sources", prefix)
+		}
+
+		var sourced Repos
+		{
+			ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			sourced, err = srcs.ListRepos(ctx)
+			cancel()
+		}
+
+		if err != nil {
+			return errors.Wrapf(err, "%s.sources.list-repos", prefix)
+		}
+
+		stored, err := s.ListRepos(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "%s.store.list-repos", prefix)
+		}
+
+		diff := NewDiff(stored, sourced)
+
+		var disabled Repos
+		for _, rs := range [...]Repos{diff.Added, diff.Modified, diff.Unmodified} {
+			for _, r := range rs {
+				if !r.Enabled {
+					disabled = append(disabled, r)
+				}
+			}
+		}
+
+		var enabled Repos
+		for _, r := range diff.Deleted {
+			if r.Enabled {
+				enabled = append(enabled, r)
+			}
+		}
+
+		all := srcs.ExternalServices()
+		svcs := make(map[int64]*ExternalService, len(all))
+		for _, svc := range all {
+			svcs[svc.ID] = svc
+
+			if err = removeInitalRepositoryEnablement(svc); err != nil {
+				return errors.Wrapf(err, "%s.remove-initial-repository-enablement", prefix)
+			}
+		}
+
+		for _, r := range disabled {
+			var es ExternalServices
+			for _, si := range r.Sources {
+				if svc := svcs[si.ExternalServiceID()]; svc != nil {
+					es = append(es, svc)
+				}
+			}
+
+			for _, svc := range es {
+				if err := excludeGithubRepo(svc, r); err != nil {
+					return errors.Wrapf(err, "%s.disabled", prefix)
+				}
+			}
+		}
+
+		for _, r := range enabled {
+			var es ExternalServices
+			for _, si := range r.Sources {
+				if svc := svcs[si.ExternalServiceID()]; svc != nil {
+					es = append(es, svc)
+				}
+			}
+
+			for _, svc := range es {
+				if err := includeGithubRepo(svc, r); err != nil {
+					return errors.Wrapf(err, "%s.enabled", prefix)
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+func removeInitalRepositoryEnablement(svc *ExternalService) error {
+	edited, err := removeJSON(svc.Config, "initialRepositoryEnablement")
+	if err != nil {
+		return err
+	}
+
+	svc.Config = edited
+	return nil
+}
+
+func excludeGithubRepo(svc *ExternalService, r *Repo) error {
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return fmt.Errorf("exclude-github-repo: external service id=%d config unmarshaling error: %s", svc.ID, err)
+	}
+
+	for _, e := range c.Exclude {
+		if (e.Id != "" && e.Id == r.ExternalRepo.ID) ||
+			(e.Name != "" && strings.ToLower(e.Name) == strings.ToLower(r.Name)) {
+			return nil // Already excluded
+		}
+	}
+
+	e := schema.Exclude{Name: r.Name}
+	if r.ExternalRepo.ID != "" {
+		e.Id = r.ExternalRepo.ID
+	}
+
+	c.Exclude = append(c.Exclude, &e)
+
+	edited, err := editJSON(svc.Config, c.Exclude, "exclude")
+	if err != nil {
+		return errors.Wrap(err, "exclude-github-repo.edit-json")
+	}
+
+	svc.Config = edited
+
+	return nil
+}
+
+func includeGithubRepo(svc *ExternalService, r *Repo) error {
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return fmt.Errorf("include-github-repo: external service id=%d config unmarshaling error: %s", svc.ID, err)
+	}
+
+	for _, name := range c.Repos {
+		if name != "" && strings.ToLower(name) == strings.ToLower(r.Name) {
+			return nil // Already included
+		}
+	}
+
+	c.Repos = append(c.Repos, r.Name)
+
+	edited, err := editJSON(svc.Config, c.Repos, "repos")
+	if err != nil {
+		return errors.Wrap(err, "include-github-repo.edit-json")
+	}
+
+	svc.Config = edited
+
+	return nil
 }
 
 // GithubSetDefaultRepositoryQueryMigration returns a Migration that changes all
@@ -56,20 +212,9 @@ func GithubSetDefaultRepositoryQueryMigration() Migration {
 				c.RepositoryQuery = append(c.RepositoryQuery, "public")
 			}
 
-			edits, _, err := jsonx.ComputePropertyEdit(svc.Config,
-				jsonx.PropertyPath("repositoryQuery"),
-				c.RepositoryQuery,
-				nil,
-				jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
-			)
-
+			edited, err := editJSON(svc.Config, c.RepositoryQuery, "repositoryQuery")
 			if err != nil {
-				return errors.Wrapf(err, "%s.compute-property-edit", prefix)
-			}
-
-			edited, err := jsonx.ApplyEdits(svc.Config, edits...)
-			if err != nil {
-				return errors.Wrapf(err, "%s.apply-edits", prefix)
+				return errors.Wrapf(err, "%s.edit-json", prefix)
 			}
 
 			svc.Config = edited
@@ -81,6 +226,34 @@ func GithubSetDefaultRepositoryQueryMigration() Migration {
 
 		return nil
 	})
+}
+
+func removeJSON(config string, path ...string) (string, error) {
+	edits, _, err := jsonx.ComputePropertyRemoval(config,
+		jsonx.PropertyPath(path...),
+		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
+	)
+
+	if err != nil {
+		return config, err
+	}
+
+	return jsonx.ApplyEdits(config, edits...)
+}
+
+func editJSON(config string, v interface{}, path ...string) (string, error) {
+	edits, _, err := jsonx.ComputePropertyEdit(config,
+		jsonx.PropertyPath(path...),
+		v,
+		nil,
+		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
+	)
+
+	if err != nil {
+		return config, err
+	}
+
+	return jsonx.ApplyEdits(config, edits...)
 }
 
 // ErrNoTransactor is returned by a Migration returned by
