@@ -21,4 +21,4 @@ for pkg in $path_to_package; do
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
-docker build -f cmd/management-console/Dockerfile -t $IMAGE $OUTPUT
+docker build -f cmd/management-console/Dockerfile -t $IMAGE $OUTPUT --label "commitSHA=$COMMIT_SHA" --label "version=$VERSION"

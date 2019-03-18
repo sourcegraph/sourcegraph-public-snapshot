@@ -172,7 +172,7 @@ function buildSymbolsDockerImage() {
     buildSymbolsDockerImageDependencies
 
     echo "Building the $IMAGE Docker image..."
-    docker build --quiet -f cmd/symbols/Dockerfile -t "$IMAGE" "$symbolsDockerBuildContext"
+    docker build --quiet -f cmd/symbols/Dockerfile -t "$IMAGE" "$symbolsDockerBuildContext --label "commitSHA=$COMMIT_SHA" --label "version=$VERSION"
     echo "Building the $IMAGE Docker image... done"
 }
 

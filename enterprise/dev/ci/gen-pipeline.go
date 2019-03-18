@@ -33,13 +33,13 @@ func main() {
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	version := os.Getenv("BUILDKITE_TAG")
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	if commit == "" {
+		commit = "1234567890123456789012345678901234567890" // for testing
+	}
 	taggedRelease := true // true if this is a semver tagged release
 	if !strings.HasPrefix(version, "v") {
 		taggedRelease = false
-		commit := os.Getenv("BUILDKITE_COMMIT")
-		if commit == "" {
-			commit = "1234567890123456789012345678901234567890" // for testing
-		}
 		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 	} else {
@@ -201,6 +201,7 @@ func main() {
 
 		cmds = append(cmds,
 			bk.Env("IMAGE", image+":"+version),
+			bk.Env("COMMIT_SHA", commit),
 			bk.Env("VERSION", version),
 			bk.Cmd(getBuildScript()),
 		)
