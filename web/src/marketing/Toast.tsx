@@ -19,7 +19,7 @@ export class Toast extends React.Component<Props, {}> {
                     {this.props.subtitle}
                     {this.props.cta && <div className="toast__contents-cta">{this.props.cta}</div>}
                 </div>
-                <button onClick={this.props.onDismiss} className="toast__close-button btn btn-icon">
+                <button onClick={this.props.onDismiss} className="toast__close-button btn btn-icon e2e-close-toast">
                     <CloseIcon className="icon-inline" />
                 </button>
             </div>
