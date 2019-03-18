@@ -2,6 +2,7 @@ package repos
 
 import (
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -114,6 +115,18 @@ type Repo struct {
 type SourceInfo struct {
 	ID       string
 	CloneURL string
+}
+
+// ExternalServiceID returns the ID of the external service this
+// SourceInfo refers to.
+func (i SourceInfo) ExternalServiceID() int64 {
+	ps := strings.SplitN(i.ID, ":", 2)
+	if len(ps) != 2 {
+		return 0
+	}
+
+	id, _ := strconv.ParseInt(ps[1], 10, 64)
+	return id
 }
 
 // CloneURLs returns all the clone URLs this repo is clonable from.
