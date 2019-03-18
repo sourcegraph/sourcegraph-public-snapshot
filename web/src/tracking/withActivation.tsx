@@ -2,6 +2,7 @@ import H from 'history'
 import React from 'react'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
+import { Subtract } from 'utility-types'
 import {
     ActivationCompletionStatus,
     ActivationProps,
@@ -175,11 +176,11 @@ const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
     }
 }
 
-interface Props {
+interface WithActivationProps {
     authenticatedUser: GQL.IUser | null
 }
 
-interface State {
+interface WithActivationState {
     completed?: ActivationCompletionStatus
 }
 
@@ -187,11 +188,14 @@ interface State {
  * Modifies the input component to return a component that includes the activation status in the
  * `activation` field of its props.
  */
-export const withActivation = <P extends ActivationProps & Props>(Component: React.ComponentType<P>) =>
-    class WithActivation extends React.Component<Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>, State> {
+export const withActivation = <P extends ActivationProps>(Component: React.ComponentType<P>) =>
+    class WithActivation extends React.Component<
+        WithActivationProps & Subtract<P, ActivationProps>,
+        WithActivationState
+    > {
         private subscriptions = new Subscription()
-        private componentUpdates = new Subject<Readonly<Props & Pick<P, Exclude<keyof P, keyof ActivationProps>>>>()
-        public state: State = {}
+        private componentUpdates = new Subject<Readonly<WithActivationProps & Subtract<P, ActivationProps>>>()
+        public state: WithActivationState = {}
 
         /**
          * Calling `next` triggers refetches. This ensures at most one refetch request is outstanding
@@ -268,12 +272,14 @@ export const withActivation = <P extends ActivationProps & Props>(Component: Rea
                     refetch: this.refetchCompletionStatus,
                 },
             }
-            // This is safe to cast to P, because this.props has everything in P *except*
+
+            // Pass component props and activation props through to wrapped component.
+            const props: Readonly<Subtract<P, ActivationProps>> = this.props
+            const props2: Subtract<P, ActivationProps> = props
+            const combinedProps = { ...props2, ...activationProps }
+            // This is safe to cast to P, because props2 has everything in P *except*
             // the properties in ActivationProps
-            const props = {
-                ...this.props,
-                ...activationProps,
-            }
-            return <Component {...props as P} />
+            const combinedProps2 = combinedProps as P
+            return <Component {...combinedProps2} />
         }
     }
