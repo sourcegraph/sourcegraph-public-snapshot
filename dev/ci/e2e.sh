@@ -60,6 +60,7 @@ env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- 
 popd
 
 pushd client/browser
+yarn run build
 env SOURCEGRAPH_BASE_URL="$URL" yarn run test-e2e
 popd
 
