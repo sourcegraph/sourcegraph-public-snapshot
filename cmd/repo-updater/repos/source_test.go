@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestExternalServicesSourcer(t *testing.T) {
+func TestNewSourcer(t *testing.T) {
 	now := time.Now()
 
 	github := ExternalService{
@@ -41,52 +41,48 @@ func TestExternalServicesSourcer(t *testing.T) {
 		DeletedAt:   now,
 	}
 
-	sources := func(es ...*ExternalService) []Source {
+	sources := func(es ...*ExternalService) (srcs []Source) {
 		t.Helper()
 
-		srcs, err := NewSources(nil, es...)
-		if err != nil {
-			t.Fatal(err)
+		for _, e := range es {
+			src, err := NewSource(e, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			srcs = append(srcs, src)
 		}
 
 		return srcs
 	}
 
 	for _, tc := range []struct {
-		name   string
-		stored ExternalServices
-		kinds  []string
-		srcs   Sources
-		err    string
+		name string
+		svcs ExternalServices
+		srcs Sources
+		err  string
 	}{
 		{
-			name:   "deleted external services are excluded",
-			stored: ExternalServices{&github, &gitlab},
-			srcs:   sources(&github),
-			err:    "<nil>",
+			name: "deleted external services are excluded",
+			svcs: ExternalServices{&github, &gitlab},
+			srcs: sources(&github),
+			err:  "<nil>",
 		},
 		{
-			name:   "github.com is added when not existent",
-			stored: ExternalServices{},
-			srcs:   sources(&githubDotCom),
-			err:    "<nil>",
+			name: "github.com is added when not existent",
+			svcs: ExternalServices{},
+			srcs: sources(&githubDotCom),
+			err:  "<nil>",
 		},
 	} {
 		tc := tc
-		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			store := new(FakeStore)
-			if err := store.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
-				t.Errorf("failed to prepare store: %v", err)
-			}
-
-			srcs, err := NewExternalServicesSourcer(store, nil).ListSources(ctx, tc.kinds...)
+			srcs, err := NewSourcer(nil)(tc.svcs...)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
-			have := srcs.ExternalServices().With(Opt.ExternalServiceID(0))
+			have := srcs.ExternalServices()
 			want := tc.srcs.ExternalServices()
 
 			if !reflect.DeepEqual(have, want) {

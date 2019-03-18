@@ -15,42 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// FakeSourcer is a fake implementation of Sourcer to be used in tests.
-type FakeSourcer struct {
-	err  error
-	srcs []Source
-}
-
-// NewFakeSourcer returns an instance of FakeSourcer with the given error
-// and sources
-func NewFakeSourcer(err error, srcs ...Source) *FakeSourcer {
-	return &FakeSourcer{err: err, srcs: srcs}
-}
-
-// ListSources returns the Sources that FakeSourcer was instantiated with that have one
-// of the given kinds as well the error, if any.
-func (s FakeSourcer) ListSources(_ context.Context, kinds ...string) (srcs Sources, err error) {
-	if s.err != nil {
-		return nil, s.err
+// NewFakeSourcer returns a Sourcer which always returns the given error and sources,
+// ignoring the given external services.
+func NewFakeSourcer(err error, srcs ...Source) Sourcer {
+	return func(...*ExternalService) (Sources, error) {
+		return srcs, err
 	}
-
-	kindset := make(map[string]bool, len(kinds))
-	for _, k := range kinds {
-		kindset[k] = true
-	}
-
-	for _, src := range s.srcs {
-		switch s := src.(type) {
-		case *FakeSource:
-			if kindset[s.kind] {
-				srcs = append(srcs, s)
-			}
-		default:
-			panic(fmt.Errorf("FakeSourcer not compatible with %#v yet", s))
-		}
-	}
-
-	return srcs, s.err
 }
 
 // FakeSource is a fake implementation of Source to be used in tests.
