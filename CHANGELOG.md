@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed an issue which prevented Sourcegraph's management console from being hosted under a subdirectory (e.g. `/console`) when behind a reverse proxy.
+
 ### Removed
 
 ## 3.2.0
