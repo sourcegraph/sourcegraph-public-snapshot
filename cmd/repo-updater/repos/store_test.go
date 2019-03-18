@@ -533,7 +533,7 @@ func (tx *noopTxStore) Done(errs ...*error) {
 		panic("no current transactions")
 	}
 	if len(errs) > 0 && *errs[0] != nil {
-		panic(fmt.Sprintf("unexpected error in noopTxStore: %v", errs[0]))
+		panic(fmt.Sprintf("unexpected error in noopTxStore: %v", *errs[0]))
 	}
 	tx.count--
 }
