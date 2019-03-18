@@ -1,22 +1,7 @@
-// Command minversion ensures users are running the minimum required Go version. If not, it will exit with a non-zero exit code.
-package main
+// Ensure that users are running Go 1.11 or newer; this package will fail to
+// compile with Go 1.10 or lower.
 
-import (
-	"fmt"
-	"os"
-	"runtime"
-	"strings"
+// +build go1.11
 
-	version "github.com/mcuadros/go-version"
-)
-
-func main() {
-	minimumVersion := "1.12"
-	rawVersion := runtime.Version()
-	versionNumber := strings.TrimPrefix(rawVersion, "go")
-	minimumVersionMet := version.Compare(minimumVersion, versionNumber, "<=")
-	if !minimumVersionMet {
-		fmt.Printf("Go version %s or newer must be used; found: %s\n", minimumVersion, versionNumber)
-		os.Exit(1) // minimum version not met means non-zero exit code
-	}
-}
+// Package minversion ensures users are running a minimum Go version.
+package minversion

@@ -76,9 +76,9 @@ func (o *OrgResolver) DisplayName() *string {
 	return o.org.DisplayName
 }
 
-func (o *OrgResolver) URL() string { return "/organizations/" + o.org.Name }
+func (r *OrgResolver) URL() string { return "/organizations/" + r.org.Name }
 
-func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings") }
+func (r *OrgResolver) SettingsURL() string { return r.URL() + "/settings" }
 
 func (o *OrgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
@@ -106,8 +106,8 @@ func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 	return &staticUserConnectionResolver{users: users}, nil
 }
 
-func (o *OrgResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{Org: &o.org.ID}
+func (o *OrgResolver) configurationSubject() api.ConfigurationSubject {
+	return api.ConfigurationSubject{Org: &o.org.ID}
 }
 
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
@@ -117,21 +117,19 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 		return nil, err
 	}
 
-	settings, err := db.Settings.GetLatest(ctx, o.settingsSubject())
+	settings, err := db.Settings.GetLatest(ctx, o.configurationSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&settingsSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{&configurationSubject{org: o}, settings, nil}, nil
 }
 
-func (o *OrgResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{subject: &settingsSubject{org: o}}
+func (o *OrgResolver) ConfigurationCascade() *configurationCascadeResolver {
+	return &configurationCascadeResolver{subject: &configurationSubject{org: o}}
 }
-
-func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
@@ -191,7 +189,7 @@ func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	}
 
 	// Add the current user as the first member of the new org.
-	_, err = db.OrgMembers.Create(ctx, newOrg.ID, currentUser.user.ID)
+	_, err = db.OrgMembers.Create(ctx, newOrg.ID, currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}

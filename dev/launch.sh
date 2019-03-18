@@ -15,7 +15,10 @@ if [ -f .env ]; then
 fi
 
 export GO111MODULE=on
-go run ./pkg/version/minversion
+go build ./pkg/version/minversion || {
+    echo "Go version 1.11.x or newer must be used to build Sourcegraph; found: $(go version)"
+    exit 1
+}
 
 export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
 
@@ -48,26 +51,64 @@ export SRC_GIT_SERVERS=127.0.0.1:3178
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
 export SEARCHER_URL=http://127.0.0.1:3181
 export REPO_UPDATER_URL=http://127.0.0.1:3182
+export LSP_PROXY=127.0.0.1:4388
 export REDIS_ENDPOINT=127.0.0.1:6379
+export SRC_INDEXER=127.0.0.1:3179
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
+export CTAGS_COMMAND=${CTAGS_COMMAND-cmd/symbols/universal-ctags-dev}
+export CTAGS_PROCESSES=1
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
 export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
-export ZOEKT_HOST=localhost:6070
 
-# webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
-# until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
-# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3081 despite the externalURL
-# having port 3080.
-export SRC_HTTP_ADDR=":3082"
-export WEBPACK_DEV_SERVER=1
+export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $var in site config JSON
 
-export DEV_OVERRIDE_CRITICAL_CONFIG=${DEV_OVERRIDE_CRITICAL_CONFIG:-./dev/critical-config.json}
-export DEV_OVERRIDE_SITE_CONFIG=${DEV_OVERRIDE_SITE_CONFIG:-./dev/site-config.json}
+# webpack-serve is a proxy running on port 3080 that (1) serves assets, waiting to respond until
+# they are (re)built and (2) otherwise passes through to Sourcegraph running on port 3081. That is
+# why Sourcegraph listens on 3081 despite the appURL having port 3080.
+export WEBPACK_SERVE=1
+export SRC_HTTP_ADDR=":3081"
+
+# we want to keep config.json, but allow local config.
+export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE:-./dev/config.json}
+
+confpath="./dev"
+
+fancyconfig() {
+	if ! ( cd dev/confmerge; go build ); then
+		echo >&2 "WARNING: Can't build confmerge in dev/confmerge, can't merge config files."
+		return 1
+	fi
+	if [ -f "$confpath/config_combined.json" ]; then
+		echo >&2 "Note: Moving existing config_combined.json to $confpath/config_backup.json."
+		mv $confpath/config_combined.json $confpath/config_backup.json
+	fi
+	if dev/confmerge/confmerge $confpath/config.json $confpath/config_local.json > $confpath/config_combined.json; then
+		echo >&2 "Successfully regenerated config_combined.json."
+	else
+		echo >&2 "FATAL: failed to generate config_combined.json."
+		rm $confpath/config_combined.json
+		return 1
+	fi
+}
+
+if $SOURCEGRAPH_COMBINE_CONFIG && [ -f $confpath/config_local.json ]; then
+	if ! fancyconfig; then
+		echo >&2 "WARNING: fancyconfig failed. Giving up. Use SOURCEGRAPH_COMBINE_CONFIG=false to bypass."
+		exit 1
+	fi
+	SOURCEGRAPH_CONFIG_FILE=$confpath/config_combined.json
+fi
+
+if ! [ -z "${ZOEKT-}" ]; then
+	export ZOEKT_HOST=localhost:6070
+else
+	export ZOEKT_HOST=
+fi
 
 # WebApp
 export NODE_ENV=development
@@ -99,11 +140,6 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
-
-# Management console webapp
-[ -n "${OFFLINE-}" ] || {
-    pushd ./cmd/management-console/web && yarn  --no-progress && popd
-}
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE:-dev/Procfile}"

@@ -16,12 +16,18 @@ type Extension struct {
 	Manifest    *string   `json:"manifest"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
-	PublishedAt time.Time `json:"publishedAt"`
 	URL         string    `json:"url"`
 
 	// RegistryURL is the URL of the remote registry that this extension was retrieved from. It is
 	// not set by package registry.
 	RegistryURL string `json:"-"`
+
+	// IsSynthesizedLocalExtension is true for extensions that were synthesized locally. For these
+	// extensions, it is easier to synthesize values of this type instead of types.RegistryExtension.
+	//
+	// BACKCOMPAT: This supports backcompat for known language servers registered in the site config
+	// "langservers" property.
+	IsSynthesizedLocalExtension bool `json:"-"`
 }
 
 // Publisher describes a publisher in the extension registry.

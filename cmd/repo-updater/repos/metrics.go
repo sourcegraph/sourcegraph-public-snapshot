@@ -1,36 +1,33 @@
 package repos
 
-import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-)
+import "github.com/prometheus/client_golang/prometheus"
 
 var (
-	githubUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	githubUpdateTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "time_last_github_sync",
 		Help:      "The last time a comprehensive GitHub sync finished",
 	}, []string{"id"})
-	gitlabUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	gitlabUpdateTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "time_last_gitlab_sync",
 		Help:      "The last time a comprehensive GitLab sync finished",
 	}, []string{"id"})
-	awsCodeCommitUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	awsCodeCommitUpdateTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "time_last_awscodecommit_sync",
 		Help:      "The last time a comprehensive AWS Code Commit sync finished",
 	}, []string{"id"})
-	phabricatorUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	phabricatorUpdateTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "time_last_phabricator_sync",
 		Help:      "The last time a comprehensive Phabricator sync finished",
 	}, []string{"id"})
-	bitbucketServerUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	bitbucketServerUpdateTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "time_last_bitbucketserver_sync",
@@ -42,81 +39,92 @@ var (
 	// updating all Gitolite connections. As as result, we cannot
 	// apply an "id" label to differentiate update times for different
 	// Gitolite connections, so this is a Gauge instead of a GaugeVec.
-	gitoliteUpdateTime = promauto.NewGauge(prometheus.GaugeOpts{
+	gitoliteUpdateTime = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "time_last_gitolite_sync",
 		Help:      "The last time a comprehensive Gitolite sync finished",
 	})
 
-	otherExternalServicesLastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	repoListUpdateTime = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "other_external_services_sync_last_time",
-		Help:      "The last time a sync of OTHER external services finished",
-	}, []string{"id"})
+		Name:      "time_last_repolist_sync",
+		Help:      "The time the last repository sync loop completed",
+	})
 
-	otherExternalServicesSyncedReposTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "other_external_services_synced_repos_total",
-		Help:      "Total number of synced repositories of OTHER external services",
-	}, []string{"id", "success"})
-
-	otherExternalServicesSyncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "other_external_services_sync_duration",
-		Help:      "Time spent syncing a single external service of kind OTHER",
-	}, []string{"id"})
-
-	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
+	purgeSuccess = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "purge_success",
 		Help:      "Incremented each time we remove a repository clone.",
 	})
-	purgeFailed = promauto.NewCounter(prometheus.CounterOpts{
+	purgeFailed = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "purge_failed",
 		Help:      "Incremented each time we try and fail to remove a repository clone.",
 	})
-	purgeSkipped = promauto.NewCounter(prometheus.CounterOpts{
+	purgeSkipped = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "purge_skipped",
 		Help:      "Incremented each time we skip a repository clone to remove.",
 	})
 
-	schedError = promauto.NewCounter(prometheus.CounterOpts{
+	schedError = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "sched_error",
 		Help:      "Incremented each time we encounter an error updating a repository.",
 	})
-	schedLoops = promauto.NewCounter(prometheus.CounterOpts{
+	schedLoops = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "sched_loops",
 		Help:      "Incremented each time the scheduler loops.",
 	})
-	schedAutoFetch = promauto.NewCounter(prometheus.CounterOpts{
+	schedAutoFetch = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "sched_auto_fetch",
 		Help:      "Incremented each time the scheduler updates a managed repository due to hitting a deadline.",
 	})
-	schedManualFetch = promauto.NewCounter(prometheus.CounterOpts{
+	schedManualFetch = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "sched_manual_fetch",
 		Help:      "Incremented each time the scheduler updates a repository due to user traffic.",
 	})
-	schedKnownRepos = promauto.NewGauge(prometheus.GaugeOpts{
+	schedKnownRepos = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "sched_known_repos",
-		Help:      "The number of repositories that are managed by the scheduler.",
+		Help:      "The number of unique repositories that have been managed by the scheduler.",
+	})
+	schedScale = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "sched_scale",
+		Help:      "The scheduler interval scale.",
 	})
 )
+
+func init() {
+	prometheus.MustRegister(githubUpdateTime)
+	prometheus.MustRegister(gitlabUpdateTime)
+	prometheus.MustRegister(awsCodeCommitUpdateTime)
+	prometheus.MustRegister(phabricatorUpdateTime)
+	prometheus.MustRegister(bitbucketServerUpdateTime)
+	prometheus.MustRegister(gitoliteUpdateTime)
+	prometheus.MustRegister(repoListUpdateTime)
+	prometheus.MustRegister(purgeSuccess)
+	prometheus.MustRegister(purgeFailed)
+	prometheus.MustRegister(purgeSkipped)
+	prometheus.MustRegister(schedError)
+	prometheus.MustRegister(schedLoops)
+	prometheus.MustRegister(schedAutoFetch)
+	prometheus.MustRegister(schedManualFetch)
+	prometheus.MustRegister(schedKnownRepos)
+	prometheus.MustRegister(schedScale)
+}

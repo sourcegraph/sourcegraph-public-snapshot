@@ -39,6 +39,8 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 
+	m.Get(apirouter.XLang).Handler(trace.TraceRoute(handler(serveXLang)))
+
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
@@ -67,14 +69,15 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	}
 	m.StrictSlash(true)
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.TraceRoute(handler(serveExternalServiceConfigs)))
-	m.Get(apirouter.ExternalServicesList).Handler(trace.TraceRoute(handler(serveExternalServicesList)))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
 	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
 	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
+	m.Get(apirouter.ReposUpdateIndex).Handler(trace.TraceRoute(handler(serveReposUpdateIndex)))
+	m.Get(apirouter.ReposInventory).Handler(trace.TraceRoute(handler(serveReposInventory)))
+	m.Get(apirouter.ReposInventoryUncached).Handler(trace.TraceRoute(handler(serveReposInventoryUncached)))
 	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(serveReposList)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.TraceRoute(handler(serveReposListEnabled)))
-	m.Get(apirouter.ReposGetByName).Handler(trace.TraceRoute(handler(serveReposGetByName)))
+	m.Get(apirouter.ReposGetByURI).Handler(trace.TraceRoute(handler(serveReposGetByURI)))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.TraceRoute(handler(serveSettingsGetForSubject)))
 	m.Get(apirouter.SavedQueriesListAll).Handler(trace.TraceRoute(handler(serveSavedQueriesListAll)))
 	m.Get(apirouter.SavedQueriesGetInfo).Handler(trace.TraceRoute(handler(serveSavedQueriesGetInfo)))
@@ -84,17 +87,17 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.OrgsGetByName).Handler(trace.TraceRoute(handler(serveOrgsGetByName)))
 	m.Get(apirouter.UsersGetByUsername).Handler(trace.TraceRoute(handler(serveUsersGetByUsername)))
 	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.TraceRoute(handler(serveUserEmailsGetEmail)))
-	m.Get(apirouter.ExternalURL).Handler(trace.TraceRoute(handler(serveExternalURL)))
-	m.Get(apirouter.GitServerAddrs).Handler(trace.TraceRoute(handler(serveGitServerAddrs)))
+	m.Get(apirouter.AppURL).Handler(trace.TraceRoute(handler(serveAppURL)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.TraceRoute(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
+	m.Get(apirouter.DefsRefreshIndex).Handler(trace.TraceRoute(handler(serveDefsRefreshIndex)))
+	m.Get(apirouter.PkgsRefreshIndex).Handler(trace.TraceRoute(handler(servePkgsRefreshIndex)))
 	m.Get(apirouter.GitInfoRefs).Handler(trace.TraceRoute(handler(serveGitInfoRefs)))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))
 	m.Get(apirouter.GitUploadPack).Handler(trace.TraceRoute(handler(serveGitUploadPack)))
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
-	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +138,7 @@ func init() {
 func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
 	// Handle custom errors
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
-		err := handlerutil.RedirectToNewRepoName(w, r, ee.NewRepo)
+		err := handlerutil.RedirectToNewRepoURI(w, r, ee.NewRepo)
 		if err != nil {
 			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewRepo)
 		}

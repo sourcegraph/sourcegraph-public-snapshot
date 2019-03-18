@@ -11,18 +11,14 @@ import (
 )
 
 func (r *repositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !Search().Index.Enabled() {
+	if zoektCl == nil {
 		return nil
 	}
-	return &repositoryTextSearchIndexResolver{
-		repo:   r,
-		client: Search().Index.Client,
-	}
+	return &repositoryTextSearchIndexResolver{repo: r}
 }
 
 type repositoryTextSearchIndexResolver struct {
-	repo   *repositoryResolver
-	client zoekt.Searcher
+	repo *repositoryResolver
 
 	once  sync.Once
 	entry *zoekt.RepoListEntry
@@ -31,13 +27,13 @@ type repositoryTextSearchIndexResolver struct {
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
-		repoList, err := r.client.List(ctx, zoektquery.NewRepoSet(string(r.repo.repo.Name)))
+		repoList, err := zoektCl.List(ctx, zoektquery.NewRepoSet(string(r.repo.repo.URI)))
 		if err != nil {
 			r.err = err
 			return
 		}
 		if len(repoList.Repos) > 1 {
-			r.err = fmt.Errorf("more than 1 indexed repo found for %q", r.repo.repo.Name)
+			r.err = fmt.Errorf("more than 1 indexed repo found for %q", r.repo.repo.URI)
 			return
 		}
 		if len(repoList.Repos) == 1 {

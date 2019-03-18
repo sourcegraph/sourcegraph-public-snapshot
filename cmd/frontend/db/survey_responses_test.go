@@ -3,7 +3,7 @@ package db
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 )
 
 // TestSurveyResponses_Create_Count tests creation and counting of db survey responses

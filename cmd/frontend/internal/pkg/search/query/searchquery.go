@@ -3,8 +3,6 @@
 package query
 
 import (
-	"strings"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
@@ -20,6 +18,10 @@ const (
 	FieldArchived  = "archived"
 	FieldLang      = "lang"
 	FieldType      = "type"
+
+	// For graph search only:
+	FieldRef   = "ref"
+	FieldHints = "hints"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -42,14 +44,17 @@ var (
 	conf = types.Config{
 		FieldTypes: map[string]types.FieldType{
 			FieldDefault:   {Literal: types.RegexpType, Quoted: types.StringType},
-			FieldCase:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldCase:      {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
 			FieldRepo:      regexpNegatableFieldType,
-			FieldRepoGroup: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldRepoGroup: types.FieldType{Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldFile:      regexpNegatableFieldType,
 			FieldFork:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
+			FieldLang:      types.FieldType{Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:      stringFieldType,
+
+			FieldRef:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldHints: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldBefore:    stringFieldType,
 			FieldAfter:     stringFieldType,
@@ -117,24 +122,7 @@ func (q *Query) BoolValue(field string) bool {
 // IsCaseSensitive reports whether the query's expressions are matched
 // case sensitively.
 func (q *Query) IsCaseSensitive() bool {
-	value, _ := q.StringValue(FieldCase)
-	if value == "auto" || value == "" { // default to smartcase if no case was provided
-		for _, value := range q.Values(FieldDefault) {
-			if value.String != nil {
-				return *value.String != strings.ToLower(*value.String)
-			}
-			if value.Regexp != nil {
-				s := value.Regexp.String()
-				return s != strings.ToLower(s)
-			}
-		}
-
-		return false
-	}
-
-	b, _ := types.ParseBool(value)
-
-	return b
+	return q.BoolValue(FieldCase)
 }
 
 // Values returns the values for the given field.

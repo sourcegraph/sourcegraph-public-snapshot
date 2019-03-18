@@ -1,3 +1,6 @@
+//docker:install git@edge openssh-client
+//docker:user sourcegraph /data/repos
+
 // gitserver is the gitserver server.
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
@@ -24,7 +27,7 @@ import (
 const janitorInterval = 24 * time.Hour
 
 var (
-	reposDir          = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+	reposDir          = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
 	runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
 )
 

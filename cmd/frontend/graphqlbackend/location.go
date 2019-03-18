@@ -1,11 +1,10 @@
 package graphqlbackend
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-lsp"
 )
 
 type locationResolver struct {
@@ -22,21 +21,9 @@ func (r *locationResolver) Range() *rangeResolver {
 	return &rangeResolver{*r.lspRange}
 }
 
-func (r *locationResolver) URL(ctx context.Context) (string, error) {
-	url, err := r.resource.URL(ctx)
-	if err != nil {
-		return "", err
-	}
-	return r.urlPath(url), nil
-}
+func (r *locationResolver) URL() string { return r.urlPath(r.resource.URL()) }
 
-func (r *locationResolver) CanonicalURL() (string, error) {
-	url, err := r.resource.CanonicalURL()
-	if err != nil {
-		return "", err
-	}
-	return r.urlPath(url), nil
-}
+func (r *locationResolver) CanonicalURL() string { return r.urlPath(r.resource.CanonicalURL()) }
 
 func (r *locationResolver) urlPath(prefix string) string {
 	url := prefix

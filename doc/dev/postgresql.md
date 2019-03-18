@@ -7,7 +7,11 @@ on the filesystem.
 
 ## Version requirements
 
-Our minimum supported version is `9.6` which means you must use that for development to ensure we don't use Postgres features introduced after that version.
+You must use PostgreSQL 9.x (9.6) for development. If you use PostgreSQL 10,
+you can't make changes to the database schema and make proper pull requests for
+them; we generate files based on the database schema, and the formatting gets
+broken. (The changes are minor and cosmetic, but they're a hassle for us in
+tracking changes, so we need to all be using compatible-enough versions.)
 
 For Ubuntu 18.04, you will need to add a repository source. Use the
 [PostgreSQL.org official repo and instructions.](https://www.postgresql.org/download/linux/ubuntu/)

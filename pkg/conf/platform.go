@@ -1,21 +1,14 @@
 package conf
 
-import (
-	"os"
-	"strconv"
-
-	"github.com/sourcegraph/sourcegraph/schema"
-)
+import "github.com/sourcegraph/sourcegraph/schema"
 
 // PlatformConfiguration contains site configuration for the Sourcegraph platform.
 type PlatformConfiguration struct {
 	RemoteRegistryURL string
 }
 
-// DefaultRemoteRegistry is the default value for the site configuration property
-// "extensions"."remoteRegistry".
-//
-// It is intentionally not set in the OSS build.
+// DefaultRemoteRegistry is the default value for the site configuration field
+// "remoteRegistry" when unspecified.
 var DefaultRemoteRegistry string
 
 // Extensions returns the configuration for the Sourcegraph platform, or nil if it is disabled.
@@ -24,12 +17,6 @@ func Extensions() *PlatformConfiguration {
 
 	x := cfg.Extensions
 	if x == nil {
-		if DefaultRemoteRegistry == "" {
-			// There is no reasonable default behavior for extensions given that there is no remote
-			// registry, so consider them disabled.
-			return nil
-		}
-
 		x = &schema.Extensions{}
 	}
 
@@ -47,10 +34,6 @@ func Extensions() *PlatformConfiguration {
 		// Nothing to do.
 	} else {
 		pc.RemoteRegistryURL = DefaultRemoteRegistry
-	}
-
-	if v, _ := strconv.ParseBool(os.Getenv("OFFLINE")); v {
-		pc.RemoteRegistryURL = ""
 	}
 
 	return &pc

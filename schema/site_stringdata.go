@@ -5,111 +5,343 @@ package schema
 // SiteSchemaJSON is the content of the file "site.schema.json".
 const SiteSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "site.schema.json#",
+  "$id": "https://sourcegraph.com/v1/site.schema.json#",
   "title": "Site configuration",
   "description": "Configuration for a Sourcegraph site.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "dontIncludeSymbolResultsByDefault": {
-      "description": "Set to ` + "`" + `true` + "`" + ` to not include symbol results if no ` + "`" + `type:` + "`" + ` filter was given",
-      "type": "boolean",
-      "group": "Search"
+    "auth.userOrgMap": {
+      "description":
+        "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form ` + "`" + `{\"*\": [\"org1\", \"org2\"]}` + "`" + `, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is ` + "`" + `\"*\"` + "`" + `.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
     },
-    "disableBuiltInSearches": {
-      "description": "Whether built-in searches should be hidden on the Searches page.",
-      "type": "boolean",
-      "group": "Search"
-    },
-    "search.index.enabled": {
-      "description": "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Search"
-    },
-    "experimentalFeatures": {
-      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+    "log": {
+      "description": "Configuration for logging and alerting, including to external services.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "sentry": {
+          "description": "Configuration for Sentry",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dsn": {
+              "description":
+                "Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
+            }
+          }
+        }
+      }
+    },
+    "siteID": {
+      "description":
+        "The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.",
+      "type": "string"
+    },
+    "appURL": {
+      "description": "Publicly accessible URL to web app (e.g., what you type into your browser).",
+      "type": "string"
+    },
+    "dontIncludeSymbolResultsByDefault": {
+      "description": "Set to ` + "`" + `true` + "`" + ` to not include symbol results if no ` + "`" + `type:` + "`" + ` filter was given",
+      "type": "boolean"
+    },
+    "disableBuiltInSearches": {
+      "description": "Whether built-in searches should be hidden on the Searches page.",
+      "type": "boolean"
+    },
+    "experimentalFeatures": {
+      "description":
+        "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "jumpToDefOSSIndex": {
+          "description":
+            "Enables or disables consulting the OSS package index on Sourcegraph.com for cross repository jump to definition. When enabled Sourcegraph.com will receive Code Intelligence requests when they fail to resolve locally. NOTE: disablePublicRepoRedirects must not be set, or should be set to false.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "canonicalURLRedirect": {
+          "description":
+            "Enables or disables enforcing that HTTP requests use the appURL as a prefix, by redirecting other requests to the same request URI on the appURL. For example, if the appURL is https://sourcegraph.example.com and the site is also available under the DNS name http://foo, then a request to http://foo/bar would be redirected to https://sourcegraph.example.com/bar. Enabled by default.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
+        "multipleAuthProviders": {
+          "description":
+            "Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users.\n\nOnly applies to Sourcegraph Enterprise Starter and Sourcegraph Enterprise.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "discussions": {
           "description": "Enables the code discussions experiment.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         }
-      },
-      "group": "Experimental",
-      "hide": true
+      }
+    },
+    "tls.letsencrypt": {
+      "description":
+        "Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.\nThe default value is auto, which uses the following conditions to switch on:\n - tlsCert and tlsKey are unset.\n - appURL is a https:// URL\n - Can successfully bind to port 443",
+      "default": "auto",
+      "enum": ["auto", "on", "off"],
+      "type": "string"
+    },
+    "tlsCert": {
+      "description":
+        "The contents of the PEM-encoded TLS certificate for the web server (for the web app and API).\n\nSee https://about.sourcegraph.com/docs/config/tlsssl/ for more information.",
+      "type": "string",
+      "pattern": "^-----BEGIN CERTIFICATE-----\n"
+    },
+    "tlsKey": {
+      "description":
+        "The contents of the PEM-encoded TLS key for the web server (for the web app and API).\n\nSee https://about.sourcegraph.com/docs/config/tlsssl/ for more information.",
+      "type": "string",
+      "pattern": "^-----BEGIN "
+    },
+    "httpToHttpsRedirect": {
+      "description":
+        "Redirect users from HTTP to HTTPS. Accepted values are \"on\", \"off\", and \"load-balanced\" (boolean values true and false are also accepted and equivalent to \"on\" and \"off\" respectively). If \"load-balanced\" then additionally we use \"X-Forwarded-Proto\" to determine if on HTTP.",
+      "anyOf": [{ "type": "string", "enum": ["on", "off", "load-balanced"] }, { "type": "boolean" }],
+      "default": "off"
+    },
+    "httpStrictTransportSecurity": {
+      "description": "The value of the HTTP Strict-Transport-Security (HSTS) header sent by Sourcegraph, if non-empty",
+      "anyOf": [{ "type": "string" }, { "type": "boolean" }],
+      "default": "max-age=31536000"
     },
     "corsOrigin": {
-      "description": "Only required when using the Phabricator integration for Sourcegraph (https://docs.sourcegraph.com/integration/phabricator). This value is the space-separated list of allowed origins for cross-origin HTTP requests to Sourcegraph. Usually it contains the base URL for your Phabricator instance.\n\nPreviously, this value was also used for the GitHub, GitLab, etc., integrations. It is no longer necessary for those. You may remove this setting if you are not using the Phabricator integration.",
-      "type": "string",
-      "examples": ["https://my-phabricator.example.com"],
-      "group": "Security"
+      "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
+      "type": "string"
+    },
+    "disableBrowserExtension": {
+      "type": "boolean",
+      "default": false,
+      "description": "Disable incoming connections from the Sourcegraph browser extension."
     },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
-      "default": false,
-      "group": "External services"
+      "default": false
     },
     "disablePublicRepoRedirects": {
-      "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
-      "type": "boolean",
-      "group": "External services"
+      "description":
+        "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
+      "type": "boolean"
     },
-    "git.cloneURLToRepositoryName": {
-      "description": "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
+    "phabricator": {
+      "description":
+        "JSON array of configuration for Phabricator hosts. See Phabricator Configuration section for more information.",
       "type": "array",
       "items": {
-        "title": "CloneURLToRepositoryName",
-        "description": "Describes a mapping from clone URL to repository name. The ` + "`" + `from` + "`" + ` field contains a regular expression with named capturing groups. The ` + "`" + `to` + "`" + ` field contains a template string that references capturing group names. For instance, if ` + "`" + `from` + "`" + ` is \"^../(?P<name>\\w+)$\" and ` + "`" + `to` + "`" + ` is \"github.com/user/{name}\", the clone URL \"../myRepository\" would be mapped to the repository name \"github.com/user/myRepository\".",
         "type": "object",
         "additionalProperties": false,
-        "required": ["from", "to"],
         "properties": {
-          "from": {
-            "description": "A regular expression that matches a set of clone URLs. The regular expression should use the Go regular expression syntax (https://golang.org/pkg/regexp/) and contain at least one named capturing group. The regular expression matches partially by default, so use \"^...$\" if whole-string matching is desired.",
+          "url": {
+            "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
             "type": "string"
           },
-          "to": {
-            "description": "The repository name output pattern. This should use ` + "`" + `{matchGroup}` + "`" + ` syntax to reference the capturing groups from the ` + "`" + `from` + "`" + ` field.",
+          "token": {
+            "description": "API token for the Phabricator instance.",
             "type": "string"
+          },
+          "repos": {
+            "description": "The list of repositories available on Phabricator.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "callsign"],
+              "properties": {
+                "path": {
+                  "description": "Display path for the url e.g. gitolite/my/repo",
+                  "type": "string"
+                },
+                "callsign": {
+                  "description": "The unique Phabricator identifier for the repository, like 'MUX'.",
+                  "type": "string"
+                }
+              }
+            }
           }
         }
-      },
-      "group": "External services"
+      }
+    },
+    "git.cloneURLToRepositoryName": {
+      "description":
+        "JSON array of configuration that maps from Git clone URL to repository URI. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CloneURLToRepositoryName"
+      }
+    },
+    "github": {
+      "description":
+        "JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GitHubConnection"
+      }
     },
     "githubClientID": {
       "description": "Client ID for GitHub.",
-      "type": "string",
-      "group": "Internal",
-      "hide": true
+      "type": "string"
     },
     "githubClientSecret": {
       "description": "Client secret for GitHub.",
-      "type": "string",
-      "group": "Internal",
-      "hide": true
+      "type": "string"
+    },
+    "gitlab": {
+      "description": "JSON array of configuration for GitLab hosts.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GitLabConnection"
+      }
+    },
+    "awsCodeCommit": {
+      "description": "JSON array of configuration for AWS CodeCommit endpoints.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/AWSCodeCommitConnection"
+      }
+    },
+    "bitbucketServer": {
+      "description": "JSON array of configuration for Bitbucket Server hosts.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/BitbucketServerConnection"
+      }
+    },
+    "gitolite": {
+      "description": "JSON array of configuration for Gitolite hosts.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GitoliteConnection"
+      }
     },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
       "type": "integer",
-      "default": 5,
-      "group": "External services"
+      "default": 5
+    },
+    "repos.list": {
+      "description": "JSON array of configuration for external repositories.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Repository"
+      }
+    },
+    "reviewBoard": {
+      "description": "JSON array of configuration for Review Board.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "description": "URL to Review Board homepage.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "lightstepAccessToken": {
+      "description": "Access token for sending traces to LightStep.",
+      "type": "string"
+    },
+    "lightstepProject": {
+      "description":
+        "The project ID on LightStep that corresponds to the ` + "`" + `lightstepAccessToken` + "`" + `, only for generating links to traces. For example, if ` + "`" + `lightstepProject` + "`" + ` is ` + "`" + `mycompany-prod` + "`" + `, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form ` + "`" + `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...` + "`" + `.",
+      "type": "string"
+    },
+    "useJaeger": {
+      "description":
+        "Use local Jaeger instance for tracing. Kubernetes cluster deployments only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, ` + "`" + `kubectl get pods` + "`" + `\nshould display pods prefixed with ` + "`" + `jaeger-cassandra` + "`" + `,\n` + "`" + `jaeger-collector` + "`" + `, and ` + "`" + `jaeger-query` + "`" + `. ` + "`" + `jaeger-collector` + "`" + ` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [` + "`" + `cqlsh` + "`" + `](https://pypi.python.org/pypi/cqlsh).\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042` + "`" + `\n1. ` + "`" + `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh` + "`" + `\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686` + "`" + `\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
+      "type": "boolean"
+    },
+    "noGoGetDomains": {
+      "description":
+        "List of domains in import paths to NOT perform ` + "`" + `go get` + "`" + ` on, but instead treat as standard Git repositories. Separated by ','.\n\nFor example, if your code imports non-go-gettable packages like ` + "`" + `\"mygitolite.aws.me.org/mux.git/subpkg\"` + "`" + ` you may set this option to ` + "`" + `\"mygitolite.aws.me.org\"` + "`" + ` and Sourcegraph will effectively run ` + "`" + `git clone mygitolite.aws.me.org/mux.git` + "`" + ` instead of performing the usual ` + "`" + `go get` + "`" + ` dependency resolution behavior.",
+      "type": "string"
+    },
+    "blacklistGoGet": {
+      "description":
+        "List of domains to blacklist dependency fetching from. Separated by ','.\n\nUnlike ` + "`" + `noGoGetDomains` + "`" + ` (which tries to use a hueristic to determine where to clone the dependencies from), this option outright prevents fetching of dependencies with the given domain name. This will prevent code intelligence from working on these dependencies, so most users should not use this option.",
+      "type": "array",
+      "items": { "type": "string" }
     },
     "repoListUpdateInterval": {
-      "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
+      "description":
+        "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",
-      "default": 1,
-      "group": "External services"
+      "default": 1
+    },
+    "searchScopes": {
+      "$ref": "#/definitions/SiteConfigSearchScope"
+    },
+    "htmlHeadTop": {
+      "description": "HTML to inject at the top of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
+      "type": "string"
+    },
+    "htmlHeadBottom": {
+      "description": "HTML to inject at the bottom of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
+      "type": "string"
+    },
+    "htmlBodyTop": {
+      "description": "HTML to inject at the top of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
+      "type": "string"
+    },
+    "htmlBodyBottom": {
+      "description": "HTML to inject at the bottom of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
+      "type": "string"
+    },
+    "licenseKey": {
+      "description":
+        "The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription.",
+      "type": "string"
     },
     "maxReposToSearch": {
-      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
+      "description":
+        "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
       "type": "integer",
-      "default": 500,
-      "group": "Search"
+      "default": 500
+    },
+    "executeGradleOriginalRootPaths": {
+      "description":
+        "Java: A comma-delimited list of patterns that selects repository revisions for which to execute Gradle scripts, rather than extracting Gradle metadata statically. **Security note:** these should be restricted to repositories within your own organization. A percent sign ('%') can be used to prefix-match. For example, ` + "`" + `git://my.internal.host/org1/%,git://my.internal.host/org2/repoA?%` + "`" + ` would select all revisions of all repositories in org1 and all revisions of repoA in org2.\nNote: this field is misnamed, as it matches against the originalRootURI LSP initialize parameter, rather than the no-longer-used originalRootPath parameter.",
+      "type": "string"
+    },
+    "privateArtifactRepoID": {
+      "description":
+        "Java: Private artifact repository ID in your build files. If you do not explicitly include the private artifact repository, then set this to some unique string (e.g,. \"my-repository\").",
+      "type": "string"
+    },
+    "privateArtifactRepoURL": {
+      "description":
+        "Java: The URL that corresponds to privateArtifactRepoID (e.g., http://my.artifactory.local/artifactory/root).",
+      "type": "string"
+    },
+    "privateArtifactRepoUsername": {
+      "description": "Java: The username to authenticate to the private Artifactory.",
+      "type": "string"
+    },
+    "privateArtifactRepoPassword": {
+      "description": "Java: The password to authenticate to the private Artifactory.",
+      "type": "string"
     },
     "parentSourcegraph": {
       "description": "URL to fetch unreachable repository details from. Defaults to \"https://sourcegraph.com\"",
@@ -120,35 +352,755 @@ const SiteSchemaJSON = `{
           "type": "string",
           "default": "https://sourcegraph.com"
         }
-      },
-      "group": "External services"
+      }
+    },
+    "auth.provider": {
+      "description":
+        "The authentication provider to use for identifying and signing in users. Defaults to \"builtin\" authentication.\n\nDEPRECATED: Use \"auth.providers\" instead. During the deprecation period (before this property is removed), provider set here will be added as an entry in \"auth.providers\".",
+      "default": "builtin",
+      "type": "string",
+      "enum": ["builtin", "openidconnect", "saml", "http-header"]
+    },
+    "auth.providers": {
+      "description":
+        "The authentication providers to use for identifying and signing in users.\n\nOnly one authentication provider is officially supported at the moment. Multiple providers can be specified, but the support is experimental. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
+      "type": "array",
+      "items": {
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["builtin", "saml", "openidconnect", "http-header"]
+          }
+        },
+        "oneOf": [
+          { "$ref": "#/definitions/BuiltinAuthProvider" },
+          { "$ref": "#/definitions/SAMLAuthProvider" },
+          { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
+          { "$ref": "#/definitions/HTTPHeaderAuthProvider" }
+        ],
+        "!go": {
+          "taggedUnionType": true
+        }
+      }
+    },
+    "auth.allowSignup": {
+      "description":
+        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nSECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).\n\nRequires auth.provider == \"builtin\"\n\nDEPRECATED: Use \"auth.providers\" with an entry of the form {\"type\": \"builtin\", \"allowSignup\": true} instead.",
+      "type": "boolean",
+      "default": false
+    },
+    "auth.disableAccessTokens": {
+      "description":
+        "DEPRECATED. Use \"auth.accessTokens.restrict\" with value \"disable\" instead.\n\nPrevents users from creating access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
+      "type": "boolean",
+      "default": false
     },
     "auth.accessTokens": {
-      "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
+      "description":
+        "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "allow": {
-          "description": "Allow or restrict the use of access tokens. The default is \"all-users-create\", which enables all users to create access tokens. Use \"none\" to disable access tokens entirely. Use \"site-admin-create\" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).",
+          "description":
+            "Allow or restrict the use of access tokens. The default is \"all-users-create\", which enables all users to create access tokens. Use \"none\" to disable access tokens entirely. Use \"site-admin-create\" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).",
           "type": "string",
           "enum": ["all-users-create", "site-admin-create", "none"],
           "default": "all-users-create"
         }
-      },
-      "default": {
-        "allow": "all-users-create"
-      },
-      "examples": [
-        {
-          "allow": "site-admin-create"
-        },
-        { "allow": "none" }
-      ],
-      "group": "Security"
+      }
+    },
+    "auth.public": {
+      "description":
+        "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires usage of the builtin authentication provider.",
+      "type": "boolean",
+      "default": false
+    },
+    "auth.openIDConnect": {
+      "$ref": "#/definitions/OpenIDConnectAuthProvider"
+    },
+    "auth.saml": {
+      "$ref": "#/definitions/SAMLAuthProvider"
+    },
+    "auth.sessionExpiry": {
+      "type": "string",
+      "description":
+        "The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.\n\nThe string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days.\n\nNote: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with \"session_\" from the Redis store:\n\n* For deployments using ` + "`" + `sourcegraph/server` + "`" + `: ` + "`" + `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del` + "`" + `\n* For cluster deployments: \n  ` + "`" + `` + "`" + `` + "`" + `\n  REDIS_POD=\"$(kubectl get pods -l app=redis-store -o jsonpath={.items[0].metadata.name})\";\n  kubectl exec \"$REDIS_POD\" -- redis-cli --raw keys 'session_*' | xargs kubectl exec \"$REDIS_POD\" -- redis-cli --raw del;\n  ` + "`" + `` + "`" + `` + "`" + `\n",
+      "default": "2160h"
+    },
+    "auth.userIdentityHTTPHeader": {
+      "description":
+        "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".\n\nDEPRECATED: Use \"auth.providers\" with an entry of the form {\"type\": \"http-header\", \"usernameHeader\": \"...\"} instead.",
+      "type": "string"
     },
     "email.smtp": {
-      "title": "SMTPServerConfig",
-      "description": "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
+      "$ref": "#/definitions/SMTPServerConfig"
+    },
+    "email.imap": {
+      "$ref": "#/definitions/IMAPServerConfig"
+    },
+    "email.address": {
+      "description": "The \"from\" address for emails sent by this server.",
+      "type": "string",
+      "format": "email",
+      "default": "noreply@sourcegraph.com"
+    },
+    "update.channel": {
+      "description": "The channel on which to automatically check for Sourcegraph updates.",
+      "type": ["string"],
+      "enum": ["release", "none"],
+      "default": "release"
+    },
+    "langservers": {
+      "description": "Language server configuration.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "description": "Name of the language mode for the language server (e.g. go, java)",
+            "type": "string",
+            "examples": [
+              "go",
+              "java",
+              "javascript",
+              "typescript",
+              "php",
+              "python",
+              "bash",
+              "clojure",
+              "cpp",
+              "cs",
+              "css",
+              "dockerfile",
+              "elixir",
+              "html",
+              "lua",
+              "ocaml",
+              "r",
+              "ruby",
+              "rust"
+            ]
+          },
+          "address": {
+            "description": "TCP address of the language server. Required (except for Sourcegraph cluster deployments).",
+            "type": "string",
+            "pattern": "^tcp://",
+            "format": "uri"
+          },
+          "initializationOptions": {
+            "description":
+              "LSP initialization options. This object will be set as the ` + "`" + `initializationOptions` + "`" + ` field in LSP initialize requests (https://microsoft.github.io/language-server-protocol/specification#initialize).",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object"
+                },
+                {
+                  "type": "array"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          "disabled": {
+            "description": "Whether or not this language server is disabled.",
+            "type": "boolean",
+            "default": false
+          },
+          "metadata": {
+            "description": "Language server metadata. Used to populate various UI elements.",
+            "type": "object",
+            "properties": {
+              "experimental": {
+                "description":
+                  "Whether or not this language server should be considered experimental. Has no effect on behavior, only effects how the language server is presented e.g. in the UI.",
+                "type": "boolean"
+              },
+              "homepageURL": {
+                "description": "URL to the language server's homepage, if available.",
+                "type": "string"
+              },
+              "issuesURL": {
+                "description": "URL to the language server's open/known issues, if available.",
+                "type": "string"
+              },
+              "docsURL": {
+                "description": "URL to the language server's documentation, if available.",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": ["language"]
+      }
+    },
+    "extensions": {
+      "description": "Configures Sourcegraph extensions.",
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "description": "Disable all usage of extensions.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "remoteRegistry": {
+          "description":
+            "The remote extension registry URL, or ` + "`" + `false` + "`" + ` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
+          "oneOf": [{ "type": "string", "format": "uri" }, { "type": "boolean", "const": false }]
+        },
+        "allowRemoteExtensions": {
+          "description":
+            "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set ` + "`" + `remoteRegistry` + "`" + ` to ` + "`" + `false` + "`" + `.\n\nOnly available in Sourcegraph Enterprise.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "discussions": {
+      "description": "Configures Sourcegraph code discussions.",
+      "type": "object",
+      "properties": {
+        "abuseProtection": {
+          "description":
+            "Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).",
+          "type": "boolean",
+          "default": false
+        },
+        "abuseEmails": {
+          "description":
+            "Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.",
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "settings": {
+      "title": "SiteConfigSettings",
+      "description":
+        "Site settings hard-coded in site configuration.\n\nDEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying for cluster deployments.",
+      "type": "object",
+      "properties": {
+        "search.scopes": { "$ref": "#/definitions/SiteConfigSearchScope" },
+        "search.repositoryGroups": {
+          "description":
+            "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "GitHubConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token"],
+      "properties": {
+        "url": {
+          "description":
+            "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com",
+          "type": "string",
+          "pattern": "^https?://",
+          "format": "uri"
+        },
+        "gitURLType": {
+          "description":
+            "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication.",
+          "type": "string",
+          "enum": ["http", "ssh"],
+          "default": "http"
+        },
+        "token": {
+          "description": "A GitHub personal access token with repo and org scope.",
+          "type": "string",
+          "pattern": "^[^<>]+$"
+        },
+        "certificate": {
+          "description": "TLS certificate of a GitHub Enterprise instance.",
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----\n"
+        },
+        "repos": {
+          "description":
+            "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" }
+        },
+        "repositoryQuery": {
+          "description":
+            "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:\n\n- ` + "`" + `public` + "`" + ` mirrors all public repositories for GitHub Enterprise and is the equivalent of ` + "`" + `none` + "`" + ` for GitHub\n\n- ` + "`" + `affiliated` + "`" + ` mirrors all repositories affiliated with the configured token's user:\n\t- Private repositories with read access\n\t- Public repositories owned by the user or their orgs\n\t- Public repositories with write access\n\n- ` + "`" + `none` + "`" + ` mirrors no repositories (except those specified in the ` + "`" + `repos` + "`" + ` configuration property or added manually)\n\nIf multiple values are provided, their results are unioned.\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate the set in the \"repos\" configuration property), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["public", "affiliated", "none"]
+          },
+          "default": ["public", "affiliated"]
+        },
+        "repositoryPathPattern": {
+          "description":
+            "The pattern used to generate the corresponding Sourcegraph repository path for a GitHub or GitHub Enterprise repository. In the pattern, the variable \"{host}\" is replaced with the GitHub host (such as github.example.com), and \"{nameWithOwner}\" is replaced with the GitHub repository's \"owner/path\" (such as \"myorg/myrepo\").\n\nFor example, if your GitHub Enterprise URL is https://github.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"{host}/{nameWithOwner}\" would mean that a GitHub repository at https://github.example.com/myorg/myrepo is available on Sourcegraph at https://src.example.com/github.example.com/myorg/myrepo.",
+          "type": "string",
+          "default": "{host}/{nameWithOwner}"
+        },
+        "initialRepositoryEnablement": {
+          "description":
+            "Defines whether repositories from this GitHub instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitHub repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitHub); site admins can still disable them explicitly, and they'll remain disabled.",
+          "type": "boolean"
+        }
+      }
+    },
+    "GitLabConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "token"],
+      "properties": {
+        "url": {
+          "description":
+            "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com",
+          "type": "string",
+          "default": "https://gitlab.com",
+          "pattern": "^https?://",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
+          "format": "uri"
+        },
+        "token": {
+          "description": "A GitLab personal access token with \"api\" scope.",
+          "type": "string",
+          "pattern": "^[^<>]+$"
+        },
+        "gitURLType": {
+          "description":
+            "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication.",
+          "type": "string",
+          "enum": ["http", "ssh"],
+          "default": "http"
+        },
+        "certificate": {
+          "description": "TLS certificate of a GitLab instance.",
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----\n"
+        },
+        "projectQuery": {
+          "description":
+            "An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
+          "type": "array",
+          "default": ["?membership=true"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "repositoryPathPattern": {
+          "description":
+            "The pattern used to generate a the corresponding Sourcegraph repository path for a GitLab project. In the pattern, the variable \"{host}\" is replaced with the GitLab URL's host (such as gitlab.example.com), and \"{pathWithNamespace}\" is replaced with the GitLab project's \"namespace/path\" (such as \"myteam/myproject\").\n\nFor example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{pathWithNamespace}\" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.",
+          "type": "string",
+          "default": "{host}/{pathWithNamespace}"
+        },
+        "initialRepositoryEnablement": {
+          "description":
+            "Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.",
+          "type": "boolean"
+        }
+      }
+    },
+    "BitbucketServerConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com",
+          "type": "string",
+          "pattern": "^https?://",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
+          "format": "uri"
+        },
+        "token": {
+          "description":
+            "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add.\n\nFor Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the \"username\" and \"password\" fields.",
+          "type": "string",
+          "pattern": "^[^<>]+$"
+        },
+        "username": {
+          "description":
+            "The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"password\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
+          "type": "string"
+        },
+        "password": {
+          "description":
+            "The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"username\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
+          "type": "string"
+        },
+        "gitURLType": {
+          "description":
+            "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication.",
+          "type": "string",
+          "enum": ["http", "ssh"],
+          "default": "http"
+        },
+        "certificate": {
+          "description": "TLS certificate of a Bitbucket Server instance.",
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----\n"
+        },
+        "repositoryPathPattern": {
+          "description":
+            "The pattern used to generate the corresponding Sourcegraph repository path for a Bitbucket Server repository.\n\n - \"{host}\" is replaced with the Bitbucket Server URL's host (such as bitbucket.example.com)\n - \"{projectKey}\" is replaced with the Bitbucket repository's parent project key (such as \"PRJ\")\n - \"{repositorySlug}\" is replaced with the Bitbucket repository's slug key (such as \"my-repo\").\n\nFor example, if your Bitbucket Server is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{projectKey}/{repositorySlug}\" would mean that a Bitbucket Server repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.",
+          "type": "string",
+          "default": "{host}/{projectKey}/{repositorySlug}"
+        },
+        "excludePersonalRepositories": {
+          "description":
+            "Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://about.sourcegraph.com/docs/config/repositories/#excluding-personal-repositories for more information. Default: false.",
+          "type": "boolean"
+        },
+        "initialRepositoryEnablement": {
+          "description":
+            "Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.",
+          "type": "boolean"
+        }
+      }
+    },
+    "AWSCodeCommitConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["region", "accessKeyID", "secretAccessKey"],
+      "properties": {
+        "region": {
+          "description":
+            "The AWS region in which to access AWS CodeCommit. See the list of supported regions at https://docs.aws.amazon.com/codecommit/latest/userguide/regions.html#regions-git.",
+          "type": "string",
+          "default": "us-east-1",
+          "pattern": "^[a-z\\d-]+$",
+          "enum": [
+            "ap-northeast-1",
+            "ap-northeast-2",
+            "ap-south-1",
+            "ap-southeast-1",
+            "ap-southeast-2",
+            "ca-central-1",
+            "eu-central-1",
+            "eu-west-1",
+            "eu-west-2",
+            "sa-east-1",
+            "us-east-1",
+            "us-east-2",
+            "us-west-1",
+            "us-west-2"
+          ]
+        },
+        "accessKeyID": {
+          "description":
+            "The AWS access key ID to use when listing and updating repositories from AWS CodeCommit. Must have the AWSCodeCommitReadOnly IAM policy.",
+          "type": "string"
+        },
+        "secretAccessKey": {
+          "description": "The AWS secret access key (that corresponds to the AWS access key ID set in ` + "`" + `accessKeyID` + "`" + `).",
+          "type": "string"
+        },
+        "repositoryPathPattern": {
+          "description":
+            "The pattern used to generate a the corresponding Sourcegraph repository path for an AWS CodeCommit repository. In the pattern, the variable \"{name}\" is replaced with the repository's name.\n\nFor example, if your Sourcegraph instance is at https://src.example.com, then a repositoryPathPattern of \"awsrepos/{name}\" would mean that a AWS CodeCommit repository named \"myrepo\" is available on Sourcegraph at https://src.example.com/awsrepos/myrepo.",
+          "type": "string",
+          "default": "{name}"
+        },
+        "initialRepositoryEnablement": {
+          "description":
+            "Defines whether repositories from AWS CodeCommit should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable AWS CodeCommit repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by AWS); site admins can still disable them explicitly, and they'll remain disabled.",
+          "type": "boolean"
+        }
+      }
+    },
+    "GitoliteConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefix", "host"],
+      "properties": {
+        "prefix": {
+          "description":
+            "Repository URI prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., \"gitolite.example.com/\".",
+          "type": "string"
+        },
+        "host": {
+          "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com).",
+          "type": "string"
+        },
+        "blacklist": {
+          "description":
+            "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
+          "type": "string"
+        },
+        "phabricatorMetadataCommand": {
+          "description":
+            "Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the URI of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
+          "type": "string"
+        }
+      }
+    },
+    "CloneURLToRepositoryName": {
+      "description":
+        "Describes a mapping from clone URL to repository name. The ` + "`" + `from` + "`" + ` field contains a regular expression with named capturing groups. The ` + "`" + `to` + "`" + ` field contains a template string that references capturing group names. For instance, if ` + "`" + `from` + "`" + ` is \"^../(?P<name>\\w+)$\" and ` + "`" + `to` + "`" + ` is \"github.com/user/{name}\", the clone URL \"../myRepository\" would be mapped to the repository name \"github.com/user/myRepository\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": {
+          "description":
+            "A regular expression that matches a set of clone URLs. The regular expression should use the Go regular expression syntax (https://golang.org/pkg/regexp/) and contain at least one named capturing group. The regular expression matches partially by default, so use \"^...$\" if whole-string matching is desired.",
+          "type": "string"
+        },
+        "to": {
+          "description":
+            "The repository name output pattern. This should use ` + "`" + `{matchGroup}` + "`" + ` syntax to reference the capturing groups from the ` + "`" + `from` + "`" + ` field.",
+          "type": "string"
+        }
+      }
+    },
+    "Repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "path"],
+      "properties": {
+        "type": {
+          "description": "Type of the version control system for this repository, such as \"git\"",
+          "type": "string",
+          "enum": ["git"],
+          "default": "git"
+        },
+        "url": {
+          "description": "Clone URL for the repository, such as git@example.com:my/repo.git",
+          "type": "string"
+        },
+        "path": {
+          "description": "Display path on Sourcegraph for the repository, such as my/repo",
+          "type": "string",
+          "pattern": "^[\\w_]"
+        },
+        "links": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "description":
+                "URL specifying where to view the repository at an external location e.g. \"https://example.com/myrepo\"",
+              "type": "string"
+            },
+            "commit": {
+              "description":
+                "URL template for specifying how to link to commits at an external location. Use \"{commit}\" as a placeholder for a given commit ID e.g. \"https://example.com/myrepo/view-commit/{commit}\"",
+              "type": "string"
+            },
+            "tree": {
+              "description":
+                "URL template for specifying how to link to paths at an external location. Use \"{path}\" as a placeholder for a given path and \"{rev}\" as a placeholder for a given revision e.g. \"https://example.com/myrepo@{rev}/browse/{path}\"",
+              "type": "string"
+            },
+            "blob": {
+              "description":
+                "URL template for specifying how to link to files at an external location. Use \"{path}\" as a placeholder for a given path and \"{rev}\" as a placeholder for a given revision e.g. \"https://example.com/myrepo@{rev}/browse/{path}\"",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "BuiltinAuthProvider": {
+      "description": "Configures the builtin username-password authentication provider.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "builtin"
+        },
+        "allowSignup": {
+          "description":
+            "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nSECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "OpenIDConnectAuthProvider": {
+      "description": "Configures the OpenID Connect authentication provider for SSO.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "issuer", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "openidconnect"
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "issuer": {
+          "description": "The URL of the OpenID Connect issuer.\n\nFor Google Apps: https://accounts.google.com",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "clientID": {
+          "description":
+            "The client ID for the OpenID Connect client for this site.\n\nFor Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials",
+          "type": "string",
+          "pattern": "^[^<]"
+        },
+        "clientSecret": {
+          "description":
+            "The client secret for the OpenID Connect client for this site.\n\nFor Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials",
+          "type": "string",
+          "pattern": "^[^<]"
+        },
+        "requireEmailDomain": {
+          "description":
+            "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
+          "type": "string",
+          "pattern": "^[^<@]"
+        }
+      }
+    },
+    "SAMLAuthProvider": {
+      "description":
+        "Configures the SAML authentication provider for SSO.\n\nNote: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the ` + "`" + `auth.providers` + "`" + ` array.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "dependencies": {
+        "serviceProviderCertificate": ["serviceProviderPrivateKey"],
+        "serviceProviderPrivateKey": ["serviceProviderCertificate"],
+        "signRequests": ["serviceProviderCertificate", "serviceProviderPrivateKey"]
+      },
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "saml"
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "serviceProviderIssuer": {
+          "description":
+            "The name of this SAML Service Provider, which is used by the Identity Provider to identify this Service Provider. It defaults to https://sourcegraph.example.com/.auth/saml/metadata (where https://sourcegraph.example.com is replaced with this Sourcegraph instance's \"appURL\"). It is only necessary to explicitly set the issuer if you are using multiple SAML authentication providers.",
+          "type": "string"
+        },
+        "identityProviderMetadataURL": {
+          "description":
+            "The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "identityProviderMetadata": {
+          "description":
+            "The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is ` + "`" + `<EntityDescriptor>` + "`" + ` or ` + "`" + `<EntityDescriptors>` + "`" + `.",
+          "type": "string"
+        },
+        "serviceProviderCertificate": {
+          "description":
+            "The SAML Service Provider certificate in X.509 encoding (begins with \"-----BEGIN CERTIFICATE-----\"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (` + "`" + `serviceProviderPrivateKey` + "`" + `).",
+          "type": "string",
+          "$comment": "The pattern matches either X.509 encoding or an env var.",
+          "pattern": "^(-----BEGIN CERTIFICATE-----\n|\\$)",
+          "minLength": 1
+        },
+        "serviceProviderPrivateKey": {
+          "description":
+            "The SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\"). This private key is used to sign AuthnRequests and LogoutRequests. It corresponds to the Service Provider's certificate (` + "`" + `serviceProviderCertificate` + "`" + `).",
+          "type": "string",
+          "$comment": "The pattern matches either PKCS#8 encoding or an env var.",
+          "pattern": "^(-----BEGIN PRIVATE KEY-----\n|\\$)",
+          "minLength": 1
+        },
+        "nameIDFormat": {
+          "description": "The SAML NameID format to use when performing user authentication.",
+          "type": "string",
+          "pattern": "^urn:",
+          "default": "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+          "examples": [
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:persistent",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:emailAddress",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified"
+          ]
+        },
+        "signRequests": {
+          "description":
+            "Sign AuthnRequests and LogoutRequests sent to the Identity Provider using the Service Provider's private key (` + "`" + `serviceProviderPrivateKey` + "`" + `). It defaults to true if the ` + "`" + `serviceProviderPrivateKey` + "`" + ` and ` + "`" + `serviceProviderCertificate` + "`" + ` are set, and false otherwise.",
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
+        "insecureSkipAssertionSignatureValidation": {
+          "description":
+            "Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "HTTPHeaderAuthProvider": {
+      "description":
+        "Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "usernameHeader"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "http-header"
+        },
+        "usernameHeader": {
+          "description":
+            "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".",
+          "type": "string"
+        }
+      }
+    },
+    "AuthProviderCommon": {
+      "$comment": "This schema is not used directly. The *AuthProvider schemas refer to its properties directly.",
+      "description": "Common properties for authentication providers.",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "description":
+            "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
+          "type": "string"
+        }
+      }
+    },
+    "SMTPServerConfig": {
+      "description":
+        "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
       "type": "object",
       "additionalProperties": false,
       "required": ["host", "port", "authentication"],
@@ -178,21 +1130,9 @@ const SiteSchemaJSON = `{
           "description": "The HELO domain to provide to the SMTP server (if needed).",
           "type": "string"
         }
-      },
-      "default": null,
-      "examples": [
-        {
-          "host": "smtp.example.com",
-          "port": 465,
-          "username": "alice",
-          "password": "mypassword",
-          "authentication": "PLAIN"
-        }
-      ],
-      "group": "Email"
+      }
     },
-    "email.imap": {
-      "title": "IMAPServerConfig",
+    "IMAPServerConfig": {
       "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
       "type": "object",
       "additionalProperties": false,
@@ -214,77 +1154,68 @@ const SiteSchemaJSON = `{
           "description": "The username to use when communicating with the IMAP server.",
           "type": "string"
         }
-      },
-      "default": null,
-      "examples": [
-        {
-          "host": "imap.example.com",
-          "port": 993,
-          "username": "alice",
-          "password": "mypassword"
-        }
-      ],
-      "group": "Email",
-      "hide": true
+      }
     },
-    "email.address": {
-      "description": "The \"from\" address for emails sent by this server.",
-      "type": "string",
-      "format": "email",
-      "group": "Email",
-      "default": "noreply@sourcegraph.com"
-    },
-    "extensions": {
-      "description": "Configures Sourcegraph extensions.",
-      "type": "object",
-      "properties": {
-        "disabled": {
-          "description": "Disable all usage of extensions.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
-        },
-        "remoteRegistry": {
-          "description": "The remote extension registry URL, or ` + "`" + `false` + "`" + ` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
-          "oneOf": [{ "type": "string", "format": "uri" }, { "type": "boolean", "const": false }]
-        },
-        "allowRemoteExtensions": {
-          "description": "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set ` + "`" + `remoteRegistry` + "`" + ` to ` + "`" + `false` + "`" + `.\n\nOnly available in Sourcegraph Enterprise.",
-          "type": "array",
-          "items": {
-            "type": "string"
+    "SiteConfigSearchScope": {
+      "description": "Predefined search scopes",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "value"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description":
+              "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
+          },
+          "name": {
+            "type": "string",
+            "description": "The human-readable name for this search scope"
+          },
+          "value": {
+            "type": "string",
+            "description": "The query string of this search scope"
+          },
+          "description": {
+            "type": "string",
+            "description": "A description for this search scope"
           }
         }
-      },
-      "default": {
-        "remoteRegistry": "https://sourcegraph.com/.api/registry"
-      },
-      "examples": [
-        {
-          "remoteRegistry": "https://sourcegraph.com/.api/registry",
-          "allowRemoteExtensions": ["sourcegraph/java"]
+      }
+    }
+  },
+  "$comment": "Allow multiple auth.providers only if experimentalFeatures.multipleAuthProviders is enabled.",
+  "if": {
+    "type": "object",
+    "properties": {
+      "experimentalFeatures": {
+        "type": "object",
+        "required": ["multipleAuthProviders"],
+        "properties": {
+          "multipleAuthProviders": {
+            "type": "string",
+            "const": "enabled"
+          }
         }
-      ],
-      "group": "Extensions"
-    },
-    "discussions": {
-      "description": "Configures Sourcegraph code discussions.",
-      "type": "object",
-      "properties": {
-        "abuseProtection": {
-          "description": "Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).",
-          "type": "boolean",
-          "default": false
-        },
-        "abuseEmails": {
-          "description": "Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.",
-          "type": "array",
-          "items": { "type": "string" },
-          "default": []
-        }
-      },
-      "group": "Experimental",
-      "hide": true
+      }
+    }
+  },
+  "then": {
+    "type": "object",
+    "properties": {
+      "auth.providers": {
+        "type": "array"
+      }
+    }
+  },
+  "else": {
+    "type": "object",
+    "properties": {
+      "auth.providers": {
+        "type": "array",
+        "maxItems": 1
+      }
     }
   }
 }

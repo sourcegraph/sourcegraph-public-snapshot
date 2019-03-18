@@ -1,0 +1,11 @@
+.explore-page {
+    overflow: auto;
+
+    &__item {
+        &-path {
+            .part:last-child {
+                font-weight: bold;
+            }
+        }
+    }
+}

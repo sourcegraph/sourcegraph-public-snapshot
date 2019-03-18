@@ -17,20 +17,11 @@ Welcome to Sourcegraph! As a developer, you can use Sourcegraph to get help whil
     - Diff search
     - Commit message search
     - Multi-branch search
-- [Code intelligence](code_intelligence/index.md)
-  - Hover tooltips (type signatures, docs, etc.)
-  - Jump-to-definition
-  - Find-references
-  - Cross-repository jump-to-definition and find-references
-  - Supports [Go](https://sourcegraph.com/extensions/sourcegraph/go), [TypeScript](https://sourcegraph.com/extensions/sourcegraph/typescript), [Python](https://sourcegraph.com/extensions/sourcegraph/python) - check the [extension registry](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) for more
 - [GraphQL API](../api/graphql/index.md)
-- [Repository badges](repository/badges.md)
 
 All features:
 
 - [Usage statistics](usage_statistics.md)
-- [User surveys](user_surveys.md)
-- [Color themes](themes.md)
 
 ## What is Sourcegraph?
 
@@ -93,17 +84,17 @@ Sourcegraph gives you code intelligence in:
 
 - **code files in Sourcegraph's web UI**
 
-![Hover tooltip](../user/code_intelligence/img/hover-tooltip.png)
+![Hover tooltip](../extensions/language_servers/img/hover-tooltip.png.md)
 
 - **diffs in your code review tool**, via [integrations](../integration/index.md)
 
-![GitHub pull request integration](../integration/img/GitHubDiff.png)
+![GitHub pull request integration](../integration/img/GitHubDiff.png.md)
 
 - **code files on your code host**, via [integrations](../integration/index.md)
 
-![GitHub file integration](img/GitHubFile.png)
+![GitHub file integration](img/GitHubFile.png.md)
 
-Read the [code intelligence documentation](../user/code_intelligence/index.md) to learn more and to set it up.
+Read the [code intelligence documentation](../extensions/language_servers/index.md) to learn more and to set it up.
 
 ---
 

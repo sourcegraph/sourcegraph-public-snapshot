@@ -29,8 +29,8 @@ const gqlSearchQuery = `query Search(
 		results {
 			approximateResultCount
 			limitHit
-			cloning { name }
-			timedout { name }
+			cloning { uri }
+			timedout { uri }
 			results {
 				__typename
 				... on FileMatch {
@@ -48,7 +48,7 @@ const gqlSearchQuery = `query Search(
 						displayName
 						prefix
 						repository {
-							name
+							uri
 						}
 					}
 					sourceRefs {
@@ -56,7 +56,7 @@ const gqlSearchQuery = `query Search(
 						displayName
 						prefix
 						repository {
-							name
+							uri
 						}
 					}
 					messagePreview {
@@ -77,7 +77,7 @@ const gqlSearchQuery = `query Search(
 					}
 					commit {
 						repository {
-							name
+							uri
 						}
 						oid
 						abbreviatedOID

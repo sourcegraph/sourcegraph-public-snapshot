@@ -21,24 +21,12 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 		return false, err
 	}
 
-	return needsRepositoryConfiguration(ctx)
+	return needsRepositoryConfiguration(), nil
 }
 
-func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
-	kinds := make([]string, 0, len(db.ExternalServiceKinds))
-	for kind, config := range db.ExternalServiceKinds {
-		if config.CodeHost {
-			kinds = append(kinds, kind)
-		}
-	}
-
-	count, err := db.ExternalServices.Count(ctx, db.ExternalServicesListOptions{
-		Kinds: kinds,
-	})
-	if err != nil {
-		return false, err
-	}
-	return count == 0, nil
+func needsRepositoryConfiguration() bool {
+	cfg := conf.Get()
+	return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && len(cfg.AwsCodeCommit) == 0 && len(cfg.Gitolite) == 0 && len(cfg.BitbucketServer) == 0
 }
 
 func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {
@@ -66,6 +54,15 @@ func noRepositoriesEnabled(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return len(repos) == 0, nil
+}
+
+func (*siteResolver) ExternalAuthEnabled() bool {
+	for _, p := range conf.AuthProviders() {
+		if p.Builtin == nil {
+			return true // has a non-builtin auth provider
+		}
+	}
+	return false
 }
 
 func (*siteResolver) DisableBuiltInSearches() bool {

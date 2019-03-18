@@ -4,10 +4,29 @@ Our editor plugins let you quickly jump to files and search code on your Sourceg
 
 We currently have plugins for these editors:
 
-<a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"><img src="img/vscode.svg"/> Visual Studio Code</a>
+<div id="integrations-btns" class="btn-group">
 
-<a href="https://atom.io/packages/sourcegraph"><img src="img/atom.svg"/> Atom</a>
+<a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph">
+<button class="btn btn-outline-primary align-items-center">
+    <img src="img/vscode.svg"/>VS Code
+</button>
+</a>
 
-<a href="https://plugins.jetbrains.com/plugin/9682-sourcegraph"><img src="img/jetbrains.svg"/> IntelliJ</a>
+<a href="https://atom.io/packages/sourcegraph">
+<button class="btn btn-outline-primary align-items-center">
+    <img src="img/atom.svg"/>Atom
+</button>
+</a>
 
-<a href="https://github.com/sourcegraph/sourcegraph-sublime"><img src="img/sublime.svg"/> Sublime Text</a>
+<a href="https://plugins.jetbrains.com/plugin/9682-sourcegraph">
+<button  class="btn btn-outline-primary align-items-center">
+    <img src="img/jetbrains.svg"/>Intellij
+</button>
+
+<a href="https://github.com/sourcegraph/sourcegraph-sublime">
+<button  class="btn btn-outline-primary align-items-center">
+    <img src="img/sublime.svg"/>Sublime
+</button>
+</a>
+
+</div>

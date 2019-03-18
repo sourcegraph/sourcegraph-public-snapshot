@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -19,8 +19,8 @@ import (
 )
 
 func init() {
-	// Enable SourcegraphDotComMode for all tests in this package.
-	envvar.MockSourcegraphDotComMode(true)
+	// Enable SourcegraphDotComMode
+	globals.AppURL = &url.URL{Scheme: "https", Host: "sourcegraph.com"}
 
 	// Reinit router
 	initRouter()
@@ -101,23 +101,6 @@ func TestRouter(t *testing.T) {
 		{
 			path:      "/r@v/-/blob/d/f",
 			wantRoute: routeBlob,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
-		},
-
-		// raw
-		{
-			path:      "/r@v/-/raw",
-			wantRoute: routeRaw,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": ""},
-		},
-		{
-			path:      "/r@v/-/raw/f",
-			wantRoute: routeRaw,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/f"},
-		},
-		{
-			path:      "/r@v/-/raw/d/f",
-			wantRoute: routeRaw,
 			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
 		},
 
@@ -213,7 +196,7 @@ func TestRouter(t *testing.T) {
 
 func TestRouter_RootPath(t *testing.T) {
 	tests := []struct {
-		repo   api.RepoName
+		repo   api.RepoURI
 		exists bool
 	}{
 		{
@@ -235,13 +218,13 @@ func TestRouter_RootPath(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			}
 
-			// Mock GetByName to return the proper repo not found error type.
-			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-				if name != tst.repo {
+			// Mock GetByURI to return the proper repo not found error type.
+			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+				if uri != tst.repo {
 					panic("unexpected")
 				}
 				if tst.exists {
-					return &types.Repo{Name: name}, nil
+					return &types.Repo{URI: uri}, nil
 				}
 				return nil, &errcode.Mock{Message: "repo not found", IsNotFound: true}
 			}

@@ -1,0 +1,14 @@
+// Imports, styles, and CSS variables for @sourcegraph/extensions-client-common.
+@import '~@sourcegraph/extensions-client-common/lib/app/app.css';
+@import '~@sourcegraph/extensions-client-common/lib/extensions/extensions.css';
+
+:root {
+    --primary-opacity-2: #{transparentize($primary, 0.8)};
+}
+
+.theme-light {
+    --extension-card-bg: #{lighten($color-light-bg-2, 2.5%)};
+}
+.theme-dark {
+    --extension-card-bg: #{$color-bg-2};
+}

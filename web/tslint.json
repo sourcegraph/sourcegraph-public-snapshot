@@ -1,7 +1,0 @@
-{
-  "extends": ["../tslint.json"],
-  "linterOptions": { "exclude": ["node_modules/**", "coverage/**"] },
-  "rules": {
-    "await-promise": false
-  }
-}

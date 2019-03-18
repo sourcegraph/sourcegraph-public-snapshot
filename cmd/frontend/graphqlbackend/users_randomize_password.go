@@ -26,7 +26,7 @@ func (r *randomizeUserPasswordResult) ResetPasswordURL(ctx context.Context) (*st
 	if err != nil {
 		return nil, err
 	}
-	urlStr := globals.ExternalURL.ResolveReference(resetURL).String()
+	urlStr := globals.AppURL.ResolveReference(resetURL).String()
 	return &urlStr, nil
 }
 

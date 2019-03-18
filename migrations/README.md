@@ -21,10 +21,10 @@ Run the following:
 ./dev/add_migration.sh
 ```
 
-There will be up/down `.sql` migration files created in this directory. Add
-SQL statements to these files that will perform the desired
-migration. **NOTE**: the migration runner does not use transactions. Use the
-explicit transaction blocks added to the migration script template.
+There will be up/down `.sql` migration files created in this directory. Add SQL statements to these
+files that will perform the desired migration. **NOTE**: the migration runner wraps each migration
+script in a transaction block; do not add explicit transaction blocks to the migration script as
+this has caused issues in the past.
 
 ```sql
 # Enter statements here
@@ -39,7 +39,7 @@ After adding SQL statements to those files, embed them into the Go code and upda
 or, to only run the DB generate scripts (subset of the command above):
 
 ```
-go generate ./migrations/
+go generate ./cmd/frontend/db/migrations/
 go generate ./cmd/frontend/db/
 ```
 

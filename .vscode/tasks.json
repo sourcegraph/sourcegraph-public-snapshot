@@ -6,74 +6,6 @@
     "cwd": "${workspaceFolder}"
   },
   "tasks": [
-    //#region typecheck tasks to run on folder open
-    {
-      "type": "typescript",
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch",
-      "tsconfig": "shared/tsconfig.json",
-      "option": "watch",
-      "presentation": {
-        "reveal": "never"
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
-      }
-    },
-    {
-      "type": "typescript",
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch",
-      "option": "watch",
-      "tsconfig": "web/tsconfig.json",
-      "presentation": {
-        "reveal": "never"
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
-      }
-    },
-    {
-      "type": "typescript",
-      "isBackground": true,
-      "option": "watch",
-      "problemMatcher": "$tsc-watch",
-      "tsconfig": "client/browser/tsconfig.json",
-      "presentation": {
-        "reveal": "never"
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
-      }
-    },
-    {
-      "type": "typescript",
-      "isBackground": true,
-      "option": "watch",
-      "problemMatcher": "$tsc-watch",
-      "tsconfig": "packages/@sourcegraph/extension-api-types/tsconfig.json",
-      "presentation": {
-        "reveal": "never"
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
-      }
-    },
-    {
-      "type": "typescript",
-      "option": "watch",
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch",
-      "tsconfig": "packages/sourcegraph-extension-api/tsconfig.json",
-      "presentation": {
-        "reveal": "never"
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
-      }
-    },
-    //#endregion
-
     {
       "label": "launch",
       "command": "${workspaceRoot}/dev/launch.sh",
@@ -94,8 +26,8 @@
     },
     {
       "label": "stylelint",
-      "command": "npm",
-      "args": ["--silent", "--prefix", "web", "run", "stylelint", "--", "--formatter", "compact"],
+      "command": "yarn",
+      "args": ["--prefix", "web", "run", "stylelint-compact"],
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",

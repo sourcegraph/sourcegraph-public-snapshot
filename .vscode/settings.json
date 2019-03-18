@@ -1,4 +1,5 @@
 {
+  "typescript.tsdk": "./node_modules/typescript/lib",
   "tslint.nodePath": "./node_modules",
   "search.exclude": {
     "**/node_modules": true,
@@ -7,23 +8,13 @@
     "ui/assets": true
   },
   "files.associations": {
-    "**/dev/critical-config.json": "jsonc",
-    "**/dev/site-config.json": "jsonc"
+    "**/dev/config.json": "jsonc"
   },
   "json.schemas": [
     {
-      "fileMatch": ["dev/critical-config.json"],
-      "url": "/schema/critical.schema.json"
-    },
-    {
-      "fileMatch": ["dev/site-config.json"],
+      "fileMatch": ["dev/config.json"],
       "url": "/schema/site.schema.json"
     }
   ],
-  "editor.formatOnSave": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "go.docsTool": "gogetdoc",
-  "jest.pathToJest": "yarn -s test",
-  "jest.showCoverageOnLoad": false,
-  "jest.autoEnable": false // until we confirm people like it
+  "editor.formatOnSave": true
 }

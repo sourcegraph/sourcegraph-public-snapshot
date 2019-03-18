@@ -11,12 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mentions"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -75,7 +74,7 @@ type notifier struct {
 	eventAuthorUserID int32
 	thread            *types.DiscussionThread
 	comment           *types.DiscussionComment
-	template          txtypes.Templates
+	template          txemail.Templates
 }
 
 // subscribers returns a list of all usernames who are subscribed to receive
@@ -222,7 +221,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		if err != nil {
 			return errors.Wrap(err, "repoShortName: db.Repos.Get")
 		}
-		split := strings.Split(string(repo.Name), "/")
+		split := strings.Split(string(repo.URI), "/")
 		if len(split) > 2 {
 			split = split[len(split)-2:]
 		}
@@ -245,6 +244,11 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 	fromName := commentAuthor.DisplayName
 	if fromName == "" {
 		fromName = commentAuthor.Username
+	}
+
+	commentContentsHTML, err := markdown.Render(n.comment.Contents, nil)
+	if err != nil {
+		return errors.Wrap(err, "render comment contents Markdown")
 	}
 
 	return txemail.Send(ctx, txemail.Message{
@@ -272,7 +276,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			ThreadTitle:           n.thread.Title,
 			CommentAuthorUsername: commentAuthor.Username,
 			CommentContents:       n.comment.Contents,
-			CommentContentsHTML:   template.HTML(markdown.Render(n.comment.Contents, nil)),
+			CommentContentsHTML:   template.HTML(commentContentsHTML),
 			URL:                   url.String(),
 			UniqueValue:           fmt.Sprint(n.comment.ID),
 			CanReply:              conf.CanReadEmail(),
@@ -345,13 +349,13 @@ var (
 </body>
 </html>
 `
-	newThreadEmailTemplate = txemail.MustValidate(txtypes.Templates{
+	newThreadEmailTemplate = txemail.MustValidate(txemail.Templates{
 		Subject: sharedCommentSubjectTemplate,
 		Text:    sharedCommentTextTemplate,
 		HTML:    sharedCommentHTMLTemplate,
 	})
 
-	newCommentEmailTemplate = txemail.MustValidate(txtypes.Templates{
+	newCommentEmailTemplate = txemail.MustValidate(txemail.Templates{
 		Subject: sharedCommentSubjectTemplate,
 		Text:    sharedCommentTextTemplate,
 		HTML:    sharedCommentHTMLTemplate,

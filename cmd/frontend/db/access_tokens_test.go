@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 )
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value

@@ -4,11 +4,12 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
+export ROCKET_SECRET_KEY="+SecretKeyIsIrrelevantAndUnusedPleaseIgnore="
+export ROCKET_ENV="production"
+
 if [[ ${USE_SYNTECT_SERVER_FROM_PATH-} == t* ]]; then
     # NB: this is NOT the common path - below is.
     export QUIET='true'
-    export ROCKET_SECRET_KEY="SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
-    export ROCKET_ENV="production"
     export ROCKET_LIMITS='{json=10485760}'
     export ROCKET_PORT=9238
     if [[ "${INSECURE_DEV:-}" == '1' ]]; then
@@ -17,8 +18,22 @@ if [[ ${USE_SYNTECT_SERVER_FROM_PATH-} == t* ]]; then
     exec syntect_server
 fi
 
+if [[ -z "${OFFLINE-}" ]] && ! docker pull sourcegraph/syntect_server > /dev/null; then
+	echo
+	echo Unable to pull latest container image for sourcegraph/syntect_server from the server.
+	echo
+	echo To run the dev server using the latest image available locally, rerun with OFFLINE=true.
+	exit 1
+fi
+
 addr=''
+secret_key=''
 if [[ "${INSECURE_DEV:-}" == '1' ]]; then
     addr='-e ROCKET_ADDRESS=0.0.0.0'
 fi
-exec docker run --name=syntect_server --rm -p9238:9238 ${addr} sourcegraph/syntect_server:056c730
+exec docker run --name=syntect_server --rm -p9238:9238 -e QUIET='true' \
+    -e ROCKET_LIMITS='{json=10485760}' \
+    -e ROCKET_SECRET_KEY=${ROCKET_SECRET_KEY} \
+    -e ROCKET_ENV=${ROCKET_ENV} \
+    ${addr} \
+    sourcegraph/syntect_server

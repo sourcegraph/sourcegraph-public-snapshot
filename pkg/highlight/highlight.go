@@ -3,13 +3,10 @@ package highlight
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"html/template"
-	"net/http"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -26,39 +23,21 @@ func init() {
 	client = gosyntect.New(syntectServer)
 }
 
-// IsBinary is a helper to tell if the content of a file is binary or not.
-func IsBinary(content []byte) bool {
-	// We first check if the file is valid UTF8, since we always consider that
-	// to be non-binary.
-	//
-	// Secondly, if the file is not valid UTF8, we check if the detected HTTP
-	// content type is text, which covers a whole slew of other non-UTF8 text
-	// encodings for us.
-	return !utf8.Valid(content) && !strings.HasPrefix(http.DetectContentType(content), "text/")
-}
-
-// Code highlights the given file content with the given filepath (must contain
-// at least the file name + extension) and returns the properly escaped HTML
-// table representing the highlighted code.
+// Code highlights the given code with the given filepath (must contain at
+// least the file name + extension) and returns the properly escaped HTML table
+// representing the highlighted code.
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, content []byte, filepath string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
+func Code(ctx context.Context, code, filepath string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
 	if !disableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
 	}
-
-	// Never pass binary files to the syntax highlighter.
-	if IsBinary(content) {
-		return "", false, errors.New("cannot render binary file")
-	}
-	code := string(content)
-
 	themechoice := "Sourcegraph"
 	if isLightTheme {
-		themechoice = "Sourcegraph (light)"
+		themechoice = "Solarized (light)"
 	}
 
 	// Trim a single newline from the end of the file. This means that a file

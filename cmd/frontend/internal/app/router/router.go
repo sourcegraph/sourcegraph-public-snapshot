@@ -92,7 +92,7 @@ func newRouter() *mux.Router {
 	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
 
 	// Must come last
-	base.PathPrefix("/").Name(UI)
+	base.PathPrefix("/").Methods("GET").Name(UI)
 
 	return base
 }

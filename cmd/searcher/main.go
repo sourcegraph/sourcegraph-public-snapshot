@@ -1,5 +1,7 @@
-// Command searcher is a simple service which exposes an API to text search a
-// repo at a specific commit. See the searcher package for more information.
+//docker:user sourcegraph
+
+// searcher is a simple service which exposes an API to text search a repo at
+// a specific commit. See the searcher package for more information.
 package main
 
 import (
@@ -23,13 +25,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
-var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "0", "maximum size of the on disk cache in megabytes")
 
 const port = "3181"
 
@@ -55,16 +56,13 @@ func main() {
 			},
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
+
+			// Allow roughly 10 fetches per gitserver
+			MaxConcurrentFetchTar: 10 * len(gitserver.DefaultClient.Addrs),
 		},
-		Log: log15.Root(),
 	}
-	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
-	rpcHandler, err := rpc.Server(&search.StoreSearcher{Store: service.Store})
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	host := ""
 	if env.InsecureDev {
@@ -80,10 +78,6 @@ func main() {
 				w.Write([]byte("ok"))
 				return
 			}
-			if r.URL.Path == rpc.DefaultRPCPath {
-				rpcHandler.ServeHTTP(w, r)
-				return
-			}
 
 			handler.ServeHTTP(w, r)
 		}),
@@ -91,7 +85,8 @@ func main() {
 	go shutdownOnSIGINT(server)
 
 	log15.Info("searcher: listening", "addr", server.Addr)
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+	err := server.ListenAndServe()
+	if err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
 }

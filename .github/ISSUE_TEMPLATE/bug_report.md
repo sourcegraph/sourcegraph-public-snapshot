@@ -1,9 +1,6 @@
 ---
 name: Bug report
 about: Report problems and unexpected behavior
-title: ''
-labels: ''
-assignees: ''
 
 ---
 

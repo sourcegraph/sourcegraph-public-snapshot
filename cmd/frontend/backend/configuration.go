@@ -14,9 +14,9 @@ var Configuration = &configuration{}
 
 type configuration struct{}
 
-// GetForSubject gets the latest settings for a single settings subject, without performing any
-// cascading (merging settings from multiple subjects).
-func (configuration) GetForSubject(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
+// GetForSubject gets the latest settings for a single configuration subject, without
+// performing any cascading (merging configuration from multiple subjects).
+func (configuration) GetForSubject(ctx context.Context, subject api.ConfigurationSubject) (*schema.Settings, error) {
 	settings, err := db.Settings.GetLatest(ctx, subject)
 	if err != nil {
 		return nil, err

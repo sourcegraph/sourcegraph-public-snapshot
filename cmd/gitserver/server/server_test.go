@@ -64,10 +64,10 @@ func TestRequest(t *testing.T) {
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
-			Name:         "UnclonedRepoWithoutURL",
+			Name:         "UnclonedRepo",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`, // no way for it to know the clone URL to start cloning
+			ExpectedBody: `{"cloneInProgress":true}`,
 		},
 		{
 			Name:         "UnclonedRepoWithURL",
@@ -116,16 +116,16 @@ func TestRequest(t *testing.T) {
 		testRepoExists = nil
 	}()
 
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (error, int) {
 		switch cmd.Args[1] {
 		case "testcommand":
 			cmd.Stdout.Write([]byte("teststdout"))
 			cmd.Stderr.Write([]byte("teststderr"))
-			return 42, nil
+			return nil, 42
 		case "testerror":
-			return 0, errors.New("testerror")
+			return errors.New("testerror"), 0
 		}
-		return 0, nil
+		return nil, 0
 	}
 	defer func() { runCommandMock = nil }()
 

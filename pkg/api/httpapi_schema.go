@@ -1,10 +1,20 @@
 package api
 
+type DefsRefreshIndexRequest struct {
+	RepoURI  `json:"uri"`
+	CommitID `json:"revision"`
+}
+
+type PkgsRefreshIndexRequest struct {
+	RepoURI  `json:"uri"`
+	CommitID `json:"revision"`
+}
+
 // RepoCreateOrUpdateRequest is a request to create or update a repository.
 //
 // The request handler determines if the request refers to an existing repository (and should therefore update
 // instead of create). If ExternalRepo is set, then it tries to find a stored repository with the same ExternalRepo
-// values. If ExternalRepo is not set, then it tries to find a stored repository with the same RepoName value.
+// values. If ExternalRepo is not set, then it tries to find a stored repository with the same RepoURI value.
 //
 // NOTE: Some fields are only used during creation (and are not used to update an existing repository).
 type RepoCreateOrUpdateRequest struct {
@@ -15,10 +25,10 @@ type RepoCreateOrUpdateRequest struct {
 	// optional during the transition period.
 	ExternalRepo *ExternalRepoSpec
 
-	// RepoName is the repository's name.
+	// RepoURI is the repository's URI.
 	//
-	// TODO(sqs): Add a way for callers to request that this repository be renamed.
-	RepoName `json:"repo"`
+	// TODO(sqs): Add a way for callers to request that this repository's URI be renamed.
+	RepoURI `json:"uri"`
 
 	// Enabled is whether the repository should be enabled when initially created.
 	//
@@ -36,26 +46,36 @@ type RepoCreateOrUpdateRequest struct {
 	Archived bool `json:"archived"`
 }
 
+type RepoUpdateIndexRequest struct {
+	RepoID   `json:"repoID"`
+	CommitID `json:"revision"`
+	Language string `json:"language"`
+}
+
+type RepoUnindexedDependenciesRequest struct {
+	RepoID   `json:"repoID"`
+	Language string `json:"language"`
+}
+
+type ReposGetInventoryUncachedRequest struct {
+	Repo RepoID
+	CommitID
+}
+
 type ReposUpdateMetadataRequest struct {
-	RepoName    `json:"repo"`
+	RepoURI     `json:"uri"`
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
 	Archived    bool   `json:"Archived"`
 }
 
+type ReposGetInventoryRequest struct {
+	Repo RepoID
+	CommitID
+}
+
 type PhabricatorRepoCreateRequest struct {
-	RepoName `json:"repo"`
+	RepoURI  `json:"uri"`
 	Callsign string `json:"callsign"`
 	URL      string `json:"url"`
-}
-
-type ExternalServiceConfigsRequest struct {
-	Kind string `json:"kind"`
-}
-
-type ExternalServicesListRequest struct {
-	// NOTE(tsenart): We must keep this field in addition to the
-	// Kinds field until after we roll-out this change, for backwards compatibility.
-	Kind  string   `json:"kind"`
-	Kinds []string `json:"kinds"`
 }

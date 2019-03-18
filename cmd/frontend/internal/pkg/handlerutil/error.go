@@ -5,7 +5,7 @@ import "github.com/sourcegraph/sourcegraph/pkg/api"
 // URLMovedError should be returned when a requested resource has moved to a new
 // address.
 type URLMovedError struct {
-	NewRepo api.RepoName `json:"RedirectTo"`
+	NewRepo api.RepoURI `json:"RedirectTo"`
 }
 
 func (e *URLMovedError) Error() string {

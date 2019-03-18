@@ -8,8 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 // UserEmail represents a row in the `user_emails` table.
@@ -43,7 +42,7 @@ type userEmails struct{}
 //
 // If the site has not yet been initialized, returns an empty string.
 func (*userEmails) GetInitialSiteAdminEmail(ctx context.Context) (email string, err error) {
-	if init, err := globalstatedb.SiteInitialized(ctx); err != nil || !init {
+	if init, err := siteInitialized(ctx); err != nil || !init {
 		return "", err
 	}
 	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email); err != nil {
@@ -52,14 +51,13 @@ func (*userEmails) GetInitialSiteAdminEmail(ctx context.Context) (email string, 
 	return email, nil
 }
 
-// GetPrimaryEmail gets the oldest email associated with the user, preferring a verified email to an
-// unverified email.
+// GetPrimaryEmail gets the oldest email associated with the user.
 func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
 	if Mocks.UserEmails.GetPrimaryEmail != nil {
 		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY (verified_at IS NOT NULL) DESC, created_at ASC, email ASC LIMIT 1",
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY created_at ASC, email ASC LIMIT 1",
 		id,
 	).Scan(&email, &verified); err != nil {
 		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("id %d", id)}}

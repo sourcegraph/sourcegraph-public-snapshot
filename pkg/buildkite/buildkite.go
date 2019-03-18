@@ -8,6 +8,7 @@ package buildkite
 
 import (
 	"io"
+	"strings"
 
 	"github.com/ghodss/yaml"
 )
@@ -25,7 +26,7 @@ type BuildOptions struct {
 
 type Step struct {
 	Label            string                 `json:"label"`
-	Command          []string               `json:"command,omitempty"`
+	Command          string                 `json:"command,omitempty"`
 	Trigger          string                 `json:"trigger,omitempty"`
 	Async            bool                   `json:"async,omitempty"`
 	Build            *BuildOptions          `json:"build,omitempty"`
@@ -84,7 +85,7 @@ type StepOpt func(step *Step)
 
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
-		step.Command = append(step.Command, command)
+		step.Command = strings.TrimSpace(step.Command + "\n" + command)
 	}
 }
 

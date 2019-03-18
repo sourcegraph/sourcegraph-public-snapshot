@@ -10,7 +10,7 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
-	lsp "github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -86,8 +86,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields) == 1
 		hasRepoOrFileFields := len(r.query.Values(query.FieldRepoGroup)) > 0 || len(r.query.Values(query.FieldRepo)) > 0 || len(r.query.Values(query.FieldFile)) > 0
 		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(query.FieldDefault)) <= 1 {
-			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-			defer cancel()
 			return r.suggestFilePaths(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
@@ -101,7 +99,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		p, err := r.getPatternInfo(nil)
+		p, err := r.getPatternInfo()
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +167,18 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					results.results = results.results[:*args.First]
 				}
 				for i, res := range results.results {
-					entryResolver := res.fileMatch.File()
+					entryResolver := &gitTreeEntryResolver{
+						path: res.fileMatch.JPath,
+						commit: &gitCommitResolver{
+							oid:      gitObjectID(res.fileMatch.commitID),
+							inputRev: res.fileMatch.inputRev,
+							// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
+							// (which would make it slow). This gitCommitResolver will return empty
+							// values for all other fields.
+							repo: &repositoryResolver{repo: res.fileMatch.repo},
+						},
+						stat: createFileInfo(res.fileMatch.JPath, false),
+					}
 					suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.results)-i))
 				}
 			}
@@ -220,10 +229,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	// Eliminate duplicates.
 	type key struct {
-		repoName api.RepoName
-		repoRev  string
-		file     string
-		symbol   string
+		repoURI api.RepoURI
+		repoRev string
+		file    string
+		symbol  string
 	}
 	seen := make(map[key]struct{}, len(allSuggestions))
 	uniqueSuggestions := allSuggestions[:0]
@@ -231,21 +240,18 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		var k key
 		switch s := s.result.(type) {
 		case *repositoryResolver:
-			k.repoName = s.repo.Name
+			k.repoURI = s.repo.URI
 		case *gitTreeEntryResolver:
-			k.repoName = s.commit.repo.repo.Name
-			// We explicitely do not use gitCommitResolver.OID() to get the OID here
-			// because it could significantly slow down search suggestions from zoekt as
-			// it doesn't specify the commit the default branch is on. This result would in
-			// computing this commit for each suggestion, which could be heavy.
+			k.repoURI = s.commit.repo.repo.URI
 			k.repoRev = string(s.commit.oid)
-			// Zoekt only searches the default branch and sets commit ID to an empty string. This
-			// may cause duplicate suggestions when merging results from Zoekt and non-Zoekt sources
-			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
-			// equal.
+			// Zoekt only searches the default branch and sets commit ID to an empty string.
+			// Set repoRev to the latest indexed revision so we can properly ensure deduplication.
+			if k.repoRev == "" && s.commit != nil && s.commit.repo != nil && s.commit.repo.repo != nil && s.commit.repo.repo.IndexedRevision != nil {
+				k.repoRev = string(*s.commit.repo.repo.IndexedRevision)
+			}
 			k.file = s.path
 		case *symbolResolver:
-			k.repoName = s.location.resource.commit.repo.repo.Name
+			k.repoURI = s.location.resource.commit.repo.repo.URI
 			k.symbol = s.symbol.Name + s.symbol.ContainerName
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))

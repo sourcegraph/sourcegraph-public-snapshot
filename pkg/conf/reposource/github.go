@@ -11,9 +11,9 @@ type GitHub struct {
 	*schema.GitHubConnection
 }
 
-var _ RepoSource = GitHub{}
+var _ repoSource = GitHub{}
 
-func (c GitHub) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+func (c GitHub) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err
@@ -21,15 +21,15 @@ func (c GitHub) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err 
 	if !match {
 		return "", nil
 	}
-	return GitHubRepoName(c.RepositoryPathPattern, baseURL.Hostname(), strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
+	return GitHubRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
 }
 
-func GitHubRepoName(repositoryPathPattern, host, nameWithOwner string) api.RepoName {
+func GitHubRepoURI(repositoryPathPattern, host, nameWithOwner string) api.RepoURI {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{nameWithOwner}"
 	}
 
-	return api.RepoName(strings.NewReplacer(
+	return api.RepoURI(strings.NewReplacer(
 		"{host}", host,
 		"{nameWithOwner}", nameWithOwner,
 	).Replace(repositoryPathPattern))

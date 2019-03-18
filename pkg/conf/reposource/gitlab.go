@@ -11,9 +11,9 @@ type GitLab struct {
 	*schema.GitLabConnection
 }
 
-var _ RepoSource = GitLab{}
+var _ repoSource = GitLab{}
 
-func (c GitLab) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+func (c GitLab) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err
@@ -23,15 +23,15 @@ func (c GitLab) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err 
 	}
 
 	pathWithNamespace := strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")
-	return GitLabRepoName(c.RepositoryPathPattern, baseURL.Hostname(), pathWithNamespace), nil
+	return GitLabRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), pathWithNamespace), nil
 }
 
-func GitLabRepoName(repositoryPathPattern, host, pathWithNamespace string) api.RepoName {
+func GitLabRepoURI(repositoryPathPattern, host, pathWithNamespace string) api.RepoURI {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{pathWithNamespace}"
 	}
 
-	return api.RepoName(strings.NewReplacer(
+	return api.RepoURI(strings.NewReplacer(
 		"{host}", host,
 		"{pathWithNamespace}", pathWithNamespace,
 	).Replace(repositoryPathPattern))

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestNotInited(t *testing.T) {
@@ -44,8 +44,8 @@ func TestGet(t *testing.T) {
 
 	t.Run("from DB", func(t *testing.T) {
 		defer reset()
-		globalstatedb.Mock.Get = func(ctx context.Context) (*globalstatedb.State, error) {
-			return &globalstatedb.State{SiteID: "a"}, nil
+		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
+			return &types.SiteConfig{SiteID: "a"}, nil
 		}
 
 		if err := tryInit(); err != nil {
@@ -61,11 +61,11 @@ func TestGet(t *testing.T) {
 
 	t.Run("panics if DB unavailable", func(t *testing.T) {
 		defer reset()
-		globalstatedb.Mock.Get = func(ctx context.Context) (*globalstatedb.State, error) {
+		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
 			return nil, errors.New("x")
 		}
 
-		want := fmt.Errorf("panic: [Error initializing global state: x]")
+		want := fmt.Errorf("panic: [Error initializing site configuration: x]")
 		if err := tryInit(); fmt.Sprint(err) != fmt.Sprint(want) {
 			t.Errorf("got error %q, want %q", err, want)
 		}
@@ -77,10 +77,9 @@ func TestGet(t *testing.T) {
 		}
 	})
 
-	t.Run("from env var", func(t *testing.T) {
+	t.Run("from JSON site config", func(t *testing.T) {
 		defer reset()
-		os.Setenv("TRACKING_APP_ID", "a")
-		defer os.Unsetenv("TRACKING_APP_ID")
+		conf.Mock(&schema.SiteConfiguration{SiteID: "a"})
 
 		if err := tryInit(); err != nil {
 			t.Fatal(err)
@@ -93,12 +92,11 @@ func TestGet(t *testing.T) {
 		}
 	})
 
-	t.Run("env var takes precedence over DB", func(t *testing.T) {
+	t.Run("JSON site config takes precedence over DB", func(t *testing.T) {
 		defer reset()
-		os.Setenv("TRACKING_APP_ID", "a")
-		defer os.Unsetenv("TRACKING_APP_ID")
-		globalstatedb.Mock.Get = func(ctx context.Context) (*globalstatedb.State, error) {
-			return &globalstatedb.State{SiteID: "b"}, nil
+		conf.Mock(&schema.SiteConfiguration{SiteID: "a"})
+		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
+			return &types.SiteConfig{SiteID: "b"}, nil
 		}
 
 		if err := tryInit(); err != nil {

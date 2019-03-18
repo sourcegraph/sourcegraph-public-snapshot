@@ -7,16 +7,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func Test_customCloneURLToRepoName(t *testing.T) {
+func Test_customCloneURLToRepoURI(t *testing.T) {
 	tests := []struct {
-		cloneURLResolvers  []*cloneURLResolver
-		cloneURLToRepoName map[string]string
+		cloneURLResolvers []*cloneURLResolver
+		cloneURLToURI     map[string]string
 	}{{
 		cloneURLResolvers: []*cloneURLResolver{{
 			from: regexp.MustCompile(`^\.\./(?P<name>[A-Za-z0-9]+)$`),
 			to:   `github.com/user/{name}`,
 		}},
-		cloneURLToRepoName: map[string]string{
+		cloneURLToURI: map[string]string{
 			"../foo":     "github.com/user/foo",
 			"../foo/bar": "",
 		},
@@ -28,7 +28,7 @@ func Test_customCloneURLToRepoName(t *testing.T) {
 			from: regexp.MustCompile(`^\.\./(?P<path>[A-Za-z0-9/]+)$`),
 			to:   `someotherhost/{path}`,
 		}},
-		cloneURLToRepoName: map[string]string{
+		cloneURLToURI: map[string]string{
 			"../foo":     "github.com/user/foo",
 			"../foo/bar": "someotherhost/foo/bar",
 		},
@@ -37,7 +37,7 @@ func Test_customCloneURLToRepoName(t *testing.T) {
 			from: regexp.MustCompile(`^\.\./\.\./main/(?P<path>[A-Za-z0-9/\-]+)$`),
 			to:   `my.gitlab.com/{path}`,
 		}},
-		cloneURLToRepoName: map[string]string{
+		cloneURLToURI: map[string]string{
 			"../foo":                 "",
 			"../../foo/bar":          "",
 			"../../main/foo/bar":     "my.gitlab.com/foo/bar",
@@ -45,12 +45,11 @@ func Test_customCloneURLToRepoName(t *testing.T) {
 		},
 	}}
 
-	cloneURLResolversOnce.Do(func() {}) // Prevent conf watching
 	for i, test := range tests {
-		cloneURLResolvers.Store(test.cloneURLResolvers)
-		for cloneURL, expName := range test.cloneURLToRepoName {
-			if name := CustomCloneURLToRepoName(cloneURL); name != api.RepoName(expName) {
-				t.Errorf("In test case %d, expected %s -> %s, but got %s", i+1, cloneURL, expName, name)
+		cloneURLResolvers = test.cloneURLResolvers
+		for cloneURL, expURI := range test.cloneURLToURI {
+			if uri := customCloneURLToRepoURI(cloneURL); uri != api.RepoURI(expURI) {
+				t.Errorf("In test case %d, expected %s -> %s, but got %s", i+1, cloneURL, expURI, uri)
 			}
 		}
 	}

@@ -11,9 +11,9 @@ type BitbucketServer struct {
 	*schema.BitbucketServerConnection
 }
 
-var _ RepoSource = BitbucketServer{}
+var _ repoSource = BitbucketServer{}
 
-func (c BitbucketServer) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+func (c BitbucketServer) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err
@@ -34,14 +34,14 @@ func (c BitbucketServer) CloneURLToRepoName(cloneURL string) (repoName api.RepoN
 	}
 	proj, rp := projAndRepo[:idx], projAndRepo[idx+1:]
 
-	return BitbucketServerRepoName(c.RepositoryPathPattern, baseURL.Hostname(), proj, rp), nil
+	return BitbucketServerRepoURI(c.RepositoryPathPattern, baseURL.Hostname(), proj, rp), nil
 }
 
-func BitbucketServerRepoName(repositoryPathPattern, host, projectKey, repoSlug string) api.RepoName {
+func BitbucketServerRepoURI(repositoryPathPattern, host, projectKey, repoSlug string) api.RepoURI {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{projectKey}/{repositorySlug}"
 	}
-	return api.RepoName(strings.NewReplacer(
+	return api.RepoURI(strings.NewReplacer(
 		"{host}", host,
 		"{projectKey}", projectKey,
 		"{repositorySlug}", repoSlug,

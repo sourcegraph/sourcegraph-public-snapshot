@@ -100,12 +100,6 @@ func (*extensionRegistryResolver) LocalExtensionIDPrefix() *string {
 	return GetLocalRegistryExtensionIDPrefix()
 }
 
-// ImplementsLocalExtensionRegistry reports whether there is an implementation of a local extension
-// registry (which is a Sourcegraph Enterprise feature).
-func (r *extensionRegistryResolver) ImplementsLocalExtensionRegistry() bool {
-	return r.ViewerPublishersFunc != nil && r.PublishersFunc != nil && r.CreateExtensionFunc != nil && r.UpdateExtensionFunc != nil && r.PublishExtensionFunc != nil && r.DeleteExtensionFunc != nil
-}
-
 type ExtensionRegistryMutationResult struct {
 	ID int32 // this is only used for local extensions, so it's OK that this only accepts a local extension ID
 }

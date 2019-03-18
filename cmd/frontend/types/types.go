@@ -16,10 +16,9 @@ type Repo struct {
 	// service itself).
 	ExternalRepo *api.ExternalRepoSpec
 
-	// Name is the name for this repository (e.g., "github.com/user/repo").
-	//
-	// Previously, this was called RepoURI.
-	Name api.RepoName
+	// URI is a normalized identifier for this repository based on its primary clone
+	// URL. E.g., "github.com/user/repo".
+	URI api.RepoURI
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.
@@ -33,20 +32,28 @@ type Repo struct {
 	CreatedAt time.Time
 	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
 	UpdatedAt *time.Time
+	// IndexedRevision is the revision that the global index is currently based on. It is only used by the indexer
+	// to determine if reindexing is necessary. Setting it to nil/null will cause the indexer to reindex the next
+	// time it gets triggered for this repository.
+	IndexedRevision *api.CommitID
+	// FreezeIndexedRevision, when true, tells the indexer not to update the indexed revision if it is already set.
+	// This is a kludge that lets us freeze the indexed repository revision for specific deployments
+	FreezeIndexedRevision bool
 }
 
-// ExternalService is a connection to an external service.
-type ExternalService struct {
-	ID          int64
-	Kind        string
-	DisplayName string
-	Config      string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   *time.Time
+// DependencyReferencesOptions specifies options for querying dependency references.
+type DependencyReferencesOptions struct {
+	Language   string // e.g. "go"
+	api.RepoID        // repository whose file:line:character describe the symbol of interest
+	api.CommitID
+	File            string
+	Line, Character int
+
+	// Limit specifies the number of dependency references to return.
+	Limit int // e.g. 20
 }
 
-type GlobalState struct {
+type SiteConfig struct {
 	SiteID      string
 	Initialized bool // whether the initial site admin account has been created
 }
@@ -81,22 +88,21 @@ type OrgMembership struct {
 
 type PhabricatorRepo struct {
 	ID       int32
-	Name     api.RepoName
+	URI      api.RepoURI
 	URL      string
 	Callsign string
 }
 
-type UserUsageStatistics struct {
+type UserActivity struct {
 	UserID                      int32
 	PageViews                   int32
 	SearchQueries               int32
 	CodeIntelligenceActions     int32
-	FindReferencesActions       int32
 	LastActiveTime              *time.Time
 	LastCodeHostIntegrationTime *time.Time
 }
 
-type SiteUsageStatistics struct {
+type SiteActivity struct {
 	DAUs []*SiteActivityPeriod
 	WAUs []*SiteActivityPeriod
 	MAUs []*SiteActivityPeriod

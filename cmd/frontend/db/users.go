@@ -9,14 +9,15 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/lib/pq"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // users provides access to the `users` table.
@@ -177,7 +178,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	// creation and site initialization operations occur atomically (to guarantee to the legitimate
 	// site admin that if they successfully initialize the server, then no attacker's account could
 	// have been created as a site admin).
-	alreadyInitialized, err := globalstatedb.EnsureInitialized(ctx, tx)
+	alreadyInitialized, err := (&siteConfig{}).ensureInitialized(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +244,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		// adding random calls here.
 
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
-		orgs, errs := orgsForAllUsersToJoin(conf.Get().Critical.AuthUserOrgMap)
+		orgs, errs := orgsForAllUsersToJoin(conf.Get().AuthUserOrgMap)
 		for _, err := range errs {
 			log15.Warn(err.Error())
 		}
@@ -460,14 +461,7 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 	if _, err := tx.ExecContext(ctx, "DELETE FROM org_members WHERE user_id=$1", id); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM settings WHERE user_id=$1", id); err != nil {
-		return err
-	}
-
-	// Settings that were merely authored by this user should not be deleted. They may be global or
-	// org settings that apply to other users, too. There is currently no way to hard-delete
-	// settings for an org or globally, but we can handle those rare cases manually.
-	if _, err := tx.ExecContext(ctx, "UPDATE settings SET author_user_id=NULL WHERE author_user_id=$1", id); err != nil {
+	if _, err := tx.ExecContext(ctx, "DELETE FROM settings WHERE user_id=$1 OR author_user_id=$1", id); err != nil {
 		return err
 	}
 
@@ -543,9 +537,6 @@ func (u *users) GetByID(ctx context.Context, id int32) (*types.User, error) {
 // has a matching *unverified* email address, they will not be returned by this method. At most one
 // user may have any given verified email address.
 func (u *users) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
-	if Mocks.Users.GetByVerifiedEmail != nil {
-		return Mocks.Users.GetByVerifiedEmail(ctx, email)
-	}
 	return u.getOneBySQL(ctx, "WHERE id=(SELECT user_id FROM user_emails WHERE email=$1 AND verified_at IS NOT NULL) AND deleted_at IS NULL LIMIT 1", email)
 }
 

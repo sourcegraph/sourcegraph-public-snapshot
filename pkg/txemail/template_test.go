@@ -3,12 +3,11 @@ package txemail
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	gophermail "gopkg.in/jpoehls/gophermail.v0"
 )
 
 func TestParseTemplate(t *testing.T) {
-	pt, err := ParseTemplate(txtypes.Templates{
+	pt, err := ParseTemplate(Templates{
 		Subject: `{{.A}} subject {{.B}}`,
 		Text: `
 {{.A}} text body {{.B}}
@@ -22,7 +21,7 @@ func TestParseTemplate(t *testing.T) {
 	}
 
 	var m gophermail.Message
-	if err := pt.Render(struct {
+	if err := pt.render(struct {
 		A string
 		B string
 	}{

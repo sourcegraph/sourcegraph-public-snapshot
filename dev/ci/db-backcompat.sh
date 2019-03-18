@@ -60,14 +60,10 @@ function runTest() {
 	    DB schema version:				${CURRENT_DB_SCHEMA}
 	EOF
 
-        # All DB tests are assumed to import the ./cmd/frontend/db/testing package, so use that to
-        # find which packages' tests need to be run.
-        PACKAGES_WITH_DB_TEST=$(go list -f '{{$printed := false}}{{range .TestImports}}{{if and (not $printed) (eq . "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing")}}{{$.ImportPath}}{{$printed = true}}{{end}}{{end}}' ./...)
-
         set -ex
         # Test without cache, because schema change does not
         # necessarily mean Go source has changed.
-        TEST_SKIP_DROP_DB_BEFORE_TESTS=true SKIP_MIGRATION_TEST=true go test -count=1 -v $PACKAGES_WITH_DB_TEST
+        SKIP_MIGRATION_TEST=true go test -count=1 -v ./cmd/frontend/db/
         set +ex
 
         NOW_DB_SCHEMA=$(psql -t -d sourcegraph-test-db -c 'select version from schema_migrations' | xargs echo -n)

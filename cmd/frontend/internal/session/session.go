@@ -1,4 +1,3 @@
-// Package session implements a redis backed user sessions HTTP middleware.
 package session
 
 import (
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -34,12 +34,12 @@ const defaultExpiryPeriod = 90 * 24 * time.Hour
 const cookieName = "sgs"
 
 func init() {
-	conf.ContributeValidator(func(c conf.Unified) (problems []string) {
-		if c.Critical.AuthSessionExpiry == "" {
+	conf.ContributeValidator(func(c schema.SiteConfiguration) (problems []string) {
+		if c.AuthSessionExpiry == "" {
 			return nil
 		}
 
-		d, err := time.ParseDuration(c.Critical.AuthSessionExpiry)
+		d, err := time.ParseDuration(c.AuthSessionExpiry)
 		if err != nil {
 			return []string{"auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used."}
 		}
@@ -169,7 +169,7 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 	var value *sessionInfo
 	if actor != nil {
 		if expiryPeriod == 0 {
-			if cfgExpiry, err := time.ParseDuration(conf.Get().Critical.AuthSessionExpiry); err == nil {
+			if cfgExpiry, err := time.ParseDuration(conf.Get().AuthSessionExpiry); err == nil {
 				expiryPeriod = cfgExpiry
 			} else { // if there is no valid session duration, fall back to the default one
 				expiryPeriod = defaultExpiryPeriod

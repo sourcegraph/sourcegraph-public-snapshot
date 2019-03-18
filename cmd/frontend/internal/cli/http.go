@@ -9,21 +9,19 @@ import (
 	"github.com/NYTimes/gziphandler"
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	internalauth "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
@@ -44,10 +42,9 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 
 	// App handler (HTML pages).
 	appHandler := app.NewHandler()
-	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.ExternalURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddlewares.App(appHandler)                                               // 🚨 SECURITY: auth middleware
-	appHandler = session.CookieMiddleware(appHandler)                                          // app accepts cookies
-	appHandler = httpapi.AccessTokenAuthMiddleware(appHandler)                                 // app accepts access tokens
+	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
+	appHandler = authMiddlewares.App(appHandler)                                          // 🚨 SECURITY: auth middleware
+	appHandler = session.CookieMiddleware(appHandler)                                     // app accepts cookies
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
@@ -60,17 +57,18 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// Wrap in middleware.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
-	h = internalauth.OverrideAuthMiddleware(h)
-	h = internalauth.ForbidAllRequestsMiddleware(h)
+	h = auth.OverrideAuthMiddleware(h)
+	h = auth.ForbidAllRequestsMiddleware(h)
 	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
 	if hooks.PreAuthMiddleware != nil {
 		h = hooks.PreAuthMiddleware(h)
 	}
+	h = healthCheckMiddleware(h)
 	h = tracepkg.Middleware(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
 	h = secureHeadersMiddleware(h)
-	h = healthCheckMiddleware(h)
+	h = middleware.CanonicalURL(h)
 	h = gcontext.ClearHandler(h)
 	h = middleware.Trace(h)
 	return h, nil
@@ -80,7 +78,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/healthz", "/__version":
-			fmt.Fprintf(w, version.Version())
+			fmt.Fprintf(w, env.Version)
 		default:
 			next.ServeHTTP(w, r)
 		}
@@ -91,26 +89,8 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 // other internal services).
 func newInternalHTTPHandler() http.Handler {
 	internalMux := http.NewServeMux()
-	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
-		withInternalActor(
-			httpapi.NewInternalHandler(
-				router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
-			),
-		),
-	))
+	internalMux.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
 	return gcontext.ClearHandler(internalMux)
-}
-
-// withInternalActor wraps an existing HTTP handler by setting an internal actor in the HTTP request
-// context.
-//
-// 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e., only use
-// for the internal endpoint), because internal requests will bypass repository permissions checks.
-func withInternalActor(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rWithActor := r.WithContext(actor.WithActor(r.Context(), &actor.Actor{Internal: true}))
-		h.ServeHTTP(w, rWithActor)
-	})
 }
 
 // corsAllowHeader is the HTTP header that, if present (and assuming secureHeadersMiddleware is
@@ -130,16 +110,29 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Header().Set("X-Frame-Options", "DENY")
+		if hsts := conf.HTTPStrictTransportSecurity(); hsts != "" {
+			w.Header().Set("Strict-Transport-Security", hsts)
+		}
 		// no cache by default
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")
 
-		if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {
+		// CORS
+		// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
+		// to the incoming header URL. Otherwise use the configured CORS origin.
+		headerOrigin := r.Header.Get("Origin")
+		isExtensionRequest := (headerOrigin == devExtension || headerOrigin == prodExtension) && !disableBrowserExtension
+		if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
 
+			allowOrigin := corsOrigin
+			if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
+				allowOrigin = headerOrigin
+			}
+
+			w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
 			if r.Method == "OPTIONS" {
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization")
+				w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type")
 				w.WriteHeader(http.StatusOK)
 				return // do not invoke next handler
 			}
@@ -154,14 +147,19 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 func isTrustedOrigin(r *http.Request) bool {
 	requestOrigin := r.Header.Get("Origin")
 
+	var isExtensionRequest bool
+	if !disableBrowserExtension {
+		isExtensionRequest = requestOrigin == devExtension || requestOrigin == prodExtension
+	}
+
 	var isCORSAllowedRequest bool
 	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {
 		isCORSAllowedRequest = isAllowedOrigin(requestOrigin, strings.Fields(corsOrigin))
 	}
 
-	if externalURL := strings.TrimSuffix(conf.Get().Critical.ExternalURL, "/"); externalURL != "" && requestOrigin == externalURL {
+	if appURL := strings.TrimSuffix(conf.Get().AppURL, "/"); appURL != "" && requestOrigin == appURL {
 		isCORSAllowedRequest = true
 	}
 
-	return isCORSAllowedRequest
+	return isExtensionRequest || isCORSAllowedRequest
 }

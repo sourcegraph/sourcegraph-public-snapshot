@@ -1,0 +1,18 @@
+.nav-links {
+    position: relative; // For help form
+    white-space: nowrap;
+    flex-wrap: nowrap;
+
+    // Less padding above, below, and between links.
+    .nav-item .nav-link {
+        padding-left: 0.375rem;
+        padding-right: 0.375rem;
+        user-select: none;
+    }
+
+    .avatar,
+    .avatar-icon {
+        width: 2rem;
+        height: 2rem;
+    }
+}

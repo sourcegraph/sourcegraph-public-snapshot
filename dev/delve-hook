@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+COMPONENTS=(${DELVE//,/ })
+ARGS=("$@")
+
+run() {
+    PORT="$1"
+    COMPONENT="$2"
+
+    YELLOW='\e[33m'
+    RESET='\e[0m'
+
+    # Due to a limitation in delve, debug binaries will not start until you
+    # attach a debugger. See https://github.com/derekparker/delve/issues/952
+    printf "${YELLOW}Debugging $COMPONENT - it will not start until you \"Attach to $COMPONENT\" in VS Code!${RESET}\n"
+
+    exec dlv exec --headless --listen=:"$PORT" --log "$ARGS"
+}
+
+for COMPONENT in "${COMPONENTS[@]}"; do
+    if [[ -n $COMPONENT && $1 == *"$COMPONENT"* ]]; then
+        case "$1" in
+            *"gitserver"*) run 2345 "$COMPONENT";;
+            *"indexer"*) run 2346 "$COMPONENT";;
+            *"query-runner"*) run 2347 "$COMPONENT";;
+            *"repo-updater"*) run 2348 "$COMPONENT";;
+            *"searcher"*) run 2349 "$COMPONENT";;
+            *"symbols"*) run 2350 "$COMPONENT";;
+            *"github-proxy"*) run 2351 "$COMPONENT";;
+            *"lsp-proxy"*) run 2352 "$COMPONENT";;
+            *"frontend"*) run 2354 "$COMPONENT";;
+        esac
+    fi
+done
+
+exec "$@"

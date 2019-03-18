@@ -4,9 +4,9 @@ Organizations are named groups of users with an associated JSON settings file (w
 
 To create an organization, go to `http(s)://[hostname]/organizations/new` on your Sourcegraph instance (or, from any page, click your username and then **New organization**).
 
-You (and any other organization members) may add members from the organization's members page at `http(s)://[hostname]/organizations/[org-name]/members`.
+You (and any other organization members) may add members from the organization's settings page at `http(s)://[hostname]/organizations/[org-name]/settings/profile`.
 
-To automatically join all users on your instance to a specific organization, create the organization first and then set the `auth.userOrgMap` [critical configuration](../../admin/config/critical_config.md) option:
+To automatically join all users on your instance to a specific organization, create the organization first and then set the `auth.userOrgMap` site configuration option:
 
 ```json
 {

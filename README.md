@@ -11,14 +11,14 @@
 
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming
 - Code intelligence for many languages via the [Language Server Protocol](https://langserver.org/)
-- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension)
-- Integration with third-party developer tools via the [Sourcegraph extension API](https://docs.sourcegraph.com/extensions)
+- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://about.sourcegraph.com/docs/features/browser-extension/)
+- Integration with third-party developer tools via the [Sourcegraph Extension API](https://github.com/sourcegraph/sourcegraph-extension-api)
 
 ## Try it yourself
 
 - Try out the public instance on any open-source repository at [sourcegraph.com](https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/httptest/httptest.go#L41:6&tab=references).
 - Install the free and open-source [browser extension](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en).
-- Spin up your own instance with the [quickstart installation guide](https://docs.sourcegraph.com/#quickstart).
+- Spin up your own instance with the [quickstart installation guide](https://about.sourcegraph.com/docs).
 - File feature requests and bug reports in [our issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 - Visit [about.sourcegraph.com](https://about.sourcegraph.com) for more information about product features.
 
@@ -33,7 +33,6 @@
 - Node.js (version 8 or 10)
 - Redis
 - Yarn
-- Nginx
 
 For a detailed guide to installing prerequisites, see [these
 instructions](doc/dev/local_development.md#step-2-install-dependencies).
@@ -62,9 +61,3 @@ The `docs` folder has additional documentation for developing and understanding 
 - [Style guide](./doc/dev/style.md)
 - [GraphQL API](./doc/dev/graphql_api.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
-
-### License
-
-Sourcegraph OSS is available freely under the [Apache 2 license](LICENSE.apache). Sourcegraph OSS comprises all files in this repository except those in the `enterprise/` and `web/src/enterprise` directories.
-
-All files in the `enterprise/` and `web/src/enterprise/` directories are subject to the [Sourcegraph Enterprise license](LICENSE.enterprise).

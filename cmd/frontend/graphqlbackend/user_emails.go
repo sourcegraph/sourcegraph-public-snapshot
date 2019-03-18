@@ -9,13 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
+func (u *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, u.user.ID); err != nil {
 		return nil, err
 	}
 
-	userEmails, err := db.UserEmails.ListByUser(ctx, r.user.ID)
+	userEmails, err := db.UserEmails.ListByUser(ctx, u.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 	for i, userEmail := range userEmails {
 		rs[i] = &userEmailResolver{
 			userEmail: *userEmail,
-			user:      r,
+			user:      u,
 		}
 	}
 	return rs, nil
@@ -35,16 +35,7 @@ type userEmailResolver struct {
 	user      *UserResolver
 }
 
-func (r *userEmailResolver) Email() string { return r.userEmail.Email }
-
-func (r *userEmailResolver) IsPrimary(ctx context.Context) (bool, error) {
-	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, r.user.user.ID)
-	if err != nil {
-		return false, err
-	}
-	return email == r.userEmail.Email, nil
-}
-
+func (r *userEmailResolver) Email() string  { return r.userEmail.Email }
 func (r *userEmailResolver) Verified() bool { return r.userEmail.VerifiedAt != nil }
 func (r *userEmailResolver) VerificationPending() bool {
 	return !r.Verified() && conf.EmailVerificationRequired()

@@ -7,20 +7,23 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 var Mocks MockServices
 
 type MockServices struct {
-	Repos MockRepos
+	Defs    MockDefs
+	Repos   MockRepos
+	Symbols MockSymbols
+
+	Dependencies MockDependencies
+	Packages     MockPackages
 }
 
 // testContext creates a new context.Context for use by tests
 func testContext() context.Context {
 	db.Mocks = db.MockStores{}
 	Mocks = MockServices{}
-	git.ResetMocks()
 
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})

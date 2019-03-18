@@ -2,18 +2,16 @@ package backend
 
 import (
 	"context"
-	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -24,122 +22,54 @@ import (
 // knowing the remote URL is necessary to perform any operations (from method calls on the return
 // value), those operations will fail. This occurs when the repository isn't cloned on gitserver or
 // when an update is needed (eg in ResolveRevision).
-func CachedGitRepo(ctx context.Context, repo *types.Repo) (*gitserver.Repo, error) {
-	var serviceType string
-	if repo.ExternalRepo != nil {
-		serviceType = repo.ExternalRepo.ServiceType
+func CachedGitRepo(repo *types.Repo) gitserver.Repo {
+	if r := quickGitserverRepo(repo.URI); r != nil {
+		return *r
 	}
-	r, err := quickGitserverRepo(ctx, repo.Name, serviceType)
-	if err != nil {
-		return nil, err
-	}
-	if r != nil {
-		return r, nil
-	}
-	return &gitserver.Repo{Name: repo.Name}, nil
+	return gitserver.Repo{Name: repo.URI}
 }
 
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
 func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	var serviceType string
-	if repo.ExternalRepo != nil {
-		serviceType = repo.ExternalRepo.ServiceType
-	}
-	gitserverRepo, err := quickGitserverRepo(ctx, repo.Name, serviceType)
-	if err != nil {
-		return gitserver.Repo{Name: repo.Name}, err
-	}
-	if gitserverRepo != nil {
+	if gitserverRepo := quickGitserverRepo(repo.URI); gitserverRepo != nil {
 		return *gitserverRepo, nil
 	}
 
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo:         repo.Name,
+		Repo:         repo.URI,
 		ExternalRepo: repo.ExternalRepo,
 	})
 	if err != nil {
-		return gitserver.Repo{Name: repo.Name}, err
+		return gitserver.Repo{Name: repo.URI}, err
 	}
 	if result.Repo == nil {
-		return gitserver.Repo{Name: repo.Name}, repoupdater.ErrNotFound
+		return gitserver.Repo{Name: repo.URI}, repoupdater.ErrNotFound
 	}
-	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
+	return gitserver.Repo{Name: result.Repo.URI, URL: result.Repo.VCS.URL}, nil
 }
 
-func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType string) (*gitserver.Repo, error) {
+func quickGitserverRepo(repo api.RepoURI) *gitserver.Repo {
 	// If it is possible to 100% correctly determine it statically, use a fast path. This is
 	// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories
 	// (especially on Sourcegraph.com), which reduces rate limit pressure significantly.
 	//
 	// This fails for private repositories, which require authentication in the URL userinfo.
 
-	lowerRepo := strings.ToLower(string(repo))
-	var hasToken func(context.Context) (bool, error)
 	switch {
-	case serviceType == github.ServiceType && strings.HasPrefix(lowerRepo, "github.com/"):
-		hasToken = hasGitHubDotComToken
-	case serviceType == gitlab.ServiceType && strings.HasPrefix(lowerRepo, "gitlab.com/"):
-		hasToken = hasGitLabDotComToken
-	default:
-		return nil, nil
-	}
+	case strings.HasPrefix(strings.ToLower(string(repo)), "github.com/"):
+		if envvar.SourcegraphDotComMode() || !conf.HasGitHubDotComToken() {
+			return &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
+		}
 
-	r := &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
-	if envvar.SourcegraphDotComMode() {
-		return r, nil
-	}
-
-	ok, err := hasToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return r, nil
+	case strings.HasPrefix(strings.ToLower(string(repo)), "gitlab.com/"):
+		if envvar.SourcegraphDotComMode() || !conf.HasGitLabDotComToken() {
+			return &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
+		}
 	}
 
 	// Fall back to performing full RepoLookup, which will hit the code host.
-	return nil, nil
-}
-
-// hasGitHubDotComToken reports whether there are any personal access tokens configured for
-// github.com.
-func hasGitHubDotComToken(ctx context.Context) (bool, error) {
-	conns, err := db.ExternalServices.ListGitHubConnections(ctx)
-	if err != nil {
-		return false, err
-	}
-	for _, c := range conns {
-		u, err := url.Parse(c.Url)
-		if err != nil {
-			continue
-		}
-		hostname := strings.ToLower(u.Hostname())
-		if (hostname == "github.com" || hostname == "api.github.com") && c.Token != "" {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// hasGitLabDotComToken reports whether there are any personal access tokens configured for
-// github.com.
-func hasGitLabDotComToken(ctx context.Context) (bool, error) {
-	conns, err := db.ExternalServices.ListGitLabConnections(ctx)
-	if err != nil {
-		return false, err
-	}
-	for _, c := range conns {
-		u, err := url.Parse(c.Url)
-		if err != nil {
-			continue
-		}
-		hostname := strings.ToLower(u.Hostname())
-		if hostname == "gitlab.com" && c.Token != "" {
-			return true, nil
-		}
-	}
-	return false, nil
+	return nil
 }
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
@@ -155,26 +85,16 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.Name, "rev": rev}, &err)
+	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.URI, "rev": rev}, &err)
 	defer done()
 
-	// We start out by using a CachedGitRepo which doesn't have a remote URL.
-	// If we need the remote URL, git.ResolveRevision will ask for it via
-	// remoteURLFunc (which is costly as it e.g. consumes code host API
-	// requests).
-	gitserverRepo, err := CachedGitRepo(ctx, repo)
+	// Try to get latest remote URL, but continue even if that fails.
+	grepo, err := GitRepo(ctx, repo)
 	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
-	remoteURLFunc := func() (string, error) {
-		grepo, err := GitRepo(ctx, repo)
-		if err != nil {
-			return "", err
-		}
-		return grepo.URL, nil
-	}
-	return git.ResolveRevision(ctx, *gitserverRepo, remoteURLFunc, rev, nil)
+	return git.ResolveRevision(ctx, grepo, nil, rev, nil)
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
@@ -182,32 +102,22 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return Mocks.Repos.GetCommit(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
 	defer done()
 
-	log15.Debug("svc.local.repos.GetCommit", "repo", repo.Name, "commitID", commitID)
+	log15.Debug("svc.local.repos.GetCommit", "repo", repo.URI, "commitID", commitID)
 
 	if !git.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	// We start out by using a CachedGitRepo which doesn't have a remote URL.
-	// If we need the remote URL, git.ResolveRevision will ask for it via
-	// remoteURLFunc (which is costly as it e.g. consumes code host API
-	// requests).
-	gitserverRepo, err := CachedGitRepo(ctx, repo)
+	// Try to get latest remote URL, but continue even if that fails.
+	gitserverRepo, err := GitRepo(ctx, repo)
 	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
-	remoteURLFunc := func() (string, error) {
-		grepo, err := GitRepo(ctx, repo)
-		if err != nil {
-			return "", err
-		}
-		return grepo.URL, nil
-	}
-	return git.GetCommit(ctx, *gitserverRepo, remoteURLFunc, commitID)
+	return git.GetCommit(ctx, gitserverRepo, commitID)
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {
@@ -226,6 +136,6 @@ func maybeLogRepoUpdaterError(repo *types.Repo, err error) {
 		msg = "Repository host was temporarily unavailable while retrieving repository information."
 	}
 	if msg != "" {
-		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.Name)
+		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.URI)
 	}
 }

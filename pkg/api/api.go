@@ -4,15 +4,17 @@ package api
 import (
 	"fmt"
 	"time"
+
+	"github.com/sourcegraph/go-lsp/lspext"
+	xlang_lspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // RepoID is the unique identifier for a repository.
 type RepoID int32
 
-// RepoName is the name of a repository, consisting of one or more "/"-separated path components.
-//
-// Previously, this was called RepoURI.
-type RepoName string
+// RepoURI is the name of a repository, consisting of one or more "/"-separated path components. It is a misnomer;
+// it's not a valid URI because it conventionally does not have a scheme.
+type RepoURI string
 
 // CommitID is the 40-character SHA-1 hash for a Git commit.
 type CommitID string
@@ -26,11 +28,22 @@ type Repo struct {
 	// service itself).
 	ExternalRepo *ExternalRepoSpec
 
-	// Name is the name of the repository (such as "github.com/user/repo").
-	Name RepoName
+	// URI is a normalized identifier for this repository based on its primary clone
+	// URL. E.g., "github.com/user/repo".
+	URI RepoURI
 	// Enabled is whether the repository is enabled. Disabled repositories are
 	// not accessible by users (except site admins).
 	Enabled bool
+	// IndexedRevision is the revision that the cross-repo code intelligence index is currently
+	// based on. It is only used by the indexer to determine if reindexing is necessary. Setting it
+	// to nil/null will cause the indexer to reindex the next time it gets triggered for this
+	// repository.
+	IndexedRevision *CommitID
+	// FreezeIndexedRevision, when true, tells the indexer not to
+	// update the indexed revision if it is already set. This is a
+	// kludge that lets us freeze the indexed repository revision for
+	// specific deployments
+	FreezeIndexedRevision bool
 }
 
 func (Repo) Fork() bool {
@@ -40,7 +53,7 @@ func (Repo) Fork() bool {
 
 // InsertRepoOp represents an operation to insert a repository.
 type InsertRepoOp struct {
-	Name         RepoName
+	URI          RepoURI
 	Description  string
 	Fork         bool
 	Archived     bool
@@ -83,33 +96,75 @@ func (r *ExternalRepoSpec) Equal(s *ExternalRepoSpec) bool {
 	return r.ID == s.ID && r.ServiceType == s.ServiceType && r.ServiceID == s.ServiceID
 }
 
-// Compare returns -1 if r < s, 0 if r == s or 1 if r > s
-func (r ExternalRepoSpec) Compare(s ExternalRepoSpec) int {
-	if r.ServiceType != s.ServiceType {
-		return cmp(r.ServiceType, s.ServiceType)
-	}
-	if r.ServiceID != s.ServiceID {
-		return cmp(r.ServiceID, s.ServiceID)
-	}
-	return cmp(r.ID, s.ID)
-}
-
 func (r *ExternalRepoSpec) String() string {
 	return fmt.Sprintf("ExternalRepoSpec{%s %s %s}", r.ServiceID, r.ServiceType, r.ID)
 }
 
-// A SettingsSubject is something that can have settings. Exactly 1 field must be nonzero.
-type SettingsSubject struct {
-	Default bool   // whether this is for default settings
-	Site    bool   // whether this is for global settings
-	Org     *int32 // the org's ID
-	User    *int32 // the user's ID
+type DependencyReferences struct {
+	References []*DependencyReference
+	Location   lspext.SymbolLocationInformation
 }
 
-func (s SettingsSubject) String() string {
+// DependencyReference effectively says that RepoID has made a reference to a
+// dependency.
+type DependencyReference struct {
+	Language string                 // the programming language of the dependency
+	DepData  map[string]interface{} // includes additional information about the dependency, e.g. whether or not it is vendored for Go
+	RepoID                          // the repository who made the reference to the dependency.
+	Hints    map[string]interface{} // hints which should be passed to workspace/xreferences in order to more quickly find the definition.
+}
+
+func (d *DependencyReference) String() string {
+	return fmt.Sprintf("DependencyReference{DepData: %v, RepoID: %v, Hints: %v}", d.DepData, d.RepoID, d.Hints)
+}
+
+// PackageInfo is the metadata of a build-system- or
+// package-manager-level package that is defined by the repository
+// identified by the value of the RepoID field.
+type PackageInfo struct {
+	// RepoID is the id of the repository that defines the package
+	RepoID
+
+	// Lang is the programming language of the package
+	Lang string
+
+	// Pkg is the package metadata
+	Pkg map[string]interface{}
+
+	// Dependencies describes the package's dependencies.
+	//
+	// NOTE: This field is only set when listing packages directly from the language
+	// server. It may not be set when retrieving persisted package information; in that
+	// case, you need to separately query for the dependencies.
+	Dependencies []xlang_lspext.DependencyReference
+}
+
+// ListPackagesOp specifies a Pkgs.ListPackages operation
+type ListPackagesOp struct {
+	// Lang, if non-empty, is the language to which to restrict the list operation.
+	Lang string
+
+	// RepoID, if non-zero, is the repository to which the set of
+	// returned packages should be restricted.
+	RepoID
+
+	// PkgQuery is the JSON containment query. It matches all packages
+	// that have the same values for keys defined in PkgQuery.
+	PkgQuery map[string]interface{}
+
+	// Limit is the maximum size of the returned package list.
+	Limit int
+}
+
+// A ConfigurationSubject is something that can have settings. Exactly 1 field must be nonzero.
+type ConfigurationSubject struct {
+	Site bool   // whether this is for site config
+	Org  *int32 // the org's ID
+	User *int32 // the user's ID
+}
+
+func (s ConfigurationSubject) String() string {
 	switch {
-	case s.Default:
-		return "DefaultSettings"
 	case s.Site:
 		return "site"
 	case s.Org != nil:
@@ -117,37 +172,15 @@ func (s SettingsSubject) String() string {
 	case s.User != nil:
 		return fmt.Sprintf("user %d", *s.User)
 	default:
-		return "unknown settings subject"
+		return "unknown configuration subject"
 	}
 }
 
-// Settings contains settings for a subject.
+// Settings contains configuration settings for a subject.
 type Settings struct {
-	ID           int32           // the unique ID of this settings value
-	Subject      SettingsSubject // the subject of these settings
-	AuthorUserID *int32          // the ID of the user who authored this settings value
-	Contents     string          // the raw JSON (with comments and trailing commas allowed)
-	CreatedAt    time.Time       // the date when this settings value was created
-}
-
-// ExternalService represents an complete external service record.
-type ExternalService struct {
-	ID          int64
-	Kind        string
-	DisplayName string
-	Config      string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   *time.Time
-}
-
-func cmp(a, b string) int {
-	switch {
-	case a < b:
-		return -1
-	case b < a:
-		return 1
-	default:
-		return 0
-	}
+	ID           int32                // the unique ID of this settings value
+	Subject      ConfigurationSubject // the subject of these settings
+	AuthorUserID int32                // the ID of the user who authored this settings value
+	Contents     string               // the raw JSON (with comments and trailing commas allowed)
+	CreatedAt    time.Time            // the date when this settings value was created
 }

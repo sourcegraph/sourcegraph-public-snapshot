@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -55,17 +56,17 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 	case id != nil:
 		return repositoryByID(ctx, *id)
 	case name != nil:
-		repo, err := backend.Repos.GetByName(ctx, api.RepoName(*name))
+		repo, err := backend.Repos.GetByURI(ctx, api.RepoURI(*name))
 		if err != nil {
 			return nil, err
 		}
 		return repositoryByIDInt32(ctx, repo.ID)
 	case gitCloneURL != nil:
-		repositoryName, err := cloneURLToRepoName(ctx, *gitCloneURL)
+		repositoryName, err := reposource.CloneURLToRepoURI(*gitCloneURL)
 		if err != nil {
 			return nil, err
 		}
-		repo, err := backend.Repos.GetByName(ctx, api.RepoName(repositoryName))
+		repo, err := backend.Repos.GetByURI(ctx, api.RepoURI(repositoryName))
 		if err != nil {
 			return nil, err
 		}
@@ -310,14 +311,14 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 	return &discussionThreadResolver{t: thread}, nil
 }
 
-func (*schemaResolver) Discussions(ctx context.Context) (*discussionsMutationResolver, error) {
+func (s *schemaResolver) Discussions(ctx context.Context) (*discussionsMutationResolver, error) {
 	if err := viewerCanUseDiscussions(ctx); err != nil {
 		return nil, err
 	}
 	return &discussionsMutationResolver{}, nil
 }
 
-func (*schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
+func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query                       *string
 	ThreadID                    *graphql.ID
@@ -590,7 +591,7 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 		endLine:        *r.t.EndLine,
 		endCharacter:   *r.t.EndCharacter,
 	}
-	if oid, _ := commit.OID(); r.t.Revision != nil && *r.t.Revision == string(oid) {
+	if r.t.Revision != nil && *r.t.Revision == string(commit.OID()) {
 		return oldSel, nil // nothing to do (requested relative revision is identical to the stored revision)
 	}
 	if r.t.Branch != nil {
@@ -598,15 +599,7 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 		if err != nil {
 			return nil, err
 		}
-		bOid, err := branchCommit.OID()
-		if err != nil {
-			return nil, err
-		}
-		oid, err := commit.OID()
-		if err != nil {
-			return nil, err
-		}
-		if bOid == oid {
+		if branchCommit.OID() == commit.OID() {
 			return oldSel, nil // nothing to do (requested relative revision is identical to the stored branch revision)
 		}
 	}
@@ -746,7 +739,7 @@ func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*gr
 // use code discussions, e.g. due to the extension not being installed or
 // enabled.
 func viewerCanUseDiscussions(ctx context.Context) error {
-	merged, err := viewerFinalSettings(ctx)
+	merged, err := viewerMergedConfiguration(ctx)
 	if err != nil {
 		return err
 	}

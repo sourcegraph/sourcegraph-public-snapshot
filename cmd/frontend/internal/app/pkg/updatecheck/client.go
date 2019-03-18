@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
@@ -68,7 +68,7 @@ var baseURL = &url.URL{
 
 func getSiteActivityJSON() ([]byte, error) {
 	days, weeks, months := 2, 1, 1
-	siteActivity, err := usagestats.GetSiteUsageStatistics(&usagestats.SiteUsageStatisticsOptions{
+	siteActivity, err := useractivity.GetSiteActivity(&useractivity.SiteActivityOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -90,12 +90,9 @@ func updateURL(ctx context.Context) string {
 	q.Set("site", siteid.Get())
 	q.Set("auth", strings.Join(authProviderTypes(), ","))
 	q.Set("deployType", conf.DeployType())
-	q.Set("hasExtURL", strconv.FormatBool(conf.UsingExternalURL()))
-	q.Set("signup", strconv.FormatBool(conf.IsBuiltinSignupAllowed()))
-
-	count, err := usagestats.GetUsersActiveTodayCount()
+	count, err := useractivity.GetUsersActiveTodayCount()
 	if err != nil {
-		logFunc("usagestats.GetUsersActiveTodayCount failed", "error", err)
+		logFunc("useractivity.GetUsersActiveTodayCount failed", "error", err)
 	}
 	q.Set("u", strconv.Itoa(count))
 	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
@@ -103,23 +100,6 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.Users.Count failed", "error", err)
 	}
 	q.Set("totalUsers", strconv.Itoa(totalUsers))
-	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{Enabled: true, Disabled: true})
-	hasRepos := totalRepos > 0
-	if err != nil {
-		logFunc("db.Repos.Count failed", "error", err)
-	}
-	q.Set("repos", strconv.FormatBool(hasRepos))
-	searchOccurred, err := usagestats.HasSearchOccurred()
-	if err != nil {
-		logFunc("usagestats.HasSearchOccurred failed", "error", err)
-	}
-	// Searches only count if repos have been added.
-	q.Set("searched", strconv.FormatBool(hasRepos && searchOccurred))
-	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
-	if err != nil {
-		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
-	}
-	q.Set("refs", strconv.FormatBool(findRefsOccurred))
 	if act, err := getSiteActivityJSON(); err != nil {
 		logFunc("getSiteActivityJSON failed", "error", err)
 	} else {
@@ -130,11 +110,12 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
+	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
 
 func authProviderTypes() []string {
-	ps := conf.Get().Critical.AuthProviders
+	ps := conf.AuthProviders()
 	types := make([]string, len(ps))
 	for i, p := range ps {
 		types[i] = conf.AuthProviderType(p)

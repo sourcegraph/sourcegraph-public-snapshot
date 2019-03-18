@@ -11,7 +11,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-
 	// "net"
 	"os"
 	"strings"
@@ -226,9 +225,9 @@ func main() {
 			verbose: true,
 			version: "Unreleased Changes",
 			subSets: []*changeSubset{
-				{heading: "Changed"},
-				{heading: "Added"},
-				{heading: "Fixed"},
+				&changeSubset{heading: "Changed"},
+				&changeSubset{heading: "Added"},
+				&changeSubset{heading: "Fixed"},
 			},
 		}
 		cl.changeSets = append([]*changeSet{&newSet}, cl.changeSets...)

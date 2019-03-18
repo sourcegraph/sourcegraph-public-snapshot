@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type searchAlert struct {
@@ -49,7 +50,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
 		return &searchAlert{
 			title:       "Add repositories or connect repository hosts",
-			description: "There are no repositories to search. Add an external service connection to your code host.",
+			description: "There are no repositories to search. Go to the site admin area or see the documentation for setup instructions.",
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
@@ -160,11 +161,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if !envvar.SourcegraphDotComMode() {
 			if noRepositoriesEnabled, err := noRepositoriesEnabled(ctx); err == nil && noRepositoriesEnabled {
 				proposeQueries = false
-				ok, err := needsRepositoryConfiguration(ctx)
-				if err != nil {
-					return nil, err
-				}
-				if ok {
+				if needsRepositoryConfiguration() {
 					a.title = "No repositories or code hosts configured"
 					a.description = "To start searching code, "
 					if isSiteAdmin {
@@ -233,6 +230,20 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 		alert.description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
 	}
 
+	// TODO(sqs): make this use search scopes from global/org/user settings, not just site config.
+	if settings := conf.Get().Settings; settings != nil {
+		for _, scope := range settings.SearchScopes {
+			// Only propose using this scope if it narrows to fewer repos.
+			if !hasRepoOrRepoGroupFilter(scope.Value) {
+				continue
+			}
+			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
+				query:       scope.Value + " " + r.rawQuery(),
+				description: scope.Name,
+			})
+		}
+	}
+
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
 	// For example, suppose the query contains "repo:kubern" and it matches > 30
@@ -252,8 +263,8 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	paths := make([]string, len(repos))
 	pathPatterns := make([]string, len(repos))
 	for i, repo := range repos {
-		paths[i] = string(repo.Repo.Name)
-		pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
+		paths[i] = string(repo.Repo.URI)
+		pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.URI)) + "$"
 	}
 
 	// See if we can narrow it down by using filters like
@@ -327,14 +338,14 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 	var description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.URI, missingRepoRevs[0].RevSpecs()[0])
 		} else {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.URI, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
 		}
 	} else {
 		repoRevs := make([]string, 0, len(missingRepoRevs))
 		for _, r := range missingRepoRevs {
-			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
+			repoRevs = append(repoRevs, string(r.Repo.URI)+"@"+strings.Join(r.RevSpecs(), ","))
 		}
 		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository: %s.", len(missingRepoRevs), strings.Join(repoRevs, ", "))
 	}
@@ -413,4 +424,12 @@ func addQueryRegexpField(query *query.Query, field, pattern string) []*syntax.Ex
 		})
 	}
 	return expr
+}
+
+func hasRepoOrRepoGroupFilter(qs string) bool {
+	q, err := query.ParseAndCheck(qs)
+	if err != nil {
+		return false
+	}
+	return len(q.Values(query.FieldRepo)) > 0 || len(q.Values(query.FieldRepoGroup)) > 0
 }

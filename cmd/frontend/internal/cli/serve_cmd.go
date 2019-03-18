@@ -2,35 +2,36 @@ package cli
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
-	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
+	"golang.org/x/crypto/acme/autocert"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -41,40 +42,35 @@ var (
 	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
 
 	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
+	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API. Only used if manual tls cert and key are specified.")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
-	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
+	appURL                  = conf.GetTODO().AppURL
+	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
+
+	tlsCert = conf.GetTODO().TlsCert
+	tlsKey  = conf.GetTODO().TlsKey
+
+	// dev browser browser extension ID. You can find this by going to chrome://extensions
+	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
+	// production browser extension ID. This is found by viewing our extension in the chrome store.
+	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
 
-func init() {
-	// If CACHE_DIR is specified, use that
-	cacheDir := env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
-	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "frontend-archive-cache")
-}
-
-// configureExternalURL determines the external URL of the application.
-//
-// It returns an error in the event that the configured external URL is not
-// parsable.
-func configureExternalURL() (*url.URL, error) {
-	addr := nginxAddr
-	if addr == "" {
-		addr = httpAddr
-	}
+func configureAppURL() (*url.URL, error) {
 	var hostPort string
-	if strings.HasPrefix(addr, ":") {
+	if strings.HasPrefix(httpAddr, ":") {
 		// Prepend localhost if HTTP listen addr is just a port.
-		hostPort = "127.0.0.1" + addr
+		hostPort = "127.0.0.1" + httpAddr
 	} else {
-		hostPort = addr
+		hostPort = httpAddr
 	}
-	externalURL := conf.Get().Critical.ExternalURL
-	if externalURL == "" {
-		externalURL = "http://<http-addr>"
+	if appURL == "" {
+		appURL = "http://<http-addr>"
 	}
-	externalURL = strings.Replace(externalURL, "<http-addr>", hostPort, -1)
+	appURL = strings.Replace(appURL, "<http-addr>", hostPort, -1)
 
-	u, err := url.Parse(externalURL)
+	u, err := url.Parse(appURL)
 	if err != nil {
 		return nil, err
 	}
@@ -87,14 +83,6 @@ func Main() error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	// Connect to the database and start the configuration server.
-	if err := dbconn.ConnectToDB(""); err != nil {
-		log.Fatal(err)
-	}
-	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
-	conf.MustValidateDefaults()
-	handleConfigOverrides()
-
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	tracer.Init(tracer.Filter(loghandlers.Trace(strings.Fields(trace), d)))
@@ -102,7 +90,7 @@ func Main() error {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			log.Printf("Version: %s", version.Version())
+			log.Printf("Version: %s", env.Version)
 			log.Print()
 
 			env.PrintHelp()
@@ -148,24 +136,37 @@ func Main() error {
 
 	go debugserver.Start()
 
+	if err := dbconn.ConnectToDB(""); err != nil {
+		log.Fatal(err)
+	}
+
 	siteid.Init()
 
 	var err error
-	globals.ExternalURL, err = configureExternalURL()
+	globals.AppURL, err = configureAppURL()
 	if err != nil {
-		// The user configured an unparsable external URL.
-		//
-		// Per critical configuration usage guidelines, bad config should NEVER
-		// take down a process, the process should just 'do nothing'. So we do
-		// that here.
-		log15.Crit("Bad externalURL preventing server from starting (please fix it in the management console and restart the server)", "error", err)
-		select {}
+		return err
 	}
 
+	go bg.ApplyUserOrgMap(context.Background())
+	goroutine.Go(func() {
+		bg.MigrateOrgSlackWebhookURLs(context.Background())
+	})
+	goroutine.Go(func() {
+		bg.StartLangServers(context.Background())
+	})
+	goroutine.Go(func() {
+		bg.KeepLangServersAndGlobalSettingsInSync(context.Background())
+	})
+	goroutine.Go(func() { bg.MigrateExternalAccounts(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
-	if hooks.AfterDBInit != nil {
-		hooks.AfterDBInit()
+	go useractivity.MigrateUserActivityData(context.Background())
+
+	tlsCertAndKey := tlsCert != "" && tlsKey != ""
+	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
+	if useTLS && globals.AppURL.Scheme == "http" {
+		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
 	}
 
 	// Create the external HTTP handler.
@@ -180,17 +181,71 @@ func Main() error {
 	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}
 
-	// Start HTTP server.
-	l, err := net.Listen("tcp", httpAddr)
-	if err != nil {
-		return err
+	// Start HTTPS server.
+	if useTLS {
+		var tlsConf *tls.Config
+
+		// Configure tlsConf
+		if tlsCertAndKey {
+			// Manual
+			cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
+			if err != nil {
+				return err
+			}
+			tlsConf = &tls.Config{
+				NextProtos:   []string{"h2", "http/1.1"},
+				Certificates: []tls.Certificate{cert},
+			}
+		} else {
+			// LetsEncrypt
+			m := &autocert.Manager{
+				Prompt:     autocert.AcceptTOS,
+				HostPolicy: autocert.HostWhitelist(globals.AppURL.Host),
+				Cache:      db.CertCache,
+			}
+			// m.TLSConfig uses m's GetCertificate as well as enabling ACME
+			// "tls-alpn-01" challenges.
+			tlsConf = m.TLSConfig()
+			// We register paths on our HTTP handler so that we can do ACME
+			// "http-01" challenges.
+			srv.SetWrapper(m.HTTPHandler)
+		}
+
+		l, err := net.Listen("tcp", httpsAddr)
+		if err != nil {
+			// Fatal if we manually specified TLS or enforce lets encrypt
+			if tlsCertAndKey || conf.GetTODO().TlsLetsencrypt == "on" {
+				log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
+			} else {
+				log15.Warn("Failed to bind to HTTPS port, TLS disabled", "address", httpsAddr, "error", err)
+			}
+		}
+
+		if l != nil {
+			l = tls.NewListener(l, tlsConf)
+			log15.Debug("HTTPS running", "on", l.Addr())
+			srv.GoServe(l, &http.Server{
+				Handler:      externalHandler,
+				ReadTimeout:  75 * time.Second,
+				WriteTimeout: 60 * time.Second,
+			})
+		}
 	}
-	log15.Debug("HTTP running", "on", httpAddr)
-	srv.GoServe(l, &http.Server{
-		Handler:      externalHandler,
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 60 * time.Second,
-	})
+
+	// Start HTTP server.
+	if httpAddr != "" {
+		l, err := net.Listen("tcp", httpAddr)
+		if err != nil {
+			return err
+		}
+
+		log15.Debug("HTTP running", "on", httpAddr)
+		srv.GoServe(l, &http.Server{
+			Handler:      externalHandler,
+			ReadTimeout:  75 * time.Second,
+			WriteTimeout: 60 * time.Second,
+		})
+	}
 
 	if httpAddrInternal != "" {
 		l, err := net.Listen("tcp", httpAddrInternal)
@@ -224,7 +279,7 @@ func Main() error {
 		fmt.Println(logoColor)
 		fmt.Println(" ")
 	}
-	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL)
+	fmt.Printf("✱ Sourcegraph is ready at: %s\n", appURL)
 
 	srv.Wait()
 	return nil

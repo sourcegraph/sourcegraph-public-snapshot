@@ -21,18 +21,19 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.critical_and_site_config"
+# Table "public.cert_cache"
 ```
-   Column   |           Type           |                               Modifiers                               
-------------+--------------------------+-----------------------------------------------------------------------
- id         | integer                  | not null default nextval('critical_and_site_config_id_seq'::regclass)
- type       | critical_or_site         | not null
- contents   | text                     | not null
+   Column   |           Type           |                        Modifiers                        
+------------+--------------------------+---------------------------------------------------------
+ id         | bigint                   | not null default nextval('cert_cache_id_seq'::regclass)
+ cache_key  | text                     | not null
+ b64data    | text                     | not null
  created_at | timestamp with time zone | not null default now()
  updated_at | timestamp with time zone | not null default now()
+ deleted_at | timestamp with time zone | 
 Indexes:
-    "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
-    "critical_and_site_config_unique" UNIQUE, btree (id, type)
+    "cert_cache_pkey" PRIMARY KEY, btree (id)
+    "cert_cache_key_idx" UNIQUE, btree (cache_key)
 
 ```
 
@@ -131,32 +132,21 @@ Referenced by:
 
 ```
 
-# Table "public.external_services"
+# Table "public.global_dep"
 ```
-    Column    |           Type           |                           Modifiers                            
---------------+--------------------------+----------------------------------------------------------------
- id           | bigint                   | not null default nextval('external_services_id_seq'::regclass)
- kind         | text                     | not null
- display_name | text                     | not null
- config       | text                     | not null
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- deleted_at   | timestamp with time zone | 
+  Column  |  Type   | Modifiers 
+----------+---------+-----------
+ language | text    | not null
+ dep_data | jsonb   | not null
+ repo_id  | integer | not null
+ hints    | jsonb   | 
 Indexes:
-    "external_services_pkey" PRIMARY KEY, btree (id)
-
-```
-
-# Table "public.global_state"
-```
-         Column          |  Type   |         Modifiers         
--------------------------+---------+---------------------------
- site_id                 | uuid    | not null
- initialized             | boolean | not null default false
- mgmt_password_plaintext | text    | not null default ''::text
- mgmt_password_bcrypt    | text    | not null default ''::text
-Indexes:
-    "global_state_pkey" PRIMARY KEY, btree (site_id)
+    "global_dep_idx_package" btree ((dep_data ->> ('package'::text COLLATE "C")))
+    "global_dep_idxgin" gin (dep_data jsonb_path_ops)
+    "global_dep_language" btree (language)
+    "global_dep_repo_id" btree (repo_id)
+Foreign-key constraints:
+    "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 
 ```
 
@@ -270,14 +260,30 @@ Referenced by:
 ------------+--------------------------+----------------------------------------------------------------
  id         | integer                  | not null default nextval('phabricator_repos_id_seq'::regclass)
  callsign   | citext                   | not null
- repo_name  | citext                   | not null
+ uri        | citext                   | not null
  created_at | timestamp with time zone | not null default now()
  updated_at | timestamp with time zone | not null default now()
  deleted_at | timestamp with time zone | 
  url        | text                     | not null default ''::text
 Indexes:
     "phabricator_repos_pkey" PRIMARY KEY, btree (id)
-    "phabricator_repos_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
+    "phabricator_repos_uri_key" UNIQUE CONSTRAINT, btree (uri)
+
+```
+
+# Table "public.pkgs"
+```
+  Column  |  Type   | Modifiers 
+----------+---------+-----------
+ repo_id  | integer | not null
+ language | text    | not null
+ pkg      | jsonb   | not null
+Indexes:
+    "pkg_lang_idx" btree (language)
+    "pkg_pkg_idx" gin (pkg jsonb_path_ops)
+    "pkg_repo_idx" btree (repo_id)
+Foreign-key constraints:
+    "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 
 ```
 
@@ -324,7 +330,7 @@ Referenced by:
  creator_user_id       | integer                  | not null
  release_version       | citext                   | 
  release_tag           | citext                   | not null
- manifest              | jsonb                    | not null
+ manifest              | text                     | not null
  bundle                | text                     | 
  created_at            | timestamp with time zone | not null default now()
  deleted_at            | timestamp with time zone | 
@@ -373,7 +379,7 @@ Referenced by:
          Column          |           Type           |                     Modifiers                     
 -------------------------+--------------------------+---------------------------------------------------
  id                      | integer                  | not null default nextval('repo_id_seq'::regclass)
- name                    | citext                   | not null
+ uri                     | citext                   | not null
  description             | text                     | 
  language                | text                     | 
  fork                    | boolean                  | 
@@ -387,25 +393,17 @@ Referenced by:
  external_service_id     | text                     | 
  enabled                 | boolean                  | not null default true
  archived                | boolean                  | not null default false
- uri                     | citext                   | not null
- deleted_at              | timestamp with time zone | 
- sources                 | jsonb                    | not null default '{}'::jsonb
- metadata                | jsonb                    | not null default '{}'::jsonb
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
-    "repo_external_service_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id) WHERE external_service_type IS NOT NULL AND external_service_id IS NOT NULL AND external_id IS NOT NULL
-    "repo_name_unique" UNIQUE, btree (name)
-    "repo_metadata_gin_idx" gin (metadata)
-    "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
-    "repo_sources_gin_idx" gin (sources)
+    "repo_uri_unique" UNIQUE, btree (uri)
+    "repo_uri_trgm" gin (lower(uri::text) gin_trgm_ops)
 Check constraints:
-    "check_name_nonempty" CHECK (name <> ''::citext)
-    "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
-    "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
+    "check_external" CHECK (external_id IS NULL AND external_service_type IS NULL AND external_service_id IS NULL OR external_id IS NOT NULL AND external_service_type IS NOT NULL AND external_service_id IS NOT NULL)
+    "check_uri_nonempty" CHECK (uri <> ''::citext)
 Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
-Triggers:
-    trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW EXECUTE PROCEDURE set_repo_name()
+    TABLE "global_dep" CONSTRAINT "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
+    TABLE "pkgs" CONSTRAINT "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 
 ```
 
@@ -442,7 +440,7 @@ Indexes:
  contents       | text                     | 
  created_at     | timestamp with time zone | not null default now()
  user_id        | integer                  | 
- author_user_id | integer                  | 
+ author_user_id | integer                  | not null
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -463,6 +461,17 @@ Foreign-key constraints:
  created_at         | timestamp with time zone | 
  user_id            | integer                  | 
  author_user_id     | integer                  | 
+
+```
+
+# Table "public.site_config"
+```
+   Column    |  Type   |       Modifiers        
+-------------+---------+------------------------
+ site_id     | uuid    | not null
+ initialized | boolean | not null default false
+Indexes:
+    "site_config_pkey" PRIMARY KEY, btree (site_id)
 
 ```
 

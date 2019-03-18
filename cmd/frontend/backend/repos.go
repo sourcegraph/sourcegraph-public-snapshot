@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -13,11 +14,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -51,30 +53,30 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
-// GetByName retrieves the repository with the given name. If the name refers to a repository on a known external
+// GetByURI retrieves the repository with the given URI. If the URI refers to a repository on a known external
 // service (such as a code host) that is not yet present in the database, it will automatically look up the
 // repository externally and add it to the database before returning it.
-func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, name)
+func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, err error) {
+	if Mocks.Repos.GetByURI != nil {
+		return Mocks.Repos.GetByURI(ctx, uri)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
+	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
 	defer done()
 
-	repo, err := db.Repos.GetByName(ctx, name)
+	repo, err := db.Repos.GetByURI(ctx, uri)
 	if err != nil && envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
-		if err := s.AddGitHubDotComRepository(ctx, name); err != nil {
+		if err := s.Add(ctx, uri); err != nil {
 			return nil, err
 		}
-		return db.Repos.GetByName(ctx, name)
+		return db.Repos.GetByURI(ctx, uri)
 	} else if err != nil {
-		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
+		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
 			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 				Scheme:   "https",
 				Host:     "sourcegraph.com",
-				Path:     string(name),
+				Path:     string(uri),
 				RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
 			}).String()}
 		}
@@ -84,32 +86,28 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	return repo, nil
 }
 
-// AddGitHubDotComRepository adds the repository with the given name. The name is mapped to a repository by consulting the
-// repo-updater, which contains information about all configured code hosts and the names that they
+// Add adds the repository with the given URI. The URI is mapped to a repository by consulting the
+// repo-updater, which contains information about all configured code hosts and the URIs that they
 // handle.
-func (s *repos) AddGitHubDotComRepository(ctx context.Context, name api.RepoName) (err error) {
-	if Mocks.Repos.AddGitHubDotComRepository != nil {
-		return Mocks.Repos.AddGitHubDotComRepository(name)
+func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
+	if Mocks.Repos.Add != nil {
+		return Mocks.Repos.Add(uri)
 	}
 
-	ctx, done := trace(ctx, "Repos", "AddGitHubDotComRepository", name, &err)
+	ctx, done := trace(ctx, "Repos", "Add", uri, &err)
 	defer done()
 
 	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	gitserverRepo, err := quickGitserverRepo(ctx, name, "github.com")
-	if err != nil {
-		return err
-	}
-	if gitserverRepo != nil {
+	if gitserverRepo := quickGitserverRepo(uri); gitserverRepo != nil {
 		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
 			return err
 		}
 	}
 
 	// Try to look up and add the repo.
-	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
+	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: uri})
 	if err != nil {
 		return err
 	}
@@ -118,7 +116,7 @@ func (s *repos) AddGitHubDotComRepository(ctx context.Context, name api.RepoName
 		// everywhere else, require server admins to explicitly enable repositories.
 		enableAutoAddedRepos := envvar.SourcegraphDotComMode()
 		if err := s.Upsert(ctx, api.InsertRepoOp{
-			Name:         result.Repo.Name,
+			URI:          result.Repo.URI,
 			Description:  result.Repo.Description,
 			Fork:         result.Repo.Fork,
 			Archived:     result.Repo.Archived,
@@ -159,7 +157,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
@@ -171,13 +169,13 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	}
 
 	// Try cache first
-	cacheKey := fmt.Sprintf("%s:%s", repo.Name, commitID)
+	cacheKey := fmt.Sprintf("%s:%s", repo.URI, commitID)
 	if b, ok := inventoryCache.Get(cacheKey); ok {
 		var inv inventory.Inventory
 		if err := json.Unmarshal(b, &inv); err == nil {
 			return &inv, nil
 		}
-		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.Name, "commitID", commitID, "err", err)
+		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.URI, "commitID", commitID, "err", err)
 	}
 
 	// Not found in the cache, so compute it.
@@ -201,17 +199,43 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, comm
 		return Mocks.Repos.GetInventoryUncached(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
 	defer done()
 
-	cachedRepo, err := CachedGitRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	files, err := git.ReadDir(ctx, *cachedRepo, commitID, "", true)
+	files, err := git.ReadDir(ctx, CachedGitRepo(repo), commitID, "", true)
 	if err != nil {
 		return nil, err
 	}
 	return inventory.Get(ctx, files)
+}
+
+var indexerAddr = env.Get("SRC_INDEXER", "indexer:3179", "The address of the indexer service.")
+
+func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) {
+	if Mocks.Repos.RefreshIndex != nil {
+		return Mocks.Repos.RefreshIndex(ctx, repo)
+	}
+
+	if !repo.Enabled {
+		return nil
+	}
+
+	ctx, done := trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.URI}, &err)
+	defer done()
+
+	// make staticcheck happy about "this value of ctx is never used (SA4006)". Not
+	// using _ in the actual assignment above in case someone forgets to use it
+	// when ctx is used below.
+	_ = ctx
+
+	go func() {
+		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo.URI))
+		if err != nil {
+			log15.Error("RefreshIndex failed", "error", err)
+			return
+		}
+		resp.Body.Close()
+	}()
+
+	return nil
 }

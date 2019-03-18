@@ -8,12 +8,12 @@ import (
 
 type repoGroup struct {
 	name         string
-	repositories []api.RepoName
+	repositories []api.RepoURI
 }
 
 func (g repoGroup) Name() string { return g.name }
 
-func (g repoGroup) Repositories() []string { return repoNamesToStrings(g.repositories) }
+func (g repoGroup) Repositories() []string { return repoURIsToStrings(g.repositories) }
 
 func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 	groupsByName, err := resolveRepoGroups(ctx)
@@ -23,9 +23,9 @@ func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 
 	groups := make([]*repoGroup, 0, len(groupsByName))
 	for name, repos := range groupsByName {
-		repoPaths := make([]api.RepoName, len(repos))
+		repoPaths := make([]api.RepoURI, len(repos))
 		for i, repo := range repos {
-			repoPaths[i] = repo.Name
+			repoPaths[i] = repo.URI
 		}
 		groups = append(groups, &repoGroup{
 			name:         name,

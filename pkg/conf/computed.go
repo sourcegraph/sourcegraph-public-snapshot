@@ -1,142 +1,55 @@
 package conf
 
 import (
-	"context"
-	"encoding/json"
+	"fmt"
 	"log"
+	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/legacyconf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
 	deployType := DeployType()
 	if !IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployCluster, DeployDocker, DeployDev, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployKubernetes, DeployDocker, DeployDev, deployType)
 	}
-
-	defaultConfig := defaultConfigForDeployment()
-
-	// If a legacy configuration file is available (specified via
-	// SOURCEGRAPH_CONFIG_FILE), use it as the default for the critical and
-	// site configs.
-	//
-	// This relies on the fact that the old v2.13.6 site config schema has
-	// most fields align directly with the v3.0+ critical and site config
-	// schemas.
-	//
-	// This code can be removed in the next significant version after 3.0 (NOT
-	// preview), after which critical/site config schemas no longer need to
-	// align generally.
-	//
-	// TODO(slimsag): Remove after 3.0 (NOT preview).
-	{
-		legacyConf := jsonc.Normalize(legacyconf.Raw())
-
-		var criticalDecoded schema.CriticalConfiguration
-		_ = json.Unmarshal(legacyConf, &criticalDecoded)
-
-		// Backwards compatability for deprecated environment variables
-		// that we previously considered deprecated but are actually
-		// widespread in use in user's deployments and/or are suggested for
-		// use in our public documentation (i.e., even though these were
-		// long deprecated, our docs were not up to date).
-		criticalBackcompatVars := map[string]func(value string){
-			"LIGHTSTEP_PROJECT":      func(v string) { criticalDecoded.LightstepProject = v },
-			"LIGHTSTEP_ACCESS_TOKEN": func(v string) { criticalDecoded.LightstepAccessToken = v },
-		}
-		for envVar, setter := range criticalBackcompatVars {
-			val := os.Getenv(envVar)
-			if val != "" {
-				setter(val)
-			}
-		}
-
-		critical, err := json.MarshalIndent(criticalDecoded, "", "  ")
-		if string(critical) != "{}" && err == nil {
-			defaultConfig.Critical = string(critical)
-		}
-
-		var siteDecoded schema.SiteConfiguration
-		_ = json.Unmarshal(legacyConf, &siteDecoded)
-		site, err := json.MarshalIndent(siteDecoded, "", "  ")
-		if string(site) != "{}" && err == nil {
-			defaultConfig.Site = string(site)
-		}
-	}
-
-	confdefaults.Default = defaultConfig
 }
 
-func defaultConfigForDeployment() conftypes.RawUnified {
-	deployType := DeployType()
-	switch {
-	case IsDev(deployType):
-		return confdefaults.DevAndTesting
-	case IsDeployTypeDockerContainer(deployType):
-		return confdefaults.DockerContainer
-	case IsDeployTypeCluster(deployType):
-		return confdefaults.Cluster
+const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
+
+// HTTPStrictTransportSecurity returns the value of the Strict-Transport-Security HTTP header to set.
+func HTTPStrictTransportSecurity() string {
+	switch v := Get().HttpStrictTransportSecurity.(type) {
+	case string:
+		return v
+	case bool:
+		if !v {
+			return ""
+		}
+		return defaultHTTPStrictTransportSecurity
 	default:
-		panic("deploy type did not register default configuration")
+		return defaultHTTPStrictTransportSecurity
 	}
 }
 
-func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	var config []*schema.AWSCodeCommitConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
+// JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
+func JumpToDefOSSIndexEnabled() bool {
+	p := Get().ExperimentalFeatures.JumpToDefOSSIndex
+	// default is disabled
+	return p == "enabled"
 }
 
-func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	var config []*schema.BitbucketServerConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
+// MultipleAuthProvidersEnabled reports whether the "multipleAuthProviders" experiment is enabled.
+func MultipleAuthProvidersEnabled() bool { return MultipleAuthProvidersEnabledFromConfig(Get()) }
 
-func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	var config []*schema.GitHubConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITHUB", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	var config []*schema.GitLabConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITLAB", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	var config []*schema.GitoliteConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	var config []*schema.PhabricatorConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
+// MultipleAuthProvidersEnabledFromConfig is like MultipleAuthProvidersEnabled, except it accepts a
+// site configuration input value instead of using the current global value.
+func MultipleAuthProvidersEnabledFromConfig(c *schema.SiteConfiguration) bool {
+	// default is enabled
+	return c.ExperimentalFeatures == nil || c.ExperimentalFeatures.MultipleAuthProviders != "disabled"
 }
 
 type AccessTokAllow string
@@ -149,6 +62,10 @@ const (
 
 // AccessTokensAllow returns whether access tokens are enabled, disabled, or restricted to creation by admin users.
 func AccessTokensAllow() AccessTokAllow {
+	if Get().AuthDisableAccessTokens {
+		return AccessTokensNone
+	}
+
 	cfg := Get().AuthAccessTokens
 	if cfg == nil {
 		return AccessTokensAll
@@ -188,10 +105,55 @@ func CanReadEmail() bool {
 	return Get().EmailImap != nil
 }
 
+// HasGitHubDotComToken reports whether there are any personal access tokens configured for
+// github.com.
+func HasGitHubDotComToken() bool {
+	for _, c := range Get().Github {
+		u, err := url.Parse(c.Url)
+		if err != nil {
+			continue
+		}
+		hostname := strings.ToLower(u.Hostname())
+		if (hostname == "github.com" || hostname == "api.github.com") && c.Token != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// HasGitLabDotComToken reports whether there are any personal access tokens configured for
+// github.com.
+func HasGitLabDotComToken() bool {
+	for _, c := range Get().Gitlab {
+		u, err := url.Parse(c.Url)
+		if err != nil {
+			continue
+		}
+		hostname := strings.ToLower(u.Hostname())
+		if hostname == "gitlab.com" && c.Token != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// EnabledLangservers returns the langservers that are not disabled.
+func EnabledLangservers() []*schema.Langservers {
+	all := Get().Langservers
+	results := make([]*schema.Langservers, 0, len(all))
+	for _, langserver := range all {
+		if langserver.Disabled {
+			continue
+		}
+		results = append(results, langserver)
+	}
+	return results
+}
+
 const (
-	DeployCluster = "cluster"
-	DeployDocker  = "docker-container"
-	DeployDev     = "dev"
+	DeployKubernetes = "k8s"
+	DeployDocker     = "docker-container"
+	DeployDev        = "dev"
 )
 
 // DeployType tells the deployment type.
@@ -199,19 +161,15 @@ func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	// Default to Cluster so that every Cluster deployment doesn't need to be
-	// configured with DEPLOY_TYPE.
-	return DeployCluster
+	// Default to Kubernetes (currently the only kind of cluster supported) so that every Kubernetes
+	// deployment doesn't need to be configured with DEPLOY_TYPE.
+	return DeployKubernetes
 }
 
-// IsDeployTypeCluster tells if the given deployment type is a cluster (and
+// IsDeployTypeKubernetesCluster tells if the given deployment type is a Kubernetes cluster (and
 // non-dev, non-single Docker image).
-func IsDeployTypeCluster(deployType string) bool {
-	if deployType == "k8s" {
-		// backwards compatibility for older deployments
-		return true
-	}
-	return deployType == DeployCluster
+func IsDeployTypeKubernetesCluster(deployType string) bool {
+	return deployType == DeployKubernetes
 }
 
 // IsDeployTypeDockerContainer tells if the given deployment type is Docker sourcegraph/server
@@ -228,66 +186,69 @@ func IsDev(deployType string) bool {
 // IsValidDeployType returns true iff the given deployType is a Kubernetes deployment, Docker deployment, or a
 // local development environmnent.
 func IsValidDeployType(deployType string) bool {
-	return IsDeployTypeCluster(deployType) || IsDeployTypeDockerContainer(deployType) || IsDev(deployType)
+	return IsDeployTypeKubernetesCluster(deployType) || IsDeployTypeDockerContainer(deployType) || IsDev(deployType)
+}
+
+// DebugManageDocker tells if Docker language servers should be managed or not.
+//
+// This only exists for dev mode / debugging purposes, and should never be used
+// in a production setting. It panics if the deploy type is not "dev".
+func DebugManageDocker() bool {
+	if deployType := DeployType(); !IsDev(deployType) {
+		panic(fmt.Sprintf("DebugManageDocker cannot be called except when DEPLOY_TYPE=dev (found %q)", deployType))
+	}
+	v, err := strconv.ParseBool(os.Getenv("DEBUG_MANAGE_DOCKER"))
+	if err != nil {
+		return true // use managed docker by default in dev mode
+	}
+	return v
+}
+
+// DebugNoDockerSocket returns true if the application should pretend that
+// there is no Docker socket present, regardless of what the filesystem says.
+//
+// This is useful for testing that state in a dev instance, which must be
+// supported as users can remove the Docker socket pass-through for e.g.
+// security reasons.
+//
+// This only exists for dev mode / debugging purposes, and should never be used
+// in a production setting. It panics if the deploy type is not "dev".
+func DebugNoDockerSocket() bool {
+	if deployType := DeployType(); !IsDev(deployType) {
+		panic(fmt.Sprintf("DebugManageDocker cannot be called except when DEPLOY_TYPE=dev (found %q)", deployType))
+	}
+	v, _ := strconv.ParseBool(os.Getenv("DEBUG_NO_DOCKER_SOCKET"))
+	return v
 }
 
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
-	channel := Get().Critical.UpdateChannel
+	channel := GetTODO().UpdateChannel
 	if channel == "" {
 		return "release"
 	}
 	return channel
 }
 
-// SearchIndexEnabled returns true if sourcegraph should index all
-// repositories for text search. If the configuration is unset, it returns
-// false for the docker server image (due to resource usage) but true
-// elsewhere. Additionally it also checks for the outdated environment
-// variable INDEXED_SEARCH.
-func SearchIndexEnabled() bool {
-	if v := Get().SearchIndexEnabled; v != nil {
-		return *v
-	}
-	if v := os.Getenv("INDEXED_SEARCH"); v != "" {
-		enabled, _ := strconv.ParseBool(v)
-		return enabled
-	}
-	return DeployType() != DeployDocker
-}
-
-// SrcGitServers represents the SRC_GIT_SERVERS environment variable.
+// SupportsManagingLanguageServers reports, by consulting *only* the site configuration and deploy
+// type, whether language servers can be managed (enabled/disabled/restarted/updated) from the
+// Sourcegraph API without requiring users to take manual steps.
 //
-// Non-frontend callers should go through api.InternalClient.GitServerAddrs() instead.
-var SrcGitServers = readSrcGitServers()
-
-func readSrcGitServers() []string {
-	v := env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers")
-	if v == "" {
-		// Detect 'go test' and setup default addresses in that case.
-		p, err := os.Executable()
-		if err == nil && filepath.Ext(p) == ".test" {
-			v = "gitserver:3178"
-		}
+// Callers needing to know whether the capability is actually present in the current environment
+// must use langservers.CanManage instead.
+//
+// If no, the boolean is false and the reason (which is always non-empty in this case) describes why
+// not. Otherwise the boolean is true and the reason is empty.
+func SupportsManagingLanguageServers() (reason string, ok bool) {
+	deployType := DeployType()
+	if IsDeployTypeKubernetesCluster(deployType) {
+		// Do not run for clusters, or else we would print log messages below about not finding the
+		// docker socket.
+		return "Managing language servers automatically is not supported for Sourcegraph cluster deployments. See https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/install.md#add-language-servers-for-code-intelligence for help.", false
 	}
-	return strings.Fields(v)
-}
-
-func UsingExternalURL() bool {
-	url := Get().Critical.ExternalURL
-	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1")) // CI:LOCALHOST_OK
-}
-
-func IsExternalURLSecure() bool {
-	return strings.HasPrefix(Get().Critical.ExternalURL, "https:")
-}
-
-func IsBuiltinSignupAllowed() bool {
-	provs := Get().Critical.AuthProviders
-	for _, prov := range provs {
-		if prov.Builtin != nil {
-			return prov.Builtin.AllowSignup
-		}
+	if IsDev(deployType) && !DebugManageDocker() {
+		// Running in dev mode with managed docker disabled.
+		return "Managing language servers automatically is disabled in your local dev instance due to the value of DEBUG_MANAGE_DOCKER.", false
 	}
-	return false
+	return "", true
 }

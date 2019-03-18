@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {

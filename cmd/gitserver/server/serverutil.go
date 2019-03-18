@@ -30,15 +30,8 @@ func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress 
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
 
-	extraArgs := []string{
-		// Unset credential helper because the command is non-interactive.
-		"-c", "credential.helper=",
-
-		// Use Git wire protocol version 2.
-		// https://opensource.googleblog.com/2018/05/introducing-git-protocol-version-2.html
-		"-c", "protocol.version=2",
-	}
-	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
+	// Unset credential helper because the command is non-interactive.
+	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
 
 	var b interface {
 		Bytes() []byte
@@ -64,7 +57,7 @@ func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress 
 		b = &buf
 	}
 
-	_, err := runCommand(ctx, cmd)
+	err, _ := runCommand(ctx, cmd)
 	return b.Bytes(), err
 }
 
@@ -137,7 +130,7 @@ var repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	_, err := runCommand(ctx, cmd)
+	err, _ := runCommand(ctx, cmd)
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {

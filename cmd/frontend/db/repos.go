@@ -2,29 +2,26 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 type repoNotFoundErr struct {
-	ID   api.RepoID
-	Name api.RepoName
+	ID  api.RepoID
+	URI api.RepoURI
 }
 
 func (e *repoNotFoundErr) Error() string {
-	if e.Name != "" {
-		return fmt.Sprintf("repo not found: name=%q", e.Name)
+	if e.URI != "" {
+		return fmt.Sprintf("repo not found: uri=%q", e.URI)
 	}
 	if e.ID != 0 {
 		return fmt.Sprintf("repo not found: id=%d", e.ID)
@@ -49,7 +46,7 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return Mocks.Repos.Get(ctx, id)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("id=%d LIMIT 1", id))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d LIMIT 1", id))
 	if err != nil {
 		return nil, err
 	}
@@ -60,22 +57,22 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	return repos[0], nil
 }
 
-// GetByName returns the repository with the given name from the database, or an
+// GetByURI returns the repository with the given URI from the database, or an
 // error. If the repo doesn't exist in the DB, then errcode.IsNotFound will
 // return true on the error returned. It does not attempt to look up or update
 // the repository on any external service (such as its code host).
-func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, name)
+func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+	if Mocks.Repos.GetByURI != nil {
+		return Mocks.Repos.GetByURI(ctx, uri)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", name))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", uri))
 	if err != nil {
 		return nil, err
 	}
 
 	if len(repos) == 0 {
-		return nil, &repoNotFoundErr{Name: name}
+		return nil, &repoNotFoundErr{URI: uri}
 	}
 	return repos[0], nil
 }
@@ -99,14 +96,8 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	return count, nil
 }
 
-const getRepoByQueryFmtstr = `
-SELECT id, name, description, language, enabled, created_at,
-  updated_at, external_id, external_service_type, external_service_id
-FROM repo
-WHERE deleted_at IS NULL AND %s`
-
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	q := sqlf.Sprintf(getRepoByQueryFmtstr, querySuffix)
+	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, indexed_revision, created_at, updated_at, freeze_indexed_revision, external_id, external_service_type, external_service_id FROM repo %s", querySuffix)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -116,21 +107,25 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 	var repos []*types.Repo
 	for rows.Next() {
 		var repo types.Repo
+		var freezeIndexedRevision *bool
 		var spec dbExternalRepoSpec
 
 		if err := rows.Scan(
 			&repo.ID,
-			&repo.Name,
+			&repo.URI,
 			&repo.Description,
 			&repo.Language,
 			&repo.Enabled,
+			&repo.IndexedRevision,
 			&repo.CreatedAt,
 			&repo.UpdatedAt,
+			&freezeIndexedRevision,
 			&spec.id, &spec.serviceType, &spec.serviceID,
 		); err != nil {
 			return nil, err
 		}
 
+		repo.FreezeIndexedRevision = freezeIndexedRevision != nil && *freezeIndexedRevision // FIXME: bad DB schema: nullable boolean
 		repo.ExternalRepo = spec.toAPISpec()
 
 		repos = append(repos, &repo)
@@ -139,8 +134,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 		return nil, err
 	}
 
-	// 🚨 SECURITY: This enforces repository permissions
-	return authzFilter(ctx, repos, authz.Read)
+	return repos, nil
 }
 
 // ReposListOptions specifies the options for listing repositories.
@@ -158,10 +152,6 @@ type ReposListOptions struct {
 	// ExcludePattern is a regular expression that must not match any repository
 	// returned in the list.
 	ExcludePattern string
-
-	// PatternQuery is an expression tree of patterns to query. The atoms of
-	// the query are strings which are regular expression patterns.
-	PatternQuery query.Q
 
 	// Enabled includes enabled repositories in the list.
 	Enabled bool
@@ -181,11 +171,8 @@ type ReposListOptions struct {
 	// OnlyArchived excludes non-archived repositories from the list.
 	OnlyArchived bool
 
-	// Index when set will only include repositories which should be indexed
-	// if true. If false it will exclude repositories which should be
-	// indexed. An example use case of this is for indexed search only
-	// indexing a subset of repositories.
-	Index *bool
+	// Filters repositories based on whether they have an IndexedRevision set.
+	HasIndexedRevision *bool
 
 	// List of fields by which to order the return repositories.
 	OrderBy RepoListOrderBy
@@ -225,14 +212,14 @@ type RepoListColumn string
 
 const (
 	RepoListCreatedAt RepoListColumn = "created_at"
-	RepoListName      RepoListColumn = "name"
+	RepoListURI       RepoListColumn = "uri"
 )
 
 // List lists repositories in the Sourcegraph repository
 //
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
-// Matching is done with fuzzy matching, i.e. "query" will match any repo name that matches the regexp `q.*u.*e.*r.*y`
+// Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
 func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.List", "")
 	defer func() {
@@ -250,7 +237,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	}
 
 	// fetch matching repos
-	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+	fetchSQL := sqlf.Sprintf("WHERE %s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
 	rawRepos, err := s.getBySQL(ctx, fetchSQL)
 	if err != nil {
@@ -264,7 +251,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // indexed-search). We special case just returning enabled names so that we
 // read much less data into memory.
 func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
-	q := sqlf.Sprintf("SELECT name FROM repo WHERE enabled = true AND deleted_at IS NULL")
+	q := sqlf.Sprintf("SELECT uri FROM repo WHERE enabled = true")
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -286,75 +273,43 @@ func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-func parsePattern(p string) ([]*sqlf.Query, error) {
-	exact, like, pattern, err := parseIncludePattern(p)
-	if err != nil {
-		return nil, err
-	}
-	var conds []*sqlf.Query
-	if exact != nil {
-		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
-			conds = append(conds, sqlf.Sprintf("TRUE"))
-		} else {
-			items := []*sqlf.Query{}
-			for _, v := range exact {
-				items = append(items, sqlf.Sprintf("%s", v))
-			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
-		}
-	}
-	if len(like) > 0 {
-		var likeConds []*sqlf.Query
-		for _, v := range like {
-			likeConds = append(likeConds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
-		}
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
-	}
-	if pattern != "" {
-		conds = append(conds, sqlf.Sprintf("lower(name) ~* %s", pattern))
-	}
-	return conds, nil
-}
-
 func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
-	conds = []*sqlf.Query{
-		sqlf.Sprintf("deleted_at IS NULL"),
-	}
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
 	}
 	if opt.Query != "" {
-		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
+		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
 	}
 	for _, includePattern := range opt.IncludePatterns {
-		extraConds, err := parsePattern(includePattern)
+		exact, like, pattern, err := parseIncludePattern(includePattern)
 		if err != nil {
 			return nil, err
 		}
-		conds = append(conds, extraConds...)
+		if exact != nil {
+			if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
+				conds = append(conds, sqlf.Sprintf("TRUE"))
+			} else {
+				items := []*sqlf.Query{}
+				for _, v := range exact {
+					items = append(items, sqlf.Sprintf("%s", v))
+				}
+				conds = append(conds, sqlf.Sprintf("uri IN (%s)", sqlf.Join(items, ",")))
+			}
+		}
+		if len(like) > 0 {
+			var likeConds []*sqlf.Query
+			for _, v := range like {
+				likeConds = append(likeConds, sqlf.Sprintf(`lower(uri) LIKE %s`, strings.ToLower(v)))
+			}
+			conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
+		}
+		if pattern != "" {
+			conds = append(conds, sqlf.Sprintf("lower(uri) ~* %s", pattern))
+		}
 	}
 	if opt.ExcludePattern != "" {
-		conds = append(conds, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
-	}
-	if opt.PatternQuery != nil {
-		cond, err := query.Eval(opt.PatternQuery, func(q query.Q) (*sqlf.Query, error) {
-			pattern, ok := q.(string)
-			if !ok {
-				return nil, errors.Errorf("unexpected token in repo listing query: %q", q)
-			}
-			extraConds, err := parsePattern(pattern)
-			if err != nil {
-				return nil, err
-			}
-			if len(extraConds) == 0 {
-				return sqlf.Sprintf("TRUE"), nil
-			}
-			return sqlf.Join(extraConds, "AND"), nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		conds = append(conds, cond)
+		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
 	}
 
 	if opt.Enabled && opt.Disabled {
@@ -365,6 +320,13 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		conds = append(conds, sqlf.Sprintf("NOT enabled"))
 	} else {
 		return nil, errors.New("Repos.List: must specify at least one of Enabled=true or Disabled=true")
+	}
+	if opt.HasIndexedRevision != nil {
+		if *opt.HasIndexedRevision {
+			conds = append(conds, sqlf.Sprintf("indexed_revision IS NOT NULL"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("indexed_revision IS NULL"))
+		}
 	}
 	if opt.NoForks {
 		conds = append(conds, sqlf.Sprintf("NOT fork"))
@@ -379,16 +341,6 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		conds = append(conds, sqlf.Sprintf("archived"))
 	}
 
-	if opt.Index != nil {
-		// We don't currently have an index column, but when we want the
-		// indexable repositories to be a subset it will live in the database
-		// layer. So we do the filtering here.
-		indexAll := conf.SearchIndexEnabled()
-		if indexAll != *opt.Index {
-			conds = append(conds, sqlf.Sprintf("false"))
-		}
-	}
-
 	return conds, nil
 }
 
@@ -399,8 +351,8 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 //
 // It allows Repos.List to optimize for the common case where a pattern like
 // `(^github.com/foo/bar$)|(^github.com/baz/qux$)` is provided. In that case,
-// it's faster to query for "WHERE name IN (...)" the two possible exact values
-// (because it can use an index) instead of using a "WHERE name ~*" regexp condition
+// it's faster to query for "WHERE uri IN (...)" the two possible exact values
+// (because it can use an index) instead of using a "WHERE uri ~*" regexp condition
 // (which generally can't use an index).
 //
 // This optimization is necessary for good performance when there are many repos
@@ -543,10 +495,19 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 	return nil, nil, nil, nil, nil
 }
 
-// Delete deletes the repository row from the repo table.
+// Delete deletes the repository row from the repo table. It will also delete any rows in the GlobalDeps and Pkgs stores
+// that reference the deleted repository row.
 func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 	if Mocks.Repos.Delete != nil {
 		return Mocks.Repos.Delete(ctx, repo)
+	}
+
+	// Delete entries in pkgs and global_dep tables that correspond to the repo first
+	if err := GlobalDeps.Delete(ctx, repo); err != nil {
+		return err
+	}
+	if err := Pkgs.Delete(ctx, repo); err != nil {
+		return err
 	}
 
 	// Hard delete entries in the discussions tables that correspond to the repo.
@@ -563,7 +524,7 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 		}
 	}
 
-	q := sqlf.Sprintf("UPDATE repo SET deleted_at = NOW() WHERE id=%d", repo)
+	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
 	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
@@ -589,62 +550,26 @@ func (s *repos) UpdateLanguage(ctx context.Context, repo api.RepoID, language st
 	return err
 }
 
-func (s *repos) UpdateRepositoryMetadata(ctx context.Context, name api.RepoName, description string, fork bool, archived bool) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE name=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, name)
+func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, commitID api.CommitID) error {
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET indexed_revision=$1 WHERE id=$2", commitID, repo)
 	return err
 }
 
-const upsertSQL = `
-WITH upsert AS (
-  UPDATE repo
-  SET
-    name                  = $1,
-    description           = $2,
-    fork                  = $3,
-    enabled               = $4,
-    external_id           = NULLIF(BTRIM($5), ''),
-    external_service_type = NULLIF(BTRIM($6), ''),
-    external_service_id   = NULLIF(BTRIM($7), ''),
-    archived              = $9
-  WHERE name = $1 OR (
-    external_id IS NOT NULL
-    AND external_service_type IS NOT NULL
-    AND external_service_id IS NOT NULL
-    AND NULLIF(BTRIM($5), '') IS NOT NULL
-    AND NULLIF(BTRIM($6), '') IS NOT NULL
-    AND NULLIF(BTRIM($7), '') IS NOT NULL
-    AND external_id = NULLIF(BTRIM($5), '')
-    AND external_service_type = NULLIF(BTRIM($6), '')
-    AND external_service_id = NULLIF(BTRIM($7), '')
-  )
-  RETURNING repo.name
-)
+func (s *repos) UpdateRepositoryMetadata(ctx context.Context, uri api.RepoURI, description string, fork bool, archived bool) error {
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE uri=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, uri)
+	return err
+}
 
-INSERT INTO repo (
-  name,
-  description,
-  fork,
-  language,
-  enabled,
-  external_id,
-  external_service_type,
-  external_service_id,
-  archived
-) (
-  SELECT
-    $1 AS name,
-    $2 AS description,
-    $3 AS fork,
-    $8 AS language,
-    $4 AS enabled,
-    NULLIF(BTRIM($5), '') AS external_id,
-    NULLIF(BTRIM($6), '') AS external_service_type,
-    NULLIF(BTRIM($7), '') AS external_service_id,
-    $9 AS archived
-  WHERE NOT EXISTS (SELECT 1 FROM upsert)
+const upsertSQL = `WITH UPSERT AS (
+	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7, archived=$9 WHERE uri=$1 RETURNING uri
+)
+INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id, archived) (
+	SELECT $1 AS uri, $2 AS description, $3 AS fork, $8 as language, $4 AS enabled,
+	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id, $9 AS archived
+	WHERE $1 NOT IN (SELECT uri FROM upsert)
 )`
 
-// Upsert updates the repository if it already exists (keyed on name) and
+// Upsert updates the repository if it already exists (keyed on URI) and
 // inserts it if it does not.
 //
 // If repo exists, op.Enabled is ignored.
@@ -662,7 +587,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	// upsert is logged as a modification to the DB, even if it is a no-op. So
 	// we do this check to avoid log spam if postgres is configured with
 	// log_statement='mod'.
-	r, err := s.GetByName(ctx, op.Name)
+	r, err := s.GetByURI(ctx, op.URI)
 	if err != nil {
 		if _, ok := err.(*repoNotFoundErr); !ok {
 			return err
@@ -682,20 +607,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err = dbconn.Global.ExecContext(
-		ctx,
-		upsertSQL,
-		op.Name,
-		op.Description,
-		op.Fork,
-		enabled,
-		spec.id,
-		spec.serviceType,
-		spec.serviceID,
-		language,
-		op.Archived,
-	)
-
+	_, err = dbconn.Global.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
 	return err
 }
 

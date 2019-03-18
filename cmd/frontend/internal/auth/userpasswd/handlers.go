@@ -42,8 +42,8 @@ func HandleSignUp(w http.ResponseWriter, r *http.Request) {
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
 func HandleSiteInit(w http.ResponseWriter, r *http.Request) {
 	// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
-	// allow signups after those conditions become true, so we don't need to check the builtin auth
-	// provider's allowSignup in site config.
+	// allow signups after those conditions become true, so we don't need to check auth.allowSignup
+	// in site config.
 	handleSignUp(w, r, true)
 }
 
@@ -73,9 +73,9 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 
 	// Create the user.
 	//
-	// We don't need to check the builtin auth provider's allowSignup because we assume the caller
-	// of doServeSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
-	// case the only signup allowed is that of the initial site admin).
+	// We don't need to check auth.allowSignup because we assume the caller of doServeSignUp checks
+	// it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which case the only signup
+	// allowed is that of the initial site admin).
 	newUserData := db.NewUser{
 		Email:                creds.Email,
 		Username:             creds.Username,

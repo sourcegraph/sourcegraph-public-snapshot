@@ -4,11 +4,23 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
-
-	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
 )
 
-var redisConfTmpl = template.Must(template.New("redis.conf").Parse(assets.MustAssetString("redis.conf.tmpl")))
+var redisConfTmpl = template.Must(template.New("redis.conf").Parse(`# allow access from all instances
+protected-mode no
+
+# limit memory usage, return error when hitting limit
+maxmemory 1gb
+maxmemory-policy noeviction
+
+# live commit log to disk, additionally snapshots every 10 minutes
+dir {{ .Dir }}
+appendonly yes
+save 600 1
+
+# least verbose logging
+loglevel warning
+`))
 
 func maybeRedisProcFile() (string, error) {
 	// Redis is already configured. See envvars used in pkg/redispool.

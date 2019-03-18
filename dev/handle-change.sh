@@ -15,10 +15,6 @@ for i; do
 	schema/*.json)
 		generate_schema=true
 		;;
-    cmd/symbols/*)
-        [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
-        exit
-        ;;
 	cmd/*)
 		cmd=${i#cmd/}
 		cmd=${cmd%%/*}
@@ -38,7 +34,6 @@ done
 
 $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
-
 if $all_cmds; then
 	rebuilt=$(./dev/go-install.sh -v | tr '\012' ' ')
 	[ $? == 0 ] || failed=true

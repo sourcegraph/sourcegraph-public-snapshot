@@ -22,44 +22,32 @@ import (
 // the endpoints for a service and update the map when they change. It can
 // also fallback to static URLs if not configured for kubernetes.
 type Map struct {
-	mu      sync.Mutex
-	init    func() (*hashMap, error)
-	err     error
-	urls    *hashMap
-	urlspec string
+	mu   sync.Mutex
+	init func() (*hashMap, error)
+	err  error
+	urls *hashMap
 }
 
-// New creates a new Map for the URL specifier.
+// New creates a new Map for rawurl. We treat schemes prefixed with k8s+
+// specially. The expected format of that is
+// k8s+http://service.namespace:port/path. namespace, port and path is
+// optional. URLs of this form will consistently hash amongst the endpoints
+// for the service. The values returned by Get will look like
+// http://endpoint:port/path.
 //
-// If the scheme is prefixed with "k8s+", one URL is expected and the format is
-// expected to match e.g. k8s+http://service.namespace:port/path. namespace,
-// port and path are optional. URLs of this form will consistently hash among
-// the endpoints for the Kubernetes service. The values returned by Get will
-// look like http://endpoint:port/path.
-//
-// If the scheme is not prefixed with "k8s+", a space seperated list of URLs is
-// expected. The map will consistently hash against these URLs in this case.
-// This is useful for specifying non-Kubernetes endpoints.
-//
-// Examples URL specifiers:
-//
-// 	"k8s+http://searcher"
-// 	"http://searcher-1 http://searcher-2 http://searcher-3"
-//
-func New(urlspec string) *Map {
-	if !strings.HasPrefix(urlspec, "k8s+") {
-		return &Map{
-			urlspec: urlspec,
-			urls:    newConsistentHashMap(strings.Fields(urlspec)),
-		}
+// Example: rawurl is k8s+http://searcher
+func New(rawurl string) *Map {
+	if !strings.HasPrefix(rawurl, "k8s+") {
+		// Non-k8s urls we return a static map
+		return &Map{urls: newConsistentHashMap([]string{rawurl})}
 	}
 
-	m := &Map{urlspec: urlspec}
+	m := &Map{}
 
 	// Kick off setting the initial urls or err on first access. We don't rely
 	// just on inform since it may not communicate updates.
 	m.init = func() (*hashMap, error) {
-		u, err := parseURL(urlspec)
+		u, err := parseURL(rawurl)
 		if err != nil {
 			return nil, err
 		}
@@ -90,18 +78,6 @@ func New(urlspec string) *Map {
 	return m
 }
 
-// Empty returns an Endpoint map which always fails with err.
-func Empty(err error) *Map {
-	return &Map{
-		urlspec: "error: " + err.Error(),
-		err:     err,
-	}
-}
-
-func (m *Map) String() string {
-	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
-}
-
 // Get the closest URL in the hash to the provided key that is not in
 // exclude. If no URL is found, "" is returned.
 //
@@ -109,25 +85,6 @@ func (m *Map) String() string {
 // endpoint may not actually be available yet / at the moment. So users of the
 // URL should implement a retry strategy.
 func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
-	urls, err := m.getUrls()
-	if err != nil {
-		return "", err
-	}
-
-	return urls.get(key, exclude), nil
-}
-
-// Endpoints returns a set of all addresses. Do not modify the returned value.
-func (m *Map) Endpoints() (map[string]struct{}, error) {
-	urls, err := m.getUrls()
-	if err != nil {
-		return nil, err
-	}
-
-	return urls.values, nil
-}
-
-func (m *Map) getUrls() (*hashMap, error) {
 	m.mu.Lock()
 	if m.init != nil {
 		m.urls, m.err = m.init()
@@ -135,7 +92,11 @@ func (m *Map) getUrls() (*hashMap, error) {
 	}
 	urls, err := m.urls, m.err
 	m.mu.Unlock()
-	return urls, err
+
+	if err != nil {
+		return "", err
+	}
+	return urls.get(key, exclude), nil
 }
 
 func inform(client *k8s.Client, m *Map, u *k8sURL) error {

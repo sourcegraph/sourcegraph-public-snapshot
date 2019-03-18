@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-func TestUserEmails_Get(t *testing.T) {
+func TestUserEmails_Get_GetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -29,6 +29,17 @@ func TestUserEmails_Get(t *testing.T) {
 	}
 	if err := UserEmails.Add(ctx, user.ID, "b@example.com", nil); err != nil {
 		t.Fatal(err)
+	}
+
+	emailPrimary, verifiedPrimary, err := UserEmails.GetPrimaryEmail(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "a@example.com"; emailPrimary != want {
+		t.Errorf("got email %q, want %q", emailPrimary, want)
+	}
+	if verifiedPrimary {
+		t.Error("want verified == false")
 	}
 
 	emailA, verifiedA, err := UserEmails.Get(ctx, user.ID, "A@EXAMPLE.com")
@@ -56,59 +67,6 @@ func TestUserEmails_Get(t *testing.T) {
 	if _, _, err := UserEmails.Get(ctx, user.ID, "doesntexist@example.com"); !errcode.IsNotFound(err) {
 		t.Errorf("got %v, want IsNotFound", err)
 	}
-}
-
-func TestUserEmails_GetPrimary(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	ctx := dbtesting.TestContext(t)
-
-	user, err := Users.Create(ctx, NewUser{
-		Email:                 "a@example.com",
-		Username:              "u2",
-		Password:              "pw",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	checkPrimaryEmail := func(t *testing.T, wantEmail string, wantVerified bool) {
-		t.Helper()
-		email, verified, err := UserEmails.GetPrimaryEmail(ctx, user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if email != wantEmail {
-			t.Errorf("got email %q, want %q", email, wantEmail)
-		}
-		if verified != wantVerified {
-			t.Errorf("got verified %v, want %v", verified, wantVerified)
-		}
-	}
-
-	checkPrimaryEmail(t, "a@example.com", false)
-
-	if err := UserEmails.Add(ctx, user.ID, "b1@example.com", nil); err != nil {
-		t.Fatal(err)
-	}
-	checkPrimaryEmail(t, "a@example.com", false)
-
-	if err := UserEmails.Add(ctx, user.ID, "b2@example.com", nil); err != nil {
-		t.Fatal(err)
-	}
-	checkPrimaryEmail(t, "a@example.com", false)
-
-	if err := UserEmails.SetVerified(ctx, user.ID, "b1@example.com", true); err != nil {
-		t.Fatal(err)
-	}
-	checkPrimaryEmail(t, "b1@example.com", true)
-
-	if err := UserEmails.SetVerified(ctx, user.ID, "b2@example.com", true); err != nil {
-		t.Fatal(err)
-	}
-	checkPrimaryEmail(t, "b1@example.com", true)
 }
 
 func TestUserEmails_ListByUser(t *testing.T) {

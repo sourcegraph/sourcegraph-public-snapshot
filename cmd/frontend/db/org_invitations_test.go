@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 

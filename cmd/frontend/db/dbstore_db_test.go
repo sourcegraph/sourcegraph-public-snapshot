@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 )
 
 func TestMigrations(t *testing.T) {
@@ -21,7 +21,7 @@ func TestMigrations(t *testing.T) {
 	if err := m.Down(); err != nil {
 		t.Errorf("error running down migrations: %s", err)
 	}
-	if err := dbconn.DoMigrate(m); err != nil {
+	if err := dbconn.DoMigrateAndClose(m); err != nil {
 		t.Errorf("error running up migrations: %s", err)
 	}
 }

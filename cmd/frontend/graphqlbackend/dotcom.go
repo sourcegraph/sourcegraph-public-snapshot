@@ -146,7 +146,7 @@ type ProductSubscriptionConnection interface {
 }
 
 type PreviewProductSubscriptionInvoiceArgs struct {
-	Account              *graphql.ID
+	Account              graphql.ID
 	SubscriptionToUpdate *graphql.ID
 	ProductSubscription  ProductSubscriptionInput
 }
@@ -220,5 +220,4 @@ type ProductSubscriptionEvent interface {
 type PlanTier interface {
 	UnitAmount() int32
 	UpTo() int32
-	FlatAmount() int32
 }

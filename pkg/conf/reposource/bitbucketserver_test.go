@@ -6,17 +6,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
+func TestBitbucketServer_cloneURLToRepoURI(t *testing.T) {
 	var tests = []struct {
 		conn schema.BitbucketServerConnection
-		urls []urlToRepoName
+		urls []urlURI
 	}{{
 		conn: schema.BitbucketServerConnection{
 			Password: "pass",
 			Url:      "https://bitbucket.sgdev.org",
 			Username: "user",
 		},
-		urls: []urlToRepoName{
+		urls: []urlURI{
 			{"https://admin@bitbucket.sgdev.org/scm/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org:7999/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
@@ -32,7 +32,7 @@ func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
 			Username:              "user",
 			RepositoryPathPattern: "{projectKey}/{repositorySlug}",
 		},
-		urls: []urlToRepoName{
+		urls: []urlURI{
 			{"https://admin@bitbucket.sgdev.org/scm/myp/myrepo.git", "myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org:7999/myp/myrepo.git", "myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org/myp/myrepo.git", "myp/myrepo"},
@@ -45,12 +45,12 @@ func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoName, err := BitbucketServer{&test.conn}.CloneURLToRepoName(u.cloneURL)
+			repoURI, err := BitbucketServer{&test.conn}.cloneURLToRepoURI(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoURI != string(repoURI) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoURI, repoURI, u.cloneURL, test.conn)
 			}
 		}
 	}

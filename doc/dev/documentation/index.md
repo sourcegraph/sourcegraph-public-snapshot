@@ -32,13 +32,12 @@ Sourcegraph docs.
 
 The documentation is organized into the following top-level directories:
 
-- [`user/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/user) for users
-- [`admin/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin) for site admins
-  - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin/external_service) for external service-related documentation *for site admins* (vs. `integration/` for the general audience)
-- [`extensions/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/extensions) for Sourcegraph extensions
-- [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
-- [`api/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for the Sourcegraph GraphQL API
-- [`dev/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for contributors
+- [`user`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/user) for users
+- [`admin`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin) for site admins
+- [`extensions`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/extensions) for Sourcegraph extensions
+- [`integration`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/integration) for integrations with other products
+- [`api`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for the Sourcegraph GraphQL API
+- [`dev`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for contributors
 
 There is no global index or nav, so all docs should be linked from their parent index page. Every new document should be cross-linked to its related documentation, and linked from its topic-related index, when it exists.
 
@@ -49,7 +48,9 @@ There is no global index or nav, so all docs should be linked from their parent 
 - Max screenshot size: 100KB
 - We do not support videos (yet)
 
-#### General rules & best practices
+---
+
+**General rules & best practices:**
 
 - When creating a new document and it has more than one word in its name,
   use underscores instead of spaces or dashes (`-`). For example,
@@ -99,50 +100,25 @@ Currently there is no automatic linting of documentation files. In the future we
 
 We treat documentation as code, so we've implemented some testing:
 
-- `docsite check`: Check that all internal (relative) links work correctly.
+- `docsite check`: Check that all internal (relative) links work correctly. <!-- TODO(sqs): set this up -->
 
-## Updating documentation
+## Previewing the changes live
 
-To update documentation content, templates, or assets on https://docs.sourcegraph.com, push changes in the `doc/` directory to this repository's `master` branch, then wait up to 5 minutes. Every 5 minutes, docs.sourcegraph.com reloads all content, templates, and assets from `master`.
+When running Sourcegraph in development mode, you can access a live preview of the docs at http://localhost:3080/help. The Markdown rendering and structure is the same as on docs.sourcegraph.com.
 
-- Documentation content lives in `doc/**/*.md`.
-- Assets and templates live in `doc/_resources/{templates,assets}`.
+You can also follow the [sourcegraph/docs.sourcegraph.com README](https://github.com/sourcegraph/docs.sourcegraph.com) to run the docs.sourcegraph.com site locally.
 
-See "[Documentation site](site.md)" for more information.
+## Sourcegraph /help
 
-### Previewing changes locally
+Every Sourcegraph instance includes the documentation at the URL path `/help`
+(`https://sourcegraph.example.com/help`), e.g., <https://sourcegraph.com/help>.
 
-You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../local_development.md) (using `dev/launch.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
+The documentation available on docs.sourcegraph.com is continuously <!-- TODO(sqs): set up continuous deploy of docs -->
+deployed every hour from the `master` branch of `sourcegraph/sourcegraph`. Once a pull request gets merged, it will be available on docs.sourcegraph.com soon, and its doc changes will ship in the next release.
 
-See also "[Other ways of previewing changes locally (very rare)](site.md#other-ways-of-previewing-changes-locally-very-rare)".
+### Linking to /help
 
-## Linking to documentation in-product
-
-In-product documentation links should point to `/help/PATH` instead of using an absolute URL of the form https://docs.sourcegraph.com/PATH. This ensures they link to the documentation for the current product version. There is a redirect (when using either `<a>` or react-router `<Link>`) from `/help/PATH` to the versioned docs.sourcegraph.com URL (https://docs.sourcegraph.com/@VERSION/PATH).
-
-## Prefer primary documents
-
-We want our written documents to be as up-to-date, accurate, and useful as possible. For this reason, we always prefer creating and using **primary documents** over secondary documents, such as in the case of documentation, plans, or design docs.
-
-A **primary document** is a document that is actually used to specify, communicate, or document something to the entire intended audience and is discoverable by that audience. A secondary document is a document that (effectively) only its creator uses or knows about.
-
-Examples:
-
-- A project's [tracking issues](../product/index.md#planning) are primary documents for "what will ship" because they specify precisely that and everyone would be able to discover them.
-  - Secondary documents for a project would be: a Google Doc with a list of TODOs, a checked-in Markdown project plan at `cmd/foo/PLAN.md`.
-- A project's [long-term plan](../product/index.md#planning) is a primary document that's either a published blog post (for particularly user-facing projects) or a set of tracking issues on future milestones.
-  - We don't have the product management capabilities right now for all projects to have a separate long-term plan separate from these existing documents that we already create.
-
-Add links to your primary document liberally, from anywhere your audience might be looking!
-
-To choose the right place for your primary document to live, ask yourself:
-
-- Where would people expect to find this information?
-- How can I maximize the probability that a developer who updates the underlying behavior described by the doc would realize they also need to update the doc? (To avoid the doc diverging from the actual behavior.)
-
-It's OK to create secondary documents for your own temporary use. If anybody else would need to use or discover them, transfer the information to the appropriate primary document (and delete the secondary document or clearly mark it as moved).
-
-> This is similar to saying "prefer a single source of truth". The problem with that, however, is that the designated source of truth might be a secondary document such as a technical spec that the intended audience is unaware of. Our use of the term "primary document" is intended to avoid that problem.
+When you're building a new feature, you may need to link to the documentation from the product. In-product documentation links should refer to the documentation hosted on the product itself (at `/help`) so that the product and documentation versions are consistent. (The docs on docs.sourcegraph.com may be for a newer version than what the user is running.)
 
 ## Product documentation vs Technical articles
 

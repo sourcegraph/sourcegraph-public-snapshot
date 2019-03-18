@@ -10,10 +10,12 @@ import (
 	"regexp"
 	"strings"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // handleGetGitolitePhabricatorMetadata serves the Gitolite
@@ -26,22 +28,15 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 	case query("gitolite"):
 		gitoliteHost := q.Get("gitolite")
 		repoName := q.Get("repo")
-
-		config, err := conf.GitoliteConfigs(r.Context())
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		// Iterate through Gitolite hosts, searching for one that will return the Phabricator mapping
-		for _, gconf := range config {
+		for _, gconf := range conf.Get().Gitolite {
 			if gconf.Host != gitoliteHost {
 				continue
 			}
-			if gconf.Phabricator == nil {
+			if gconf.PhabricatorMetadataCommand == "" {
 				continue
 			}
-			callsign, err := getGitolitePhabCallsign(r.Context(), gconf, repoName, gconf.Phabricator.CallsignCommand)
+			callsign, err := getGitolitePhabCallsign(r.Context(), gconf, repoName, gconf.PhabricatorMetadataCommand)
 			if err != nil {
 				log15.Warn("failed to get Phabricator callsign", "host", gconf.Host, "repo", repoName, "err", err)
 				continue

@@ -1,0 +1,62 @@
+@import './Suggestion';
+
+.query-input2 {
+    flex: 1 1 auto;
+    position: relative;
+
+    &__suggestions {
+        position: absolute;
+        width: 100%;
+        z-index: 1;
+        max-height: 25rem;
+        margin: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overflow-y: overlay;
+        background-color: #1c2736;
+        border: solid 1px rgb(27, 84, 138);
+        border-top: none;
+        padding: 0;
+
+        .theme-light & {
+            background-color: $color-light-bg-2;
+            border-top: none;
+        }
+
+        // Custom scrollbar
+        &::-webkit-scrollbar {
+            width: 0.5rem;
+            height: 0.5rem;
+        }
+
+        &::-webkit-scrollbar-corner,
+        &::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: #2a3a51;
+        }
+
+        .theme-light &::-webkit-scrollbar-thumb {
+            background-color: $color-light-bg-3;
+        }
+    }
+
+    &__loading-notifier {
+        position: absolute;
+        z-index: 1;
+        right: 0.5rem;
+        padding-left: 0.25rem;
+        bottom: 0.375rem;
+        background-color: $color-bg-4;
+    }
+}
+
+.theme-light {
+    .query-input2 {
+        &__loading-notifier {
+            background-color: $color-light-bg-1;
+        }
+    }
+}

@@ -46,22 +46,6 @@ Their purpose is to reexport symbols from a number of other files to make import
 - Avoid styling the children of your components. This couples your component to the implementation of the child
 - Order your rules so that layout rules (that describe how the component is laid out to its parents) come first, then rules that describe the layout of its children, and finally visual details.
 
-## Code splitting
-
-[Code splitting](https://reactjs.org/docs/code-splitting.html) refers to the practice of bundling the frontend code into multiple JavaScript files, each with a subset of the frontend code, so that the client only needs to download and parse/run the code necessary for the page they are viewing. We use the [react-router code splitting technique](https://reactjs.org/docs/code-splitting.html#route-based-code-splitting) to accomplish this.
-
-When adding a new route (and new components), you can opt into code splitting for it by referring to a lazy-loading reference to the component (instead of a static import binding of the component). To create the lazy-loading reference to the component, use `React.lazy`, as in:
-
-``` typescript
-const MyComponent = React.lazy(async () => ({
-    default: (await import('./path/to/MyComponent)).MyComponent,
-}))
-```
-
-If you don't do this (and just use a normal `import`), it will still work, but it will increase the initial bundle size for all users.
-
-(It is necessary to return the component as the `default` property of an object because `React.lazy` is hard-coded to look there for it. We could avoid this extra work by using default exports, but we chose not to use default exports ([reasons](https://blog.neufund.org/why-we-have-banned-default-exports-and-you-should-do-the-same-d51fdc2cf2ad)).)
-
 ### Theming
 
 Theming is done through toggling top-level CSS classes `theme-light` and `theme-dark`.
@@ -76,29 +60,15 @@ We use [Prettier](https://github.com/prettier/prettier) so you never have to wor
 
 ## Tests
 
-We write unit tests and e2e tests.
-
-### Unit tests
-
-Unit tests are for things that can be tested in isolation; you provide inputs and make assertion on the outputs and/or side effects.
-
-React component snapshot tests are a special kind of unit test that we use to test React components. See "[React component snapshot tests](testing.md#react-component-snapshot-tests)" for more information.
-
-You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to run only tests changed since the last commit). See "[Testing](testing.md)" for more information.
-
-### E2E tests
-
-_🚨  Until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976 is completed, our E2E tests will be disabled in CI. **Before merging your PR, you should manually run e2e tests against a local instancing by running `./dev/enterprise/start.sh` in one terminal tab and `yarn run test-e2e` in another one**. Additionally, some E2E tests depend on the Go language server. Currently, that language server is in a transition state and can't be run on its own. Until @chrismwendt finishes up his work on that project, all tests that rely on Go code intelligence are skipped.🚨_
-
-E2E tests are for the whole app: JS, CSS, and backend.
-
-These tests require hitting a backend like https://sourcegraph.com or https://sourcegraph.sgdev.org (default `SOURCEGRAPH_BASE_URL=http://localhost:3080`). E2E tests send messages to a chrome debugger port (9222), telling chrome to do things like "go to this URL" and "click on this selector" and "execute this JavaScript in the page".
-
-You can run E2E tests via `cd web && yarn run test-e2e`. This command will automatically start a headless chrome process; to prevent that, set the environment variable `SKIP_LAUNCH_CHROME=t`. See "[Testing](testing.md)" for more information.
-
-#### E2E caveats
-
-- don't overdo them; they are the tip of the testing pyramid and the mass of tests should be at lower layers
-- avoid coupling your tests too tightly to the implementation (e.g. with strict selectors that are coupled to the DOM structure), or we will have many test failures
-  - for example, mark your E2E element targets with a class like `.e2e-j2d-button`
-- if you change a lot about the UI you should run e2e tetss before committing b/c you will likely break something.
+- We write unit tests and e2e tests.
+- Unit tests are for things that can be tested in isolation; you provide inputs and make assertion on the outputs and/or side effects.
+- Run unit tests via `yarn run test`.
+- E2E tests are for the whole app: JS, CSS, and backend. These tests require hitting a backend like https://sourcegraph.com or https://sourcegraph.sgdev.org (default `SOURCEGRAPH_BASE_URL=http://localhost:3080`).
+- Run E2E tests via `yarn run test-e2e`.
+- E2E tests send messages to a chrome debugger port (9222), telling chrome to do things like "go to this URL" and "click on this selector" and "execute this JavaScript in the page".
+- `yarn run test-e2e` will automatically start a headless chrome process; to prevent that, set the environment variable `SKIP_LAUNCH_CHROME=t`
+- E2E caveats:
+  - don't overdo them; they are the tip of the testing pyramid and the mass of tests should be at lower layers
+  - avoid coupling your tests too tightly to the implementation (e.g. with strict selectors that are coupled to the DOM structure), or we will have many test failures
+    - for example, mark your E2E element targets with a class like `.e2e-j2d-button`
+  - if you change a lot about the UI you should run e2e tetss before committing b/c you will likely break something.

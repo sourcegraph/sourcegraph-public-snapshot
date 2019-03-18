@@ -3,58 +3,54 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// AccessTokenAuthMiddleware authenticates the user based on the
-// token query parameter or the "Authorization" header.
+// AccessTokenAuthMiddleware authenticates the user based on the "Authorization" header's access
+// token (if any).
 func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
 
-		var sudoUser string
-		token := r.URL.Query().Get("token")
-
-		if token == "" {
-			// Handle token passed via basic auth (https://<token>@sourcegraph.com/foobar).
-			basicAuthUsername, _, _ := r.BasicAuth()
-			if basicAuthUsername != "" {
-				token = basicAuthUsername
-			}
-		}
-
-		if headerValue := r.Header.Get("Authorization"); headerValue != "" && token == "" {
-			// Handle Authorization header
-			var err error
-			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
-			if err != nil {
-				if authz.IsUnrecognizedScheme(err) {
-					// Ignore Authorization headers that we don't handle.
-					log15.Warn("Ignoring unrecognized Authorization header.", "err", err, "value", headerValue)
-					next.ServeHTTP(w, r)
-					return
-				}
-
-				// Report errors on malformed Authorization headers for schemes we do handle, to
-				// make it clear to the client that their request is not proceeding with their
-				// supplied credentials.
-				log15.Error("Invalid Authorization header.", "err", err)
-				http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
-				return
-			}
-		}
-
-		if token != "" {
+		headerValue := r.Header.Get("Authorization")
+		tokenParams, hasTokenParam := r.URL.Query()["token"]
+		if headerValue != "" || hasTokenParam {
 			if !(conf.AccessTokensAllow() == conf.AccessTokensAll || conf.AccessTokensAllow() == conf.AccessTokensAdmin) {
 				// if conf.AccessTokensAllow() == conf.AccessTokensNone {
 				http.Error(w, "Access token authorization is disabled.", http.StatusUnauthorized)
 				return
+			}
+
+			var token string
+			var sudoUser string
+			if hasTokenParam {
+				// Handle token query string param
+				token = tokenParams[0]
+			} else {
+				// Handle Authorization header
+				var err error
+				token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
+				if err != nil {
+					if authz.IsUnrecognizedScheme(err) {
+						// Ignore Authorization headers that we don't handle.
+						log15.Debug("Ignoring unrecognized Authorization header.", "err", err)
+						next.ServeHTTP(w, r)
+						return
+					}
+
+					// Report errors on malformed Authorization headers for schemes we do handle, to
+					// make it clear to the client that their request is not proceeding with their
+					// supplied credentials.
+					log15.Error("Invalid Authorization header.", "err", err)
+					http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
+					return
+				}
 			}
 
 			// Validate access token.

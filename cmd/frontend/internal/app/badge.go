@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 )
 
 // TODO(slimsag): once https://github.com/badges/shields/pull/828 is merged,
@@ -18,7 +18,11 @@ import (
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
 func badgeValue(r *http.Request) (int, error) {
-	totalRefs, err := backend.CountGoImporters(r.Context(), routevar.ToRepo(mux.Vars(r)))
+	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
+	if err != nil {
+		return 0, errors.Wrap(err, "GetRepo")
+	}
+	totalRefs, err := backend.Defs.TotalRefs(r.Context(), repo.URI)
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}

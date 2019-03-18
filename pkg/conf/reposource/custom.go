@@ -4,23 +4,43 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"sync"
-	"sync/atomic"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived from the site config
+var cloneURLResolvers []*cloneURLResolver
+
 func init() {
-	conf.ContributeValidator(func(c conf.Unified) (problems []string) {
+	conf.ContributeValidator(func(c schema.SiteConfiguration) (problems []string) {
 		for _, c := range conf.Get().GitCloneURLToRepositoryName {
 			if _, err := regexp.Compile(c.From); err != nil {
 				problems = append(problems, fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From))
 			}
 		}
 		return
+	})
+
+	conf.Watch(func() {
+		cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
+		newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
+		for i, c := range cloneURLConfig {
+			from, err := regexp.Compile(c.From)
+			if err != nil {
+				// Skip if there's an error. A user-visible validation error will appear due to the ContributeValidator call above.
+				log15.Error("Site config: unable to compile Git clone URL mapping regexp", "regexp", c.From)
+				continue
+			}
+			newCloneURLResolvers[i] = &cloneURLResolver{
+				from: from,
+				to:   c.To,
+			}
+		}
+		cloneURLResolvers = newCloneURLResolvers
 	})
 }
 
@@ -29,42 +49,15 @@ type cloneURLResolver struct {
 	to   string
 }
 
-var (
-	// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings,
-	// derived from the site config
-	cloneURLResolvers     atomic.Value
-	cloneURLResolversOnce sync.Once
-)
-
-// CustomCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
+// customCloneURLToRepoURI maps from clone URL to repo URI using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
-func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
-	cloneURLResolversOnce.Do(func() {
-		conf.Watch(func() {
-			cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
-			newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
-			for i, c := range cloneURLConfig {
-				from, err := regexp.Compile(c.From)
-				if err != nil {
-					// Skip if there's an error. A user-visible validation error will appear due to the ContributeValidator call above.
-					log15.Error("Site config: unable to compile Git clone URL mapping regexp", "regexp", c.From)
-					continue
-				}
-				newCloneURLResolvers[i] = &cloneURLResolver{
-					from: from,
-					to:   c.To,
-				}
-			}
-			cloneURLResolvers.Store(newCloneURLResolvers)
-		})
-	})
-
-	for _, r := range cloneURLResolvers.Load().([]*cloneURLResolver) {
-		if name := mapString(r.from, cloneURL, r.to); name != "" {
-			return api.RepoName(name)
+func customCloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI) {
+	for _, r := range cloneURLResolvers {
+		if uri := mapString(r.from, cloneURL, r.to); uri != "" {
+			return api.RepoURI(uri)
 		}
 	}
-	return api.RepoName("")
+	return api.RepoURI("")
 }
 
 func mapString(r *regexp.Regexp, in string, outTmpl string) string {

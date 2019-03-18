@@ -4,6 +4,10 @@ package assets
 
 import (
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
 )
 
-var Assets = http.Dir("./ui/assets")
+func init() {
+	assets.Assets = http.Dir("./ui/assets")
+}

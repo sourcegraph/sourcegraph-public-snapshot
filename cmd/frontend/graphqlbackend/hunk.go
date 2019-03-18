@@ -47,11 +47,7 @@ func (r *hunkResolver) Message() string {
 }
 
 func (r *hunkResolver) Commit(ctx context.Context) (*gitCommitResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
-	if err != nil {
-		return nil, err
-	}
-	commit, err := git.GetCommit(ctx, *cachedRepo, nil, r.hunk.CommitID)
+	commit, err := git.GetCommit(ctx, backend.CachedGitRepo(r.repo.repo), r.hunk.CommitID)
 	if err != nil {
 		return nil, err
 	}

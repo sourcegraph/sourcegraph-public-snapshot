@@ -17,7 +17,7 @@ func TestReposService_Get(t *testing.T) {
 
 	wantRepo := &types.Repo{
 		ID:      1,
-		Name:    "github.com/u/r",
+		URI:     "github.com/u/r",
 		Enabled: true,
 	}
 
@@ -41,8 +41,8 @@ func TestReposService_List(t *testing.T) {
 	ctx := testContext()
 
 	wantRepos := []*types.Repo{
-		{Name: "r1"},
-		{Name: "r2"},
+		{URI: "r1"},
+		{URI: "r2"},
 	}
 
 	calledList := db.Mocks.Repos.MockList(t, "r1", "r2")
@@ -63,16 +63,16 @@ func TestRepos_Add(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	const repoName = "my/repo"
+	const repoURI = "my/repo"
 
 	calledRepoLookup := false
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 		calledRepoLookup = true
-		if args.Repo != repoName {
-			t.Errorf("got %q, want %q", args.Repo, repoName)
+		if args.Repo != repoURI {
+			t.Errorf("got %q, want %q", args.Repo, repoURI)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{Name: repoName, Description: "d"},
+			Repo: &protocol.RepoInfo{URI: repoURI, Description: "d"},
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
@@ -80,13 +80,13 @@ func TestRepos_Add(t *testing.T) {
 	calledUpsert := false
 	db.Mocks.Repos.Upsert = func(op api.InsertRepoOp) error {
 		calledUpsert = true
-		if want := (api.InsertRepoOp{Name: repoName, Description: "d"}); !reflect.DeepEqual(op, want) {
+		if want := (api.InsertRepoOp{URI: repoURI, Description: "d"}); !reflect.DeepEqual(op, want) {
 			t.Errorf("got %+v, want %+v", op, want)
 		}
 		return nil
 	}
 
-	if err := s.AddGitHubDotComRepository(ctx, repoName); err != nil {
+	if err := s.Add(ctx, repoURI); err != nil {
 		t.Fatal(err)
 	}
 	if !calledRepoLookup {

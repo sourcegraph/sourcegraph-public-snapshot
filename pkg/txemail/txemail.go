@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	gophermail "gopkg.in/jpoehls/gophermail.v0"
 )
 
@@ -23,8 +22,8 @@ type Message struct {
 	MessageID  *string  // optional "Message-ID" header
 	References []string // optional "References" header list
 
-	Template txtypes.Templates // unparsed subject/body templates
-	Data     interface{}       // template data
+	Template Templates   // unparsed subject/body templates
+	Data     interface{} // template data
 }
 
 // Render returns the rendered message contents without sending email.
@@ -61,7 +60,7 @@ func Render(message Message) (*gophermail.Message, error) {
 		return nil, err
 	}
 
-	if err := parsed.Render(message.Data, &m); err != nil {
+	if err := parsed.render(message.Data, &m); err != nil {
 		return nil, err
 	}
 

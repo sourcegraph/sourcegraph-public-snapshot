@@ -8,7 +8,7 @@ import (
 
 func TestRepoShortName(t *testing.T) {
 	tests := []struct {
-		input api.RepoName
+		input api.RepoURI
 		want  string
 	}{
 		{input: "repo", want: "repo"},

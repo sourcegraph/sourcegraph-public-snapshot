@@ -1,11 +1,7 @@
-// Package shared provides the entrypoint to Sourcegraph's single docker
-// image. It has functionality to setup the shared environment variables, as
-// well as create the Procfile for goreman to run.
 package shared
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,23 +15,21 @@ import (
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
 const FrontendInternalHost = "127.0.0.1:3090"
 
-// zoektHost is the address zoekt webserver is listening on.
-const zoektHost = "127.0.0.1:3070"
-
 // defaultEnv is environment variables that will be set if not already set.
 var defaultEnv = map[string]string{
 	// Sourcegraph services running in this container
 	"SRC_GIT_SERVERS":       "127.0.0.1:3178",
 	"SEARCHER_URL":          "http://127.0.0.1:3181",
 	"REPO_UPDATER_URL":      "http://127.0.0.1:3182",
+	"SRC_INDEXER":           "127.0.0.1:3179",
 	"QUERY_RUNNER_URL":      "http://127.0.0.1:3183",
 	"SRC_SYNTECT_SERVER":    "http://127.0.0.1:9238",
 	"SYMBOLS_URL":           "http://127.0.0.1:3184",
-	"SRC_HTTP_ADDR":         ":8080",
-	"SRC_HTTPS_ADDR":        ":8443",
+	"SRC_HTTP_ADDR":         ":7080",
+	"SRC_HTTPS_ADDR":        ":7443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
-	"ZOEKT_HOST":            zoektHost,
+	"LSP_PROXY":             "127.0.0.1:4388",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -53,6 +47,7 @@ var defaultEnv = map[string]string{
 	"SRC_LOG_LEVEL": "warn",
 
 	// TODO other bits
+	// * Guess SRC_APP_URL based on hostname
 	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 }
 
@@ -65,31 +60,24 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 func Main() {
 	log.SetFlags(0)
 
-	// Ensure CONFIG_DIR and DATA_DIR
-
 	// Load $CONFIG_DIR/env before we set any defaults
 	{
 		configDir := SetDefaultEnv("CONFIG_DIR", "/etc/sourcegraph")
-		err := os.MkdirAll(configDir, 0755)
-		if err != nil {
-			log.Fatalf("failed to ensure CONFIG_DIR exists: %s", err)
-		}
-
-		err = godotenv.Load(filepath.Join(configDir, "env"))
+		err := godotenv.Load(filepath.Join(configDir, "env"))
 		if err != nil && !os.IsNotExist(err) {
 			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
 		}
 
-		// Load the legacy config file if it exists.
-		//
-		// TODO(slimsag): Remove this code in the next significant version of
-		// Sourcegraph after 3.0.
+		// Load the config file, or generate a new one if it doesn't exist.
 		configPath := os.Getenv("SOURCEGRAPH_CONFIG_FILE")
 		if configPath == "" {
 			configPath = filepath.Join(configDir, "sourcegraph-config.json")
 		}
-		_, err = os.Stat(configPath)
-		if err == nil {
+		_, configIsWritable, err := readOrGenerateConfig(configPath)
+		if err != nil {
+			log.Fatalf("failed to load config: %s", err)
+		}
+		if configIsWritable {
 			if err := os.Setenv("SOURCEGRAPH_CONFIG_FILE", configPath); err != nil {
 				log.Fatal(err)
 			}
@@ -132,30 +120,17 @@ func Main() {
 
 	// TODO validate known_hosts contains all code hosts in config.
 
-	nginx, err := nginxProcFile()
-	if err != nil {
-		log.Fatal("Failed to setup nginx:", err)
-	}
-
-	zoektIndexDir := filepath.Join(DataDir, "zoekt/index")
-	debugFlag := ""
-	if verbose {
-		debugFlag = "-debug"
-	}
-
 	procfile := []string{
-		nginx,
-		`frontend: env CONFIGURATION_MODE=server frontend`,
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`management-console: management-console`,
+		`lsp-proxy: lsp-proxy`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
+		`frontend: frontend`,
 		`repo-updater: repo-updater`,
+		`indexer: indexer`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
-		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 %s", FrontendInternalHost, zoektIndexDir, debugFlag),
-		fmt.Sprintf("zoekt-webserver: zoekt-webserver -rpc -pprof -listen %s -index %s", zoektHost, zoektIndexDir),
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 	if line, err := maybeRedisProcFile(); err != nil {
@@ -167,6 +142,11 @@ func Main() {
 		log.Fatal(err)
 	} else if line != "" {
 		procfile = append(procfile, line)
+	}
+	if lines, err := maybeZoektProcfile(DataDir); err != nil {
+		log.Fatal(err)
+	} else if lines != nil {
+		procfile = append(procfile, lines...)
 	}
 
 	const goremanAddr = "127.0.0.1:5005"

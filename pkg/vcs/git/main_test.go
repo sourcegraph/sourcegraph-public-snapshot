@@ -1,7 +1,6 @@
 package git_test
 
 import (
-	"context"
 	"flag"
 	"log"
 	"net"
@@ -24,9 +23,7 @@ func TestMain(m *testing.M) {
 	srv := &http.Server{Handler: (&server.Server{}).Handler()}
 	go srv.Serve(l)
 
-	gitserver.DefaultClient = &gitserver.Client{Addrs: func(ctx context.Context) []string {
-		return []string{l.Addr().String()}
-	}}
+	gitserver.DefaultClient = &gitserver.Client{Addrs: []string{l.Addr().String()}}
 
 	os.Exit(m.Run())
 }

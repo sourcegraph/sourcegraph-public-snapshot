@@ -1,4 +1,3 @@
-// Package symbols implements the symbol search service.
 package symbols
 
 import (
@@ -79,20 +78,8 @@ func (s *Service) Handler() http.Handler {
 	}
 
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("/search", s.handleSearch)
-	mux.HandleFunc("/healthz", s.handleHealthCheck)
-
 	return mux
-}
-
-func (s *Service) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-
-	_, err := w.Write([]byte("Ok"))
-	if err != nil {
-		log.Printf("failed to write response to health check, err: %s", err)
-	}
 }
 
 // watchAndEvict is a loop which periodically checks the size of the cache and

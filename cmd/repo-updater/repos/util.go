@@ -7,9 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
-
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 
 	"github.com/gregjones/httpcache"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -19,14 +16,10 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-const configWatchInterval = 5 * time.Second
-
 // NormalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant
 // differences (such as in presence of a trailing slash, or hostname case) eliminated. Its return value should be
 // used for the (ExternalRepoSpec).ServiceID field (and passed to XyzExternalRepoSpec) instead of a non-normalized
 // base URL.
-//
-// DEPRECATED in favor of externalservice.NormalizeBaseURL
 func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	baseURL.Host = strings.ToLower(baseURL.Host)
 	if !strings.HasSuffix(baseURL.Path, "/") {
@@ -35,41 +28,26 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
-// cachedRoundTripper wraps another http.RoundTripper with caching.
-func cachedRoundTripper(rt http.RoundTripper) http.RoundTripper {
-	return &httpcache.Transport{
-		Transport:           &nethttp.Transport{RoundTripper: rt},
-		Cache:               httputil.Cache,
-		MarkCachedResponses: true, // so we avoid using cached rate limit info
-	}
-}
-
-// newCertPool returns an x509.CertPool with the given certificates added to it.
-func newCertPool(certs ...string) (*x509.CertPool, error) {
-	pool := x509.NewCertPool()
-	for _, cert := range certs {
-		if ok := pool.AppendCertsFromPEM([]byte(cert)); !ok {
-			return nil, errors.New("invalid certificate")
-		}
-	}
-	return pool, nil
-}
-
 // cachedTransportWithCertTrusted returns an http.Transport that trusts the
 // provided PEM cert, or http.DefaultTransport if it is empty. The transport
 // is also using our redis backed cache.
 func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
 	transport := http.DefaultTransport
 	if cert != "" {
-		pool, err := newCertPool(cert)
-		if err != nil {
-			return nil, err
+		certPool := x509.NewCertPool()
+		if ok := certPool.AppendCertsFromPEM([]byte(cert)); !ok {
+			return nil, errors.New("invalid certificate value")
 		}
 		transport = &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: pool},
+			TLSClientConfig: &tls.Config{RootCAs: certPool},
 		}
 	}
-	return cachedRoundTripper(transport), nil
+
+	return &httpcache.Transport{
+		Transport:           &nethttp.Transport{RoundTripper: transport},
+		Cache:               httputil.Cache,
+		MarkCachedResponses: true, // so we avoid using cached rate limit info
+	}, nil
 }
 
 // A repoCreateOrUpdateRequest is a RepoCreateOrUpdateRequest, from the API,
@@ -84,42 +62,31 @@ type repoCreateOrUpdateRequest struct {
 // being updated, so repo-updater can detect when repositories are dropped from
 // a given source.
 func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
-	c := conf.Get()
-	newMap := make(sourceRepoMap)
+	newList := make(sourceRepoList)
 
 	do := func(op repoCreateOrUpdateRequest) {
-		if op.RepoCreateOrUpdateRequest.RepoName == "" {
+		if op.RepoCreateOrUpdateRequest.RepoURI == "" {
 			log15.Warn("ignoring invalid request to create or enable repo with empty name", "source", source, "repo", op.RepoCreateOrUpdateRequest.ExternalRepo)
 			return
 		}
 		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op.RepoCreateOrUpdateRequest)
 		if err != nil {
-			log15.Warn("Error creating or updating repository", "repo", op.RepoName, "error", err)
+			log15.Warn("Error creating or updating repository", "repo", op.RepoURI, "error", err)
 			return
 		}
 
-		err = api.InternalClient.ReposUpdateMetadata(ctx, op.RepoName, op.Description, op.Fork, op.Archived)
+		err = api.InternalClient.ReposUpdateMetadata(ctx, op.RepoURI, op.Description, op.Fork, op.Archived)
 		if err != nil {
-			log15.Warn("Error updating repository metadata", "repo", op.RepoName, "error", err)
+			log15.Warn("Error updating repository metadata", "repo", op.RepoURI, "error", err)
 			return
 		}
 
-		if !c.DisableAutoGitUpdates {
-			newMap[createdRepo.Name] = &configuredRepo2{
-				Name:    createdRepo.Name,
-				URL:     op.URL,
-				Enabled: createdRepo.Enabled,
-			}
-		}
+		newList[string(createdRepo.URI)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
 	}
-
 	for repo := range repoChan {
 		do(repo)
 	}
-
-	if !c.DisableAutoGitUpdates {
-		Scheduler.updateSource(source, newMap)
-	}
+	repos.updateSource(source, newList)
 }
 
 // setUserinfoBestEffort adds the username and password to rawurl. If user is

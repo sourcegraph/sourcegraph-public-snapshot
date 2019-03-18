@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -32,22 +31,40 @@ func TestValidate(t *testing.T) {
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		rawCritical, rawSite string
-		wantProblem          string
-		wantErr              string
+		raw         string
+		wantProblem string
+		wantErr     string
 	}{
 		"unrecognized auth.providers": {
-			rawCritical: `{"auth.providers":[{"type":"asdf"}]}`,
-			rawSite:     "{}",
-			wantErr:     "tagged union type must have a",
+			raw:     `{"auth.providers":[{"type":"asdf"}]}`,
+			wantErr: "tagged union type must have a",
+		},
+
+		// username is optional; password and token are disjointly required
+		"bitbucketserver no auth": {
+			raw:         `{"bitbucketServer":[{}]}`,
+			wantProblem: "specify either a token or a username/password",
+		},
+		"bitbucketserver password and token": {
+			raw:         `{"bitbucketServer":[{"password":"p","token":"t"}]}`,
+			wantProblem: "specify either a token or a username/password",
+		},
+		"bitbucketserver username and token": {
+			raw: `{"bitbucketServer":[{"username":"u","token":"t"}]}`,
+		},
+		"bitbucketserver username and password": {
+			raw: `{"bitbucketServer":[{"username":"u","password":"p"}]}`,
+		},
+		"bitbucketserver password": {
+			raw: `{"bitbucketServer":[{"password":"p"}]}`,
+		},
+		"bitbucketserver token": {
+			raw: `{"bitbucketServer":[{"token":"t"}]}`,
 		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			problems, err := validateCustomRaw(conftypes.RawUnified{
-				Critical: test.rawCritical,
-				Site:     test.rawSite,
-			})
+			problems, err := validateCustomRaw([]byte(test.raw))
 			if err != nil {
 				if test.wantErr == "" {
 					t.Fatalf("got unexpected error: %v", err)

@@ -53,7 +53,7 @@ func purge(ctx context.Context, log log15.Logger) error {
 	if err != nil {
 		return err
 	}
-	enabled := make(map[api.RepoName]struct{})
+	enabled := make(map[api.RepoURI]struct{})
 	for _, repo := range enabledList {
 		enabled[protocol.NormalizeRepo(repo)] = struct{}{}
 	}
@@ -64,7 +64,7 @@ func purge(ctx context.Context, log log15.Logger) error {
 
 	// remove repositories that are in cloned but not in enabled
 	for _, repoStr := range cloned {
-		repo := protocol.NormalizeRepo(api.RepoName(repoStr))
+		repo := protocol.NormalizeRepo(api.RepoURI(repoStr))
 		if _, ok := enabled[repo]; ok {
 			continue
 		}

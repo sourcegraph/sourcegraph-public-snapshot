@@ -9,6 +9,9 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
+
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // Adapted from github.com/golang/gddo/gosrc.
@@ -16,6 +19,48 @@ import (
 // RuntimeVersion is the version of go stdlib to use. We allow it to be
 // different to runtime.Version for test data.
 var RuntimeVersion = runtime.Version()
+
+type noGoGetDomainsT struct {
+	mu      sync.RWMutex
+	domains []string
+}
+
+func (n *noGoGetDomainsT) get() []string {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+	return n.domains
+}
+
+func (n *noGoGetDomainsT) reconfigure() {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Parse noGoGetDomains to avoid needing to validate them when
+	// resolving static import paths
+	n.domains = parseCommaSeparatedList(conf.Get().NoGoGetDomains)
+}
+
+func parseCommaSeparatedList(list string) []string {
+	split := strings.Split(list, ",")
+	i := 0
+	for _, s := range split {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			split[i] = s
+			i++
+		}
+	}
+	return split[:i]
+}
+
+// noGoGetDomains is a list of domains we do not attempt standard go vanity
+// import resolution. Instead we take an educated guess based on the URL how
+// to create the directory struct.
+var noGoGetDomains = &noGoGetDomainsT{}
+
+func init() {
+	conf.Watch(noGoGetDomains.reconfigure)
+}
 
 type Directory struct {
 	ImportPath  string // the Go import path for this package
@@ -49,6 +94,34 @@ func resolveStaticImportPath(importPath string) (*Directory, error) {
 		}, nil
 	}
 
+	// This allows users to set a list of domains that we should NEVER perform
+	// go get or git clone against. This is useful when e.g. a user has not
+	// correctly configured a monorepo and we are constantly hitting their
+	// production website to resolve import paths like "facebook.com/pkg/util"
+	// and skewing their own 404 metrics. This DOES mean these imports will be
+	// broken until they do correctly configure their monorepo (so we can
+	// identify its GOPATH), but it gives them a quick escape hatch that is
+	// better than "turn off the Sourcegraph server".
+	for _, domain := range conf.Get().BlacklistGoGet {
+		if strings.HasPrefix(importPath, domain) {
+			return nil, errors.New("import path in blacklistGoGet configuration")
+		}
+	}
+
+	// This allows a user to set a list of domains that are considered to be
+	// non-go-gettable, i.e. standard git repositories. Some on-prem customers
+	// use setups like this, where they directly import non-go-gettable git
+	// repository URLs like "mygitolite.aws.me.org/mux.git/subpkg"
+	for _, domain := range noGoGetDomains.get() {
+		if !strings.HasPrefix(importPath, domain) {
+			continue
+		}
+		d, err := guessImportPath(importPath)
+		if d != nil || err != nil {
+			return d, err
+		}
+	}
+
 	switch {
 	case strings.HasPrefix(importPath, "github.com/"):
 		parts := strings.SplitN(importPath, "/", 4)
@@ -68,11 +141,45 @@ func resolveStaticImportPath(importPath string) (*Directory, error) {
 		if err != nil {
 			return nil, err
 		}
-		d.ImportPath = strings.Replace(d.ImportPath, "github.com/golang/", "golang.org/x/", 1)
 		d.ProjectRoot = strings.Replace(d.ProjectRoot, "github.com/golang/", "golang.org/x/", 1)
 		return d, nil
 	}
 	return nil, errNoMatch
+}
+
+// guessImportPath is used by noGoGetDomains since we can't do the usual
+// go get resolution.
+func guessImportPath(importPath string) (*Directory, error) {
+	if !strings.Contains(importPath, ".git") {
+		// Assume GitHub-like where two path elements is the project
+		// root.
+		parts := strings.SplitN(importPath, "/", 4)
+		if len(parts) < 3 {
+			return nil, fmt.Errorf("invalid GitHub-like import path: %q", importPath)
+		}
+		repo := parts[0] + "/" + parts[1] + "/" + parts[2]
+		return &Directory{
+			ImportPath:  importPath,
+			ProjectRoot: repo,
+			CloneURL:    "http://" + repo,
+			VCS:         "git",
+		}, nil
+	}
+
+	// TODO(slimsag): We assume that .git only shows up
+	// once in the import path. Not always true, but generally
+	// should be in 99% of cases.
+	split := strings.Split(importPath, ".git")
+	if len(split) != 2 {
+		return nil, fmt.Errorf("expected one .git in %q", importPath)
+	}
+
+	return &Directory{
+		ImportPath:  importPath,
+		ProjectRoot: split[0] + ".git",
+		CloneURL:    "http://" + split[0] + ".git",
+		VCS:         "git",
+	}, nil
 }
 
 // gopkgSrcTemplate matches the go-source dir templates specified by the

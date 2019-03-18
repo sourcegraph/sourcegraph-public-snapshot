@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 )
 
 func getUserToInviteToOrganization(ctx context.Context, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
@@ -84,7 +83,7 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 		return nil, err
 	}
 	result := &inviteUserToOrganizationResult{
-		invitationURL: globals.ExternalURL.ResolveReference(orgInvitationURL(org)).String(),
+		invitationURL: globals.AppURL.ResolveReference(orgInvitationURL(org)).String(),
 	}
 
 	// Send a notification to the recipient. If disabled, the frontend will still show the
@@ -255,13 +254,13 @@ func sendOrgInvitationNotification(ctx context.Context, org *types.Org, sender *
 		}{
 			FromName: fromName,
 			OrgName:  org.Name,
-			URL:      globals.ExternalURL.ResolveReference(orgInvitationURL(org)).String(),
+			URL:      globals.AppURL.ResolveReference(orgInvitationURL(org)).String(),
 		},
 	})
 }
 
 var (
-	emailTemplates = txemail.MustValidate(txtypes.Templates{
+	emailTemplates = txemail.MustValidate(txemail.Templates{
 		Subject: `{{.FromName}} invited you to join {{.OrgName}} on Sourcegraph`,
 		Text: `
 {{.FromName}} invited you to join the {{.OrgName}} organization on Sourcegraph.

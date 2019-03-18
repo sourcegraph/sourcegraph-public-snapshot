@@ -1,0 +1,142 @@
+.site-admin-lang-servers {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.75rem;
+    border: 1px solid #2b3750;
+    border-radius: 0.125rem;
+    width: 100%;
+
+    &__header {
+        color: #93a9c8;
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        vertical-align: middle;
+        background: #1c2736;
+
+        &-icon {
+            flex: 0 0 auto;
+            margin-right: 0.5rem;
+            display: flex;
+        }
+
+        &-title {
+            flex: 0 1 auto;
+        }
+    }
+
+    &__loading-icon {
+        align-self: center;
+        display: inline-block;
+        margin: 2rem;
+        width: 2.5rem;
+        svg {
+            stroke: currentColor;
+        }
+    }
+
+    &__error {
+        margin: 0.75rem;
+        &-text {
+            margin-left: 0.25rem;
+            color: red;
+        }
+    }
+
+    &__list-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+        border-bottom: 1px solid #2b3750;
+        border-collapse: collapse;
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    &__status {
+        float: right;
+
+        &--running {
+            color: #37b24d;
+        }
+
+        &--unhealthy {
+            color: #f03e3e;
+        }
+
+        &--disabled {
+            color: $color-light-text-2;
+        }
+    }
+
+    &__left-area {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__language {
+        display: flex;
+        height: 1.25rem;
+        &-name {
+            font-weight: bold;
+        }
+        &-custom {
+            padding-left: 0.25rem;
+            color: $color-text-1;
+        }
+        .badge {
+            align-self: center;
+            margin-left: 0.25rem;
+        }
+    }
+
+    &__repo {
+        margin-top: 0.5rem;
+        display: flex;
+        &-link:not(:first-child) {
+            margin-left: 0.25rem;
+        }
+    }
+
+    &__actions {
+        display: flex;
+
+        .btn {
+            margin-bottom: 0.5rem;
+        }
+
+        &-updating {
+            line-height: 2rem;
+            color: $color-text-1;
+            margin-right: 0.25rem;
+        }
+        &-update,
+        &-restart {
+            border-right: 2px solid #151c28;
+        }
+        &-enable-disable {
+            width: 4.75rem;
+        }
+    }
+}
+
+.theme-light {
+    .site-admin-lang-servers {
+        color: $color-light-text-1;
+        border-color: $color-light-border;
+        &__header {
+            color: $color-light-text-1;
+            background: $color-light-bg-4;
+        }
+        &__list-item {
+            border-color: $color-light-border;
+        }
+        &__actions {
+            &-update,
+            &-restart {
+                border-right: 2px solid #e4e9f2;
+            }
+        }
+    }
+}

@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -83,7 +83,7 @@ func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
 }
 
 type SavedQueryIDSpec struct {
-	Subject SettingsSubject
+	Subject ConfigurationSubject
 	Key     string
 }
 
@@ -168,7 +168,7 @@ func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query strin
 	return c.postInternal(ctx, "saved-queries/delete-info", query, nil)
 }
 
-func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject SettingsSubject) (parsed *schema.Settings, settings *Settings, err error) {
+func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject ConfigurationSubject) (parsed *schema.Settings, settings *Settings, err error) {
 	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
 	if err == nil {
 		err = jsonc.Unmarshal(settings.Contents, &parsed)
@@ -214,26 +214,17 @@ func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (
 }
 
 // TODO(slimsag): In the future, once we're no longer using environment
-// variables to build ExternalURL, remove this in favor of services just reading it
+// variables to build AppURL, remove this in favor of services just reading it
 // directly from the configuration file.
 //
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
-	var externalURL string
-	err := c.postInternal(ctx, "app-url", nil, &externalURL)
+func (c *internalClient) AppURL(ctx context.Context) (string, error) {
+	var appURL string
+	err := c.postInternal(ctx, "app-url", nil, &appURL)
 	if err != nil {
 		return "", err
 	}
-	return externalURL, nil
-}
-
-func (c *internalClient) GitServerAddrs(ctx context.Context) ([]string, error) {
-	var gitServerAddrs []string
-	err := c.postInternal(ctx, "git-server-addrs", nil, &gitServerAddrs)
-	if err != nil {
-		return nil, err
-	}
-	return gitServerAddrs, nil
+	return appURL, nil
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
@@ -246,8 +237,22 @@ func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, e
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message) error {
+func (c *internalClient) SendEmail(ctx context.Context, message txemail.Message) error {
 	return c.postInternal(ctx, "send-email", &message, nil)
+}
+
+func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
+	return c.postInternal(ctx, "defs/refresh-index", &DefsRefreshIndexRequest{
+		RepoURI:  uri,
+		CommitID: commitID,
+	}, nil)
+}
+
+func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
+	return c.postInternal(ctx, "pkgs/refresh-index", &PkgsRefreshIndexRequest{
+		RepoURI:  uri,
+		CommitID: commitID,
+	}, nil)
 }
 
 func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCreateOrUpdateRequest) (*Repo, error) {
@@ -260,67 +265,62 @@ func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCrea
 }
 
 // ReposListEnabled returns a list of all enabled repository names.
-func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, error) {
-	var names []RepoName
+func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoURI, error) {
+	var names []RepoURI
 	err := c.postInternal(ctx, "repos/list-enabled", nil, &names)
 	return names, err
 }
 
-// MockInternalClientConfiguration mocks (*internalClient).Configuration.
-var MockInternalClientConfiguration func() (conftypes.RawUnified, error)
-
-func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnified, error) {
-	if MockInternalClientConfiguration != nil {
-		return MockInternalClientConfiguration()
-	}
-	var cfg conftypes.RawUnified
-	err := c.postInternal(ctx, "configuration", nil, &cfg)
-	return cfg, err
-}
-
-func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName, description string, fork bool, archived bool) error {
+func (c *internalClient) ReposUpdateMetadata(ctx context.Context, uri RepoURI, description string, fork bool, archived bool) error {
 	return c.postInternal(ctx, "repos/update-metadata", ReposUpdateMetadataRequest{
-		RepoName:    repo,
+		RepoURI:     uri,
 		Description: description,
 		Fork:        fork,
 		Archived:    archived,
 	}, nil)
 }
 
-func (c *internalClient) ReposGetByName(ctx context.Context, repoName RepoName) (*Repo, error) {
+func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, commitID CommitID, lang string) error {
+	return c.postInternal(ctx, "repos/update-index", RepoUpdateIndexRequest{
+		RepoID:   repo,
+		CommitID: commitID,
+		Language: lang,
+	}, nil)
+}
+
+func (c *internalClient) ReposGetByURI(ctx context.Context, uri RepoURI) (*Repo, error) {
 	var repo Repo
-	err := c.postInternal(ctx, "repos/"+string(repoName), nil, &repo)
+	err := c.postInternal(ctx, "repos/"+string(uri), nil, &repo)
 	if err != nil {
 		return nil, err
 	}
 	return &repo, nil
 }
 
-func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoName, callsign, url string) error {
+func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
+	var inv inventory.Inventory
+	err := c.postInternal(ctx, "repos/inventory-uncached", ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID}, &inv)
+	if err != nil {
+		return nil, err
+	}
+	return &inv, nil
+}
+
+func (c *internalClient) ReposGetInventory(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
+	var inv inventory.Inventory
+	err := c.postInternal(ctx, "repos/inventory", ReposGetInventoryRequest{Repo: repo, CommitID: commitID}, &inv)
+	if err != nil {
+		return nil, err
+	}
+	return &inv, nil
+}
+
+func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri RepoURI, callsign, url string) error {
 	return c.postInternal(ctx, "phabricator/repo-create", PhabricatorRepoCreateRequest{
-		RepoName: repo,
+		RepoURI:  uri,
 		Callsign: callsign,
 		URL:      url,
 	}, nil)
-}
-
-var MockExternalServiceConfigs func(kind string, result interface{}) error
-
-// ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
-// which should be a slice of the expected config type.
-func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result interface{}) error {
-	if MockExternalServiceConfigs != nil {
-		return MockExternalServiceConfigs(kind, result)
-	}
-	return c.postInternal(ctx, "external-services/configs", ExternalServiceConfigsRequest{
-		Kind: kind,
-	}, &result)
-}
-
-// ExternalServicesList returns all external services of the given kind.
-func (c *internalClient) ExternalServicesList(ctx context.Context, opts ExternalServicesListRequest) ([]*ExternalService, error) {
-	var extsvcs []*ExternalService
-	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 
 func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody interface{}) error {

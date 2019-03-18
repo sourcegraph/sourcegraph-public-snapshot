@@ -47,7 +47,7 @@ func TestRepository_Archive(t *testing.T) {
 			},
 		},
 		"repo with .git dir": {
-			repo: gitserver.Repo{Name: api.RepoName(repoWithDotGitDir), URL: repoWithDotGitDir},
+			repo: gitserver.Repo{Name: api.RepoURI(repoWithDotGitDir), URL: repoWithDotGitDir},
 			want: map[string]string{"file1": "hello\n", ".git/mydir/file2": "milton\n", ".git/mydir/": "", ".git/": ""},
 		},
 	}

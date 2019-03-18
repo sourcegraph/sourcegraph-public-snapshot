@@ -9,33 +9,66 @@ import (
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		input        conf.Unified
+		input        schema.SiteConfiguration
 		wantProblems []string
 	}{
-		"no auth.providers": {
-			input:        conf.Unified{Critical: schema.CriticalConfiguration{}},
+		"no auth.provider": {
+			input:        schema.SiteConfiguration{},
 			wantProblems: []string{"no auth providers set"},
 		},
-		"empty auth.providers": {
-			input:        conf.Unified{Critical: schema.CriticalConfiguration{AuthProviders: []schema.AuthProviders{}}},
-			wantProblems: []string{"no auth providers set"},
+		"unrecognized auth.provider": {
+			input:        schema.SiteConfiguration{AuthProvider: "x"},
+			wantProblems: []string{"no auth providers set", "auth.provider is deprecated"},
 		},
-		"single auth provider": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
-				},
-			}},
-			wantProblems: nil,
+		"deprecated auth.provider": {
+			input:        schema.SiteConfiguration{AuthProvider: "builtin"},
+			wantProblems: []string{"auth.provider is deprecated"},
 		},
-		"multiple auth providers": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+		"auth.provider and auth.providers": {
+			input: schema.SiteConfiguration{
+				AuthProvider:  "builtin",
+				AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}},
+			},
+			wantProblems: []string{"auth.providers takes precedence"},
+		},
+		"multiple auth providers with experimentalFeatures == nil": {
+			input: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
 				},
-			}},
+			},
 			wantProblems: nil,
+		},
+		"multiple auth providers with experimentalFeatures.multipleAuthProviders unset": {
+			input: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{},
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
+				},
+			},
+			wantProblems: nil,
+		},
+		"multiple auth providers with experimentalFeatures.multipleAuthProviders == enabled": {
+			input: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "enabled"},
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
+				},
+			},
+			wantProblems: nil,
+		},
+		"multiple auth providers with experimentalFeatures.multipleAuthProviders == disabled": {
+			input: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "disabled"},
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
+				},
+			},
+			wantProblems: []string{"auth.providers supports only a single"},
 		},
 	}
 	for name, test := range tests {

@@ -6,15 +6,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestAWS_cloneURLToRepoName(t *testing.T) {
+func TestAWS_cloneURLToRepoURI(t *testing.T) {
 	var tests = []struct {
 		conn schema.AWSCodeCommitConnection
-		urls []urlToRepoName
+		urls []urlURI
 	}{{
 		conn: schema.AWSCodeCommitConnection{
 			Region: "us-west-1",
 		},
-		urls: []urlToRepoName{
+		urls: []urlURI{
 			{"ssh://my-ssh-key-id@git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "test2"},
 			{"https://git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "test2"},
 			{"https://git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "test2"},
@@ -26,7 +26,7 @@ func TestAWS_cloneURLToRepoName(t *testing.T) {
 		conn: schema.AWSCodeCommitConnection{
 			RepositoryPathPattern: "aws/{name}",
 		},
-		urls: []urlToRepoName{
+		urls: []urlURI{
 			{"ssh://my-ssh-key-id@git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "aws/test2"},
 			{"https://git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "aws/test2"},
 			{"https://git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "aws/test2"},
@@ -38,12 +38,12 @@ func TestAWS_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoName, err := AWS{&test.conn}.CloneURLToRepoName(u.cloneURL)
+			repoURI, err := AWS{&test.conn}.cloneURLToRepoURI(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoURI != string(repoURI) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoURI, repoURI, u.cloneURL, test.conn)
 			}
 		}
 	}

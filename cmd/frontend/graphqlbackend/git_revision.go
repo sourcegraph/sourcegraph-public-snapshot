@@ -17,11 +17,7 @@ type gitRevSpecExpr struct {
 func (r *gitRevSpecExpr) Expr() string { return r.expr }
 
 func (r *gitRevSpecExpr) Object(ctx context.Context) (*gitObject, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
-	if err != nil {
-		return nil, err
-	}
-	oid, err := git.ResolveRevision(ctx, *cachedRepo, nil, r.expr, nil)
+	oid, err := git.ResolveRevision(ctx, backend.CachedGitRepo(r.repo.repo), nil, r.expr, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -1,5 +1,3 @@
-// Package errorutil exports a HTTP Middleware for HTTP handlers which return
-// errors.
 package errorutil
 
 import (

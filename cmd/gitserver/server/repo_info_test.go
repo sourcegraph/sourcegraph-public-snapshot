@@ -22,7 +22,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		t.Fatal("could not acquire lock")
 	}
 
-	getRepoInfo := func(t *testing.T, repo api.RepoName) (resp protocol.RepoInfoResponse) {
+	getRepoInfo := func(t *testing.T, repo api.RepoURI) (resp protocol.RepoInfoResponse) {
 		rr := httptest.NewRecorder()
 		body, err := json.Marshal(protocol.RepoInfoRequest{Repo: repo})
 		if err != nil {
@@ -69,16 +69,11 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		repoLastFetched = func(dir string) (time.Time, error) { return lastFetched, nil }
 		defer func() { repoLastFetched = origRepoLastFetched }()
 
-		lastChanged := time.Date(1987, 1, 2, 3, 4, 5, 6, time.UTC)
-		origRepoLastChanged := repoLastChanged
-		repoLastChanged = func(dir string) (time.Time, error) { return lastChanged, nil }
-		defer func() { repoLastChanged = origRepoLastChanged }()
-
 		origRepoRemoteURL := repoRemoteURL
 		repoRemoteURL = func(context.Context, string) (string, error) { return "u", nil }
 		defer func() { repoRemoteURL = origRepoRemoteURL }()
 
-		if got, want := getRepoInfo(t, "x"), (protocol.RepoInfoResponse{Cloned: true, LastFetched: &lastFetched, LastChanged: &lastChanged, URL: "u"}); !reflect.DeepEqual(got, want) {
+		if got, want := getRepoInfo(t, "x"), (protocol.RepoInfoResponse{Cloned: true, LastFetched: &lastFetched, URL: "u"}); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v, want %+v", got, want)
 		}
 	})

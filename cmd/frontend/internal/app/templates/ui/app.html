@@ -5,9 +5,12 @@
 	{{.Injected.HeadTop}}
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="google" content="notranslate">
 	<meta http-equiv="Content-Language" content="en">
-    <meta name="viewport" content="width=device-width, viewport-fit=cover" />
+	{{ if .Context.SourcegraphDotComMode }}
+	<meta name='viewport' content='initial-scale=1, viewport-fit=cover'>
+	{{ end }}
 	{{with .Metadata}}
 	<meta name='description' content="{{.Description}}" />
 	<meta name='twitter:title' content="{{.Title}}" />
@@ -25,18 +28,7 @@
 	<script ignore-csp>
 		; (function (t, r, a, c, k, e, d) { if (!t[k]) { t.GlobalTelligentNamespace = t.GlobalTelligentNamespace || []; t.GlobalTelligentNamespace.push(k); t[k] = function () { (t[k].q = t[k].q || []).push(arguments) }; t[k].q = t[k].q || []; e = r.createElement(a); d = r.getElementsByTagName(a)[0]; e.async = 1; e.src = c; d.parentNode.insertBefore(e, d) } }(window, document, "script", "https://storage.googleapis.com/telligent-artifacts/tracker/tel.js", "telligent"));
 	</script>
-    {{end}}
-    {{if .InjectGoogleAnalyticsTracker}}
-        <!-- Global site tag (gtag.js) - Google Analytics -->
-        <script ignore-csp async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-17"></script>
-        <script ignore-csp>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-40540747-17');
-        gtag('config', 'AW-868484203');
-        </script>
-    {{end}}
+	{{end}}
 	<script ignore-csp>
 		window.context = {{.Context }}
 		window.pageError = {{.Error }}
@@ -47,14 +39,7 @@
 <body>
 	{{.Injected.BodyTop}}
 	<div id="root"></div>
-	<noscript>
-		<p>Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.</p>
-
-		<br>
-		<br>
-		<br>
-		You need to enable JavaScript to run this app.
-	</noscript>
+	<noscript>You need to enable JavaScript to run this app.</noscript>
 	<script src="{{.AssetURL}}/scripts/app.bundle.js?{{version "scripts/app.bundle.js"}}"></script>
 	{{.Injected.BodyBottom}}
 </body>

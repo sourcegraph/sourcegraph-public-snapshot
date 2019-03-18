@@ -9,8 +9,6 @@
     "ms-vscode.Go",
     "shinnn.stylelint",
     "exiasr.hadolint",
-    "bierner.markdown-mermaid",
-    "zignd.html-css-class-completion",
-    "orta.vscode-jest"
+    "bierner.markdown-mermaid"
   ]
 }

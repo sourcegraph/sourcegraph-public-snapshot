@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-echo "--- template inlines"
-
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 set -euf -o pipefail

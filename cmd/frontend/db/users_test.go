@@ -5,11 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -84,7 +83,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if _, err := globalstatedb.Get(ctx); err != nil {
+	if _, err := SiteConfig.Get(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -385,11 +384,6 @@ func TestUsers_Delete(t *testing.T) {
 			}
 			ctx := dbtesting.TestContext(t)
 
-			otherUser, err := Users.Create(ctx, NewUser{Username: "other"})
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			user, err := Users.Create(ctx, NewUser{
 				Email:                 "a@a.com",
 				Username:              "u",
@@ -400,19 +394,11 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// Create settings for the user, and for another user authored by this user.
-			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, &user.ID, "{}"); err != nil {
-				t.Fatal(err)
-			}
-			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &otherUser.ID}, nil, &user.ID, "{}"); err != nil {
-				t.Fatal(err)
-			}
-
 			// Create a repository to comply with the postgres repo constraint.
-			if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+			if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 				t.Fatal(err)
 			}
-			repo, err := Repos.GetByName(ctx, "myrepo")
+			repo, err := Repos.GetByURI(ctx, "myrepo")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -462,22 +448,8 @@ func TestUsers_Delete(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(users) > 1 {
-				// The otherUser should still exist, which is why we check for 1 not 0.
-				t.Errorf("got %d users, want 1", len(users))
-			}
-
-			// User's settings no longer exist.
-			if settings, err := Settings.GetLatest(ctx, api.SettingsSubject{User: &user.ID}); err != nil {
-				t.Error(err)
-			} else if settings != nil {
-				t.Errorf("got settings %+v, want nil", settings)
-			}
-			// Settings authored by user still exist but have nil author.
-			if settings, err := Settings.GetLatest(ctx, api.SettingsSubject{User: &otherUser.ID}); err != nil {
-				t.Fatal(err)
-			} else if settings.AuthorUserID != nil {
-				t.Errorf("got author %v, want nil", *settings.AuthorUserID)
+			if len(users) > 0 {
+				t.Errorf("got %d users, want 0", len(users))
 			}
 
 			// Can't delete already-deleted user.

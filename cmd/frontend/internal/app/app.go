@@ -21,7 +21,7 @@ import (
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
 func NewHandler() http.Handler {
-	session.SetSessionStore(session.NewRedisStore(globals.ExternalURL.Scheme == "https"))
+	session.SetSessionStore(session.NewRedisStore(globals.AppURL.Scheme == "https"))
 
 	r := router.Router()
 
@@ -37,11 +37,11 @@ func NewHandler() http.Handler {
 
 	// Redirects
 	r.Get(router.OldToolsRedirect).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/beta", http.StatusMovedPermanently)
+		http.Redirect(w, r, "/beta", 301)
 	})))
 
 	r.Get(router.GopherconLiveBlog).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://about.sourcegraph.com/go", http.StatusFound)
+		http.Redirect(w, r, "https://about.sourcegraph.com/go", 302)
 	})))
 
 	if envvar.SourcegraphDotComMode() {

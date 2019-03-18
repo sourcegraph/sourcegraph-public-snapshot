@@ -1,12 +1,12 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 
 // authProviderResolver resolves an auth provider.
 type authProviderResolver struct {
-	authProvider providers.Provider
+	authProvider auth.Provider
 
-	info *providers.Info // == authProvider.CachedInfo()
+	info *auth.ProviderInfo // == authProvider.CachedInfo()
 }
 
 func (r *authProviderResolver) ServiceType() string { return r.authProvider.ConfigID().Type }

@@ -9,25 +9,22 @@ import (
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
-		input        conf.Unified
+		input        schema.SiteConfiguration
 		wantProblems []string
 	}{
-		"single": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
-				},
-			}},
-			wantProblems: nil,
-		},
 		"multiple": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "enabled"},
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
-			}},
+			},
 			wantProblems: []string{"at most 1"},
+		},
+		"auth.allowSignup deprecation": {
+			input:        schema.SiteConfiguration{AuthAllowSignup: true},
+			wantProblems: []string{"auth.allowSignup requires", "auth.allowSignup is deprecated"},
 		},
 	}
 	for name, test := range tests {

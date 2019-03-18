@@ -35,13 +35,13 @@ import (
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
-	limitHit bool                      // whether the limit on results was hit
-	repos    []*types.Repo             // repos that were matched by the repo-related filters
-	searched []*types.Repo             // repos that were searched
-	indexed  []*types.Repo             // repos that were searched using an index
-	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
-	missing  []*types.Repo             // repos that could not be searched because they do not exist
-	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
+	limitHit bool                     // whether the limit on results was hit
+	repos    []*types.Repo            // repos that were matched by the repo-related filters
+	searched []*types.Repo            // repos that were searched
+	indexed  []*types.Repo            // repos that were searched using an index
+	cloning  []*types.Repo            // repos that could not be searched because they were still being cloned
+	missing  []*types.Repo            // repos that could not be searched because they do not exist
+	partial  map[api.RepoURI]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
 
@@ -134,7 +134,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.resultCount += other.resultCount
 
 	if c.partial == nil {
-		c.partial = make(map[api.RepoName]struct{})
+		c.partial = make(map[api.RepoURI]struct{})
 	}
 
 	for repo := range other.partial {
@@ -146,8 +146,9 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 type searchResultsResolver struct {
 	results []*searchResultResolver
 	searchResultsCommon
-	alert *searchAlert
-	start time.Time // when the results started being computed
+	alert            *searchAlert
+	start            time.Time // when the results started being computed
+	repoToMatchCount map[string]int
 }
 
 func (sr *searchResultsResolver) Results() []*searchResultResolver {
@@ -201,7 +202,7 @@ var commonFileFilters = []struct {
 
 func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	filters := map[string]*searchFilterResolver{}
-	repoToMatchCount := make(map[string]int)
+	sr.repoToMatchCount = make(map[string]int)
 	add := func(value string, label string, count int, limitHit bool, kind string) {
 		sf, ok := filters[value]
 		if !ok {
@@ -225,10 +226,11 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		if rev != "" {
 			filter = filter + fmt.Sprintf(`@%s`, regexp.QuoteMeta(rev))
 		}
-		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
-		// Increment number of matches per repo. Add will override previous entry for uri
-		repoToMatchCount[uri] += lineMatchCount
-		add(filter, uri, repoToMatchCount[uri], limitHit, "repo")
+		_, limitHit := sr.searchResultsCommon.partial[api.RepoURI(uri)]
+		// Increment number of matches per repo.
+		sr.repoToMatchCount[uri] += lineMatchCount
+		repoCount := sr.repoToMatchCount[uri]
+		add(filter, uri, repoCount, limitHit, "repo")
 	}
 	addFileFilter := func(filematchPath string, lineMatchCount int, limitHit bool) {
 		if ext := path.Ext(filematchPath); ext != "" {
@@ -248,7 +250,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			if result.fileMatch.inputRev != nil {
 				rev = *result.fileMatch.inputRev
 			}
-			addRepoFilter(string(result.fileMatch.repo.Name), rev, len(result.fileMatch.LineMatches()))
+			addRepoFilter(string(result.fileMatch.repo.URI), rev, len(result.fileMatch.LineMatches()))
 			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
 
 			if len(result.fileMatch.symbols) > 0 {
@@ -262,10 +264,6 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			// we shouldn't be getting any repositoy name matches back.
 			addRepoFilter(result.repo.URI(), "", 1)
 		}
-		// Add `case:yes` filter to offer easier access to search results matching with case sensitive set to yes
-		// We use count == 0 and limitHit == false since we can't determine that information without
-		// running the search query. This causes it to display as just `case:yes`.
-		add("case:yes", "case:yes", 0, false, "case")
 	}
 
 	filterSlice := make([]*searchFilterResolver, 0, len(filters))
@@ -351,7 +349,7 @@ func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.repo.Name}, fm.JPath, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.repo.URI}, fm.JPath, &git.BlameOptions{
 		NewestCommit: fm.commitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
@@ -440,14 +438,7 @@ loop:
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
-	start := time.Now()
-	rr, err := r.doResults(ctx, "")
-	if err != nil {
-		log15.Debug("graphql search failed", "query", r.rawQuery(), "duration", time.Since(start), "error", err)
-		return nil, err
-	}
-	log15.Debug("graphql search success", "query", r.rawQuery(), "count", rr.ResultCount(), "duration", time.Since(start))
-	return rr, nil
+	return r.doResults(ctx, "")
 }
 
 type searchResultsStats struct {
@@ -551,48 +542,25 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 }
 
-type getPatternInfoOptions struct {
-	// forceFileSearch, when true, specifies that the search query should be
-	// treated as if every default term had `file:` before it. This can be used
-	// to allow users to jump to files by just typing their name.
-	forceFileSearch bool
-}
-
-// getPatternInfo gets the search pattern info for the query in the resolver.
-func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
+func (r *searchResolver) getPatternInfo() (*search.PatternInfo, error) {
 	var patternsToCombine []string
-	if opts == nil || !opts.forceFileSearch {
-		for _, v := range r.query.Values(query.FieldDefault) {
-			// Treat quoted strings as literal strings to match, not regexps.
-			var pattern string
-			switch {
-			case v.String != nil:
-				pattern = regexp.QuoteMeta(*v.String)
-			case v.Regexp != nil:
-				pattern = v.Regexp.String()
-			}
-			if pattern == "" {
-				continue
-			}
-			patternsToCombine = append(patternsToCombine, pattern)
+	for _, v := range r.query.Values(query.FieldDefault) {
+		// Treat quoted strings as literal strings to match, not regexps.
+		var pattern string
+		switch {
+		case v.String != nil:
+			pattern = regexp.QuoteMeta(*v.String)
+		case v.Regexp != nil:
+			pattern = v.Regexp.String()
 		}
-	} else {
-		// TODO: We must have some pattern that always matches here, or else
-		// cmd/searcher/search/matcher.go:97 would cause a nil regexp panic
-		// when not using indexed search. I am unsure what the right solution
-		// is here. Would this code path go away when we switch fully to
-		// indexed search @keegan? This workaround is OK for now though.
-		patternsToCombine = append(patternsToCombine, ".")
+		if pattern == "" {
+			continue
+		}
+		patternsToCombine = append(patternsToCombine, pattern)
 	}
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
-
-	if opts != nil && opts.forceFileSearch {
-		for _, v := range r.query.Values(query.FieldDefault) {
-			includePatterns = append(includePatterns, asString(v))
-		}
-	}
 
 	// Handle lang: and -lang: filters.
 	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
@@ -675,17 +643,17 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		if err != nil {
 			return nil, err
 		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
+		return &searchResultsResolver{alert: alert}, nil
 	}
 	if overLimit {
 		alert, err := r.alertForOverRepoLimit(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
+		return &searchResultsResolver{alert: alert}, nil
 	}
 
-	p, err := r.getPatternInfo(nil)
+	p, err := r.getPatternInfo()
 	if err != nil {
 		return nil, err
 	}
@@ -850,6 +818,33 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 			})
+		case "ref":
+			refValues, _ := r.query.StringValues(query.FieldRef)
+			if len(refValues) == 0 {
+				continue
+			}
+			wg := waitGroup(len(resultTypes) == 1)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				refResults, refCommon, err := searchReferencesInRepos(ctx, &args)
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "ref search failed"))
+					multiErrMu.Unlock()
+				}
+				if refResults != nil {
+					resultsMu.Lock()
+					results = append(results, refResults...)
+					resultsMu.Unlock()
+				}
+				if refCommon != nil {
+					commonMu.Lock()
+					common.update(*refCommon)
+					commonMu.Unlock()
+				}
+			})
 		case "diff":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
@@ -957,13 +952,13 @@ type searchResultResolver struct {
 	diff      *commitSearchResultResolver // diff or commit match
 }
 
-// getSearchResultURIs returns the repo name and file uri respectiveley
+// getSearchResultURIs returns the repo uri and file uri respectiveley
 func getSearchResultURIs(c *searchResultResolver) (string, string) {
 	if c.fileMatch != nil {
-		return string(c.fileMatch.repo.Name), c.fileMatch.JPath
+		return string(c.fileMatch.repo.URI), c.fileMatch.JPath
 	}
 	if c.repo != nil {
-		return string(c.repo.repo.Name), ""
+		return string(c.repo.repo.URI), ""
 	}
 	// Diffs aren't going to be returned with other types of results
 	// and are already ordered in the desired order, so we'll just leave them in place.

@@ -10,11 +10,40 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+var (
+	gitoliteBlacklists   map[string]*regexp.Regexp
+	gitoliteBlacklistErr error
+	gitoliteBlacklistMu  sync.Mutex
+)
+
+func init() {
+	conf.Watch(func() {
+		newBlacklists := make(map[string]*regexp.Regexp)
+		for _, gconf := range conf.Get().Gitolite {
+			if gconf.Blacklist == "" {
+				continue
+			}
+
+			var err error
+			newBlacklists[gconf.Host], err = regexp.Compile(gconf.Blacklist)
+			if err != nil {
+				gitoliteBlacklistErr = err
+				log15.Error("Invalid regexp for Gitolite blacklist", "expr", gconf.Blacklist, "err", err)
+				return
+			}
+		}
+		gitoliteBlacklistMu.Lock()
+		gitoliteBlacklists, gitoliteBlacklistErr = newBlacklists, nil
+		gitoliteBlacklistMu.Unlock()
+	})
+}
 
 func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -27,14 +56,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		fallthrough // treat same as if the URL query was "gitolite" for backcompat
 	case query("gitolite"):
 		gitoliteHost := q.Get("gitolite")
-
-		config, err := conf.GitoliteConfigs(ctx)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		for _, gconf := range config {
+		for _, gconf := range conf.Get().Gitolite {
 			if gconf.Host != gitoliteHost {
 				continue
 			}
@@ -110,19 +132,12 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func blacklistRegexp(gconf *schema.GitoliteConnection) (*regexp.Regexp, error) {
-	if gconf.Blacklist == "" {
-		return nil, nil
-	}
-	return regexp.Compile(gconf.Blacklist)
-}
-
 func listGitoliteRepos(ctx context.Context, gconf *schema.GitoliteConnection) ([]string, error) {
-	blacklist, err := blacklistRegexp(gconf)
-	if err != nil {
-		log15.Error("Invalid regexp for Gitolite blacklist", "expr", gconf.Blacklist, "err", err)
-		return nil, err
+	if gitoliteBlacklistErr != nil {
+		return nil, gitoliteBlacklistErr
 	}
+
+	blacklist := gitoliteBlacklists[gconf.Host]
 
 	out, err := exec.CommandContext(ctx, "ssh", gconf.Host, "info").CombinedOutput()
 	if err != nil {
@@ -137,18 +152,18 @@ func listGitoliteRepos(ctx context.Context, gconf *schema.GitoliteConnection) ([
 		fields := strings.Fields(line)
 		if len(fields) >= 2 && fields[0] == "R" {
 			name := fields[len(fields)-1]
-			repoName := gconf.Prefix + name
+			repoURI := gconf.Prefix + name
 
 			// Gitolite's internal rules for what a regex looks like exclude `+` from
 			// consideration because of `gtk+`. The character list here is derived from
 			// Gitolite's `$REPOPAT_PATT`. Note that even when these characters would
 			// not have special meaning to a regex engine, Gitolite will treat them as
 			// proof that a string is a pattern, not a literal name.
-			if strings.ContainsAny(repoName, "\\^$|()[]*?{},") || (blacklist != nil && blacklist.MatchString(repoName)) {
+			if strings.ContainsAny(repoURI, "\\^$|()[]*?{},") || (blacklist != nil && blacklist.MatchString(repoURI)) {
 				blacklistCount++
 				continue
 			}
-			repos = append(repos, repoName)
+			repos = append(repos, repoURI)
 		}
 	}
 	if blacklistCount > 0 {

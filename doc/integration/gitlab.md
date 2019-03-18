@@ -1,32 +1,23 @@
 # GitLab integration with Sourcegraph
 
-You can use Sourcegraph with [GitLab.com](https://github.com) and GitLab CE/EE.
+Sourcegraph integrates with GitLab.com, GitLab CE, and GitLab EE.
 
-Feature | Supported?
-------- | ----------
-[Repository syncing](../admin/external_service/gitlab.md#repository-syncing) | ✅
-[Repository permissions](../admin/external_service/gitlab.md#repository-permissions) | ✅
-[User authentication](../admin/external_service/gitlab.md#user-authentication) | ✅
-[Browser extension](#browser-extension) | ✅
+## GitLab configuration
 
-## Repository syncing
+Sourcegraph supports syncing repositories from GitLab.com, GitLab CE, and GitLab EE (version 10.0 and newer). To add repositories associated with a GitLab user:
 
-Site admins can [add GitLab repositories to Sourcegraph](../admin/external_service/gitlab.md#repository-syncing).
+1.  Go to the [site configuration editor](../admin/site_config/index.md).
+2.  Press **Add GitLab projects**.
+3.  Fill in the fields in the generated `gitlab` configuration option.
 
-## Repository permissions
-
-Site admins can [configure Sourcegraph to respect GitLab repository access permissions](../admin/external_service/gitlab.md#repository-permissions).
-
-## User authentication
-
-Site admins can [configure Sourcegraph to allow users to sign in via GitLab](../admin/external_service/gitlab.md#user-authentication).
+By default, it adds every GitLab project where the token's user is a member. To see other optional GitLab configuration settings, view [all settings](../admin/site_config/index.md) or press Ctrl+Space or Cmd+Space in the site configuration editor.
 
 ## Browser extension
 
 The [Sourcegraph browser extension](browser_extension.md) supports GitLab. When installed in your web browser, it adds hover tooltips, go-to-definition, find-references, and code search to files and merge requests viewed on GitLab.
 
 1.  Install the [Sourcegraph browser extension](browser_extension.md).
-1.  [Configure the browser extension](browser_extension.md#configuring-the-sourcegraph-instance-to-use) to use your Sourcegraph instance.
+1.  [Configure the browser extension](browser_extension.md#configuring-the-sourcegraph-instance-to-use) to use your Sourcegraph instance (where you've added the `gitlab` site config property).
 
 - You can also use [`https://sourcegraph.com`](https://sourcegraph.com) for public code from GitLab.com only.
 

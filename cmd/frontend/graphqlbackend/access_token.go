@@ -11,14 +11,6 @@ import (
 )
 
 // accessTokenResolver resolves an access token.
-//
-// Access tokens provide scoped access to a user account (not just the API).
-// This is different than other services such as GitHub, where access tokens
-// only provide access to the API. This is OK for us because our general UI is
-// completely implemented via our API, so access token authentication with our
-// UI does not provide any additional functionality. In contrast, GitHub and
-// other services likely allow user accounts to do more than what access tokens
-// alone can via the API.
 type accessTokenResolver struct {
 	accessToken db.AccessToken
 }

@@ -28,12 +28,13 @@ func restartGoremanDev() error {
 	// Should be kept in sync with Procfile.
 	allProcessesExceptFrontend := []string{
 		"gitserver",
+		"indexer",
 		"query-runner",
 		"repo-updater",
 		"searcher",
 		"symbols",
 		"github-proxy",
-		"management-console",
+		"lsp-proxy",
 		"syntect_server",
 		"zoekt-indexserver",
 		"zoekt-webserver",

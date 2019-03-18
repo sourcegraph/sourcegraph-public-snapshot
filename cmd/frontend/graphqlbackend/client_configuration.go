@@ -30,41 +30,20 @@ func (r *parentSourcegraphResolver) URL() string {
 func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfigurationResolver, error) {
 	cfg := conf.Get()
 	var contentScriptUrls []string
-
-	// The following code makes serial database calls.
-	// Ideally these could be done in parallel, but the table is small
-	// and I don't think real world perf is going to be bad.
-
-	githubs, err := conf.GitHubConfigs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, gh := range githubs {
+	for _, gh := range cfg.Github {
 		contentScriptUrls = append(contentScriptUrls, gh.Url)
 	}
-
-	bitbucketservers, err := conf.BitbucketServerConfigs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, bb := range bitbucketservers {
+	for _, bb := range cfg.BitbucketServer {
 		contentScriptUrls = append(contentScriptUrls, bb.Url)
 	}
-
-	gitlabs, err := conf.GitLabConfigs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, gl := range gitlabs {
+	for _, gl := range cfg.Gitlab {
 		contentScriptUrls = append(contentScriptUrls, gl.Url)
 	}
-
-	phabricators, err := conf.PhabricatorConfigs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, ph := range phabricators {
+	for _, ph := range cfg.Phabricator {
 		contentScriptUrls = append(contentScriptUrls, ph.Url)
+	}
+	for _, rb := range cfg.ReviewBoard {
+		contentScriptUrls = append(contentScriptUrls, rb.Url)
 	}
 
 	var parentSourcegraph parentSourcegraphResolver

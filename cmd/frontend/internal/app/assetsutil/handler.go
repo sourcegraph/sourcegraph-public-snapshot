@@ -1,4 +1,3 @@
-// Package assetsutil is a utils package for static files.
 package assetsutil
 
 import (
@@ -8,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sqs/httpgzip"
 )
@@ -46,7 +45,7 @@ func Mount(mux *http.ServeMux) {
 			if isPhabricatorAsset(r.URL.Path) {
 				w.Header().Set("Cache-Control", "max-age=300, public")
 			} else {
-				w.Header().Set("Cache-Control", "immutable, max-age=172800, public")
+				w.Header().Set("Cache-Control", "max-age=25200, public")
 			}
 		}
 

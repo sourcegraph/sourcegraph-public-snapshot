@@ -23,14 +23,14 @@ func TestSavedQueries(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{ID: uid}, nil
 	}
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
 		return &api.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
 
-	mockSettingsCascadeSubjects = func() ([]*settingsSubject, error) {
-		return []*settingsSubject{{user: &UserResolver{user: &types.User{ID: uid}}}}, nil
+	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
+		return []*configurationSubject{{user: &UserResolver{user: &types.User{ID: uid}}}}, nil
 	}
-	defer func() { mockSettingsCascadeSubjects = nil }()
+	defer func() { mockConfigurationCascadeSubjects = nil }()
 
 	savedQueries, err := (&schemaResolver{}).SavedQueries(ctx)
 	if err != nil {
@@ -39,7 +39,7 @@ func TestSavedQueries(t *testing.T) {
 	want := []*savedQueryResolver{
 		{
 			key:            "a",
-			subject:        &settingsSubject{user: &UserResolver{user: &types.User{ID: uid}}},
+			subject:        &configurationSubject{user: &UserResolver{user: &types.User{ID: uid}}},
 			index:          0,
 			description:    "d",
 			query:          "q",
@@ -57,27 +57,27 @@ func TestCreateSavedQuery(t *testing.T) {
 	uid := int32(1)
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &settingsSubject{user: &UserResolver{user: &types.User{ID: uid}}}
+	subject := &configurationSubject{user: &UserResolver{user: &types.User{ID: uid}}}
 
 	defer resetMocks()
 	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsCreateIfUpToDate := false
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
 		return &api.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, _, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, _ *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &api.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
 
-	mockSettingsCascadeSubjects = func() ([]*settingsSubject, error) {
-		return []*settingsSubject{subject}, nil
+	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
+		return []*configurationSubject{subject}, nil
 	}
-	defer func() { mockSettingsCascadeSubjects = nil }()
+	defer func() { mockConfigurationCascadeSubjects = nil }()
 
 	mutation, err := (&schemaResolver{}).ConfigurationMutation(ctx, &struct {
-		Input *settingsMutationGroupInput
-	}{Input: &settingsMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
+		Input *configurationMutationGroupInput
+	}{Input: &configurationMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,33 +120,33 @@ func TestUpdateSavedQuery(t *testing.T) {
 	uid := int32(1)
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &settingsSubject{user: &UserResolver{user: &types.User{ID: uid}}}
+	subject := &configurationSubject{user: &UserResolver{user: &types.User{ID: uid}}}
 	newDescription := "d2"
 
 	defer resetMocks()
 	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsGetLatest := false
 	calledSettingsCreateIfUpToDate := false
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
 		calledSettingsGetLatest = true
 		if calledSettingsCreateIfUpToDate {
 			return &api.Settings{ID: lastID + 1, Contents: `{"search.savedQueries":[{"key":"a","description":"d2","query":"q"}]}`}, nil
 		}
 		return &api.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, _, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, _ *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &api.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
 
-	mockSettingsCascadeSubjects = func() ([]*settingsSubject, error) {
-		return []*settingsSubject{subject}, nil
+	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
+		return []*configurationSubject{subject}, nil
 	}
-	defer func() { mockSettingsCascadeSubjects = nil }()
+	defer func() { mockConfigurationCascadeSubjects = nil }()
 
 	mutation, err := (&schemaResolver{}).ConfigurationMutation(ctx, &struct {
-		Input *settingsMutationGroupInput
-	}{Input: &settingsMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
+		Input *configurationMutationGroupInput
+	}{Input: &configurationMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
 	if err != nil {
 		t.Fatal(err)
 	}

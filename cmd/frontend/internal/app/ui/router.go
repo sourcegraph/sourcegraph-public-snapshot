@@ -45,10 +45,10 @@ const (
 	routeThreads        = "threads"
 	routeTree           = "tree"
 	routeBlob           = "blob"
-	routeRaw            = "raw"
 	routeOrganizations  = "org"
 	routeSettings       = "settings"
 	routeSiteAdmin      = "site-admin"
+	routeExplore        = "explore"
 	routeDiscussions    = "discussions"
 	routeAPIConsole     = "api-console"
 	routeSearchScope    = "scope"
@@ -63,8 +63,6 @@ const (
 	routeRegistry       = "registry"
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
-	routeExplore        = "explore"
-	routeWelcome        = "welcome"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -114,7 +112,6 @@ func newRouter() *mux.Router {
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/start").Methods("GET").Name(routeStart)
-	r.PathPrefix("/welcome").Methods("GET").Name(routeWelcome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/searches").Methods("GET").Name(routeSearchSearches)
@@ -125,6 +122,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
+	r.Path("/explore").Methods("GET").Name(routeExplore)
 	r.Path("/discussions").Methods("GET").Name(routeDiscussions)
 	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
@@ -137,7 +135,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
 	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
 	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
-	r.PathPrefix("/explore").Methods("GET").Name(routeExplore)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -158,9 +155,6 @@ func newRouter() *mux.Router {
 
 	// blob
 	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
-
-	// raw
-	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw)
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
@@ -187,15 +181,15 @@ func initRouter() {
 	router := newRouter()
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeStart).Handler(staticRedirectHandler("/welcome", http.StatusMovedPermanently))
-	router.Get(routeWelcome).Handler(handler(serveWelcome))
+	router.Get(routeStart).Handler(handler(serveStart))
 	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
-	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
+	router.Get(uirouter.RouteSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))
 	router.Get(routeOrganizations).Handler(handler(serveBasicPageString("Organization - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("Settings - Sourcegraph")))
 	router.Get(routeSiteAdmin).Handler(handler(serveBasicPageString("Admin - Sourcegraph")))
 	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))
+	router.Get(routeExplore).Handler(handler(serveBasicPageString("Explore - Sourcegraph")))
 	router.Get(routeDiscussions).Handler(handler(serveBasicPageString("Discussions - Sourcegraph")))
 	router.Get(routeAPIConsole).Handler(handler(serveBasicPageString("API explorer - Sourcegraph")))
 	router.Get(routeRepoSettings).Handler(handler(serveBasicPageString("Repository settings - Sourcegraph")))
@@ -211,7 +205,6 @@ func initRouter() {
 	router.Get(routeSurveyScore).Handler(handler(serveBasicPageString("Survey - Sourcegraph")))
 	router.Get(routeRegistry).Handler(handler(serveBasicPageString("Registry - Sourcegraph")))
 	router.Get(routeExtensions).Handler(handler(serveBasicPageString("Extensions - Sourcegraph")))
-	router.Get(routeExplore).Handler(handler(serveBasicPageString("Explore - Sourcegraph")))
 	router.Get(routeHelp).HandlerFunc(serveHelp)
 
 	router.Get(routeUserSettings).Handler(handler(serveBasicPageString("User settings - Sourcegraph")))
@@ -263,7 +256,7 @@ func initRouter() {
 	// repo
 	serveRepoHandler := handler(serveRepoOrBlob(routeRepo, func(c *Common, r *http.Request) string {
 		// e.g. "gorilla/mux - Sourcegraph"
-		return fmt.Sprintf("%s - Sourcegraph", repoShortName(c.Repo.Name))
+		return fmt.Sprintf("%s - Sourcegraph", repoShortName(c.Repo.URI))
 	}))
 	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
@@ -283,18 +276,15 @@ func initRouter() {
 	router.Get(routeTree).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		// e.g. "src - gorilla/mux - Sourcegraph"
 		dirName := path.Base(mux.Vars(r)["Path"])
-		return fmt.Sprintf("%s - %s - Sourcegraph", dirName, repoShortName(c.Repo.Name))
+		return fmt.Sprintf("%s - %s - Sourcegraph", dirName, repoShortName(c.Repo.URI))
 	})))
 
 	// blob
 	router.Get(routeBlob).Handler(handler(serveRepoOrBlob(routeBlob, func(c *Common, r *http.Request) string {
 		// e.g. "mux.go - gorilla/mux - Sourcegraph"
 		fileName := path.Base(mux.Vars(r)["Path"])
-		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.Name))
+		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.URI))
 	})))
-
-	// raw
-	router.Get(routeRaw).Handler(handler(serveRaw))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

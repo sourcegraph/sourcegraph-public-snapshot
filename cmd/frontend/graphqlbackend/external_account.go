@@ -8,11 +8,10 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
 type externalAccountResolver struct {
-	account extsvc.ExternalAccount
+	account db.ExternalAccount
 }
 
 func externalAccountByID(ctx context.Context, id graphql.ID) (*externalAccountResolver, error) {

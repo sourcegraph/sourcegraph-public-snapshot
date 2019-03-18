@@ -39,7 +39,6 @@ func (c *Client) baseContactURL(email string) *url.URL {
 type ContactProperties struct {
 	UserID        string `json:"user_id"`
 	IsServerAdmin bool   `json:"is_server_admin"`
-	LatestPing    int64  `json:"latest_ping"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -55,7 +54,6 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps := &apiProperties{}
 	apiProps.set("user_id", h.UserID)
 	apiProps.set("is_server_admin", h.IsServerAdmin)
-	apiProps.set("latest_ping", h.LatestPing)
 	return apiProps
 }
 

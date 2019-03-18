@@ -1,0 +1,46 @@
+.site-init-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    flex: 1 1 auto;
+
+    color: $color-light-text-1;
+
+    &__content {
+        width: 26rem;
+        padding: 1.5rem;
+        border: solid 1px $color-light-border;
+    }
+
+    &__logo {
+        width: 100%;
+        padding-bottom: 2rem;
+    }
+
+    &__control {
+        margin-bottom: 1rem;
+    }
+
+    .signin-signup-form {
+        width: 100%;
+        max-width: inherit;
+    }
+
+    .signin-signup-form__input {
+        display: block;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    &__label {
+        display: flex;
+        align-items: center;
+    }
+
+    &__input-telemetry {
+        margin-right: 0.5rem;
+    }
+}

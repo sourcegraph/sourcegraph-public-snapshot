@@ -3,25 +3,37 @@
   "configurations": [
     {
       "type": "node",
-      "name": "vscode-jest-tests",
       "request": "launch",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
-      "args": [
-        "--color",
-        "--runInBand"
-        // "path/to/test/file",
-        // "-t",
-        // "test name"
-      ],
+      "name": "Mocha Tests",
       "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "skipFiles": [
-        "**/async_hooks.js",
-        "**/inspector_async_hook.js"
-        // "**/node_modules/rxjs"
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": ["--require", "ts-node/register", "--colors", "--no-timeouts", "src/**/*.test.ts?(x)"],
+      "env": {
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
+      },
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Mocha E2E Tests",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": [
+        "--require",
+        "ts-node/register",
+        "--require",
+        "src/util/long-stack-traces.ts",
+        "--colors",
+        "--no-timeouts",
+        "src/**/*.test.e2e.ts?(x)",
+        "--bail"
       ],
-      "smartStep": false
+      "internalConsoleOptions": "openOnSessionStart",
+      "env": {
+        // "SOURCEGRAPH_BASE_URL": "https://sourcegraph.com",
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
+      }
     },
     {
       "type": "node",
@@ -36,11 +48,11 @@
       "internalConsoleOptions": "openOnSessionStart"
     },
     {
-      "name": "Webapp Chrome",
+      "name": "ui",
       "type": "chrome",
       "request": "attach",
       "port": 9222,
-      "webRoot": "${workspaceRoot}/web",
+      "webRoot": "${workspaceRoot}",
       "url": "http://localhost:3080/*",
       "sourceMaps": true
     },
@@ -129,24 +141,24 @@
       "args": []
     },
     {
-      "name": "Attach to frontend",
+      "name": "Attach to lsp-proxy",
       "type": "go",
       "request": "launch",
       "mode": "remote",
       "remotePath": "${workspaceRoot}",
-      "port": 2354,
+      "port": 2352,
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
       "args": []
     },
     {
-      "name": "Attach to management-console",
+      "name": "Attach to frontend",
       "type": "go",
       "request": "launch",
       "mode": "remote",
       "remotePath": "${workspaceRoot}",
-      "port": 2355,
+      "port": 2354,
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},

@@ -58,8 +58,7 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
-	InjectSourcegraphTracker     bool
-	InjectGoogleAnalyticsTracker bool
+	InjectSourcegraphTracker bool
 
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
@@ -67,12 +66,12 @@ type Common struct {
 	api.CommitID        // resolved SHA1 revision
 }
 
-// repoShortName trims the first path element of the given repo name if it has
+// repoShortName trims the first path element of the given repo uri if it has
 // at least two path components.
-func repoShortName(name api.RepoName) string {
-	split := strings.Split(string(name), "/")
+func repoShortName(uri api.RepoURI) string {
+	split := strings.Split(string(uri), "/")
 	if len(split) < 2 {
-		return string(name)
+		return string(uri)
 	}
 	return strings.Join(split[1:], "/")
 }
@@ -94,31 +93,22 @@ func repoShortName(name api.RepoName) string {
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
 	injectTelligentTracker := false
-	injectGoogleAnalyticsTracker := false
 	if envvar.SourcegraphDotComMode() {
 		injectTelligentTracker = true
-		if strings.TrimPrefix(r.URL.Path, "/") == routeWelcome {
-			injectGoogleAnalyticsTracker = true
-		}
 	}
 
 	common := &Common{
 		Injected: InjectedHTML{
-			HeadTop:    template.HTML(conf.Get().Critical.HtmlHeadTop),
-			HeadBottom: template.HTML(conf.Get().Critical.HtmlHeadBottom),
-			BodyTop:    template.HTML(conf.Get().Critical.HtmlBodyTop),
-			BodyBottom: template.HTML(conf.Get().Critical.HtmlBodyBottom),
+			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
+			HeadBottom: template.HTML(conf.Get().HtmlHeadBottom),
+			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
+			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
-		Metadata: &Metadata{
-			Title:       "Sourcegraph",
-			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
-		},
 
-		InjectSourcegraphTracker:     injectTelligentTracker,
-		InjectGoogleAnalyticsTracker: injectGoogleAnalyticsTracker,
+		InjectSourcegraphTracker: injectTelligentTracker,
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {
@@ -130,11 +120,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
-				err = handlerutil.RedirectToNewRepoName(w, r, e.NewRepo)
-				if err != nil {
-					return nil, errors.Wrap(err, "when sending renamed repository redirect response")
-				}
-
+				http.Redirect(w, r, "/"+string(e.NewRepo), http.StatusMovedPermanently)
 				return nil, nil
 			}
 			if e, ok := err.(backend.ErrRepoSeeOther); ok {
@@ -178,8 +164,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			}
 			return nil, err
 		}
-		if common.Repo.Name == "github.com/sourcegraphtest/Always500Test" {
-			return nil, errors.New("error caused by Always500Test repo name")
+		if common.Repo.URI == "github.com/sourcegraphtest/Always500Test" {
+			return nil, errors.New("error caused by Always500Test repo URI")
 		}
 		common.Rev = mux.Vars(r)["Rev"]
 		// Update gitserver contents for a repo whenever it is visited.
@@ -225,9 +211,9 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if envvar.SourcegraphDotComMode() && !actor.FromContext(r.Context()).IsAuthenticated() {
-		// The user is not signed in and tried to access Sourcegraph.com.  Redirect to /welcome so
-		// they see the welcome page.
-		http.Redirect(w, r, "/welcome", http.StatusTemporaryRedirect)
+		// The user is not signed in and tried to access our main site at sourcegraph.com.
+		// Redirect to sourcegraph.com/start so they see general info.
+		http.Redirect(w, r, "/start", http.StatusTemporaryRedirect)
 		return nil
 	}
 	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
@@ -236,29 +222,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveSignIn(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "", serveError)
-	if err != nil {
-		return err
-	}
-	if common == nil {
-		return nil // request was handled
-	}
-	common.Title = "Sign in - Sourcegraph"
-
-	// If we are being redirected to another page after sign in, it means the
-	// user attempted to access something without authorization. Reflect this
-	// in the status code. This is useful when users curl / code which
-	// interacts with the Sourcegraph endpoints. Specifically this is a common
-	// issue facing extension developers interacting with the raw API.
-	if r.URL.Query().Get("returnTo") != "" {
-		w.WriteHeader(http.StatusUnauthorized)
-	}
-
-	return renderTemplate(w, "app.html", common)
-}
-
-func serveWelcome(w http.ResponseWriter, r *http.Request) error {
+func serveStart(w http.ResponseWriter, r *http.Request) error {
 	common, err := newCommon(w, r, "Sourcegraph", serveError)
 	if err != nil {
 		return err
@@ -268,7 +232,8 @@ func serveWelcome(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if !envvar.SourcegraphDotComMode() {
-		// The welcome page only exists on Sourcegraph.com.
+		// The user is signed in and tried to access sourcegraph.com/start,
+		// this page should be a 404 under that situation.
 		w.WriteHeader(http.StatusNotFound)
 	}
 	return renderTemplate(w, "app.html", common)
@@ -300,7 +265,7 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 			// It does not apply the file: filter because that was not the behavior of the
 			// old blob URLs with a 'q' parameter either.
 			r.URL.Path = "/search"
-			q.Set("sq", "repo:^"+regexp.QuoteMeta(string(common.Repo.Name))+"$")
+			q.Set("sq", "repo:^"+regexp.QuoteMeta(string(common.Repo.URI))+"$")
 			r.URL.RawQuery = q.Encode()
 			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
 			return nil

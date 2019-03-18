@@ -11,4 +11,4 @@ Unless you feel confident your change will be accepted (trivial bug fixes, code 
 ## Code of Conduct
 
 All interactions with the Sourcegraph open source project are governed by the
-[Sourcegraph Code of Conduct](./doc/dev/conduct.md).
+[Sourcegraph Code of Conduct](./docs/conduct.md).

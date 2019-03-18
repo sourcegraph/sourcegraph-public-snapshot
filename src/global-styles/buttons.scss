@@ -1,0 +1,66 @@
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/button-group';
+
+// Light theme button variants
+.theme-light {
+    @each $color, $value in $theme-colors-light {
+        .btn-#{$color} {
+            @include button-variant($value, $value);
+        }
+    }
+
+    @each $color, $value in $theme-colors-light {
+        .btn-outline-#{$color} {
+            @include button-outline-variant($value);
+        }
+    }
+}
+
+// This class is meant for clickable icons
+// It is NOT meant for buttons with icons in it
+.btn-icon {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+
+    .icon {
+        @extend .icon-inline;
+    }
+
+    &:focus:not(:disabled):not(.disabled) {
+        box-shadow: 0 0 0 2px rgba($primary, 0.5);
+    }
+
+    &:hover:not(:disabled):not(.disabled) {
+        color: white;
+
+        .theme-light & {
+            color: $color-light-text-2;
+        }
+    }
+}
+
+.btn.btn-sm {
+    @extend small;
+}
+
+// A .btn-outline-link button class that displays an unsaturated outline around a link.
+.btn.btn-outline-link {
+    color: $link-color !important;
+}
+.theme-dark {
+    .btn.btn-outline-link {
+        @include button-outline-variant($secondary);
+    }
+}
+// stylelint-disable-next-line no-duplicate-selectors
+.theme-light {
+    .btn.btn-outline-link {
+        @include button-outline-variant($secondary-light);
+    }
+}

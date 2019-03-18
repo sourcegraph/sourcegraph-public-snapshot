@@ -6,8 +6,8 @@ import (
 
 // SearchArgs are the arguments to perform a search on the symbols service.
 type SearchArgs struct {
-	// Repo is the name of the repository to search in.
-	Repo api.RepoName `json:"repo"`
+	// Repo is the repository URI to search in.
+	Repo api.RepoURI `json:"repo"`
 
 	// CommitID is the commit to search in.
 	CommitID api.CommitID `json:"commitID"`

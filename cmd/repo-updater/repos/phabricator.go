@@ -62,19 +62,14 @@ type phabAPIResponse struct {
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	for {
-		phabs, err := conf.PhabricatorConfigs(ctx)
-		if err != nil {
-			log15.Error("unable to fetch Phabricator connections", "err", err)
-		}
-
-		for i, c := range phabs {
+		for i, c := range conf.Get().Phabricator {
 			if c.Token == "" {
 				continue
 			}
 
 			after := ""
 			for {
-				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(phabs))
+				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(conf.Get().Phabricator))
 				res, err := fetchPhabRepos(ctx, c, after)
 				if err != nil {
 					log15.Error("Error fetching Phabricator repos", "err", err)
@@ -93,11 +88,11 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 			}
 
 		}
-		time.Sleep(GetUpdateInterval())
+		time.Sleep(getUpdateInterval())
 	}
 }
 
-func fetchPhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, after string) (*phabRepoLookupResponse, error) {
+func fetchPhabRepos(ctx context.Context, cfg *schema.Phabricator, after string) (*phabRepoLookupResponse, error) {
 	form := url.Values{}
 	form.Add("output", "json")
 	form.Add("params[__conduit__]", `{"token": "`+cfg.Token+`"}`)
@@ -129,7 +124,7 @@ func fetchPhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, afte
 }
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, repos []*phabRepo) error {
+func updatePhabRepos(ctx context.Context, cfg *schema.Phabricator, repos []*phabRepo) error {
 	for _, repo := range repos {
 		if repo.Fields.VCS != "git" {
 			continue
@@ -137,7 +132,7 @@ func updatePhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, rep
 		if repo.Fields.Status == "inactive" {
 			continue
 		}
-		var repoName string
+		var uri string
 		for _, u := range repo.Attachments.URIs.URIs {
 			// Phabricator may list multiple URIs for a repo, some of which are internal Phabricator resources.
 			// We select the first URI which doesn't have `builtin` fields (as those only come from internal Phab
@@ -145,15 +140,15 @@ func updatePhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, rep
 			if u.Fields.Builtin != nil && u.Fields.Builtin.Identifier != nil {
 				continue
 			}
-			repoName = u.Fields.URI.Normalized
+			uri = u.Fields.URI.Normalized
 			break
 		}
-		if repoName == "" {
+		if uri == "" {
 			// some repos have no attachments
 			return nil
 		}
 
-		err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(repoName), repo.Fields.Callsign, cfg.Url)
+		err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoURI(uri), repo.Fields.Callsign, cfg.Url)
 		if err != nil {
 			return err
 		}

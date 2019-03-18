@@ -13,6 +13,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type testTransport map[string]string
@@ -32,6 +34,13 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestResolveImportPath(t *testing.T) {
+	defer func(orig []string) { noGoGetDomains.domains = orig }(noGoGetDomains.domains)
+	noGoGetDomains.domains = []string{"mygitolite.aws.me.org"}
+
+	conf := conf.Get()
+	defer func(orig []string) { conf.BlacklistGoGet = orig }(conf.BlacklistGoGet)
+	conf.BlacklistGoGet = []string{"nohttp.google.com"}
+
 	tests := []struct {
 		importPath string
 		dir        *Directory
@@ -64,18 +73,47 @@ func TestResolveImportPath(t *testing.T) {
 			VCS:         "git",
 		}},
 		{"golang.org/x/foo", &Directory{
-			ImportPath:  "golang.org/x/foo",
+			ImportPath:  "github.com/golang/foo",
 			ProjectRoot: "golang.org/x/foo",
 			CloneURL:    "https://github.com/golang/foo",
 			VCS:         "git",
 		}},
 		{"golang.org/x/foo/bar", &Directory{
-			ImportPath:  "golang.org/x/foo/bar",
+			ImportPath:  "github.com/golang/foo/bar",
 			ProjectRoot: "golang.org/x/foo",
 			CloneURL:    "https://github.com/golang/foo",
 			VCS:         "git",
 		}},
 		{"github.com/foo", nil},
+
+		// no go get (see noGoGetDomains)
+		{"mygitolite.aws.me.org/mux.git", &Directory{
+			ImportPath:  "mygitolite.aws.me.org/mux.git",
+			ProjectRoot: "mygitolite.aws.me.org/mux.git",
+			CloneURL:    "http://mygitolite.aws.me.org/mux.git",
+			VCS:         "git",
+		}},
+		{"mygitolite.aws.me.org/mux.git/subpkg", &Directory{
+			ImportPath:  "mygitolite.aws.me.org/mux.git/subpkg",
+			ProjectRoot: "mygitolite.aws.me.org/mux.git",
+			CloneURL:    "http://mygitolite.aws.me.org/mux.git",
+			VCS:         "git",
+		}},
+		{"mygitolite.aws.me.org/org/repo", &Directory{
+			ImportPath:  "mygitolite.aws.me.org/org/repo",
+			ProjectRoot: "mygitolite.aws.me.org/org/repo",
+			CloneURL:    "http://mygitolite.aws.me.org/org/repo",
+			VCS:         "git",
+		}},
+		{"mygitolite.aws.me.org/org/repo/subpkg", &Directory{
+			ImportPath:  "mygitolite.aws.me.org/org/repo/subpkg",
+			ProjectRoot: "mygitolite.aws.me.org/org/repo",
+			CloneURL:    "http://mygitolite.aws.me.org/org/repo",
+			VCS:         "git",
+		}},
+
+		// BlacklistGoGet
+		{"nohttp.google.com/pkg", nil},
 
 		// dynamic (see client setup below)
 		{"alice.org/pkg", &Directory{

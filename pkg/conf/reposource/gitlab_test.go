@@ -6,15 +6,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestGitLab_cloneURLToRepoName(t *testing.T) {
+func TestGitLab_cloneURLToRepoURI(t *testing.T) {
 	var tests = []struct {
 		conn schema.GitLabConnection
-		urls []urlToRepoName
+		urls []urlURI
 	}{{
 		conn: schema.GitLabConnection{
 			Url: "https://gitlab.com",
 		},
-		urls: []urlToRepoName{
+		urls: []urlURI{
 			{"git@gitlab.com:beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
 			{"git@gitlab.com:/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
 			{"https://gitlab.com/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
@@ -29,7 +29,7 @@ func TestGitLab_cloneURLToRepoName(t *testing.T) {
 			Url:                   "https://gitlab.mycompany.com",
 			RepositoryPathPattern: "{pathWithNamespace}",
 		},
-		urls: []urlToRepoName{
+		urls: []urlURI{
 			{"git@gitlab.mycompany.com:foo/bar/baz.git", "foo/bar/baz"},
 			{"https://gitlab.mycompany.com/foo/bar/baz.git", "foo/bar/baz"},
 			{"https://oauth2:ACCESS_TOKEN@gitlab.mycompany.com/foo/bar/baz.git", "foo/bar/baz"},
@@ -42,12 +42,12 @@ func TestGitLab_cloneURLToRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoName, err := GitLab{&test.conn}.CloneURLToRepoName(u.cloneURL)
+			repoURI, err := GitLab{&test.conn}.cloneURLToRepoURI(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoURI != string(repoURI) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoURI, repoURI, u.cloneURL, test.conn)
 			}
 		}
 	}

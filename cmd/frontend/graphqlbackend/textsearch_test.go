@@ -127,7 +127,7 @@ func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 
 func TestSearchFilesInRepos(t *testing.T) {
 	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
-		repoName := repo.Name
+		repoName := repo.URI
 		switch repoName {
 		case "foo/one":
 			return []*fileMatchResolver{
@@ -178,14 +178,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 	if len(results) != 2 {
 		t.Errorf("expected two results, got %d", len(results))
 	}
-	if v := toRepoNames(common.cloning); !reflect.DeepEqual(v, []api.RepoName{"foo/cloning"}) {
+	if v := toRepoURIs(common.cloning); !reflect.DeepEqual(v, []api.RepoURI{"foo/cloning"}) {
 		t.Errorf("unexpected cloning: %v", v)
 	}
-	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i].Name < common.missing[j].Name }) // to make deterministic
-	if v := toRepoNames(common.missing); !reflect.DeepEqual(v, []api.RepoName{"foo/missing", "foo/missing-db"}) {
+	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i].URI < common.missing[j].URI }) // to make deterministic
+	if v := toRepoURIs(common.missing); !reflect.DeepEqual(v, []api.RepoURI{"foo/missing", "foo/missing-db"}) {
 		t.Errorf("unexpected missing: %v", v)
 	}
-	if v := toRepoNames(common.timedout); !reflect.DeepEqual(v, []api.RepoName{"foo/timedout"}) {
+	if v := toRepoURIs(common.timedout); !reflect.DeepEqual(v, []api.RepoURI{"foo/timedout"}) {
 		t.Errorf("unexpected timedout: %v", v)
 	}
 
@@ -207,13 +207,13 @@ func TestSearchFilesInRepos(t *testing.T) {
 
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
-	for i, repospec := range repos {
-		repoName, revs := search.ParseRepositoryRevisions(repospec)
+	for i, urispec := range repos {
+		uri, revs := search.ParseRepositoryRevisions(urispec)
 		if len(revs) == 0 {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{URI: uri}, Revs: revs}
 	}
 	return r
 }

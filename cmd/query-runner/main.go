@@ -1,3 +1,5 @@
+//docker:user sourcegraph
+
 package main
 
 import (
@@ -189,7 +191,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// fails in order to avoid e.g. failed saved queries from executing
 	// constantly and potentially causing harm to the system. We'll retry at
 	// our normal interval, regardless of errors.
-	v, execDuration, searchErr := performSearch(ctx, newQuery)
+	v, searchErr, execDuration := performSearch(ctx, newQuery)
 	if err := api.InternalClient.SavedQueriesSetInfo(ctx, &api.SavedQueryInfo{
 		Query:        query.Query,
 		LastExecuted: time.Now(),
@@ -214,7 +216,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	return nil
 }
 
-func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, execDuration time.Duration, err error) {
+func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, err error, execDuration time.Duration) {
 	attempts := 0
 	for {
 		// Query for search results.
@@ -222,20 +224,20 @@ func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, exe
 		v, err := search(ctx, query)
 		execDuration := time.Since(start)
 		if err != nil {
-			return nil, execDuration, errors.Wrap(err, "search")
+			return nil, errors.Wrap(err, "search"), execDuration
 		}
 		if len(v.Data.Search.Results.Results) > 0 {
-			return v, execDuration, nil // We have at least some search results, so we're done.
+			return v, nil, execDuration // We have at least some search results, so we're done.
 		}
 
 		cloning := len(v.Data.Search.Results.Cloning)
 		timedout := len(v.Data.Search.Results.Timedout)
 		if cloning == 0 && timedout == 0 {
-			return v, execDuration, nil // zero results, but no cloning or timed out repos. No point in retrying.
+			return v, nil, execDuration // zero results, but no cloning or timed out repos. No point in retrying.
 		}
 
 		if attempts > 5 {
-			return nil, execDuration, fmt.Errorf("found 0 results due to %d cloning %d timedout repos", cloning, timedout)
+			return nil, fmt.Errorf("found 0 results due to %d cloning %d timedout repos", cloning, timedout), execDuration
 		}
 
 		// We didn't find any search results. Some repos are cloning or timed
@@ -265,7 +267,7 @@ func latestResultTime(prevInfo *api.SavedQueryInfo, v *gqlSearchResponse, search
 	return *t
 }
 
-var externalURL *url.URL
+var appURL *url.URL
 
 // notify handles sending notifications for new search results.
 func notify(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery, newQuery string, results *gqlSearchResponse) error {
@@ -309,22 +311,22 @@ const (
 )
 
 func searchURL(query, utmSource string) string {
-	if externalURL == nil {
-		// Determine the external URL.
-		externalURLStr, err := api.InternalClient.ExternalURL(context.Background())
+	if appURL == nil {
+		// Determine the app URL.
+		appURLStr, err := api.InternalClient.AppURL(context.Background())
 		if err != nil {
-			log15.Error("failed to get ExternalURL", err)
+			log15.Error("failed to get AppURL", err)
 			return ""
 		}
-		externalURL, err = url.Parse(externalURLStr)
+		appURL, err = url.Parse(appURLStr)
 		if err != nil {
-			log15.Error("failed to parse ExternalURL", err)
+			log15.Error("failed to parse AppURL", err)
 			return ""
 		}
 	}
 
 	// Construct URL to the search query.
-	u := externalURL.ResolveReference(&url.URL{Path: "search"})
+	u := appURL.ResolveReference(&url.URL{Path: "search"})
 	q := u.Query()
 	q.Set("q", query)
 	q.Set("utm_source", utmSource)

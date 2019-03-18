@@ -49,15 +49,6 @@ func CheckUserIsSiteAdmin(ctx context.Context, userID int32) error {
 	return nil
 }
 
-// InsufficientAuthorizationError is an error that occurs when the authentication is technically valid
-// (e.g., the token is not expired) but does not yield a user with privileges to perform a certain
-// action.
-type InsufficientAuthorizationError struct {
-	Message string
-}
-
-func (e *InsufficientAuthorizationError) Error() string { return e.Message }
-
 // CheckSiteAdminOrSameUser returns an error if the user is NEITHER (1) a
 // site admin NOR (2) the user specified by subjectUserID.
 //
@@ -79,9 +70,9 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	}
 	subjectUser, err := db.Users.GetByID(ctx, subjectUserID)
 	if err != nil {
-		return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())}
+		return fmt.Errorf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())
 	}
-	return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as %s or as an admin (%s)", subjectUser.Username, isSiteAdminErr.Error())}
+	return fmt.Errorf("must be authenticated as %s or as an admin (%s)", subjectUser.Username, isSiteAdminErr.Error())
 }
 
 func currentUser(ctx context.Context) (*types.User, error) {

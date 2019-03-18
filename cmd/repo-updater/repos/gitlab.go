@@ -4,88 +4,79 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var gitlabConnections = func() *atomicvalue.Value {
-	c := atomicvalue.New()
-	c.Set(func() interface{} {
-		return []*gitlabConnection{}
-	})
-	return c
-}()
+// GitLabServiceType is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID value is
+// the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
+const GitLabServiceType = "gitlab"
 
-// SyncGitLabConnections periodically syncs connections from
-// the Frontend API.
-func SyncGitLabConnections(ctx context.Context) {
-	t := time.NewTicker(configWatchInterval)
-	var lastConfig []*schema.GitLabConnection
-	for range t.C {
-		gitlabConf, err := conf.GitLabConfigs(ctx)
-		if err != nil {
-			log15.Error("unable to fetch Gitlab configs", "err", err)
-			continue
-		}
+// GitLabExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitLab project.
+func GitLabExternalRepoSpec(proj *gitlab.Project, baseURL url.URL) *api.ExternalRepoSpec {
+	return &api.ExternalRepoSpec{
+		ID:          strconv.Itoa(proj.ID),
+		ServiceType: GitLabServiceType,
+		ServiceID:   NormalizeBaseURL(&baseURL).String(),
+	}
+}
 
-		var hasGitLabDotComConnection bool
-		for _, c := range gitlabConf {
-			u, _ := url.Parse(c.Url)
-			if u != nil && (u.Hostname() == "gitlab.com" || u.Hostname() == "www.gitlab.com") {
-				hasGitLabDotComConnection = true
-				break
-			}
-		}
-		if !hasGitLabDotComConnection {
-			// Add a GitLab.com entry by default, to support navigating to URL paths like
-			// /gitlab.com/foo/bar to auto-add that project.
-			gitlabConf = append(gitlabConf, &schema.GitLabConnection{
-				ProjectQuery:                []string{"none"}, // don't try to list all repositories during syncs
-				Url:                         "https://gitlab.com",
-				InitialRepositoryEnablement: true,
-			})
-		}
+var gitlabConnections = atomicvalue.New()
 
-		if reflect.DeepEqual(gitlabConf, lastConfig) {
-			continue
-		}
-		lastConfig = gitlabConf
-
-		var conns []*gitlabConnection
-		for _, c := range gitlabConf {
-			conn, err := newGitLabConnection(c)
-			if err != nil {
-				log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)
-				continue
-			}
-			conns = append(conns, conn)
-		}
-
+func init() {
+	conf.Watch(func() {
 		gitlabConnections.Set(func() interface{} {
+			gitlabConf := conf.Get().Gitlab
+
+			var hasGitLabDotComConnection bool
+			for _, c := range gitlabConf {
+				u, _ := url.Parse(c.Url)
+				if u != nil && (u.Hostname() == "gitlab.com" || u.Hostname() == "www.gitlab.com") {
+					hasGitLabDotComConnection = true
+					break
+				}
+			}
+			if !hasGitLabDotComConnection {
+				// Add a GitLab.com entry by default, to support navigating to URL paths like
+				// /gitlab.com/foo/bar to auto-add that project.
+				gitlabConf = append(gitlabConf, &schema.GitLabConnection{
+					ProjectQuery:                []string{"none"}, // don't try to list all repositories during syncs
+					Url:                         "https://gitlab.com",
+					InitialRepositoryEnablement: true,
+				})
+			}
+
+			var conns []*gitlabConnection
+			for _, c := range gitlabConf {
+				conn, err := newGitLabConnection(c)
+				if err != nil {
+					log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)
+					continue
+				}
+				conns = append(conns, conn)
+			}
 			return conns
 		})
-
 		gitLabRepositorySyncWorker.restart()
-	}
+	})
 }
 
 // getGitLabConnection returns the GitLab connection (config + API client) that is responsible for
 // the repository specified by the args.
 func getGitLabConnection(args protocol.RepoLookupArgs) (*gitlabConnection, error) {
 	gitlabConnections := gitlabConnections.Get().([]*gitlabConnection)
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == gitlab.ServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitLabServiceType {
 		// Look up by external repository spec.
 		for _, conn := range gitlabConnections {
 			if args.ExternalRepo.ServiceID == conn.baseURL.String() {
@@ -96,7 +87,7 @@ func getGitLabConnection(args protocol.RepoLookupArgs) (*gitlabConnection, error
 	}
 
 	if args.Repo != "" {
-		// Look up by repository name.
+		// Look up by repository URI.
 		repo := strings.ToLower(string(args.Repo))
 		for _, conn := range gitlabConnections {
 			if strings.HasPrefix(repo, conn.baseURL.Hostname()+"/") {
@@ -123,8 +114,8 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 
 	ghrepoToRepoInfo := func(proj *gitlab.Project, conn *gitlabConnection) *protocol.RepoInfo {
 		return &protocol.RepoInfo{
-			Name:         gitlabProjectToRepoPath(conn, proj),
-			ExternalRepo: gitlab.ExternalRepoSpec(proj, *conn.baseURL),
+			URI:          gitlabProjectToRepoPath(conn, proj),
+			ExternalRepo: GitLabExternalRepoSpec(proj, *conn.baseURL),
 			Description:  proj.Description,
 			Fork:         proj.ForkedFromProject != nil,
 			Archived:     proj.Archived,
@@ -148,13 +139,13 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		return nil, false, nil // refers to a non-GitLab repo
 	}
 
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == gitlab.ServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitLabServiceType {
 		// Look up by external repository spec.
 		id, err := strconv.Atoi(args.ExternalRepo.ID)
 		if err != nil {
 			return nil, true, err
 		}
-		proj, err := conn.client.GetProject(ctx, gitlab.GetProjectOp{ID: id})
+		proj, err := conn.client.GetProject(ctx, id, "")
 		if proj != nil {
 			repo = ghrepoToRepoInfo(proj, conn)
 		}
@@ -162,9 +153,9 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	}
 
 	if args.Repo != "" {
-		// Look up by repository name.
+		// Look up by repository URI.
 		pathWithNamespace := strings.TrimPrefix(strings.ToLower(string(args.Repo)), conn.baseURL.Hostname()+"/")
-		proj, err := conn.client.GetProject(ctx, gitlab.GetProjectOp{PathWithNamespace: pathWithNamespace})
+		proj, err := conn.client.GetProject(ctx, 0, pathWithNamespace)
 		if proj != nil {
 			repo = ghrepoToRepoInfo(proj, conn)
 		}
@@ -193,7 +184,7 @@ var gitLabRepositorySyncWorker = &worker{
 					select {
 					case <-shutdown:
 						return
-					case <-time.After(GetUpdateInterval()):
+					case <-time.After(getUpdateInterval()):
 					}
 				}
 			}(c)
@@ -207,8 +198,8 @@ func RunGitLabRepositorySyncWorker(ctx context.Context) {
 	gitLabRepositorySyncWorker.start(ctx)
 }
 
-func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.RepoName {
-	return reposource.GitLabRepoName(conn.config.RepositoryPathPattern, conn.baseURL.Hostname(), proj.PathWithNamespace)
+func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.RepoURI {
+	return reposource.GitLabRepoURI(conn.config.RepositoryPathPattern, conn.baseURL.Hostname(), proj.PathWithNamespace)
 }
 
 // updateGitLabProjects ensures that all provided repositories exist in the repository table.
@@ -221,8 +212,8 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 	for proj := range projs {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoName:     gitlabProjectToRepoPath(conn, proj),
-				ExternalRepo: gitlab.ExternalRepoSpec(proj, *conn.baseURL),
+				RepoURI:      gitlabProjectToRepoPath(conn, proj),
+				ExternalRepo: GitLabExternalRepoSpec(proj, *conn.baseURL),
 				Description:  proj.Description,
 				Fork:         proj.ForkedFromProject != nil,
 				Archived:     proj.Archived,
@@ -248,7 +239,7 @@ func newGitLabConnection(config *schema.GitLabConnection) (*gitlabConnection, er
 	return &gitlabConnection{
 		config:  config,
 		baseURL: baseURL,
-		client:  gitlab.NewClientProvider(baseURL, transport).GetPATClient(config.Token, ""),
+		client:  gitlab.NewClient(baseURL, config.Token, transport),
 	}, nil
 }
 
@@ -278,9 +269,8 @@ func (c *gitlabConnection) authenticatedRemoteURL(proj *gitlab.Project) string {
 }
 
 func (c *gitlabConnection) listAllProjects(ctx context.Context) <-chan *gitlab.Project {
-	configProjectQuery := c.config.ProjectQuery
-	if len(configProjectQuery) == 0 {
-		configProjectQuery = []string{"?membership=true"}
+	if len(c.config.ProjectQuery) == 0 {
+		c.config.ProjectQuery = []string{"?membership=true"}
 	}
 
 	normalizeQuery := func(projectQuery string) (url.Values, error) {
@@ -299,7 +289,7 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) <-chan *gitlab.P
 	ch := make(chan *gitlab.Project, perPage)
 	go func() {
 	projectsQueries:
-		for _, projectQuery := range configProjectQuery {
+		for _, projectQuery := range c.config.ProjectQuery {
 			if projectQuery == "none" {
 				continue
 			}

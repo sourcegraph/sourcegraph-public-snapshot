@@ -17,20 +17,17 @@ The sections below describe the the dependencies that you need to have to be abl
 
 ## Step 1: Get the code
 
-> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
-
-On Mac with homebrew, you can run
-```
-brew install golang
-```
-
 Run this command to get the Sourcegraph source code on your local machine:
+
+Using Go:
 
 ```
 go get github.com/sourcegraph/sourcegraph
 ```
 
-This downloads your "Sourcegraph repository directory".
+> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
+
+This is your "Sourcegraph repository directory".
 
 ## Step 2: Install dependencies
 
@@ -40,13 +37,11 @@ Sourcegraph has the following dependencies:
 - [Go](https://golang.org/doc/install) (v1.11 or higher)
 - [Node JS](https://nodejs.org/en/download/) (version 8 or 10)
 - [make](https://www.gnu.org/software/make/)
-- [Docker](https://docs.docker.com/engine/installation/) (v18 or higher)
+- [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
   - For macOS we recommend using Docker for Mac instead of `docker-machine`
-- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.0)
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.x)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
-- [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
-- [SQLite](https://www.sqlite.org/index.html) tools
 
 You have two options for installing these dependencies.
 
@@ -63,10 +58,10 @@ This is a streamlined setup for Mac machines.
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL 9.6, Redis, Git, nginx, and SQLite tools with the following command:
+3.  Install Go, Node, PostgreSQL 9, Redis, Git with the following command:
 
     ```
-    brew install go node redis postgresql@9.6 git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go node redis postgresql@9.6 git gnu-sed
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically
@@ -121,14 +116,6 @@ _`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to st
 You need to have the redis image running when you run the Sourcegraph
 `dev/launch.sh` script. If you do not have docker access without root, run these
 commands under `sudo`.
-
-#### SQLite tools
-
-On Ubuntu, you can get the required tools by running:
-
-```
-apt-get install libpcre3-dev libsqlite3-dev pkg-config musl-tools
-```
 
 ## Step 3: Install Yarn
 
@@ -288,19 +275,16 @@ ulimit -n 10000
 ```
 
 On Linux, it may also be necessary to increase `sysctl -n fs.inotify.max_user_watches`, which can be
-done by running one of the following:
+done by running the following:
 
 ```bash
 echo 524288 | sudo tee -a /proc/sys/fs/inotify/max_user_watches
-
-# If the above doesn't work, you can also try this:
-sudo sysctl fs.inotify.max_user_watches=524288
 ```
 
-If you ever need to wipe your local database and Redis, run the following command.
+If you ever need to wipe your local database, run the following command.
 
 ```
-./dev/drop-entire-local-database-and-redis.sh
+./dev/drop-entire-local-database.sh
 ```
 
 ## How to Run Tests
@@ -346,36 +330,20 @@ Requires "Debugger for Chrome" extension.
 
 ### Debug Go code
 
-Install [Delve](https://github.com/derekparker/delve):
+**Note: If you run into an error `could not launch process: decoding dwarf section info at offset 0x0: too short` make sure you are on the latest delve version**
 
-```
-xcode-select --install
-go get -u github.com/go-delve/delve/cmd/dlv
-```
+- Install [Delve](https://github.com/derekparker/delve)
+- Run `DELVE=frontend,searcher ./dev/launch.sh` (`DELVE` accepts a comma-separated list of components as specified in [dev/Procfile](https://github.com/sourcegraph/sourcegraph/blob/master/dev/Procfile))
+- Set a breakpoint in VS Code (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
+- Run "Attach to $component" in the VS Code debug view
+- The process should start once the debugger is attached
 
-Then install `pgrep`:
+Known issues:
 
-```
-brew install proctools
-```
-
-Make sure to run `env DELVE=true dev/launch.sh` to disable optimizations during compilation, otherwise Delve will have difficulty stepping through optimized functions (line numbers will be off, you won't be able to print local variables, etc.).
-
-Now you can attach a debugger to any Go process (e.g. frontend, searcher, go-langserver) in 1 command:
-
-```
-dlv attach $(pgrep frontend)
-```
-
-Delve will pause the process once it attaches the debugger. Most used [commands](https://github.com/go-delve/delve/tree/master/Documentation/cli):
-
-- `b cmd/frontend/db/access_tokens.go:52` to set a breakpoint on a line (`bp` lists all, `clearall` deletes all)
-- `c` to continue execution of the program
-- `Ctrl-C` pause the program to bring back the command prompt
-- `n` to step over the next statement
-- `s` to step into the next function call
-- `stepout` to step out of the current function call
-- `Ctrl-D` to exit
+- At the time of writing there is an issue with homebrew formula so workarounds are required.
+  - Use homebrew and then google any errors you encounter.
+- There doesn't seem to be a clean way to stop debugging (https://github.com/derekparker/delve/issues/1057).
+  - The workaround is to manually kill the process when you are done.
 
 ## Go dependency management
 
@@ -410,27 +378,12 @@ If you think a diff is erroneous, don't commit it. Add a tech debt
 item to the issue tracker and assign the person who you think is
 responsible (or ask).
 
-## [Code style guide](code_style_guide.md)
+## Code style guide
 
-See "[Code style guide](code_style_guide.md)".
+See [docs/style.md](style.md).
 
 ## Windows support
 
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).
 Sourcegraph currently relies on Unix specifics in several places, which makes it currently not possible to run Sourcegraph directly inside Windows without WSL.
 We are happy to accept contributions here! :)
-
-## Other nice things
-
-### Offline development
-
-Sometimes you will want to develop Sourcegraph but it just so happens you will be on a plane or a
-train or perhaps a beach, and you will have no WiFi. And you may raise your fist toward heaven and
-say something like, "Why, we can put a man on the moon, so why can't we develop high-quality code
-search without an Internet connection?" But lower your hand back to your keyboard and fret no
-further, for the year is 2019, and you *can* develop Sourcegraph with no connectivity by setting the
-`OFFLINE` environment variable:
-
-```
-OFFLINE=true dev/launch.sh
-```

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -20,7 +20,6 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
 
 	var calledVCSRawLogDiffSearch bool
-	gitSignatureWithDate := git.Signature{Date: time.Now().AddDate(0, 0, -1)}
 	git.Mocks.RawLogDiffSearch = func(opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error) {
 		calledVCSRawLogDiffSearch = true
 		if want := "p"; opt.Query.Pattern != want {
@@ -37,7 +36,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		}
 		return []*git.LogCommitSearchResult{
 			{
-				Commit: git.Commit{ID: "c1", Author: gitSignatureWithDate},
+				Commit: git.Commit{ID: "c1"},
 				Diff:   &git.Diff{Raw: "x"},
 			},
 		}, true, nil
@@ -49,8 +48,9 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := search.RepositoryRevisions{
-		Repo: &types.Repo{ID: 1, Name: "repo"},
-		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
+		Repo:          &types.Repo{ID: 1, URI: "repo"},
+		GitserverRepo: gitserver.Repo{Name: "repo", URL: "u"},
+		Revs:          []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,
@@ -62,26 +62,17 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	wantCommit := gitCommitResolver{
-		repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
-		oid:    "c1",
-		author: *toSignatureResolver(&gitSignatureWithDate),
-	}
-	_, _ = wantCommit.OID() // set wantCommit.Once state to done
-
 	if want := []*commitSearchResultResolver{
 		{
-			commit:      &wantCommit,
+			commit: &gitCommitResolver{
+				repo:   &repositoryResolver{repo: &types.Repo{ID: 1, URI: "repo"}},
+				oid:    "c1",
+				author: *toSignatureResolver(&git.Signature{}),
+			},
 			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
-			icon:        "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=",
-			label:       "[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)",
-			url:         "/repo/-/commit/c1",
-			detail:      "[`c1` one day ago](/repo/-/commit/c1)",
-			matches:     []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
 		},
 	}; !reflect.DeepEqual(results, want) {
-		t.Errorf("results\ngot  %v\nwant %v\ndiff: %v", results, want, pretty.Compare(results, want))
+		t.Errorf("results\ngot  %v\nwant %v", results, want)
 	}
 	if limitHit {
 		t.Error("limitHit")
@@ -94,8 +85,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 }
 
-func (r *commitSearchResultResolver) String() string {
-	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.commit, r.diffPreview, r.messagePreview)
+func (c *commitSearchResultResolver) String() string {
+	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", c.commit, c.diffPreview, c.messagePreview)
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {

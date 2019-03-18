@@ -25,11 +25,6 @@ func (r *repositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
 type repositoryMirrorInfoResolver struct {
 	repository *repositoryResolver
 
-	// memoize the repo-updater RepoUpdateSchedulerInfo call
-	repoUpdateSchedulerInfoOnce   sync.Once
-	repoUpdateSchedulerInfoResult *repoupdaterprotocol.RepoUpdateSchedulerInfoResult
-	repoUpdateSchedulerInfoErr    error
-
 	// memoize the gitserver RepoInfo call
 	repoInfoOnce     sync.Once
 	repoInfoResponse *protocol.RepoInfoResponse
@@ -38,17 +33,9 @@ type repositoryMirrorInfoResolver struct {
 
 func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfoResponse, error) {
 	r.repoInfoOnce.Do(func() {
-		r.repoInfoResponse, r.repoInfoErr = gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
+		r.repoInfoResponse, r.repoInfoErr = gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.URI)
 	})
 	return r.repoInfoResponse, r.repoInfoErr
-}
-
-func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
-	r.repoUpdateSchedulerInfoOnce.Do(func() {
-		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{RepoName: r.repository.repo.Name}
-		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
-	})
-	return r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr
 }
 
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
@@ -61,7 +48,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	{
 		// Look up the remote URL in repo-updater.
 		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
-			Repo:         r.repository.repo.Name,
+			Repo:         r.repository.repo.URI,
 			ExternalRepo: r.repository.repo.ExternalRepo,
 		})
 		if err != nil {
@@ -101,7 +88,7 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 	if err != nil {
 		return nil, err
 	}
-	return strptr(info.CloneProgress), nil
+	return nullString(info.CloneProgress), nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*string, error) {
@@ -114,64 +101,6 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*string, 
 	}
 	s := info.LastFetched.Format(time.RFC3339)
 	return &s, nil
-}
-
-func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
-	info, err := r.repoUpdateSchedulerInfo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if info.Schedule == nil {
-		return nil, nil
-	}
-	return &updateScheduleResolver{schedule: info.Schedule}, nil
-}
-
-type updateScheduleResolver struct {
-	schedule *repoupdaterprotocol.RepoScheduleState
-}
-
-func (r *updateScheduleResolver) IntervalSeconds() int32 {
-	return int32(r.schedule.IntervalSeconds)
-}
-
-func (r *updateScheduleResolver) Due() string {
-	return r.schedule.Due.Format(time.RFC3339)
-}
-
-func (r *updateScheduleResolver) Index() int32 {
-	return int32(r.schedule.Index)
-}
-
-func (r *updateScheduleResolver) Total() int32 {
-	return int32(r.schedule.Total)
-}
-
-func (r *repositoryMirrorInfoResolver) UpdateQueue(ctx context.Context) (*updateQueueResolver, error) {
-	info, err := r.repoUpdateSchedulerInfo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if info.Queue == nil {
-		return nil, nil
-	}
-	return &updateQueueResolver{queue: info.Queue}, nil
-}
-
-type updateQueueResolver struct {
-	queue *repoupdaterprotocol.RepoQueueState
-}
-
-func (r *updateQueueResolver) Updating() bool {
-	return r.queue.Updating
-}
-
-func (r *updateQueueResolver) Index() int32 {
-	return int32(r.queue.Index)
-}
-
-func (r *updateQueueResolver) Total() int32 {
-	return int32(r.queue.Total)
 }
 
 func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, args *struct {
@@ -200,8 +129,8 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 			return nil, err
 		}
 	case args.Name != nil:
-		// GitRepo will use just the name to look up the repository from repo-updater.
-		repo = &types.Repo{Name: api.RepoName(*args.Name)}
+		// GitRepo will use just the URI to look up the repository from repo-updater.
+		repo = &types.Repo{URI: api.RepoURI(*args.Name)}
 	}
 
 	gitserverRepo, err := backend.GitRepo(ctx, repo)

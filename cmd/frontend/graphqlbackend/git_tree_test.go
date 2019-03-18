@@ -17,10 +17,7 @@ import (
 
 func TestGitTree(t *testing.T) {
 	resetMocks()
-	db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return nil, nil
-	}
-	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		if repo.ID != 2 || rev != exampleCommitSHA1 {
 			t.Error("wrong arguments to Repos.ResolveRev")

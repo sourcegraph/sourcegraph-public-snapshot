@@ -22,8 +22,13 @@ import (
 	jaegermetrics "github.com/uber/jaeger-lib/metrics"
 )
 
+// Note: these configuration options require service restarts to take effect.
+// Keep in sync with the pkg/conf.requireRestart list.
 var (
+	lightstepAccessToken         = conf.Get().LightstepAccessToken
+	lightstepProject             = conf.Get().LightstepProject
 	lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
+	useJaeger                    = conf.Get().UseJaeger
 	logColors                    = map[log15.Lvl]color.Attribute{
 		log15.LvlCrit:  color.FgRed,
 		log15.LvlError: color.FgRed,
@@ -112,7 +117,7 @@ func Init(options ...Option) {
 		handler = log15.LvlFilterHandler(lvl, handler)
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
-	if conf.Get().Critical.UseJaeger {
+	if useJaeger {
 		log15.Info("Distributed tracing enabled", "tracer", "jaeger")
 		cfg := jaegercfg.Configuration{
 			Sampler: &jaegercfg.SamplerConfig{
@@ -133,7 +138,6 @@ func Init(options ...Option) {
 		return
 	}
 
-	lightstepAccessToken := conf.Get().Critical.LightstepAccessToken
 	if lightstepAccessToken != "" {
 		log15.Info("Distributed tracing enabled", "tracer", "Lightstep")
 		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
@@ -164,7 +168,7 @@ func lightStepSpanURL(span opentracing.Span) string {
 	t := span.(interface {
 		Start() time.Time
 	}).Start().UnixNano() / 1000
-	return fmt.Sprintf("https://app.lightstep.com/%s/trace?span_guid=%x&at_micros=%d#span-%x", conf.Get().Critical.LightstepProject, spanCtx.SpanID, t, spanCtx.SpanID)
+	return fmt.Sprintf("https://app.lightstep.com/%s/trace?span_guid=%x&at_micros=%d#span-%x", lightstepProject, spanCtx.SpanID, t, spanCtx.SpanID)
 }
 
 func jaegerSpanURL(span opentracing.Span) string {

@@ -11,9 +11,9 @@ type AWS struct {
 	*schema.AWSCodeCommitConnection
 }
 
-var _ RepoSource = AWS{}
+var _ repoSource = AWS{}
 
-func (c AWS) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+func (c AWS) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	parsedCloneURL, _, _, err := parseURLs(cloneURL, "")
 	if err != nil {
 		return "", err
@@ -23,14 +23,14 @@ func (c AWS) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err err
 		return "", nil
 	}
 
-	return AWSRepoName(c.RepositoryPathPattern, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/v1/repos/")), nil
+	return AWSRepoURI(c.RepositoryPathPattern, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/v1/repos/")), nil
 }
 
-func AWSRepoName(repositoryPathPattern, name string) api.RepoName {
+func AWSRepoURI(repositoryPathPattern, name string) api.RepoURI {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{name}"
 	}
-	return api.RepoName(strings.NewReplacer(
+	return api.RepoURI(strings.NewReplacer(
 		"{name}", name,
 	).Replace(repositoryPathPattern))
 }

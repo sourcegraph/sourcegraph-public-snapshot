@@ -28,10 +28,10 @@ docker pull $IMAGE
 
 echo "starting server..."
 docker run "$@" \
- --publish 7080:7080 --publish 2633:2633 \
- --rm \
+ --publish 7080:7080 --rm \
  -e SRC_LOG_LEVEL=dbug \
  -e DEBUG=t \
  --volume $DATA/config:/etc/sourcegraph \
  --volume $DATA/data:/var/opt/sourcegraph \
+ -v /var/run/docker.sock:/var/run/docker.sock \
  $IMAGE

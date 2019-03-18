@@ -3,41 +3,17 @@ package protocol
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
-
-type RepoUpdateSchedulerInfoArgs struct {
-	// RepoName is the repository name to look up.
-	RepoName api.RepoName
-}
-
-type RepoUpdateSchedulerInfoResult struct {
-	Schedule *RepoScheduleState `json:",omitempty"`
-	Queue    *RepoQueueState    `json:",omitempty"`
-}
-
-type RepoScheduleState struct {
-	Index           int
-	Total           int
-	IntervalSeconds int
-	Due             time.Time
-}
-
-type RepoQueueState struct {
-	Index    int
-	Total    int
-	Updating bool
-}
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.
 //
 // Exactly one of Repo and ExternalRepo should be set.
 type RepoLookupArgs struct {
-	// Repo is the repository name to look up. If the ExternalRepo information is available to the
+	// Repo is the repository URI to look up. If the ExternalRepo information is available to the
 	// caller, it is preferred to use that (because it is robust to renames).
-	Repo api.RepoName `json:",omitempty"`
+	Repo api.RepoURI `json:",omitempty"`
 
 	// ExternalRepo specifies the repository to look up by its external repository identity.
 	ExternalRepo *api.ExternalRepoSpec
@@ -71,17 +47,14 @@ func (r *RepoLookupResult) String() string {
 	if r.ErrorUnauthorized {
 		parts = append(parts, "unauthorized")
 	}
-	if r.ErrorTemporarilyUnavailable {
-		parts = append(parts, "tempunavailable")
-	}
 	return fmt.Sprintf("RepoLookupResult{%s}", strings.Join(parts, " "))
 }
 
 // RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).
 type RepoInfo struct {
-	// Name the canonical name of the repository. Its case (uppercase/lowercase) may differ from the name arg used
-	// in the lookup. If the repository was renamed on the external service, this name is the new name.
-	Name api.RepoName
+	// URI is the canonical URI of the repository. Its case (uppercase/lowercase) may differ from the URI arg used
+	// in the lookup. If the repository was renamed on the external service, this URI will be the new name.
+	URI api.RepoURI
 
 	Description string // repository description (from the external service)
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
@@ -100,7 +73,7 @@ type RepoInfo struct {
 }
 
 func (r *RepoInfo) String() string {
-	return fmt.Sprintf("RepoInfo{%s}", r.Name)
+	return fmt.Sprintf("RepoInfo{%s}", r.URI)
 }
 
 // VCSInfo describes how to access an external repository's Git data (to clone or update it).
@@ -118,23 +91,8 @@ type RepoLinks struct {
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo api.RepoName `json:"repo"`
+	Repo api.RepoURI `json:"repo"`
 
 	// URL is the repository's Git remote URL (from which to clone or update).
 	URL string `json:"url"`
-}
-
-// ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
-//
-// The FrontendAPI is one of the issuers of this request. It does so when creating or
-// updating an external service so that admins don't have to wait until the next sync
-// run to see their repos being synced.
-type ExternalServiceSyncRequest struct {
-	ExternalService api.ExternalService
-}
-
-// ExternalServiceSyncResult is a result type of an external service's sync request.
-type ExternalServiceSyncResult struct {
-	ExternalService api.ExternalService
-	Error           error
 }

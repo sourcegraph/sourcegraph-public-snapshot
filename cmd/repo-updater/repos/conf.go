@@ -6,10 +6,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-func GetUpdateInterval() time.Duration {
-	v := conf.Get().RepoListUpdateInterval
-	if v == 0 { //  default to 1 minute
-		v = 1
+func getUpdateInterval() time.Duration {
+	if v := conf.Get().RepoListUpdateInterval; v == 0 { //  default to 1 minute
+		return 1 * time.Minute
+	} else if v == -1 { // sentinel for zero
+		return 0
+	} else {
+		return time.Duration(v) * time.Minute
 	}
-	return time.Duration(v) * time.Minute
 }

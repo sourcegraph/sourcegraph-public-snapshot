@@ -8,14 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -24,9 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
+func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
+	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
+	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err
 	}
@@ -46,7 +43,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	err = backend.Repos.Upsert(r.Context(), api.InsertRepoOp{
-		Name:         repo.RepoName,
+		URI:          repo.RepoURI,
 		Description:  repo.Description,
 		Fork:         repo.Fork,
 		Archived:     repo.Archived,
@@ -56,7 +53,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	sgRepo, err := backend.Repos.GetByName(r.Context(), repo.RepoName)
+	sgRepo, err := backend.Repos.GetByURI(r.Context(), repo.RepoURI)
 	if err != nil {
 		return err
 	}
@@ -75,8 +72,23 @@ func serveReposUpdateMetadata(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := db.Repos.UpdateRepositoryMetadata(r.Context(), repo.RepoName, repo.Description, repo.Fork, repo.Archived); err != nil {
+	if err := db.Repos.UpdateRepositoryMetadata(r.Context(), repo.RepoURI, repo.Description, repo.Fork, repo.Archived); err != nil {
 		return errors.Wrap(err, "Repos.UpdateRepositoryMetadata failed")
+	}
+	return nil
+}
+
+func serveReposUpdateIndex(w http.ResponseWriter, r *http.Request) error {
+	var repo api.RepoUpdateIndexRequest
+	err := json.NewDecoder(r.Body).Decode(&repo)
+	if err != nil {
+		return err
+	}
+	if err := db.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.CommitID); err != nil {
+		return errors.Wrap(err, "Repos.UpdateIndexedRevision failed")
+	}
+	if err := db.Repos.UpdateLanguage(r.Context(), repo.RepoID, repo.Language); err != nil {
+		return fmt.Errorf("Repos.UpdateLanguage failed: %s", err)
 	}
 	return nil
 }
@@ -87,7 +99,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	phabRepo, err := db.Phabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
+	phabRepo, err := db.Phabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoURI, repo.URL)
 	if err != nil {
 		return err
 	}
@@ -100,76 +112,49 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// serveExternalServiceConfigs serves a JSON response that is an array of all
-// external service configs that match the requested kind.
-func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServiceConfigsRequest
+func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
+	var req api.ReposGetInventoryUncachedRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return err
 	}
-	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: []string{req.Kind},
-	})
+	repo, err := backend.Repos.Get(r.Context(), req.Repo)
 	if err != nil {
 		return err
 	}
-
-	// Instead of returning an intermediate response type, we directly return
-	// the array of configs (which are themselves JSON objects).
-	// This makes it possible for the caller to directly unmarshal the response into
-	// a slice of connection configurations for this external service kind.
-	configs := make([]map[string]interface{}, 0, len(services))
-	for _, service := range services {
-		var config map[string]interface{}
-		// Raw configs may have comments in them so we have to use a json parser
-		// that supports comments in json.
-		if err := jsonc.Unmarshal(service.Config, &config); err != nil {
-			log15.Error(
-				"ignoring external service config that has invalid json",
-				"id", service.ID,
-				"displayName", service.DisplayName,
-				"config", service.Config,
-				"err", err,
-			)
-			continue
-		}
-		configs = append(configs, config)
+	inv, err := backend.Repos.GetInventoryUncached(r.Context(), repo, req.CommitID)
+	if err != nil {
+		return err
 	}
-	return json.NewEncoder(w).Encode(configs)
+	data, err := json.Marshal(inv)
+	if err != nil {
+		return err
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+	return nil
 }
 
-// serveExternalServicesList serves a JSON response that is an array of all external services
-// of the given kind
-func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServicesListRequest
+func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
+	var req api.ReposGetInventoryRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return err
 	}
-
-	if len(req.Kinds) == 0 {
-		req.Kinds = append(req.Kinds, req.Kind)
-	}
-
-	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: req.Kinds,
-	})
+	repo, err := backend.Repos.Get(r.Context(), req.Repo)
 	if err != nil {
 		return err
 	}
-	return json.NewEncoder(w).Encode(services)
-}
-
-func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
-	raw, err := globals.ConfigurationServerFrontendOnly.Source.Read(r.Context())
+	inv, err := backend.Repos.GetInventory(r.Context(), repo, req.CommitID)
 	if err != nil {
 		return err
 	}
-	err = json.NewEncoder(w).Encode(raw)
+	data, err := json.Marshal(inv)
 	if err != nil {
-		return errors.Wrap(err, "Encode")
+		return err
 	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 	return nil
 }
 
@@ -183,22 +168,7 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
-	// BACKCOMPAT: Add a "URI" field because zoekt-sourcegraph-indexserver expects one to exist
-	// (with the repository name). This is a legacy of the rename from "repo URI" to "repo name".
-	type repoWithBackcompatURIField struct {
-		URI string
-		*types.Repo
-	}
-	res2 := make([]*repoWithBackcompatURIField, len(res))
-	for i, repo := range res {
-		res2[i] = &repoWithBackcompatURIField{
-			URI:  string(repo.Name),
-			Repo: repo,
-		}
-	}
-
-	data, err := json.Marshal(res2)
+	data, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
@@ -295,7 +265,7 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
-	var subject api.SettingsSubject
+	var subject api.ConfigurationSubject
 	if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
 		return errors.Wrap(err, "Decode")
 	}
@@ -377,15 +347,8 @@ func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(globals.ExternalURL.String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveGitServerAddrs(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.SrcGitServers); err != nil {
+func serveAppURL(w http.ResponseWriter, r *http.Request) error {
+	if err := json.NewEncoder(w).Encode(globals.AppURL.String()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
@@ -407,10 +370,48 @@ func serveSendEmail(w http.ResponseWriter, r *http.Request) error {
 	return txemail.Send(r.Context(), msg)
 }
 
+func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
+	var args api.DefsRefreshIndexRequest
+	err := json.NewDecoder(r.Body).Decode(&args)
+	if err != nil {
+		return err
+	}
+	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoURI)
+	if err != nil {
+		return err
+	}
+	err = backend.Dependencies.RefreshIndex(r.Context(), repo, args.CommitID)
+	if err != nil {
+		return nil
+	}
+	w.WriteHeader(http.StatusNoContent)
+	w.Write([]byte("OK"))
+	return nil
+}
+
+func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
+	var args api.PkgsRefreshIndexRequest
+	err := json.NewDecoder(r.Body).Decode(&args)
+	if err != nil {
+		return err
+	}
+	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoURI)
+	if err != nil {
+		return err
+	}
+	err = backend.Packages.RefreshIndex(r.Context(), repo, args.CommitID)
+	if err != nil {
+		return nil
+	}
+	w.WriteHeader(http.StatusNoContent)
+	w.Write([]byte("OK"))
+	return nil
+}
+
 func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	// used by zoekt-sourcegraph-mirror
 	vars := mux.Vars(r)
-	name := api.RepoName(vars["RepoName"])
+	name := api.RepoURI(vars["RepoURI"])
 	spec := vars["Spec"]
 
 	// Do not to trigger a repo-updater lookup since this is a batch job.
@@ -427,7 +428,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	// used by zoekt-sourcegraph-mirror
 	vars := mux.Vars(r)
-	name := api.RepoName(vars["RepoName"])
+	name := api.RepoURI(vars["RepoURI"])
 	spec := vars["Commit"]
 
 	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
@@ -455,18 +456,18 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("only support service git-upload-pack")
 	}
 
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
+	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
+	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err
 	}
 
 	if !repo.Enabled {
-		return errors.Errorf("repo is not enabled: %s", repo.Name)
+		return errors.Errorf("repo is not enabled: %s", repo.URI)
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Repo = gitserver.Repo{Name: repo.Name}
+	cmd.Repo = gitserver.Repo{Name: repo.URI}
 	refs, err := cmd.Output(r.Context())
 	if err != nil {
 		return err
@@ -480,13 +481,13 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
+	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
+	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err
 	}
 
-	gitserver.DefaultClient.UploadPack(repo.Name, w, r)
+	gitserver.DefaultClient.UploadPack(repo.URI, w, r)
 	return nil
 }
 

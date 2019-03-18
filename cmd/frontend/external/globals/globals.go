@@ -1,5 +1,3 @@
-// Package globals exports symbols from frontend/globals. See the parent
-// package godoc for more information.
 package globals
 
 import (
@@ -8,6 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
-func ExternalURL() *url.URL {
-	return globals.ExternalURL
+func AppURL() *url.URL {
+	return globals.AppURL
 }

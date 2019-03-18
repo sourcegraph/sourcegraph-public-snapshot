@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func URLToRepoTreeEntry(repo api.RepoName, rev, path string) *url.URL {
+func URLToRepoTreeEntry(repo api.RepoURI, rev, path string) *url.URL {
 	return &url.URL{Path: fmt.Sprintf("/%s%s/-/tree/%s", repo, revStr(rev), path)}
 }
 

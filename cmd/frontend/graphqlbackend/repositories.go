@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"regexp"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -22,7 +22,6 @@ import (
 func (r *schemaResolver) Repositories(args *struct {
 	graphqlutil.ConnectionArgs
 	Query           *string
-	Names           *[]string
 	Enabled         bool
 	Disabled        bool
 	Cloned          bool
@@ -32,6 +31,8 @@ func (r *schemaResolver) Repositories(args *struct {
 	NotIndexed      bool
 	OrderBy         string
 	Descending      bool
+	CIIndexed       bool
+	NotCIIndexed    bool
 }) (*repositoryConnectionResolver, error) {
 	opt := db.ReposListOptions{
 		Enabled:  args.Enabled,
@@ -41,13 +42,15 @@ func (r *schemaResolver) Repositories(args *struct {
 			Descending: args.Descending,
 		}},
 	}
-	if args.Names != nil {
-		// Make an exact-match regexp for each name.
-		patterns := make([]string, len(*args.Names))
-		for i, name := range *args.Names {
-			patterns[i] = regexp.QuoteMeta(name)
-		}
-		opt.IncludePatterns = []string{"^(" + strings.Join(patterns, "|") + ")$"}
+	if args.CIIndexed && args.NotCIIndexed {
+		return nil, fmt.Errorf("cannot set both ciIndexed and notCIIndexed")
+	}
+	if args.CIIndexed {
+		t := true
+		opt.HasIndexedRevision = &t
+	} else if args.NotCIIndexed {
+		f := false
+		opt.HasIndexedRevision = &f
 	}
 	if args.Query != nil {
 		opt.Query = *args.Query
@@ -96,25 +99,24 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		var indexed map[api.RepoName]bool
-		searchIndexEnabled := Search().Index.Enabled()
-		isIndexed := func(repo api.RepoName) bool {
-			if !searchIndexEnabled {
+		var indexed map[api.RepoURI]bool
+		isIndexed := func(repo api.RepoURI) bool {
+			if zoektCache == nil {
 				return true // do not need index
 			}
-			return indexed[api.RepoName(strings.ToLower(string(repo)))]
+			return indexed[api.RepoURI(strings.ToLower(string(repo)))]
 		}
-		if searchIndexEnabled && (!r.indexed || !r.notIndexed) {
+		if zoektCache != nil && (!r.indexed || !r.notIndexed) {
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
-			indexedRepos, err := Search().Index.ListAll(listCtx)
+			indexedRepos, err := zoektCache.ListAll(listCtx)
 			if err != nil {
 				r.err = err
 				return
 			}
-			indexed = make(map[api.RepoName]bool, len(indexedRepos.Repos))
+			indexed = make(map[api.RepoURI]bool, len(indexedRepos.Repos))
 			for _, repo := range indexedRepos.Repos {
-				indexed[api.RepoName(strings.ToLower(string(repo.Repository.Name)))] = true
+				indexed[api.RepoURI(strings.ToLower(string(repo.Repository.Name)))] = true
 			}
 		}
 
@@ -130,7 +132,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				// Query gitserver to filter by repository clone status.
 				keepRepos := repos[:0]
 				for _, repo := range repos {
-					info, err := gitserver.DefaultClient.RepoInfo(ctx, repo.Name)
+					info, err := gitserver.DefaultClient.RepoInfo(ctx, repo.URI)
 					if err != nil {
 						r.err = err
 						return
@@ -145,7 +147,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if !r.indexed || !r.notIndexed {
 				keepRepos := repos[:0]
 				for _, repo := range repos {
-					indexed := isIndexed(repo.Name)
+					indexed := isIndexed(repo.URI)
 					if (r.indexed && indexed) || (r.notIndexed && !indexed) {
 						keepRepos = append(keepRepos, repo)
 					}
@@ -188,14 +190,6 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *struct {
 	Precise bool
 }) (countptr *int32, err error) {
-	if isAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx); isAdminErr != nil {
-		if args.Precise {
-			// Only site admins can perform precise counts, because it is a slow operation.
-			return nil, isAdminErr
-		}
-		return nil, nil
-	}
-
 	i32ptr := func(v int32) *int32 {
 		return &v
 	}
@@ -207,6 +201,13 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *str
 	if !r.indexed || !r.notIndexed {
 		// Don't support counting if filtering by index status.
 		return nil, nil
+	}
+
+	if args.Precise {
+		// Only site admins can perform precise counts, because it is a slow operation.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
@@ -238,6 +239,25 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(repos) > r.opt.Limit), nil
 }
 
+func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
+	Name string
+}) (*repositoryResolver, error) {
+	// 🚨 SECURITY: Only site admins can add repositories.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	uri := api.RepoURI(args.Name)
+	if err := backend.Repos.Add(ctx, uri); err != nil {
+		return nil, err
+	}
+	repo, err := backend.Repos.GetByURI(ctx, uri)
+	if err != nil {
+		return nil, err
+	}
+	return &repositoryResolver{repo: repo}, nil
+}
+
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
 	Repository graphql.ID
 	Enabled    bool
@@ -263,6 +283,9 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 			return nil, err
 		}
 		if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+			return nil, err
+		}
+		if err := backend.Repos.RefreshIndex(ctx, repo.repo); err != nil {
 			return nil, err
 		}
 	}
@@ -321,10 +344,18 @@ func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func repoNamesToStrings(repoNames []api.RepoName) []string {
-	strings := make([]string, len(repoNames))
-	for i, repoName := range repoNames {
-		strings[i] = string(repoName)
+func repoIDsToInt32s(repoIDs []api.RepoID) []int32 {
+	int32s := make([]int32, len(repoIDs))
+	for i, repoID := range repoIDs {
+		int32s[i] = int32(repoID)
+	}
+	return int32s
+}
+
+func repoURIsToStrings(repoURIs []api.RepoURI) []string {
+	strings := make([]string, len(repoURIs))
+	for i, repoURI := range repoURIs {
+		strings[i] = string(repoURI)
 	}
 	return strings
 }
@@ -337,20 +368,20 @@ func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
 	return resolvers
 }
 
-func toRepoNames(repos []*types.Repo) []api.RepoName {
-	names := make([]api.RepoName, len(repos))
+func toRepoURIs(repos []*types.Repo) []api.RepoURI {
+	uris := make([]api.RepoURI, len(repos))
 	for i, repo := range repos {
-		names[i] = repo.Name
+		uris[i] = repo.URI
 	}
-	return names
+	return uris
 }
 
 func toDBRepoListColumn(ob string) db.RepoListColumn {
 	switch ob {
-	case "REPO_URI", "REPOSITORY_NAME":
-		return db.RepoListName
-	case "REPO_CREATED_AT", "REPOSITORY_CREATED_AT":
-		return db.RepoListCreatedAt
+	case "REPO_URI":
+		return "uri"
+	case "REPO_CREATED_AT":
+		return "created_at"
 	default:
 		return ""
 	}

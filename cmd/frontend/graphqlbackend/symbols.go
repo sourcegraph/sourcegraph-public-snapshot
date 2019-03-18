@@ -6,18 +6,34 @@ import (
 	"strings"
 	"time"
 
-	lsp "github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type symbolsArgs struct {
 	graphqlutil.ConnectionArgs
 	Query *string
+}
+
+func (r *repositoryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
+	var rev string
+	if r.repo.IndexedRevision != nil {
+		rev = string(*r.repo.IndexedRevision)
+	}
+	commit, err := r.Commit(ctx, &repositoryCommitArgs{Rev: rev})
+	if err != nil {
+		return nil, err
+	}
+	symbols, err := computeSymbols(ctx, commit, args.Query, args.First)
+	if err != nil && len(symbols) == 0 {
+		return nil, err
+	}
+	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
 }
 
 func (r *gitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
@@ -49,6 +65,7 @@ func limitOrDefault(first *int32) int {
 }
 
 func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *string, first *int32) (res []*symbolResolver, err error) {
+	// TODO!(sqs): limit to path
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	defer func() {
@@ -59,12 +76,12 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 	searchArgs := protocol.SearchArgs{
 		CommitID: api.CommitID(commit.oid),
 		First:    limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:     commit.repo.repo.Name,
+		Repo:     commit.repo.repo.URI,
 	}
 	if query != nil {
 		searchArgs.Query = *query
 	}
-	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := uri.Parse("git://" + string(commit.repo.repo.URI) + "?" + string(commit.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +105,7 @@ func toSymbolResolver(symbol lsp.SymbolInformation, lang string, commitResolver 
 		symbol:   symbol,
 		language: lang,
 	}
-	uri, err := gituri.Parse(string(symbol.Location.URI))
+	uri, err := uri.Parse(string(symbol.Location.URI))
 	if err != nil {
 		log15.Warn("Omitting symbol with invalid URI from results.", "uri", symbol.Location.URI, "error", err)
 		return nil
@@ -140,6 +157,14 @@ func (r *symbolResolver) Language() string { return r.language }
 
 func (r *symbolResolver) Location() *locationResolver { return r.location }
 
-func (r *symbolResolver) URL(ctx context.Context) (string, error) { return r.location.URL(ctx) }
+func (r *symbolResolver) URL() string { return r.urlPath(r.location.URL()) }
 
-func (r *symbolResolver) CanonicalURL() (string, error) { return r.location.CanonicalURL() }
+func (r *symbolResolver) CanonicalURL() string { return r.urlPath(r.location.CanonicalURL()) }
+
+func (r *symbolResolver) urlPath(prefix string) string {
+	url := prefix
+	if backend.IsLanguageSupported(r.language) {
+		url += "$references"
+	}
+	return url
+}

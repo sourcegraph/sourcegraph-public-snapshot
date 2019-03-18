@@ -1,0 +1,13 @@
+.search-button {
+    margin-left: 0.5rem;
+
+    &__label {
+        margin-left: 0.25rem;
+    }
+
+    @media (max-width: $media-lg) {
+        &__label {
+            display: none;
+        }
+    }
+}

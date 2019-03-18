@@ -33,6 +33,7 @@ echo ""
 
 # Recreate the test DB and run TestMigrations once to ensure that the schema version is the latest.
 set -ex
+./dev/ci/reset-test-db.sh || true
 go test -count=1 -v ./cmd/frontend/db/  -run=TestMigrations
 HEAD="$HEAD" OLD="${COMMIT_BEFORE_LAST_MIGRATION}" ./dev/ci/db-backcompat.sh
 set +ex

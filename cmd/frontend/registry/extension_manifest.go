@@ -36,6 +36,17 @@ func (r *extensionManifest) parse() (*schema.SourcegraphExtensionManifest, error
 
 func (r *extensionManifest) Raw() string { return r.raw }
 
+func (r *extensionManifest) Title() (*string, error) {
+	parsed, err := r.parse()
+	if parsed == nil || err != nil {
+		return nil, err
+	}
+	if parsed.Title == "" {
+		return nil, nil
+	}
+	return &parsed.Title, nil
+}
+
 func (r *extensionManifest) Description() (*string, error) {
 	parsed, err := r.parse()
 	if parsed == nil || err != nil {

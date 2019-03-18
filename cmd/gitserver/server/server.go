@@ -1,4 +1,3 @@
-// Package server implements the gitserver service.
 package server
 
 import (
@@ -26,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -51,20 +50,20 @@ const tempDirName = ".tmp"
 // logs to stderr
 var traceLogs bool
 
-var lastCheckAt = make(map[api.RepoName]time.Time)
+var lastCheckAt = make(map[api.RepoURI]time.Time)
 var lastCheckMutex sync.Mutex
 
 // debounce() provides some filtering to prevent spammy requests for the same
 // repository. If the last fetch of the repository was within the given
 // duration, returns false, otherwise returns true and updates the last
 // fetch stamp.
-func debounce(name api.RepoName, since time.Duration) bool {
+func debounce(uri api.RepoURI, since time.Duration) bool {
 	lastCheckMutex.Lock()
 	defer lastCheckMutex.Unlock()
-	if t, ok := lastCheckAt[name]; ok && time.Now().Before(t.Add(since)) {
+	if t, ok := lastCheckAt[uri]; ok && time.Now().Before(t.Add(since)) {
 		return false
 	}
-	lastCheckAt[name] = time.Now()
+	lastCheckAt[uri] = time.Now()
 	return true
 }
 
@@ -74,11 +73,11 @@ func init() {
 
 // runCommandMock is set by tests. When non-nil it is run instead of
 // runCommand
-var runCommandMock func(context.Context, *exec.Cmd) (int, error)
+var runCommandMock func(context.Context, *exec.Cmd) (error, int)
 
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
+func runCommand(ctx context.Context, cmd *exec.Cmd) (err error, exitCode int) {
 	if runCommandMock != nil {
 		return runCommandMock(ctx, cmd)
 	}
@@ -100,7 +99,7 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	if cmd.ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
-	return exitStatus, err
+	return err, exitStatus
 }
 
 // Server is a gitserver server.
@@ -132,13 +131,19 @@ type Server struct {
 	cloneLimiter     *mutablelimiter.Limiter
 	cloneableLimiter *mutablelimiter.Limiter
 
+	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
-	repoUpdateLocks   map[api.RepoName]*locks
+	repoUpdateLocks   map[api.RepoURI]*locks
 }
 
 type locks struct {
 	once *sync.Once  // consolidates multiple waiting updates
 	mu   *sync.Mutex // prevents updates running in parallel
+}
+
+type updateRepoRequest struct {
+	repo api.RepoURI
+	url  string // remote URL
 }
 
 // shortGitCommandTimeout returns the timeout for git commands that should not
@@ -159,7 +164,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 		return longGitCommandTimeout
 
 	case "ls-remote":
-		return 30 * time.Second
+		return 5 * time.Second
 
 	default:
 		return time.Minute
@@ -194,15 +199,12 @@ var longGitCommandTimeout = time.Hour
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
-	s.repoUpdateLocks = make(map[api.RepoName]*locks)
+	s.updateRepo = s.repoUpdateLoop()
+	s.repoUpdateLocks = make(map[api.RepoURI]*locks)
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
-	// can happen at once on a single gitserver.
-	// Used to prevent throttle limits from a code host. Defaults to 5.
-	//
-	// The new repo-updater scheduler enforces the rate limit across all gitserver,
-	// so ideally this logic could be removed here; however, ensureRevision can also
-	// cause an update to happen and it is called on every exec command.
+	// can happen at once. Used to prevent throttle limits from a code
+	// host. Defaults to 5.
 	maxConcurrentClones := conf.Get().GitMaxConcurrentClones
 	if maxConcurrentClones == 0 {
 		maxConcurrentClones = 5
@@ -225,18 +227,21 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
 	mux.HandleFunc("/repo", s.handleRepoInfo)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
+	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
 	mux.HandleFunc("/upload-pack", s.handleUploadPack)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
-	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
 	return mux
 }
 
 // Janitor does clean up tasks over s.ReposDir.
 func (s *Server) Janitor() {
+	// We may have clones which do not live in a directory named .git. Move
+	// them.
+	s.migrateGitDir()
+
+	// Other janitorial tasks
 	s.cleanupRepos()
 }
 
@@ -330,6 +335,9 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
 	if req.URL == "" {
+		req.URL = OriginMap(req.Repo)
+	}
+	if req.URL == "" {
 		// BACKCOMPAT: Determine URL from the existing repo on disk if the client didn't send it.
 		dir := path.Join(s.ReposDir, string(req.Repo))
 		var err error
@@ -368,6 +376,63 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
+// handleEnqueueRepoUpdate: This is the old implementation, which is being
+// deprecated.
+func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var resp protocol.RepoUpdateResponse
+	req.Repo = protocol.NormalizeRepo(req.Repo)
+	dir := path.Join(s.ReposDir, string(req.Repo))
+	if !repoCloned(dir) && !s.skipCloneForTests {
+		// optimistically, we assume that our cloning attempt might
+		// succeed.
+		resp.CloneInProgress = true
+		go func() {
+			ctx, cancel1 := s.serverContext()
+			defer cancel1()
+			ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+			defer cancel2()
+			_, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
+			if err != nil {
+				log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
+			}
+		}()
+	} else {
+		// Check the repo status before enqueuing
+		var statusErr error
+		lastFetched, err := repoLastFetched(dir)
+		if err != nil {
+			statusErr = err
+		}
+		lastChanged, err := repoLastChanged(dir)
+		if err != nil {
+			statusErr = err
+		}
+
+		// We always want to enqueue an update
+		updateQueue.Inc()
+		s.updateRepo <- updateRepoRequest{repo: req.Repo, url: req.URL}
+
+		if statusErr != nil {
+			log15.Error("failed to get status of repo", "repo", req.Repo, "error", statusErr)
+			http.Error(w, statusErr.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		resp.Cloned = true
+		resp.LastFetched = &lastFetched
+		resp.LastChanged = &lastChanged
+	}
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -558,23 +623,17 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !repoCloned(dir) {
-		if req.URL == "" {
-			status = "repo-not-found"
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
-			return
-		}
 		cloneProgress, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
 		if err != nil {
 			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
+			json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
 			return
 		}
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
 		})
@@ -617,7 +676,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	cmd.Stderr = stderrW
 
 	var err error
-	exitStatus, err = runCommand(ctx, cmd)
+	err, exitStatus = runCommand(ctx, cmd)
 	if err != nil {
 		errStr = err.Error()
 	}
@@ -673,13 +732,21 @@ type cloneOptions struct {
 
 // cloneRepo issues a git clone command for the given repo. It is
 // non-blocking.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, opts *cloneOptions) (string, error) {
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string, opts *cloneOptions) (string, error) {
 	dir := filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))
 
 	// PERF: Before doing the network request to check if isCloneable, lets
 	// ensure we are not already cloning.
 	if progress, cloneInProgress := s.locker.Status(dir); cloneInProgress {
 		return progress, nil
+	}
+
+	if url == "" {
+		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
+		url = OriginMap(repo)
+		if url == "" {
+			return "", fmt.Errorf("error cloning repo: no URL provided and origin map entry found for %s", repo)
+		}
 	}
 
 	// isCloneable causes a network request, so we limit the number that can
@@ -810,7 +877,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(repo api.RepoName, url string, lock *RepositoryLock, pr io.Reader) {
+func readCloneProgress(repo api.RepoURI, url string, lock *RepositoryLock, pr io.Reader) {
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
 	redactor := newURLRedactor(url)
@@ -898,23 +965,19 @@ var testRepoExists func(ctx context.Context, url string) error
 
 // isCloneable checks to see if the Git remote URL is cloneable.
 func (s *Server) isCloneable(ctx context.Context, url string) error {
-	args := []string{"ls-remote", url, "HEAD"}
-	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(args))
+	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout([]string{"ls-remote"}))
 	defer cancel()
 
-	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoURI(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return nil
 	}
 	if testRepoExists != nil {
 		return testRepoExists(ctx, url)
 	}
 
-	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd := exec.CommandContext(ctx, "git", "ls-remote", url, "HEAD")
 	out, err := s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
-		if ctxerr := ctx.Err(); ctxerr != nil {
-			err = ctxerr
-		}
 		if len(out) > 0 {
 			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
 		}
@@ -949,6 +1012,12 @@ var (
 		Name:      "lsremote_queue",
 		Help:      "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
+	updateQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "update_queue",
+		Help:      "number of repos waiting to be updated (enqueue-repo-update)",
+	})
 	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "gitserver",
@@ -962,12 +1031,38 @@ func init() {
 	prometheus.MustRegister(execDuration)
 	prometheus.MustRegister(cloneQueue)
 	prometheus.MustRegister(lsRemoteQueue)
+	prometheus.MustRegister(updateQueue)
 	prometheus.MustRegister(repoClonedCounter)
+}
+
+func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
+	updateRepo := make(chan updateRepoRequest, 10)
+
+	go func() {
+		for req := range updateRepo {
+			updateQueue.Dec()
+
+			if !debounce(req.repo, 10*time.Second) {
+				continue
+			}
+			go func(req updateRepoRequest) {
+				// Create a new context with a new timeout (instead of passing one through updateRepoRequest)
+				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
+				ctx, cancel1 := s.serverContext()
+				defer cancel1()
+				ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+				defer cancel2()
+				s.doRepoUpdate(ctx, req.repo, req.url)
+			}(req)
+		}
+	}()
+
+	return updateRepo
 }
 
 var headBranchPattern = regexp.MustCompile(`HEAD branch: (.+?)\n`)
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string) error {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	span.SetTag("url", url)
@@ -1144,7 +1239,7 @@ func computeRefHash(dir string) ([]byte, error) {
 	return hash, nil
 }
 
-func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
+func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) error {
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
@@ -1158,8 +1253,13 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	repo = protocol.NormalizeRepo(repo)
 	dir := path.Join(s.ReposDir, string(repo))
 
-	// If URL is not set, we can also use the last known working URL (set as the remote origin).
+	// If URL is not set, we can also consult our deprecated OriginMap or the
+	// last known working URL (set as the remote origin).
 	var urlIsGitRemote bool
+	if url == "" {
+		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
+		url = OriginMap(repo)
+	}
 	if url == "" {
 		// log15.Warn("Deprecated: use of saved Git remote for repo updating (API client should set URL)", "repo", repo)
 		var err error
@@ -1186,7 +1286,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		}
 		if cmd != nil {
 			cmd.Dir = dir
-			if _, err := runCommand(ctx, cmd); err != nil {
+			if err, _ := runCommand(ctx, cmd); err != nil {
 				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "error", err)
 			}
 		}
@@ -1258,7 +1358,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	return nil
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev, repoDir string) (didUpdate bool) {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) (didUpdate bool) {
 	if rev == "" || rev == "HEAD" {
 		return false
 	}

@@ -16,11 +16,15 @@ import (
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	getResults := func(t *testing.T, query string) []string {
+	createSearchResolver := func(t *testing.T, query string) *searchResolver {
 		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
+		return r
+	}
+	getResults := func(t *testing.T, query string) []string {
+		r := createSearchResolver(t, query)
 		results, err := r.Results(context.Background())
 		if err != nil {
 			t.Fatal("Results:", err)
@@ -31,7 +35,7 @@ func TestSearchResults(t *testing.T) {
 			// just remove that assumption in the following line of code.
 			switch {
 			case result.repo != nil:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", result.repo.repo.Name)
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", result.repo.repo.URI)
 			case result.fileMatch != nil:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", result.fileMatch.JPath, result.fileMatch.JLineMatches[0].JLineNumber)
 			}
@@ -52,9 +56,9 @@ func TestSearchResults(t *testing.T) {
 			if want := (db.ReposListOptions{Enabled: true, IncludePatterns: []string{"r", "p"}, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*types.Repo{{Name: "repo"}}, nil
+			return []*types.Repo{{URI: "repo"}}, nil
 		}
-		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{}, nil
@@ -75,10 +79,10 @@ func TestSearchResults(t *testing.T) {
 			if want := (db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*types.Repo{{Name: "repo"}}, nil
+			return []*types.Repo{{URI: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
-		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
@@ -228,7 +232,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 				t.Fatal(err)
 			}
 			sr := searchResolver{query: query}
-			p, err := sr.getPatternInfo(nil)
+			p, err := sr.getPatternInfo()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -243,7 +247,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.Repo{
-		Name: "testRepo",
+		URI: "testRepo",
 	}
 
 	repoMatch := &repositoryResolver{
@@ -270,52 +274,42 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 	tests := []testCase{
 
-		{
+		testCase{
 			descr: "single repo match",
 			searchResults: []*searchResultResolver{
-				{
+				&searchResultResolver{
 					repo: repoMatch,
 				},
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
-				`repo:^testRepo$`: {},
-				`case:yes`:        {},
+				`repo:^testRepo$`: struct{}{},
 			},
 		},
 
-		{
+		testCase{
 			descr: "single file match without revision in query",
 			searchResults: []*searchResultResolver{
-				{
+				&searchResultResolver{
 					fileMatch: fileMatch,
 				},
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
-				`repo:^testRepo$`: {},
-				`file:\.md$`:      {},
-				`case:yes`:        {},
+				`repo:^testRepo$`: struct{}{},
+				`file:\.md$`:      struct{}{},
 			},
 		},
 
-		{
+		testCase{
 			descr: "single file match with specified revision",
 			searchResults: []*searchResultResolver{
-				{
+				&searchResultResolver{
 					fileMatch: fileMatchRev,
 				},
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
-				`repo:^testRepo$@develop`: {},
-				`file:\.md$`:              {},
-				`case:yes`:                {},
+				`repo:^testRepo$@develop`: struct{}{},
+				`file:\.md$`:              struct{}{},
 			},
-		},
-
-		// If there are no search results, no filters should be displayed.
-		{
-			descr:                     "no results",
-			searchResults:             []*searchResultResolver{},
-			expectedDynamicFilterStrs: map[string]struct{}{},
 		},
 	}
 
@@ -352,7 +346,7 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 
 	tests := []testCase{
-		{
+		testCase{
 			descr:    "simple match",
 			specs:    []string{"foo"},
 			repo:     "foo",
@@ -360,7 +354,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: ""}},
 			clashing: nil,
 		},
-		{
+		testCase{
 			descr:    "single revspec",
 			specs:    []string{".*o@123456"},
 			repo:     "foo",
@@ -368,7 +362,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
-		{
+		testCase{
 			descr:    "revspec plus unspecified rev",
 			specs:    []string{".*o@123456", "foo"},
 			repo:     "foo",
@@ -376,7 +370,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
-		{
+		testCase{
 			descr:    "revspec plus unspecified rev, but backwards",
 			specs:    []string{".*o", "foo@123456"},
 			repo:     "foo",
@@ -384,7 +378,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
-		{
+		testCase{
 			descr:    "conflicting revspecs",
 			specs:    []string{".*o@123456", "foo@234567"},
 			repo:     "foo",
@@ -392,7 +386,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  nil,
 			clashing: []search.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
 		},
-		{
+		testCase{
 			descr:    "overlapping revspecs",
 			specs:    []string{".*o@a:b", "foo@b:c"},
 			repo:     "foo",
@@ -400,7 +394,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "b"}},
 			clashing: nil,
 		},
-		{
+		testCase{
 			descr:    "multiple overlapping revspecs",
 			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
 			repo:     "foo",
@@ -408,7 +402,7 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []search.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
-		{
+		testCase{
 			descr:    "invalid regexp",
 			specs:    []string{"*o@a:b"},
 			repo:     "foo",
@@ -433,7 +427,7 @@ func TestSearchRevspecs(t *testing.T) {
 			if test.err != nil {
 				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
 			}
-			matched, clashing := getRevsForMatchedRepo(api.RepoName(test.repo), pats)
+			matched, clashing := getRevsForMatchedRepo(api.RepoURI(test.repo), pats)
 			if !reflect.DeepEqual(matched, test.matched) {
 				t.Errorf("matched repo mismatch: actual: %#v, expected: %#v", matched, test.matched)
 			}
@@ -453,29 +447,29 @@ func TestCompareSearchResults(t *testing.T) {
 
 	tests := []testCase{
 		// Different repo matches
-		{
+		testCase{
 			a: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						Name: api.RepoName("a"),
+						URI: api.RepoURI("a"),
 					},
 				},
 			},
 			b: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						Name: api.RepoName("b"),
+						URI: api.RepoURI("b"),
 					},
 				},
 			},
 			aIsLess: true,
 		},
 		// Repo match vs file match in same repo
-		{
+		testCase{
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						Name: api.RepoName("a"),
+						URI: api.RepoURI("a"),
 					},
 					JPath: "a",
 				},
@@ -483,18 +477,18 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				repo: &repositoryResolver{
 					repo: &types.Repo{
-						Name: api.RepoName("a"),
+						URI: api.RepoURI("a"),
 					},
 				},
 			},
 			aIsLess: false,
 		},
 		// Same repo, different files
-		{
+		testCase{
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						Name: api.RepoName("a"),
+						URI: api.RepoURI("a"),
 					},
 					JPath: "a",
 				},
@@ -502,7 +496,7 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						Name: api.RepoName("a"),
+						URI: api.RepoURI("a"),
 					},
 					JPath: "b",
 				},
@@ -510,11 +504,11 @@ func TestCompareSearchResults(t *testing.T) {
 			aIsLess: true,
 		},
 		// different repo, same file name
-		{
+		testCase{
 			a: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						Name: api.RepoName("a"),
+						URI: api.RepoURI("a"),
 					},
 					JPath: "a",
 				},
@@ -522,7 +516,7 @@ func TestCompareSearchResults(t *testing.T) {
 			b: &searchResultResolver{
 				fileMatch: &fileMatchResolver{
 					repo: &types.Repo{
-						Name: api.RepoName("b"),
+						URI: api.RepoURI("b"),
 					},
 					JPath: "a",
 				},

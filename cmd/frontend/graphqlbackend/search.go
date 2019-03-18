@@ -11,36 +11,28 @@ import (
 	"strings"
 	"sync"
 
-	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/felixfbecker/stringscore"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-// This file contains the root resolver for search. It currently has a lot of
-// logic that spans out into all the other search_* files.
-//
-// NOTE: This file and most supporting code will be deleted when search2.go is
-// rolled out. However, right now to understand search and fix bugs in it you
-// should start here.
 
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; max {
@@ -58,19 +50,13 @@ func maxReposToSearch() int {
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
 	Query string
-}) (interface {
-	Results(context.Context) (*searchResultsResolver, error)
-	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
-	//lint:ignore U1000 is used by graphql via reflection
-	Stats(context.Context) (*searchResultsStats, error)
-}, error) {
-
+}) (*searchResolver, error) {
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
-		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
 		return nil, err
 	}
 	return &searchResolver{
+		root:  r,
 		query: query,
 	}, nil
 }
@@ -88,6 +74,8 @@ func asString(v *searchquerytypes.Value) string {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
+	root *schemaResolver
+
 	query *query.Query // the parsed search query
 
 	// Cached resolveRepositories results.
@@ -139,7 +127,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	groups := map[string][]*types.Repo{}
 
 	// Repo groups can be defined in the search.repoGroups settings field.
-	merged, err := viewerFinalSettings(ctx)
+	merged, err := viewerMergedConfiguration(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +138,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	for name, repoPaths := range settings.SearchRepositoryGroups {
 		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &types.Repo{Name: api.RepoName(repoPath)}
+			repos[i] = &types.Repo{URI: api.RepoURI(repoPath)}
 		}
 		groups[name] = repos
 	}
@@ -175,7 +163,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 	sampleReposMu.Lock()
 	defer sampleReposMu.Unlock()
 	if sampleRepos == nil {
-		sampleRepoPaths := []api.RepoName{
+		sampleRepoPaths := []api.RepoURI{
 			"github.com/sourcegraph/jsonrpc2",
 			"github.com/sourcegraph/javascript-typescript-langserver",
 			"github.com/gorilla/mux",
@@ -186,7 +174,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 		}
 		repos := make([]*types.Repo, len(sampleRepoPaths))
 		for i, path := range sampleRepoPaths {
-			repo, err := backend.Repos.GetByName(ctx, path)
+			repo, err := backend.Repos.GetByURI(ctx, path)
 			if err != nil {
 				return nil, fmt.Errorf("get %q: %s", path, err)
 			}
@@ -259,9 +247,9 @@ type patternRevspec struct {
 	revs           []search.RevisionSpecifier
 }
 
-// given a repo name, determine whether it matched any patterns for which we have
+// given a URI, determine whether it matched any patterns for which we have
 // revspecs (or ref globs), and if so, return the matching/allowed ones.
-func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []search.RevisionSpecifier, clashing []search.RevisionSpecifier) {
+func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []search.RevisionSpecifier, clashing []search.RevisionSpecifier) {
 	revLists := make([][]search.RevisionSpecifier, 0, len(pats))
 	for _, rev := range pats {
 		if rev.includePattern.MatchString(string(repo)) {
@@ -330,7 +318,7 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		if _, err := regexp.Compile(string(repoPattern)); err != nil {
 			return nil, &badRequestError{err}
 		}
-		repoPattern = api.RepoName(optimizeRepoPatternWithHeuristics(string(repoPattern)))
+		repoPattern = api.RepoURI(optimizeRepoPatternWithHeuristics(string(repoPattern)))
 		includePatterns[i] = string(repoPattern)
 		if len(revs) > 0 {
 			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")
@@ -381,7 +369,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		var patterns []string
 		for _, groupName := range groupNames {
 			for _, repo := range groups[groupName] {
-				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
+				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.URI))+"$")
 			}
 		}
 		includePatterns = append(includePatterns, unionRegExps(patterns))
@@ -421,9 +409,12 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
-		repoRev := &search.RepositoryRevisions{Repo: repo}
+		repoRev := &search.RepositoryRevisions{
+			Repo:          repo,
+			GitserverRepo: gitserver.Repo{Name: repo.URI},
+		}
 
-		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
+		revs, clashingRevs := getRevsForMatchedRepo(repo.URI, includePatternRevs)
 
 		repoResolver := &repositoryResolver{repo: repo}
 
@@ -451,7 +442,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
-				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
+				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo, nil, rev.RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -491,7 +482,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
-	repos, _, _, overLimit, err := r.resolveRepositories(ctx, nil)
+	repoRevisions, _, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -502,31 +493,38 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, nil
 	}
 
-	p, err := r.getPatternInfo(&getPatternInfoOptions{forceFileSearch: true})
-	if err != nil {
-		return nil, err
-	}
-	args := search.Args{
-		Pattern:         p,
-		Repos:           repos,
-		Query:           r.query,
-		UseFullDeadline: r.searchTimeoutFieldSet(),
-	}
-	if err := args.Pattern.Validate(); err != nil {
-		return nil, err
+	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
+	excludePattern := unionRegExps(excludePatterns)
+	pathOptions := pathmatch.CompileOptions{
+		RegExp:        true,
+		CaseSensitive: r.query.IsCaseSensitive(),
 	}
 
-	fileResults, _, err := searchFilesInRepos(ctx, &args)
-	if err != nil {
-		return nil, err
+	// Treat all default terms as though they had `file:` before them (to make it easy for users to
+	// jump to files by just typing their name).
+	for _, v := range r.query.Values(query.FieldDefault) {
+		includePatterns = append(includePatterns, asString(v))
 	}
 
-	var suggestions []*searchSuggestionResolver
-	for i, result := range fileResults {
-		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
-		suggestions = append(suggestions, newSearchResultResolver(result.File(), assumedScore))
+	matchPath, err := pathmatch.CompilePathPatterns(includePatterns, excludePattern, pathOptions)
+	if err != nil {
+		return nil, &badRequestError{err}
 	}
-	return suggestions, nil
+
+	matcher := matcher{match: matchPath.MatchPath}
+
+	// Rank matches if include patterns are specified.
+	if len(includePatterns) > 0 {
+		scorerQueryParts := make([]string, len(includePatterns))
+		for i, includePattern := range includePatterns {
+			// Try to extract the text-only (non-regexp) part of the query to
+			// pass to stringscore, which doesn't use regexps. This is best-effort.
+			scorerQueryParts[i] = strings.TrimSuffix(strings.TrimPrefix(strings.Replace(includePattern, `\`, "", -1), "^"), "$")
+		}
+		matcher.scorerQuery = strings.Join(scorerQueryParts, " ")
+	}
+
+	return searchTree(ctx, matcher, repoRevisions, limit)
 }
 
 func unionRegExps(patterns []string) string {
@@ -602,6 +600,127 @@ func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
 	return res, ok
 }
 
+// A matcher describes how to filter and score results (for repos and files).
+// Exactly one of (query) and (match, scoreQuery) must be set.
+type matcher struct {
+	query string // query to match using stringscore algorithm
+
+	match       func(path string) bool // func that returns true if the item matches
+	scorerQuery string                 // effective query to use in stringscore algorithm
+}
+
+// searchTree searches the specified repositories for files and dirs whose name matches the matcher.
+func searchTree(ctx context.Context, matcher matcher, repos []*search.RepositoryRevisions, limit int) ([]*searchSuggestionResolver, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var (
+		resMu sync.Mutex
+		res   []*searchSuggestionResolver
+	)
+	done := make(chan error, len(repos))
+	for _, repoRev := range repos {
+		if len(repoRev.Revs) >= 2 {
+			return nil, errMultipleRevsNotSupported
+		}
+
+		go func(repoRev search.RepositoryRevisions) {
+			fileResults, err := searchTreeForRepo(ctx, matcher, repoRev, limit, true)
+			if err != nil {
+				done <- err
+				return
+			}
+			resMu.Lock()
+			res = append(res, fileResults...)
+			resMu.Unlock()
+			done <- nil
+		}(*repoRev)
+	}
+	for range repos {
+		if err := <-done; err != nil {
+			// TODO collect error
+			if errors.Cause(err) != context.Canceled {
+				log15.Warn("searchFiles error", "err", err)
+			}
+		}
+	}
+	return res, nil
+}
+
+var mockSearchFilesForRepo func(matcher matcher, repoRevs search.RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error)
+
+// searchTreeForRepo searches the specified repository for files whose name matches
+// the matcher
+func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs search.RepositoryRevisions, limit int, includeDirs bool) (res []*searchSuggestionResolver, err error) {
+	if mockSearchFilesForRepo != nil {
+		return mockSearchFilesForRepo(matcher, repoRevs, limit, includeDirs)
+	}
+
+	if len(repoRevs.Revs) == 0 {
+		return nil, nil // no revs to search
+	}
+
+	repoResolver := &repositoryResolver{repo: repoRevs.Repo}
+	commitResolver, err := repoResolver.Commit(ctx, &repositoryCommitArgs{Rev: repoRevs.RevSpecs()[0]}) // TODO(sqs): search all revspecs
+	if err != nil {
+		return nil, err
+	}
+	if vcs.IsCloneInProgress(err) {
+		// TODO report a cloning repo
+		return res, nil
+	}
+	if commitResolver == nil {
+		// TODO(sqs): this means the repository is empty or the revision did not resolve - in either case,
+		// there no tree entries here, but maybe we should handle this better
+		return nil, nil
+	}
+	treeResolver, err := commitResolver.Tree(ctx, &struct {
+		Path      string
+		Recursive bool
+	}{Path: ""})
+	if err != nil {
+		return nil, err
+	}
+	entries, err := treeResolver.Entries(ctx, &gitTreeEntryConnectionArgs{
+		ConnectionArgs: graphqlutil.ConnectionArgs{First: nil},
+		Recursive:      true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var scorerQuery string
+	if matcher.query != "" {
+		scorerQuery = matcher.query
+	} else {
+		scorerQuery = matcher.scorerQuery
+	}
+
+	scorer := newScorer(scorerQuery)
+	for _, entryResolver := range entries {
+		if !includeDirs {
+			if entryResolver.IsDirectory() {
+				continue
+			}
+		}
+
+		score := scorer.calcScore(entryResolver)
+		if score <= 0 && matcher.scorerQuery != "" && matcher.match(entryResolver.path) {
+			score = 1 // minimum to ensure everything included by match.match is included
+		}
+		if score > 0 {
+			res = append(res, newSearchResultResolver(entryResolver, score))
+		}
+	}
+
+	sortSearchSuggestions(res)
+	if len(res) > limit {
+		res = res[:limit]
+	}
+
+	return res, nil
+}
+
 // newSearchResultResolver returns a new searchResultResolver wrapping the
 // given result.
 //
@@ -610,7 +729,7 @@ func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
 func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *repositoryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.URI), label: string(r.repo.URI)}
 
 	case *gitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
@@ -621,6 +740,123 @@ func newSearchResultResolver(result interface{}, score int) *searchSuggestionRes
 	default:
 		panic("never here")
 	}
+}
+
+// scorer is a structure for holding some scorer state that can be shared
+// across calcScore calls for the same query string.
+type scorer struct {
+	query      string
+	queryEmpty bool
+	queryParts []string
+}
+
+// newScorer returns a scorer to be used for calculating sort scores of results
+// against the specified query.
+func newScorer(query string) *scorer {
+	return &scorer{
+		query:      query,
+		queryEmpty: strings.TrimSpace(query) == "",
+		queryParts: splitNoEmpty(query, "/"),
+	}
+}
+
+// score values to add to different types of results to e.g. get forks lower in
+// search results, etc.
+const (
+	// Files > Repos > Forks
+	scoreBumpFile = 1 * (math.MaxInt32 / 16)
+	scoreBumpRepo = 0 * (math.MaxInt32 / 16)
+	scoreBumpFork = -10
+)
+
+// calcScore calculates and assigns the sorting score to the given result.
+//
+// A panic occurs if the type of result is not a valid search result resolver type.
+func (s *scorer) calcScore(result interface{}) int {
+	var score int
+	if s.queryEmpty {
+		// If no query, then it will show *all* results; score must be nonzero in order to
+		// have scoreBump* constants applied.
+		score = 1
+	}
+
+	switch r := result.(type) {
+	case *repositoryResolver:
+		if !s.queryEmpty {
+			score = postfixFuzzyAlignScore(splitNoEmpty(string(r.repo.URI), "/"), s.queryParts)
+		}
+		// Push forks down
+		if r.repo.Fork {
+			score += scoreBumpFork
+		}
+		if score > 0 {
+			score += scoreBumpRepo
+		}
+		return score
+
+	case *gitTreeEntryResolver:
+		if !s.queryEmpty {
+			pathParts := splitNoEmpty(r.path, "/")
+			score = postfixFuzzyAlignScore(pathParts, s.queryParts)
+		}
+		if score > 0 {
+			score += scoreBumpFile
+		}
+		return score
+
+	default:
+		panic("never here")
+	}
+}
+
+// postfixFuzzyAlignScore is used to calculate how well a targets component
+// matches a query from the back. It rewards consecutive alignment as well as
+// aligning to the right. For example for the query "a/b" we get the
+// following ranking:
+//
+//   /a/b == /x/a/b
+//   /a/b/x
+//   /a/x/b
+//
+// The following will get zero score
+//
+//   /x/b
+//   /ab/
+func postfixFuzzyAlignScore(targetParts, queryParts []string) int {
+	total := 0
+	consecutive := true
+	queryIdx := len(queryParts) - 1
+	for targetIdx := len(targetParts) - 1; targetIdx >= 0 && queryIdx >= 0; targetIdx-- {
+		score := stringscore.Score(targetParts[targetIdx], queryParts[queryIdx])
+		if score <= 0 {
+			consecutive = false
+			continue
+		}
+		// Consecutive and align bonus
+		if consecutive {
+			score *= 2
+		}
+		consecutive = true
+		total += score
+		queryIdx--
+	}
+	// Did not match whole of queryIdx
+	if queryIdx >= 0 {
+		return 0
+	}
+	return total
+}
+
+// splitNoEmpty is like strings.Split except empty strings are removed.
+func splitNoEmpty(s, sep string) []string {
+	split := strings.Split(s, sep)
+	res := make([]string, 0, len(split))
+	for _, part := range split {
+		if part != "" {
+			res = append(res, part)
+		}
+	}
+	return res
 }
 
 func sortSearchSuggestions(s []*searchSuggestionResolver) {
@@ -714,69 +950,3 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev search.Reposito
 }
 
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
-
-// SearchProviders contains instances of our search providers.
-type SearchProviders struct {
-	// Text is our root text searcher.
-	Text *searchbackend.Text
-
-	// SearcherURLs is an endpoint map to our searcher service replicas.
-	SearcherURLs *endpoint.Map
-
-	// Index is a search.Searcher for Zoekt.
-	Index *searchbackend.Zoekt
-}
-
-var (
-	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
-	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-
-	searchOnce sync.Once
-	searchP    *SearchProviders
-)
-
-// Search returns instances of our search providers.
-func Search() *SearchProviders {
-	searchOnce.Do(func() {
-		// Zoekt
-		index := &searchbackend.Zoekt{}
-		if zoektAddr != "" {
-			index.Client = zoektrpc.Client(zoektAddr)
-		}
-		go func() {
-			conf.Watch(func() {
-				index.SetEnabled(conf.SearchIndexEnabled())
-			})
-		}()
-
-		// Searcher
-		var searcherURLs *endpoint.Map
-		if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-		} else {
-			searcherURLs = endpoint.New(searcherURL)
-		}
-
-		text := &searchbackend.Text{
-			Index: index,
-			Fallback: &searchbackend.TextJIT{
-				Endpoints: searcherURLs,
-				Resolve: func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error) {
-					// Do not trigger a repo-updater lookup (e.g.,
-					// backend.{GitRepo,Repos.ResolveRev}) because that would
-					// slow this operation down by a lot (if we're looping
-					// over many repos). This means that it'll fail if a repo
-					// is not on gitserver.
-					return git.ResolveRevision(ctx, gitserver.Repo{Name: name}, nil, spec, &git.ResolveRevisionOptions{NoEnsureRevision: true})
-				},
-			},
-		}
-
-		searchP = &SearchProviders{
-			Text:         text,
-			SearcherURLs: searcherURLs,
-			Index:        index,
-		}
-	})
-	return searchP
-}

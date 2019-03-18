@@ -18,13 +18,13 @@ import (
 func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 
-	repo, err := backend.Repos.GetByName(ctx, origRepo)
+	repo, err := backend.Repos.GetByURI(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
 
-	if origRepo != repo.Name {
-		return nil, &URLMovedError{repo.Name}
+	if origRepo != repo.URI {
+		return nil, &URLMovedError{repo.URI}
 	}
 
 	return repo, nil
@@ -58,13 +58,13 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (*types.Repo, ap
 	return repo, commitID, err
 }
 
-// RedirectToNewRepoName writes an HTTP redirect response with a
+// RedirectToNewRepoURI writes an HTTP redirect response with a
 // Location that matches the request's location except with the
-// Repo route var updated to refer to newRepoName (instead of the
-// originally requested repo name).
-func RedirectToNewRepoName(w http.ResponseWriter, r *http.Request, newRepoName api.RepoName) error {
+// Repo route var updated to refer to newRepoURI (instead of the
+// originally requested repo URI).
+func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI api.RepoURI) error {
 	origVars := mux.Vars(r)
-	origVars["Repo"] = string(newRepoName)
+	origVars["Repo"] = string(newRepoURI)
 
 	var pairs []string
 	for k, v := range origVars {

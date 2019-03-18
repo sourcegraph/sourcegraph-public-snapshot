@@ -1,4 +1,4 @@
-# G Suite and Chrome Enterprise integration
+# G Suite integration
 
 > NOTE: Company-wide deployment via G Suite is a [paid upgrade](https://about.sourcegraph.com/pricing)
 
@@ -11,7 +11,7 @@ each user's Chrome browser will install and configure the Sourcegraph Chrome
 extension automatically. (It may take a few hours to fully propagate the Chrome
 settings.) Then all users will see code intelligence like this:
 
-<img src="img/GitHubGSuiteDemo.png" style="border: 1px solid #ccc"/>
+<img src="img/GitHubGSuiteDemo.png" style="border: 1px solid red"/>
 
 ## Automatically install with G Suite
 
@@ -19,12 +19,15 @@ settings.) Then all users will see code intelligence like this:
 2.  Click **User settings**.
 3.  Click the name of the organization in the list.
 4.  Enable **Force installation**.
-5.  Configure the extension by replacing `https://sourcegraph.example.com` in the following code block with your Sourcegraph instance's URL:
+5.  Configure the extension (replace `https://sourcegraph.example.com` with your Sourcegraph instance's URL, and keep `https://sourcegraph.com` if you want the extension to provide code intelligence and search for open-source code via Sourcegraph.com):
 
 ```
 {
-    "sourcegraphURL": {
-        "Value": "https://sourcegraph.example.com"
+    "serverUrls": {
+        "Value": [
+            "https://sourcegraph.example.com",
+            "https://sourcegraph.com"
+        ]
     }
 }
 ```

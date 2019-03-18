@@ -1,12 +1,14 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 func TestParseIncludePattern(t *testing.T) {
@@ -71,17 +73,56 @@ func TestRepos_Delete(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	pkgsDeletedCalls := make(map[api.RepoID]struct{})
+	Mocks.Pkgs.Delete = func(ctx context.Context, repo api.RepoID) error {
+		pkgsDeletedCalls[repo] = struct{}{}
+		return nil
+	}
+
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 
-	rp, err := Repos.GetByName(ctx, "myrepo")
+	rp, err := Repos.GetByURI(ctx, "myrepo")
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	pks := []lspext.PackageInformation{{
+		Package: map[string]interface{}{"name": "pkg"},
+		Dependencies: []lspext.DependencyReference{{
+			Attributes: map[string]interface{}{"name": "dep1"},
+		}},
+	}}
+	if err := Pkgs.UpdateIndexForLanguage(ctx, "go", rp.ID, pks); err != nil {
+		t.Fatal(err)
+	}
+
+	inputRefs := []lspext.DependencyReference{{
+		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
+	}}
+	if err := GlobalDeps.UpdateIndexForLanguage(ctx, "go", rp.ID, inputRefs); err != nil {
 		t.Fatal(err)
 	}
 
 	if err := Repos.Delete(ctx, rp.ID); err != nil {
 		t.Fatal(err)
+	}
+
+	if _, wasDeleted := pkgsDeletedCalls[rp.ID]; !wasDeleted {
+		t.Error("expected Pkgs.Delete to be called, but it wasn't")
+	}
+
+	gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
+		Language: "go",
+		DepData:  map[string]interface{}{"name": "dep1"},
+		Limit:    20,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gotRefs) > 0 {
+		t.Errorf("expected no more refs after delete, but got %+v", gotRefs)
 	}
 
 	rp2, err := Repos.Get(ctx, rp.ID)
@@ -102,7 +143,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -133,7 +174,7 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := Repos.GetByURI(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo already present")
 		} else {
@@ -141,70 +182,32 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 
-	rp, err := Repos.GetByName(ctx, "myrepo")
+	rp, err := Repos.GetByURI(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if rp.Name != "myrepo" {
-		t.Fatalf("rp.Name: %s != %s", rp.Name, "myrepo")
-	}
-	if rp.ExternalRepo != nil {
-		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, "<nil>")
+	if rp.URI != "myrepo" {
+		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
 	}
 
-	ext := &api.ExternalRepoSpec{
-		ID:          "ext:id",
-		ServiceType: "test",
-		ServiceID:   "ext:test",
-	}
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 
-	rp, err = Repos.GetByName(ctx, "myrepo")
+	rp, err = Repos.GetByURI(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if rp.Name != "myrepo" {
-		t.Fatalf("rp.Name: %s != %s", rp.Name, "myrepo")
+	if rp.URI != "myrepo" {
+		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
 	}
 	if rp.Description != "asdfasdf" {
-		t.Fatalf("rp.Name: %q != %q", rp.Description, "asdfasdf")
-	}
-	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
-		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
-	}
-
-	// Rename. Detected by external repo
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
-		if err == nil {
-			t.Fatal("myrepo should be renamed, but still present as myrepo")
-		} else {
-			t.Fatal(err)
-		}
-	}
-
-	rp, err = Repos.GetByName(ctx, "myrepo/renamed")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rp.Name != "myrepo/renamed" {
-		t.Fatalf("rp.Name: %s != %s", rp.Name, "myrepo/renamed")
-	}
-	if rp.Description != "asdfasdf" {
-		t.Fatalf("rp.Name: %q != %q", rp.Description, "asdfasdf")
-	}
-	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
-		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
+		t.Fatalf("rp.URI: %q != %q", rp.Description, "asdfasdf")
 	}
 }

@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Server) handleUploadPack(w http.ResponseWriter, r *http.Request) {
-	repo := protocol.NormalizeRepo(api.RepoName(r.URL.Query().Get("repo")))
+	repo := protocol.NormalizeRepo(api.RepoURI(r.URL.Query().Get("repo")))
 	if repo == "" {
 		http.Error(w, "repo missing", http.StatusBadRequest)
 		return

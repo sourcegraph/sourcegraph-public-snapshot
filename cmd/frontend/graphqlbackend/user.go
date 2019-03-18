@@ -3,50 +3,24 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-func (r *schemaResolver) User(ctx context.Context, args struct {
-	Username *string
-	Email    *string
-}) (*UserResolver, error) {
-	switch {
-	case args.Username != nil:
-		user, err := db.Users.GetByUsername(ctx, *args.Username)
-		if err != nil {
-			return nil, err
-		}
-		return &UserResolver{user: user}, nil
-
-	case args.Email != nil:
-		// 🚨 SECURITY: Only site admins are allowed to look up by email address on Sourcegraph.com, for
-		// user privacy reasons.
-		if envvar.SourcegraphDotComMode() {
-			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-				return nil, err
-			}
-		}
-		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
-		if err != nil {
-			return nil, err
-		}
-		return &UserResolver{user: user}, nil
-
-	default:
-		return nil, errors.New("must specify either username or email to look up user")
+func (r *schemaResolver) User(ctx context.Context, args struct{ Username string }) (*UserResolver, error) {
+	user, err := db.Users.GetByUsername(ctx, args.Username)
+	if err != nil {
+		return nil, err
 	}
+	return &UserResolver{user: user}, nil
 }
 
 // UserResolver implements the GraphQL User type.
@@ -83,11 +57,10 @@ func UnmarshalUserID(id graphql.ID) (userID int32, err error) {
 	return
 }
 
-// DatabaseID returns the numeric ID for the user in the database.
-func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
+func (r *UserResolver) SourcegraphID() int32 { return r.user.ID }
 
 // Email returns the user's oldest email, if one exists.
-// Deprecated: use Emails instead.
+// DEPRECATED: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
@@ -122,7 +95,7 @@ func (r *UserResolver) URL() string {
 	return "/users/" + r.user.Username
 }
 
-func (r *UserResolver) SettingsURL() *string { return strptr(r.URL() + "/settings") }
+func (r *UserResolver) SettingsURL() string { return r.URL() + "/settings" }
 
 func (r *UserResolver) CreatedAt() string {
 	return r.user.CreatedAt.Format(time.RFC3339)
@@ -133,8 +106,8 @@ func (r *UserResolver) UpdatedAt() *string {
 	return &t
 }
 
-func (r *UserResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{User: &r.user.ID}
+func (r *UserResolver) configurationSubject() api.ConfigurationSubject {
+	return api.ConfigurationSubject{User: &r.user.ID}
 }
 
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
@@ -144,21 +117,19 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 		return nil, err
 	}
 
-	settings, err := db.Settings.GetLatest(ctx, r.settingsSubject())
+	settings, err := db.Settings.GetLatest(ctx, r.configurationSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&settingsSubject{user: r}, settings, nil}, nil
+	return &settingsResolver{&configurationSubject{user: r}, settings, nil}, nil
 }
 
-func (r *UserResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{subject: &settingsSubject{user: r}}
+func (r *UserResolver) ConfigurationCascade() *configurationCascadeResolver {
+	return &configurationCascadeResolver{subject: &configurationSubject{user: r}}
 }
-
-func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
 
 func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
@@ -196,9 +167,6 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		AvatarURL:   args.AvatarURL,
 	}
 	if args.Username != nil {
-		if !viewerCanChangeUsername(ctx, userID) {
-			return nil, fmt.Errorf("unable to change username because auth.disableUsernameChanges is true in critical config")
-		}
 		update.Username = *args.Username
 	}
 	if err := db.Users.Update(ctx, userID, update); err != nil {
@@ -294,21 +262,4 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
-}
-
-// ViewerCanChangeUsername returns if the current user can change the username of the user.
-func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
-	return viewerCanChangeUsername(ctx, r.user.ID)
-}
-
-func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
-		return false
-	}
-	if !conf.Get().Critical.AuthDisableUsernameChanges {
-		return true
-	}
-	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.disableUsernameChanges == true.
-	isSiteAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
-	return isSiteAdminErr == nil
 }

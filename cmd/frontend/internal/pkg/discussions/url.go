@@ -45,7 +45,7 @@ func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.Discus
 		if t.TargetRepo.Path == nil {
 			return nil, nil // Can't generate a link to this yet, we don't have a UI for it yet.
 		}
-		u = &url.URL{Path: path.Join("/", string(repo.Name), "/-/blob/", *t.TargetRepo.Path)}
+		u = &url.URL{Path: path.Join("/", string(repo.URI), "/-/blob/", *t.TargetRepo.Path)}
 
 		// TODO(slimsag:discussions): frontend doesn't link to the comment directly
 		// unless these are in this exact order. Why?
@@ -61,5 +61,5 @@ func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.Discus
 	default:
 		return nil, nil // can't generate a link to this target type
 	}
-	return globals.ExternalURL.ResolveReference(u), nil
+	return globals.AppURL.ResolveReference(u), nil
 }

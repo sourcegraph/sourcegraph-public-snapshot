@@ -1,0 +1,9 @@
+@import '../../components/Area';
+@import './ExtensionAreaHeader';
+
+.registry-extension-area {
+    width: 100%;
+    &__content {
+        height: 100%;
+    }
+}

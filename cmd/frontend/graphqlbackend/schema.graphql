@@ -43,12 +43,25 @@ type Mutation {
     updateOrganization(id: ID!, displayName: String): Org!
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
-    # Adds a external service. Only site admins may perform this mutation.
-    addExternalService(input: AddExternalServiceInput!): ExternalService!
-    # Updates a external service. Only site admins may perform this mutation.
-    updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
-    # Delete an external service. Only site admins may perform this mutation.
-    deleteExternalService(externalService: ID!): EmptyResponse!
+    # Adds a repository on a code host that is already present in the site configuration. The name (which may
+    # consist of one or more path components) of the repository must be recognized by an already configured code
+    # host, or else Sourcegraph won't know how to clone it.
+    #
+    # The newly added repository is not enabled (unless the code host's configuration specifies that it should be
+    # enabled). The caller must explicitly enable it with setRepositoryEnabled.
+    #
+    # If the repository already exists, it is returned.
+    #
+    # To add arbitrary repositories (that don't need to reside on an already configured code host), use the site
+    # configuration "repos.list" property.
+    #
+    # As a special case, GitHub.com public repositories may be added by using a name of the form
+    # "github.com/owner/repo". If there is no GitHub personal access token for github.com configured, the site may
+    # experience problems with github.com repositories due to the low default github.com API rate limit (60
+    # requests per hour).
+    #
+    # Only site admins may perform this mutation.
+    addRepository(name: String!): Repository!
     # Enables or disables a repository. A disabled repository is only
     # accessible to site admins and never appears in search results.
     #
@@ -129,7 +142,7 @@ type Mutation {
     #
     # - All user data (access tokens, email addresses, external account info, survey responses, etc)
     # - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
-    # - Sourcegraph extensions published by the user.
+    # - Sourcegraph Extensions published by the user.
     # - User, Organization, or Global settings authored by the user.
     # - Discussion threads and comments created by the user.
     #
@@ -256,35 +269,16 @@ type Mutation {
         # ID of the saved search.
         id: ID!
     ): EmptyResponse
-    # All mutations that update settings (global, organization, and user settings) are under this field.
-    #
-    # Only the settings subject whose settings are being mutated (and site admins) may perform this mutation.
-    #
-    # This mutation only affects global, organization, and user settings, not site configuration. For site
-    # configuration (which is a separate set of configuration properties from global/organization/user settings),
-    # use updateSiteConfiguration.
-    settingsMutation(input: SettingsMutationGroupInput!): SettingsMutation
-    # DEPRECATED: Use settingsMutation instead. This field is a deprecated alias for settingsMutation and will be
-    # removed in a future release.
-    configurationMutation(input: SettingsMutationGroupInput!): SettingsMutation
-        @deprecated(reason: "use settingsMutation instead")
-    # Updates the site configuration. Returns whether or not a restart is required for the update to be applied.
-    #
-    # Only site admins may perform this mutation.
-    updateSiteConfiguration(
-        # The last ID of the site configuration that is known by the client, to
-        # prevent race conditions. An error will be returned if someone else
-        # has already written a new update.
-        lastID: Int!
-        # A JSON object containing the entire site configuration. The previous site configuration will be replaced
-        # with this new value.
-        input: String!
-    ): Boolean!
+    # All mutations that update configuration settings are under this field.
+    configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
+    # Updates the site configuration. Returns whether or not a restart is
+    # needed for the update to be applied.
+    updateSiteConfiguration(input: String!): Boolean!
+    # Manages language servers.
+    langServers: LangServersMutation
     # Manages discussions.
     discussions: DiscussionsMutation
     # Sets whether the user with the specified user ID is a site admin.
-    #
-    # Only site admins may perform this mutation.
     #!
     #! 🚨 SECURITY: Only trusted users should be given site admin permissions.
     #! Site admins have full access to the site configuration and other
@@ -293,42 +287,38 @@ type Mutation {
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     # Reloads the site by restarting the server. This is not supported for all deployment
     # types. This may cause downtime.
-    #
-    # Only site admins may perform this mutation.
     reloadSite: EmptyResponse
     # Submits a user satisfaction (NPS) survey.
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
-    # Submits a request for a Sourcegraph Enterprise trial license.
-    requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
-    # Clears the management console plaintext password forever. Only site
-    # admins can perform this action.
-    clearManagementConsolePlaintextPassword: EmptyResponse
     # Mutations that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomMutation!
 }
 
-# A new external service.
-input AddExternalServiceInput {
-    # The kind of the external service.
-    kind: ExternalServiceKind!
-    # The display name of the external service.
-    displayName: String!
-    # The JSON configuration of the external service.
-    config: String!
-}
-
-# Fields to update for an existing external service.
-input UpdateExternalServiceInput {
-    # The id of the external service to update.
-    id: ID!
-    # The updated display name, if provided.
-    displayName: String
-    # The updated config, if provided.
-    config: String
+# Mutations for language servers.
+type LangServersMutation {
+    # Enables the language server for the given language.
+    #
+    # Any user can perform this mutation, unless the language has been
+    # explicitly disabled.
+    enable(language: String!): EmptyResponse
+    # Disables the language server for the given language.
+    #
+    # Only admins can perform this action. After disabling, it is impossible
+    # for plain users to enable the language server for this language (until an
+    # admin re-enables it).
+    disable(language: String!): EmptyResponse
+    # Restarts the language server for the given language.
+    #
+    # Only admins can perform this action.
+    restart(language: String!): EmptyResponse
+    # Updates the language server for the given language.
+    #
+    # Only admins can perform this action.
+    update(language: String!): EmptyResponse
 }
 
 # A selection within a file.
@@ -489,40 +479,33 @@ input MarkdownOptions {
     alwaysNil: String
 }
 
-# Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user
-# settings) mutations need.
-input SettingsMutationGroupInput {
-    # The subject whose settings to mutate (organization, user, etc.).
+# Input for Mutation.configuration, which contains fields that all configuration
+# mutations need.
+input ConfigurationMutationGroupInput {
+    # The subject whose configuration to mutate (organization, user, etc.).
     subject: ID!
-    # The ID of the last-known settings known to the client, or null if there is none. This field is used to
-    # prevent race conditions when there are concurrent editors.
+    # The ID of the last-known configuration known to the client, or null if
+    # there is none. This field is used to prevent race conditions when there
+    # are concurrent editors.
     lastID: Int
 }
 
-# Mutations that update settings (global, organization, or user settings). These mutations are grouped together
-# because they:
+# Mutations that update configuration settings. These mutations are grouped
+# together because they:
 #
 # - are all versioned to avoid race conditions with concurrent editors
-# - all apply to a specific settings subject (i.e., a user, an organization, or the whole site)
+# - all apply to a specific configuration subject
 #
-# Grouping them lets us extract those common parameters to the Mutation.settingsMutation field.
-type SettingsMutation {
-    # Edit a single property in the settings object.
-    editSettings(
-        # The edit to apply to the settings.
-        edit: SettingsEdit!
-    ): UpdateSettingsPayload
-    # DEPRECATED
-    editConfiguration(edit: ConfigurationEdit!): UpdateSettingsPayload
-        @deprecated(
-            reason: "Use editSettings instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
-    # Overwrite the existing settings with the new settings.
-    overwriteSettings(
-        # A JSON object (stringified) of the settings. Trailing commas and "//"-style comments are supported. The
-        # entire previous settings value will be overwritten by this new value.
-        contents: String!
-    ): UpdateSettingsPayload
+# Grouping them lets us extract those common parameters to the
+# Mutation.configuration field.
+type ConfigurationMutation {
+    # Edit a single property in the configuration object.
+    editConfiguration(
+        # The configuration edit to apply.
+        edit: ConfigurationEdit!
+    ): UpdateConfigurationPayload
+    # Overwrite the contents to the new contents provided.
+    overwriteConfiguration(contents: String): UpdateConfigurationPayload
     # Create a saved query.
     createSavedQuery(
         description: String!
@@ -532,7 +515,7 @@ type SettingsMutation {
         notifySlack: Boolean = false
         disableSubscriptionNotifications: Boolean = false
     ): SavedQuery!
-    # Update the saved query with the given ID in settings.
+    # Update the saved query with the given ID in the configuration.
     updateSavedQuery(
         id: ID!
         description: String
@@ -541,12 +524,12 @@ type SettingsMutation {
         notify: Boolean = false
         notifySlack: Boolean = false
     ): SavedQuery!
-    # Delete the saved query with the given ID in the settings.
+    # Delete the saved query with the given ID in the configuration.
     deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
 }
 
-# An edit to a JSON property in a settings JSON object. The JSON property to edit can be nested.
-input SettingsEdit {
+# An edit to a (nested) configuration property's value.
+input ConfigurationEdit {
     # The key path of the property to update.
     #
     # Inserting into an existing array is not yet supported.
@@ -557,20 +540,8 @@ input SettingsEdit {
     # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
     # or else the GraphQL parser will return an error.
     value: JSONValue
-    # Whether to treat the value as a JSONC-encoded string, which makes it possible to perform an edit that
-    # preserves (or adds/removes) comments.
-    valueIsJSONCEncodedString: Boolean = false
-}
-
-# DEPRECATED: This type was renamed to SettingsEdit.
-#
-# NOTE: GraphQL does not support @deprecated directives on INPUT_FIELD_DEFINITION (input fields).
-input ConfigurationEdit {
-    # DEPRECATED
-    keyPath: [KeyPathSegment!]!
-    # DEPRECATED
-    value: JSONValue
-    # DEPRECATED
+    # Whether to treat the value as a JSONC-encoded string, which makes it possible to perform a configuration edit
+    # that preserves (or adds/removes) comments.
     valueIsJSONCEncodedString: Boolean = false
 }
 
@@ -585,8 +556,8 @@ input KeyPathSegment {
     index: Int
 }
 
-# The payload for SettingsMutation.updateConfiguration.
-type UpdateSettingsPayload {
+# The payload for ConfigurationMutation.updateConfiguration.
+type UpdateConfigurationPayload {
     # An empty response.
     empty: EmptyResponse
 }
@@ -642,30 +613,19 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
-    # Looks up a repository by either name or cloneURL.
+    # Looks up a repository by name.
     repository(
-        # Query the repository by name, for example "github.com/gorilla/mux".
+        # The name, for example "github.com/gorilla/mux".
         name: String
-        # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
-        # by checking if there exists a code host configuration that matches the clone URL.
-        # Will not actually check the code host to see if the repository actually exists.
-        cloneURL: String
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
-    # Lists all external services.
-    externalServices(
-        # Returns the first n repositories from the list.
-        first: Int
-    ): ExternalServiceConnection!
     # List all repositories.
     repositories(
         # Returns the first n repositories from the list.
         first: Int
         # Return repositories whose names match the query.
         query: String
-        # Return repositories whose names are in the list.
-        names: [String!]
         # Include enabled repositories.
         enabled: Boolean = true
         # Include disabled repositories.
@@ -680,8 +640,12 @@ type Query {
         indexed: Boolean = true
         # Include repositories that do not have a text search index.
         notIndexed: Boolean = true
+        # Filter for repositories that have been indexed for cross-repository code intelligence.
+        ciIndexed: Boolean = false
+        # Filter for repositories that have not been indexed for cross-repository code intelligence.
+        notCIIndexed: Boolean = false
         # Sort field.
-        orderBy: RepositoryOrderBy = REPOSITORY_NAME
+        orderBy: RepoOrderBy = REPO_URI
         # Sort direction.
         descending: Boolean = false
     ): RepositoryConnection!
@@ -694,13 +658,8 @@ type Query {
     ): PhabricatorRepo
     # The current user.
     currentUser: User
-    # Looks up a user by username or email address.
-    user(
-        # Query the user by username.
-        username: String
-        # Query the user by verified email address.
-        email: String
-    ): User
+    # Looks up a user by username.
+    user(username: String!): User
     # List all users.
     users(
         # Returns the first n users from the list.
@@ -758,16 +717,10 @@ type Query {
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
-    # EXPERIMENTAL: Syntax highlights a code string.
-    highlightCode(code: String!, fuzzyLanguage: String!, disableTimeout: Boolean!, isLightTheme: Boolean!): String!
-    # Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
-    # be a site (which has global settings), an organization, or a user.
-    settingsSubject(id: ID!): SettingsSubject
-    # The settings for the viewer. The viewer is either an anonymous visitor (in which case viewer settings is
-    # global settings) or an authenticated user (in which case viewer settings are the user's settings).
-    viewerSettings: SettingsCascade!
-    # DEPRECATED
-    viewerConfiguration: ConfigurationCascade! @deprecated(reason: "use viewerSettings instead")
+    # Looks up an instance of a type that implements ConfigurationSubject.
+    configurationSubject(id: ID!): ConfigurationSubject
+    # The configuration for the viewer.
+    viewerConfiguration: ConfigurationCascade!
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
     # Runs a search.
@@ -775,6 +728,8 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
+    # The search scopes.
+    searchScopes: [SearchScope!]!
     # All saved queries configured for the current user, merged from all configurations.
     savedQueries: [SavedQuery!]!
     # All repository groups for the current user, merged from all configurations.
@@ -788,6 +743,12 @@ type Query {
     ): SurveyResponseConnection!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
+    # The Sourcegraph documentation page for the given path, used to serve the content for help
+    # pages under the URL path /help on the Sourcegraph instance. If no page exists at the path,
+    # null is returned.
+    #
+    # FOR INTERNAL USE ONLY.
+    docSitePage(path: String!): DocSitePage
     # Queries that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -822,42 +783,6 @@ type Search {
 
 # A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository
-
-# An object representing a markdown string.
-type Markdown {
-    # The raw markdown string.
-    text: String!
-    # HTML for the rendered markdown string, or null if there is no HTML representation provided.
-    # If specified, clients should render this directly.
-    html: String!
-}
-
-# A search result. Every type of search result, except FileMatch, must implement this interface.
-interface GenericSearchResultInterface {
-    # URL to an icon that is displayed with every search result.
-    icon: String!
-    # A markdown string that is rendered prominently.
-    label: Markdown!
-    # The URL of the result.
-    url: String!
-    # A markdown string that is rendered less prominently.
-    detail: Markdown!
-    # A list of matches in this search result.
-    matches: [SearchResultMatch!]!
-}
-
-# A match in a search result. Matches make up the body content of a search result.
-type SearchResultMatch {
-    # URL for the individual result match.
-    url: String!
-    # A markdown string containing the preview contents of the result match.
-    body: Markdown!
-    # A list of highlights that specify locations of matches of the query in the body. Each highlight is
-    # a line number, character offset, and length. Currently, highlights are only displayed on match bodies
-    # that are code blocks. If the result body is a code block, exclude the markdown code fence lines in
-    # the line and character count. Leave as an empty list if no highlights are available.
-    highlights: [Highlight!]!
-}
 
 # Search results.
 type SearchResults {
@@ -932,6 +857,19 @@ type SearchFilter {
 # A search suggestion.
 union SearchSuggestion = Repository | File | Symbol
 
+# A search scope.
+type SearchScope {
+    # A unique identifier for the search scope.
+    # If set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value.
+    id: String
+    # The name.
+    name: String!
+    # The value.
+    value: String!
+    # A description for this search scope, which will appear on the scoped search page.
+    description: String
+}
+
 # A search-related alert message.
 type SearchAlert {
     # The title.
@@ -942,16 +880,16 @@ type SearchAlert {
     proposedQueries: [SearchQueryDescription!]
 }
 
-# A saved search query, defined in settings.
+# A saved search query, defined in configuration.
 type SavedQuery {
     # The unique ID of the saved query.
     id: ID!
-    # The subject whose settings this saved query was defined in.
-    subject: SettingsSubject!
+    # The subject whose configuration this saved query was defined in.
+    subject: ConfigurationSubject!
     # The unique key of this saved query (unique only among all other saved
     # queries of the same subject).
     key: String
-    # The 0-indexed index of this saved query in the subject's settings.
+    # The 0-indexed index of this saved query in the subject's configuration.
     index: Int!
     # The description.
     description: String!
@@ -990,17 +928,7 @@ type Diff {
 }
 
 # A search result that is a Git commit.
-type CommitSearchResult implements GenericSearchResultInterface {
-    # Base64 data uri to an icon.
-    icon: String!
-    # A markdown string that is rendered prominently.
-    label: Markdown!
-    # The URL of the result.
-    url: String!
-    # A markdown string of that is rendered less prominently.
-    detail: Markdown!
-    # The result previews of the result.
-    matches: [SearchResultMatch!]!
+type CommitSearchResult {
     # The commit that matched the search query.
     commit: GitCommit!
     # The ref names of the commit.
@@ -1039,43 +967,38 @@ type Highlight {
     length: Int!
 }
 
-# A list of external services.
-type ExternalServiceConnection {
-    # A list of external services.
-    nodes: [ExternalService!]!
-
-    # The total number of external services in the connection.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
+# Ref fields.
+type RefFields {
+    # The ref location.
+    refLocation: RefLocation
+    # The URI.
+    uri: URI
 }
 
-# A specific kind of external service.
-enum ExternalServiceKind {
-    AWSCODECOMMIT
-    BITBUCKETSERVER
-    GITHUB
-    GITLAB
-    GITOLITE
-    PHABRICATOR
-    OTHER
+# A URI.
+type URI {
+    # The host.
+    host: String!
+    # The fragment.
+    fragment: String!
+    # The path.
+    path: String!
+    # The query.
+    query: String!
+    # The scheme.
+    scheme: String!
 }
 
-# A configured external service.
-type ExternalService implements Node {
-    # The external service's unique ID.
-    id: ID!
-    # The kind of external service.
-    kind: ExternalServiceKind!
-    # The display name of the external service.
-    displayName: String!
-    # The JSON configuration of the external service.
-    config: String!
-    # When the external service was created.
-    createdAt: String!
-    # When the external service was last updated.
-    updatedAt: String!
+# A ref location.
+type RefLocation {
+    # The starting line number.
+    startLineNumber: Int!
+    # The starting column.
+    startColumn: Int!
+    # The ending line number.
+    endLineNumber: Int!
+    # The ending column.
+    endColumn: Int!
 }
 
 # A list of repositories.
@@ -1084,7 +1007,6 @@ type RepositoryConnection {
     nodes: [Repository!]!
     # The total count of repositories in the connection. This total count may be larger
     # than the number of nodes in this object when the result is paginated.
-    # This requires admin permissions and will return null for all non-admin users.
     #
     # In some cases, the total count can't be computed quickly; if so, it is null. Pass
     # precise: true to always compute total counts even if it takes a while.
@@ -1094,7 +1016,7 @@ type RepositoryConnection {
 }
 
 # A repository is a Git source control repository that is mirrored from some origin code host.
-type Repository implements Node & GenericSearchResultInterface {
+type Repository implements Node {
     # The repository's unique ID.
     id: ID!
     # The repository's name, as a path with one or more components. It conventionally consists of
@@ -1139,6 +1061,8 @@ type Repository implements Node & GenericSearchResultInterface {
     externalRepository: ExternalRepository
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
+    # The commit that was last indexed for cross-references, if any.
+    lastIndexedRevOrLatest: GitCommit
     # Information about the text search index for this repository, or null if text search indexing
     # is not enabled or supported for this repository.
     textSearchIndex: RepositoryTextSearchIndex
@@ -1197,18 +1121,44 @@ type Repository implements Node & GenericSearchResultInterface {
         # Returns the first n contributors from the list.
         first: Int
     ): RepositoryContributorConnection!
+    # The repository's symbols (e.g., functions, variables, types, classes, etc.) on the default branch.
+    #
+    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
+    # yet been processed. Use Repository.commit.tree.symbols to retrieve symbols for a specific revision.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
+    # Packages defined in this repository, as returned by LSP workspace/xpackages requests to this repository's
+    # language servers (running against a recent commit on its default branch).
+    #
+    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
+    # yet been processed. Use Repository.commit.packages to retrieve packages for a specific revision.
+    packages(
+        # Returns the first n packages from the list.
+        first: Int
+        # Return packages matching the query.
+        query: String
+    ): PackageConnection!
+    # Dependencies of this repository, as returned by LSP workspace/xreferences requests to this repository's
+    # language servers (running against a recent commit on its default branch).
+    #
+    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
+    # yet been processed. Use Repository.commit.dependencies to retrieve dependencies for a specific revision.
+    dependencies(
+        # Returns the first n dependencies from the list.
+        first: Int
+        # Return dependencies matching the query.
+        query: String
+    ): DependencyConnection!
+    # The total ref list.
+    listTotalRefs: TotalRefList!
     # Link to another Sourcegraph instance location where this repository is located.
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
-    # Base64 data uri to an icon.
-    icon: String!
-    # A markdown string that is rendered prominently.
-    label: Markdown!
-    # A markdown string of that is rendered less prominently.
-    detail: Markdown!
-    # The result previews of the result.
-    matches: [SearchResultMatch!]!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -1239,34 +1189,6 @@ type MirrorRepositoryInfo {
     cloned: Boolean!
     # When the repository was last successfully updated from the remote source repository..
     updatedAt: String
-    # The state of this repository in the update schedule.
-    updateSchedule: UpdateSchedule
-    # The state of this repository in the update queue.
-    updateQueue: UpdateQueue
-}
-
-# The state of a repository in the update schedule.
-type UpdateSchedule {
-    # The interval that was used when scheduling the current due time.
-    intervalSeconds: Int!
-    # The next time that the repo will be inserted into the update queue.
-    due: String!
-    # The index of the repo in the schedule.
-    index: Int!
-    # The total number of repos in the schedule.
-    total: Int!
-}
-
-# The state of a repository in the update queue.
-type UpdateQueue {
-    # The index of the repo in the update queue.
-    # Updating repos are placed at the end of the queue until they finish updating
-    # so don't display this if updating is true.
-    index: Int!
-    # True if the repo is currently updating.
-    updating: Boolean!
-    # The total number of repos in the update queue (including updating repos).
-    total: Int!
 }
 
 # A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
@@ -1644,7 +1566,7 @@ type GitRevisionRange {
 
 # A Phabricator repository.
 type PhabricatorRepo {
-    # The canonical repo name (e.g. "github.com/gorilla/mux").
+    # The canonical repo path (e.g. "github.com/gorilla/mux").
     name: String!
     # An alias for name.
     uri: String! @deprecated(reason: "use name instead")
@@ -1652,6 +1574,14 @@ type PhabricatorRepo {
     callsign: String!
     # The URL to the phabricator instance (e.g. http://phabricator.sgdev.org)
     url: String!
+}
+
+# A total ref list.
+type TotalRefList {
+    # The repositories.
+    repositories: [Repository!]!
+    # The total.
+    total: Int!
 }
 
 # Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
@@ -1732,6 +1662,22 @@ type GitCommit implements Node {
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
+    # Packages defined in this repository as of this commit, as returned by LSP workspace/xpackages
+    # requests to this repository's language servers.
+    packages(
+        # Returns the first n packages from the list.
+        first: Int
+        # Return packages matching the query.
+        query: String
+    ): PackageConnection!
+    # Dependencies of this repository as of this commit, as returned by LSP workspace/xreferences
+    # requests to this repository's language servers.
+    dependencies(
+        # Returns the first n dependencies from the list.
+        first: Int
+        # Return dependencies matching the query.
+        query: String
+    ): DependencyConnection!
 }
 
 # A set of Git behind/ahead counts for one commit relative to another.
@@ -1903,6 +1849,8 @@ interface File2 {
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    # Returns dependency references for the file.
+    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Symbols defined in this file.
     symbols(
         # Returns the first n symbols from the list.
@@ -1957,6 +1905,8 @@ type GitBlob implements TreeEntry & File2 {
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    # Returns dependency references for the blob.
+    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # Symbols defined in this blob.
@@ -2017,6 +1967,48 @@ type LineMatch {
     limitHit: Boolean!
 }
 
+# Dependency references.
+type DependencyReferences {
+    # The dependency reference data.
+    dependencyReferenceData: DependencyReferencesData!
+    # The repository data.
+    repoData: RepoDataMap!
+}
+
+# A repository data map.
+type RepoDataMap {
+    # The repositories.
+    repos: [Repository!]!
+    # The repository IDs.
+    repoIds: [Int!]!
+}
+
+# Dependency references data.
+type DependencyReferencesData {
+    # The references.
+    references: [DependencyReference!]!
+    # The location.
+    location: DepLocation!
+}
+
+# A dependency reference.
+type DependencyReference {
+    # The dependency data.
+    dependencyData: String!
+    # The repository ID.
+    repoId: Int!
+    # The hints.
+    hints: String!
+}
+
+# A dependency location.
+type DepLocation {
+    # The location.
+    location: String!
+    # The symbol.
+    symbol: String!
+}
+
 # A hunk.
 type Hunk {
     # The startLine.
@@ -2049,11 +2041,13 @@ type UserConnection {
 }
 
 # A user.
-type User implements Node & SettingsSubject {
+type User implements Node & ConfigurationSubject {
     # The unique ID for the user.
     id: ID!
     # The user's username.
     username: String!
+    # The unique numeric ID for the user.
+    sourcegraphID: Int! @deprecated(reason: "use id instead")
     # The user's primary email address.
     #
     # Only the user and site admins can access this field.
@@ -2065,7 +2059,7 @@ type User implements Node & SettingsSubject {
     # The URL to the user's profile on Sourcegraph.
     url: String!
     # The URL to the user's settings.
-    settingsURL: String
+    settingsURL: String!
     # The date when the user account was created on Sourcegraph.
     createdAt: String!
     # The date when the user account was last updated on Sourcegraph.
@@ -2078,16 +2072,9 @@ type User implements Node & SettingsSubject {
     #
     # Only the user and site admins can access this field.
     latestSettings: Settings
-    # All settings for this user, and the individual levels in the settings cascade (global > organization > user)
-    # that were merged to produce the final merged settings.
-    #
-    # Only the user and site admins can access this field.
-    settingsCascade: SettingsCascade!
-    # DEPRECATED
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
     configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
     # The organizations that this user is a member of.
     organizations: OrgConnection!
     # This user's organization memberships.
@@ -2096,8 +2083,10 @@ type User implements Node & SettingsSubject {
     #
     # Only the user and site admins can access this field.
     tags: [String!]!
-    # The user's usage statistics on Sourcegraph.
-    usageStatistics: UserUsageStatistics!
+    # The user's usage activity on Sourcegraph.
+    #
+    # Only the user and site admins can access this field.
+    activity: UserActivity!
     # The user's email addresses.
     #
     # Only the user and site admins can access this field.
@@ -2123,11 +2112,6 @@ type User implements Node & SettingsSubject {
     # Whether the viewer has admin privileges on this user. The user has admin privileges on their own user, and
     # site admins have admin privileges on all users.
     viewerCanAdminister: Boolean!
-    # Whether the viewer can change the username of this user.
-    #
-    # The user can change their username unless auth.disableUsernameChanges is set.
-    # Site admins can always change the username of any user.
-    viewerCanChangeUsername: Boolean!
     # The user's survey responses.
     #
     # Only the user and site admins can access this field.
@@ -2138,10 +2122,6 @@ type User implements Node & SettingsSubject {
     #
     # FOR INTERNAL USE ONLY.
     urlForSiteAdminBilling: String
-    # The unique numeric ID for the user.
-    #
-    # FOR INTERNAL USE ONLY.
-    databaseID: Int!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2185,8 +2165,8 @@ type AuthProviderConnection {
     pageInfo: PageInfo!
 }
 
-# A provider of user authentication, such as an external single-sign-on service (e.g., using OpenID Connect or
-# SAML). The provider information in this type is visible to all viewers and does not contain any secret values.
+# A provider of user authentication, such as an external single-sign-on service (e.g., using OpenID
+# Connect or SAML).
 type AuthProvider {
     # The type of the auth provider.
     serviceType: String!
@@ -2271,9 +2251,6 @@ type OrganizationMembershipConnection {
 type UserEmail {
     # The email address.
     email: String!
-    # Whether the email address is the user's primary email address. Currently this is defined as the earliest
-    # email address associated with the user, preferring verified emails to unverified emails.
-    isPrimary: Boolean!
     # Whether the email address has been verified by the user.
     verified: Boolean!
     # Whether the email address is pending verification.
@@ -2295,7 +2272,7 @@ type OrgConnection {
 }
 
 # An organization, which is a group of users.
-type Org implements Node & SettingsSubject {
+type Org implements Node & ConfigurationSubject {
     # The unique ID for the organization.
     id: ID!
     # The organization's name. This is unique among all organizations on this Sourcegraph site.
@@ -2310,16 +2287,9 @@ type Org implements Node & SettingsSubject {
     #
     # Only organization members and site admins can access this field.
     latestSettings: Settings
-    # All settings for this organization, and the individual levels in the settings cascade (global > organization)
-    # that were merged to produce the final merged settings.
-    #
-    # Only organization members and site admins can access this field.
-    settingsCascade: SettingsCascade!
-    # DEPRECATED
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
     configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
     # A pending invitation for the viewer to join this organization, if any.
     viewerPendingInvitation: OrganizationInvitation
     # Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
@@ -2330,7 +2300,7 @@ type Org implements Node & SettingsSubject {
     # The URL to the organization.
     url: String!
     # The URL to the organization's settings.
-    settingsURL: String
+    settingsURL: String!
     # A list of extensions published by this organization in the extension registry.
 }
 
@@ -2373,6 +2343,97 @@ enum OrganizationInvitationResponseType {
     ACCEPT
     # The invitation was rejected by the recipient.
     REJECT
+}
+
+# Status about management capabilities for language servers.
+type LanguageServerManagementStatus {
+    # Whether this site can manage (enable/disable/restart/update) language servers on its own.
+    #
+    # Even if this field's value is true, individual language servers may not be manageable. Clients must check the
+    # LangServer.canXyz fields.
+    #
+    # Always false for Sourcegraph cluster deployments.
+    siteCanManage: Boolean!
+    # The reason why the site can't manage language servers, if siteCanManage == false.
+    reason: String
+}
+
+# The possible configuration states of a language server.
+enum LangServerState {
+    # The language server is neither enabled nor disabled. When a repo for this
+    # language is visited by any user, it will be enabled.
+    LANG_SERVER_STATE_NONE
+    # The language server was enabled by a plain user or admin user.
+    LANG_SERVER_STATE_ENABLED
+    # The language server was disabled by an admin user.
+    LANG_SERVER_STATE_DISABLED
+}
+
+# A language server.
+type LangServer {
+    # "go", "java", "typescript", etc.
+    language: String!
+    # "Go", "Java", "TypeScript", "PHP", etc.
+    displayName: String!
+    # Whether or not this language server should be considered experimental.
+    #
+    # Has no effect on behavior, only effects how the language server is presented e.g. in the UI.
+    experimental: Boolean!
+    # URL to the language server's homepage, if available.
+    homepageURL: String
+    # URL to the language server's open/known issues, if available.
+    issuesURL: String
+    # URL to the language server's documentation, if available.
+    docsURL: String
+    # Whether or not the site is a cluster deployment of Sourcegraph (e.g., to Kubernetes).
+    isClusterDeployment: Boolean!
+    # Whether or not this is a custom language server (i.e. one that does not
+    # come built in with Sourcegraph).
+    custom: Boolean!
+    # The current configuration state of the language server.
+    #
+    # For custom language servers, this field is never LANG_SERVER_STATE_NONE.
+    state: LangServerState!
+    # Whether or not the language server is being downloaded, starting, restarting.
+    #
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
+    pending: Boolean!
+    # Whether or not the language server is being downloaded.
+    #
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
+    downloading: Boolean!
+    # Whether or not the current user can enable the language server or not.
+    #
+    # Always false for Sourcegraph cluster deployments.
+    canEnable: Boolean!
+    # Whether or not the current user can disable the language server or not.
+    #
+    # Always false for Sourcegraph cluster deployments.
+    canDisable: Boolean!
+    # Whether or not the current user can restart the language server or not.
+    #
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
+    canRestart: Boolean!
+    # Whether or not the current user can update the language server or not.
+    #
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
+    canUpdate: Boolean!
+    # Indicates whether or not the language server is healthy or
+    # unhealthy. Examples include:
+    #
+    #   Healthy:
+    #       - Server is running, experiencing no issues.
+    #       - Server is not running, currently being downloaded.
+    #       - Server is not running, currently starting or restarting.
+    #
+    #   Unhealthy:
+    #       - Server is running, experiencing restarts / OOMs often.
+    #       - Server is not running, an error is preventing startup.
+    #
+    # The value is true ("healthy") if the language server is not enabled.
+    #
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
+    healthy: Boolean!
 }
 
 # An object defining a selection range within e.g. a file.
@@ -2600,43 +2661,18 @@ type DiscussionCommentConnection {
     pageInfo: PageInfo!
 }
 
-# RepositoryOrderBy enumerates the ways a repositories list can be ordered.
-enum RepositoryOrderBy {
-    REPO_URI # deprecated (use the equivalent REPOSITORY_NAME)
-    REPOSITORY_NAME
-    REPO_CREATED_AT # deprecated (use the equivalent REPOSITORY_CREATED_AT)
-    REPOSITORY_CREATED_AT
-}
-
-# The default settings for the Sourcegraph instance. This is hardcoded in
-# Sourcegraph, but may change from release to release.
-type DefaultSettings implements SettingsSubject {
-    # The opaque GraphQL ID.
-    id: ID!
-    # The latest default settings (this never changes).
-    latestSettings: Settings
-    # The URL to the default settings. This URL does not exist because you
-    # cannot edit or directly view default settings.
-    settingsURL: String
-    # Whether the viewer can modify the subject's settings. Always false for
-    # default settings.
-    viewerCanAdminister: Boolean!
-    # The default settings, and the final merged settings.
-    #
-    # All viewers can access this field.
-    settingsCascade: SettingsCascade!
-    # DEPRECATED
-    configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
+# RepoOrderBy enumerates the ways a repositories-list result set can
+# be ordered.
+enum RepoOrderBy {
+    REPO_URI
+    REPO_CREATED_AT
 }
 
 # A site is an installation of Sourcegraph that consists of one or more
 # servers that share the same configuration and database.
 #
 # The site is a singleton; the API only ever returns the single global site.
-type Site implements SettingsSubject {
+type Site implements ConfigurationSubject {
     # The site's opaque GraphQL ID. This is NOT the "site ID" as it is referred to elsewhere;
     # use the siteID field for that. (GraphQL node types conventionally have an id field of type
     # ID! that globally identifies the node.)
@@ -2645,31 +2681,35 @@ type Site implements SettingsSubject {
     siteID: String!
     # The site's configuration. Only visible to site admins.
     configuration: SiteConfiguration!
-    # The site's latest site-wide settings (which are the second-lowest-precedence
+    # The site's latest site-wide settings (which are the lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
-    # The global settings for this site, and the final merged settings.
-    #
-    # All viewers can access this field.
-    settingsCascade: SettingsCascade!
-    # DEPRECATED
+    # Deprecated settings specified in the site configuration "settings" field. These are distinct from a site's
+    # latestSettings (which are stored in the DB) and are applied at the lowest level of precedence.
+    deprecatedSiteConfigurationSettings: String
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
     configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
     # The URL to the site's settings.
-    settingsURL: String
+    settingsURL: String!
     # Whether the viewer can reload the site (with the reloadSite mutation).
     canReloadSite: Boolean!
-    # Whether the viewer can modify the subject's settings.
+    # Whether the viewer can modify the subject's configuration.
     viewerCanAdminister: Boolean!
+    # Lists all language servers.
+    langServers: [LangServer!]!
+    # The language server for a given language (if exists, otherwise null)
+    langServer(language: String!): LangServer
+    # The status of language server management capabilities.
+    #
+    # Only site admins may view this field.
+    languageServerManagementStatus: LanguageServerManagementStatus
     # A list of all access tokens on this site.
     accessTokens(
         # Returns the first n access tokens from the list.
         first: Int
     ): AccessTokenConnection!
-    # A list of all authentication providers. This information is visible to all viewers and does not contain any
-    # secret information.
+    # A list of all authentication providers.
     authProviders: AuthProviderConnection!
     # A list of all user external accounts on this site.
     externalAccounts(
@@ -2697,8 +2737,12 @@ type Site implements SettingsSubject {
     noRepositoriesEnabled: Boolean!
     # Alerts to display to the viewer.
     alerts: [Alert!]!
-    # BACKCOMPAT: Always returns true.
+    # Whether the site has code intelligence. This field will be expanded in the future to describe
+    # more about the code intelligence available (languages supported, etc.). It is subject to
+    # change without notice.
     hasCodeIntelligence: Boolean!
+    # Whether the site is using an external authentication service such as OIDC or SAML.
+    externalAuthEnabled: Boolean!
     # Whether we want to show built-in searches on the saved searches page
     disableBuiltInSearches: Boolean!
     # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
@@ -2706,41 +2750,38 @@ type Site implements SettingsSubject {
     sendsEmailVerificationEmails: Boolean!
     # Information about this site's product subscription status.
     productSubscription: ProductSubscriptionStatus!
-    # Usage statistics for this site.
-    usageStatistics(
+    # The activity.
+    activity(
         # Days of history.
         days: Int
         # Weeks of history.
         weeks: Int
         # Months of history.
         months: Int
-    ): SiteUsageStatistics!
-    # Information about this site's management console.
-    #
-    # Only site admins may retrieve this information.
-    managementConsoleState: ManagementConsoleState!
-}
-
-# Information about this site's management console.
-#
-# Only site admins may retrieve this information.
-type ManagementConsoleState {
-    # The plaintext password of the management console, which is automatically
-    # generated. This can only be retrieved until the admin clears it, after
-    # which it is impossible to retrieve.
-    plaintextPassword: String
+    ): SiteActivity!
 }
 
 # The configuration for a site.
 type SiteConfiguration {
-    # The unique identifier of this site configuration version.
-    id: Int!
-    # The effective configuration JSON.
+    # The effective configuration JSON. This will lag behind the pendingContents
+    # if the site configuration was updated but the server has not yet restarted.
     effectiveContents: String!
-    # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.
-    # This includes both JSON Schema validation problems and other messages that perform more advanced checks
-    # on the configuration (that can't be expressed in the JSON Schema).
+    # The pending configuration JSON, which will become effective after the next
+    # server restart. This is set if the site configuration has been updated since
+    # the server started.
+    pendingContents: String
+    # Messages describing validation problems or usage of deprecated configuration in the configuration JSON
+    # (pendingContents if it exists, otherwise effectiveContents). This includes both JSON Schema validation
+    # problems and other messages that perform more advanced checks on the configuration (that can't be expressed
+    # in the JSON Schema).
     validationMessages: [String!]!
+    # Whether the viewer can update the site configuration (using the
+    # updateSiteConfiguration mutation).
+    canUpdate: Boolean!
+    # The source of the configuration as a human-readable description,
+    # referring to either the on-disk file path or the SOURCEGRAPH_CONFIG
+    # env var.
+    source: String!
 }
 
 # Information about software updates for Sourcegraph.
@@ -2775,90 +2816,213 @@ type Alert {
     isDismissibleWithKey: String
 }
 
-# SettingsSubject is something that can have settings: a site ("global settings", which is different from "site
-# configuration"), an organization, or a user.
-interface SettingsSubject {
+# ConfigurationSubject is something that can have configuration.
+interface ConfigurationSubject {
     # The ID.
     id: ID!
     # The latest settings.
     latestSettings: Settings
     # The URL to the settings.
-    settingsURL: String
-    # Whether the viewer can modify the subject's settings.
+    settingsURL: String!
+    # Whether the viewer can modify the subject's configuration.
     viewerCanAdminister: Boolean!
-    # All settings for this subject, and the individual levels in the settings cascade (global > organization > user)
-    # that were merged to produce the final merged settings.
-    settingsCascade: SettingsCascade!
-    # DEPRECATED
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
     configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
 }
 
-# The configurations for all of the relevant settings subjects, plus the merged settings.
-type SettingsCascade {
-    # The other settings subjects that are applied with lower precedence than this subject to
-    # form the final merged settings. For example, a user in 2 organizations would have the following
-    # settings subjects: site (global settings), org 1, org 2, and the user.
-    subjects: [SettingsSubject!]!
-    # The effective final merged settings as (stringified) JSON, merged from all of the subjects.
-    final: String!
-    # DEPRECATED: This field will be removed in a future release.
-    #
-    # The effective final merged settings, merged from all of the subjects.
-    merged: Configuration! @deprecated(reason: "use final instead")
-}
-
-# DEPRECATED: Renamed to SettingsCascade.
+# The configurations for all of the relevant configuration subjects, plus the merged configuration.
 type ConfigurationCascade {
-    # DEPRECATED
-    subjects: [SettingsSubject!]! @deprecated(reason: "use SettingsCascade.subjects instead")
-    # DEPRECATED
-    merged: Configuration! @deprecated(reason: "use SettingsCascade.final instead")
+    # The other configuration subjects that are applied with lower precedence than this subject to
+    # form the final configuration. For example, a user in 2 organizations would have the following
+    # configuration subjects: site (global settings), org 1, org 2, and the user.
+    subjects: [ConfigurationSubject!]!
+    # The effective configuration, merged from all of the subjects.
+    merged: Configuration!
 }
 
 # Settings is a version of a configuration settings file.
 type Settings {
     # The ID.
     id: Int!
+    # The configuration.
+    configuration: Configuration!
     # The subject that these settings are for.
-    subject: SettingsSubject!
-    # The author, or null if there is no author or the authoring user was deleted.
-    author: User
+    subject: ConfigurationSubject!
+    # The author.
+    author: User!
     # The time when this was created.
     createdAt: String!
-    # The stringified JSON contents of the settings. The contents may include "//"-style comments and trailing
-    # commas in the JSON.
-    contents: String!
-    # DEPRECATED: This field will be removed in a future release.
-    #
-    # The configuration.
-    configuration: Configuration! @deprecated(reason: "use the contents field instead")
+    # The contents.
+    contents: String! @deprecated(reason: "use configuration.contents instead")
 }
 
-# DEPRECATED: Use the contents field on the parent type instead. This type will be removed in a future release.
+# Configuration contains settings from (possibly) multiple settings files.
 type Configuration {
-    # DEPRECATED: This field will be removed in a future release.
-    #
     # The raw JSON contents, encoded as a string.
-    contents: String! @deprecated(reason: "use the contents field on the parent type instead")
-    # DEPRECATED: This field is always empty. It will be removed in a future release.
-    messages: [String!]! @deprecated(reason: "use client-side JSON Schema validation instead")
+    contents: String!
+    # Error and warning messages about the configuration.
+    messages: [String!]!
 }
 
-# UserUsageStatistics describes a user's usage statistics.
+# A list of packages.
+type PackageConnection {
+    # A list of packages.
+    nodes: [Package!]!
+    # The total count of packages in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A package represents a grouping of code that is returned by a language server in response to a
+# workspace/xpackages request.
 #
-# This information is visible to all viewers.
-type UserUsageStatistics {
+# See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+type Package implements Node {
+    # The ID of the package.
+    id: ID!
+    # The repository commit that defines the package.
+    definingCommit: GitCommit!
+    # The programming language used to define the package.
+    language: String!
+    # The package descriptor, as returned by the language server's workspace/xpackages LSP method. The attribute
+    # names and values are defined by each language server and should generally be considered opaque.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    data: [KeyValue!]!
+    # This package's dependencies, as returned by the language server's workspace/xpackages LSP method.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    dependencies: [Dependency!]!
+    # The list of references (from only this repository at the definingCommit) to definitions in this package.
+    #
+    # If this operation is not supported (by the language server), this field's value will be null.
+    internalReferences: ReferenceConnection
+    # The list of references (from other repositories' packages) to definitions in this package. Currently this
+    # lists packages that refer to this package, NOT individual call/reference sites within those referencing
+    # packages (unlike internalReferences, which does list individual call sites). If this operation is not
+    # supported (by the language server), this field's value will be null.
+    #
+    # EXPERIMENTAL: This field is experimental. It is subject to change. Please report any issues you see, and
+    # contact support for help.
+    externalReferences: ReferenceConnection
+}
+
+# A list of dependencies.
+type DependencyConnection {
+    # A list of dependencies.
+    nodes: [Dependency!]!
+    # The total count of dependencies in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A dependency represents a dependency relationship between two units of code. It is derived from data returned by
+# a language server in response to a workspace/xreferences request.
+#
+# See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+type Dependency implements Node {
+    # The ID of the dependency.
+    id: ID!
+    # The repository commit that depends on the unit of code described by this resolver's other fields.
+    dependingCommit: GitCommit!
+    # The programming language of the dependency.
+    language: String!
+    # The dependency attributes, as returned by the language server's workspace/xdependencies LSP method. The
+    # attribute names and values are defined by each language server and should generally be considered opaque.
+    # They generally overlap with the package descriptor's fields in the Package type.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    data: [KeyValue!]!
+    # Hints that can be passed to workspace/xreferences to speed up retrieval of references to this dependency.
+    # These hints are returned by the language server's workspace/xdependencies LSP method. The attribute names and
+    # values are defined by each language server and should generally be considered opaque.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    hints: [KeyValue!]!
+    # The list of references (in the depending commit's code files) to definitions in this dependency.
+    #
+    # If this operation is not supported (by the language server), this field's value will be null.
+    #
+    # EXPERIMENTAL: This field is experimental. It is subject to change. Please report any issues you see, and
+    # contact support for help.
+    references: ReferenceConnection
+}
+
+# An opaque value of any type.
+scalar OpaqueValue
+
+# A key-value pair.
+type KeyValue {
+    # The key.
+    key: String!
+    # The value, which can be of any type.
+    value: OpaqueValue!
+}
+
+# A list of code references (e.g., function calls, variable references, package import statements, etc.), as
+# returned by language server(s) over LSP.
+#
+# NOTE: The actual references (which would be expected to be available in the "nodes" field) are not exposed. This
+# is because currently there are no API consumers that need them. In the future, they will be available here, but
+# in the meantime, consumers can provide the searchQuery to the Query.search GraphQL resolver to retrieve
+# references.
+type ReferenceConnection {
+    # The total count of references in this connection. If an exact count is not available, then this field's value
+    # will be null; consult the approximateCount field instead.
+    totalCount: Int
+    # The approximate count of references in this connection. If counting is not supported, then this field's value
+    # will be null.
+    approximateCount: ApproximateCount
+    # The search query (for Sourcegraph search) that matches references in this connection.
+    #
+    # The query string does not include any repo:REPO@REV tokens (even if this connection would seem to warrant
+    # the inclusion of such tokens). Therefore, clients must add those tokens if they wish to constrain the search
+    # to only certain repositories and revisions. (This is so that clients can use the nice revision instead of the
+    # 40-character Git commit SHA if desired.)
+    queryString: String!
+    # The symbol descriptor query to pass to language servers in the LSP workspace/xreferences request to retrieve
+    # all references in this connection. This is derived from the attributes data of this connection's subject
+    # (e.g., Package.data or Dependency.data). The attribute names and values are defined by each language server
+    # and should generally be considered opaque.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    symbolDescriptor: [KeyValue!]!
+}
+
+# An approximate count. To display this to the user, use ApproximateCount.label as the number and use
+# ApproximateCount.count to determine whether to pluralize the noun (if any) adjacent to the label.
+type ApproximateCount {
+    # The count, which may be inexact. This number is always the prefix of the label field.
+    count: Int!
+    # Whether the count finished and is exact.
+    exact: Boolean!
+    # A textual label that approximates the count (e.g., "99+" if the counting is cut off at 99).
+    label: String!
+}
+
+# UserActivity describes a user's activity on the site.
+type UserActivity {
     # The number of search queries that the user has performed.
     searchQueries: Int!
     # The number of page views that the user has performed.
     pageViews: Int!
     # The number of code intelligence actions that the user has performed.
     codeIntelligenceActions: Int!
-    # The number of find-refs actions that the user has performed.
-    findReferencesActions: Int!
     # The last time the user was active (any action, any platform).
     lastActiveTime: String
     # The last time the user was active on a code host integration.
@@ -2870,9 +3034,7 @@ enum UserEvent {
     PAGEVIEW
     SEARCHQUERY
     CODEINTEL
-    CODEINTELREFS
     CODEINTELINTEGRATION
-    CODEINTELINTEGRATIONREFS
 }
 
 # A period of time in which a set of users have been active.
@@ -2887,22 +3049,18 @@ enum UserActivePeriod {
     ALL_TIME
 }
 
-# SiteUsageStatistics describes a site's aggregate usage statistics.
-#
-# This information is visible to all viewers.
-type SiteUsageStatistics {
+# SiteActivity describes a site's aggregate activity level.
+type SiteActivity {
     # Recent daily active users.
-    daus: [SiteUsagePeriod!]!
+    daus: [SiteActivityPeriod!]!
     # Recent weekly active users.
-    waus: [SiteUsagePeriod!]!
+    waus: [SiteActivityPeriod!]!
     # Recent monthly active users.
-    maus: [SiteUsagePeriod!]!
+    maus: [SiteActivityPeriod!]!
 }
 
-# SiteUsagePeriod describes a site's usage statistics for a given timespan.
-#
-# This information is visible to all viewers.
-type SiteUsagePeriod {
+# SiteActivityPeriod describes a site's activity level for a given timespan.
+type SiteActivityPeriod {
     # The time when this started.
     startTime: String!
     # The user count.
@@ -2964,15 +3122,8 @@ type SurveyResponse {
 type ProductSubscriptionStatus {
     # The full name of the product in use, such as "Sourcegraph Enterprise".
     productNameWithBrand: String!
-    # The max number of user accounts that have been active on this Sourcegraph site for the current license.
-    # If no license is in use, returns zero.
+    # The actual total number of users on this Sourcegraph site.
     actualUserCount: Int!
-    # The date and time when the max number of user accounts that have been active on this Sourcegraph site for
-    # the current license was reached. If no license is in use, returns an empty string.
-    actualUserCountDate: String!
-    # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
-    # it is the user limit for instances without a license, or null if there is no limit.
-    maximumAllowedUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
 }
@@ -3005,18 +3156,6 @@ type ExtensionRegistry {
         # Returns only extensions from this publisher.
         publisher: ID
         # Returns only extensions matching the query.
-        #
-        # The following keywords are supported:
-        #
-        # - category:"C" - include only extensions in the given category.
-        # - tag:"T" - include only extensions in the given tag.
-        #
-        # The following keywords are ignored by the server (so that the frontend can post-process the result set to
-        # implement the keywords):
-        #
-        # - #installed - include only installed extensions.
-        # - #enabled - include only enabled extensions.
-        # - #disabled - include only disabled extensions.
         query: String
         # Include extensions from the local registry.
         local: Boolean = true
@@ -3036,7 +3175,7 @@ type ExtensionRegistry {
     # A list of publishers that the viewer may publish extensions as.
     viewerPublishers: [RegistryPublisher!]!
     # The extension ID prefix for extensions that are published in the local extension registry. This is the
-    # hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "externalURL" site configuration property.
+    # hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "appURL" site configuration property.
     #
     # It is null if extensions published on this Sourcegraph site do not have an extension ID prefix.
     #
@@ -3147,11 +3286,8 @@ type RegistryExtension implements Node {
     manifest: ExtensionManifest
     # The date when this extension was created on the registry.
     createdAt: String
-    # The date when this extension was last updated on the registry (including updates to its metadata only, not
-    # publishing new releases).
+    # The date when this extension was last updated on the registry.
     updatedAt: String
-    # The date when a release of this extension was most recently published, or null if there are no releases.
-    publishedAt: String
     # The URL to the extension on this Sourcegraph site.
     url: String!
     # The URL to the extension on the extension registry where it lives (if this is a remote
@@ -3161,8 +3297,6 @@ type RegistryExtension implements Node {
     registryName: String!
     # Whether the registry extension is published on this Sourcegraph site.
     isLocal: Boolean!
-    # Whether the extension is marked as a work-in-progress extension by the extension author.
-    isWorkInProgress: Boolean!
     # Whether the viewer has admin privileges on this registry extension.
     viewerCanAdminister: Boolean!
 }
@@ -3171,6 +3305,8 @@ type RegistryExtension implements Node {
 type ExtensionManifest {
     # The raw JSON contents of the manifest.
     raw: String!
+    # The title specified in the manifest, if any.
+    title: String
     # The description specified in the manifest, if any.
     description: String
     # The URL to the bundled JavaScript source code for the extension, if any.
@@ -3193,6 +3329,18 @@ type RegistryExtensionConnection {
     # In order to be able to return local extensions even when the remote registry is unreachable, errors are
     # recorded here instead of in the top-level GraphQL errors list.
     error: String
+}
+
+# A Sourcegraph product documentation page.
+type DocSitePage {
+    # The title of this page.
+    title: String!
+    # The content, as Markdown-rendered HTML.
+    contentHTML: String!
+    # The page index, as rendered HTML.
+    indexHTML: String!
+    # The filename of the file containing this page's content.
+    filePath: String!
 }
 
 # Mutations that are only used on Sourcegraph.com.
@@ -3315,8 +3463,8 @@ type DotcomQuery {
     #
     # Performing this query does not mutate any data or cause any billing changes to be made.
     previewProductSubscriptionInvoice(
-        # The customer account (user) for whom this preview invoice will be generated, or null if there is none.
-        account: ID
+        # The customer account (user) for whom this preview invoice will be generated.
+        account: ID!
         # If non-null, preview the invoice for an update to the existing product subscription. The
         # product subscription's billing customer must match the account parameter. If null, preview
         # the invoice for a new subscription.
@@ -3494,8 +3642,6 @@ type PlanTier {
     unitAmount: Int!
     # The maximum number of users that this tier applies to.
     upTo: Int!
-    # The base fee that this tier applies to.
-    flatAmount: Int!
 }
 
 # The information about a product subscription that determines its price.

@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -17,57 +16,58 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var awsCodeCommitConnections = func() *atomicvalue.Value {
-	c := atomicvalue.New()
-	c.Set(func() interface{} {
-		return []*awsCodeCommitConnection{}
-	})
-	return c
-}()
+// AWSCodeCommitServiceType is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
+// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
+// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
+const AWSCodeCommitServiceType = "awscodecommit"
 
-// SyncAWSCodeCommitConnections periodically syncs connections from
-// the Frontend API.
-func SyncAWSCodeCommitConnections(ctx context.Context) {
-	t := time.NewTicker(configWatchInterval)
-	var lastConfig []*schema.AWSCodeCommitConnection
-	for range t.C {
-		config, err := conf.AWSCodeCommitConfigs(ctx)
-		if err != nil {
-			log15.Error("unable to fetch AWS CodeCommit configs", "err", err)
-			continue
-		}
+// AWSCodeCommitExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified AWS
+// CodeCommit repository.
+func AWSCodeCommitExternalRepoSpec(repo *awscodecommit.Repository, serviceID string) *api.ExternalRepoSpec {
+	return &api.ExternalRepoSpec{
+		ID:          repo.ARN,
+		ServiceType: AWSCodeCommitServiceType,
+		ServiceID:   serviceID,
+	}
+}
 
-		if reflect.DeepEqual(config, lastConfig) {
-			continue
-		}
-		lastConfig = config
+var awsCodeCommitConnections = atomicvalue.New()
 
-		var conns []*awsCodeCommitConnection
-		for _, c := range config {
-			conn, err := newAWSCodeCommitConnection(c)
-			if err != nil {
-				log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)
-				continue
-			}
-			conns = append(conns, conn)
-		}
-
+func init() {
+	conf.Watch(func() {
 		awsCodeCommitConnections.Set(func() interface{} {
+			var conns []*awsCodeCommitConnection
+			for _, c := range conf.Get().AwsCodeCommit {
+				conn, err := newAWSCodeCommitConnection(c)
+				if err != nil {
+					log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)
+					continue
+				}
+				conns = append(conns, conn)
+			}
 			return conns
 		})
-
 		awsCodeCommitRepositorySyncWorker.restart()
-	}
+	})
+}
+
+// createAWSCodeCommitServiceID creates the repository external service ID. See
+// AWSCodeCommitServiceType for documentation on the format of this value.
+//
+// This value uniquely identifies the most specific namespace in which AWS CodeCommit repositories
+// are defined.
+func createAWSCodeCommitServiceID(awsPartition endpoints.Partition, awsRegion endpoints.Region, awsAccountID string) string {
+	return "arn:" + awsPartition.ID() + ":codecommit:" + awsRegion.ID() + ":" + awsAccountID + ":"
 }
 
 // GetAWSCodeCommitRepositoryMock is set by tests that need to mock GetAWSCodeCommitRepository.
@@ -85,7 +85,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 
 	log15.Debug("GetAWSCodeCommitRepository", "repo", args.Repo, "externalRepo", args.ExternalRepo)
 
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == awscodecommit.ServiceType {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == AWSCodeCommitServiceType {
 		// Look up by external repository spec.
 		var err error
 		for _, conn := range awsCodeCommitConnections.Get().([]*awsCodeCommitConnection) {
@@ -100,8 +100,8 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 					}
 					webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", conn.awsRegion.ID(), ccrepo.Name)
 					repo = &protocol.RepoInfo{
-						Name:         awsCodeCommitRepositoryToRepoPath(conn, ccrepo),
-						ExternalRepo: awscodecommit.ExternalRepoSpec(ccrepo, serviceID),
+						URI:          awsCodeCommitRepositoryToRepoPath(conn, ccrepo),
+						ExternalRepo: AWSCodeCommitExternalRepoSpec(ccrepo, serviceID),
 						Description:  ccrepo.Description,
 						VCS:          protocol.VCSInfo{URL: remoteURL},
 						Links: &protocol.RepoLinks{
@@ -118,7 +118,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 		return nil, true, errors.Wrap(err, "getServiceID")
 	}
 
-	// Unlike other code hosts (e.g., GitHub and GitLab), looking up by repository name is not
+	// Unlike other code hosts (e.g., GitHub and GitLab), looking up by repository URI is not
 	// supported because it's far less likely to be useful for AWS CodeCommit, which usually has a
 	// more limited universe of repositories.
 	return nil, false, nil
@@ -155,7 +155,7 @@ var awsCodeCommitRepositorySyncWorker = &worker{
 					select {
 					case <-shutdown:
 						return
-					case <-time.After(GetUpdateInterval()):
+					case <-time.After(getUpdateInterval()):
 					}
 				}
 			}(c)
@@ -169,8 +169,8 @@ func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
 	awsCodeCommitRepositorySyncWorker.start(ctx)
 }
 
-func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awscodecommit.Repository) api.RepoName {
-	return reposource.AWSRepoName(conn.config.RepositoryPathPattern, repo.Name)
+func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awscodecommit.Repository) api.RepoURI {
+	return reposource.AWSRepoURI(conn.config.RepositoryPathPattern, repo.Name)
 }
 
 // updateAWSCodeCommitRepositories ensures that all provided repositories have been added and updated on Sourcegraph.
@@ -189,8 +189,8 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 		}
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoName:     awsCodeCommitRepositoryToRepoPath(conn, repo),
-				ExternalRepo: awscodecommit.ExternalRepoSpec(repo, awscodecommit.ServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)),
+				RepoURI:      awsCodeCommitRepositoryToRepoPath(conn, repo),
+				ExternalRepo: AWSCodeCommitExternalRepoSpec(repo, createAWSCodeCommitServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)),
 				Description:  repo.Description,
 				Enabled:      conn.config.InitialRepositoryEnablement,
 			},
@@ -246,7 +246,7 @@ func (c *awsCodeCommitConnection) getServiceID() (string, error) {
 	if awsAccountID == "" {
 		return "", nil
 	}
-	return awscodecommit.ServiceID(c.awsPartition, c.awsRegion, c.awsAccountID), nil
+	return createAWSCodeCommitServiceID(c.awsPartition, c.awsRegion, c.awsAccountID), nil
 }
 
 func (c *awsCodeCommitConnection) tryPopulateAWSAccountID() (string, error) {
@@ -321,23 +321,24 @@ func (c *awsCodeCommitConnection) authenticatedRemoteURL(repo *awscodecommit.Rep
 
 func makeHMAC(key []byte, data []byte) []byte {
 	hash := hmac.New(sha256.New, key)
-	_, _ = hash.Write(data)
+	hash.Write(data)
 	return hash.Sum(nil)
 }
 
 func makeSHA256(data []byte) []byte {
 	hash := sha256.New()
-	_, _ = hash.Write(data)
+	hash.Write(data)
 	return hash.Sum(nil)
 }
 
 func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) <-chan *awscodecommit.Repository {
-	ch := make(chan *awscodecommit.Repository, awscodecommit.MaxMetadataBatch)
+	const maxItems = 50
+	ch := make(chan *awscodecommit.Repository, maxItems)
 	go func() {
 		defer close(ch)
 		var nextToken string
 		for {
-			repos, token, err := c.client.ListRepositories(ctx, nextToken)
+			repos, token, err := c.client.ListRepositories(ctx, maxItems, nextToken)
 			if err != nil {
 				log15.Error("Error listing AWS CodeCommit repositories", "error", err)
 				return

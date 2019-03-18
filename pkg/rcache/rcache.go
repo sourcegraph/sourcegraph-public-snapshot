@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/garyburd/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -40,68 +41,6 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 	return &Cache{
 		keyPrefix:  keyPrefix,
 		ttlSeconds: ttlSeconds,
-	}
-}
-
-func (r *Cache) GetMulti(keys ...string) [][]byte {
-	c := pool.Get()
-	defer c.Close()
-
-	if len(keys) == 0 {
-		return nil
-	}
-	rkeys := make([]interface{}, len(keys))
-	for i, key := range keys {
-		rkeys[i] = r.rkeyPrefix() + key
-	}
-
-	vals, err := redis.Values(c.Do("MGET", rkeys...))
-	if err != nil && err != redis.ErrNil {
-		log15.Warn("failed to execute redis command", "cmd", "MGET", "error", err)
-	}
-
-	strVals := make([][]byte, len(vals))
-	for i, val := range vals {
-		b, err := redis.Bytes(val, nil)
-		if err != nil {
-			log15.Warn("failed to parse bytes from Redis value", "value", val)
-			continue
-		}
-		strVals[i] = b
-	}
-	return strVals
-}
-
-func (r *Cache) SetMulti(keyvals ...[2]string) {
-	c := pool.Get()
-	defer c.Close()
-
-	if len(keyvals) == 0 {
-		return
-	}
-
-	for _, kv := range keyvals {
-		k, v := kv[0], kv[1]
-		if !utf8.Valid([]byte(k)) {
-			if conf.IsDev(conf.DeployType()) {
-				panic(fmt.Sprintf("rcache: keys must be valid utf8 %v", []byte(k)))
-			} else {
-				log15.Error("rcache: keys must be valid utf8", "key", []byte(k))
-			}
-			continue
-		}
-		if r.ttlSeconds == 0 {
-			if err := c.Send("SET", r.rkeyPrefix()+k, []byte(v)); err != nil {
-				log15.Warn("failed to write redis command to client output buffer", "cmd", "SET", "error", err)
-			}
-		} else {
-			if err := c.Send("SETEX", r.rkeyPrefix()+k, r.ttlSeconds, []byte(v)); err != nil {
-				log15.Warn("failed to write redis command to client output buffer", "cmd", "SETEX", "error", err)
-			}
-		}
-	}
-	if err := c.Flush(); err != nil {
-		log15.Warn("failed to flush Redis client", "error", err)
 	}
 }
 

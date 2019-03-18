@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 #
-# Build commands, optionally with or without race detector.  a list of every command we know about,
-# to use by default
-#
-# This will install binaries into the `.bin` directory under the repository root by default or, if
-# $GOMOD_ROOT is set, under that directory.
-
-all_oss_commands=" gitserver query-runner github-proxy management-console searcher frontend repo-updater symbols "
+# build commands, optionally with or without race detector.
+# a list of every command we know about, to use by default
+all_commands=" gitserver indexer query-runner github-proxy lsp-proxy searcher frontend repo-updater symbols "
 
 # GOMOD_ROOT is the directory from which `go install` commands are run. It should contain a go.mod
 # file. The go.mod file may be updated as a side effect of updating the dependencies before the `go
@@ -29,10 +25,10 @@ shift $(expr $OPTIND - 1)
 # check provided commands
 ok=true
 case $# in
-0)	commands=$all_oss_commands;;
+0)	commands=$all_commands;;
 *)	commands=" $* "
 	for cmd in $commands; do
-		case $all_oss_commands in
+		case $all_commands in
 		*" $cmd "*)	;;
 		*)	echo >&2 "unknown command: $cmd"
 			ok=false
@@ -48,18 +44,11 @@ mkdir -p .bin
 export GOBIN=$PWD/.bin
 export GO111MODULE=on
 
-INSTALL_GO_PKGS="github.com/mattn/goreman \
-github.com/sourcegraph/docsite/cmd/docsite \
-github.com/google/zoekt/cmd/zoekt-archive-index \
-github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-github.com/google/zoekt/cmd/zoekt-webserver \
-"
-
-if [ ! -n "${OFFLINE-}" ]; then
-    INSTALL_GO_PKGS="$INSTALL_GO_PKGS github.com/go-delve/delve/cmd/dlv"
-fi
-
-if ! go install $INSTALL_GO_PKGS; then
+if ! go install \
+	github.com/mattn/goreman \
+	github.com/google/zoekt/cmd/zoekt-archive-index \
+	github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
+	github.com/google/zoekt/cmd/zoekt-webserver; then
 	echo >&2 "failed to install prerequisites, aborting."
 	exit 1
 fi
@@ -104,7 +93,7 @@ do_install() {
 		replaced=false
     		for enterpriseCmd in $ENTERPRISE_COMMANDS; do
 			if [ "$cmd" == "$enterpriseCmd" ]; then
-				cmds="$cmds github.com/sourcegraph/sourcegraph/enterprise/cmd/$enterpriseCmd"
+				cmds="$cmds github.com/sourcegraph/enterprise/cmd/$enterpriseCmd"
 				replaced=true
 			fi
 		done

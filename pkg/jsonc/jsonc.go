@@ -3,7 +3,6 @@ package jsonc
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/sourcegraph/jsonx"
 )
@@ -15,7 +14,7 @@ func Unmarshal(text string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	if strings.TrimSpace(text) == "" {
+	if len(data) == 0 {
 		return nil
 	}
 	return json.Unmarshal(data, v)

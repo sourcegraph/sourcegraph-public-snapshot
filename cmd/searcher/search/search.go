@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 
 	"github.com/pkg/errors"
 
@@ -37,7 +37,6 @@ import (
 // Service is the search service. It is an http.Handler.
 type Service struct {
 	Store *Store
-	Log   log15.Logger
 }
 
 var decoder = schema.NewDecoder()
@@ -166,9 +165,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		span.SetTag("limitHit", limitHit)
 		span.SetTag("deadlineHit", deadlineHit)
 		span.Finish()
-		if s.Log != nil {
-			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
-		}
+		log15.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
 	}(time.Now())
 
 	rg, err := compile(&p.PatternInfo)

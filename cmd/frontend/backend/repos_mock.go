@@ -7,22 +7,24 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type MockRepos struct {
-	Get                       func(v0 context.Context, id api.RepoID) (*types.Repo, error)
-	GetByName                 func(v0 context.Context, name api.RepoName) (*types.Repo, error)
-	AddGitHubDotComRepository func(name api.RepoName) error
-	List                      func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-	GetCommit                 func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
-	ResolveRev                func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	GetInventory              func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
-	GetInventoryUncached      func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+	Get                  func(v0 context.Context, id api.RepoID) (*types.Repo, error)
+	GetByURI             func(v0 context.Context, uri api.RepoURI) (*types.Repo, error)
+	Add                  func(uri api.RepoURI) error
+	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
+	GetCommit            func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
+	ResolveRev           func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+	ListDeps             func(v0 context.Context, v1 []api.RepoURI) ([]api.RepoURI, error)
+	GetInventory         func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+	GetInventoryUncached func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+	RefreshIndex         func(ctx context.Context, repo *types.Repo) (err error)
 }
 
 var errRepoNotFound = &errcode.Mock{
@@ -43,15 +45,15 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 	return
 }
 
-func (s *MockRepos) MockGetByName(t *testing.T, wantName api.RepoName, repo api.RepoID) (called *bool) {
+func (s *MockRepos) MockGetByURI(t *testing.T, wantURI api.RepoURI, repo api.RepoID) (called *bool) {
 	called = new(bool)
-	s.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+	s.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 		*called = true
-		if name != wantName {
-			t.Errorf("got repo name %q, want %q", name, wantName)
+		if uri != wantURI {
+			t.Errorf("got repo URI %q, want %q", uri, wantURI)
 			return nil, errRepoNotFound
 		}
-		return &types.Repo{ID: repo, Name: name}, nil
+		return &types.Repo{ID: repo, URI: uri}, nil
 	}
 	return
 }
@@ -69,13 +71,13 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 	return
 }
 
-func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *bool) {
+func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoURI) (called *bool) {
 	called = new(bool)
 	s.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 		*called = true
 		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
-			repos[i] = &types.Repo{Name: repo}
+			repos[i] = &types.Repo{URI: repo}
 		}
 		return repos, nil
 	}
@@ -104,7 +106,7 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", &git.RevisionNotFoundError{Repo: repo.Name, Spec: rev}
+		return "", &git.RevisionNotFoundError{Repo: repo.URI, Spec: rev}
 	}
 	return
 }

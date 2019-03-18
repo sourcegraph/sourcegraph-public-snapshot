@@ -37,10 +37,10 @@ func TestRepoShield(t *testing.T) {
 		"value": " 200 projects",
 	}
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		switch name {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+		switch uri {
 		case "github.com/gorilla/mux":
-			return &types.Repo{ID: 2, Name: name}, nil
+			return &types.Repo{ID: 2, URI: uri}, nil
 		default:
 			panic("wrong path")
 		}
@@ -51,7 +51,7 @@ func TestRepoShield(t *testing.T) {
 		}
 		return "aed", nil
 	}
-	backend.MockCountGoImporters = func(ctx context.Context, source api.RepoName) (int, error) {
+	backend.Mocks.Defs.TotalRefs = func(ctx context.Context, source api.RepoURI) (int, error) {
 		if source != "github.com/gorilla/mux" {
 			t.Error("wrong repo source to TotalRefs")
 		}

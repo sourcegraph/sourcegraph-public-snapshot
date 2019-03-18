@@ -1,0 +1,82 @@
+[
+  {
+    "URI": "/SG/go-langserver",
+    "Description": "go-langserver",
+    "Fork": false,
+    "Archived": false,
+    "VCS": {
+      "URL": "ssh://git@bitbucket.example.com:7999/sg/go-langserver.git"
+    },
+    "Links": {
+      "Root": "https://bitbucket.example.com/projects/SG/repos/go-langserver/browse",
+      "Tree": "https://bitbucket.example.com/projects/SG/repos/go-langserver/browse/{path}?at={rev}",
+      "Blob": "https://bitbucket.example.com/projects/SG/repos/go-langserver/browse/{path}?at={rev}",
+      "Commit": "https://bitbucket.example.com/projects/SG/repos/go-langserver/commits/{commit}"
+    },
+    "ExternalRepo": {
+      "ID": "SG/go-langserver",
+      "ServiceType": "bitbucketServer",
+      "ServiceID": "bitbucket.example.com/"
+    }
+  },
+  {
+    "URI": "/SG/python-langserver",
+    "Description": "python-langserver",
+    "Fork": false,
+    "Archived": false,
+    "VCS": {
+      "URL": "ssh://git@bitbucket.example.com:7999/sg/python-langserver.git"
+    },
+    "Links": {
+      "Root": "https://bitbucket.example.com/projects/SG/repos/python-langserver/browse",
+      "Tree": "https://bitbucket.example.com/projects/SG/repos/python-langserver/browse/{path}?at={rev}",
+      "Blob": "https://bitbucket.example.com/projects/SG/repos/python-langserver/browse/{path}?at={rev}",
+      "Commit": "https://bitbucket.example.com/projects/SG/repos/python-langserver/commits/{commit}"
+    },
+    "ExternalRepo": {
+      "ID": "SG/python-langserver",
+      "ServiceType": "bitbucketServer",
+      "ServiceID": "bitbucket.example.com/"
+    }
+  },
+  {
+    "URI": "/SG/python-langserver-fork",
+    "Description": "python-langserver-fork",
+    "Fork": true,
+    "Archived": false,
+    "VCS": {
+      "URL": "ssh://git@bitbucket.example.com:7999/sg/python-langserver-fork.git"
+    },
+    "Links": {
+      "Root": "https://bitbucket.example.com/projects/SG/repos/python-langserver-fork/browse",
+      "Tree": "https://bitbucket.example.com/projects/SG/repos/python-langserver-fork/browse/{path}?at={rev}",
+      "Blob": "https://bitbucket.example.com/projects/SG/repos/python-langserver-fork/browse/{path}?at={rev}",
+      "Commit": "https://bitbucket.example.com/projects/SG/repos/python-langserver-fork/commits/{commit}"
+    },
+    "ExternalRepo": {
+      "ID": "SG/python-langserver-fork",
+      "ServiceType": "bitbucketServer",
+      "ServiceID": "bitbucket.example.com/"
+    }
+  },
+  {
+    "URI": "/~KEEGAN/rgp",
+    "Description": "rgp",
+    "Fork": false,
+    "Archived": false,
+    "VCS": {
+      "URL": "ssh://git@bitbucket.example.com:7999/~keegan/rgp.git"
+    },
+    "Links": {
+      "Root": "https://bitbucket.example.com/users/keegan/repos/rgp/browse",
+      "Tree": "https://bitbucket.example.com/users/keegan/repos/rgp/browse/{path}?at={rev}",
+      "Blob": "https://bitbucket.example.com/users/keegan/repos/rgp/browse/{path}?at={rev}",
+      "Commit": "https://bitbucket.example.com/users/keegan/repos/rgp/commits/{commit}"
+    },
+    "ExternalRepo": {
+      "ID": "~KEEGAN/rgp",
+      "ServiceType": "bitbucketServer",
+      "ServiceID": "bitbucket.example.com/"
+    }
+  }
+]

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -17,72 +15,41 @@ import (
 // and Kubernetes cluster-specific config. This is deprecated. Until we have transitioned fully, we
 // suppress validation errors on these fields.
 var ignoreLegacyKubernetesFields = map[string]struct{}{
-	"alertmanagerConfig":    {},
-	"alertmanagerURL":       {},
-	"authProxyIP":           {},
-	"authProxyPassword":     {},
-	"deploymentOverrides":   {},
-	"gitoliteIP":            {},
-	"gitserverCount":        {},
-	"gitserverDiskSize":     {},
-	"gitserverSSH":          {},
-	"httpNodePort":          {},
-	"httpsNodePort":         {},
-	"indexedSearchDiskSize": {},
-	"langGo":                {},
-	"langJava":              {},
-	"langJavaScript":        {},
-	"langPHP":               {},
-	"langPython":            {},
-	"langSwift":             {},
-	"langTypeScript":        {},
-	"namespace":             {},
-	"nodeSSDPath":           {},
-	"phabricatorIP":         {},
-	"prometheus":            {},
-	"pyPIIP":                {},
-	"rbac":                  {},
-	"storageClass":          {},
-	"useAlertManager":       {},
+	"alertmanagerConfig":    struct{}{},
+	"alertmanagerURL":       struct{}{},
+	"authProxyIP":           struct{}{},
+	"authProxyPassword":     struct{}{},
+	"deploymentOverrides":   struct{}{},
+	"gitoliteIP":            struct{}{},
+	"gitserverCount":        struct{}{},
+	"gitserverDiskSize":     struct{}{},
+	"gitserverSSH":          struct{}{},
+	"httpNodePort":          struct{}{},
+	"httpsNodePort":         struct{}{},
+	"indexedSearchDiskSize": struct{}{},
+	"langGo":                struct{}{},
+	"langJava":              struct{}{},
+	"langJavaScript":        struct{}{},
+	"langPHP":               struct{}{},
+	"langPython":            struct{}{},
+	"langSwift":             struct{}{},
+	"langTypeScript":        struct{}{},
+	"namespace":             struct{}{},
+	"nodeSSDPath":           struct{}{},
+	"phabricatorIP":         struct{}{},
+	"prometheus":            struct{}{},
+	"pyPIIP":                struct{}{},
+	"rbac":                  struct{}{},
+	"storageClass":          struct{}{},
+	"useAlertManager":       struct{}{},
 }
 
-// Validate validates the configuration against the JSON Schema and other
-// custom validation checks.
-func Validate(input conftypes.RawUnified) (problems []string, err error) {
-	criticalProblems, err := doValidate(input.Critical, schema.CriticalSchemaJSON)
-	if err != nil {
-		return nil, err
-	}
-	problems = append(problems, criticalProblems...)
-
-	siteProblems, err := doValidate(input.Site, schema.SiteSchemaJSON)
-	if err != nil {
-		return nil, err
-	}
-	problems = append(problems, siteProblems...)
-
-	customProblems, err := validateCustomRaw(conftypes.RawUnified{
-		Critical: string(jsonc.Normalize(input.Critical)),
-		Site:     string(jsonc.Normalize(input.Site)),
-	})
-	if err != nil {
-		return nil, err
-	}
-	problems = append(problems, customProblems...)
-	return problems, nil
-}
-
-// ValidateSite is like Validate, except it only validates the site configuration.
-func ValidateSite(input string) (problems []string, err error) {
-	raw := Raw()
-	raw.Site = input
-	return Validate(raw)
-}
-
-func doValidate(inputStr, schema string) (problems []string, err error) {
+// Validate validates the site configuration the JSON Schema and other custom validation
+// checks.
+func Validate(inputStr string) (problems []string, err error) {
 	input := []byte(jsonc.Normalize(inputStr))
 
-	res, err := validate([]byte(schema), input)
+	res, err := validate([]byte(schema.SiteSchemaJSON), input)
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +66,30 @@ func doValidate(inputStr, schema string) (problems []string, err error) {
 			keyPath = e.Field()
 		}
 
+		// TEMPORARY: Ignore validation errors in the singleton auth config because we can
+		// 100% infer them for now.
+		//
+		// TODO(sqs): Remove this. https://github.com/sourcegraph/sourcegraph/issues/11148
+		if e.Field() == "type" && (keyPath == "auth.openIDConnect" || keyPath == "auth.saml") {
+			continue
+		}
+		if e.Field() == "auth.saml.type" || e.Field() == "auth.openIDConnect.type" {
+			continue
+		}
+
+		if !MultipleAuthProvidersEnabled() && keyPath == "(root)" && e.Description() == "Must validate \"else\" as \"if\" was not valid" {
+			continue
+		}
+
 		problems = append(problems, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
+
+	problems2, err := validateCustomRaw(input)
+	if err != nil {
+		return nil, err
+	}
+	problems = append(problems, problems2...)
+
 	return problems, nil
 }
 
@@ -142,33 +131,10 @@ type jsonLoaderFactory struct{}
 
 func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 	switch source {
-	case "settings.schema.json":
+	case "https://sourcegraph.com/v1/settings.schema.json":
 		return gojsonschema.NewStringLoader(schema.SettingsSchemaJSON)
-	case "site.schema.json":
+	case "https://sourcegraph.com/v1/site.schema.json":
 		return gojsonschema.NewStringLoader(schema.SiteSchemaJSON)
-	case "critical.schema.json":
-		return gojsonschema.NewStringLoader(schema.CriticalSchemaJSON)
 	}
 	return nil
-}
-
-// MustValidateDefaults should be called after all custom validators have been
-// registered. It will panic if any of the default deployment configurations
-// are invalid.
-func MustValidateDefaults() {
-	mustValidate("DevAndTesting", confdefaults.DevAndTesting)
-	mustValidate("DockerContainer", confdefaults.DockerContainer)
-	mustValidate("Cluster", confdefaults.Cluster)
-}
-
-// mustValidate panics if the configuration does not pass validation.
-func mustValidate(name string, cfg conftypes.RawUnified) conftypes.RawUnified {
-	problems, err := Validate(cfg)
-	if err != nil {
-		panic(fmt.Sprintf("Error with %q: %s", name, err))
-	}
-	if len(problems) > 0 {
-		panic(fmt.Sprintf("conf: problems with default configuration for %q:\n  %s", name, strings.Join(problems, "\n  ")))
-	}
-	return cfg
 }

@@ -1,26 +1,25 @@
 {
-  "extends": "@sourcegraph/tsconfig",
+  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2017",
     "module": "commonjs",
-    "allowJs": true,
     "moduleResolution": "node",
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["es2017", "es2017.object", "dom", "dom.iterable"],
+    "jsx": "react",
     "sourceMap": true,
     "noEmit": true,
+    "downlevelIteration": true,
     "skipLibCheck": true,
     "noErrorTruncation": true,
     "importHelpers": true,
-    "resolveJsonModule": true,
     "plugins": [
       {
         "name": "tslint-language-service"
       }
     ]
   },
-
-  "files": ["gulpfile.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*", "./*.ts"]
 }

@@ -5,11 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -54,22 +53,6 @@ type Client struct {
 
 	// HTTP client to use
 	HTTPClient *http.Client
-}
-
-// RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
-func (c *Client) RepoUpdateSchedulerInfo(ctx context.Context, args protocol.RepoUpdateSchedulerInfoArgs) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
-	resp, err := c.httpPost(ctx, "repo-update-scheduler-info", args)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		stack := fmt.Sprintf("RepoScheduleInfo: %+v", args)
-		return nil, errors.Wrap(fmt.Errorf("http status %d", resp.StatusCode), stack)
-	}
-	defer resp.Body.Close()
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	return result, err
 }
 
 // MockRepoLookup mocks (*Client).RepoLookup for tests.
@@ -129,7 +112,7 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 // Repo represents a repository on gitserver. It contains the information necessary to identify and
 // create/clone it.
 type Repo struct {
-	Name api.RepoName // the repository's URI
+	Name api.RepoURI // the repository's URI
 
 	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
 	// this field is optional (it will use the last-used Git remote URL). If the repository is not
@@ -157,36 +140,6 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) err
 	}
 	resp.Body.Close()
 	return nil
-}
-
-// SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error) {
-	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
-	resp, err := c.httpPost(ctx, "sync-external-service", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	bs, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
-	}
-
-	var result protocol.ExternalServiceSyncResult
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		// TODO(tsenart): Use response type for unmarshalling errors too.
-		// This needs to be done after rolling out the response type in prod.
-		return nil, errors.New(string(bs))
-	} else if len(bs) == 0 {
-		// TODO(keegancsmith): Remove once repo-updater update is rolled out.
-		result.ExternalService = svc
-		return &result, nil
-	} else if err = json.Unmarshal(bs, &result); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {

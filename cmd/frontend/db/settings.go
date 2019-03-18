@@ -4,25 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
-	}
-
-	if strings.TrimSpace(contents) == "" {
-		return nil, fmt.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
 	}
 
 	// Validate JSON syntax before saving.
@@ -71,7 +66,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSub
 	return latestSetting, nil
 }
 
-func (o *settings) GetLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
+func (o *settings) GetLatest(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
 	if Mocks.Settings.GetLatest != nil {
 		return Mocks.Settings.GetLatest(ctx, subject)
 	}
@@ -91,17 +86,11 @@ func (o *settings) ListAll(ctx context.Context) (_ []*api.Settings, err error) {
 	}()
 
 	q := sqlf.Sprintf(`
-		WITH q AS (
-			SELECT DISTINCT
-				ON (org_id, user_id, author_user_id)
-				id, org_id, user_id, author_user_id, contents, created_at
-				FROM settings
-				ORDER BY org_id, user_id, author_user_id, id DESC
-		)
-		SELECT q.id, q.org_id, q.user_id, CASE WHEN users.deleted_at IS NULL THEN q.author_user_id ELSE NULL END, q.contents, q.created_at
-		FROM q
-		LEFT JOIN users ON users.id=q.author_user_id
-		ORDER BY q.org_id, q.user_id, q.author_user_id, q.id DESC
+		SELECT DISTINCT
+			ON (org_id, user_id, author_user_id)
+			id, org_id, user_id, author_user_id, contents, created_at
+			FROM settings
+			ORDER BY org_id, user_id, author_user_id, id DESC
 	`)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -110,21 +99,20 @@ func (o *settings) ListAll(ctx context.Context) (_ []*api.Settings, err error) {
 	return o.parseQueryRows(ctx, rows)
 }
 
-func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject api.SettingsSubject) (*api.Settings, error) {
+func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject api.ConfigurationSubject) (*api.Settings, error) {
 	var cond *sqlf.Query
 	switch {
 	case subject.Org != nil:
 		cond = sqlf.Sprintf("org_id=%d", *subject.Org)
 	case subject.User != nil:
-		cond = sqlf.Sprintf("user_id=%d AND EXISTS (SELECT NULL FROM users WHERE id=%d AND deleted_at IS NULL)", *subject.User, *subject.User)
+		cond = sqlf.Sprintf("user_id=%d", *subject.User)
 	default:
 		// No org and no user represents global site settings.
 		cond = sqlf.Sprintf("user_id IS NULL AND org_id IS NULL")
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT s.id, s.org_id, s.user_id, CASE WHEN users.deleted_at IS NULL THEN s.author_user_id ELSE NULL END, s.contents, s.created_at FROM settings s
-		LEFT JOIN users ON users.id=s.author_user_id
+		SELECT id, org_id, user_id, author_user_id, contents, created_at FROM settings
 		WHERE %s
 		ORDER BY id DESC LIMIT 1`, cond)
 	rows, err := queryTarget.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)

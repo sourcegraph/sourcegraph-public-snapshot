@@ -5,7 +5,6 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -38,7 +37,9 @@ func initGitRepositoryWorkingCopy(t testing.TB, cmds ...string) (dir string) {
 	dir = makeTmpDir(t, "git")
 	cmds = append([]string{"git init"}, cmds...)
 	for _, cmd := range cmds {
-		out, err := gitCommand(dir, "bash", "-c", cmd).CombinedOutput()
+		c := exec.Command("bash", "-c", cmd)
+		c.Dir = dir
+		out, err := c.CombinedOutput()
 		if err != nil {
 			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
 		}
@@ -47,9 +48,9 @@ func initGitRepositoryWorkingCopy(t testing.TB, cmds ...string) (dir string) {
 }
 
 func makeGitRepositoryBare(t testing.TB, dir string) {
-	out, err :=
-		gitCommand(dir, "git", "config", "--bool", "core.bare", "true").
-			CombinedOutput()
+	c := exec.Command("git", "config", "--bool", "core.bare", "true")
+	c.Dir = dir
+	out, err := c.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Failed to convert to bare repo: %s\nOut: %s", err, out)
 	}
@@ -64,18 +65,11 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 	}
 }
 
-func gitCommand(dir, name string, args ...string) *exec.Cmd {
-	c := exec.Command(name, args...)
-	c.Dir = dir
-	c.Env = append(c.Env, "GIT_CONFIG="+path.Join(dir, ".git", "config"))
-	return c
-}
-
 // makeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
 // it.
 func makeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
 	dir := initGitRepository(t, cmds...)
-	return gitserver.Repo{Name: api.RepoName(dir), URL: dir}
+	return gitserver.Repo{Name: api.RepoURI(dir), URL: dir}
 }
 
 func commitsEqual(a, b *git.Commit) bool {

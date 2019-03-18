@@ -1,10 +1,6 @@
 package repos
 
-import (
-	"testing"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
-)
+import "testing"
 
 func TestSetUserinfoBestEffort(t *testing.T) {
 	cases := []struct {
@@ -15,7 +11,7 @@ func TestSetUserinfoBestEffort(t *testing.T) {
 	}{
 		// no-op
 		{"https://foo.com/foo/bar", "", "", "https://foo.com/foo/bar"},
-		// invalid name is returned as is
+		// invalid URI is returned as is
 		{":/foo.com/foo/bar", "u", "p", ":/foo.com/foo/bar"},
 
 		// no user details in rawurl
@@ -43,11 +39,5 @@ func TestSetUserinfoBestEffort(t *testing.T) {
 		if got != c.want {
 			t.Errorf("setUserinfoBestEffort(%q, %q, %q): got %q want %q", c.rawurl, c.username, c.password, got, c.want)
 		}
-	}
-}
-
-func init() {
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 	}
 }

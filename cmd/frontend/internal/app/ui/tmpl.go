@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
@@ -24,7 +24,7 @@ var (
 	versionCacheMu sync.RWMutex
 	versionCache   = make(map[string]string)
 
-	_, noAssetVersionString = os.LookupEnv("WEBPACK_DEV_SERVER")
+	_, noAssetVersionString = os.LookupEnv("WEBPACK_SERVE")
 )
 
 // Functions that are exposed to templates.

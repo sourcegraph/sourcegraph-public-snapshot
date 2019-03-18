@@ -5,7 +5,10 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestRepositories(t *testing.T) {
@@ -18,7 +21,7 @@ func TestRepositories(t *testing.T) {
 			Query: `
 				{
 					repositories {
-						nodes { name }
+						nodes { uri }
 						totalCount
 					}
 				}
@@ -28,13 +31,41 @@ func TestRepositories(t *testing.T) {
 					"repositories": {
 						"nodes": [
 							{
-								"name": "repo1"
+								"uri": "repo1"
 							},
 							{
-								"name": "repo2"
+								"uri": "repo2"
 							}
 						],
-						"totalCount": null
+						"totalCount": 2
+					}
+				}
+			`,
+		},
+	})
+}
+
+func TestAddRepository(t *testing.T) {
+	resetMocks()
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	backend.Mocks.Repos.Add = func(uri api.RepoURI) error { return nil }
+	db.Mocks.Repos.MockGetByURI(t, "my/repo", 123)
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: GraphQLSchema,
+			Query: `
+				mutation {
+					addRepository(name: "my/repo") {
+					    id
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"addRepository": {
+						"id": "UmVwb3NpdG9yeToxMjM="
 					}
 				}
 			`,

@@ -14,16 +14,16 @@ import (
 func TestRepoRefresh(t *testing.T) {
 	c := newTest()
 
-	enqueueRepoUpdateCount := map[api.RepoName]int{}
+	enqueueRepoUpdateCount := map[api.RepoURI]int{}
 	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo gitserver.Repo) error {
 		enqueueRepoUpdateCount[repo.Name]++
 		return nil
 	}
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		switch name {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+		switch uri {
 		case "github.com/gorilla/mux":
-			return &types.Repo{ID: 2, Name: name}, nil
+			return &types.Repo{ID: 2, URI: uri}, nil
 		default:
 			panic("wrong path")
 		}

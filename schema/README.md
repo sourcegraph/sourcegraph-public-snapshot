@@ -5,9 +5,8 @@
 Sourcegraph uses the following JSON Schemas:
 
 - [`settings.schema.json`](./settings.schema.json)
-- [`critical.schema.json`](./critical.schema.json)
 - [`site.schema.json`](./site.schema.json)
-- [`extension.schema.json`](../shared/src/schema/extension.schema.json) (not codegenned into Go structs)
+- [`extension.schema.json`](https://github.com/sourcegraph/extensions-client-common/blob/master/src/schema/extension.schema.json) is manually copied to this directory as needed. Only the subset of properties and definitions used by our Go code is needed. The web app uses the `extension.schema.json` file from the `@sourcegraph/extensions-client-common` npm package (the Go code currently doesn't use the file from this npm package because that would require running `yarn` in all Go tests in CI, which would be slow).
 
 # Modifying a schema
 

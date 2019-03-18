@@ -1,0 +1,71 @@
+@import '../components/Resizable';
+@import '../repo/blob/panel/BlobPanel';
+@import '../repo/blob/panel/FileLocations';
+
+.panel {
+    flex: 1 1 50%;
+    min-height: 0;
+
+    overflow-x: auto;
+
+    display: flex;
+    flex-direction: column;
+
+    background-color: $color-bg-4;
+    border-top: 1px solid $color-border;
+    width: 100%;
+
+    &--resizable {
+        min-height: 10rem;
+        max-height: 80%;
+    }
+
+    &__empty {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.6;
+    }
+
+    &__header {
+        flex: none;
+        padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+        display: flex;
+        align-items: center;
+        &-title {
+            flex: 1;
+
+            // Override .hljs styles (for titles that have syntax highlighting).
+            > .hljs {
+                padding: 0 0.25rem 0 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+        &-icon {
+            flex: 0;
+            align-self: flex-start;
+            opacity: 0.6;
+        }
+    }
+
+    &__tabs {
+        flex: 1;
+        min-height: 0; /* needed for Firefox for content scrolling to work properly; See sourcegraph/sourcegraph#12340 and https://codepen.io/slimsag/pen/mjPXyN */
+        &-content {
+            flex: 1;
+            &--scroll {
+                overflow: auto;
+            }
+        }
+    }
+}
+
+.theme-light {
+    .panel {
+        background-color: $color-light-bg-2;
+        border-top-color: $color-light-border;
+    }
+}

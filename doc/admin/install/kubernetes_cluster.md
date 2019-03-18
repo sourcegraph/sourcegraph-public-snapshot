@@ -1,3 +1,3 @@
 # Installing Sourcegraph on a Kubernetes cluster
 
-This page has moved [here](cluster.md).
+The Kubernetes cluster installation documentation has moved to the [deploy-sourcegraph repository](https://github.com/sourcegraph/deploy-sourcegraph).

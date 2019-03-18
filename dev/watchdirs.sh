@@ -2,4 +2,4 @@
 #
 # Prints the list of directories to watch in development
 
-echo cmd dev pkg schema
+echo cmd dev pkg schema xlang

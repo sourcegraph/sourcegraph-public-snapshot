@@ -13,12 +13,6 @@ var ErrExtensionsDisabled = errors.New("extensions are disabled in site configur
 
 func (r *schemaResolver) ExtensionRegistry(ctx context.Context) (ExtensionRegistryResolver, error) {
 	if conf.Extensions() == nil {
-		if !ExtensionRegistry.ImplementsLocalExtensionRegistry() {
-			// The OSS build doesn't implement a local extension registry, so the reason for
-			// extensions being disabled is probably that the OSS build is in use.
-			return nil, errors.New("no extension registry is available (use Sourcegraph Core or Sourcegraph Enterprise to access the Sourcegraph extension registry and/or to host a private internal extension registry)")
-		}
-
 		return nil, ErrExtensionsDisabled
 	}
 	return ExtensionRegistry, nil
@@ -43,8 +37,6 @@ type ExtensionRegistryResolver interface {
 	PublishExtension(context.Context, *ExtensionRegistryPublishExtensionArgs) (ExtensionRegistryMutationResult, error)
 	DeleteExtension(context.Context, *ExtensionRegistryDeleteExtensionArgs) (*EmptyResponse, error)
 	LocalExtensionIDPrefix() *string
-
-	ImplementsLocalExtensionRegistry() bool // not exposed via GraphQL
 }
 
 type RegistryExtensionConnectionArgs struct {
@@ -106,18 +98,17 @@ type RegistryExtension interface {
 	Manifest(ctx context.Context) (ExtensionManifest, error)
 	CreatedAt() *string
 	UpdatedAt() *string
-	PublishedAt(context.Context) (*string, error)
 	URL() string
 	RemoteURL() *string
 	RegistryName() (string, error)
 	IsLocal() bool
-	IsWorkInProgress() bool
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 }
 
 // ExtensionManifest is the interface for the GraphQL type ExtensionManifest.
 type ExtensionManifest interface {
 	Raw() string
+	Title() (*string, error)
 	Description() (*string, error)
 	BundleURL() (*string, error)
 }

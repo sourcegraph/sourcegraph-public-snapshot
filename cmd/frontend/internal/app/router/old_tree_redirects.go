@@ -23,6 +23,6 @@ func addOldTreeRedirectRoute(matchRouter *mux.Router) {
 			path = "/" + path
 		}
 
-		http.Redirect(w, r, URLToRepoTreeEntry(api.RepoName(v["Repo"]), v["Rev"], path).String(), http.StatusMovedPermanently)
+		http.Redirect(w, r, URLToRepoTreeEntry(api.RepoURI(v["Repo"]), v["Rev"], path).String(), http.StatusMovedPermanently)
 	})
 }

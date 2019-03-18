@@ -4,7 +4,7 @@
 
 The documentation style guide defines the markup structure used in Sourcegraph documentation. Check the [documentation guidelines](index.md) for general development instructions.
 
-See the [Sourcegraph style guide](../style_guide.md) for general information.
+See the [Sourcegraph style guide](https://github.com/sourcegraph/about/blob/master/STYLEGUIDE.md) for general information.
 
 For help adhering to the guidelines, see [Linting](index.md#linting).
 
@@ -12,7 +12,7 @@ For help adhering to the guidelines, see [Linting](index.md#linting).
 
 - [Directory structure](index.md#location-and-naming-documents): place the docs in the correct location.
 - [Documentation files](index.md#documentation-files): name the files accordingly.
-<!-- - [Markdown](../../user/markdown.md): TODO(ryan): Fix in 3.3 once it has content. -->
+- [Markdown](../../user/markdown.md): use the Sourcegraph-flavored Markdown in the documentation.
 
 - Don't use capital letters, spaces, or special characters in file names, branch names, directory names, headings, or in anything that generates a path or URL fragment.
 - Don't create `README.md` files in docs. Name them `index.md` instead.
@@ -20,7 +20,7 @@ For help adhering to the guidelines, see [Linting](index.md#linting).
 ## Text
 
 - Split up long lines (wrap text), this makes it much easier to review and edit. Only double line
-breaks are shown as a full line Sourcegraph markdown 80-100. <!-- TODO(ryan): Link to ../../user/markdown.md once it has content. Fix in 3.3 -->
+  breaks are shown as a full line break in [Sourcegraph markdown](../../user/markdown.md). 80-100
   characters is a good line length.
 - Make sure that the documentation is added in the correct
   [directory](index.md#documentation-directory-structure) and that there's a link to it somewhere

@@ -7,12 +7,13 @@ import (
 	"sync"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -22,19 +23,13 @@ var (
 
 // RunGitoliteRepositorySyncWorker runs the worker that syncs repositories from gitolite hosts to Sourcegraph
 //
-// If there is a Phabricator set, every ten loops we will try to run that for every repo also.
+// If there is a PhabricatorMetadataCommand set, every ten loops we will try to run that for every
+// repo also.
 func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 	phabricatorMetadataCounter := 0
 	for {
 		log15.Debug("RunGitoliteRepositorySyncWorker:GitoliteUpdateRepos")
-		config, err := conf.GitoliteConfigs(context.Background())
-		if err != nil {
-			log15.Error("unable to fetch Gitolite configs", "err", err)
-			time.Sleep(GetUpdateInterval())
-			continue
-		}
-
-		for _, gconf := range config {
+		for _, gconf := range conf.Get().Gitolite {
 			if err := gitoliteUpdateRepos(ctx, gconf, (phabricatorMetadataCounter%10) == 0); err != nil {
 				log15.Error("error updating Gitolite repositories", "err", err, "prefix", gconf.Prefix)
 			} else {
@@ -45,7 +40,7 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 		// an int wrapped, I'm sorry.
 		phabricatorMetadataCounter++
 		gitoliteUpdateTime.Set(float64(time.Now().Unix()))
-		time.Sleep(GetUpdateInterval())
+		time.Sleep(getUpdateInterval())
 	}
 }
 
@@ -54,15 +49,10 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 // existence). We return a dummy response, because if we don't, callers will interpret the response as "repository not
 // found".
 func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-	config, err := conf.GitoliteConfigs(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-
-	for _, c := range config {
+	for _, c := range conf.Get().Gitolite {
 		if strings.HasPrefix(string(args.Repo), c.Prefix) {
 			return &protocol.RepoInfo{
-				Name:         args.Repo,
+				URI:          args.Repo,
 				ExternalRepo: args.ExternalRepo,
 			}, true, nil
 		}
@@ -73,7 +63,7 @@ func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (r
 // tryUpdateGitolitePhabricatorMetadata attempts to update Phabricator metadata for a Gitolite-sourced repository, if it
 // is appropriate to do so.
 func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.GitoliteConnection, repos []string) {
-	if gconf.Phabricator == nil {
+	if gconf.PhabricatorMetadataCommand == "" {
 		return
 	}
 	phabTaskMu.Lock()
@@ -93,7 +83,7 @@ func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.Git
 		if metadata.Callsign == "" {
 			continue
 		}
-		if err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(repoName), metadata.Callsign, gconf.Phabricator.Url); err != nil {
+		if err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoURI(repoName), metadata.Callsign, gconf.Host); err != nil {
 			log15.Warn("could not ensure Gitolite Phabricator mapping", "repo", repoName, "error", err)
 		}
 	}
@@ -115,7 +105,7 @@ func gitoliteUpdateRepos(ctx context.Context, gconf *schema.GitoliteConnection, 
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("gitolite:%s", gconf.Prefix), repoChan)
-	if doPhabricator && gconf.Phabricator != nil {
+	if doPhabricator && gconf.PhabricatorMetadataCommand != "" {
 		go tryUpdateGitolitePhabricatorMetadata(ctx, gconf, rlist)
 	}
 	for _, entry := range rlist {
@@ -123,8 +113,8 @@ func gitoliteUpdateRepos(ctx context.Context, gconf *schema.GitoliteConnection, 
 		url := strings.Replace(entry, gconf.Prefix, gconf.Host+":", 1)
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoName: api.RepoName(entry),
-				Enabled:  true,
+				RepoURI: api.RepoURI(entry),
+				Enabled: true,
 			},
 			URL: url,
 		}

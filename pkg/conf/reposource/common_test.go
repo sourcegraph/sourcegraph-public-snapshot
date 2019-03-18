@@ -7,10 +7,10 @@ import (
 	"testing"
 )
 
-// urlToRepoName represents a cloneURL and expected corresponding repo name
-type urlToRepoName struct {
+// urlURI represents a cloneURL and expected corresponding repoURI
+type urlURI struct {
 	cloneURL string
-	repoName string
+	repoURI  string
 }
 
 func TestParseCloneURL(t *testing.T) {
@@ -25,13 +25,6 @@ func TestParseCloneURL(t *testing.T) {
 				User:   url.User("git"),
 				Host:   "github.com",
 				Path:   "gorilla/mux.git",
-			},
-		}, {
-			input: "git+https://github.com/gorilla/mux.git",
-			output: &url.URL{
-				Scheme: "git+https",
-				Host:   "github.com",
-				Path:   "/gorilla/mux.git",
 			},
 		}, {
 			input: "https://github.com/gorilla/mux.git",

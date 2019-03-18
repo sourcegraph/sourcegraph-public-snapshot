@@ -9,7 +9,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Repository returns the external links for a repository.
@@ -46,11 +44,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		branchName, _, _, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "--short", "HEAD"})
+		branchName, _, _, err := git.ExecSafe(ctx, backend.CachedGitRepo(repo), []string{"symbolic-ref", "--short", "HEAD"})
 		branchName = bytes.TrimSpace(branchName)
 		if err == nil && string(branchName) != "" {
 			links = append(links, &Resolver{
@@ -106,28 +100,27 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.PhabricatorRepo, link *protocol.RepoLinks, serviceType string) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
-	span.SetTag("Repo", repo.Name)
+	span.SetTag("Repo", repo.URI)
 	if repo.ExternalRepo != nil {
 		span.SetTag("ExternalRepo", repo.ExternalRepo)
 	}
 
 	var err error
-	phabRepo, err = db.Phabricator.GetByName(ctx, repo.Name)
+	phabRepo, err = db.Phabricator.GetByURI(ctx, repo.URI)
 	if err != nil && !errcode.IsNotFound(err) {
 		ext.Error.Set(span, true)
 		span.SetTag("phabErr", err.Error())
 	}
 
-	// Look up repo links in the repo-updater. This supplies links from code host APIs.
+	// Look up repo links in the repo-updater. This supplies links from code host APIs as well as
+	// explicitly configured links for repos.list repos.
 	info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo:         repo.Name,
+		Repo:         repo.URI,
 		ExternalRepo: repo.ExternalRepo,
 	})
 	if err != nil {
 		ext.Error.Set(span, true)
 		span.SetTag("repoUpdaterErr", err.Error())
-		log15.Warn("linksForRepository failed to RepoLookup", "repo", repo.Name, "error", err)
-		linksForRepositoryFailed.Inc()
 	}
 	if info != nil && info.Repo != nil {
 		link = info.Repo.Links
@@ -137,15 +130,4 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 	}
 
 	return phabRepo, link, serviceType
-}
-
-var linksForRepositoryFailed = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "links_for_repository_failed_total",
-	Help:      "The total number of times the GraphQL field LinksForRepository failed.",
-})
-
-func init() {
-	prometheus.MustRegister(linksForRepositoryFailed)
 }

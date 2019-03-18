@@ -29,7 +29,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
-	http.Redirect(w, r, "/"+string(repo.Name)+"@"+string(commitID), http.StatusMovedPermanently)
+	http.Redirect(w, r, "/"+string(repo.URI)+"@"+string(commitID), http.StatusMovedPermanently)
 	return nil
 }
 

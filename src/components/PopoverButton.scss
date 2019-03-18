@@ -1,0 +1,92 @@
+@import './ConnectionPopover';
+
+.popover-button {
+    &__container {
+        display: flex;
+        align-items: center;
+    }
+    &__anchor {
+        position: relative;
+    }
+
+    user-select: none;
+    cursor: pointer;
+
+    color: $color-text;
+    background-color: transparent;
+
+    &__btn {
+        outline: none !important;
+        box-shadow: none !important;
+        border: solid 1px transparent;
+        border-radius: 0.25rem;
+
+        padding: 0.125rem 0.3rem;
+        &--link {
+            text-decoration: none !important;
+        }
+        &:not(&--link) {
+            padding-right: 0;
+        }
+    }
+    &__btn:hover,
+    &--open#{&}__btn:not(&__btn--link) {
+        border-color: $color-border;
+    }
+
+    &__icon {
+        opacity: 0.4;
+        cursor: pointer;
+        .icon {
+            height: 1.25rem;
+            width: 1.25rem;
+        }
+        &--outside {
+            margin-left: -0.185rem;
+        }
+    }
+    &__anchor:hover &__icon,
+    &--open &__icon {
+        opacity: 0.75;
+    }
+    &--open &__icon {
+        // Flip vertically so that it's a caret-up icon (not caret-down).
+        transform: rotate(180deg) translateY(-1px);
+    }
+
+    &__popover {
+        background-color: $color-bg-1;
+        border: solid 1px $color-border;
+
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+
+        z-index: 100;
+
+        // Align with button (when possible).
+        //
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-left: 1px;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-top: -1px;
+    }
+    &--open {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+}
+
+.theme-light {
+    .popover-button {
+        color: $color-light-text-5;
+
+        &__btn:hover,
+        &--open.popover-button__btn:not(.popover-button__btn--link) {
+            border-color: $color-light-border;
+        }
+
+        &__popover {
+            background-color: $color-light-bg-1;
+            border-color: $color-light-border;
+        }
+    }
+}

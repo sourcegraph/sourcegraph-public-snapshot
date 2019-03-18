@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
-	"github.com/sourcegraph/sourcegraph/pkg/pubsub/pubsubutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -24,16 +21,16 @@ var (
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.1.2")
+	latestReleaseDockerServerImageBuild = newBuild("2.12.2")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.1.2")
+	latestReleaseKubernetesBuild = newBuild("2.12.2")
 )
 
 func getLatestRelease(deployType string) build {
-	if conf.IsDeployTypeCluster(deployType) {
+	if conf.IsDeployTypeKubernetesCluster(deployType) {
 		return latestReleaseKubernetesBuild
 	}
 	return latestReleaseDockerServerImageBuild
@@ -63,9 +60,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-
-	latestReleaseBuild := getLatestRelease(deployType)
-	hasUpdate, err := canUpdate(clientVersionString, latestReleaseBuild)
+	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
+	clientVersion, err := semver.NewVersion(clientVersionString)
 	if err != nil {
 		// Still log pings on malformed version strings.
 		logPing(r, clientVersionString, false)
@@ -74,6 +70,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	latestReleaseBuild := getLatestRelease(deployType)
+	hasUpdate := clientVersion.LessThan(latestReleaseBuild.Version)
 	logPing(r, clientVersionString, hasUpdate)
 
 	if !hasUpdate {
@@ -93,66 +91,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(body)
 }
 
-// canUpdate returns true if the latestReleaseBuild is newer than the clientVersionString.
-func canUpdate(clientVersionString string, latestReleaseBuild build) (bool, error) {
-	// Check for a date in the version string to handle developer builds that don't have a semver.
-	// If there is an error parsing a date out of the version string, then we ignore the error
-	// and parse it as a semver.
-	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil {
-		return hasDateUpdate, nil
-	}
-
-	// Released builds will have a semantic version that we can compare.
-	return canUpdateVersion(clientVersionString, latestReleaseBuild)
-}
-
-// canUpdateVersion returns true if the latest released build is newer than
-// the clientVersionString. It returns an error if clientVersionString is not a semver.
-func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (bool, error) {
-	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
-	clientVersion, err := semver.NewVersion(clientVersionString)
-	if err != nil {
-		return false, err
-	}
-	return clientVersion.LessThan(latestReleaseBuild.Version), nil
-}
-
-var dateRegex = regexp.MustCompile("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
-var timeNow = time.Now
-
-// canUpdateDate returns true if clientVersionString contains a date
-// more than 40 days in the past. It returns an error if there is no
-// parsable date in clientVersionString
-func canUpdateDate(clientVersionString string) (bool, error) {
-	match := dateRegex.FindStringSubmatch(clientVersionString)
-	if len(match) != 2 {
-		return false, fmt.Errorf("no date in version string %q", clientVersionString)
-	}
-
-	t, err := time.ParseInLocation("2006-01-02", match[1], time.UTC)
-	if err != nil {
-		// This shouldn't ever happen if the above code is correct.
-		return false, err
-	}
-
-	// Assume that we release a new version at least every 40 days.
-	return timeNow().After(t.Add(40 * 24 * time.Hour)), nil
-}
-
 func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	q := r.URL.Query()
 	clientSiteID := q.Get("site")
 	authProviders := q.Get("auth")
-	builtinSignupAllowed := q.Get("signup")
-	hasExtURL := q.Get("hasExtURL")
 	uniqueUsers := q.Get("u")
 	activity := q.Get("act")
 	initialAdminEmail := q.Get("initAdmin")
+	hasCodeIntelligence := q.Get("codeintel")
 	deployType := q.Get("deployType")
 	totalUsers := q.Get("totalUsers")
-	hasRepos := q.Get("repos")
-	everSearched := q.Get("searched")
-	everFindRefs := q.Get("refs")
 
 	// Log update check.
 	var clientAddr string
@@ -168,58 +116,35 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		activity = `{}`
 	}
 
-	message := fmt.Sprintf(`{
+	eventlogger.LogEvent("", "ServerUpdateCheck", json.RawMessage(fmt.Sprintf(`{
 		"remote_ip": "%s",
 		"remote_site_version": "%s",
 		"remote_site_id": "%s",
 		"has_update": "%s",
 		"unique_users_today": "%s",
+		"has_code_intelligence": "%s",
 		"site_activity": %s,
 		"installer_email": "%s",
 		"auth_providers": "%s",
-		"builtin_signup_allowed": "%s",
 		"deploy_type": "%s",
-		"total_user_accounts": "%s",
-		"has_external_url": "%s",
-		"has_repos": "%s",
-		"ever_searched": "%s",
-		"ever_find_refs": "%s",
-		"timestamp": "%s"
+		"total_user_accounts": "%s"
 	}`,
 		clientAddr,
 		clientVersionString,
 		clientSiteID,
 		strconv.FormatBool(hasUpdate),
 		uniqueUsers,
+		hasCodeIntelligence,
 		activity,
 		initialAdminEmail,
 		authProviders,
-		builtinSignupAllowed,
 		deployType,
 		totalUsers,
-		hasExtURL,
-		hasRepos,
-		everSearched,
-		everFindRefs,
-		time.Now().UTC().Format(time.RFC3339),
-	)
-
-	eventlogger.LogEvent("", "ServerUpdateCheck", json.RawMessage(message))
-
-	if pubsubutil.Enabled() {
-		err := pubsubutil.Publish(pubsubutil.PubSubTopicID, message)
-		if err != nil {
-			log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
-		}
-	}
+	)))
 
 	// Sync the initial administrator email in HubSpot.
 	if initialAdminEmail != "" && strings.Contains(initialAdminEmail, "@") {
-		// Hubspot requires the timestamp to be rounded to the nearest day at midnight.
-		now := time.Now().UTC()
-		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-		go tracking.SyncUser(initialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis})
+		go tracking.SyncUser(initialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true})
 	}
 }
 

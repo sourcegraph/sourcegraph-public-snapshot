@@ -10,12 +10,12 @@ import (
 )
 
 type MockRepos struct {
-	Get       func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
-	GetByName func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
-	List      func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
-	Delete    func(ctx context.Context, repo api.RepoID) error
-	Count     func(ctx context.Context, opt ReposListOptions) (int, error)
-	Upsert    func(api.InsertRepoOp) error
+	Get      func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
+	GetByURI func(ctx context.Context, repo api.RepoURI) (*types.Repo, error)
+	List     func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
+	Delete   func(ctx context.Context, repo api.RepoID) error
+	Count    func(ctx context.Context, opt ReposListOptions) (int, error)
+	Upsert   func(api.InsertRepoOp) error
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
@@ -44,26 +44,26 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 	return
 }
 
-func (s *MockRepos) MockGetByName(t *testing.T, want api.RepoName, repo api.RepoID) (called *bool) {
+func (s *MockRepos) MockGetByURI(t *testing.T, want api.RepoURI, repo api.RepoID) (called *bool) {
 	called = new(bool)
-	s.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+	s.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 		*called = true
-		if name != want {
-			t.Errorf("got repo name %q, want %q", name, want)
-			return nil, &repoNotFoundErr{Name: name}
+		if uri != want {
+			t.Errorf("got repo URI %q, want %q", uri, want)
+			return nil, &repoNotFoundErr{URI: uri}
 		}
-		return &types.Repo{ID: repo, Name: name, Enabled: true}, nil
+		return &types.Repo{ID: repo, URI: uri, Enabled: true}, nil
 	}
 	return
 }
 
-func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *bool) {
+func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoURI) (called *bool) {
 	called = new(bool)
 	s.List = func(ctx context.Context, opt ReposListOptions) ([]*types.Repo, error) {
 		*called = true
 		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
-			repos[i] = &types.Repo{Name: repo}
+			repos[i] = &types.Repo{URI: repo}
 		}
 		return repos, nil
 	}

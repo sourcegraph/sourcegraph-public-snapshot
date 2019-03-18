@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 	"sync"
@@ -12,18 +13,17 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	lsp "github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
@@ -68,7 +68,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 			defer run.Release()
 			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.Pattern, args.Query, limit)
 			if repoErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
+				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.URI)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -108,7 +108,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		}
 		span.Finish()
 	}()
-	span.SetTag("repo", string(repoRevs.Repo.Name))
+	span.SetTag("repo", string(repoRevs.Repo.URI))
 
 	inputRev := repoRevs.RevSpecs()[0]
 	span.SetTag("rev", inputRev)
@@ -116,18 +116,18 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), nil, inputRev, nil)
+	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo, nil, inputRev, nil)
 	if err != nil {
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.Name) + "?" + url.QueryEscape(inputRev))
+	baseURI, err := uri.Parse("git://" + string(repoRevs.Repo.URI) + "?" + url.QueryEscape(inputRev))
 	if err != nil {
 		return nil, err
 	}
 
 	symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
-		Repo:            repoRevs.Repo.Name,
+		Repo:            repoRevs.Repo.URI,
 		CommitID:        commitID,
 		Query:           patternInfo.Pattern,
 		IsCaseSensitive: patternInfo.IsCaseSensitive,
@@ -154,11 +154,9 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
 			fileMatch := &fileMatchResolver{
-				symbols: []*symbolResolver{symbolRes},
-				uri:     uri,
-				repo:    symbolRes.location.resource.commit.repo.repo,
-				// Don't get commit from gitCommitResolver.OID() because we don't want to
-				// slow search results down when they are coming from zoekt.
+				symbols:  []*symbolResolver{symbolRes},
+				uri:      uri,
+				repo:     symbolRes.location.resource.commit.repo.repo,
 				commitID: api.CommitID(symbolRes.location.resource.commit.oid),
 			}
 			fileMatchesByURI[uri] = fileMatch
@@ -180,7 +178,7 @@ func makeFileMatchURIFromSymbol(symbolResolver *symbolResolver, inputRev string)
 
 // symbolToLSPSymbolInformation converts a symbols service Symbol struct to an LSP SymbolInformation
 // baseURI is the git://repo?rev base URI for the symbol that is extended with the file path
-func symbolToLSPSymbolInformation(s protocol.Symbol, baseURI *gituri.URI) lsp.SymbolInformation {
+func symbolToLSPSymbolInformation(s protocol.Symbol, baseURI *uri.URI) lsp.SymbolInformation {
 	ch := ctagsSymbolCharacter(s)
 	return lsp.SymbolInformation{
 		Name:          s.Name + s.Signature,
@@ -219,11 +217,11 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKModule
 	case "namespace":
 		return lsp.SKNamespace
-	case "package", "packageName", "subprogspec":
+	case "package", "subprogspec":
 		return lsp.SKPackage
 	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
 		return lsp.SKClass
-	case "method", "methodSpec":
+	case "method":
 		return lsp.SKMethod
 	case "property":
 		return lsp.SKProperty
@@ -266,6 +264,6 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
 	}
-	log15.Debug("Unknown ctags kind", "kind", kind)
+	log.Printf("Unknown ctags kind: %q", kind)
 	return 0
 }

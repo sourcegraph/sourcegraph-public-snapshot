@@ -14,7 +14,6 @@ type MockUsers struct {
 	GetByID              func(ctx context.Context, id int32) (*types.User, error)
 	GetByUsername        func(ctx context.Context, username string) (*types.User, error)
 	GetByCurrentAuthUser func(ctx context.Context) (*types.User, error)
-	GetByVerifiedEmail   func(ctx context.Context, email string) (*types.User, error)
 	Count                func(ctx context.Context, opt *UsersListOptions) (int, error)
 	List                 func(ctx context.Context, opt *UsersListOptions) ([]*types.User, error)
 }

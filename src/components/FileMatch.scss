@@ -1,0 +1,56 @@
+.file-match {
+    &__item {
+        text-decoration: none; // don't use cascading link style
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        background-color: #070a0d;
+
+        &-clickable {
+            cursor: pointer;
+        }
+
+        &:hover {
+            background-color: #151d28;
+            text-decoration: none;
+        }
+
+        &:not(:first-child) {
+            border-top: 1px solid #2a3a51;
+        }
+
+        .theme-light & {
+            background-color: $color-light-bg-1;
+            border-top: 1px solid $color-light-border;
+
+            &:hover {
+                background-color: $color-light-bg-4;
+                text-decoration: none;
+            }
+        }
+    }
+
+    &__code {
+        border-bottom: solid 1px #2a3a51;
+        font-size: 12px;
+        padding: 0.5rem 1.25rem;
+        margin-bottom: 0;
+        > code {
+            display: block;
+            > a {
+                color: inherit;
+            }
+            &::before {
+                content: attr(data-line);
+                opacity: 0.65;
+                padding-right: 0.325rem;
+                display: inline-block;
+            }
+        }
+        .theme-light & {
+            border-bottom-color: $color-light-border;
+        }
+    }
+}

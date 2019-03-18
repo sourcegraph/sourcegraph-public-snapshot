@@ -50,22 +50,19 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 			return nil, err
 		}
 
-		commit, err := git.GetCommit(ctx, repo, nil, commitID)
+		commit, err := git.GetCommit(ctx, repo, commitID)
 		if err != nil {
 			return nil, err
 		}
 		return toGitCommitResolver(r, commit), nil
 	}
 
-	grepo, err := backend.CachedGitRepo(ctx, r.repo)
+	grepo := backend.CachedGitRepo(r.repo)
+	base, err := getCommit(ctx, grepo, baseRevspec)
 	if err != nil {
 		return nil, err
 	}
-	base, err := getCommit(ctx, *grepo, baseRevspec)
-	if err != nil {
-		return nil, err
-	}
-	head, err := getCommit(ctx, *grepo, headRevspec)
+	head, err := getCommit(ctx, grepo, headRevspec)
 	if err != nil {
 		return nil, err
 	}
@@ -127,20 +124,11 @@ type fileDiffConnectionResolver struct {
 func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
 	do := func() ([]*diff.FileDiff, error) {
 		var rangeSpec string
-		hOid, err := r.cmp.head.OID()
-		if err != nil {
-			return nil, err
-		}
 		if r.cmp.base == nil {
-
 			// Rare case: the base is the empty tree, in which case we need ".." not "..." because the latter only works for commits.
-			rangeSpec = string(r.cmp.baseRevspec) + ".." + string(hOid)
+			rangeSpec = string(r.cmp.baseRevspec) + ".." + string(r.cmp.head.oid)
 		} else {
-			bOid, err := r.cmp.base.OID()
-			if err != nil {
-				return nil, err
-			}
-			rangeSpec = string(bOid) + "..." + string(hOid)
+			rangeSpec = string(r.cmp.base.oid) + "..." + string(r.cmp.head.oid)
 		}
 		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
 			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be
@@ -148,11 +136,8 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			// flags or refer to a file.
 			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.cmp.repo.repo)
-		if err != nil {
-			return nil, err
-		}
-		rdr, err := git.ExecReader(ctx, *cachedRepo, []string{
+
+		rdr, err := git.ExecReader(ctx, backend.CachedGitRepo(r.cmp.repo.repo), []string{
 			"diff",
 			"--find-renames",
 			"--find-copies",

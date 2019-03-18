@@ -13,6 +13,10 @@ import (
 
 // registryExtensionRemoteResolver implements the GraphQL type RegistryExtension with data from a
 // remote registry.
+//
+// BACKCOMPAT: It also wraps synthesized registry.Extension values representing known language
+// servers. These extensions aren't considered remote, so in this case, this type name is a
+// misnomer.
 type registryExtensionRemoteResolver struct {
 	v *registry.Extension
 }
@@ -50,15 +54,17 @@ func (r *registryExtensionRemoteResolver) Manifest(context.Context) (graphqlback
 }
 
 func (r *registryExtensionRemoteResolver) CreatedAt() *string {
+	if r.v.IsSynthesizedLocalExtension {
+		return nil
+	}
 	return strptr(r.v.CreatedAt.Format(time.RFC3339))
 }
 
 func (r *registryExtensionRemoteResolver) UpdatedAt() *string {
+	if r.v.IsSynthesizedLocalExtension {
+		return nil
+	}
 	return strptr(r.v.UpdatedAt.Format(time.RFC3339))
-}
-
-func (r *registryExtensionRemoteResolver) PublishedAt(context.Context) (*string, error) {
-	return strptr(r.v.PublishedAt.Format(time.RFC3339)), nil
 }
 
 func (r *registryExtensionRemoteResolver) URL() string {
@@ -66,10 +72,16 @@ func (r *registryExtensionRemoteResolver) URL() string {
 }
 
 func (r *registryExtensionRemoteResolver) RemoteURL() *string {
+	if r.v.IsSynthesizedLocalExtension {
+		return nil
+	}
 	return &r.v.URL
 }
 
 func (r *registryExtensionRemoteResolver) RegistryName() (string, error) {
+	if r.v.IsSynthesizedLocalExtension {
+		return "builtin", nil
+	}
 	u, err := url.Parse(r.v.RegistryURL)
 	if err != nil {
 		return "", err
@@ -77,11 +89,7 @@ func (r *registryExtensionRemoteResolver) RegistryName() (string, error) {
 	return registry.Name(u), nil
 }
 
-func (r *registryExtensionRemoteResolver) IsLocal() bool { return false }
-
-func (r *registryExtensionRemoteResolver) IsWorkInProgress() bool {
-	return IsWorkInProgressExtension(r.v.Manifest)
-}
+func (r *registryExtensionRemoteResolver) IsLocal() bool { return r.v.IsSynthesizedLocalExtension }
 
 func (r *registryExtensionRemoteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return false, nil // can't administer remote extensions

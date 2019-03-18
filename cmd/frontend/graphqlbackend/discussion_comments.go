@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 )
 
 type discussionCommentResolver struct {
@@ -53,7 +53,7 @@ func (r *discussionCommentResolver) HTML(ctx context.Context, args *struct{ Opti
 	if err != nil {
 		return "", err
 	}
-	return markdown.Render(contents, nil), nil
+	return markdown.Render(contents, nil)
 }
 func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, error) {
 	thread, err := db.DiscussionThreads.Get(ctx, r.c.ThreadID)
@@ -117,7 +117,7 @@ func (r *discussionCommentResolver) CanDelete(ctx context.Context) bool {
 	return true
 }
 
-func (*schemaResolver) DiscussionComments(ctx context.Context, args *struct {
+func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	AuthorUserID *graphql.ID
 }) (*discussionCommentsConnectionResolver, error) {

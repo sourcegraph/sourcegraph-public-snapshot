@@ -10,8 +10,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 type Entry struct {
@@ -35,26 +33,6 @@ type Parser interface {
 	Close()
 }
 
-func isCommandAvailable(name string) bool {
-	cmd := exec.Command("/bin/sh", "-c", "command -v "+name)
-	if err := cmd.Run(); err != nil {
-		return false
-	}
-	return true
-}
-
-var ctagsCommand = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)")
-
-// GetCommand returns the ctags command from the CTAGS_COMMAND environment
-// variable, falling back to `universal-ctags`. Panics if the command doesn't
-// exist.
-func GetCommand() string {
-	if !isCommandAvailable(ctagsCommand) {
-		panic(fmt.Errorf("ctags command %s not found", ctagsCommand))
-	}
-	return ctagsCommand
-}
-
 func NewParser(ctagsCommand string) (Parser, error) {
 	opt := "default"
 
@@ -66,8 +44,8 @@ func NewParser(ctagsCommand string) (Parser, error) {
 	// }
 
 	cmd := exec.Command(ctagsCommand, "--_interactive="+opt, "--fields=*",
-		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,Tcl,typescript,Verilog,Vim",
-		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass", "--file-scope=no",
+		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,elm,Erlang,Go,Java,JavaScript,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,Scheme,Tcl,Verilog,Vim",
+		"--map-JavaScript=+.ts", "--map-JavaScript=+.tsx", "--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass", "--file-scope=no",
 		"--kinds-Go=-p", // omit because 1 symbol per `package` keyword (1 for each file in a package) is not useful
 	)
 	in, err := cmd.StdinPipe()

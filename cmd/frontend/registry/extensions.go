@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 )
 
@@ -102,6 +100,8 @@ var GetLocalExtensionByExtensionID func(ctx context.Context, extensionIDWithoutP
 // to the remote registry specified in site configuration (usually sourcegraph.com). The host must
 // be specified to refer to a local extension on the current Sourcegraph site (e.g.,
 // sourcegraph.example.com/publisher/name).
+//
+// BACKCOMPAT: It also synthesizes registry extensions from known language servers.
 func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local graphqlbackend.RegistryExtension, remote *registry.Extension, err error) {
 	_, extensionIDWithoutPrefix, isLocal, err := ParseExtensionID(extensionID)
 	if err != nil {
@@ -109,6 +109,11 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local g
 	}
 
 	if isLocal {
+		// BACKCOMPAT: First, look up among extensions synthesized from known language servers.
+		if x, err := getSynthesizedRegistryExtension(ctx, "extensionID", extensionID); x != nil || err != nil {
+			return nil, x, err
+		}
+
 		if GetLocalExtensionByExtensionID != nil {
 			x, err := GetLocalExtensionByExtensionID(ctx, extensionIDWithoutPrefix)
 			return x, nil, err
@@ -124,9 +129,9 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local g
 
 // getLocalRegistryName returns the name of the local registry.
 func getLocalRegistryName() string {
-	u, err := url.Parse(conf.Get().Critical.ExternalURL)
+	u, err := url.Parse(conf.Get().AppURL)
 	if err != nil || u == nil || u.Host == "" {
-		return registry.Name(globals.ExternalURL)
+		return registry.Name(globals.AppURL)
 	}
 	return registry.Name(u)
 }
@@ -174,6 +179,11 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 		return mockGetRemoteRegistryExtension(field, value)
 	}
 
+	// BACKCOMPAT: First, look up among extensions synthesized from known language servers.
+	if x, err := getSynthesizedRegistryExtension(ctx, field, value); x != nil || err != nil {
+		return x, err
+	}
+
 	registryURL, err := getRemoteRegistryURL()
 	if registryURL == nil || err != nil {
 		return nil, err
@@ -192,7 +202,7 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 		x.RegistryURL = registryURL.String()
 	}
 
-	if x != nil && !IsRemoteExtensionAllowed(x.ExtensionID) {
+	if !IsRemoteExtensionAllowed(x.ExtensionID) {
 		return nil, fmt.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
 	}
 
@@ -244,38 +254,3 @@ func (t sleepIfUncachedTransport) RoundTrip(req *http.Request) (*http.Response, 
 	}
 	return resp, err
 }
-
-// IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is
-// marked as a work-in-progress extension (by having a "wip": true property, or (for backcompat) a
-// title that begins with "WIP:" or "[WIP]").
-//
-// BACKCOMPAT: This still supports titles even though extensions no longer have titles. In Feb 2019
-// it will probably be safe to remove the title handling.
-//
-// NOTE: Keep this pattern in sync with WorkInProgressExtensionTitlePostgreSQLPattern.
-func IsWorkInProgressExtension(manifest *string) bool {
-	if manifest == nil {
-		// Extensions with no manifest (== no releases published yet) are considered
-		// work-in-progress.
-		return true
-	}
-
-	var result struct {
-		schema.SourcegraphExtensionManifest
-		Title string
-	}
-	if err := jsonc.Unmarshal(*manifest, &result); err != nil {
-		// An extension whose manifest fails to parse is problematic for other reasons (and an error
-		// will be displayed), but it isn't helpful to also consider it work-in-progress.
-		return false
-	}
-
-	return result.Wip || strings.HasPrefix(result.Title, "WIP:") || strings.HasPrefix(result.Title, "[WIP]")
-}
-
-// WorkInProgressExtensionTitlePostgreSQLPattern is the PostgreSQL "SIMILAR TO" pattern that matches
-// the extension manifest's "title" property. See
-// https://www.postgresql.org/docs/9.3/functions-matching.html.
-//
-// NOTE: Keep this pattern in sync with IsWorkInProgressExtension.
-const WorkInProgressExtensionTitlePostgreSQLPattern = `(\[WIP]|WIP:)%`

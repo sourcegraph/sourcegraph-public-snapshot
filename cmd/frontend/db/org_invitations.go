@@ -9,7 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 // An OrgInvitation is an invitation for a user to join an organization as a member.

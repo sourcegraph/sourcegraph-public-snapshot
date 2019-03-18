@@ -3,14 +3,43 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+// ExternalAccount represents a row in the `user_external_accounts` table. See the GraphQL API's
+// corresponding fields for documentation.
+type ExternalAccount struct {
+	ID                  int32
+	UserID              int32
+	ExternalAccountSpec // ServiceType, ServiceID, ClientID, AccountID
+	ExternalAccountData // AuthData, AccountData
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+// ExternalAccountSpec specifies a user external account by its external identifier (i.e., by
+// the identifier provided by the account's owner service), instead of by our database's serial
+// ID. See the GraphQL API's corresponding fields for documentation.
+type ExternalAccountSpec struct {
+	ServiceType string
+	ServiceID   string
+	ClientID    string
+	AccountID   string
+}
+
+// ExternalAccountData contains data that can be freely updated in the user external account
+// after it has been created. See the GraphQL API's corresponding fields for documentation.
+type ExternalAccountData struct {
+	AuthData    *json.RawMessage
+	AccountData *json.RawMessage
+}
 
 // userExternalAccountNotFoundError is the error that is returned when a user external account is not found.
 type userExternalAccountNotFoundError struct {
@@ -29,7 +58,7 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 type userExternalAccounts struct{}
 
 // Get gets information about the user external account.
-func (s *userExternalAccounts) Get(ctx context.Context, id int32) (*extsvc.ExternalAccount, error) {
+func (s *userExternalAccounts) Get(ctx context.Context, id int32) (*ExternalAccount, error) {
 	if Mocks.ExternalAccounts.Get != nil {
 		return Mocks.ExternalAccounts.Get(id)
 	}
@@ -42,7 +71,7 @@ func (s *userExternalAccounts) Get(ctx context.Context, id int32) (*extsvc.Exter
 // It looks up the existing user associated with the external account's ExternalAccountSpec. If
 // found, it updates the account's data and returns the user. It NEVER creates a user; you must call
 // CreateUserAndSave for that.
-func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) (userID int32, err error) {
+func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec ExternalAccountSpec, data ExternalAccountData) (userID int32, err error) {
 	if Mocks.ExternalAccounts.LookupUserAndSave != nil {
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
@@ -66,7 +95,7 @@ RETURNING user_id
 //
 // - the same user: it updates the data and returns a nil error; or
 // - a different user: it performs no update and returns a non-nil error
-func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) (err error) {
+func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID int32, spec ExternalAccountSpec, data ExternalAccountData) (err error) {
 	if Mocks.ExternalAccounts.AssociateUserAndSave != nil {
 		return Mocks.ExternalAccounts.AssociateUserAndSave(userID, spec, data)
 	}
@@ -134,7 +163,7 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND u
 //
 // It creates a new user and associates it with the specified external account. If the user to
 // create already exists, it returns an error.
-func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) (createdUserID int32, err error) {
+func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser NewUser, spec ExternalAccountSpec, data ExternalAccountData) (createdUserID int32, err error) {
 	if Mocks.ExternalAccounts.CreateUserAndSave != nil {
 		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
 	}
@@ -164,7 +193,7 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 	return createdUser.ID, err
 }
 
-func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) error {
+func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec ExternalAccountSpec, data ExternalAccountData) error {
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
@@ -199,7 +228,7 @@ type ExternalAccountsListOptions struct {
 	*LimitOffset
 }
 
-func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) {
+func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsListOptions) ([]*ExternalAccount, error) {
 	if Mocks.ExternalAccounts.List != nil {
 		return Mocks.ExternalAccounts.List(opt)
 	}
@@ -261,7 +290,7 @@ func (userExternalAccounts) deleteForDeletedUsers(ctx context.Context) error {
 	return err
 }
 
-func (s *userExternalAccounts) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.ExternalAccount, error) {
+func (s *userExternalAccounts) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*ExternalAccount, error) {
 	results, err := s.listBySQL(ctx, querySuffix)
 	if err != nil {
 		return nil, err
@@ -272,16 +301,16 @@ func (s *userExternalAccounts) getBySQL(ctx context.Context, querySuffix *sqlf.Q
 	return results[0], nil
 }
 
-func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.ExternalAccount, error) {
+func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*ExternalAccount, error) {
 	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at FROM user_external_accounts t %s`, querySuffix)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
-	var results []*extsvc.ExternalAccount
+	var results []*ExternalAccount
 	defer rows.Close()
 	for rows.Next() {
-		var o extsvc.ExternalAccount
+		var o ExternalAccount
 		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &o.AuthData, &o.AccountData, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -304,11 +333,11 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	Get                  func(id int32) (*extsvc.ExternalAccount, error)
-	LookupUserAndSave    func(extsvc.ExternalAccountSpec, extsvc.ExternalAccountData) (userID int32, err error)
-	AssociateUserAndSave func(userID int32, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) error
-	CreateUserAndSave    func(NewUser, extsvc.ExternalAccountSpec, extsvc.ExternalAccountData) (createdUserID int32, err error)
+	Get                  func(id int32) (*ExternalAccount, error)
+	LookupUserAndSave    func(ExternalAccountSpec, ExternalAccountData) (userID int32, err error)
+	AssociateUserAndSave func(userID int32, spec ExternalAccountSpec, data ExternalAccountData) error
+	CreateUserAndSave    func(NewUser, ExternalAccountSpec, ExternalAccountData) (createdUserID int32, err error)
 	Delete               func(id int32) error
-	List                 func(ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error)
+	List                 func(ExternalAccountsListOptions) ([]*ExternalAccount, error)
 	Count                func(ExternalAccountsListOptions) (int, error)
 }

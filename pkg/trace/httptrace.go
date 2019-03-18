@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -44,38 +43,26 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Help:      "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
-var (
-	sentryDSN string
-
-	ravenReadyOnce sync.Once
-	ravenReady     = make(chan struct{})
-)
+var sentryDSN string
 
 func init() {
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
 
-	go func() {
-		conf.Watch(func() {
-			if conf.Get().Critical.Log == nil {
-				return
-			}
-			if conf.Get().Critical.Log.Sentry == nil {
-				return
-			}
-			if conf.Get().Critical.Log.Sentry.Dsn == "" {
-				return
-			}
+	conf.Watch(func() {
+		if conf.Get().Log == nil {
+			return
+		}
+		if conf.Get().Log.Sentry == nil {
+			return
+		}
+		if conf.Get().Log.Sentry.Dsn == "" {
+			return
+		}
 
-			sentryDSN = conf.Get().Critical.Log.Sentry.Dsn
-			raven.SetDSN(sentryDSN)
-		})
-
-		ravenReadyOnce.Do(func() {
-			close(ravenReady)
-		})
-	}()
-
+		sentryDSN = conf.Get().Log.Sentry.Dsn
+		raven.SetDSN(sentryDSN)
+	})
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
@@ -119,7 +106,7 @@ func Middleware(next http.Handler) http.Handler {
 			"route":  routeName,
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(m.Code),
-			"repo":   repotrackutil.GetTrackedRepo(api.RepoName(r.URL.Path)),
+			"repo":   repotrackutil.GetTrackedRepo(api.RepoURI(r.URL.Path)),
 		}
 		requestDuration.With(labels).Observe(m.Duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
@@ -137,9 +124,8 @@ func Middleware(next http.Handler) http.Handler {
 			"duration", m.Duration,
 		)
 
-		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
-		if m.Code/100 != 2 && m.Code/100 != 3 && m.Code/100 != 4 {
-			<-ravenReady
+		// If status code is not 2xx, notify Sentry
+		if m.Code/100 != 2 && m.Code/100 != 3 {
 			raven.CaptureError(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path}, map[string]string{
 				"method":        r.Method,
 				"url":           r.URL.String(),

@@ -11,9 +11,9 @@ type Gitolite struct {
 	*schema.GitoliteConnection
 }
 
-var _ RepoSource = Gitolite{}
+var _ repoSource = Gitolite{}
 
-func (c Gitolite) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
+func (c Gitolite) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	parsedCloneURL, err := parseCloneURL(cloneURL)
 	if err != nil {
 		return "", err
@@ -25,11 +25,11 @@ func (c Gitolite) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, er
 	if parsedHostURL.Hostname() != parsedCloneURL.Hostname() {
 		return "", nil
 	}
-	return GitoliteRepoName(c.Prefix, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
+	return GitoliteRepoURI(c.Prefix, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
 }
 
-func GitoliteRepoName(prefix, path string) api.RepoName {
-	return api.RepoName(strings.NewReplacer(
+func GitoliteRepoURI(prefix, path string) api.RepoURI {
+	return api.RepoURI(strings.NewReplacer(
 		"{prefix}", prefix,
 		"{path}", path,
 	).Replace("{prefix}{path}"))

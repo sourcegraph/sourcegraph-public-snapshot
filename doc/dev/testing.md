@@ -1,32 +1,16 @@
 # Testing
 
-## Go tests (backend)
+## Running tests locally
 
-To run tests for the Go backend, run `go test ./...`, or specify a package
+To run tests for the Go source code, run `go test ./...`, or specify a package
 directly, `go test ./util/textutil`.
 
-## TypeScript tests (web app and browser extension)
+To run tests for the website, run `yarn run test`.
 
-- To run all unit tests, run `yarn test` from the root directory.
-- To run unit tests in development (only running the tests related to uncommitted code), run `yarn test --watch`.
-  - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true` (and, if you want, `jest.showCoverageOnLoad: true`)
-- To debug tests in VS Code, use [vscode-jest](https://github.com/jest-community/vscode-jest) and click the **Debug** code lens next to any `test('name ...', ...)` definition in your test file (be sure to set a breakpoint or break on uncaught exceptions by clicking in the left gutter).
-- e2e tests:
-  - To run e2e tests for the browser extension: `cd client/browser && yarn test-e2e`
-  - To run e2e tests for the browser extension: `cd web && yarn test-e2e`
-- You can also run `yarn test` from any of the individual project dirs (`shared/`, `web/`, `client/browser/`).
+To run the end-to-end tests for the website: `yarn run test-e2e`. See
+[web app development documentation](web_app.md) for more information.
 
-Usually while developing you will either have `yarn test --watch` running in a terminal or you will use vscode-jest.
-
-### React component snapshot tests
-
-[React component snapshot tests](https://jestjs.io/docs/en/tutorial-react) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
-
-- See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
-- See [existing test files that use `react-test-renderer`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+react-test-renderer) for usage examples.
-- Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `yarn test --updateSnapshot`) to update all snapshot files. Be sure to review the diff!
-
-## Continuous Integration
+### Continuous Integration
 
 The test suite is exercised on every pull request. For the moment CI output
 access is limited to Sourcegraph employees, though we hope to enable public

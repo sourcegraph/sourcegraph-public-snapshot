@@ -57,17 +57,13 @@ type Client struct {
 }
 
 type key struct {
-	repo     api.RepoName
+	repo     api.RepoURI
 	commitID api.CommitID
 }
 
 func (c *Client) url(key key) (string, error) {
 	c.once.Do(func() {
-		if len(strings.Fields(c.URL)) == 0 {
-			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
-		} else {
-			c.endpoint = endpoint.New(c.URL)
-		}
+		c.endpoint = endpoint.New(c.URL)
 	})
 	return c.endpoint.Get(string(key.repo)+":"+string(key.commitID), nil)
 }

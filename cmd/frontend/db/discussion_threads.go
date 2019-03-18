@@ -14,10 +14,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -379,7 +379,7 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 		// syntax: "repo:github.com/gorilla/mux" or "repo:some/repo"
 		// TODO(slimsag:discussions): support list syntax here.
 		"repo": func(value string) {
-			repo, err := Repos.GetByName(ctx, api.RepoName(value))
+			repo, err := Repos.GetByURI(ctx, api.RepoURI(value))
 			if err != nil {
 				tmp := api.RepoID(-1)
 				opts.TargetRepoID = &tmp
@@ -388,7 +388,7 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 			opts.TargetRepoID = &repo.ID
 		},
 		"-repo": func(value string) {
-			repo, err := Repos.GetByName(ctx, api.RepoName(value))
+			repo, err := Repos.GetByURI(ctx, api.RepoURI(value))
 			if err != nil {
 				return
 			}
@@ -555,12 +555,12 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opts.TitleQuery != nil && strings.TrimSpace(*opts.TitleQuery) != "" {
-		conds = append(conds, sqlf.Sprintf("title ILIKE %v", extraFuzzy(*opts.TitleQuery)))
+		conds = append(conds, sqlf.Sprintf("title LIKE %v", extraFuzzy(*opts.TitleQuery)))
 	}
 	if opts.NotTitleQuery != nil && strings.TrimSpace(*opts.NotTitleQuery) != "" {
 		// Using extraFuzzy here would exclude too many results, so instead we
 		// just do prefix/suffix fuzziness for now.
-		conds = append(conds, sqlf.Sprintf("title NOT ILIKE %v", "%"+*opts.NotTitleQuery+"%"))
+		conds = append(conds, sqlf.Sprintf("title NOT LIKE %v", "%"+*opts.NotTitleQuery+"%"))
 	}
 	if len(opts.ThreadIDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(opts.ThreadIDs)))
