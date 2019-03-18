@@ -68,6 +68,11 @@ describe('e2e test suite', function(this: any): void {
 
     async function ensureLoggedIn(): Promise<void> {
         await page.goto(baseURL)
+        await page.evaluate(() => {
+            localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
+            localStorage.setItem('has-dismissed-integrations-toast', 'true')
+            localStorage.setItem('has-dismissed-survey-toast', 'true')
+        })
         const url = new URL(await page.url())
         if (url.pathname === '/site-admin/init') {
             await page.type('input[name=email]', 'test@test.com')
@@ -81,6 +86,35 @@ describe('e2e test suite', function(this: any): void {
             await page.click('button[type=submit]')
             await page.waitForNavigation()
         }
+    }
+
+    type ReplaceTextMethod = 'selectall' | 'keyboard'
+
+    async function replaceText({
+        selector,
+        newText,
+        method = 'selectall',
+    }: {
+        selector: string
+        newText: string
+        method?: ReplaceTextMethod
+    }): Promise<void> {
+        const selectAllByMethod: Record<ReplaceTextMethod, () => Promise<void>> = {
+            selectall: async () => {
+                await page.evaluate(() => document.execCommand('selectall', false))
+            },
+            keyboard: async () => {
+                const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
+                await page.keyboard.down(modifier)
+                await page.keyboard.press('a')
+                await page.keyboard.up(modifier)
+            },
+        }
+
+        await (await page.waitForSelector(selector)).click()
+        await selectAllByMethod[method]()
+        await page.keyboard.press(Key.Backspace)
+        await page.keyboard.type(newText)
     }
 
     async function ensureHasExternalService(): Promise<void> {
@@ -104,15 +138,9 @@ describe('e2e test suite', function(this: any): void {
         const githubButton = await await page.waitForSelector('.linked-external-service-card--github')
         await githubButton.click()
 
-        await (await page.waitForSelector('#e2e-external-service-form-display-name')).type('test-github')
+        await replaceText({ selector: '#e2e-external-service-form-display-name', newText: 'test-github' })
 
-        const editor = await page.waitForSelector('.view-line')
-        await editor.click()
-        const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
-        await page.keyboard.down(modifier)
-        await page.keyboard.press('a')
-        await page.keyboard.up(modifier)
-        await page.keyboard.press(Key.Backspace)
+        // Type in a new external service configuration.
         const repoSlugs = [
             'gorilla/mux',
             'gorilla/securecookie',
@@ -124,13 +152,15 @@ describe('e2e test suite', function(this: any): void {
             'sourcegraph/vcsstore',
             'sourcegraph/go-vcs',
         ]
-        await page.keyboard.type(
-            JSON.stringify({
+        await replaceText({
+            selector: '.view-line',
+            newText: JSON.stringify({
                 url: 'https://github.com',
                 token: gitHubToken,
                 repos: repoSlugs,
-            })
-        )
+            }),
+            method: 'keyboard',
+        })
         await page.click('.e2e-add-external-service-button')
 
         // Wait for repositories to sync.
