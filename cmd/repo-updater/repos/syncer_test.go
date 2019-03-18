@@ -28,6 +28,7 @@ func TestSyncer_Sync(t *testing.T) {
 		{
 			name:    "sourcer error aborts sync",
 			sourcer: repos.NewFakeSourcer(errors.New("boom")),
+			store:   new(repos.FakeStore),
 			err:     "syncer.sync.sourced: boom",
 		},
 		{
@@ -36,7 +37,8 @@ func TestSyncer_Sync(t *testing.T) {
 				repos.NewFakeSource("a", "github", nil),
 				repos.NewFakeSource("b", "github", errors.New("boom")),
 			),
-			err: "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
+			store: new(repos.FakeStore),
+			err:   "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name:    "store list error aborts sync",
