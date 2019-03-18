@@ -34,6 +34,7 @@ func main() {
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	version := os.Getenv("BUILDKITE_TAG")
 	commit := os.Getenv("BUILDKITE_COMMIT")
+	date := time.Now().Format(time.RFC3339)
 	if commit == "" {
 		commit = "1234567890123456789012345678901234567890" // for testing
 	}
@@ -56,6 +57,7 @@ func main() {
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("COMMIT_SHA", commit),
+		bk.Env("DATE", date),
 	)
 
 	isPR := !isBextReleaseBranch &&

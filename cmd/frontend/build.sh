@@ -22,4 +22,4 @@ for pkg in github.com/sourcegraph/sourcegraph/cmd/frontend; do
 done
 
 echo "--- docker build $IMAGE"
-docker build -f cmd/frontend/Dockerfile -t $IMAGE $OUTPUT --label "commitSHA=$COMMIT_SHA" --label "version=$VERSION"
+docker build -f cmd/frontend/Dockerfile -t $IMAGE $OUTPUT --label "org.opencontainers.image.revision=$COMMIT_SHA" --label="org.opencontainers.image.created=$DATE" --label "org.opencontainers.image.version=$VERSION"
