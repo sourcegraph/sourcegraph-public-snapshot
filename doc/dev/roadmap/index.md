@@ -12,7 +12,7 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 ### 3.2
 
-Release date: 2019-03-20
+Release date: 2019-03-20 ([draft announcement](https://docs.google.com/document/d/1LA_8puMeWpnREVrCadSjkRnUyjCNrieSY9PJlcL3UwY/edit))
 
 Core services:
 
