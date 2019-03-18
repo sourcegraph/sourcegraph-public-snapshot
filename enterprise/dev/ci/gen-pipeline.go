@@ -55,6 +55,7 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("COMMIT_SHA", commit),
 	)
 
 	isPR := !isBextReleaseBranch &&
@@ -91,7 +92,6 @@ func main() {
 			bk.Cmd("./cmd/server/pre-build.sh"),
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
 			bk.Env("VERSION", version),
-			bk.Env("COMMIT_SHA", commit),
 			bk.Cmd("./cmd/server/build.sh"),
 			bk.Cmd("popd"))
 
@@ -202,7 +202,6 @@ func main() {
 
 		cmds = append(cmds,
 			bk.Env("IMAGE", image+":"+version),
-			bk.Env("COMMIT_SHA", commit),
 			bk.Env("VERSION", version),
 			bk.Cmd(getBuildScript()),
 		)
