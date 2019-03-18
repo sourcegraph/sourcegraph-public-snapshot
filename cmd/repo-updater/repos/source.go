@@ -66,34 +66,6 @@ func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
 	}
 }
 
-// NewSources returns a list of repository yielding Sources from the given ExternalServices.
-func NewSources(cf httpcli.Factory, svcs ...*ExternalService) ([]Source, error) {
-	srcs := make([]Source, 0, len(svcs))
-	errs := new(multierror.Error)
-	for _, svc := range svcs {
-		if svc.IsDeleted() {
-			continue
-		} else if src, err := NewSource(svc, cf); err != nil {
-			errs = multierror.Append(errs, err)
-		} else {
-			srcs = append(srcs, src)
-		}
-	}
-	return srcs, errs.ErrorOrNil()
-}
-
-// ExternalServicesFromSources returns the ExternalServices from the given Sources.
-func ExternalServicesFromSources(srcs ...Source) ExternalServices {
-	es := make(ExternalServices, 0, len(srcs))
-	for _, src := range srcs {
-		switch s := src.(type) {
-		case *GithubSource:
-			es = append(es, s.svc)
-		}
-	}
-	return es
-}
-
 func includesGitHubDotComSource(srcs []Source) bool {
 	for _, src := range srcs {
 		if gs, ok := src.(*GithubSource); !ok {
@@ -116,6 +88,22 @@ type Source interface {
 
 // Sources is a list of Sources that implements the Source interface.
 type Sources []Source
+
+// NewSources returns a list of repository yielding Sources from the given ExternalServices.
+func NewSources(cf httpcli.Factory, svcs ...*ExternalService) (Sources, error) {
+	srcs := make([]Source, 0, len(svcs))
+	errs := new(multierror.Error)
+	for _, svc := range svcs {
+		if svc.IsDeleted() {
+			continue
+		} else if src, err := NewSource(svc, cf); err != nil {
+			errs = multierror.Append(errs, err)
+		} else {
+			srcs = append(srcs, src)
+		}
+	}
+	return srcs, errs.ErrorOrNil()
+}
 
 // ListRepos lists all the repos of all the sources and returns the
 // aggregate result.
@@ -153,6 +141,18 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 	}
 
 	return repos, errs.ErrorOrNil()
+}
+
+// ExternalServices returns the ExternalServices from the given Sources.
+func (srcs Sources) ExternalServices() ExternalServices {
+	es := make(ExternalServices, 0, len(srcs))
+	for _, src := range srcs {
+		switch s := src.(type) {
+		case *GithubSource:
+			es = append(es, s.svc)
+		}
+	}
+	return es
 }
 
 // A GithubSource yields repositories from a single Github connection configured
