@@ -23,15 +23,27 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 	return m(ctx, s)
 }
 
-// GithubReposMigrationToNewSyncer returns a Migration that performs three things:
-//  1. Explicitly adds enabled repos that would have been deleted to github.repos
-//  2. Explicitly adds disabled repos that would have been added to github.exclude
-//  3. Removes the deprecated github.initialRepositoryEnablement field.
-func GithubReposMigrationToNewSyncer(src Sourcer, now func() time.Time) Migration {
+// GithubReposEnabledStateDeprecationMigration returns a Migration that changes
+// existing Github external services to maintain the same set of mirrored repos
+// without recourse to the now deprecated enabled column of a repository.
+//
+// This is done by:
+//  1. Explicitly adding enabled repos that would have been deleted to github.repos
+//  2. Explicitly adding disabled repos that would have been added to github.exclude
+//  3. Removing the deprecated github.initialRepositoryEnablement field.
+//
+// This migration must be rolled-out together with the UI changes that remove the admin's
+// ability to explicitly enabled / disable individual repos.
+func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 	return transactional(func(ctx context.Context, s Store) error {
-		const prefix = "migrate.github-repos-to-new-syncer"
+		const prefix = "migrate.github-repos-enabled-state-deprecation"
 
-		srcs, err := src.ListSources(ctx, "github")
+		githubs, err := s.ListExternalServices(ctx, "github")
+		if err != nil {
+			return errors.Wrapf(err, "%s.list-external-services", prefix)
+		}
+
+		srcs, err := sourcer(githubs...)
 		if err != nil {
 			return errors.Wrapf(err, "%s.list-sources", prefix)
 		}
@@ -47,12 +59,12 @@ func GithubReposMigrationToNewSyncer(src Sourcer, now func() time.Time) Migratio
 			return errors.Wrapf(err, "%s.sources.list-repos", prefix)
 		}
 
-		stored, err := s.ListRepos(ctx)
+		stored, err := s.ListRepos(ctx, "github")
 		if err != nil {
 			return errors.Wrapf(err, "%s.store.list-repos", prefix)
 		}
 
-		diff := NewDiff(stored, sourced)
+		diff := NewDiff(sourced, stored)
 
 		var disabled Repos
 		for _, rs := range [...]Repos{diff.Added, diff.Modified, diff.Unmodified} {
@@ -74,7 +86,6 @@ func GithubReposMigrationToNewSyncer(src Sourcer, now func() time.Time) Migratio
 		svcs := make(map[int64]*ExternalService, len(all))
 		for _, svc := range all {
 			svcs[svc.ID] = svc
-
 			if err = removeInitalRepositoryEnablement(svc); err != nil {
 				return errors.Wrapf(err, "%s.remove-initial-repository-enablement", prefix)
 			}
@@ -110,7 +121,7 @@ func GithubReposMigrationToNewSyncer(src Sourcer, now func() time.Time) Migratio
 			}
 		}
 
-		return nil
+		return s.UpsertExternalServices(ctx, all...)
 	})
 }
 
