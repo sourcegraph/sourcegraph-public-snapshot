@@ -34,7 +34,6 @@ func main() {
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	version := os.Getenv("BUILDKITE_TAG")
 	commit := os.Getenv("BUILDKITE_COMMIT")
-	date := time.Now().Format(time.RFC3339)
 	if commit == "" {
 		commit = "1234567890123456789012345678901234567890" // for testing
 	}
@@ -48,6 +47,7 @@ func main() {
 		version = strings.TrimPrefix(version, "v")
 	}
 	releaseBranch := regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch)
+	date := time.Now().Format(time.RFC3339)
 
 	isBextReleaseBranch := branch == "bext/release"
 
