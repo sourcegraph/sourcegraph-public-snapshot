@@ -16,7 +16,7 @@ import (
 
 // A Sourcer yields Sources whose Repos should be synced.
 type Sourcer interface {
-	ListSources(ctx context.Context, kinds ...string) ([]Source, error)
+	ListSources(ctx context.Context, kinds ...string) (Sources, error)
 }
 
 // ExternalServicesSourcer converts each code host connection configured via external services
@@ -34,7 +34,7 @@ func NewExternalServicesSourcer(st Store, cf httpcli.Factory) *ExternalServicesS
 
 // ListSources lists all configured repository yielding Sources of the given kinds,
 // based on the code host connections configured via external services in the frontend API.
-func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...string) ([]Source, error) {
+func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...string) (Sources, error) {
 	svcs, err := s.st.ListExternalServices(ctx, kinds...)
 	if err != nil {
 		return nil, err
@@ -112,6 +112,47 @@ func includesGitHubDotComSource(srcs []Source) bool {
 type Source interface {
 	// TODO(keegancsmith) document contract of ListRepos + contract tests
 	ListRepos(context.Context) ([]*Repo, error)
+}
+
+// Sources is a list of Sources that implements the Source interface.
+type Sources []Source
+
+// ListRepos lists all the repos of all the sources and returns the
+// aggregate result.
+func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
+	if len(srcs) == 0 {
+		return nil, nil
+	}
+
+	type result struct {
+		src   Source
+		repos []*Repo
+		err   error
+	}
+
+	ch := make(chan result, len(srcs))
+	for _, src := range srcs {
+		go func(src Source) {
+			if repos, err := src.ListRepos(ctx); err != nil {
+				ch <- result{src: src, err: err}
+			} else {
+				ch <- result{src: src, repos: repos}
+			}
+		}(src)
+	}
+
+	var repos []*Repo
+	errs := new(multierror.Error)
+
+	for i := 0; i < cap(ch); i++ {
+		if r := <-ch; r.err != nil {
+			errs = multierror.Append(errs, r.err)
+		} else {
+			repos = append(repos, r.repos...)
+		}
+	}
+
+	return repos, errs.ErrorOrNil()
 }
 
 // A GithubSource yields repositories from a single Github connection configured

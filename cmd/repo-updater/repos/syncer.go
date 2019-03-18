@@ -6,7 +6,6 @@ import (
 	"sort"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -213,40 +212,13 @@ func merge(o, n *Repo) {
 }
 
 func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) {
-	sources, err := s.sourcer.ListSources(ctx, kinds...)
+	srcs, err := s.sourcer.ListSources(ctx, kinds...)
 	if err != nil {
 		return nil, err
 	}
 
-	type result struct {
-		src   Source
-		repos []*Repo
-		err   error
-	}
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
-	ch := make(chan result, len(sources))
-	for _, src := range sources {
-		go func(src Source) {
-			ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-			defer cancel()
-			if repos, err := src.ListRepos(ctx); err != nil {
-				ch <- result{src: src, err: err}
-			} else {
-				ch <- result{src: src, repos: repos}
-			}
-		}(src)
-	}
-
-	var repos []*Repo
-	errs := new(multierror.Error)
-
-	for i := 0; i < cap(ch); i++ {
-		if r := <-ch; r.err != nil {
-			errs = multierror.Append(errs, r.err)
-		} else {
-			repos = append(repos, r.repos...)
-		}
-	}
-
-	return repos, errs.ErrorOrNil()
+	return srcs.ListRepos(ctx)
 }
