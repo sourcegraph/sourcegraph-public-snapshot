@@ -97,6 +97,7 @@ for the patch release checklist.
     - [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/sourcegraph/pull/2701/commits/386e5ecb5225ab9c8ccc9791b489160ed7c984a2))
 - [ ] Review all issues in the release milestone. Backlog things that didn't make it into the release and ping issues that still need to be done for the release (e.g. Tweets, marketing).
 - [ ] Verify that the blog post is ready to be merged.
+- [ ] Start [collecting retrospective feedback](retrospectives/index.md).
 
 ## By 10am PT on the 20th
 
@@ -104,3 +105,4 @@ for the patch release checklist.
 - [ ] Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
 - [ ] Close this issue.
 - [ ] Close the milestone.
+- [ ] Notify the next release captain that they are on duty for the next release.
