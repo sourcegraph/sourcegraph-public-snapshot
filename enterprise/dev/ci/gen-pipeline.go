@@ -33,15 +33,16 @@ func main() {
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	version := os.Getenv("BUILDKITE_TAG")
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	if commit == "" {
+		commit = "1234567890123456789012345678901234567890" // for testing
+	}
 	taggedRelease := true // true if this is a semver tagged release
+	now := time.Now()
 	if !strings.HasPrefix(version, "v") {
 		taggedRelease = false
-		commit := os.Getenv("BUILDKITE_COMMIT")
-		if commit == "" {
-			commit = "1234567890123456789012345678901234567890" // for testing
-		}
 		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
-		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
+		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, now.Format("2006-01-02"), commit)
 	} else {
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		version = strings.TrimPrefix(version, "v")
@@ -55,6 +56,8 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("COMMIT_SHA", commit),
+		bk.Env("DATE", now.Format(time.RFC3339)),
 	)
 
 	isPR := !isBextReleaseBranch &&

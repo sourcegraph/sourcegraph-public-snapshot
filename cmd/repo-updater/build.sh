@@ -20,4 +20,4 @@ for pkg in github.com/sourcegraph/sourcegraph/cmd/repo-updater; do
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
-docker build -f cmd/repo-updater/Dockerfile -t $IMAGE $OUTPUT
+docker build -f cmd/repo-updater/Dockerfile -t $IMAGE $OUTPUT --label "org.opencontainers.image.revision=$COMMIT_SHA" --label="org.opencontainers.image.created=$DATE" --label "org.opencontainers.image.version=$VERSION"
