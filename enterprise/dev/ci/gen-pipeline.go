@@ -91,6 +91,7 @@ func main() {
 			bk.Cmd("./cmd/server/pre-build.sh"),
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
 			bk.Env("VERSION", version),
+			bk.Env("COMMIT_SHA", commit),
 			bk.Cmd("./cmd/server/build.sh"),
 			bk.Cmd("popd"))
 
