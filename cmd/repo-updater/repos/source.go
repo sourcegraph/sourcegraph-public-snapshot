@@ -184,7 +184,7 @@ func githubRepoToRepo(
 	ghrepo *github.Repository,
 	conn *githubConnection,
 ) *Repo {
-	urn := externalServiceID(svc)
+	urn := svc.URN()
 	return &Repo{
 		Name:         string(githubRepositoryToRepoPath(conn, ghrepo)),
 		ExternalRepo: *github.ExternalRepoSpec(ghrepo, *conn.baseURL),
@@ -199,8 +199,4 @@ func githubRepoToRepo(
 		},
 		Metadata: ghrepo,
 	}
-}
-
-func externalServiceID(svc *ExternalService) string {
-	return "extsvc:" + strconv.FormatInt(svc.ID, 10)
 }
