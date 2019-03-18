@@ -38,16 +38,16 @@ func main() {
 		commit = "1234567890123456789012345678901234567890" // for testing
 	}
 	taggedRelease := true // true if this is a semver tagged release
+	now := time.Now()
 	if !strings.HasPrefix(version, "v") {
 		taggedRelease = false
 		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
-		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
+		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, now.Format("2006-01-02"), commit)
 	} else {
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		version = strings.TrimPrefix(version, "v")
 	}
 	releaseBranch := regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch)
-	date := time.Now().Format(time.RFC3339)
 
 	isBextReleaseBranch := branch == "bext/release"
 
@@ -57,7 +57,7 @@ func main() {
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("COMMIT_SHA", commit),
-		bk.Env("DATE", date),
+		bk.Env("DATE", now.Format(time.RFC3339)),
 	)
 
 	isPR := !isBextReleaseBranch &&
