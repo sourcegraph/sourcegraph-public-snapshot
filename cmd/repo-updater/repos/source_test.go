@@ -56,7 +56,7 @@ func TestExternalServicesSourcer(t *testing.T) {
 		name   string
 		stored ExternalServices
 		kinds  []string
-		srcs   []Source
+		srcs   Sources
 		err    string
 	}{
 		{
@@ -86,8 +86,8 @@ func TestExternalServicesSourcer(t *testing.T) {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
-			have := ExternalServicesFromSources(srcs...).With(Opt.ExternalServiceID(0))
-			want := ExternalServicesFromSources(tc.srcs...)
+			have := srcs.ExternalServices().With(Opt.ExternalServiceID(0))
+			want := tc.srcs.ExternalServices()
 
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("sources:\n%s", cmp.Diff(have, want))
