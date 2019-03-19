@@ -192,6 +192,7 @@ func githubRepoToRepo(
 		ExternalRepo: *github.ExternalRepoSpec(ghrepo, *conn.baseURL),
 		Description:  ghrepo.Description,
 		Fork:         ghrepo.IsFork,
+		Enabled:      true,
 		Archived:     ghrepo.IsArchived,
 		Sources: map[string]*SourceInfo{
 			urn: {
