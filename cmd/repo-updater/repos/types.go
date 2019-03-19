@@ -66,7 +66,7 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 // ExcludeGithubRepos changes the configuration of a Github external service to exclude the
 // given repos from being synced.
 func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
-	return e.config("github", func(v interface{}) error {
+	return e.config("github", func(v interface{}) (string, interface{}) {
 		c := v.(*schema.GitHubConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -103,14 +103,14 @@ func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
 			}
 		}
 
-		return nil
+		return "exclude", c.Exclude
 	})
 }
 
 // IncludeGithubRepos changes the configuration of a Github external service to explicitly enlist the
 // given repos to be synced.
 func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
-	return e.config("github", func(v interface{}) error {
+	return e.config("github", func(v interface{}) (string, interface{}) {
 		c := v.(*schema.GitHubConnection)
 
 		set := make(map[string]bool, len(c.Repos))
@@ -129,11 +129,11 @@ func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
 			}
 		}
 
-		return nil
+		return "repos", c.Repos
 	})
 }
 
-func (e *ExternalService) config(kind string, opt func(c interface{}) error) error {
+func (e *ExternalService) config(kind string, opt func(c interface{}) (string, interface{})) error {
 	if strings.ToLower(e.Kind) != kind {
 		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
 	}
@@ -150,11 +150,8 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) error) err
 		return fmt.Errorf("external service id=%d config unmarshaling error: %s", e.ID, err)
 	}
 
-	if err := opt(c); err != nil {
-		return errors.Wrap(err, "configure")
-	}
-
-	edited, err := jsonc.Edit(e.Config, c)
+	path, val := opt(c)
+	edited, err := jsonc.Edit(e.Config, val, strings.Split(path, ".")...)
 	if err != nil {
 		return errors.Wrap(err, "edit")
 	}
