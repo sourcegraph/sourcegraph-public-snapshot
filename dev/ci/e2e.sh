@@ -3,6 +3,9 @@
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 set -ex
 
+# try to repro https://buildkite.com/sourcegraph/sourcegraph/builds/29651#4f4f329f-fb4a-4606-b8a9-070658706602
+IMAGE=sourcegraph/server:29651_2019-03-19_aa8f605_candidate
+
 if [ -z "$IMAGE" ]; then
     echo "Must specify \$IMAGE."
     exit 1
@@ -52,6 +55,10 @@ set -e
 echo "Waiting for $URL... done"
 
 yarn
+
+echo "Running ffmpeg..."
+# `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
+ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
 
 pushd web
 env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
