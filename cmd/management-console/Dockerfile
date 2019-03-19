@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine:3.9
+FROM sourcegraph/alpine:3.9@sha256:987f878657f0dd9734a597c9b5fe6ecd0bda633f6ea556103b9449838b1ed834
 ENV PGDATABASE=sg PGHOST=pgsql PGPORT=5432 PGSSLMODE=disable PGUSER=sg
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/management-console"]
