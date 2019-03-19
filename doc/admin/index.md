@@ -14,7 +14,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [Management console](management_console.md)
   - [Repository webhooks](repo/webhooks.md)
   - [User authentication](auth.md)
-  - [Upgrading Sourcegraph](updates.md)- 
+  - [Upgrading Sourcegraph](updates.md)
   - [Setting the URL for your instance](url.md)
   - [Monitoring and tracing](monitoring_and_tracing.md)
      - [Troubleshooting](monitoring_and_tracing.md#troubleshooting)
