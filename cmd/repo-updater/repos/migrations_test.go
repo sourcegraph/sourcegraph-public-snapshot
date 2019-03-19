@@ -295,15 +295,9 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 }
 
 func jsonFormat(s string) string {
-	opts := jsonx.FormatOptions{
-		InsertSpaces: true,
-		TabSize:      2,
-	}
-
-	formatted, err := jsonx.ApplyEdits(s, jsonx.Format(s, opts)...)
+	formatted, err := jsonc.Format(s, true, 2)
 	if err != nil {
 		panic(err)
 	}
-
 	return formatted
 }

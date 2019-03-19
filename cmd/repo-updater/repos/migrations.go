@@ -126,7 +126,7 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 }
 
 func removeInitalRepositoryEnablement(svc *ExternalService) error {
-	edited, err := removeJSON(svc.Config, "initialRepositoryEnablement")
+	edited, err := jsonc.Remove(svc.Config, "initialRepositoryEnablement")
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func GithubSetDefaultRepositoryQueryMigration() Migration {
 				c.RepositoryQuery = append(c.RepositoryQuery, "public")
 			}
 
-			edited, err := editJSON(svc.Config, c.RepositoryQuery, "repositoryQuery")
+			edited, err := jsonc.Edit(svc.Config, c.RepositoryQuery, "repositoryQuery")
 			if err != nil {
 				return errors.Wrapf(err, "%s.edit-json", prefix)
 			}
@@ -237,34 +237,6 @@ func GithubSetDefaultRepositoryQueryMigration() Migration {
 
 		return nil
 	})
-}
-
-func removeJSON(config string, path ...string) (string, error) {
-	edits, _, err := jsonx.ComputePropertyRemoval(config,
-		jsonx.PropertyPath(path...),
-		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
-	)
-
-	if err != nil {
-		return config, err
-	}
-
-	return jsonx.ApplyEdits(config, edits...)
-}
-
-func editJSON(config string, v interface{}, path ...string) (string, error) {
-	edits, _, err := jsonx.ComputePropertyEdit(config,
-		jsonx.PropertyPath(path...),
-		v,
-		nil,
-		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
-	)
-
-	if err != nil {
-		return config, err
-	}
-
-	return jsonx.ApplyEdits(config, edits...)
 }
 
 // ErrNoTransactor is returned by a Migration returned by
