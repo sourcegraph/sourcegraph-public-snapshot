@@ -265,7 +265,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         <p className="form-text text-muted">
                             <small>
                                 Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
-                                more information, see the <Link to="/help/admin/site_config/all">documentation</Link>.
+                                more information, see the <Link to="/help/admin/config/site_config">documentation</Link>
+                                .
                             </small>
                         </p>
                     </div>
