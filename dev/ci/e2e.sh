@@ -40,6 +40,8 @@ socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat std
 
 URL="http://localhost:7080"
 
+apt-get install -y ffmpeg
+
 set +e
 timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
