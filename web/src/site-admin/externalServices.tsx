@@ -7,6 +7,7 @@ import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
+import { Link } from 'react-router-dom'
 import awsCodeCommitSchemaJSON from '../../../schema/aws_codecommit.schema.json'
 import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.json'
 import githubSchemaJSON from '../../../schema/github.schema.json'
@@ -126,12 +127,9 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
         <span>
             Adding this configuration enables Sourcegraph to sync repositories from GitHub. Click the "quick configure"
             buttons for common actions or directly edit the JSON configuration.{' '}
-            <a
-                target="_blank"
-                href="https://docs.sourcegraph.com/integration/github#github-integration-with-sourcegraph"
-            >
+            <Link target="_blank" to="/help/admin/external_service/github#configuration">
                 Read the docs
-            </a>{' '}
+            </Link>{' '}
             for more info about each field.
         </span>
     ),
@@ -139,7 +137,7 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#githubconnection-object
+  // https://docs.sourcegraph.com/admin/external_service/github#configuration
 
   "url": "https://github.com",
 
@@ -169,7 +167,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#awscodecommitconnection-object
+  // https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration
 
   "region": "",
   "accessKeyID": "",
@@ -186,7 +184,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#bitbucketserverconnection-object
+  // https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration
 
   "url": "https://bitbucket.example.com",
 
@@ -205,7 +203,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#gitlabconnection-object
+  // https://docs.sourcegraph.com/admin/external_service/gitlab#configuration
 
   "url": "https://gitlab.example.com",
 
@@ -224,7 +222,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#gitoliteconnection-object
+  // https://docs.sourcegraph.com/admin/external_service/gitolite#configuration
 
   "prefix": "gitolite.example.com/",
   "host": "git@gitolite.example.com"
@@ -240,7 +238,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#phabricatorconnection-object
+  // https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
 
   "url": "https://phabricator.example.com",
   "token": "",
@@ -257,7 +255,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#otherexternalserviceconnection-object
+  // https://docs.sourcegraph.com/admin/external_service/other#configuration
 
   // Supported URL schemes are: http, https, git and ssh
   "url": "https://my-other-githost.example.com",
@@ -315,7 +313,7 @@ const externalServiceAddVariants: Partial<
             defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/site_config/all#githubconnection-object
+  // https://docs.sourcegraph.com/admin/external_service/github#configuration
 
   // Set this to the URL for your GitHub Enterprise.
   "url": "https://github.example.com",

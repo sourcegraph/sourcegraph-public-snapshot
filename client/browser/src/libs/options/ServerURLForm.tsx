@@ -153,10 +153,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         )}
                         <p>
                             <b>Site admins:</b> ensure that{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/admin/site_config/all#auth-accesstokens-object"
-                                target="_blank"
-                            >
+                            <a href="https://docs.sourcegraph.com/admin/config/site_config" target="_blank">
                                 all users can create access tokens
                             </a>
                             .
