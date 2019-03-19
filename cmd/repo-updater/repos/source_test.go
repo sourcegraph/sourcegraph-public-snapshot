@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -106,9 +108,30 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		name   string
 		ctx    context.Context
 		svc    ExternalService
-		assert func(testing.TB, Repos)
+		assert ReposAssertion
 		err    string
 	}{
+		{
+			name: "yielded repos are always enabled",
+			svc: ExternalService{
+				Kind: "GITHUB",
+				Config: config(&schema.GitHubConnection{
+					Url: "https://github.com",
+					RepositoryQuery: []string{
+						"user:tsenart in:name patrol",
+					},
+					Repos: []string{"sourcegraph/sourcegraph"},
+				}),
+			},
+			assert: func(t testing.TB, rs Repos) {
+				for _, r := range rs {
+					if !r.Enabled {
+						t.Errorf("repo %q is not enabled", r.Name)
+					}
+				}
+			},
+			err: "<nil>",
+		},
 		{
 			name: "excluded repos are never yielded",
 			svc: ExternalService{
@@ -146,7 +169,8 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			rec := newRecorder(t, "testdata/github-source", *update)
+			cassete := filepath.Join("testdata", "github", strings.Replace(tc.name, " ", "-", -1))
+			rec := newRecorder(t, cassete, *update)
 			defer save(t, rec)
 
 			mw := httpcli.NewMiddleware(
