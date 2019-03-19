@@ -1,3 +1,5 @@
+# N# Sourcegraph Architecture diagram
+
 ```mermaid
 graph LR
     Frontend-- HTTP -->gitserver
