@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+env
+
 # We want to build multiple go binaries, so we use a custom build step on CI.
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
