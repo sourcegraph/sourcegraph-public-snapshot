@@ -44,6 +44,12 @@ export type BlobPanelTabID = 'info' | 'def' | 'references' | 'discussions' | 'im
 /** The subject (what the contextual information refers to). */
 interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec> {
     repoID: string
+
+    /**
+     * Include the full URI fragment here because it represents the state of panels, and we want
+     * panels to be re-rendered when this state changes.
+     */
+    hash: string
 }
 
 function toSubject(props: Props): PanelSubject {
@@ -57,6 +63,7 @@ function toSubject(props: Props): PanelSubject {
         mode: props.mode,
         position:
             parsedHash.line !== undefined ? { line: parsedHash.line, character: parsedHash.character || 0 } : undefined,
+        hash: props.location.hash,
     }
 }
 
@@ -173,7 +180,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                                   filePath={subject.filePath}
                                                   history={this.props.history}
                                                   location={this.props.location}
-                                                  authenticatedUser={this.props.authenticatedUser}
+                                                  compact={true}
                                               />
                                           ),
                                       }

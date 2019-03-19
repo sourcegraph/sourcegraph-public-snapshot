@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -47,19 +47,19 @@ func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.Discus
 		}
 		u = &url.URL{Path: path.Join("/", string(repo.Name), "/-/blob/", *t.TargetRepo.Path)}
 
-		// TODO(slimsag:discussions): frontend doesn't link to the comment directly
-		// unless these are in this exact order. Why?
-		//fragment := url.Values{}
-		//fragment.Set("tab", "discussions")
-		//fragment.Set("threadID", strconv.FormatInt(t.ID, 10))
-		//fragment.Set("commentID", strconv.FormatInt(c.ID, 10))
-		//u.Fragment = fragment.Encode()
-		u.Fragment = fmt.Sprintf("tab=discussions&threadID=%v", t.ID)
+		fragment := url.Values{}
+		fragment.Set("tab", "discussions")
+		fragment.Set("threadID", strconv.FormatInt(t.ID, 10))
 		if c != nil {
-			u.Fragment += fmt.Sprintf("&commentID=%v", c.ID)
+			fragment.Set("commentID", strconv.FormatInt(c.ID, 10))
 		}
+		encFragment := fragment.Encode()
+		if t.TargetRepo.StartLine != nil {
+			encFragment = fmt.Sprintf("L%d&%s", *t.TargetRepo.StartLine+1, encFragment)
+		}
+		u.Fragment = encFragment
 	default:
 		return nil, nil // can't generate a link to this target type
 	}
-	return globals.ExternalURL.ResolveReference(u), nil
+	return u, nil
 }
