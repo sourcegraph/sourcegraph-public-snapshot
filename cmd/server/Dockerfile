@@ -1,4 +1,4 @@
-FROM alpine:3.9 AS ctags
+FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS ctags
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -25,7 +25,7 @@ RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctag
     apk --no-cache --purge del build-deps
 
 # TODO: Make this image use our sourcegraph/alpine:3.9 base image.
-FROM alpine:3.9
+FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
 RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
     echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
     echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
@@ -46,7 +46,7 @@ RUN apk update && apk add --no-cache \
     mailcap nginx openssh-client su-exec tini
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:056c730 /syntect_server /usr/local/bin/
+COPY --from=sourcegraph/syntect_server:056c730@sha256:2f7489ebddfbbe92bef3e72af3840d24f45d387baa0da1edabf06fa732195ae6 /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so

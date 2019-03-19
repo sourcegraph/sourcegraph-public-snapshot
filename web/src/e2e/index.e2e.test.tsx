@@ -88,6 +88,13 @@ describe('e2e test suite', function(this: any): void {
         }
     }
 
+    /**
+     * Specifies how `replaceText` will select the content of the element. No
+     * single method works in all cases:
+     *
+     * - Meta+A doesn't work in input boxes https://github.com/GoogleChrome/puppeteer/issues/1313
+     * - selectall doesn't work in the Monaco editor
+     */
     type ReplaceTextMethod = 'selectall' | 'keyboard'
 
     async function replaceText({

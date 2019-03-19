@@ -5,7 +5,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -129,6 +129,12 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
         eventLogger.logViewEvent('SiteAdminExternalServices')
     }
 
+    private completeConnectedCodeHostActivation = (externalServices: GQL.IExternalServiceConnection) => {
+        if (this.props.activation && externalServices.totalCount > 0) {
+            this.props.activation.update({ ConnectedCodeHost: true })
+        }
+    }
+
     private queryExternalServices = (args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> =>
         queryGraphQL(
             gql`
@@ -155,11 +161,9 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
                 if (!data || !data.externalServices || errors) {
                     throw createAggregateError(errors)
                 }
-                if (data.externalServices.totalCount > 0 && this.props.activation) {
-                    this.props.activation.update({ ConnectedCodeHost: true })
-                }
                 return data.externalServices
-            })
+            }),
+            tap(this.completeConnectedCodeHostActivation)
         )
 
     public render(): JSX.Element | null {
