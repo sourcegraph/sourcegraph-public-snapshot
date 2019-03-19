@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -100,7 +99,7 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 			}
 
 			for _, svc := range es {
-				if err := excludeGithubRepo(svc, r); err != nil {
+				if err := svc.ExcludeGithubRepos(r); err != nil {
 					return errors.Wrapf(err, "%s.disabled", prefix)
 				}
 			}
@@ -115,7 +114,7 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 			}
 
 			for _, svc := range es {
-				if err := includeGithubRepo(svc, r); err != nil {
+				if err := svc.IncludeGithubRepos(r); err != nil {
 					return errors.Wrapf(err, "%s.enabled", prefix)
 				}
 			}
@@ -132,60 +131,6 @@ func removeInitalRepositoryEnablement(svc *ExternalService) error {
 	}
 
 	svc.Config = edited
-	return nil
-}
-
-func excludeGithubRepo(svc *ExternalService, r *Repo) error {
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return fmt.Errorf("exclude-github-repo: external service id=%d config unmarshaling error: %s", svc.ID, err)
-	}
-
-	for _, e := range c.Exclude {
-		if (e.Id != "" && e.Id == r.ExternalRepo.ID) ||
-			(e.Name != "" && strings.ToLower(e.Name) == strings.ToLower(r.Name)) {
-			return nil // Already excluded
-		}
-	}
-
-	e := schema.Exclude{Name: r.Name}
-	if r.ExternalRepo.ID != "" {
-		e.Id = r.ExternalRepo.ID
-	}
-
-	c.Exclude = append(c.Exclude, &e)
-
-	edited, err := editJSON(svc.Config, c.Exclude, "exclude")
-	if err != nil {
-		return errors.Wrap(err, "exclude-github-repo.edit-json")
-	}
-
-	svc.Config = edited
-
-	return nil
-}
-
-func includeGithubRepo(svc *ExternalService, r *Repo) error {
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return fmt.Errorf("include-github-repo: external service id=%d config unmarshaling error: %s", svc.ID, err)
-	}
-
-	for _, name := range c.Repos {
-		if name != "" && strings.ToLower(name) == strings.ToLower(r.Name) {
-			return nil // Already included
-		}
-	}
-
-	c.Repos = append(c.Repos, r.Name)
-
-	edited, err := editJSON(svc.Config, c.Repos, "repos")
-	if err != nil {
-		return errors.Wrap(err, "include-github-repo.edit-json")
-	}
-
-	svc.Config = edited
-
 	return nil
 }
 
