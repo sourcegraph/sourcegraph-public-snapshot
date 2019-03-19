@@ -1,19 +1,28 @@
 FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS ctags
 
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+
 # hadolint ignore=DL3003,DL3018,DL4006
 RUN apk --no-cache add --virtual build-deps curl jansson-dev \
-  libseccomp-dev linux-headers autoconf pkgconfig make automake \
-  gcc g++ binutils
+    libseccomp-dev linux-headers autoconf pkgconfig make automake \
+    gcc g++ binutils
 
 ENV CTAGS_VERSION=08a69b5a030cf56c079e3006238b992b34c9cc51
 
 # hadolint ignore=DL3003
 RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" && \
-  tar -C /tmp -xzf ctags.tar.gz && cd /tmp/ctags-$CTAGS_VERSION && \
-  ./autogen.sh && LDFLAGS=-static ./configure --program-prefix=universal- --enable-json --enable-seccomp && \
-  make -j8 && make install && cd && \
-  rm -rf /tmp/ctags-$CTAGS_VERSION && \
-  apk --no-cache --purge del build-deps
+    tar -C /tmp -xzf ctags.tar.gz && cd /tmp/ctags-$CTAGS_VERSION && \
+    ./autogen.sh && LDFLAGS=-static ./configure --program-prefix=universal- --enable-json --enable-seccomp && \
+    make -j8 && make install && cd && \
+    rm -rf /tmp/ctags-$CTAGS_VERSION && \
+    apk --no-cache --purge del build-deps
 
 # TODO: Make this image use our sourcegraph/alpine:3.9 base image.
 FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
@@ -28,13 +37,13 @@ RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repo
 
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
-  # NOTE that the Postgres version we run is different
-  # from our *Minimum Supported Version* which alone dictates
-  # the features we can depend on. See this link for more information:
-  # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
-  'bash=4.4.19-r1' 'postgresql-contrib=11.1-r0' 'postgresql=11.1-r0' \
-  'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
-  mailcap nginx openssh-client su-exec tini
+    # NOTE that the Postgres version we run is different
+    # from our *Minimum Supported Version* which alone dictates
+    # the features we can depend on. See this link for more information:
+    # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
+    'bash=4.4.19-r1' 'postgresql-contrib=11.1-r0' 'postgresql=11.1-r0' \
+    'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
+    mailcap nginx openssh-client su-exec tini
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:056c730@sha256:2f7489ebddfbbe92bef3e72af3840d24f45d387baa0da1edabf06fa732195ae6 /syntect_server /usr/local/bin/
