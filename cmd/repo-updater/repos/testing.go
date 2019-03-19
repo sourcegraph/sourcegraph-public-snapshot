@@ -25,16 +25,15 @@ func NewFakeSourcer(err error, srcs ...Source) Sourcer {
 
 // FakeSource is a fake implementation of Source to be used in tests.
 type FakeSource struct {
-	urn   string
-	kind  string
+	svc   *ExternalService
 	repos []*Repo
 	err   error
 }
 
 // NewFakeSource returns an instance of FakeSource with the given urn, error
 // and repos.
-func NewFakeSource(urn, kind string, err error, rs ...*Repo) *FakeSource {
-	return &FakeSource{urn: urn, kind: kind, err: err, repos: rs}
+func NewFakeSource(svc *ExternalService, err error, rs ...*Repo) *FakeSource {
+	return &FakeSource{svc: svc, err: err, repos: rs}
 }
 
 // ListRepos returns the Repos that FakeSource was instantiated with
@@ -42,7 +41,7 @@ func NewFakeSource(urn, kind string, err error, rs ...*Repo) *FakeSource {
 func (s FakeSource) ListRepos(context.Context) ([]*Repo, error) {
 	repos := make([]*Repo, len(s.repos))
 	for i, r := range s.repos {
-		repos[i] = r.With(Opt.RepoSources(s.urn))
+		repos[i] = r.With(Opt.RepoSources(s.svc.URN()))
 	}
 	return repos, s.err
 }
@@ -298,6 +297,7 @@ var Opt = struct {
 	ExternalServiceModifiedAt func(time.Time) func(*ExternalService)
 	ExternalServiceDeletedAt  func(time.Time) func(*ExternalService)
 	RepoID                    func(uint32) func(*Repo)
+	RepoName                  func(string) func(*Repo)
 	RepoCreatedAt             func(time.Time) func(*Repo)
 	RepoModifiedAt            func(time.Time) func(*Repo)
 	RepoDeletedAt             func(time.Time) func(*Repo)
@@ -325,6 +325,11 @@ var Opt = struct {
 	RepoID: func(n uint32) func(*Repo) {
 		return func(r *Repo) {
 			r.ID = n
+		}
+	},
+	RepoName: func(name string) func(*Repo) {
+		return func(r *Repo) {
+			r.Name = name
 		}
 	},
 	RepoCreatedAt: func(ts time.Time) func(*Repo) {
