@@ -97,7 +97,5 @@ func main() {
 		bk.Env("VERSION", version),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 		bk.Cmd("./dev/ci/e2e.sh"),
-		bk.ArtifactPaths("./puppeteer/*.png"),
-		bk.ArtifactPaths("./web/e2e.mp4"),
-		bk.ArtifactPaths("./web/ffmpeg.log"))
+		bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
 }

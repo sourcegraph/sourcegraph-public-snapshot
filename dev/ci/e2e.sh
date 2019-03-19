@@ -58,6 +58,8 @@ yarn
 
 echo "Running ffmpeg..."
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
+which ffmpeg
+ffmpeg -version
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
 
 pushd web
