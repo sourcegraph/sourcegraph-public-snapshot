@@ -128,6 +128,8 @@ func (srcs Sources) ExternalServices() ExternalServices {
 		switch s := src.(type) {
 		case *GithubSource:
 			es = append(es, s.svc)
+		case *FakeSource:
+			es = append(es, s.svc)
 		}
 	}
 	return es
