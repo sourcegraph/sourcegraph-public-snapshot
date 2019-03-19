@@ -153,7 +153,7 @@ const codeViewResolver: CodeViewResolver = {
     resolveCodeView,
 }
 
-export const phabCodeViews: CodeView[] = [
+const phabCodeViews: CodeView[] = [
     {
         selector: '.diffusion-source',
         dom: diffusionDOMFns,

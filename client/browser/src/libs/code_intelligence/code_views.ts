@@ -126,11 +126,6 @@ export const findCodeViews = (codeHost: CodeHost, watchChildrenModifications = t
     return merge(...obs).pipe(emitWhenIntersecting(250))
 }
 
-export interface CodeViewContent {
-    content: string
-    baseContent?: string
-}
-
 export const fetchFileContents = (info: FileInfo) => {
     const fetchingBaseFile = info.baseCommitID
         ? fetchBlobContentLines({

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { SourcegraphIcon } from './Icons'
 
-export interface Props {
+interface Props {
     url?: string
     style?: React.CSSProperties
     iconStyle?: React.CSSProperties

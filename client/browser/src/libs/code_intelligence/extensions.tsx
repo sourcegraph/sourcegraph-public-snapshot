@@ -97,7 +97,7 @@ const groupByLine = (decorations: TextDocumentDecoration[]) => {
     return grouped
 }
 
-export const cleanupDecorations = (dom: DOMFunctions, codeView: HTMLElement, lines: number[]): void => {
+const cleanupDecorations = (dom: DOMFunctions, codeView: HTMLElement, lines: number[]): void => {
     for (const lineNumber of lines) {
         const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
         if (!codeElement) {

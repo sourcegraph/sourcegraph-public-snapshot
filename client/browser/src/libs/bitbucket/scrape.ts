@@ -1,6 +1,6 @@
 import { FileInfo } from '../code_intelligence'
 
-export interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
+interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
     project: string
     repoSlug: string
 }

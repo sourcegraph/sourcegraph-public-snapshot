@@ -1,8 +1,6 @@
 // tslint:disable
 
 import * as React from 'react'
-import { render } from 'react-dom'
-import CloseIcon from 'mdi-react/CloseIcon'
 import IconBase from 'react-icon-base'
 
 export class SourcegraphIcon extends React.Component<any, {}> {
@@ -29,18 +27,4 @@ export class SourcegraphIcon extends React.Component<any, {}> {
             </IconBase>
         )
     }
-}
-
-export function makeSourcegraphIcon(): HTMLElement {
-    const el = document.createElement('span')
-    el.className = 'sg-icon'
-    render(<SourcegraphIcon />, el)
-    return el
-}
-
-export function makeCloseIcon(): HTMLElement {
-    const el = document.createElement('span')
-    el.className = 'sg-icon'
-    render(<CloseIcon size={17} />, el)
-    return el
 }

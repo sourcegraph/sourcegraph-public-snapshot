@@ -9,7 +9,7 @@ import { RequestContext } from './context'
 import { AuthRequiredError, createAuthRequiredError, PrivateRepoPublicSourcegraphComError } from './errors'
 import { getHeaders } from './headers'
 
-export interface GraphQLRequestArgs {
+interface GraphQLRequestArgs {
     ctx: RequestContext
     request: string
     variables?: any

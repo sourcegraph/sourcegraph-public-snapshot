@@ -12,7 +12,7 @@ export enum GitLabPageKind {
 /**
  * General information that can be found on any GitLab page that we care about. (i.e. has code)
  */
-export interface GitLabInfo {
+interface GitLabInfo {
     pageKind: GitLabPageKind
 
     owner: string
@@ -24,7 +24,7 @@ export interface GitLabInfo {
 /**
  * Information about single file pages.
  */
-export interface GitLabFileInfo extends Pick<GitLabInfo, 'repoName'> {
+interface GitLabFileInfo extends Pick<GitLabInfo, 'repoName'> {
     filePath: string
     rev: string
 }

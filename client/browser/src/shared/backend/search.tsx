@@ -74,7 +74,7 @@ function basename(path: string): string {
     return path.split('/').slice(-1)[0] || '.'
 }
 
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | null {
+function createSuggestion(item: GQL.SearchSuggestion): Suggestion | null {
     switch (item.__typename) {
         case 'Repository': {
             return {

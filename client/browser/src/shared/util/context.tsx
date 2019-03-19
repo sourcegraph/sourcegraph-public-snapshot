@@ -29,10 +29,6 @@ export function setSourcegraphUrl(url: string): void {
     sourcegraphUrl = url
 }
 
-export function isBrowserExtension(): boolean {
-    return window.SOURCEGRAPH_PHABRICATOR_EXTENSION || false
-}
-
 export function isSourcegraphDotCom(url: string = sourcegraphUrl): boolean {
     return url === DEFAULT_SOURCEGRAPH_URL
 }
@@ -53,7 +49,7 @@ export function getExtensionVersionSync(): string {
     return runtime.getExtensionVersionSync()
 }
 
-export function isFirefoxExtension(): boolean {
+function isFirefoxExtension(): boolean {
     return window.navigator.userAgent.indexOf('Firefox') !== -1
 }
 
@@ -73,11 +69,4 @@ export function isPrivateRepository(): boolean {
         return false
     }
     return !!header.querySelector('.private')
-}
-
-export function canFetchForURL(url: string): boolean {
-    if (url === DEFAULT_SOURCEGRAPH_URL && isPrivateRepository()) {
-        return false
-    }
-    return true
 }
