@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec } from '../../../../../shared/src/util/url'
 import { getContext } from '../backend/context'
 import { CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError } from '../backend/errors'
 import { queryGraphQL } from '../backend/graphql'
-import { memoizeObservable } from '../util/memoize'
 
 /**
  * @return Observable that emits the repo URL

@@ -3,7 +3,7 @@ import { OpenInSourcegraphProps } from '../repo'
 import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { Button } from './Button'
 
-export interface Props {
+interface Props {
     openProps: OpenInSourcegraphProps
     style?: React.CSSProperties
     iconStyle?: React.CSSProperties

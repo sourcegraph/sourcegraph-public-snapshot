@@ -7,7 +7,7 @@ import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { Button } from './Button'
 
-export interface Props {
+interface Props {
     openProps: OpenDiffInSourcegraphProps
     style?: React.CSSProperties
     iconStyle?: React.CSSProperties
@@ -17,7 +17,7 @@ export interface Props {
     label: string
 }
 
-export interface State {
+interface State {
     fileDiff: IFileDiffConnection | undefined
 }
 

@@ -1,12 +1,12 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import storage from '../../browser/storage'
 import { isExtension } from '../../context'
 import { getContext } from '../../shared/backend/context'
 import { mutateGraphQL } from '../../shared/backend/graphql'
 import { resolveRepo } from '../../shared/repo/backend'
 import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../../shared/util/context'
-import { memoizeObservable } from '../../shared/util/memoize'
 import { normalizeRepoName } from './util'
 
 interface PhabEntity {

@@ -15,7 +15,7 @@ async function injectModules(): Promise<void> {
     await injectCodeIntelligence()
 }
 
-export function init(): void {
+function init(): void {
     /**
      * This is the main entry point for the phabricator in-page JavaScript plugin.
      */

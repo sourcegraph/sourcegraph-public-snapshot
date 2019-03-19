@@ -25,7 +25,7 @@ import { SymbolsDropdown } from './SymbolsDropdown'
 export const LOADING: 'LOADING' = 'LOADING'
 export type SymbolFetchResult = typeof LOADING | ErrorLike | GQL.ISymbol[]
 
-export function isSuccessfulFetch(result: SymbolFetchResult): result is GQL.ISymbol[] {
+function isSuccessfulFetch(result: SymbolFetchResult): result is GQL.ISymbol[] {
     return result !== LOADING && !isErrorLike(result)
 }
 

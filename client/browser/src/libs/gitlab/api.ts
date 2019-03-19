@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { map } from 'rxjs/operators'
 
-import { memoizeObservable } from '../../shared/util/memoize'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { GitLabDiffInfo } from './scrape'
 
 /**

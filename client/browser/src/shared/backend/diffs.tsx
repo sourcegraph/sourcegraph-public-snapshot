@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { memoizeObservable } from '../util/memoize'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { createAggregateError } from './errors'
 import { queryGraphQL } from './graphql'
 

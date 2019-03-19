@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { filter, map } from 'rxjs/operators'
 
-import { memoizeObservable } from '../../shared/util/memoize'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { PRPageInfo } from './scrape'
 
 //
