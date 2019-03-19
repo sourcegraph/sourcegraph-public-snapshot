@@ -40,6 +40,8 @@ socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat std
 
 URL="http://localhost:7080"
 
+apt-get install -y software-properties-common
+add-apt-repository -y ppa:jonathonf/ffmpeg-4
 apt-get install -y ffmpeg
 
 set +e
