@@ -1,12 +1,16 @@
 package repos
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // An ExternalService is defines a Source that yields Repos.
@@ -57,6 +61,107 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 	}
 
 	return modified
+}
+
+// ExcludeGithubRepos changes the configuration of a Github external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
+	return e.config("github", func(v interface{}) error {
+		c := v.(*schema.GitHubConnection)
+		set := make(map[string]bool, len(c.Exclude)*2)
+		for _, ex := range c.Exclude {
+			if ex.Id != "" {
+				set[ex.Id] = true
+			}
+
+			if ex.Name != "" {
+				set[strings.ToLower(ex.Name)] = true
+			}
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "github" {
+				continue
+			}
+
+			id := r.ExternalRepo.ID
+			name := strings.ToLower(r.Name)
+
+			if !set[name] && !set[id] {
+				c.Exclude = append(c.Exclude, &schema.Exclude{
+					Name: r.Name,
+					Id:   id,
+				})
+
+				if id != "" {
+					set[id] = true
+				}
+
+				if name != "" {
+					set[name] = true
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+// IncludeGithubRepos changes the configuration of a Github external service to explicitly enlist the
+// given repos to be synced.
+func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
+	return e.config("github", func(v interface{}) error {
+		c := v.(*schema.GitHubConnection)
+
+		set := make(map[string]bool, len(c.Repos))
+		for _, name := range c.Repos {
+			set[strings.ToLower(name)] = true
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "github" {
+				continue
+			}
+
+			if name := strings.ToLower(r.Name); !set[name] {
+				c.Repos = append(c.Repos, r.Name)
+				set[name] = true
+			}
+		}
+
+		return nil
+	})
+}
+
+func (e *ExternalService) config(kind string, opt func(c interface{}) error) error {
+	if strings.ToLower(e.Kind) != kind {
+		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
+	}
+
+	var c interface{}
+	switch kind {
+	case "github":
+		c = new(schema.GitHubConnection)
+	default:
+		panic("not implemented")
+	}
+
+	if err := jsonc.Unmarshal(e.Config, c); err != nil {
+		return fmt.Errorf("external service id=%d config unmarshaling error: %s", e.ID, err)
+	}
+
+	if err := opt(c); err != nil {
+		return errors.Wrap(err, "configure")
+	}
+
+	edited, err := jsonc.Edit(e.Config, c)
+	if err != nil {
+		return errors.Wrap(err, "edit")
+	}
+
+	e.Config = edited
+
+	return nil
 }
 
 // Clone returns a clone of the given external service.
