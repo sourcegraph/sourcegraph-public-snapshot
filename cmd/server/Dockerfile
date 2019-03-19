@@ -1,14 +1,5 @@
 FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS ctags
 
-ARG COMMIT_SHA="unknown"
-ARG DATE="unknown"
-ARG VERSION="unknown"
-
-LABEL org.opencontainers.image.revision=${COMMIT_SHA}
-LABEL org.opencontainers.image.created=${DATE}
-LABEL org.opencontainers.image.version=${VERSION}
-LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
-
 # hadolint ignore=DL3003,DL3018,DL4006
 RUN apk --no-cache add --virtual build-deps curl jansson-dev \
     libseccomp-dev linux-headers autoconf pkgconfig make automake \
@@ -26,6 +17,16 @@ RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctag
 
 # TODO: Make this image use our sourcegraph/alpine:3.9 base image.
 FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+
 RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
     echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
     echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
