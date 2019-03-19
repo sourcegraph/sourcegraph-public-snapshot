@@ -397,6 +397,15 @@ func (es ExternalServices) DisplayNames() []string {
 	return names
 }
 
+// URNs returns the list of URNs from all ExternalServices.
+func (es ExternalServices) URNs() []string {
+	urns := make([]string, len(es))
+	for i := range es {
+		urns[i] = es[i].URN()
+	}
+	return urns
+}
+
 func (es ExternalServices) Len() int {
 	return len(es)
 }

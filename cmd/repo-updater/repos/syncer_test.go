@@ -19,6 +19,9 @@ func TestSyncer_Sync(t *testing.T) {
 
 	testSyncerSync(new(repos.FakeStore))(t)
 
+	github := repos.ExternalService{ID: 1, Kind: "github"}
+	gitlab := repos.ExternalService{ID: 2, Kind: "gitlab"}
+
 	for _, tc := range []struct {
 		name    string
 		sourcer repos.Sourcer
@@ -34,21 +37,21 @@ func TestSyncer_Sync(t *testing.T) {
 		{
 			name: "sources partial errors aborts sync",
 			sourcer: repos.NewFakeSourcer(nil,
-				repos.NewFakeSource("a", "github", nil),
-				repos.NewFakeSource("b", "github", errors.New("boom")),
+				repos.NewFakeSource(&github, nil),
+				repos.NewFakeSource(&gitlab, errors.New("boom")),
 			),
 			store: new(repos.FakeStore),
 			err:   "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name:    "store list error aborts sync",
-			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil)),
+			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
 			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
 			err:     "syncer.sync.store.list-repos: boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
-			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil)),
+			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
 			store:   &repos.FakeStore{UpsertReposError: errors.New("booya")},
 			err:     "syncer.sync.store.upsert-repos: booya",
 		},
@@ -80,6 +83,13 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		},
 	}
 
+	svcs := repos.ExternalServices{
+		{ID: 1, Kind: "github"},
+		{ID: 2, Kind: "github"},
+	}
+
+	repos.Opt.RepoSources(svcs[0].URN())(&foo)
+
 	type testCase struct {
 		name    string
 		sourcer repos.Sourcer
@@ -99,13 +109,14 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
 				name:    "new repo",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.Clone())),
 				store:   s,
 				stored:  repos.Repos{},
 				now:     clock.Now,
-				diff: repos.Diff{Added: repos.Repos{
-					foo.With(repos.Opt.RepoCreatedAt(clock.Time(1)), repos.Opt.RepoSources("a")),
-				}},
+				diff: repos.Diff{Added: repos.Repos{foo.With(
+					repos.Opt.RepoCreatedAt(clock.Time(1)),
+					repos.Opt.RepoSources(svcs[0].URN()),
+				)}},
 				err: "<nil>",
 			})
 		}
@@ -114,14 +125,14 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
 				name:    "had name and got external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.Clone())),
 				store:   s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"), func(r *repos.Repo) {
+				stored: repos.Repos{foo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ID = ""
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)), repos.Opt.RepoSources("a")),
+					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			})
@@ -132,15 +143,16 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			testCases = append(testCases, testCase{
 				name: "new repo sources",
 				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource("a", "github", nil, foo.Clone()),
-					repos.NewFakeSource("b", "github", nil, foo.Clone()),
+					repos.NewFakeSource(svcs[0], nil, foo.Clone()),
+					repos.NewFakeSource(svcs[1], nil, foo.Clone()),
 				),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"))},
+				stored: repos.Repos{foo.Clone()},
 				now:    clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)), repos.Opt.RepoSources("a", "b")),
-				}},
+				diff: repos.Diff{Modified: repos.Repos{foo.With(
+					repos.Opt.RepoModifiedAt(clock.Time(1)),
+					repos.Opt.RepoSources(svcs.URNs()...),
+				)}},
 				err: "<nil>",
 			})
 		}
@@ -149,13 +161,13 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
 				name: "enabled field is not updateable",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.With(func(r *repos.Repo) {
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.With(func(r *repos.Repo) {
 					r.Enabled = !r.Enabled
 				}))),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"))},
+				stored: repos.Repos{foo.Clone()},
 				now:    clock.Now,
-				diff:   repos.Diff{Unmodified: repos.Repos{foo.With(repos.Opt.RepoSources("a"))}},
+				diff:   repos.Diff{Unmodified: repos.Repos{foo.Clone()}},
 				err:    "<nil>",
 			})
 		}
@@ -164,15 +176,15 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
 				name: "enabled field of a undeleted repo is not updateable",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.With(func(r *repos.Repo) {
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.With(func(r *repos.Repo) {
 					r.Enabled = !r.Enabled
 				}))),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"), repos.Opt.RepoDeletedAt(clock.Time(0)))},
+				stored: repos.Repos{foo.With(repos.Opt.RepoDeletedAt(clock.Time(0)))},
 				now:    clock.Now,
-				diff: repos.Diff{Added: repos.Repos{
-					foo.With(repos.Opt.RepoSources("a"), repos.Opt.RepoCreatedAt(clock.Time(1))),
-				}},
+				diff: repos.Diff{Added: repos.Repos{foo.With(
+					repos.Opt.RepoCreatedAt(clock.Time(1)),
+				)}},
 				err: "<nil>",
 			})
 		}
@@ -182,14 +194,14 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			testCases = append(testCases, testCase{
 				name: "deleted repo source",
 				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource("a", "github", nil, foo.Clone()),
+					repos.NewFakeSource(svcs[0], nil, foo.Clone()),
 				),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a", "b"))},
+				stored: repos.Repos{foo.With(repos.Opt.RepoSources(svcs.URNs()...))},
 				now:    clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)), repos.Opt.RepoSources("a")),
-				}},
+				diff: repos.Diff{Modified: repos.Repos{foo.With(
+					repos.Opt.RepoModifiedAt(clock.Time(1)),
+				)}},
 				err: "<nil>",
 			})
 		}
@@ -200,10 +212,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				name:    "deleted ALL repo sources",
 				sourcer: repos.NewFakeSourcer(nil),
 				store:   s,
-				stored:  repos.Repos{foo.With(repos.Opt.RepoSources("a", "b"))},
+				stored:  repos.Repos{foo.With(repos.Opt.RepoSources(svcs.URNs()...))},
 				now:     clock.Now,
-				diff: repos.Diff{Deleted: repos.Repos{
-					foo.With(repos.Opt.RepoDeletedAt(clock.Time(1))),
+				diff: repos.Diff{Deleted: repos.Repos{foo.With(
+					repos.Opt.RepoDeletedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			})
@@ -213,14 +225,14 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
 				name:    "renamed repo is detected via external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.Clone())),
 				store:   s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"), func(r *repos.Repo) {
+				stored: repos.Repos{foo.With(func(r *repos.Repo) {
 					r.Name = "old-name"
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.RepoSources("a"), repos.Opt.RepoModifiedAt(clock.Time(1))),
+				diff: repos.Diff{Modified: repos.Repos{foo.With(
+					repos.Opt.RepoModifiedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			})
@@ -230,7 +242,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
 				name:    "renamed repo which was deleted is detected and added",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil, foo.Clone())),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.Clone())),
 				store:   s,
 				stored: repos.Repos{foo.With(func(r *repos.Repo) {
 					r.Sources = map[string]*repos.SourceInfo{}
@@ -238,8 +250,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					r.DeletedAt = clock.Time(0)
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Added: repos.Repos{
-					foo.With(repos.Opt.RepoSources("a"), repos.Opt.RepoCreatedAt(clock.Time(1))),
+				diff: repos.Diff{Added: repos.Repos{foo.With(
+					repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			})
@@ -249,17 +261,15 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			clock := repos.NewFakeClock(time.Now(), time.Second)
 			testCases = append(testCases, testCase{
 				name: "metadata update",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource("a", "github", nil,
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil,
 					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)),
-						repos.Opt.RepoSources("a"),
 						repos.Opt.RepoMetadata(&github.Repository{IsArchived: true})),
 				)),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoSources("a"))},
+				stored: repos.Repos{foo.Clone()},
 				now:    clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
 					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)),
-						repos.Opt.RepoSources("a"),
 						repos.Opt.RepoMetadata(&github.Repository{IsArchived: true})),
 				}},
 				err: "<nil>",
