@@ -14,7 +14,7 @@ for the patch release checklist.
     - [ ] Tagging the final release.
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
-- [ ] Schedule the [retrospective](retrospectives/index.md) for this release.
+- [ ] Schedule the [retrospective](retrospectives/index.md) meeting within a few days _after_ the release.
 
 ## 5 working days before release (YYYY-MM-DD)
 
@@ -71,6 +71,7 @@ for the patch release checklist.
 - [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
 - [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
 - [ ] Review all open issues in the release milestone that aren't blocking and ask assignees to triage them to a different milestone (backlog preferred).
+- [ ] Start [collecting retrospective feedback](retrospectives/index.md). It should be due at the same time as the release.
 
 ## As necessary
 
@@ -97,7 +98,6 @@ for the patch release checklist.
     - [ ] Update versions in docs.sourcegraph.com header ([example](https://github.com/sourcegraph/sourcegraph/pull/2701/commits/386e5ecb5225ab9c8ccc9791b489160ed7c984a2))
 - [ ] Review all issues in the release milestone. Backlog things that didn't make it into the release and ping issues that still need to be done for the release (e.g. Tweets, marketing).
 - [ ] Verify that the blog post is ready to be merged.
-- [ ] Start [collecting retrospective feedback](retrospectives/index.md).
 
 ## By 10am PT on the 20th
 
