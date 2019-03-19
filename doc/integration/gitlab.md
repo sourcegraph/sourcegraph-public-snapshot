@@ -30,7 +30,11 @@ The [Sourcegraph browser extension](browser_extension.md) supports GitLab. When 
 
 - You can also use [`https://sourcegraph.com`](https://sourcegraph.com) for public code from GitLab.com only.
 
-1.  Click the Sourcegraph icon in the browser toolbar to open the settings page. If a permissions notice is displayed, click **Grant permissions** to allow the browser extension to work on your GitLab instance.
+1.  To allow the browser extension to work on your Gitlab:
+    - Navigate to any page on Gitlab.
+    - Right-click the Sourcegraph icon in the browser extension toolbar.
+    - Click "Enable Sourcegraph on this domain".
+    - Click "Allow" in the permissions request popup.
 1.  Visit any file or merge request on GitLab. Hover over code or click the "View file" and "View repository" buttons.
 
 ![Sourcegraph for GitLab](https://cl.ly/7916fe1453a4/download/sourcegraph-for-gitLab.gif)

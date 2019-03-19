@@ -38,7 +38,9 @@ The Sourcegraph extension adds a search engine shortcut to your web browser that
 
 To install this search engine shortcut manually, and for more information, see "[Browser search engine shortcuts](browser_search_engine.md)".
 
-## Configuring the Sourcegraph instance to use
+## Configuration
+
+### Configuring the Sourcegraph instance to use
 
 By default, the browser extension communicates with [Sourcegraph.com](https://sourcegraph.com), which has only public code.
 
@@ -47,6 +49,17 @@ To use the browser extension with a different Sourcegraph instance:
 1.  Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
 1.  Click **Update** and enter the URL of a Sourcegraph instance (such as `https://sourcegraph.example.com` or `https://sourcegraph.com`).
 1.  Click **Save**.
+
+### Enabling the browser extension on your code host
+
+By default, the Sourcegraph browser extension will only provide code intelligence on [github.com](https://github.com/). It needs additional permissions in order to run on other code hosts.
+
+To grant these permissions:
+
+1.  Navigate to any page on your code host.
+1.  Right-click the Sourcegraph icon in the browser extension toolbar.
+1.  Click "Enable Sourcegraph on this domain".
+1.  Click "Allow" in the permissions request popup.
 
 ### Troubleshooting
 
@@ -58,7 +71,7 @@ Try the following:
 
 1.  Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
     - Ensure that the Sourcegraph URL is correct. It must point to your own Sourcegraph instance to work on private code.
-    - Check whether any permissions must be granted. If so, the settings page will display an alert with a **Grant permissions** button.
+    - Check whether any permissions must be granted. If so, the settings page will offer you to "grant the Sourcegraph browser extension additional permissions".
 1. On some code hosts, you need to be signed in (to the code host) to use the browser extension. Try signing in.
 
 ## Privacy
