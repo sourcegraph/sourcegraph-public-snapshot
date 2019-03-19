@@ -28,4 +28,18 @@ This runs a docsite server on http://localhost:5081 that reads templates and ass
 
 ### Running a local server that mimics prod configuration
 
-If you want to run the doc site *exactly* as it's deployed (reading templates and assets from the remote Git repository, too), consult the current Kubernetes deployment spec and invoke `docsite serve` with the deployment's `DOCSITE_CONFIG` env var.
+If you want to run the doc site *exactly* as it's deployed (reading templates and assets from the remote Git repository, too), consult the current Kubernetes deployment spec and invoke `docsite serve` with the deployment's `DOCSITE_CONFIG` env var, the end result looking something like:
+
+```shell
+DOCSITE_CONFIG=$(cat <<-DOCSITE
+{
+  "templates": "https://codeload.github.com/sourcegraph/sourcegraph/zip/master#*/doc/_resources/templates/",
+  "assets": "https://codeload.github.com/sourcegraph/sourcegraph/zip/master#*/doc/_resources/assets/",
+  "content": "https://codeload.github.com/sourcegraph/sourcegraph/zip/master#*/doc/",
+  "baseURLPath": "/",
+  "assetsBaseURLPath": "/assets/"
+}
+DOCSITE
+) docsite serve -http=localhost:5081
+
+```
