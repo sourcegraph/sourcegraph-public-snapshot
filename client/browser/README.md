@@ -1,4 +1,4 @@
-# Sourcegraph browser extensions
+# Sourcegraph browser extension
 
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -18,7 +18,7 @@ The tooltips include features like:
 
 #### 🚀 Install: [**Sourcegraph for Chrome**](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 
-> Sourcegraph for Firefox is temporarily unavailable on Mozilla's Firefox Add-ons site. See [issue #744](https://github.com/sourcegraph/sourcegraph/issues/744#issuecomment-436163831) for a workaround and updates.
+#### 🚀 Install: [**Sourcegraph for Firefox**](https://docs.sourcegraph.com/integration/browser_extension)
 
 It works as follows:
 
@@ -28,12 +28,12 @@ It works as follows:
 - when the user mouses over a code table cell, the extension modifies the DOM node:
   - text nodes are wrapped in <span> (so hover/click events have appropriate specificity)
   - element nodes may be recursively split into multiple element nodes (e.g. a <span>&Router{namedRoutes:<span> contains multiple code tokens, and event targets need more granular ranges)
-  - ^^ we assume syntax highlighting takes care of the base case of wrapping a discrete language symbol
+  - We assume syntax highlighting takes care of the base case of wrapping a discrete language symbol
   - tooltip data is fetched from the Sourcegraph API
 - when an event occurs, we modify a central state store about what kind of tooltip to display
 - code subscribes to the central store updates, and creates/adds/removes/hides an absolutely positioned element (the tooltip)
 
-## Project Layout
+## Project layout
 
 - `src/extension/`
   - Entrypoint for browser extension builds. (Includes bundled assets, background scripts, options)
