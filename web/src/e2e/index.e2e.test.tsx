@@ -36,14 +36,14 @@ describe('e2e test suite', function(this: any): void {
 
     // Start browser.
     beforeAll(async () => {
-        let args: string[] | undefined
+        let args: string[] = []
         if (process.getuid() === 0) {
             // TODO don't run as root in CI
             console.warn('Running as root, disabling sandbox')
             args = ['--no-sandbox', '--disable-setuid-sandbox']
         }
         browser = await puppeteer.launch({
-            args,
+            args: [...args, '--window-size=1280,1024'],
             headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
         })
         page = await browser.newPage()

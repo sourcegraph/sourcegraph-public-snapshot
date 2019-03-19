@@ -148,20 +148,19 @@ func main() {
 
 	pipeline.AddWait()
 
-	// e2e tests are broken in CI https://github.com/sourcegraph/sourcegraph/issues/2822#issuecomment-474207270
-	// if !isBextReleaseBranch {
-	// 	pipeline.AddStep(":chromium:",
-	// 		// Avoid crashing the sourcegraph/server containers. See
-	// 		// https://github.com/sourcegraph/sourcegraph/issues/2657
-	// 		bk.ConcurrencyGroup("e2e"),
-	// 		bk.Concurrency(1),
+	if !isBextReleaseBranch {
+		pipeline.AddStep(":chromium:",
+			// Avoid crashing the sourcegraph/server containers. See
+			// https://github.com/sourcegraph/sourcegraph/issues/2657
+			bk.ConcurrencyGroup("e2e"),
+			bk.Concurrency(1),
 
-	// 		bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
-	// 		bk.Env("VERSION", version),
-	// 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-	// 		bk.Cmd("./dev/ci/e2e.sh"),
-	// 		bk.ArtifactPaths("./puppeteer/*.png"))
-	// }
+			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+			bk.Env("VERSION", version),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Cmd("./dev/ci/e2e.sh"),
+			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
+	}
 
 	pipeline.AddWait()
 
