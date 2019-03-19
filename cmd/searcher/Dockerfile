@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine:3.9@sha256:987f878657f0dd9734a597c9b5fe6ecd0bda633f6ea556103b9449838b1ed834
+FROM sourcegraph/alpine:3.9@sha256:e9264d4748e16de961a2b973cc12259dee1d33473633beccb1dfb8a0e62c6459
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
