@@ -196,12 +196,6 @@ body {
     -webkit-backdrop-filter: saturate(240%) blur(14px);
     backdrop-filter: saturate(240%) blur(14px);
 }
-@media screen and (max-width: 768px) {
-	.global-navbar {
-		position: absolute;
-		top: 0;
-	}
-}
 .nav-content {
     height: 100%;
     padding: 0 1rem;
@@ -481,9 +475,6 @@ a:active .current-branch {
 .content-nav > ul:first-of-type {
     border-top: none;
 }
-.content-nav > ul:nth-of-type(2) {
-    border-top: none;
-}
 .content-nav > ul ul {
     padding-left: 0;
 }
@@ -687,9 +678,7 @@ li.content-nav-no-hover:hover {
 }
 
 @media screen and (max-width: 768px) {
-	.page-nav-wrapper {
-		border: none;
-	}
+
     /* Give space at bottom of div for breadcrumbs */
     .docs-content-section .markdown-body {
         padding-bottom: 1rem;
@@ -703,7 +692,7 @@ li.content-nav-no-hover:hover {
         margin-top: 0;
         vertical-align: middle;
         position: -webkit-sticky;
-        top: 12px;
+        top: 72px;
         margin-top: 70px;
         margin-bottom: 16px;
         background-color: rgba(255, 255, 255, 0.85);
@@ -716,22 +705,8 @@ li.content-nav-no-hover:hover {
     }
 
     .breadcrumb-links {
-        margin-left: 42px;
+        margin-left: 12px;
         display: block;
-    }
-    .content-nav-mobile-button {
-        display: inline-block;
-        float: left;
-        position: absolute;
-        width: 28px;
-        height: 28px;
-        margin-right: 12px;
-        top: 50%;
-        transform: translateY(-28%);
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: 100%;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' style='width:24px;height:24px' viewBox='0 0 24 24'%3E%3Cpath d='M0,9.61 L1.31775701,11 L6,6 L1.31775701,1 L0,2.39 L3.3271028,6 L0,9.61 L0,9.61 Z M18,0 L5,0 L5,2 L18,2 L18,0 L18,0 Z M18,7 L18,5 L8,5 L8,7 L18,7 L18,7 Z M18,12 L18,10 L5,10 L5,12 L18,12 Z' id='Shape'%3E%3C/path%3E%3C/svg%3E");
     }
 	.content-nav {
 		top: 20px;
@@ -770,12 +745,15 @@ li.content-nav-no-hover:hover {
     .page-nav-wrapper {
         z-index: 99;
         display: block;
-        height: 100%;
         width: auto;
 		position: absolute;
 		/* top: 132px; */
 		left: 1rem;
 		right: 1rem;
+		position: fixed;
+		height: auto;
+		top:0;
+		border: none;
     }
     .page-nav-wrapper.mobile-show .content-nav {
         padding-left: 20px;
