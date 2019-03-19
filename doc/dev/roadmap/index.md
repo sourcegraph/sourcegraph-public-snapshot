@@ -19,7 +19,7 @@ Distribution:
 - [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
 - [Improve scaling documentation](https://github.com/sourcegraph/sourcegraph/issues/2019)
 - [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
-- [Documentation UX and content improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
+- [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
 
 Code search:
 
@@ -50,6 +50,8 @@ Code navigation:
 
 - Integrations quality
 - Code intelligence
+
+[Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2848)
 
 
 ---
