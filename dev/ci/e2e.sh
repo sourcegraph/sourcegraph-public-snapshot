@@ -56,6 +56,7 @@ echo "Waiting for $URL... done"
 
 # yarn
 
+pushd web
 echo "Running ffmpeg..."
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
 which ffmpeg
@@ -65,8 +66,6 @@ ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp
 google-chrome --no-sandbox &
 
 sleep 5
-
-# pushd web
 # env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
 # popd
 
