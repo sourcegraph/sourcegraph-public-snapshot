@@ -2,7 +2,7 @@
 
 You can also add repositories to Sourcegraph that are already cloned to disk on the host machine. This is useful for repositories requiring non-standard authentication to clone, or very large repositories on which cloning exceeds the resources available to the Docker container.
 
-> NOTE: Sourcegraph will alter the contents and structure of any sideloaded repository so do not use it for any other purpose.
+> NOTE: Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph`, so do not mount repositories in use by other processes under that directory.
 
 The steps documented here are intended for Sourcegraph instances running on a single node. The general process also applies for clustered deployments of Sourcegraph to Kubernetes, but you need to perform these steps on the underlying node hosting the `gitserver` pod, or on the persistent volume used by the `gitserver` deployment.
 
