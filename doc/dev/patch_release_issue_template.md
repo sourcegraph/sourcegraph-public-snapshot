@@ -31,7 +31,7 @@ In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
   ```
   find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEW_VERSION/g' {} +
   ```
-- [ ] Update versions in [docs.sourcegraph.com template](../_resources/templates/doc.html) ([example](https://github.com/sourcegraph/sourcegraph/pull/2841/files#diff-3d0e70da24a04f44a1fdc404b7242b89))
+- [ ] Update versions in [docs.sourcegraph.com template](https://github.com/sourcegraph/sourcegraph/blob/master/doc/_resources/templates/doc.html) ([example](https://github.com/sourcegraph/sourcegraph/pull/2841/files#diff-3d0e70da24a04f44a1fdc404b7242b89))
 - [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
 - [ ] Create a new section for the patch version in the changelog. Verify that all changes that have been cherry picked onto the release branch have been moved to this section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
 - [ ] Post a reply in the #dev-announce thread to say that the release is complete.
