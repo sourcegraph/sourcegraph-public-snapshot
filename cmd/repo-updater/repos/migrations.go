@@ -98,6 +98,13 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 				}
 			}
 
+			if len(es) == 0 {
+				// If the repo was deleted, and it is still deleted, it has no
+				// sources stored. So we add it to all Github external services
+				// just to be sure.
+				es = all
+			}
+
 			for _, svc := range es {
 				if err := svc.ExcludeGithubRepos(r); err != nil {
 					return errors.Wrapf(err, "%s.disabled", prefix)

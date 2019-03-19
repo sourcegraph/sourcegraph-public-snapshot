@@ -246,6 +246,7 @@ var Assert = struct {
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
 		want := Repos(rs)
+		want.Apply(Opt.RepoID(0))
 		return func(t testing.TB, have Repos) {
 			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
@@ -266,6 +267,7 @@ var Assert = struct {
 	},
 	ExternalServicesEqual: func(es ...*ExternalService) ExternalServicesAssertion {
 		want := ExternalServices(es)
+		want.Apply(Opt.ExternalServiceID(0))
 		return func(t testing.TB, have ExternalServices) {
 			have.Apply(Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
