@@ -14,10 +14,6 @@ We welcome suggestions! Share feedback by using [code discussions](https://about
 
 Release date: 2019-03-20 ([draft announcement](https://docs.google.com/document/d/1LA_8puMeWpnREVrCadSjkRnUyjCNrieSY9PJlcL3UwY/edit))
 
-Core services:
-
-- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
-
 Distribution:
 
 - [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
@@ -37,26 +33,23 @@ Code navigation:
 
 ### 3.3
 
-Release date: 2019-04-20
-
-> NOTE: Planning for 3.3 is in progress. This list is not complete. Feedback? We'd love to hear from you.
+Release date: 2019-04-20 ([draft announcement](https://docs.google.com/document/d/19SsZ00UdA7WZFIXSCOaJVgP1Ngu7l8HgGeArT_iDbhg/edit))
 
 Core services:
 
-- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025) (for code hosts other than GitHub)
+- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
 
-Distribution:
+[Distribution](https://github.com/sourcegraph/sourcegraph/issues/2809)
 
-- TBD
+[Code search](https://github.com/sourcegraph/sourcegraph/issues/2740):
 
-Code search:
-
-- TBD
+- Working toward [subquery search](https://github.com/sourcegraph/sourcegraph/issues/1005)
+- Saved search improvements
 
 Code navigation:
 
-- Integrations quality (TBD)
-- Code intelligence (TBD)
+- Integrations quality
+- Code intelligence
 
 
 ---
