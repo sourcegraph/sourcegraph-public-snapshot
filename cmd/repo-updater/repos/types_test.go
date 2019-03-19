@@ -3,13 +3,11 @@ package repos
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
@@ -17,8 +15,12 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 	github := ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github",
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		Config: `{
+			// Some comment
+			"url": "https://github.com"
+		}`,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
 	repos := Repos{
@@ -59,13 +61,15 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 	var testCases []testCase
 	{
 		svc := github.With(func(e *ExternalService) {
-			e.Config = marshalJSON(t, &schema.GitHubConnection{
-				Url: "https://github.com",
-				Exclude: []*schema.Exclude{
-					{Id: repos[0].ExternalRepo.ID},
-					{Name: strings.ToUpper(repos[2].Name)}, // Test case insensitvity
-				},
-			})
+			e.Config = formatJSON(t, `
+			{
+				// Some comment
+				"url": "https://github.com",
+				"exclude": [
+					{"id": "foo"},
+					{"name": "BAZ"}
+				]
+			}`)
 		})
 
 		testCases = append(testCases, testCase{
@@ -90,12 +94,14 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 	}
 	{
 		svc := github.With(func(e *ExternalService) {
-			e.Config = marshalJSON(t, &schema.GitHubConnection{
-				Url: "https://github.com",
-				Exclude: []*schema.Exclude{
-					{Name: "boo"},
-				},
-			})
+			e.Config = formatJSON(t, `
+			{
+				// Some comment
+				"url": "https://github.com",
+				"exclude": [
+					{"name": "boo"}
+				]
+			}`)
 		})
 
 		testCases = append(testCases, testCase{
@@ -104,27 +110,31 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 			svc:    svc,
 			repos:  repos,
 			assert: Assert.ExternalServicesEqual(svc.With(func(e *ExternalService) {
-				e.Config = marshalJSON(t, &schema.GitHubConnection{
-					Url: "https://github.com",
-					Exclude: []*schema.Exclude{
-						{Name: "boo"},
-						{Name: repos[0].Name, Id: repos[0].ExternalRepo.ID},
-						{Name: repos[2].Name},
-					},
-				})
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://github.com",
+					"exclude": [
+						{"name": "boo"},
+						{"id": "foo", "name": "foo"},
+						{"name": "baz"}
+					]
+				}`)
 			})),
 			err: `<nil>`,
 		})
 	}
 	{
 		svc := github.With(func(e *ExternalService) {
-			e.Config = marshalJSON(t, &schema.GitHubConnection{
-				Url: "https://github.com",
-				Repos: []string{
-					strings.ToUpper(repos[0].Name), // Test case insensitvity
-					repos[2].Name,
-				},
-			})
+			e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://github.com",
+					"repos": [
+						"FOO",
+						"baz"
+					]
+				}`)
 		})
 
 		testCases = append(testCases, testCase{
@@ -149,10 +159,14 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 	}
 	{
 		svc := github.With(func(e *ExternalService) {
-			e.Config = marshalJSON(t, &schema.GitHubConnection{
-				Url:   "https://github.com",
-				Repos: []string{"boo"},
-			})
+			e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://github.com",
+					"repos": [
+						"boo"
+					]
+				}`)
 		})
 
 		testCases = append(testCases, testCase{
@@ -161,14 +175,16 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 			svc:    svc,
 			repos:  repos,
 			assert: Assert.ExternalServicesEqual(svc.With(func(e *ExternalService) {
-				e.Config = marshalJSON(t, &schema.GitHubConnection{
-					Url: "https://github.com",
-					Repos: []string{
-						"boo",
-						repos[0].Name,
-						repos[2].Name,
-					},
-				})
+				e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"url": "https://github.com",
+						"repos": [
+							"boo",
+							"foo",
+							"baz"
+						]
+					}`)
 			})),
 			err: `<nil>`,
 		})
@@ -198,6 +214,15 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 	}
 }
 
+func formatJSON(t testing.TB, s string) string {
+	formatted, err := jsonc.Format(s, true, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return formatted
+}
+
 func marshalJSON(t testing.TB, v interface{}) string {
 	t.Helper()
 
@@ -206,10 +231,5 @@ func marshalJSON(t testing.TB, v interface{}) string {
 		t.Fatal(err)
 	}
 
-	formatted, err := jsonc.Format(string(bs), true, 2)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return formatted
+	return formatJSON(t, string(bs))
 }
