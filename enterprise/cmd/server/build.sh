@@ -6,4 +6,4 @@ set -ex
 
 export SERVER_PKG=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/enterprise/cmd/server}
 
-./cmd/server/build.sh github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/management-console
+( . ./cmd/server/build.sh github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/management-console)

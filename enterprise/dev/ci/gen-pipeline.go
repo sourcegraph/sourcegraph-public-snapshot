@@ -95,7 +95,6 @@ func main() {
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
 			bk.Env("VERSION", version),
 			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd(fmt.Sprintf("docker inspect sourcegraph/server:%s_candidate", version)),
 			bk.Cmd("popd"))
 
 		pipeline.AddStep(":white_check_mark:",
@@ -227,11 +226,6 @@ func main() {
 				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, version, image)),
 				bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
 			)
-		}
-
-		if app == "server" {
-			bk.Cmd(fmt.Sprintf("docker inspect sourcegraph/server:%s_candidate", version))
-			bk.Cmd("docker inspect sourcegraph/server:insiders")
 		}
 		pipeline.AddStep(":docker:", cmds...)
 	}

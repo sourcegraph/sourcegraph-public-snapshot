@@ -25,9 +25,6 @@ env \
     | docker load
 echo "Copying $IMAGE to the dedicated e2e testing node... done"
 
-echo "Seeing if the labels carry over..."
-docker inspect $IMAGE
-
 echo "Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d $IMAGE)"
 trap 'kill $(jobs -p)'" ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
