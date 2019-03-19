@@ -66,6 +66,7 @@ ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp
 google-chrome --no-sandbox &
 
 sleep 5
+false
 # env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
 # popd
 
