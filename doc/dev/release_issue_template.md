@@ -14,7 +14,7 @@ for the patch release checklist.
     - [ ] Tagging the final release.
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
-- [ ] Schedule the [retrospective](retrospectives/index.md) for this release.
+- [ ] Schedule the [retrospective](retrospectives/index.md) meeting within a few days _after_ the release.
 
 ## 5 working days before release (YYYY-MM-DD)
 
@@ -70,7 +70,8 @@ for the patch release checklist.
     - [ ] Tear down this Kubernetes cluster.
 - [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
 - [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
-- [ ] Review all open issues in the release milestone that aren't blocking and ask assignees to traige them to a different milestone (backlog preferred).
+- [ ] Review all open issues in the release milestone that aren't blocking and ask assignees to triage them to a different milestone (backlog preferred).
+- [ ] Start [collecting retrospective feedback](retrospectives/index.md). It should be due at the same time as the release.
 
 ## As necessary
 
@@ -104,3 +105,4 @@ for the patch release checklist.
 - [ ] Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
 - [ ] Close this issue.
 - [ ] Close the milestone.
+- [ ] Notify the next release captain that they are on duty for the next release.
