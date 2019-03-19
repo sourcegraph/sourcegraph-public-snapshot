@@ -40,10 +40,6 @@ socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat std
 
 URL="http://localhost:7080"
 
-apt-get install -y software-properties-common
-add-apt-repository -y ppa:jonathonf/ffmpeg-4
-apt-get install -y ffmpeg
-
 set +e
 timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
@@ -58,7 +54,7 @@ fi
 set -e
 echo "Waiting for $URL... done"
 
-yarn
+# yarn
 
 echo "Running ffmpeg..."
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
@@ -66,9 +62,13 @@ which ffmpeg
 ffmpeg -version
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
 
-pushd web
-env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
-popd
+google-chrome --no-sandbox &
 
-echo "Logs from the sourcegraph/server Docker container that was subject to e2e tests:"
-docker logs --timestamps "$CONTAINER"
+sleep 5
+
+# pushd web
+# env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
+# popd
+
+# echo "Logs from the sourcegraph/server Docker container that was subject to e2e tests:"
+# docker logs --timestamps "$CONTAINER"
