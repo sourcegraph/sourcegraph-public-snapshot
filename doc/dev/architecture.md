@@ -4,6 +4,8 @@ This is a high level overview of our architecture at Sourcegraph so you can unde
 
 ![Sourcegraph architecture](img/architecture.svg)
 
+**Note**: Non-sighted users can view a [text-representation of this diagram](architecture-mermaid.md).
+
 <!--
 Updating the architecture image
 
