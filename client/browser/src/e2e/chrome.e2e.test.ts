@@ -101,31 +101,32 @@ describe('Sourcegraph Chrome extension', () => {
 
     test('connects to sourcegraph.com by default', async () => {
         await page.goto(OPTIONS_PAGE_URL)
-        await page.waitForSelector('.server-url-form__input-container__status__indicator--success')
+        await page.waitForSelector('.e2e-server-url-status-success')
     })
 
     if (SOURCEGRAPH_BASE_URL !== 'https://sourcegraph.com') {
         test("sets the Sourcegraph URL and warns the user he's not logged in", async () => {
+            await ensureLoggedIn({ page, baseURL: SOURCEGRAPH_BASE_URL })
+            // Make sure we're actually logged out of the instance
+            await page.goto(SOURCEGRAPH_BASE_URL + '/-/sign-out')
+            await page.waitForSelector('.signin-form')
             await page.goto(OPTIONS_PAGE_URL)
-            await page.waitForSelector('.server-url-form__input-container__input')
-            await page.focus('.server-url-form__input-container__input')
+            await page.waitForSelector('.e2e-server-url-input')
+            await page.focus('.e2e-server-url-input')
             // Erase input value
             await page.evaluate(
-                () =>
-                    ((document.querySelector('.server-url-form__input-container__input')! as HTMLInputElement).value =
-                        '')
+                () => ((document.querySelector('.e2e-server-url-input')! as HTMLInputElement).value = '')
             )
             await page.keyboard.type(SOURCEGRAPH_BASE_URL)
             // Clear the focus on the input field.
             await page.evaluate(() => (document.activeElement! as HTMLElement).blur())
-            await page.waitForSelector('.server-url-form__input-container__status__indicator--error')
-            await getTokenWithSelector(page, 'Sign in to your instance', '.server-url-form__error a')
+            await page.waitForSelector('.e2e-server-url-status-error')
         })
 
         test('connects to the instance once the user is logged in', async () => {
             await ensureLoggedIn({ page, baseURL: SOURCEGRAPH_BASE_URL })
             await page.goto(OPTIONS_PAGE_URL)
-            await page.waitForSelector('.server-url-form__input-container__status__indicator--success')
+            await page.waitForSelector('.e2e-server-url-status-success')
         })
     }
 

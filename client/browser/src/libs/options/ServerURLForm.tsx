@@ -92,6 +92,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
     }
 
     public render(): React.ReactNode {
+        const statusClassName = this.isUpdating ? 'default' : statusClassNames[this.props.status]
         return (
             // tslint:disable-next-line:jsx-ban-elements
             <form className={`server-url-form ${this.props.className || ''}`} onSubmit={this.handleSubmit}>
@@ -101,8 +102,8 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         <span
                             className={
                                 'server-url-form__input-container__status__indicator ' +
-                                'server-url-form__input-container__status__indicator--' +
-                                (this.isUpdating ? 'default' : statusClassNames[this.props.status])
+                                `server-url-form__input-container__status__indicator--${statusClassName} ` +
+                                `e2e-server-url-status-${statusClassName}`
                             }
                         />
                         <span className="server-url-form__input-container__status__text">
@@ -113,7 +114,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         type="text"
                         ref={this.inputElement}
                         value={this.props.value}
-                        className="server-url-form__input-container__input"
+                        className="server-url-form__input-container__input e2e-server-url-input"
                         onChange={this.handleChange}
                         spellCheck={false}
                         autoCapitalize="off"
