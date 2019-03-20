@@ -41,7 +41,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                     <div>{this.props.node.displayName}</div>
                     <div>
                         <Link
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-secondary btn-sm e2e-edit-external-service-button"
                             to={`/site-admin/external-services/${this.props.node.id}`}
                             data-tooltip="External service settings"
                         >

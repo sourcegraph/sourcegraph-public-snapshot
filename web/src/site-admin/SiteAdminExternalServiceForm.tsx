@@ -67,7 +67,11 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                 </div>
                 <button
                     type="submit"
-                    className={`btn btn-primary ${this.props.mode === 'create' && 'e2e-add-external-service-button'}`}
+                    className={`btn btn-primary ${
+                        this.props.mode === 'create'
+                            ? 'e2e-add-external-service-button'
+                            : 'e2e-update-external-service-button'
+                    }`}
                     disabled={this.props.loading}
                 >
                     {this.props.loading && <LoadingSpinner className="icon-inline" />}

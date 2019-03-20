@@ -1,7 +1,7 @@
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as os from 'os'
 import * as path from 'path'
-import puppeteer from 'puppeteer'
+import puppeteer, { LaunchOptions } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
@@ -31,7 +31,28 @@ describe('e2e test suite', function(this: any): void {
 
     async function init(): Promise<void> {
         await ensureLoggedIn()
-        await ensureHasExternalService()
+
+        const repoSlugs = [
+            'gorilla/mux',
+            'gorilla/securecookie',
+            'sourcegraphtest/AlwaysCloningTest',
+            'sourcegraph/godockerize',
+            'sourcegraph/jsonrpc2',
+            'sourcegraph/checkup',
+            'sourcegraph/go-diff',
+            'sourcegraph/vcsstore',
+            'sourcegraph/go-vcs',
+        ]
+        await ensureHasExternalService(
+            'github',
+            'e2e-test-github',
+            JSON.stringify({
+                url: 'https://github.com',
+                token: gitHubToken,
+                repos: repoSlugs,
+            }),
+            repoSlugs
+        )
     }
 
     // Start browser.
@@ -42,10 +63,11 @@ describe('e2e test suite', function(this: any): void {
             console.warn('Running as root, disabling sandbox')
             args = ['--no-sandbox', '--disable-setuid-sandbox']
         }
-        browser = await puppeteer.launch({
+        const launchOpt: LaunchOptions = {
             args: [...args, '--window-size=1280,1024'],
             headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
-        })
+        }
+        browser = await puppeteer.launch(launchOpt)
         page = await browser.newPage()
         await init()
     })
@@ -118,81 +140,83 @@ describe('e2e test suite', function(this: any): void {
             },
         }
 
-        await (await page.waitForSelector(selector)).click()
+        await retry(async () => {
+            await page.waitForSelector(selector)
+            await page.click(selector)
+        })
         await selectAllByMethod[method]()
         await page.keyboard.press(Key.Backspace)
         await page.keyboard.type(newText)
     }
 
-    async function ensureHasExternalService(): Promise<void> {
+    async function ensureHasExternalService(
+        kind: string,
+        displayName: string,
+        config: string,
+        ensureRepos?: string[]
+    ): Promise<void> {
         await page.goto(baseURL + '/site-admin/external-services')
         await page.waitFor('.e2e-filtered-connection')
         await page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
-        // Matches buttons for deleting external services named 'test-github'.
-        const deleteButton = await page.$(
-            '[data-e2e-external-service-name="test-github"] .e2e-delete-external-service-button'
-        )
-        if (deleteButton) {
+
+        // Matches buttons for deleting external services named ${displayName}.
+        const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
+        if (await page.$(deleteButtonSelector)) {
             const accept = async (dialog: puppeteer.Dialog) => {
                 await dialog.accept()
                 page.off('dialog', accept)
             }
             page.on('dialog', accept)
-            await deleteButton.click()
+            await retry(async () => {
+                await page.waitForSelector(deleteButtonSelector)
+                await page.click(deleteButtonSelector)
+            })
         }
+
         await (await page.waitForSelector('.e2e-goto-add-external-service-page')).click()
 
-        const githubButton = await await page.waitForSelector('.linked-external-service-card--github')
+        const githubButton = await await page.waitForSelector(`.linked-external-service-card--${kind}`)
         await githubButton.click()
 
-        await replaceText({ selector: '#e2e-external-service-form-display-name', newText: 'test-github' })
+        await replaceText({ selector: '#e2e-external-service-form-display-name', newText: displayName })
 
         // Type in a new external service configuration.
-        const repoSlugs = [
-            'gorilla/mux',
-            'gorilla/securecookie',
-            'sourcegraphtest/AlwaysCloningTest',
-            'sourcegraph/godockerize',
-            'sourcegraph/jsonrpc2',
-            'sourcegraph/checkup',
-            'sourcegraph/go-diff',
-            'sourcegraph/vcsstore',
-            'sourcegraph/go-vcs',
-        ]
         await replaceText({
             selector: '.view-line',
-            newText: JSON.stringify({
-                url: 'https://github.com',
-                token: gitHubToken,
-                repos: repoSlugs,
-            }),
+            newText: config,
             method: 'keyboard',
         })
         await page.click('.e2e-add-external-service-button')
 
-        // Wait for repositories to sync.
-        await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
-        await retry(async () => {
-            await page.reload()
-            await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/gorilla/mux']`, {
-                timeout: 5000,
+        if (ensureRepos) {
+            // Wait for repositories to sync.
+            await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
+            await retry(async () => {
+                await page.reload()
+                await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/gorilla/mux']`, {
+                    timeout: 5000,
+                })
             })
-        })
 
-        // Clone the repositories
-        for (const slug of repoSlugs) {
-            await page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
-            await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`)
-            if (await page.$(`.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='false']`)) {
-                await page.click(`.repository-node[data-e2e-repository='github.com/${slug}'] .e2e-enable-repository`)
-                if (slug === 'sourcegraphtest/AlwaysCloningTest') {
-                    await page.waitForSelector(
-                        `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`
+            // Clone the repositories
+            for (const slug of ensureRepos) {
+                await page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
+                await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`)
+                if (
+                    await page.$(`.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='false']`)
+                ) {
+                    await page.click(
+                        `.repository-node[data-e2e-repository='github.com/${slug}'] .e2e-enable-repository`
                     )
-                } else {
-                    await page.waitForSelector(
-                        `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true'][data-e2e-cloned='true']`
-                    )
+                    if (slug === 'sourcegraphtest/AlwaysCloningTest') {
+                        await page.waitForSelector(
+                            `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`
+                        )
+                    } else {
+                        await page.waitForSelector(
+                            `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true'][data-e2e-cloned='true']`
+                        )
+                    }
                 }
             }
         }
@@ -258,6 +282,52 @@ describe('e2e test suite', function(this: any): void {
         // verify there are some references
         await page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item')
     }
+
+    describe('External services', async () => {
+        test('External service add, edit, delete', async () => {
+            const displayName = 'e2e-github-test-2'
+            await ensureHasExternalService(
+                'github',
+                displayName,
+                '{"url": "https://github.myenterprise.com", "token": "initial-token"}'
+            )
+            await page.goto(baseURL + '/site-admin/external-services')
+            await page.waitFor('.e2e-filtered-connection')
+            await page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+            const editButton = await page.$(
+                `[data-e2e-external-service-name="${displayName}"] .e2e-edit-external-service-button`
+            )
+            expect(editButton).not.toBeNull()
+            await editButton!.click()
+
+            // Type in a new external service configuration.
+            await replaceText({
+                selector: '.view-line',
+                newText: '{"url": "https://github.myenterprise.com", "token": "second-token"}',
+                method: 'keyboard',
+            })
+            await page.click('.e2e-update-external-service-button')
+
+            await page.waitForSelector('.list-group-item[href="/site-admin/external-services"]')
+            await page.click('.list-group-item[href="/site-admin/external-services"]')
+            await page.waitFor('.e2e-filtered-connection')
+            await page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+
+            const deleteButtonSelector = `[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button`
+            await page.waitForSelector(deleteButtonSelector)
+            const accept = async (dialog: puppeteer.Dialog) => {
+                await dialog.accept()
+                page.off('dialog', accept)
+            }
+            page.on('dialog', accept)
+            await retry(async () => {
+                await page.waitForSelector(deleteButtonSelector)
+                await page.click(deleteButtonSelector)
+            })
+
+            await page.waitFor(() => !document.querySelector('[data-e2e-external-service-name="e2e-github-test-2"]'))
+        })
+    })
 
     describe('Visual tests', () => {
         test('Repositories list', async () => {
