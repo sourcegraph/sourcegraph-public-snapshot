@@ -61,6 +61,7 @@ interface Props {
     rev: string | undefined
     history: H.History
     location: H.Location
+    /** The path of the file or directory currently shown in the content area */
     activePath: string
 }
 
