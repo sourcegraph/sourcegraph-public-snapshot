@@ -108,6 +108,7 @@ type CloneURLToRepositoryName struct {
 // CriticalConfiguration description: Critical configuration for a Sourcegraph site.
 type CriticalConfiguration struct {
 	AuthDisableUsernameChanges bool                `json:"auth.disableUsernameChanges,omitempty"`
+	AuthEnableUsernameChanges  bool                `json:"auth.enableUsernameChanges,omitempty"`
 	AuthProviders              []AuthProviders     `json:"auth.providers,omitempty"`
 	AuthPublic                 bool                `json:"auth.public,omitempty"`
 	AuthSessionExpiry          string              `json:"auth.sessionExpiry,omitempty"`
