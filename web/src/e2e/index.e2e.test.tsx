@@ -80,18 +80,9 @@ describe('e2e test suite', function(this: any): void {
         await init()
     })
 
-    beforeEach(async () => {
-        if (page.isClosed()) {
-            page = await browser.newPage()
-        }
-    })
-
     // Close browser.
     afterAll(async () => {
         if (browser) {
-            if (page && !page.isClosed()) {
-                await page.close()
-            }
             await browser.close()
         }
     })
@@ -229,11 +220,6 @@ describe('e2e test suite', function(this: any): void {
             }
         }
     }
-
-    // Open page.
-    beforeEach(async () => {
-        page = await browser.newPage()
-    })
 
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
