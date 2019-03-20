@@ -162,6 +162,14 @@ func main() {
 			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
 	}
 
+	pipeline.AddStep(":chromium:",
+		bk.ConcurrencyGroup("e2e"),
+		bk.Concurrency(1),
+		bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+		bk.Env("VERSION", version),
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		bk.Cmd("./dev/ci/e2e-bext.sh"))
+
 	pipeline.AddWait()
 
 	pipeline.AddStep(":codecov:",

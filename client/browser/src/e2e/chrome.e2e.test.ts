@@ -10,6 +10,15 @@ const SOURCEGRAPH_BASE_URL = readEnvString({
     defaultValue: 'https://sourcegraph.com',
 })
 
+// The default value here is the dev extension ID.
+// In CI, tests are be run against the prod extension ID.
+const EXTENSION_ID = readEnvString({
+    variable: 'SOURCEGRAPH_EXTENSION_ID',
+    defaultValue: 'bmfbcejdknlknpncfpeloejonjoledha',
+})
+
+const OPTIONS_PAGE_URL = `chrome-extension://${EXTENSION_ID}/options.html`
+
 async function getTokenWithSelector(
     page: puppeteer.Page,
     token: string,
@@ -91,13 +100,13 @@ describe('Sourcegraph Chrome extension', () => {
     const repoBaseURL = 'https://github.com/gorilla/mux'
 
     test('connects to sourcegraph.com by default', async () => {
-        await page.goto('chrome-extension://bmfbcejdknlknpncfpeloejonjoledha/options.html')
+        await page.goto(OPTIONS_PAGE_URL)
         await page.waitForSelector('.server-url-form__input-container__status__indicator--success')
     })
 
     if (SOURCEGRAPH_BASE_URL !== 'https://sourcegraph.com') {
         test("sets the Sourcegraph URL and warns the user he's not logged in", async () => {
-            await page.goto('chrome-extension://bmfbcejdknlknpncfpeloejonjoledha/options.html')
+            await page.goto(OPTIONS_PAGE_URL)
             await page.waitForSelector('.server-url-form__input-container__input')
             await page.focus('.server-url-form__input-container__input')
             // Erase input value
@@ -115,7 +124,7 @@ describe('Sourcegraph Chrome extension', () => {
 
         test('connects to the instance once the user is logged in', async () => {
             await ensureLoggedIn({ page, baseURL: SOURCEGRAPH_BASE_URL })
-            await page.goto('chrome-extension://bmfbcejdknlknpncfpeloejonjoledha/options.html')
+            await page.goto(OPTIONS_PAGE_URL)
             await page.waitForSelector('.server-url-form__input-container__status__indicator--success')
         })
     }
