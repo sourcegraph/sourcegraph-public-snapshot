@@ -160,16 +160,16 @@ func main() {
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Cmd("./dev/ci/e2e.sh"),
 			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
-	}
 
-	pipeline.AddStep(":chromium:",
-		bk.ConcurrencyGroup("e2e"),
-		bk.Concurrency(1),
-		bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
-		bk.Env("VERSION", version),
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		bk.Cmd("./dev/ci/e2e-bext.sh"),
-		bk.ArtifactPaths("./puppeteer/*.png"))
+		pipeline.AddStep(":chromium:",
+			bk.ConcurrencyGroup("e2e"),
+			bk.Concurrency(1),
+			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+			bk.Env("VERSION", version),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Cmd("./dev/ci/e2e-bext.sh"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
+	}
 
 	pipeline.AddWait()
 
@@ -249,6 +249,7 @@ func main() {
 		// Run e2e tests
 		pipeline.AddStep(":chromium:",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("SOURCEGRAPH_EXTENSION_ID", "dgjhfomjieaadpoljlnidmbgkdffpack"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("yarn -s run build"),
