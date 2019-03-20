@@ -267,13 +267,7 @@ describe('e2e test suite', function(this: any): void {
         test('Repositories list', async () => {
             await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
             await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
-            try {
-                await percySnapshot(page, 'Repositories list')
-            } catch (e) {
-                console.error('Percy snapshot failed.', 'typeof e', typeof e)
-                console.error('Percy snapshot failed.', 'e', e)
-                console.error('Percy snapshot failed.', 'JSON.stringify(e)', JSON.stringify(e))
-            }
+            await percySnapshot(page, 'Repositories list')
         })
 
         test('Search results repo', async () => {
