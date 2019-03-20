@@ -22,6 +22,10 @@ process.on('unhandledRejection', error => {
     console.error('Caught unhandledRejection:', error)
 })
 
+process.on('rejectionHandled', error => {
+    console.error('Caught rejectionHandled:', error)
+})
+
 /**
  * Used in the external service configuration.
  */
