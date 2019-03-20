@@ -41,15 +41,17 @@ Core services:
 
 [Distribution](https://github.com/sourcegraph/sourcegraph/issues/2809)
 
+[Documentation](https://github.com/sourcegraph/sourcegraph/issues/2848)
+
 [Code search](https://github.com/sourcegraph/sourcegraph/issues/2740):
 
 - Working toward [subquery search](https://github.com/sourcegraph/sourcegraph/issues/1005)
-- Saved search improvements
+- [Saved search improvements](https://github.com/sourcegraph/sourcegraph/issues/2824)
 
 Code navigation:
 
-- Integrations quality
-- Code intelligence
+- [Integrations quality](https://github.com/sourcegraph/sourcegraph/issues/2834)
+- [Code intelligence](https://github.com/sourcegraph/sourcegraph/issues/2856)
 
 [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2848)
 
