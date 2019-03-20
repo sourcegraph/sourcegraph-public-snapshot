@@ -110,18 +110,6 @@ describe('e2e test suite', function(this: any): void {
         }
     }
 
-    async function robustClick(selector: string): Promise<void> {
-        for (let i = 0; i < 3; i++) {
-            try {
-                await page.waitForSelector(selector)
-                await page.click(selector)
-            } catch (e) {
-                continue
-            }
-            break
-        }
-    }
-
     /**
      * Specifies how `replaceText` will select the content of the element. No
      * single method works in all cases:
@@ -152,7 +140,10 @@ describe('e2e test suite', function(this: any): void {
             },
         }
 
-        await robustClick(selector)
+        await retry(async () => {
+            await page.waitForSelector(selector)
+            await page.click(selector)
+        })
         await selectAllByMethod[method]()
         await page.keyboard.press(Key.Backspace)
         await page.keyboard.type(newText)
@@ -176,7 +167,10 @@ describe('e2e test suite', function(this: any): void {
                 page.off('dialog', accept)
             }
             page.on('dialog', accept)
-            await robustClick(deleteButtonSelector)
+            await retry(async () => {
+                await page.waitForSelector(deleteButtonSelector)
+                await page.click(deleteButtonSelector)
+            })
         }
 
         await (await page.waitForSelector('.e2e-goto-add-external-service-page')).click()
@@ -326,7 +320,10 @@ describe('e2e test suite', function(this: any): void {
                 page.off('dialog', accept)
             }
             page.on('dialog', accept)
-            await robustClick(deleteButtonSelector)
+            await retry(async () => {
+                await page.waitForSelector(deleteButtonSelector)
+                await page.click(deleteButtonSelector)
+            })
 
             await page.waitFor(() => !document.querySelector('[data-e2e-external-service-name="e2e-github-test-2"]'))
         })
