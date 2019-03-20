@@ -301,6 +301,7 @@ describe('e2e test suite', function(this: any): void {
                 method: 'keyboard',
             })
             await page.click('.e2e-update-external-service-button')
+            await page.waitForSelector('.e2e-update-external-service-button:not([disabled])')
 
             await page.waitForSelector('.list-group-item[href="/site-admin/external-services"]')
             await page.click('.list-group-item[href="/site-admin/external-services"]')
