@@ -133,7 +133,7 @@ func main() {
 			httpcli.NewCachedTransportOpt(httputil.Cache, true),
 		)
 
-		src := repos.NewExternalServicesSourcer(store, cliFactory)
+		src := repos.NewSourcer(cliFactory)
 		syncer = repos.NewSyncer(store, src, diffs, clock)
 
 		log15.Info("starting new syncer", "external service kinds", kinds)
