@@ -115,7 +115,7 @@ const listExternalServicesQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.ListExternalServices
 SELECT
   id,
-  LOWER(kind),
+  kind,
   display_name,
   config,
   created_at,
@@ -191,7 +191,7 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -208,7 +208,7 @@ INSERT INTO external_services (
 VALUES %s
 ON CONFLICT(id) DO UPDATE
 SET
-  kind         = excluded.kind,
+  kind         = UPPER(excluded.kind),
   display_name = excluded.display_name,
   config       = excluded.config,
   created_at   = excluded.created_at,

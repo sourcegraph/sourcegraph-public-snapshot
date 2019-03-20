@@ -2,6 +2,7 @@ package repos
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -28,8 +29,8 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		return false
 	}
 
-	if e.Kind != n.Kind {
-		e.Kind, modified = n.Kind, true
+	if kind := strings.ToUpper(n.Kind); strings.ToUpper(e.Kind) != kind {
+		e.Kind, modified = kind, true
 	}
 
 	if e.DisplayName != n.DisplayName {

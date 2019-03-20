@@ -167,6 +167,7 @@ func (s *FakeStore) UpsertExternalServices(ctx context.Context, svcs ...*Externa
 		} else {
 			s.svcIDSeq++
 			svc.ID = s.svcIDSeq
+			svc.Kind = strings.ToUpper(svc.Kind)
 			s.svcByID[svc.ID] = svc
 		}
 	}

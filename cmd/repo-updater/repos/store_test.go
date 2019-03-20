@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,7 +39,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	now := clock.Now()
 
 	github := repos.ExternalService{
-		Kind:        "github",
+		Kind:        "GITHUB",
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
 		CreatedAt:   now,
@@ -77,6 +78,12 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 			assert func(testing.TB, repos.ExternalServices)
 			err    error
 		}{
+			{
+				name:   "returned kind is uppercase",
+				kinds:  []string{"github"},
+				stored: repos.ExternalServices{&github},
+				assert: equal(&github),
+			},
 			{
 				name:   "case-insensitive kinds",
 				kinds:  []string{"GiThUb"},
@@ -156,6 +163,13 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 				return
 			}
 
+			for _, e := range want {
+				if e.Kind != strings.ToUpper(e.Kind) {
+					t.Errorf("external service kind didn't get upper-cased: %q", e.Kind)
+					break
+				}
+			}
+
 			sort.Sort(want)
 
 			have, err := tx.ListExternalServices(ctx, kinds...)
@@ -179,7 +193,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 				r.CreatedAt = now
 			}
 
-			if err = tx.UpsertExternalServices(ctx, want.Clone()...); err != nil {
+			if err = tx.UpsertExternalServices(ctx, want...); err != nil {
 				t.Errorf("UpsertExternalServices error: %s", err)
 			} else if have, err = tx.ListExternalServices(ctx); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
