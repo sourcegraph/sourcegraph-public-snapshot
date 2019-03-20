@@ -11,6 +11,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The symbols sidebar now only shows symbols defined in the current file or directory.
+
 ### Fixed
 
 ### Removed
