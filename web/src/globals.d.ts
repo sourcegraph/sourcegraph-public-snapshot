@@ -109,6 +109,14 @@ interface SourcegraphContext {
         isBuiltin: boolean
         authenticationURL?: string
     }[]
+
+    /** Custom branding for the homepage and search icon. */
+    branding?: {
+        /** The URL to the logo used on the search homepage. */
+        logo: string
+        /** The URL to the icon used as the search logo */
+        favicon: string
+    }
 }
 
 /**

@@ -58,18 +58,18 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        let logoUrl =
+            `${window.context.assetsRoot}/img/sourcegraph` +
+            (this.props.isLightTheme ? '-light' : '') +
+            '-head-logo.svg'
+        if (window.context.branding && window.context.branding.logo) {
+            logoUrl = window.context.branding.logo
+        }
         const hasScopes = this.getScopes().length > 0
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
-                <img
-                    className="search-page__logo"
-                    src={
-                        `${window.context.assetsRoot}/img/sourcegraph` +
-                        (this.props.isLightTheme ? '-light' : '') +
-                        '-head-logo.svg'
-                    }
-                />
+                <img className="search-page__logo" src={logoUrl} />
                 <Form className="search search-page__container" onSubmit={this.onSubmit}>
                     <div className="search-page__input-container">
                         <QueryInput

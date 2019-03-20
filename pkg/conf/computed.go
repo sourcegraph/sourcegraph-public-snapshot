@@ -291,3 +291,14 @@ func IsBuiltinSignupAllowed() bool {
 	}
 	return false
 }
+
+func Branding() schema.Branding {
+	brandSettings := Get().Branding
+	if brandSettings == nil {
+		return schema.Branding{
+			Logo:    "",
+			Favicon: "",
+		}
+	}
+	return *brandSettings
+}

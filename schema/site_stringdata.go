@@ -146,6 +146,23 @@ const SiteSchemaJSON = `{
       ],
       "group": "Security"
     },
+    "branding": {
+      "description": "Customize Sourcegraph homepage logo and search icon.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logo": {
+          "description": "The image URL to be used on the search homepage.",
+          "type": "string",
+          "default": ""
+        },
+        "favicon": {
+          "description": "The image URL to be used in the navigation bar.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
     "email.smtp": {
       "title": "SMTPServerConfig",
       "description": "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
