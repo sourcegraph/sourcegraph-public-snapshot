@@ -85,10 +85,17 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                 ? '/.assets/img/sourcegraph-light-head-logo.svg'
                 : '/.assets/img/sourcegraph-head-logo.svg'
         } else {
-            logoSrc =
-                window.context.branding && window.context.branding.favicon
-                    ? window.context.branding.favicon
-                    : '/.assets/img/sourcegraph-mark.svg'
+            logoSrc = '/.assets/img/sourcegraph-mark.svg'
+            const { branding } = window.context
+            if (branding) {
+                if (this.props.isLightTheme) {
+                    if (branding.light && branding.light.symbol) {
+                        logoSrc = branding.light.symbol
+                    }
+                } else if (branding.dark && branding.dark.symbol) {
+                    logoSrc = branding.dark.symbol
+                }
+            }
         }
 
         const logo = (

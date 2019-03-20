@@ -95,8 +95,9 @@ type BitbucketServerConnection struct {
 
 // Branding description: Customize Sourcegraph homepage logo and search icon.
 type Branding struct {
+	Dark    *Dark  `json:"dark,omitempty"`
 	Favicon string `json:"favicon,omitempty"`
-	Logo    string `json:"logo,omitempty"`
+	Light   *Light `json:"light,omitempty"`
 }
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
@@ -129,6 +130,12 @@ type CriticalConfiguration struct {
 	Log                        *Log                `json:"log,omitempty"`
 	UpdateChannel              string              `json:"update.channel,omitempty"`
 	UseJaeger                  bool                `json:"useJaeger,omitempty"`
+}
+
+// Dark description: Override style for dark themes
+type Dark struct {
+	Logo   string `json:"logo,omitempty"`
+	Symbol string `json:"symbol,omitempty"`
 }
 
 // Discussions description: Configures Sourcegraph code discussions.
@@ -274,6 +281,12 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Username)
 	}
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username", "external"})
+}
+
+// Light description: Override style for light themes
+type Light struct {
+	Logo   string `json:"logo,omitempty"`
+	Symbol string `json:"symbol,omitempty"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.

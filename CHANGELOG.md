@@ -9,6 +9,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Enterprise admins can now customize the appearance of the homepage and search icon.
+
 ### Changed
 
 ### Fixed
@@ -23,7 +25,6 @@ All notable changes to Sourcegraph are documented in this file.
   To enable, open the user menu in the top right and make sure the theme dropdown is set to "System".
   This is currently supported on macOS Mojave with Safari Technology Preview 68 and later.
 - The `github.exclude` setting was added to the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) to allow excluding repositories yielded by `github.repos` or `github.repositoryQuery` from being synced.
-- Enterprise admins can now customize the appearance of the homepage and search icon.
 
 ### Changed
 

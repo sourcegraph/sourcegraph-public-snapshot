@@ -151,15 +151,37 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "logo": {
-          "description": "The image URL to be used on the search homepage.",
-          "type": "string",
-          "default": ""
+        "dark": {
+          "description": "Override style for dark themes",
+          "type": "object",
+          "properties": {
+            "logo": {
+              "description": "The URL to the logo used on the homepage.",
+              "type": "string"
+            },
+            "symbol": {
+              "description": "The URL to the symbol used as the search icon.",
+              "type": "string"
+            }
+          }
+        },
+        "light": {
+          "description": "Override style for light themes",
+          "type": "object",
+          "properties": {
+            "logo": {
+              "description": "The URL to the logo used on the homepage.",
+              "type": "string"
+            },
+            "symbol": {
+              "description": "The URL to the symbol used as the search icon.",
+              "type": "string"
+            }
+          }
         },
         "favicon": {
-          "description": "The image URL to be used in the navigation bar.",
-          "type": "string",
-          "default": ""
+          "description": "The URL of the favicon to be used for your instance",
+          "type": "string"
         }
       }
     },

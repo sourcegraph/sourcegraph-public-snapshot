@@ -77,7 +77,7 @@ type JSContext struct {
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
-	Branding schema.Branding `json:"branding"`
+	Branding *schema.Branding `json:"branding"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP

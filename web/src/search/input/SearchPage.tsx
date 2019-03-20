@@ -62,8 +62,15 @@ export class SearchPage extends React.Component<Props, State> {
             `${window.context.assetsRoot}/img/sourcegraph` +
             (this.props.isLightTheme ? '-light' : '') +
             '-head-logo.svg'
-        if (window.context.branding && window.context.branding.logo) {
-            logoUrl = window.context.branding.logo
+        const { branding } = window.context
+        if (branding) {
+            if (this.props.isLightTheme) {
+                if (branding.light && branding.light.logo) {
+                    logoUrl = branding.light.logo
+                }
+            } else if (branding.dark && branding.dark.logo) {
+                logoUrl = branding.dark.logo
+            }
         }
         const hasScopes = this.getScopes().length > 0
         return (
