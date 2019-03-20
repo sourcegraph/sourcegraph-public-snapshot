@@ -15,11 +15,12 @@ import (
 
 type symbolsArgs struct {
 	graphqlutil.ConnectionArgs
-	Query *string
+	Query           *string
+	IncludePatterns *[]string
 }
 
 func (r *gitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First)
+	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -27,7 +28,7 @@ func (r *gitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 }
 
 func (r *gitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r, args.Query, args.First)
+	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
-func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *string, first *int32) (res []*symbolResolver, err error) {
+func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	defer func() {
@@ -54,10 +55,15 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 			err = errors.New("processing symbols is taking longer than expected. Try again in a while")
 		}
 	}()
+	var includePatternsSlice []string
+	if includePatterns != nil {
+		includePatternsSlice = *includePatterns
+	}
 	searchArgs := protocol.SearchArgs{
-		CommitID: api.CommitID(commit.oid),
-		First:    limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:     commit.repo.repo.Name,
+		CommitID:        api.CommitID(commit.oid),
+		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
+		Repo:            commit.repo.repo.Name,
+		IncludePatterns: includePatternsSlice,
 	}
 	if query != nil {
 		searchArgs.Query = *query
