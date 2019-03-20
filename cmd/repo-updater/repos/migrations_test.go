@@ -21,7 +21,7 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 
 	githubDotCom := repos.ExternalService{
 		ID:          1,
-		Kind:        "github",
+		Kind:        "GITHUB",
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
 			{
@@ -230,7 +230,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	now := clock.Now()
 
 	githubDotCom := repos.ExternalService{
-		Kind:        "github",
+		Kind:        "GITHUB",
 		DisplayName: "Github.com - Test",
 		Config: formatJSON(`
 			{
@@ -243,7 +243,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	}
 
 	githubEnterprise := repos.ExternalService{
-		Kind:        "github",
+		Kind:        "GITHUB",
 		DisplayName: "Github Enterprise - Test",
 		Config: formatJSON(`
 			{
@@ -256,7 +256,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	}
 
 	gitlab := repos.ExternalService{
-		Kind:        "gitlab",
+		Kind:        "GITLAB",
 		DisplayName: "Gitlab - Test",
 		Config:      formatJSON(`{"url": "https://gitlab.com"}`),
 		CreatedAt:   now,
@@ -277,7 +277,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 				stored: repos.ExternalServices{&githubDotCom, &gitlab},
 				assert: func(t testing.TB, have repos.ExternalServices) {
 					repos.Assert.ExternalServicesEqual(&gitlab)(t, have.Filter(
-						func(s *repos.ExternalService) bool { return s.Kind == "gitlab" },
+						func(s *repos.ExternalService) bool { return s.Kind == "GITLAB" },
 					))
 				},
 				err: "<nil>",
