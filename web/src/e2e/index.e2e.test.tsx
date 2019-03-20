@@ -18,6 +18,10 @@ const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false
     ? realPercySnapshot
     : noopPercySnapshot
 
+process.on('unhandledRejection', error => {
+    console.error('Caught unhandledRejection:', error)
+})
+
 /**
  * Used in the external service configuration.
  */
