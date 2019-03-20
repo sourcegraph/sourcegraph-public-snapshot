@@ -287,7 +287,7 @@ describe('e2e test suite', function(this: any): void {
         await page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item')
     }
 
-    describe('External services', async () => {
+    describe('External services', () => {
         test('External service add, edit, delete', async () => {
             const displayName = 'e2e-github-test-2'
             await ensureHasExternalService(
