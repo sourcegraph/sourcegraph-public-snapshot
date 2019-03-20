@@ -168,7 +168,8 @@ func main() {
 		bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
 		bk.Env("VERSION", version),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		bk.Cmd("./dev/ci/e2e-bext.sh"))
+		bk.Cmd("./dev/ci/e2e-bext.sh"),
+		bk.ArtifactPaths("./puppeteer/*.png"))
 
 	pipeline.AddWait()
 
