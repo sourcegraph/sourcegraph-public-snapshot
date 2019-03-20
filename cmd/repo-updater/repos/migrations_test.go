@@ -21,7 +21,7 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 
 	githubDotCom := repos.ExternalService{
 		ID:          1,
-		Kind:        "github",
+		Kind:        "GITHUB",
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
 			{
