@@ -80,18 +80,9 @@ describe('e2e test suite', function(this: any): void {
         await init()
     })
 
-    beforeEach(async () => {
-        if (page.isClosed()) {
-            page = await browser.newPage()
-        }
-    })
-
     // Close browser.
     afterAll(async () => {
         if (browser) {
-            if (page && !page.isClosed()) {
-                await page.close()
-            }
             await browser.close()
         }
     })
@@ -230,11 +221,6 @@ describe('e2e test suite', function(this: any): void {
         }
     }
 
-    // Open page.
-    beforeEach(async () => {
-        page = await browser.newPage()
-    })
-
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
         path.resolve(__dirname, '..', '..', '..'),
@@ -315,6 +301,7 @@ describe('e2e test suite', function(this: any): void {
                 method: 'keyboard',
             })
             await page.click('.e2e-update-external-service-button')
+            await page.waitForSelector('.e2e-update-external-service-button:not([disabled])')
 
             await page.waitForSelector('.list-group-item[href="/site-admin/external-services"]')
             await page.click('.list-group-item[href="/site-admin/external-services"]')
