@@ -616,7 +616,7 @@ func newSearchResultResolver(result interface{}, score int) *searchSuggestionRes
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
 
 	case *symbolResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.ContainerName), label: r.symbol.Name + " " + r.symbol.ContainerName}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
 
 	default:
 		panic("never here")

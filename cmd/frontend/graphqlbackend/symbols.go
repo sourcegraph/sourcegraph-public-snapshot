@@ -6,13 +6,11 @@ import (
 	"strings"
 	"time"
 
-	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type symbolsArgs struct {
@@ -74,7 +72,7 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 	}
 	resolvers := make([]*symbolResolver, 0, len(symbols))
 	for _, symbol := range symbols {
-		resolver := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit)
+		resolver := toSymbolResolver(symbol, baseURI, strings.ToLower(symbol.Language), commit)
 		if resolver == nil {
 			continue
 		}
@@ -83,22 +81,18 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 	return resolvers, err
 }
 
-func toSymbolResolver(symbol lsp.SymbolInformation, lang string, commitResolver *gitCommitResolver) *symbolResolver {
+func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, commitResolver *gitCommitResolver) *symbolResolver {
 	resolver := &symbolResolver{
 		symbol:   symbol,
 		language: lang,
+		uri:      baseURI.WithFilePath(symbol.Path),
 	}
-	uri, err := gituri.Parse(string(symbol.Location.URI))
-	if err != nil {
-		log15.Warn("Omitting symbol with invalid URI from results.", "uri", symbol.Location.URI, "error", err)
-		return nil
-	}
-	symbolRange := symbol.Location.Range // copy
+	symbolRange := symbolRange(symbol)
 	resolver.location = &locationResolver{
 		resource: &gitTreeEntryResolver{
 			commit: commitResolver,
-			path:   uri.Fragment,
-			stat:   createFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)
+			path:   resolver.uri.Fragment,
+			stat:   createFileInfo(resolver.uri.Fragment, false), // assume the path refers to a file (not dir)
 		},
 		lspRange: &symbolRange,
 	}
@@ -118,22 +112,23 @@ func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 }
 
 type symbolResolver struct {
-	symbol   lsp.SymbolInformation
+	symbol   protocol.Symbol
 	language string
 	location *locationResolver
+	uri      *gituri.URI
 }
 
 func (r *symbolResolver) Name() string { return r.symbol.Name }
 
 func (r *symbolResolver) ContainerName() *string {
-	if r.symbol.ContainerName == "" {
+	if r.symbol.Parent == "" {
 		return nil
 	}
-	return &r.symbol.ContainerName
+	return &r.symbol.Parent
 }
 
 func (r *symbolResolver) Kind() string /* enum SymbolKind */ {
-	return strings.ToUpper(r.symbol.Kind.String())
+	return strings.ToUpper(ctagsKindToLSPSymbolKind(r.symbol.Kind).String())
 }
 
 func (r *symbolResolver) Language() string { return r.language }
@@ -143,3 +138,5 @@ func (r *symbolResolver) Location() *locationResolver { return r.location }
 func (r *symbolResolver) URL(ctx context.Context) (string, error) { return r.location.URL(ctx) }
 
 func (r *symbolResolver) CanonicalURL() (string, error) { return r.location.CanonicalURL() }
+
+func (r *symbolResolver) FileLocal() bool { return r.symbol.FileLimited }

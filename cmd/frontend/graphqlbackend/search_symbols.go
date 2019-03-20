@@ -148,7 +148,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		if inputRev != "" {
 			commit.inputRev = &inputRev
 		}
-		symbolRes := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit)
+		symbolRes := toSymbolResolver(symbol, baseURI, strings.ToLower(symbol.Language), commit)
 		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
@@ -178,21 +178,11 @@ func makeFileMatchURIFromSymbol(symbolResolver *symbolResolver, inputRev string)
 	return uri
 }
 
-// symbolToLSPSymbolInformation converts a symbols service Symbol struct to an LSP SymbolInformation
-// baseURI is the git://repo?rev base URI for the symbol that is extended with the file path
-func symbolToLSPSymbolInformation(s protocol.Symbol, baseURI *gituri.URI) lsp.SymbolInformation {
+func symbolRange(s protocol.Symbol) lsp.Range {
 	ch := ctagsSymbolCharacter(s)
-	return lsp.SymbolInformation{
-		Name:          s.Name + s.Signature,
-		ContainerName: s.Parent,
-		Kind:          ctagsKindToLSPSymbolKind(s.Kind),
-		Location: lsp.Location{
-			URI: lsp.DocumentURI(baseURI.WithFilePath(s.Path).String()),
-			Range: lsp.Range{
-				Start: lsp.Position{Line: s.Line - 1, Character: ch},
-				End:   lsp.Position{Line: s.Line - 1, Character: ch + len(s.Name)},
-			},
-		},
+	return lsp.Range{
+		Start: lsp.Position{Line: s.Line - 1, Character: ch},
+		End:   lsp.Position{Line: s.Line - 1, Character: ch + len(s.Name)},
 	}
 }
 
