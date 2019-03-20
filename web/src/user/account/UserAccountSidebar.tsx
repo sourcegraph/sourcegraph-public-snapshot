@@ -103,6 +103,7 @@ export const UserAccountSidebar: React.FunctionComponent<UserAccountSidebarProps
                         <LogoutIcon className="icon-inline list-group-item-action-icon" /> Sign out
                     </a>
                 )}
+            <div>Version: {window.context.version}</div>
         </div>
     )
 }
