@@ -98,6 +98,37 @@ const commentSnippetCodeView: CodeView = {
     isDiff: false,
 }
 
+const fileLineContainerCodeView: CodeView = {
+    selector: '.js-file-line-container',
+    dom: singleFileDOMFunctions,
+    getToolbarMount: fileLineContainer => {
+        const codeViewParent = fileLineContainer.closest('.repository-content')
+        if (!codeViewParent) {
+            throw new Error('Repository content element not found')
+        }
+        const className = 'sourcegraph-app-annotator'
+        const existingMount = codeViewParent.querySelector(`.${className}`) as HTMLElement
+        if (existingMount) {
+            return existingMount
+        }
+        const mountEl = document.createElement('div')
+        mountEl.style.display = 'inline-flex'
+        mountEl.style.verticalAlign = 'middle'
+        mountEl.style.alignItems = 'center'
+        mountEl.className = className
+        const rawURLLink = codeViewParent.querySelector('#raw-url')
+        const buttonGroup = rawURLLink && rawURLLink.closest('.BtnGroup')
+        if (!buttonGroup || !buttonGroup.parentNode) {
+            throw new Error('File actions not found')
+        }
+        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
+        return mountEl
+    },
+    resolveFileInfo,
+    toolbarButtonProps,
+    isDiff: false,
+}
+
 const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
     if (elem.querySelector('article.markdown-body')) {
         // This code view is rendered markdown, we shouldn't add code intelligence
@@ -148,7 +179,7 @@ const getOverlayMount = () => {
 
 export const githubCodeHost: CodeHost = {
     name: 'github',
-    codeViews: [searchResultCodeView, commentSnippetCodeView],
+    codeViews: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
     codeViewResolver,
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
