@@ -131,7 +131,7 @@ func main() {
 			httpcli.NewCachedTransportOpt(httputil.Cache, true),
 		)
 
-		src := repos.NewExternalServicesSourcer(store, cliFactory)
+		src := repos.NewSourcer(cliFactory)
 		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
 			return time.Now().UTC()
 		})
