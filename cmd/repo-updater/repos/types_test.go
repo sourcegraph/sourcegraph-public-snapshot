@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -221,15 +220,4 @@ func formatJSON(t testing.TB, s string) string {
 	}
 
 	return formatted
-}
-
-func marshalJSON(t testing.TB, v interface{}) string {
-	t.Helper()
-
-	bs, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return formatJSON(t, string(bs))
 }
