@@ -297,3 +297,13 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 	clone.Apply(opts...)
 	return clone
 }
+
+// Filter returns all the ExternalServices that match the given predicate.
+func (es ExternalServices) Filter(pred func(*ExternalService) bool) (fs ExternalServices) {
+	for _, e := range es {
+		if pred(e) {
+			fs = append(fs, e)
+		}
+	}
+	return fs
+}
