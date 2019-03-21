@@ -19,7 +19,9 @@ To set this up, add GitHub as an external service to Sourcegraph:
 
 ## Repository syncing
 
-By default, Sourcegraph syncs all repositories that are affiliated with the user whose token you provide.
+By default, Sourcegraph syncs `none` of the repositories that are affiliated with the user whose token you provide, as defined by default [`repositoryQuery`](github.md#configuration) setting.
+
+You can explicitly configure which repositories to mirror via the [`repositoryQuery`](github.md#configuration) setting.
 
 If you want to synchronize public repositories from GitHub.com, the repositories need to be explicitly enumerated in the [`repos`](github.md#configuration) field of the GitHub external service configuration.
 
