@@ -33,7 +33,7 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 //
 // This migration must be rolled-out together with the UI changes that remove the admin's
 // ability to explicitly enabled / disable individual repos.
-func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
+func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time) Migration {
 	return transactional(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.github-repos-enabled-state-deprecation"
 
@@ -83,9 +83,11 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 
 		all := srcs.ExternalServices()
 		svcs := make(map[int64]*ExternalService, len(all))
+		now := clock()
+
 		for _, svc := range all {
 			svcs[svc.ID] = svc
-			if err = removeInitalRepositoryEnablement(svc); err != nil {
+			if err = removeInitalRepositoryEnablement(svc, now); err != nil {
 				return errors.Wrapf(err, "%s.remove-initial-repository-enablement", prefix)
 			}
 		}
@@ -109,6 +111,7 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 				if err := svc.ExcludeGithubRepos(r); err != nil {
 					return errors.Wrapf(err, "%s.disabled", prefix)
 				}
+				svc.UpdatedAt = now
 			}
 		}
 
@@ -124,6 +127,7 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 				if err := svc.IncludeGithubRepos(r); err != nil {
 					return errors.Wrapf(err, "%s.enabled", prefix)
 				}
+				svc.UpdatedAt = now
 			}
 		}
 
@@ -131,20 +135,24 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer) Migration {
 	})
 }
 
-func removeInitalRepositoryEnablement(svc *ExternalService) error {
+func removeInitalRepositoryEnablement(svc *ExternalService, ts time.Time) error {
 	edited, err := jsonc.Remove(svc.Config, "initialRepositoryEnablement")
 	if err != nil {
 		return err
 	}
 
-	svc.Config = edited
+	if edited != svc.Config {
+		svc.Config = edited
+		svc.UpdatedAt = ts
+	}
+
 	return nil
 }
 
 // GithubSetDefaultRepositoryQueryMigration returns a Migration that changes all
 // configurations of GitHub external services which have an empty "repositoryQuery"
 // migration to its explicit default.
-func GithubSetDefaultRepositoryQueryMigration() Migration {
+func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration {
 	return transactional(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.github-set-default-repository-query"
 
@@ -153,6 +161,7 @@ func GithubSetDefaultRepositoryQueryMigration() Migration {
 			return errors.Wrapf(err, "%s.list-external-services", prefix)
 		}
 
+		now := clock()
 		for _, svc := range svcs {
 			var c schema.GitHubConnection
 			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
@@ -181,6 +190,7 @@ func GithubSetDefaultRepositoryQueryMigration() Migration {
 			}
 
 			svc.Config = edited
+			svc.UpdatedAt = now
 		}
 
 		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {

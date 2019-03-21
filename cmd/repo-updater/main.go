@@ -39,6 +39,8 @@ func main() {
 	env.HandleHelpFlag()
 	tracer.Init()
 
+	clock := func() time.Time { return time.Now().UTC() }
+
 	// Syncing relies on access to frontend and git-server, so wait until they started up.
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
@@ -51,7 +53,7 @@ func main() {
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
 	for _, m := range []repos.Migration{
-		repos.GithubSetDefaultRepositoryQueryMigration(),
+		repos.GithubSetDefaultRepositoryQueryMigration(clock),
 	} {
 		if err := m.Run(ctx, store); err != nil {
 			log.Fatalf("failed to run migration: %s", err)
@@ -132,9 +134,7 @@ func main() {
 		)
 
 		src := repos.NewSourcer(cliFactory)
-		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
-			return time.Now().UTC()
-		})
+		syncer = repos.NewSyncer(store, src, diffs, clock)
 
 		log15.Info("starting new syncer", "external service kinds", kinds)
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval(), kinds...)) }()

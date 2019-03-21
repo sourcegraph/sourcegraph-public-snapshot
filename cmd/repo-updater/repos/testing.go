@@ -294,20 +294,27 @@ var Assert = struct {
 
 // Opt contains functional options to be used in tests.
 var Opt = struct {
-	ExternalServiceID        func(int64) func(*ExternalService)
-	ExternalServiceDeletedAt func(time.Time) func(*ExternalService)
-	RepoID                   func(uint32) func(*Repo)
-	RepoName                 func(string) func(*Repo)
-	RepoCreatedAt            func(time.Time) func(*Repo)
-	RepoModifiedAt           func(time.Time) func(*Repo)
-	RepoDeletedAt            func(time.Time) func(*Repo)
-	RepoSources              func(...string) func(*Repo)
-	RepoMetadata             func(interface{}) func(*Repo)
-	RepoExternalID           func(string) func(*Repo)
+	ExternalServiceID         func(int64) func(*ExternalService)
+	ExternalServiceModifiedAt func(time.Time) func(*ExternalService)
+	ExternalServiceDeletedAt  func(time.Time) func(*ExternalService)
+	RepoID                    func(uint32) func(*Repo)
+	RepoName                  func(string) func(*Repo)
+	RepoCreatedAt             func(time.Time) func(*Repo)
+	RepoModifiedAt            func(time.Time) func(*Repo)
+	RepoDeletedAt             func(time.Time) func(*Repo)
+	RepoSources               func(...string) func(*Repo)
+	RepoMetadata              func(interface{}) func(*Repo)
+	RepoExternalID            func(string) func(*Repo)
 }{
 	ExternalServiceID: func(n int64) func(*ExternalService) {
 		return func(e *ExternalService) {
 			e.ID = n
+		}
+	},
+	ExternalServiceModifiedAt: func(ts time.Time) func(*ExternalService) {
+		return func(e *ExternalService) {
+			e.UpdatedAt = ts
+			e.DeletedAt = time.Time{}
 		}
 	},
 	ExternalServiceDeletedAt: func(ts time.Time) func(*ExternalService) {
