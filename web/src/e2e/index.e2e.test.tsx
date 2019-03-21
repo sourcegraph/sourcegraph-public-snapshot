@@ -64,21 +64,27 @@ describe('e2e test suite', function(this: any): void {
     }
 
     // Start browser.
-    beforeAll(async () => {
-        let args: string[] = []
-        if (process.getuid() === 0) {
-            // TODO don't run as root in CI
-            console.warn('Running as root, disabling sandbox')
-            args = ['--no-sandbox', '--disable-setuid-sandbox']
-        }
-        const launchOpt: LaunchOptions = {
-            args: [...args, '--window-size=1280,1024'],
-            headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
-        }
-        browser = await puppeteer.launch(launchOpt)
-        page = await browser.newPage()
-        await init()
-    })
+    beforeAll(
+        async () => {
+            let args: string[] = []
+            if (process.getuid() === 0) {
+                // TODO don't run as root in CI
+                console.warn('Running as root, disabling sandbox')
+                args = ['--no-sandbox', '--disable-setuid-sandbox']
+            }
+            const launchOpt: LaunchOptions = {
+                args: [...args, '--window-size=1280,1024'],
+                headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+            }
+            browser = await puppeteer.launch(launchOpt)
+            page = await browser.newPage()
+            await init()
+        },
+        // Cloning the repositories takes ~1 minute, so give initialization 2
+        // minutes instead of 1 (which would be inherited from
+        // `jest.setTimeout(1 * 60 * 1000)` above).
+        2 * 60 * 1000
+    )
 
     // Close browser.
     afterAll(async () => {
