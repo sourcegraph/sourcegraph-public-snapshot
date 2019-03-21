@@ -27,11 +27,49 @@ See [previous Sourcegraph releases](previous_releases.md).
 
 ---
 
-## Future
+## Themes
+
+We want Sourcegraph to be the best way to answer questions while writing, reviewing, and reading code. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
+
+Our work generally falls into the following categories:
+
+- **Code search and navigation:** quickly showing you the code you're looking for and making it easy to navigate around
+- **Code intelligence:** go-to-definition, hover tooltips, references, symbols, etc., for code in many languages, including real-time and cross-repository support
+- **Integrations:** making Sourcegraph work well with code hosts, review tools, editors, and other tools in your dev workflow (e.g., repository syncing from your code host, browser extensions, and editor extensions)
+- **Extensibility:** supporting [Sourcegraph extensions](../../extensions/index.md) that add code intelligence and other information (e.g., tracing, logging, and security annotations from 3rd-party tools) to Sourcegraph and external tools that Sourcegraph integrates with
+- **Distribution:** making it easy to deploy and manage a self-hosted Sourcegraph instance
+- **Enterprise:** features that larger companies need (e.g., scaling, authentication, authorization, auditing, etc.)
+
+---
+
+## Feature areas
+
+### Cross-feature-area
+
+- Better support for searching open-source repositories AND internal code
+
+### Search
+
+- "Did you mean ...?" for common mistakes in search queries [#2772](https://github.com/sourcegraph/sourcegraph/issues/2772)
+- Nested search queries (e.g., in all repositories whose `package.json` contains `foo`, find matches of `bar`) [#1005](https://github.com/sourcegraph/sourcegraph/issues/1005)
+  - Multi-line searches (#35)(https://github.com/sourcegraph/sourcegraph/issues/35)
+- More advanced search filters (provided by extensions), such as those using language-specific or dependency graph information <!-- TODO -->
+- More types/sources of search results (provided by extensions), such as documentation (wiki, Markdown, and Google Docs), issues, PR comments, and configuration data [#738](https://github.com/sourcegraph/sourcegraph/issues/738)
+- Improved search relevance and ranking <!-- TODO -->
+
+### Code navigation and intelligence
+
+- Refine search-based (non-language-server-based) code intelligence for [all languages](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
+  - 
+- Analyze and expose dependency graph for all major languages and build systems <!-- TODO -->
+- Programming language statistics <!-- TODO -->
+- Cross-language, cross-repository definitions and references support for APIs/IDLs (GraphQL, Thrift, Protobuf, etc) [#981](https://github.com/sourcegraph/sourcegraph/issues/981)
+- Language-server-based (precise) code intelligence for [more languages](https://sourcegraph.com/extensions?query=tag%3Alanguage-server)
+
+## Features
 
 Search
 
-- [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
 - Improvements to saved searches
 
 Code intelligence and navigation
@@ -40,7 +78,6 @@ Code intelligence and navigation
 - [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
 - [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
 - [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
-- [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981) (followup from 3.0)
 - [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
 - [Scoped symbols sidebar](https://github.com/sourcegraph/sourcegraph/issues/1967)
 - PHP language support via extension
@@ -64,22 +101,6 @@ Other
 - Enhanced notification preferences
 - Support for non-Git version control systems (Perforce, Subversion, TFS, etc.)
 - API access logging
-
----
-
-## Themes
-
-We want Sourcegraph to be the best way to answer questions while writing, reviewing, or planning code. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
-
-Our work generally falls into the following categories:
-
-- **Search and browsing:** quickly showing you the code you're looking for and making it easy to navigate around
-- **Code intelligence:** go-to-definition, hover tooltips, references, symbols, etc., for code in many languages, including real-time and cross-repository support
-- **Integrations:** making Sourcegraph work well with code hosts, review tools, editors, and other tools in your dev workflow (e.g., repository syncing from your code host, browser extensions, and editor extensions)
-- **Extensibility:** supporting Sourcegraph extensions that add code intelligence and other information (e.g., tracing, logging, and security annotations from 3rd-party tools) to Sourcegraph and external tools that Sourcegraph integrates with
-- **Deployment:** making it easy to run and maintain a self-hosted Sourcegraph instance
-- **Enterprise:** features that larger companies need (e.g., scaling, authentication, authorization, auditing, etc.)
-
 
 <!--
 
