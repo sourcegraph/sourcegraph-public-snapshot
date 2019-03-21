@@ -23,7 +23,8 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 		Config: formatJSON(`
 			{
 				// Some comment
-				"url": "https://github.com"
+				"url": "https://github.com",
+				"token": "secret"
 			}
 		`),
 	}
@@ -45,19 +46,19 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 	}
 
 	excluded := func(t testing.TB, rs ...*repos.Repo) func(*repos.ExternalService) {
+		t.Helper()
 		return func(e *repos.ExternalService) {
-			t.Helper()
 			if err := e.ExcludeGithubRepos(rs...); err != nil {
-				t.Error(err)
+				t.Fatal(err)
 			}
 		}
 	}
 
 	included := func(t testing.TB, rs ...*repos.Repo) func(*repos.ExternalService) {
+		t.Helper()
 		return func(e *repos.ExternalService) {
-			t.Helper()
 			if err := e.IncludeGithubRepos(rs...); err != nil {
-				t.Error(err)
+				t.Fatal(err)
 			}
 		}
 	}
@@ -154,6 +155,7 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 						{
 							// Some comment
 							"url": "https://github.com",
+							"token": "secret",
 							"initialRepositoryEnablement": false
 						}`)
 					}), nil,

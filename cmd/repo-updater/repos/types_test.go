@@ -16,7 +16,8 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 		DisplayName: "Github",
 		Config: `{
 			// Some comment
-			"url": "https://github.com"
+			"url": "https://github.com",
+			"token": "secret"
 		}`,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -24,7 +25,7 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 
 	repos := Repos{
 		{
-			Name: "foo",
+			Name: "github.com/org/foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceType: "github",
 				ServiceID:   "https://github.com/",
@@ -32,7 +33,7 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 			},
 		},
 		{
-			Name: "bar",
+			Name: "github.com/org/bar",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",
@@ -40,7 +41,7 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 			},
 		},
 		{
-			Name: "baz",
+			Name: "github.com/org/baz",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceType: "github",
 				ServiceID:   "https://github.mycorp.com/",
@@ -64,9 +65,10 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 			{
 				// Some comment
 				"url": "https://github.com",
+				"token": "secret",
 				"exclude": [
 					{"id": "foo"},
-					{"name": "BAZ"}
+					{"name": "org/BAZ"}
 				]
 			}`)
 		})
@@ -97,8 +99,9 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 			{
 				// Some comment
 				"url": "https://github.com",
+				"token": "secret",
 				"exclude": [
-					{"name": "boo"}
+					{"name": "org/boo"}
 				]
 			}`)
 		})
@@ -113,10 +116,11 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 				{
 					// Some comment
 					"url": "https://github.com",
+					"token": "secret",
 					"exclude": [
-						{"name": "boo"},
-						{"id": "foo", "name": "foo"},
-						{"name": "baz"}
+						{"name": "org/boo"},
+						{"id": "foo", "name": "org/foo"},
+						{"name": "org/baz"}
 					]
 				}`)
 			})),
@@ -129,9 +133,10 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 				{
 					// Some comment
 					"url": "https://github.com",
+					"token": "secret",
 					"repos": [
-						"FOO",
-						"baz"
+						"org/FOO",
+						"org/baz"
 					]
 				}`)
 		})
@@ -162,8 +167,9 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 				{
 					// Some comment
 					"url": "https://github.com",
+					"token": "secret",
 					"repos": [
-						"boo"
+						"org/boo"
 					]
 				}`)
 		})
@@ -178,10 +184,11 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 					{
 						// Some comment
 						"url": "https://github.com",
+						"token": "secret",
 						"repos": [
-							"boo",
-							"foo",
-							"baz"
+							"org/boo",
+							"org/foo",
+							"org/baz"
 						]
 					}`)
 			})),

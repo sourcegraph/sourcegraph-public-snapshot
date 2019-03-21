@@ -507,7 +507,7 @@ func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.St
 				return
 			}
 			defer txstore.Done(&errRollback)
-			s = &noopTxStore{Store: txstore}
+			s = &noopTxStore{TB: t, Store: txstore}
 		}
 
 		test(t, s)
@@ -515,6 +515,7 @@ func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.St
 }
 
 type noopTxStore struct {
+	testing.TB
 	repos.Store
 	count int
 }
@@ -529,11 +530,13 @@ func (tx *noopTxStore) Transact(context.Context) (repos.TxStore, error) {
 }
 
 func (tx *noopTxStore) Done(errs ...*error) {
+	tx.Helper()
+
 	if tx.count != 1 {
-		panic("no current transactions")
+		tx.Fatal("no current transactions")
 	}
 	if len(errs) > 0 && *errs[0] != nil {
-		panic(fmt.Sprintf("unexpected error in noopTxStore: %v", *errs[0]))
+		tx.Fatal(fmt.Sprintf("unexpected error in noopTxStore: %v", *errs[0]))
 	}
 	tx.count--
 }

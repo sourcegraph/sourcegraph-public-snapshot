@@ -7,10 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goware/urlx"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // An ExternalService is defines a Source that yields Repos.
@@ -85,11 +88,11 @@ func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
 			}
 
 			id := r.ExternalRepo.ID
-			name := strings.ToLower(r.Name)
+			name := githubNameWithOwner(r.Name)
 
 			if !set[name] && !set[id] {
 				c.Exclude = append(c.Exclude, &schema.Exclude{
-					Name: r.Name,
+					Name: name,
 					Id:   id,
 				})
 
@@ -105,6 +108,14 @@ func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
 
 		return "exclude", c.Exclude
 	})
+}
+
+func githubNameWithOwner(name string) string {
+	u, _ := urlx.Parse(name)
+	if u != nil {
+		name = strings.TrimPrefix(u.Path, "/")
+	}
+	return strings.ToLower(name)
 }
 
 // IncludeGithubRepos changes the configuration of a Github external service to explicitly enlist the
@@ -123,8 +134,8 @@ func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
 				continue
 			}
 
-			if name := strings.ToLower(r.Name); !set[name] {
-				c.Repos = append(c.Repos, r.Name)
+			if name := githubNameWithOwner(r.Name); !set[name] {
+				c.Repos = append(c.Repos, name)
 				set[name] = true
 			}
 		}
@@ -158,7 +169,55 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 
 	e.Config = edited
 
-	return nil
+	return e.validateConfig()
+}
+
+func (e ExternalService) schema() string {
+	switch strings.ToLower(e.Kind) {
+	case "awscodecommit":
+		return schema.AWSCodeCommitSchemaJSON
+	case "bitbucketserver":
+		return schema.BitbucketServerSchemaJSON
+	case "github":
+		return schema.GitHubSchemaJSON
+	case "gitlab":
+		return schema.GitLabSchemaJSON
+	case "gitolite":
+		return schema.GitoliteSchemaJSON
+	case "phabricator":
+		return schema.PhabricatorSchemaJSON
+	case "other":
+		return schema.OtherExternalServiceSchemaJSON
+	default:
+		return ""
+	}
+}
+
+// validateConfig validates the config of an external service
+// against its JSON schema.
+func (e ExternalService) validateConfig() error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(e.schema()))
+	if err != nil {
+		return errors.Wrapf(err, "failed to compile schema for external service of kind %q", e.Kind)
+	}
+
+	normalized, err := jsonc.Parse(e.Config)
+	if err != nil {
+		return errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate config against schema")
+	}
+
+	errs := new(multierror.Error)
+	for _, err := range res.Errors() {
+		errs = multierror.Append(errs, errors.New(err.String()))
+	}
+
+	return errs.ErrorOrNil()
 }
 
 // Clone returns a clone of the given external service.
