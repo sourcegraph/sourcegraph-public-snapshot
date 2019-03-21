@@ -14,25 +14,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoInfoRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	resp, err := s.doRepoInfo(r.Context(), req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) doRepoInfo(ctx context.Context, req protocol.RepoInfoRequest) (*protocol.RepoInfoResponse, error) {
-	repo := protocol.NormalizeRepo(req.Repo)
+func (s *Server) doRepoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfoResponse, error) {
+	repo = protocol.NormalizeRepo(repo)
 	dir := path.Join(s.ReposDir, string(repo))
 	resp := protocol.RepoInfoResponse{
 		Cloned: repoCloned(dir),
@@ -46,26 +29,26 @@ func (s *Server) doRepoInfo(ctx context.Context, req protocol.RepoInfoRequest) (
 	}
 	{
 		resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
-		if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+		if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 			resp.CloneInProgress = true
 			resp.CloneProgress = "This will never finish cloning"
 		}
 	}
 	if resp.Cloned {
 		if mtime, err := repoLastFetched(dir); err != nil {
-			log15.Warn("error computing last-fetched date", "repo", req.Repo, "err", err)
+			log15.Warn("error computing last-fetched date", "repo", repo, "err", err)
 		} else {
 			resp.LastFetched = &mtime
 		}
 
 		if cloneTime, err := getRecloneTime(dir); err != nil {
-			log15.Warn("error getting reclone time", "repo", req.Repo, "err", err)
+			log15.Warn("error getting reclone time", "repo", repo, "err", err)
 		} else {
 			resp.CloneTime = &cloneTime
 		}
 
 		if lastChanged, err := repoLastChanged(dir); err != nil {
-			log15.Warn("error getting last changed", "repo", req.Repo, "err", err)
+			log15.Warn("error getting last changed", "repo", repo, "err", err)
 		} else {
 			resp.LastChanged = &lastChanged
 		}
@@ -84,7 +67,7 @@ func (s *Server) handleMultiRepoInfo(w http.ResponseWriter, r *http.Request) {
 		Results: make(map[api.RepoName]*protocol.RepoInfoResponse),
 	}
 	for _, repoName := range req.Repos {
-		result, err := s.doRepoInfo(r.Context(), protocol.RepoInfoRequest{Repo: repoName})
+		result, err := s.doRepoInfo(r.Context(), repoName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
