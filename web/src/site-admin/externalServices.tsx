@@ -146,12 +146,17 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   // Create one with the repo scope at https://[your-github-instance]/settings/tokens/new
   "token": "",
 
+  // An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.
+  // See https://docs.sourcegraph.com/admin/site_config/all#githubconnection-object for more details.
+  "repositoryQuery": [
+      "none"
+  ],
+
   // Sync public repositories from https://github.com by adding them to "repos".
   // (This is not necessary for GitHub Enterprise instances)
-  // "repos": [
-  //     "sourcegraph/sourcegraph"
-  // ]
-
+  "repos": [
+      // "sourcegraph/sourcegraph"
+  ]
 }`,
 }
 
