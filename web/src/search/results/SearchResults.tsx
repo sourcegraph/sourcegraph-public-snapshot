@@ -1,21 +1,19 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, Subject, Subscription } from 'rxjs'
+import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery } from '..'
 import { EvaluatedContributions } from '../../../../shared/src/api/protocol'
+import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
-import { fetchHighlightedFileLines } from '../../repo/backend'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../theme'
-import { eventLogger } from '../../tracking/eventLogger'
-import { search } from '../backend'
+import { EventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
 import {
     isSearchResults,
@@ -28,11 +26,17 @@ import { SearchResultsList } from './SearchResultsList'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps, PlatformContextProps, ThemeProps {
+export interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     navbarSearchQuery: string
+    eventLogger: Pick<EventLogger, 'log' | 'logViewEvent'>
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    searchRequest: (
+        query: string,
+        { extensionsController }: ExtensionsControllerProps<'services'>
+    ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
 }
 
@@ -55,8 +59,6 @@ interface SearchResultsState {
     contributions?: EvaluatedContributions
 }
 
-const newRepoFilters = localStorage.getItem('newRepoFilters') !== 'false'
-
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
         didSaveQuery: false,
@@ -64,14 +66,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         allExpanded: false,
         uiLimit: UI_PAGE_SIZE,
     }
-
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SearchResults')
+        this.props.eventLogger.logViewEvent('SearchResults')
 
         this.subscriptions.add(
             this.componentUpdates
@@ -82,7 +83,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter((query): query is string => !!query),
                     tap(query => {
-                        eventLogger.log('SearchResultsQueried', {
+                        this.props.eventLogger.log('SearchResultsQueried', {
                             code_search: { query_data: queryTelemetryData(query) },
                         })
                     }),
@@ -91,11 +92,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
-                            search(query, this.props).pipe(
+                            this.props.searchRequest(query, this.props).pipe(
                                 // Log telemetry
                                 tap(
                                     results =>
-                                        eventLogger.log('SearchResultsFetched', {
+                                        this.props.eventLogger.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
                                                 results: {
@@ -107,7 +108,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             },
                                         }),
                                     error => {
-                                        eventLogger.log('SearchResultsFetchFailed', {
+                                        this.props.eventLogger.log('SearchResultsFetchFailed', {
                                             code_search: { error_message: error.message },
                                         })
                                         console.error(error)
@@ -141,12 +142,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private onDidCreateSavedQuery = () => {
-        eventLogger.log('SavedQueryCreated')
+        this.props.eventLogger.log('SavedQueryCreated')
         this.setState({ showSavedQueryModal: false, didSaveQuery: true })
     }
 
     private onModalClose = () => {
-        eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: false } })
+        this.props.eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: false } })
         this.setState({ didSaveQuery: false, showSavedQueryModal: false })
     }
 
@@ -159,7 +160,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             <div className="search-results">
                 <PageTitle key="page-title" title={query} />
                 {((isSearchResults(this.state.resultsOrError) && filters.length > 0) || extensionFilters) && (
-                    <div className="search-results__filters-bar">
+                    <div className="search-results__filters-bar" data-testid="filters-bar">
                         Filters:
                         <div className="search-results__filters">
                             {extensionFilters &&
@@ -188,10 +189,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         </div>
                     </div>
                 )}
-                {newRepoFilters &&
-                    isSearchResults(this.state.resultsOrError) &&
+                {isSearchResults(this.state.resultsOrError) &&
                     this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
-                        <div className="search-results__filters-bar">
+                        <div className="search-results__filters-bar" data-testid="repo-filters-bar">
                             Repositories:
                             <div className="search-results__filters">
                                 {this.state.resultsOrError.dynamicFilters
@@ -236,7 +236,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     authenticatedUser={this.props.authenticatedUser}
                     settingsCascade={this.props.settingsCascade}
                     isLightTheme={this.props.isLightTheme}
-                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                    fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                 />
             </div>
         )
@@ -248,9 +249,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
             let dynamicFilters = this.state.resultsOrError.dynamicFilters
-            if (newRepoFilters) {
-                dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
-            }
+            dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
             for (const d of dynamicFilters) {
                 filters.set(d.value, d)
             }
@@ -313,13 +312,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         this.setState(
             state => ({ allExpanded: !state.allExpanded }),
             () => {
-                eventLogger.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+                this.props.eventLogger.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
             }
         )
     }
 
     private onDynamicFilterClicked = (value: string) => {
-        eventLogger.log('DynamicFilterClicked', {
+        this.props.eventLogger.log('DynamicFilterClicked', {
             search_filter: { value },
         })
 

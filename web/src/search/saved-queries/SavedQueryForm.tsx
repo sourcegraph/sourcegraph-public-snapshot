@@ -97,7 +97,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                                 if (settings && settings['notifications.slack']) {
                                     slackWebhookURL = settings['notifications.slack']!.webhookURL
                                 }
-                            } catch {
+                            } catch (e) {
                                 slackWebhookURL = null
                             }
                             this.setState(state => ({
