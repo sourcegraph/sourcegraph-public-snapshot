@@ -1,64 +1,33 @@
 # Sourcegraph roadmap
 
-<aside class="note visible-product"><p>View the <strong><a href="https://docs.sourcegraph.com/dev/roadmap">latest roadmap on docs.sourcegraph.com</a></strong>.</p></aside>
-
 We want Sourcegraph to be the best way to answer questions while writing, reviewing, or planning code. This roadmap shows what's planned for upcoming Sourcegraph releases. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
 
-A new Sourcegraph release ships in the first week of each month. The plans and timeframes are subject to change.
+A new Sourcegraph release ships on the [20th day of each month](../releases.md#releases-are-monthly). The plans and timeframes are subject to change.
 
-We welcome suggestions! Share feedback by using [code discussions](https://about.sourcegraph.com/blog/discuss-code-and-docs-in-repositories) on this document or the linked documents and issues.
-
-## Future releases
-
-### 3.2
-
-Release date: 2019-03-20 ([draft announcement](https://docs.google.com/document/d/1LA_8puMeWpnREVrCadSjkRnUyjCNrieSY9PJlcL3UwY/edit))
-
-Distribution:
-
-- [Improve cloud provider deployment process](https://github.com/sourcegraph/sourcegraph/issues/2068)
-- [Improve scaling documentation](https://github.com/sourcegraph/sourcegraph/issues/2019)
-- [Instance activation flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/2069)
-- [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
-
-Code search:
-
-- [Search UX](https://github.com/sourcegraph/sourcegraph/issues/2081)
-
-Code navigation:
-
-- [Integrations quality](https://github.com/sourcegraph/sourcegraph/issues/2380)
-- [Code intelligence](https://github.com/sourcegraph/sourcegraph/issues/2452)
-- [Sentry extension](https://github.com/sourcegraph/sourcegraph/issues/2628)
+## Releases
 
 ### 3.3
 
 Release date: 2019-04-20 ([draft announcement](https://docs.google.com/document/d/19SsZ00UdA7WZFIXSCOaJVgP1Ngu7l8HgGeArT_iDbhg/edit))
 
-Core services:
+- Core services
+  - [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+- [Distribution](https://github.com/sourcegraph/sourcegraph/issues/2809)
+- [Documentation](https://github.com/sourcegraph/sourcegraph/issues/2848)
+- [Code search](https://github.com/sourcegraph/sourcegraph/issues/2740)
+  - Working toward [subquery search](https://github.com/sourcegraph/sourcegraph/issues/1005)
+  - [Saved search improvements](https://github.com/sourcegraph/sourcegraph/issues/2824)
+- Code navigation
+  - [Integrations quality](https://github.com/sourcegraph/sourcegraph/issues/2834)
+  - [Code intelligence](https://github.com/sourcegraph/sourcegraph/issues/2856)
 
-- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+### [Previous releases](previous_releases.md)
 
-[Distribution](https://github.com/sourcegraph/sourcegraph/issues/2809)
-
-[Documentation](https://github.com/sourcegraph/sourcegraph/issues/2848)
-
-[Code search](https://github.com/sourcegraph/sourcegraph/issues/2740):
-
-- Working toward [subquery search](https://github.com/sourcegraph/sourcegraph/issues/1005)
-- [Saved search improvements](https://github.com/sourcegraph/sourcegraph/issues/2824)
-
-Code navigation:
-
-- [Integrations quality](https://github.com/sourcegraph/sourcegraph/issues/2834)
-- [Code intelligence](https://github.com/sourcegraph/sourcegraph/issues/2856)
-
-[Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2848)
-
+See [previous Sourcegraph releases](previous_releases.md).
 
 ---
 
-### Future
+## Future
 
 Search
 
@@ -110,10 +79,6 @@ Our work generally falls into the following categories:
 - **Extensibility:** supporting Sourcegraph extensions that add code intelligence and other information (e.g., tracing, logging, and security annotations from 3rd-party tools) to Sourcegraph and external tools that Sourcegraph integrates with
 - **Deployment:** making it easy to run and maintain a self-hosted Sourcegraph instance
 - **Enterprise:** features that larger companies need (e.g., scaling, authentication, authorization, auditing, etc.)
-
-## [Previous releases](previous_releases.md)
-
-See [previous Sourcegraph releases](previous_releases.md).
 
 
 <!--

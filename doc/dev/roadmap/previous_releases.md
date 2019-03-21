@@ -2,6 +2,10 @@
 
 See the [Sourcegraph changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md) for a detailed list of changes.
 
+### 3.2
+
+See the [Sourcegraph 3.2 announcement blog post](https://about.sourcegraph.com/blog/sourcegraph-3.2).
+
 ### 3.1
 
 See the blog post "[Announcing Sourcegraph 3.1](https://about.sourcegraph.com/blog/sourcegraph-3.1)".
