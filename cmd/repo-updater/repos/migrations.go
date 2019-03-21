@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
@@ -25,7 +26,7 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 // GithubSetDefaultRepositoryQueryMigration returns a Migration that changes all
 // configurations of GitHub external services which have an empty "repositoryQuery"
 // migration to its explicit default.
-func GithubSetDefaultRepositoryQueryMigration() Migration {
+func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration {
 	return transactional(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.github-set-default-repository-query"
 
@@ -73,6 +74,7 @@ func GithubSetDefaultRepositoryQueryMigration() Migration {
 			}
 
 			svc.Config = edited
+			svc.UpdatedAt = clock()
 		}
 
 		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {

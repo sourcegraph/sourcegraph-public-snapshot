@@ -16,9 +16,6 @@ func TestGithubSetDefaultRepositoryQueryMigration(t *testing.T) {
 }
 
 func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
-	now := clock.Now()
-
 	githubDotCom := repos.ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github.com - Test",
@@ -28,8 +25,6 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 				"url": "https://github.com"
 			}
 		`),
-		CreatedAt: now,
-		UpdatedAt: now,
 	}
 
 	githubNone := repos.ExternalService{
@@ -42,8 +37,6 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 				"repositoryQuery": ["none"]
 			}
 		`),
-		CreatedAt: now,
-		UpdatedAt: now,
 	}
 
 	githubEnterprise := repos.ExternalService{
@@ -55,17 +48,15 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 				"url": "https://github.mycorp.com"
 			}
 		`),
-		CreatedAt: now,
-		UpdatedAt: now,
 	}
 
 	gitlab := repos.ExternalService{
 		Kind:        "GITLAB",
 		DisplayName: "Gitlab - Test",
 		Config:      jsonFormat(`{"url": "https://gitlab.com"}`),
-		CreatedAt:   now,
-		UpdatedAt:   now,
 	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
 
 	return func(t *testing.T) {
 		t.Helper()
@@ -92,15 +83,18 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 				name:   "github.com services are set to affiliated",
 				stored: repos.ExternalServices{&githubDotCom},
 				assert: repos.Assert.ExternalServicesEqual(
-					githubDotCom.With(func(e *repos.ExternalService) {
-						e.Config = jsonFormat(`
-							{
-								// Some comment
-								"url": "https://github.com",
-								"repositoryQuery": ["affiliated"]
-							}
-						`)
-					}),
+					githubDotCom.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							e.Config = jsonFormat(`
+								{
+									// Some comment
+									"url": "https://github.com",
+									"repositoryQuery": ["affiliated"]
+								}
+							`)
+						},
+					),
 				),
 				err: "<nil>",
 			},
@@ -108,15 +102,18 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 				name:   "github enterprise services are set to public and affiliated",
 				stored: repos.ExternalServices{&githubEnterprise},
 				assert: repos.Assert.ExternalServicesEqual(
-					githubEnterprise.With(func(e *repos.ExternalService) {
-						e.Config = jsonFormat(`
-							{
-								// Some comment
-								"url": "https://github.mycorp.com",
-								"repositoryQuery": ["affiliated", "public"]
-							}
-						`)
-					}),
+					githubEnterprise.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							e.Config = jsonFormat(`
+								{
+									// Some comment
+									"url": "https://github.mycorp.com",
+									"repositoryQuery": ["affiliated", "public"]
+								}
+							`)
+						},
+					),
 				),
 				err: "<nil>",
 			},
@@ -130,7 +127,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 					return
 				}
 
-				err := repos.GithubSetDefaultRepositoryQueryMigration().Run(ctx, tx)
+				err := repos.GithubSetDefaultRepositoryQueryMigration(clock.Now).Run(ctx, tx)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
