@@ -311,7 +311,7 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 				Description:  repo.Description,
 				Fork:         repo.IsFork,
 				Archived:     repo.IsArchived,
-				Enabled:      true,
+				Enabled:      conn.config.InitialRepositoryEnablement,
 			},
 			URL: conn.authenticatedRemoteURL(repo),
 		}
