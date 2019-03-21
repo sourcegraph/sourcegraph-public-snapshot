@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -19,17 +20,27 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	resp, err := s.doRepoInfo(r.Context(), req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) doRepoInfo(ctx context.Context, req protocol.RepoInfoRequest) (*protocol.RepoInfoResponse, error) {
 	repo := protocol.NormalizeRepo(req.Repo)
 	dir := path.Join(s.ReposDir, string(repo))
-
 	resp := protocol.RepoInfoResponse{
 		Cloned: repoCloned(dir),
 	}
 	if resp.Cloned {
-		remoteURL, err := repoRemoteURL(r.Context(), dir)
+		remoteURL, err := repoRemoteURL(ctx, dir)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, err
 		}
 		resp.URL = remoteURL
 	}
@@ -58,6 +69,27 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		} else {
 			resp.LastChanged = &lastChanged
 		}
+	}
+	return &resp, nil
+}
+
+func (s *Server) handleMultiRepoInfo(w http.ResponseWriter, r *http.Request) {
+	var req protocol.MultiRepoInfoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp := protocol.MultiRepoInfoResponse{
+		Results: make(map[api.RepoName]*protocol.RepoInfoResponse),
+	}
+	for _, repoName := range req.Repos {
+		result, err := s.doRepoInfo(r.Context(), protocol.RepoInfoRequest{Repo: repoName})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		resp.Results[repoName] = result
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {

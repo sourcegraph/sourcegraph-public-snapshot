@@ -572,6 +572,32 @@ func (c *Client) RepoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 	return info, err
 }
 
+// MultiRepoInfo retrieves information about multiple repositories on gitserver.
+//
+// The repository not existing is not an error; in that case, MultiRepoInfoResponse.Results[i].Cloned
+// will be false and the error will be nil.
+//
+//
+// If multiple errors occurred, an incomplete result is returned along with a
+// *multierror.Error.
+func (c *Client) MultiRepoInfo(ctx context.Context, repos []api.RepoName) (*protocol.MultiRepoInfoResponse, error) {
+	req := &protocol.MultiRepoInfoRequest{
+		Repos: repos,
+	}
+	resp, err := c.httpPost(ctx, repos[0], "repos", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d", resp.StatusCode)}
+	}
+
+	var info *protocol.MultiRepoInfoResponse
+	err = json.NewDecoder(resp.Body).Decode(&info)
+	return info, err
+}
+
 // Remove removes the repository clone from gitserver.
 func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	req := &protocol.RepoDeleteRequest{
@@ -590,6 +616,8 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	return nil
 }
 
+// httpPost performs a POST request to a gitserver, sharding based on the given
+// repo name (the repo name is otherwise not used).
 func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {

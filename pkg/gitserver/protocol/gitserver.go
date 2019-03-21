@@ -98,6 +98,12 @@ type RepoInfoRequest struct {
 	Repo api.RepoName
 }
 
+// MultiRepoInfoRequest is a request for information about multiple repositories on gitserver.
+type MultiRepoInfoRequest struct {
+	// Repos are the repositories to get information about.
+	Repos []api.RepoName
+}
+
 // RepoDeleteRequest is a request to delete a repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
@@ -117,6 +123,13 @@ type RepoInfoResponse struct {
 	// recloned automatically, so this time is likely to move forward
 	// periodically.
 	CloneTime *time.Time
+}
+
+// MultiRepoInfoResponse is the response to a repository information request
+// for multiple repositories at the same time.
+type MultiRepoInfoResponse struct {
+	// Results mapping from the repository name to the repository information.
+	Results map[api.RepoName]*RepoInfoResponse
 }
 
 // CreateCommitFromPatchRequest is the request information needed for creating
