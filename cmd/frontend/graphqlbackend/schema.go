@@ -1726,6 +1726,9 @@ type GitCommit implements Node {
         first: Int
         # Return symbols matching the query.
         query: String
+        # A list of regular expressions, all of which must match all
+        # file paths returned in the list.
+        includePatterns: [String!]
     ): SymbolConnection!
 }
 

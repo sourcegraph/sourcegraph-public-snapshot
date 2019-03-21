@@ -125,6 +125,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             key="symbols"
                             repoID={this.props.repoID}
                             rev={this.props.rev}
+                            activePath={this.props.filePath}
                             history={this.props.history}
                             location={this.props.location}
                         />
