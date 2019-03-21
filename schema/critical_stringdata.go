@@ -135,7 +135,7 @@ const CriticalSchemaJSON = `{
       "default": false
     },
     "auth.enableUsernameChanges": {
-      "description": "Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or SSO provider. For this reason, setting this to true is disallowed if any SSO provider is currently configured in the ` + "`" + `auth.providers` + "`" + ` field of the critical site configuration or if any permissions are enabled that rely on username equivalency.",
+      "description": "Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.",
       "type": "boolean",
       "default": false
     },
