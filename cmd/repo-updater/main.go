@@ -52,8 +52,17 @@ func main() {
 
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
+	cliFactory := httpcli.NewFactory(
+		nil, // No middleware for now. Use this for Prometheus instrumentation later.
+		httpcli.TracedTransportOpt,
+		httpcli.NewCachedTransportOpt(httputil.Cache, true),
+	)
+
+	src := repos.NewSourcer(cliFactory)
+
 	for _, m := range []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
+		repos.GithubReposEnabledStateDeprecationMigration(src, clock),
 	} {
 		if err := m.Run(ctx, store); err != nil {
 			log.Fatalf("failed to run migration: %s", err)
@@ -124,16 +133,7 @@ func main() {
 	var syncer *repos.Syncer
 
 	if syncerEnabled {
-
 		diffs := make(chan repos.Diff)
-
-		cliFactory := httpcli.NewFactory(
-			nil, // No middleware for now. Use this for Prometheus instrumentation later.
-			httpcli.TracedTransportOpt,
-			httpcli.NewCachedTransportOpt(httputil.Cache, true),
-		)
-
-		src := repos.NewSourcer(cliFactory)
 		syncer = repos.NewSyncer(store, src, diffs, clock)
 
 		log15.Info("starting new syncer", "external service kinds", kinds)
