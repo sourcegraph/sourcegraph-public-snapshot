@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A Migration performs a data migration in the given Store,
@@ -86,6 +87,11 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 		now := clock()
 
 		for _, svc := range all {
+			if svc.Config == "" {
+				log15.Error(prefix+".external-service-config-invalid", "external-service-id", svc.ID, "name", svc.DisplayName)
+				continue
+			}
+
 			svcs[svc.ID] = svc
 			if err = removeInitalRepositoryEnablement(svc, now); err != nil {
 				return errors.Wrapf(err, "%s.remove-initial-repository-enablement", prefix)
