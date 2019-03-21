@@ -63,8 +63,8 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 		}
 	}
 
-	now := time.Now().UTC()
-	clock := func() time.Time { return now }
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
 
 	return func(t *testing.T) {
 		t.Helper()
@@ -216,7 +216,7 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 					return
 				}
 
-				err := repos.GithubReposEnabledStateDeprecationMigration(tc.sourcer, clock).Run(ctx, tx)
+				err := repos.GithubReposEnabledStateDeprecationMigration(tc.sourcer, clock.Now).Run(ctx, tx)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 					return
