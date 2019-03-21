@@ -423,13 +423,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 
 	repositoryQueries := c.config.RepositoryQuery
 	if len(repositoryQueries) == 0 {
-		// Users need to specify ["none"] to disable mirroring.
-		if c.githubDotCom {
-			// Doesn't make sense to try to enumerate all public repos on github.com
-			repositoryQueries = []string{"affiliated"}
-		} else {
-			repositoryQueries = []string{"public", "affiliated"}
-		}
+		repositoryQueries = append(repositoryQueries, "none")
 	}
 
 	for _, repositoryQuery := range repositoryQueries {
