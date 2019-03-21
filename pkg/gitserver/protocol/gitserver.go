@@ -92,12 +92,6 @@ type IsRepoClonedRequest struct {
 	Repo api.RepoName
 }
 
-// RepoInfoRequest is a request for information about a repository on gitserver.
-type RepoInfoRequest struct {
-	// Repo is the repository to get information about.
-	Repo api.RepoName
-}
-
 // MultiRepoInfoRequest is a request for information about multiple repositories on gitserver.
 type MultiRepoInfoRequest struct {
 	// Repos are the repositories to get information about.
@@ -110,7 +104,7 @@ type RepoDeleteRequest struct {
 	Repo api.RepoName
 }
 
-// RepoInfoResponse is the response to a repository information request (RepoInfoRequest).
+// RepoInfoResponse is the response to a repository information request (MultiRepoInfoRequest).
 type RepoInfoResponse struct {
 	URL             string     // this repository's Git remote URL
 	CloneInProgress bool       // whether the repository is currently being cloned

@@ -82,7 +82,7 @@ func (s *Server) handleMultiRepoInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoInfoRequest
+	var req protocol.RepoDeleteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
