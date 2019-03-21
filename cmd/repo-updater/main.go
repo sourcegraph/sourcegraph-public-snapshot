@@ -123,9 +123,8 @@ func main() {
 			httpcli.NewCachedTransportOpt(httputil.Cache, true),
 		)
 
-		src := repos.NewExternalServicesSourcer(frontendAPI, cliFactory)
-
 		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+		src := repos.NewExternalServicesSourcer(store, cliFactory)
 		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
 			return time.Now().UTC()
 		})

@@ -2,10 +2,79 @@ package repos
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
+
+// An ExternalService is defines a Source that yields Repos.
+type ExternalService struct {
+	ID          int64
+	Kind        string
+	DisplayName string
+	Config      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   time.Time
+}
+
+// IsDeleted returns true if the external service is deleted.
+func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
+
+// Update updates ExternalService r with the fields from the given newer ExternalService n,
+// returning true if modified.
+func (e *ExternalService) Update(n *ExternalService) (modified bool) {
+	if e.ID != n.ID {
+		return false
+	}
+
+	if kind := strings.ToUpper(n.Kind); strings.ToUpper(e.Kind) != kind {
+		e.Kind, modified = kind, true
+	}
+
+	if e.DisplayName != n.DisplayName {
+		e.DisplayName, modified = n.DisplayName, true
+	}
+
+	if e.Config != n.Config {
+		e.Config, modified = n.Config, true
+	}
+
+	if !e.UpdatedAt.Equal(n.UpdatedAt) {
+		e.UpdatedAt, modified = n.UpdatedAt, true
+	}
+
+	if !e.DeletedAt.Equal(n.DeletedAt) {
+		e.DeletedAt, modified = n.DeletedAt, true
+	}
+
+	return modified
+}
+
+// Clone returns a clone of the given external service.
+func (e *ExternalService) Clone() *ExternalService {
+	clone := *e
+	return &clone
+}
+
+// Apply applies the given functional options to the ExternalService.
+func (e *ExternalService) Apply(opts ...func(*ExternalService)) {
+	if e == nil {
+		return
+	}
+
+	for _, opt := range opts {
+		opt(e)
+	}
+}
+
+// With returns a clone of the given repo with the given functional options applied.
+func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService {
+	clone := e.Clone()
+	clone.Apply(opts...)
+	return clone
+}
 
 // Repo represents a source code repository stored in Sourcegraph.
 type Repo struct {
@@ -149,18 +218,23 @@ func (rs Repos) Swap(i, j int) {
 }
 
 func (rs Repos) Less(i, j int) bool {
-	if rs[i].Name == rs[j].Name {
-		return rs[i].ExternalRepo.Compare(rs[j].ExternalRepo) == -1
+	if rs[i].ID != rs[j].ID {
+		return rs[i].ID < rs[j].ID
 	}
-	return rs[i].Name < rs[j].Name
+	if rs[i].Name != rs[j].Name {
+		return rs[i].Name < rs[j].Name
+	}
+	return rs[i].ExternalRepo.Compare(rs[j].ExternalRepo) == -1
 }
 
+// Concat adds the given Repos to the end of rs.
 func (rs *Repos) Concat(others ...Repos) {
 	for _, o := range others {
 		*rs = append(*rs, o...)
 	}
 }
 
+// Clone returns a clone of Repos.
 func (rs Repos) Clone() Repos {
 	o := make(Repos, 0, len(rs))
 	for _, r := range rs {
@@ -174,4 +248,52 @@ func (rs Repos) Apply(opts ...func(*Repo)) {
 	for _, r := range rs {
 		r.Apply(opts...)
 	}
+}
+
+// ExternalServices is an utility type with
+// convenience methods for operating on lists of ExternalServices.
+type ExternalServices []*ExternalService
+
+// DisplayNames returns the list of display names from all ExternalServices.
+func (es ExternalServices) DisplayNames() []string {
+	names := make([]string, len(es))
+	for i := range es {
+		names[i] = es[i].DisplayName
+	}
+	return names
+}
+
+func (es ExternalServices) Len() int {
+	return len(es)
+}
+
+func (es ExternalServices) Swap(i, j int) {
+	es[i], es[j] = es[j], es[i]
+}
+
+func (es ExternalServices) Less(i, j int) bool {
+	return es[i].ID < es[j].ID
+}
+
+// Clone returns a clone of the given external services.
+func (es ExternalServices) Clone() ExternalServices {
+	o := make(ExternalServices, 0, len(es))
+	for _, r := range es {
+		o = append(o, r.Clone())
+	}
+	return o
+}
+
+// Apply applies the given functional options to the ExternalService.
+func (es ExternalServices) Apply(opts ...func(*ExternalService)) {
+	for _, r := range es {
+		r.Apply(opts...)
+	}
+}
+
+// With returns a clone of the given external services with the given functional options applied.
+func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices {
+	clone := es.Clone()
+	clone.Apply(opts...)
+	return clone
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -21,35 +20,29 @@ type Sourcer interface {
 }
 
 // ExternalServicesSourcer converts each code host connection configured via external services
-// in the frontend API to a Source that yields Repos. Each invocation of ListSources
-// may yield different Sources depending on what the user configured at a given point in time.
+// to a Source that yields Repos. Each invocation of ListSources may yield different Sources
+// depending on what the user configured at a given point in time.
 type ExternalServicesSourcer struct {
-	api InternalAPI
-	cf  httpcli.Factory
+	st Store
+	cf httpcli.Factory
 }
 
-// NewExternalServicesSourcer returns a new ExternalServicesSourcer with the given Frontend API.
-func NewExternalServicesSourcer(api InternalAPI, cf httpcli.Factory) *ExternalServicesSourcer {
-	return &ExternalServicesSourcer{api: api, cf: cf}
+// NewExternalServicesSourcer returns a new ExternalServicesSourcer with the given Store.
+func NewExternalServicesSourcer(st Store, cf httpcli.Factory) *ExternalServicesSourcer {
+	return &ExternalServicesSourcer{st: st, cf: cf}
 }
 
 // ListSources lists all configured repository yielding Sources of the given kinds,
 // based on the code host connections configured via external services in the frontend API.
 func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...string) ([]Source, error) {
-	svcs, err := s.api.ExternalServicesList(ctx, api.ExternalServicesListRequest{Kinds: kinds})
+	svcs, err := s.st.ListExternalServices(ctx, kinds...)
 	if err != nil {
 		return nil, err
 	}
 
-	srcs := make([]Source, 0, len(svcs)+1)
 	errs := new(multierror.Error)
-	for _, svc := range svcs {
-		if src, err := NewSource(svc, s.cf); err != nil {
-			errs = multierror.Append(errs, err)
-		} else {
-			srcs = append(srcs, src)
-		}
-	}
+	srcs, err := NewSources(s.cf, svcs...)
+	errs = multierror.Append(errs, err)
 
 	if !includesGitHubDotComSource(srcs) {
 		// add a GitHub.com source by default, to support navigating to URL
@@ -63,14 +56,42 @@ func (s ExternalServicesSourcer) ListSources(ctx context.Context, kinds ...strin
 	return srcs, errs.ErrorOrNil()
 }
 
-// NewSource returns a repository yielding Source from the given api.ExternalService configuration.
-func NewSource(svc *api.ExternalService, cf httpcli.Factory) (Source, error) {
-	switch svc.Kind {
-	case "GITHUB":
+// NewSource returns a repository yielding Source from the given ExternalService configuration.
+func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
+	switch strings.ToLower(svc.Kind) {
+	case "github":
 		return NewGithubSource(svc, cf)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
+}
+
+// NewSources returns a list of repository yielding Sources from the given ExternalServices.
+func NewSources(cf httpcli.Factory, svcs ...*ExternalService) ([]Source, error) {
+	srcs := make([]Source, 0, len(svcs))
+	errs := new(multierror.Error)
+	for _, svc := range svcs {
+		if svc.IsDeleted() {
+			continue
+		} else if src, err := NewSource(svc, cf); err != nil {
+			errs = multierror.Append(errs, err)
+		} else {
+			srcs = append(srcs, src)
+		}
+	}
+	return srcs, errs.ErrorOrNil()
+}
+
+// ExternalServicesFromSources returns the ExternalServices from the given Sources.
+func ExternalServicesFromSources(srcs ...Source) ExternalServices {
+	es := make(ExternalServices, 0, len(srcs))
+	for _, src := range srcs {
+		switch s := src.(type) {
+		case *GithubSource:
+			es = append(es, s.svc)
+		}
+	}
+	return es
 }
 
 func includesGitHubDotComSource(srcs []Source) bool {
@@ -96,12 +117,12 @@ type Source interface {
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	svc  *api.ExternalService
+	svc  *ExternalService
 	conn *githubConnection
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *api.ExternalService, cf httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *ExternalService, cf httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -113,7 +134,7 @@ func NewGithubSource(svc *api.ExternalService, cf httpcli.Factory) (*GithubSourc
 // to the list of sources in Sourcer when one isn't already configured in order to
 // support navigating to URL paths like /github.com/foo/bar to auto-add that repository.
 func NewGithubDotComSource(cf httpcli.Factory) (*GithubSource, error) {
-	svc := api.ExternalService{Kind: "GITHUB"}
+	svc := ExternalService{Kind: "GITHUB"}
 	return newGithubSource(&svc, &schema.GitHubConnection{
 		RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
 		Url:                         "https://github.com",
@@ -121,7 +142,7 @@ func NewGithubDotComSource(cf httpcli.Factory) (*GithubSource, error) {
 	}, cf)
 }
 
-func newGithubSource(svc *api.ExternalService, c *schema.GitHubConnection, cf httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf httpcli.Factory) (*GithubSource, error) {
 	conn, err := newGitHubConnection(c, cf)
 	if err != nil {
 		return nil, err
@@ -140,7 +161,7 @@ func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) 
 }
 
 func githubRepoToRepo(
-	svc *api.ExternalService,
+	svc *ExternalService,
 	ghrepo *github.Repository,
 	conn *githubConnection,
 ) *Repo {
@@ -161,6 +182,6 @@ func githubRepoToRepo(
 	}
 }
 
-func externalServiceURN(svc *api.ExternalService) string {
+func externalServiceURN(svc *ExternalService) string {
 	return "extsvc:" + strconv.FormatInt(svc.ID, 10)
 }
