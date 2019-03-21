@@ -60,6 +60,16 @@ func main() {
 		bk.Env("DATE", now.Format(time.RFC3339)),
 	)
 
+	if os.Getenv("MUST_INCLUDE_COMMIT") != "" {
+		output, err := exec.Command("git", "merge-base", "--is-ancestor", os.Getenv("MUST_INCLUDE_COMMIT"), "HEAD").CombinedOutput()
+		if err != nil {
+			fmt.Printf("This branch %s at commit %s does not include commit %s.\n", branch, commit, os.Getenv("MUST_INCLUDE_COMMIT"))
+			fmt.Println("Rebase onto the latest master to get the latest CI fixes.")
+			fmt.Println(string(output))
+			panic(err)
+		}
+	}
+
 	isPR := !isBextReleaseBranch &&
 		!releaseBranch &&
 		!taggedRelease &&
