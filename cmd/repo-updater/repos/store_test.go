@@ -60,7 +60,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 				name:   "returned kind is uppercase",
 				kinds:  []string{"github"},
 				stored: repos.ExternalServices{&github},
-				assert: equal(&github),
+				assert: repos.Assert.ExternalServicesEqual(&github),
 			},
 			{
 				name:   "case-insensitive kinds",
