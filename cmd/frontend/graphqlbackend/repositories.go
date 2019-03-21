@@ -128,15 +128,21 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 			if !r.cloned || !r.cloneInProgress || !r.notCloned {
 				// Query gitserver to filter by repository clone status.
+				repoNames := make([]api.RepoName, len(repos))
+				lookup := make(map[api.RepoName]*types.Repo)
+				for i, repo := range repos {
+					repoNames[i] = repo.Name
+					lookup[repo.Name] = repo
+				}
 				keepRepos := repos[:0]
-				for _, repo := range repos {
-					info, err := gitserver.DefaultClient.RepoInfo(ctx, repo.Name)
-					if err != nil {
-						r.err = err
-						return
-					}
+				info, err := gitserver.DefaultClient.MultiRepoInfo(ctx, repoNames)
+				if err != nil {
+					r.err = err
+					return
+				}
+				for repoName, info := range info.Results {
 					if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
-						keepRepos = append(keepRepos, repo)
+						keepRepos = append(keepRepos, lookup[repoName])
 					}
 				}
 				repos = keepRepos
