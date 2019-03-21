@@ -40,8 +40,6 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},
 		{"Syncer/Sync", testSyncerSync(store)},
-		{"Migrations/GithubSetDefaultRepositoryQuery",
-			testGithubSetDefaultRepositoryQueryMigration(store)},
 	} {
 		t.Run(tc.name, tc.test)
 	}

@@ -46,6 +46,28 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 		UpdatedAt:   now,
 	}
 
+	equal := func(es ...*repos.ExternalService) func(testing.TB, repos.ExternalServices) {
+		want := repos.ExternalServices(es)
+		return func(t testing.TB, have repos.ExternalServices) {
+			have.Apply(repos.Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("external services: %s", cmp.Diff(have, want))
+			}
+		}
+	}
+
+	orderedBy := func(ord func(a, b *repos.ExternalService) bool) func(testing.TB, repos.ExternalServices) {
+		return func(t testing.TB, have repos.ExternalServices) {
+			want := have.Clone()
+			sort.Slice(want, func(i, j int) bool {
+				return ord(want[i], want[j])
+			})
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("external services: %s", cmp.Diff(have, want))
+			}
+		}
+	}
+
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -53,20 +75,20 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 			name   string
 			kinds  []string
 			stored repos.ExternalServices
-			assert repos.ExternalServicesAssertion
+			assert func(testing.TB, repos.ExternalServices)
 			err    error
 		}{
 			{
 				name:   "returned kind is uppercase",
 				kinds:  []string{"github"},
 				stored: repos.ExternalServices{&github},
-				assert: repos.Assert.ExternalServicesEqual(&github),
+				assert: equal(&github),
 			},
 			{
 				name:   "case-insensitive kinds",
 				kinds:  []string{"GiThUb"},
 				stored: repos.ExternalServices{&github},
-				assert: repos.Assert.ExternalServicesEqual(&github),
+				assert: equal(&github),
 			},
 			{
 				name:  "returns soft deleted external services",
@@ -74,19 +96,15 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 				stored: repos.ExternalServices{
 					github.With(repos.Opt.ExternalServiceDeletedAt(now)),
 				},
-				assert: repos.Assert.ExternalServicesEqual(
-					github.With(repos.Opt.ExternalServiceDeletedAt(now)),
-				),
+				assert: equal(github.With(repos.Opt.ExternalServiceDeletedAt(now))),
 			},
 			{
 				name:   "results are in ascending order by id",
 				kinds:  []string{"github"},
 				stored: mkExternalServices(512, &github),
-				assert: repos.Assert.ExternalServicesOrderedBy(
-					func(a, b *repos.ExternalService) bool {
-						return a.ID < b.ID
-					},
-				),
+				assert: orderedBy(func(a, b *repos.ExternalService) bool {
+					return a.ID < b.ID
+				}),
 			},
 		} {
 			tc := tc
@@ -321,6 +339,28 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		},
 	}
 
+	equal := func(rs ...*repos.Repo) func(testing.TB, repos.Repos) {
+		want := repos.Repos(rs)
+		return func(t testing.TB, have repos.Repos) {
+			have.Apply(repos.Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("repos: %s", cmp.Diff(have, want))
+			}
+		}
+	}
+
+	orderedBy := func(ord func(a, b *repos.Repo) bool) func(testing.TB, repos.Repos) {
+		return func(t testing.TB, have repos.Repos) {
+			want := have.Clone()
+			sort.Slice(want, func(i, j int) bool {
+				return ord(want[i], want[j])
+			})
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("repos: %s", cmp.Diff(have, want))
+			}
+		}
+	}
+
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -328,7 +368,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 			name   string
 			kinds  []string
 			stored repos.Repos
-			repos  repos.ReposAssertion
+			repos  func(testing.TB, repos.Repos)
 			err    error
 		}{
 			{
@@ -337,7 +377,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 				stored: repos.Repos{foo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
 				})},
-				repos: repos.Assert.ReposEqual(foo.With(func(r *repos.Repo) {
+				repos: equal(foo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ServiceType = "gItHuB"
 				})),
 			},
@@ -345,19 +385,19 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 				name:   "ignores unmanaged",
 				kinds:  []string{"github"},
 				stored: repos.Repos{&foo, &unmanaged}.Clone(),
-				repos:  repos.Assert.ReposEqual(&foo),
+				repos:  equal(&foo),
 			},
 			{
 				name:   "returns soft deleted repos",
 				kinds:  []string{"github"},
 				stored: repos.Repos{foo.With(repos.Opt.RepoDeletedAt(now))},
-				repos:  repos.Assert.ReposEqual(foo.With(repos.Opt.RepoDeletedAt(now))),
+				repos:  equal(foo.With(repos.Opt.RepoDeletedAt(now))),
 			},
 			{
 				name:   "returns repos in ascending order by id",
 				kinds:  []string{"github"},
 				stored: mkRepos(512, &foo),
-				repos: repos.Assert.ReposOrderedBy(func(a, b *repos.Repo) bool {
+				repos: orderedBy(func(a, b *repos.Repo) bool {
 					return a.ID < b.ID
 				}),
 			},
