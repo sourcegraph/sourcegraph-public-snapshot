@@ -16,9 +16,6 @@ func TestGithubReposEnabledStateDeprecationMigration(t *testing.T) {
 }
 
 func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
-	now := clock.Now()
-
 	githubDotCom := repos.ExternalService{
 		ID:          1,
 		Kind:        "GITHUB",
@@ -29,18 +26,14 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 				"url": "https://github.com"
 			}
 		`),
-		CreatedAt: now,
-		UpdatedAt: now,
 	}
 
 	githubDotComDuplicate :=
 		githubDotCom.With(repos.Opt.ExternalServiceID(2))
 
 	repo := repos.Repo{
-		Name:      "github.com/foo/bar",
-		CreatedAt: now,
-		UpdatedAt: now,
-		Enabled:   false,
+		Name:    "github.com/foo/bar",
+		Enabled: false,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
 			ServiceType: "github",
@@ -69,6 +62,9 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 		}
 	}
 
+	now := time.Now().UTC()
+	clock := func() time.Time { return now }
+
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -85,9 +81,10 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(githubDotCom.Clone(), nil, repo.Clone()),
 				),
-				assert: repos.Assert.ExternalServicesEqual(
-					githubDotCom.With(excluded(t, &repo)),
-				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(t, &repo),
+				)),
 				err: "<nil>",
 			},
 			{
@@ -96,9 +93,10 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(githubDotCom.Clone(), nil, repo.Clone()),
 				),
-				assert: repos.Assert.ExternalServicesEqual(
-					githubDotCom.With(excluded(t, &repo)),
-				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(t, &repo),
+				)),
 				err: "<nil>",
 			},
 			{
@@ -109,18 +107,20 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 						r.Description = "some updated description"
 					})),
 				),
-				assert: repos.Assert.ExternalServicesEqual(
-					githubDotCom.With(excluded(t, &repo)),
-				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(t, &repo),
+				)),
 				err: "<nil>",
 			},
 			{
 				name:    "disabled: was deleted and is still deleted, got excluded",
 				stored:  repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(githubDotCom.Clone(), nil)),
-				assert: repos.Assert.ExternalServicesEqual(
-					githubDotCom.With(excluded(t, &repo)),
-				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(t, &repo),
+				)),
 				err: "<nil>",
 			},
 			{
@@ -129,9 +129,10 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 					r.Enabled = true
 				})},
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(githubDotCom.Clone(), nil)),
-				assert: repos.Assert.ExternalServicesEqual(
-					githubDotCom.With(included(t, &repo)),
-				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					included(t, &repo),
+				)),
 				err: "<nil>",
 			},
 			{
@@ -157,8 +158,10 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 						}`)
 					}), nil,
 				)),
-				assert: repos.Assert.ExternalServicesEqual(githubDotCom.Clone()),
-				err:    "<nil>",
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+				)),
+				err: "<nil>",
 			},
 			{
 				name:   "disabled: repo is excluded in all of its sources",
@@ -168,8 +171,14 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 					repos.NewFakeSource(githubDotComDuplicate.Clone(), nil, repo.Clone()),
 				),
 				assert: repos.Assert.ExternalServicesEqual(
-					githubDotCom.With(excluded(t, &repo)),
-					githubDotComDuplicate.With(excluded(t, &repo)),
+					githubDotCom.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						excluded(t, &repo),
+					),
+					githubDotComDuplicate.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						excluded(t, &repo),
+					),
 				),
 				err: "<nil>",
 			},
@@ -184,8 +193,14 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 					repos.NewFakeSource(githubDotComDuplicate.Clone(), nil),
 				),
 				assert: repos.Assert.ExternalServicesEqual(
-					githubDotCom.With(included(t, &repo)),
-					githubDotComDuplicate.With(included(t, &repo)),
+					githubDotCom.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						included(t, &repo),
+					),
+					githubDotComDuplicate.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						included(t, &repo),
+					),
 				),
 				err: "<nil>",
 			},
@@ -199,7 +214,7 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 					return
 				}
 
-				err := repos.GithubReposEnabledStateDeprecationMigration(tc.sourcer).Run(ctx, tx)
+				err := repos.GithubReposEnabledStateDeprecationMigration(tc.sourcer, clock).Run(ctx, tx)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 					return
