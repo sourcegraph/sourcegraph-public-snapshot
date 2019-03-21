@@ -135,6 +135,11 @@ const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
         return null
     }
 
+    // This is a suggested change on a GitHub PR
+    if (elem.closest('.js-suggested-changes-blob')) {
+        return null
+    }
+
     const files = document.getElementsByClassName('file')
     const { filePath } = parseURL()
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
