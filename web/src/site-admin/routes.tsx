@@ -1,4 +1,5 @@
 import React from 'react'
+import { Redirect } from 'react-router'
 import { eventLogger } from '../tracking/eventLogger'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 const SiteAdminAddExternalServicesPage = React.lazy(async () => ({
@@ -69,6 +70,11 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     },
     {
         path: '/external-services/add',
+        render: () => <Redirect to="new" />,
+        exact: true,
+    },
+    {
+        path: '/external-services/new',
         render: props => <SiteAdminAddExternalServicesPage {...props} eventLogger={eventLogger} />,
         exact: true,
     },
