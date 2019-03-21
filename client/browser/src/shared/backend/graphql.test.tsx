@@ -29,10 +29,16 @@ const MOCK_RESOLVE_REV_REQUEST = `query ResolveRev($repoName: String!, $rev: Str
     }
 }`
 
-const MOCK_CONTEXT: RequestContext = {
+const MOCK_CONTEXT_PUBLIC: RequestContext = {
     repoKey: 'foo',
     isRepoSpecific: true,
     privateRepository: false,
+}
+
+const MOCK_CONTEXT_PRIVATE: RequestContext = {
+    repoKey: 'foo',
+    isRepoSpecific: true,
+    privateRepository: true,
 }
 
 describe('requestGraphQL()', () => {
@@ -51,7 +57,7 @@ describe('requestGraphQL()', () => {
     it('makes a simple request to Sourcegraph.com', async () => {
         const ajaxRequest = existsOnSourcegraphDotCom()
         const response = await requestGraphQL<GQL.IGraphQLResponseRoot>({
-            ctx: MOCK_CONTEXT,
+            ctx: MOCK_CONTEXT_PUBLIC,
             request: MOCK_RESOLVE_REV_REQUEST,
             ajaxRequest: ajaxRequest as any,
         }).toPromise()
@@ -62,7 +68,7 @@ describe('requestGraphQL()', () => {
     it('errors if the repository is private and the request is to Sourcegraph.com', async () => {
         await expect(
             requestGraphQL({
-                ctx: { ...MOCK_CONTEXT, privateRepository: true },
+                ctx: MOCK_CONTEXT_PRIVATE,
                 request: MOCK_RESOLVE_REV_REQUEST,
                 url: DEFAULT_SOURCEGRAPH_URL,
                 ajaxRequest: jest.fn() as any,
@@ -77,7 +83,7 @@ describe('requestGraphQL()', () => {
     it('falls back to the public Sourcegraph.com if a public repository is not found on the private instance', async () => {
         const ajaxRequest = existsOnSourcegraphDotCom()
         const response = await requestGraphQL<GQL.IGraphQLResponseRoot>({
-            ctx: MOCK_CONTEXT,
+            ctx: MOCK_CONTEXT_PUBLIC,
             request: MOCK_RESOLVE_REV_REQUEST,
             url: 'https://sourcegraph.private.org',
             ajaxRequest: ajaxRequest as any,
@@ -89,7 +95,7 @@ describe('requestGraphQL()', () => {
     it('falls back to the public Sourcegraph.com if the user is logged out of his private instance and the repository is public', async () => {
         const ajaxRequest = existsOnSourcegraphDotCom()
         const response = await requestGraphQL<GQL.IGraphQLResponseRoot>({
-            ctx: MOCK_CONTEXT,
+            ctx: MOCK_CONTEXT_PUBLIC,
             request: MOCK_RESOLVE_REV_REQUEST,
             url: 'https://sourcegraph.private.org',
             ajaxRequest: ajaxRequest as any,
@@ -102,7 +108,7 @@ describe('requestGraphQL()', () => {
         const ajaxRequest = existsOnSourcegraphDotCom()
         await expect(
             requestGraphQL({
-                ctx: { ...MOCK_CONTEXT, privateRepository: true },
+                ctx: MOCK_CONTEXT_PRIVATE,
                 request: MOCK_RESOLVE_REV_REQUEST,
                 url: 'https://sourcegraph.private.org',
                 ajaxRequest: ajaxRequest as any,
@@ -118,7 +124,7 @@ describe('requestGraphQL()', () => {
         const ajaxRequest = () => throwError({ status: 401 })
         await expect(
             requestGraphQL({
-                ctx: { ...MOCK_CONTEXT, privateRepository: true },
+                ctx: MOCK_CONTEXT_PRIVATE,
                 request: MOCK_RESOLVE_REV_REQUEST,
                 url: 'https://sourcegraph.private.org',
                 ajaxRequest: ajaxRequest as any,
@@ -134,7 +140,7 @@ describe('requestGraphQL()', () => {
         const ajaxRequest = () => throwError({ status: 401 })
         await expect(
             requestGraphQL({
-                ctx: { ...MOCK_CONTEXT, privateRepository: true },
+                ctx: MOCK_CONTEXT_PRIVATE,
                 request: MOCK_RESOLVE_REV_REQUEST,
                 url: 'https://sourcegraph.private.org',
                 ajaxRequest: ajaxRequest as any,
