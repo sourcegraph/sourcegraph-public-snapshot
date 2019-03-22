@@ -116,20 +116,17 @@ interface SourcegraphContext {
         favicon?: string
 
         /** Override style for light themes */
-        light?: {
-            /** The URL to the logo used on the homepage */
-            logo?: string
-            /** The URL to the symbol used as the search icon */
-            symbol?: string
-        }
+        light?: BrandAssets
         /** Override style for dark themes */
-        dark?: {
-            /** The URL to the logo used on the homepage */
-            logo?: string
-            /** The URL to the symbol used as the search icon */
-            symbol?: string
-        }
+        dark?: BrandAssets
     }
+}
+
+interface BrandAssets {
+    /** The URL to the logo used on the homepage */
+    logo?: string
+    /** The URL to the symbol used as the search icon */
+    symbol?: string
 }
 
 /**
