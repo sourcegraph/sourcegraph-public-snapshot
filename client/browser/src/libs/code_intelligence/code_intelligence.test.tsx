@@ -172,7 +172,7 @@ describe('handleCodeHost()', () => {
                 codeHost: {
                     name: 'test',
                     check: () => true,
-                    codeViews: [
+                    codeViewSpecs: [
                         {
                             selector: `#code`,
                             dom: {
@@ -234,7 +234,7 @@ describe('handleCodeHost()', () => {
                 codeHost: {
                     name: 'test',
                     check: () => true,
-                    codeViews: [
+                    codeViewSpecs: [
                         {
                             selector: `#code`,
                             dom: {

@@ -1,8 +1,9 @@
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { from, merge, Observable, of, Subject, zip } from 'rxjs'
-import { catchError, filter, map, mergeMap } from 'rxjs/operators'
+import { Observable, of, Subject, zip } from 'rxjs'
+import { catchError, concatAll, filter, map, mergeMap } from 'rxjs/operators'
 
 import { fetchBlobContentLines } from '../../shared/repo/backend'
+import { MutationRecordLike } from '../../shared/util/dom'
 import { CodeHost, FileInfo, ResolvedCodeView } from './code_intelligence'
 
 /**
@@ -16,12 +17,7 @@ const emitWhenIntersecting = (margin: number) => {
     const intersectionObserver = new IntersectionObserver(
         entries => {
             for (const entry of entries) {
-                // `entry` is an `IntersectionObserverEntry`,
-                // which has
-                // [isIntersecting](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserverEntry/isIntersecting#Browser_compatibility)
-                // as a prop, but TS complains that it does not
-                // exist.
-                if ((entry as any).isIntersecting) {
+                if (entry.isIntersecting) {
                     intersectingElements.next(entry.target as HTMLElement)
                 }
             }
@@ -34,9 +30,9 @@ const emitWhenIntersecting = (margin: number) => {
 
     return (codeViews: Observable<ResolvedCodeView>) =>
         new Observable<ResolvedCodeView>(observer => {
-            codeViews.subscribe(({ codeView, ...rest }) => {
+            codeViews.subscribe(({ codeViewElement: codeView, ...rest }) => {
                 intersectionObserver.observe(codeView)
-                codeViewStash.set(codeView, { codeView, ...rest })
+                codeViewStash.set(codeView, { codeViewElement: codeView, ...rest })
             })
 
             intersectingElements
@@ -48,85 +44,70 @@ const emitWhenIntersecting = (margin: number) => {
         })
 }
 
+const findCodeViews = ({ codeViewSpecs, codeViewSpecResolver }: CodeHost, nodes: Iterable<Node>): ResolvedCodeView[] =>
+    [...nodes]
+        .filter((node): node is HTMLElement => node instanceof HTMLElement)
+        .flatMap(element => [
+            ...(codeViewSpecs
+                ? codeViewSpecs
+                      // Find all new code views within the added element
+                      // (MutationObservers don't emit all descendant nodes of an addded node recursively)
+                      .map(({ selector, ...info }) => ({
+                          info,
+                          matches: element.matches(selector)
+                              ? [element]
+                              : [...element.querySelectorAll<HTMLElement>(selector)],
+                      }))
+                      .flatMap(({ info, matches }) => matches.map(codeViewElement => ({ ...info, codeViewElement })))
+                : []),
+            // code views from resolver
+            ...(codeViewSpecResolver
+                ? (element.matches(codeViewSpecResolver.selector)
+                      ? [element]
+                      : [...element.querySelectorAll<HTMLElement>(codeViewSpecResolver.selector)]
+                  )
+                      .map(codeViewElement => ({
+                          resolved: codeViewSpecResolver.resolveCodeViewSpec(codeViewElement),
+                          codeViewElement,
+                      }))
+                      .filter(propertyIsDefined('resolved'))
+                      .map(({ resolved, ...rest }) => ({ ...resolved, ...rest }))
+                : []),
+        ])
+
 /**
- * Find all the code views on a page given a CodeHost. It emits code views
- * that are lazily loaded as well.
+ * Find all the code views on a page given a CodeHostSpec from DOM mutations.
+ *
+ * Emits every code view that gets added or removed.
+ *
+ * At any given time, there can be 0-n code views on a page.
  */
-export const findCodeViews = (codeHost: CodeHost, watchChildrenModifications = true) => (
-    containers: Observable<Element>
-) => {
-    const codeViewsFromList: Observable<ResolvedCodeView> = containers.pipe(
-        filter(() => !!codeHost.codeViews),
-        mergeMap(container =>
-            from(codeHost.codeViews!).pipe(
-                map(({ selector, ...info }) => ({
-                    info,
-                    matches: container.querySelectorAll<HTMLElement>(selector),
-                }))
-            )
-        ),
-        mergeMap(({ info, matches }) =>
-            of(...matches).pipe(
-                map(codeView => ({
-                    ...info,
-                    codeView,
-                }))
-            )
-        )
+export const trackCodeViews = (codeHost: CodeHost) => (
+    mutations: Observable<MutationRecordLike[]>
+): Observable<ResolvedCodeView & { type: 'added' | 'removed' }> =>
+    mutations.pipe(
+        concatAll(),
+        mergeMap(mutation => [
+            ...findCodeViews(codeHost, mutation.addedNodes).map(codeView => ({
+                type: 'added' as 'added',
+                ...codeView,
+            })),
+            ...findCodeViews(codeHost, mutation.removedNodes).map(codeView => ({
+                type: 'removed' as 'removed',
+                ...codeView,
+            })),
+        ])
     )
+// .pipe(emitWhenIntersecting(250))
 
-    const codeViewsFromResolver: Observable<ResolvedCodeView> = containers.pipe(
-        filter(() => !!codeHost.codeViewResolver),
-        map(container => ({
-            resolveCodeView: codeHost.codeViewResolver!.resolveCodeView,
-            matches: container.querySelectorAll<HTMLElement>(codeHost.codeViewResolver!.selector),
-        })),
-        mergeMap(({ resolveCodeView, matches }) =>
-            of(...matches).pipe(
-                map(codeView => ({
-                    resolved: resolveCodeView(codeView),
-                    codeView,
-                })),
-                filter(propertyIsDefined('resolved')),
-                map(({ resolved, ...rest }) => ({
-                    ...resolved,
-                    ...rest,
-                }))
-            )
-        )
-    )
-
-    const obs = [codeViewsFromList, codeViewsFromResolver]
-
-    if (watchChildrenModifications) {
-        const possibleLazilyLoadedContainers = new Subject<HTMLElement>()
-
-        const mutationObserver = new MutationObserver(mutations => {
-            for (const mutation of mutations) {
-                if (mutation.type === 'childList' && mutation.target instanceof HTMLElement) {
-                    const { target } = mutation
-
-                    possibleLazilyLoadedContainers.next(target)
-                }
-            }
-        })
-
-        containers.subscribe(container =>
-            mutationObserver.observe(container, {
-                childList: true,
-                subtree: true,
-            })
-        )
-
-        const lazilyLoadedCodeViews = possibleLazilyLoadedContainers.pipe(findCodeViews(codeHost, false))
-
-        obs.push(lazilyLoadedCodeViews)
-    }
-
-    return merge(...obs).pipe(emitWhenIntersecting(250))
+export interface FileInfoWithContents extends FileInfo {
+    content?: string
+    baseContent?: string
+    headHasFileContents?: boolean
+    baseHasFileContents?: boolean
 }
 
-export const fetchFileContents = (info: FileInfo) => {
+export const fetchFileContents = (info: FileInfo): Observable<FileInfoWithContents> => {
     const fetchingBaseFile = info.baseCommitID
         ? fetchBlobContentLines({
               repoName: info.repoName,
@@ -142,13 +123,15 @@ export const fetchFileContents = (info: FileInfo) => {
     })
 
     return zip(fetchingBaseFile, fetchingHeadFile).pipe(
-        map(([baseFileContent, headFileContent]) => ({
-            ...info,
-            baseContent: baseFileContent ? baseFileContent.join('\n') : undefined,
-            content: headFileContent.join('\n'),
-            headHasFileContents: headFileContent.length > 0,
-            baseHasFileContents: baseFileContent ? baseFileContent.length > 0 : undefined,
-        })),
+        map(
+            ([baseFileContent, headFileContent]): FileInfoWithContents => ({
+                ...info,
+                baseContent: baseFileContent ? baseFileContent.join('\n') : undefined,
+                content: headFileContent.join('\n'),
+                headHasFileContents: headFileContent.length > 0,
+                baseHasFileContents: baseFileContent ? baseFileContent.length > 0 : undefined,
+            })
+        ),
         catchError(error => [info])
     )
 }

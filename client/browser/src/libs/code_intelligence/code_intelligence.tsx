@@ -10,10 +10,10 @@ import {
 } from '@sourcegraph/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { isEqual, uniqBy } from 'lodash'
 import * as React from 'react'
 import { createPortal, render } from 'react-dom'
-import { animationFrameScheduler, combineLatest, EMPTY, fromEvent, Observable, of, Subject, Subscription } from 'rxjs'
+import { animationFrameScheduler, EMPTY, fromEvent, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     distinctUntilChanged,
@@ -22,14 +22,14 @@ import {
     mergeMap,
     observeOn,
     startWith,
-    switchMap,
+    tap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 
 import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
 import { ActionNavItemsClassProps } from '../../../../../shared/src/actions/ActionsNavItems'
-import { Model, ViewComponentData } from '../../../../../shared/src/api/client/model'
+import { ViewComponentData, WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/model'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
@@ -57,12 +57,13 @@ import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { eventLogger, sourcegraphUrl } from '../../shared/util/context'
+import { MutationRecordLike } from '../../shared/util/dom'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
-import { fetchFileContents, findCodeViews } from './code_views'
-import { applyDecorations, initializeExtensions, injectCommandPalette, injectGlobalDebug } from './extensions'
+import { fetchFileContents, trackCodeViews } from './code_views'
+import { applyDecorations, initializeExtensions, injectGlobalDebug } from './extensions'
 import { injectViewContextOnSourcegraph } from './external_links'
 
 registerHighlightContributions()
@@ -71,7 +72,7 @@ registerHighlightContributions()
  * Defines a type of code view a given code host can have. It tells us how to
  * look for the code view and how to do certain things when we find it.
  */
-export interface CodeView {
+export interface CodeViewSpec {
     /** A selector used by `document.querySelectorAll` to find the code view. */
     selector: string
     /** The DOMFunctions for the code view. */
@@ -100,11 +101,11 @@ export interface CodeView {
     isDiff?: boolean
 }
 
-export type CodeViewWithOutSelector = Pick<CodeView, Exclude<keyof CodeView, 'selector'>>
+export type CodeViewSpecWithOutSelector = Pick<CodeViewSpec, Exclude<keyof CodeViewSpec, 'selector'>>
 
-export interface CodeViewResolver {
+export interface CodeViewSpecResolver {
     selector: string
-    resolveCodeView: (elem: HTMLElement) => CodeViewWithOutSelector | null
+    resolveCodeViewSpec: (elem: HTMLElement) => CodeViewSpecWithOutSelector | null
 }
 
 interface OverlayPosition {
@@ -156,16 +157,18 @@ export interface CodeHost {
      */
     getOverlayMount?: () => HTMLElement | null
 
+    // Code views and code view resolver form a union
+
     /**
      * The list of types of code views to try to annotate.
      */
-    codeViews?: CodeView[]
+    codeViewSpecs?: CodeViewSpec[]
 
     /**
      * Resolve `CodeView`s from the DOM. This is useful when each code view type
      * doesn't have a distinct selector
      */
-    codeViewResolver?: CodeViewResolver
+    codeViewSpecResolver?: CodeViewSpecResolver
 
     /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
@@ -330,35 +333,17 @@ export function initCodeIntelligence({
     class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemProps>> {
         private portal: HTMLElement | null = null
 
-        private observer: MutationObserver
-
         constructor(props: {}) {
             super(props)
             this.state = hoverifier.hoverState
             hoverifier.hoverStateUpdates.subscribe(update => this.setState(update))
-
-            this.observer = new MutationObserver(mutations => {
-                for (const mutation of mutations) {
-                    if (mutation.type === 'childList') {
-                        for (const removedNode of mutation.removedNodes) {
-                            if (removedNode.contains(removedNode)) {
-                                nextCloseButtonClick(new MouseEvent('click'))
-                            }
-                        }
-                    }
-                }
-            })
         }
         public componentDidMount(): void {
             containerComponentUpdates.next()
-            if (this.portal) {
-                this.observer.observe(this.portal.parentElement!, { childList: true })
-            }
         }
         public componentDidUpdate(): void {
             if (!this.portal || !document.body.contains(this.portal)) {
                 this.portal = getOverlayMount()
-                this.observer.observe(this.portal.parentElement!, { childList: true })
             }
 
             containerComponentUpdates.next()
@@ -410,17 +395,18 @@ export function initCodeIntelligence({
  * ResolvedCodeView attaches an actual code view DOM element that was found on
  * the page to the CodeView type being passed around by this file.
  */
-export interface ResolvedCodeView extends CodeViewWithOutSelector {
+export interface ResolvedCodeView extends CodeViewSpecWithOutSelector {
     /** The code view DOM element. */
-    codeView: HTMLElement
+    codeViewElement: HTMLElement
 }
 
 export function handleCodeHost({
+    mutations,
     codeHost,
     extensionsController,
     platformContext,
     showGlobalDebug,
-}: CodeIntelligenceProps): Subscription {
+}: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
 
@@ -438,24 +424,42 @@ export function handleCodeHost({
         )
 
     const openOptionsMenu = () => {
-        sendMessage({
-            type: 'openOptionsPage',
-        })
+        sendMessage({ type: 'openOptionsPage' })
     }
 
     const hoverifier = initCodeIntelligence({ codeHost, extensionsController, platformContext, showGlobalDebug })
     subscriptions.add(hoverifier)
 
     // Inject UI components
-    injectCommandPalette({ extensionsController, platformContext, history, getMount: codeHost.getCommandPaletteMount })
-    injectGlobalDebug({
-        extensionsController,
-        platformContext,
-        getMount: codeHost.getGlobalDebugMount,
-        history,
-        showGlobalDebug,
-    })
-    injectViewContextOnSourcegraph(sourcegraphUrl, codeHost, ensureRepoExists, isInPage ? undefined : openOptionsMenu)
+    subscriptions.add(
+        mutations.subscribe(mutations => {
+            // We don't need to inspect the mutations because the functions are idempotent
+            // TODO optimize
+            // Maybe getMount() would have to be replaced by a function that determines if a new mount was added from a given mutation record
+
+            // injectCommandPalette({
+            //     extensionsController,
+            //     platformContext,
+            //     history,
+            //     getMount: codeHost.getCommandPaletteMount,
+            // })
+
+            injectGlobalDebug({
+                extensionsController,
+                platformContext,
+                getMount: codeHost.getGlobalDebugMount,
+                history,
+                showGlobalDebug,
+            })
+
+            injectViewContextOnSourcegraph(
+                sourcegraphUrl,
+                codeHost,
+                ensureRepoExists,
+                isInPage ? undefined : openOptionsMenu
+            )
+        })
+    )
 
     // A stream of selections for the current code view. By default, selections
     // are parsed from the location hash, but the codeHost can provide an alternative implementation.
@@ -467,18 +471,27 @@ export function handleCodeHost({
               startWith([])
           )
 
-    // Keeps track of all documents on the page since calling this function (should be once per page).
-    let visibleViewComponents: ViewComponentData[] = []
-
-    const codeViews = of(document.body).pipe(
-        findCodeViews(codeHost),
-        mergeMap(({ codeView, resolveFileInfo, ...rest }) =>
-            resolveFileInfo(codeView).pipe(map(info => ({ info, codeView, ...rest })))
+    /** A stream of added or removed code views */
+    const codeViews = mutations.pipe(
+        trackCodeViews(codeHost),
+        tap(codeView => console.log('CodeView ' + codeView.type, codeView.codeViewElement)),
+        mergeMap(({ type, codeViewElement, resolveFileInfo, ...rest }) =>
+            type === 'added'
+                ? resolveFileInfo(codeViewElement).pipe(
+                      mergeMap(fileInfo =>
+                          fetchFileContents(fileInfo).pipe(
+                              map(fileInfoWithContents => ({
+                                  fileInfo: fileInfoWithContents,
+                                  type,
+                                  codeViewElement,
+                                  ...rest,
+                              }))
+                          )
+                      )
+                  )
+                : [{ type, codeViewElement, resolveFileInfo, ...rest }]
         ),
-        switchMap(({ info, ...rest }) =>
-            fetchFileContents(info).pipe(map(infoWithContents => ({ info: infoWithContents, ...rest })))
-        ),
-        catchError((err: Error) => {
+        catchError(err => {
             if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
                 return EMPTY
             }
@@ -487,12 +500,77 @@ export function handleCodeHost({
         observeOn(animationFrameScheduler)
     )
 
+    interface CodeViewState {
+        subscriptions: Subscription
+        visibleViewComponents: ViewComponentData[]
+        roots: WorkspaceRootWithMetadata[]
+    }
+    /** Map from code view element to the state associated with it (to be updated or removed) */
+    const codeViewStates = new Map<Element, CodeViewState>()
+
+    // Update model as selections change
     subscriptions.add(
-        combineLatest(codeViews, selectionsChanges).subscribe(
-            ([{ codeView, info, dom, adjustPosition, getToolbarMount, toolbarButtonProps }, selections]) => {
-                const originalDOM = dom
-                dom = {
-                    ...dom,
+        selectionsChanges.subscribe(selections => {
+            extensionsController.services.model.model.next({
+                ...extensionsController.services.model.model.value,
+                visibleViewComponents: [...codeViewStates.values()]
+                    .flatMap(state => state.visibleViewComponents)
+                    .map(visibleViewComponent => ({ ...visibleViewComponent, selections })),
+            })
+        })
+    )
+
+    subscriptions.add(
+        codeViews.pipe(withLatestFrom(selectionsChanges)).subscribe(([codeViewEvent, selections]) => {
+            // Handle added or removed view component, workspace root and subscriptions
+            if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.codeViewElement)) {
+                const { codeViewElement, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
+                const codeViewState: CodeViewState = {
+                    subscriptions: new Subscription(),
+                    visibleViewComponents: [
+                        {
+                            type: 'textEditor' as 'textEditor',
+                            item: {
+                                uri: toURIWithPath(fileInfo),
+                                languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                                text: fileInfo.content,
+                            },
+                            selections,
+                            isActive: true,
+                        },
+                    ],
+                    roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
+                }
+                codeViewStates.set(codeViewElement, codeViewState)
+
+                // When codeView is a diff, add BASE too.
+                if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
+                    codeViewState.visibleViewComponents.push({
+                        type: 'textEditor',
+                        item: {
+                            uri: toURIWithPath({
+                                repoName: fileInfo.baseRepoName,
+                                commitID: fileInfo.baseCommitID,
+                                filePath: fileInfo.baseFilePath,
+                            }),
+                            languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                            text: fileInfo.baseContent,
+                        },
+                        // There is no notion of a selection on diff views yet, so this is empty.
+                        selections: [],
+                        isActive: true,
+                    })
+                    codeViewState.roots.push({
+                        uri: toRootURI({
+                            repoName: fileInfo.baseRepoName,
+                            commitID: fileInfo.baseCommitID,
+                        }),
+                        inputRevision: fileInfo.baseRev || '',
+                    })
+                }
+
+                const domFunctions = {
+                    ...codeViewEvent.dom,
                     // If any parent element has the sourcegraph-extension-element
                     // class then that element does not have any code. We
                     // must check for "any parent element" because extensions
@@ -501,109 +579,80 @@ export function handleCodeHost({
                     getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
                         target.closest('.sourcegraph-extension-element') !== null
                             ? null
-                            : originalDOM.getCodeElementFromTarget(target),
+                            : codeViewEvent.dom.getCodeElementFromTarget(target),
                 }
 
-                visibleViewComponents = [
-                    // Either a normal file, or HEAD when codeView is a diff
-                    {
-                        type: 'textEditor',
-                        item: {
-                            uri: toURIWithPath(info),
-                            languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                            text: info.content,
-                        },
-                        selections,
-                        isActive: true,
-                    },
-                    // All the currently open documents, which are all now considered inactive.
-                    ...visibleViewComponents.map(c => ({ ...c, isActive: false })),
-                ]
-                const roots: Model['roots'] = [{ uri: toRootURI(info), inputRevision: info.rev || '' }]
-
-                // When codeView is a diff, add BASE too.
-                if (info.baseContent && info.baseRepoName && info.baseCommitID && info.baseFilePath) {
-                    visibleViewComponents.push({
-                        type: 'textEditor',
-                        item: {
-                            uri: toURIWithPath({
-                                repoName: info.baseRepoName,
-                                commitID: info.baseCommitID,
-                                filePath: info.baseFilePath,
-                            }),
-                            languageId: getModeFromPath(info.filePath) || 'could not determine mode',
-                            text: info.baseContent,
-                        },
-                        // There is no notion of a selection on diff views yet, so this is empty.
-                        selections: [],
-                        isActive: false,
-                    })
-                    roots.push({
-                        uri: toRootURI({
-                            repoName: info.baseRepoName,
-                            commitID: info.baseCommitID,
-                        }),
-                        inputRevision: info.baseRev || '',
-                    })
-                }
-
+                // Apply decorations coming from extensions
                 let decoratedLines: number[] = []
-                if (!info.baseCommitID) {
-                    extensionsController.services.textDocumentDecoration
-                        .getDecorations(toTextDocumentIdentifier(info))
-                        .subscribe(decorations => {
-                            decoratedLines = applyDecorations(dom, codeView, decorations || [], decoratedLines)
-                        })
+                if (!fileInfo.baseCommitID) {
+                    codeViewState.subscriptions.add(
+                        extensionsController.services.textDocumentDecoration
+                            .getDecorations(toTextDocumentIdentifier(fileInfo))
+                            .subscribe(decorations => {
+                                decoratedLines = applyDecorations(
+                                    domFunctions,
+                                    codeViewElement,
+                                    decorations || [],
+                                    decoratedLines
+                                )
+                            })
+                    )
                 }
 
-                extensionsController.services.model.model.next({ roots, visibleViewComponents })
-
+                // Add hover code intelligence
                 const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
                     part,
                 }) => ({
-                    repoName: part === 'base' ? info.baseRepoName || info.repoName : info.repoName,
-                    commitID: part === 'base' ? info.baseCommitID! : info.commitID,
-                    filePath: part === 'base' ? info.baseFilePath || info.filePath : info.filePath,
-                    rev: part === 'base' ? info.baseRev || info.baseCommitID! : info.rev || info.commitID,
+                    repoName: part === 'base' ? fileInfo.baseRepoName || fileInfo.repoName : fileInfo.repoName,
+                    commitID: part === 'base' ? fileInfo.baseCommitID! : fileInfo.commitID,
+                    filePath: part === 'base' ? fileInfo.baseFilePath || fileInfo.filePath : fileInfo.filePath,
+                    rev:
+                        part === 'base'
+                            ? fileInfo.baseRev || fileInfo.baseCommitID!
+                            : fileInfo.rev || fileInfo.commitID,
                 })
-
-                subscriptions.add(
+                codeViewState.subscriptions.add(
                     hoverifier.hoverify({
-                        dom,
-                        positionEvents: of(codeView).pipe(findPositionsFromEvents(dom)),
+                        dom: domFunctions,
+                        positionEvents: of(codeViewElement).pipe(findPositionsFromEvents(domFunctions)),
                         resolveContext,
                         adjustPosition,
                     })
                 )
 
-                codeView.classList.add('sg-mounted')
+                codeViewElement.classList.add('sg-mounted')
 
-                if (!getToolbarMount) {
-                    return
+                // Render toolbar
+                if (getToolbarMount) {
+                    const mount = getToolbarMount(codeViewElement)
+                    render(
+                        <TelemetryContext.Provider value={eventLogger}>
+                            <CodeViewToolbar
+                                {...fileInfo}
+                                {...codeHost.actionNavItemClassProps}
+                                platformContext={platformContext}
+                                extensionsController={extensionsController}
+                                buttonProps={toolbarButtonProps}
+                                location={H.createLocation(window.location)}
+                            />
+                        </TelemetryContext.Provider>,
+                        mount
+                    )
                 }
-
-                const mount = getToolbarMount(codeView)
-
-                render(
-                    <TelemetryContext.Provider value={eventLogger}>
-                        <CodeViewToolbar
-                            {...info}
-                            {...codeHost.actionNavItemClassProps}
-                            platformContext={platformContext}
-                            extensionsController={extensionsController}
-                            buttonProps={
-                                toolbarButtonProps || {
-                                    className: '',
-                                    style: {},
-                                }
-                            }
-                            location={H.createLocation(window.location)}
-                        />
-                    </TelemetryContext.Provider>,
-                    mount
-                )
+            } else if (codeViewEvent.type === 'removed') {
+                const codeViewState = codeViewStates.get(codeViewEvent.codeViewElement)
+                if (codeViewState) {
+                    codeViewState.subscriptions.unsubscribe()
+                    codeViewStates.delete(codeViewEvent.codeViewElement)
+                }
             }
-        )
+
+            // Apply added/removed roots/visibleViewComponents
+            extensionsController.services.model.model.next({
+                roots: uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri),
+                visibleViewComponents: [...codeViewStates.values()].flatMap(state => state.visibleViewComponents),
+            })
+        })
     )
 
     return subscriptions
@@ -612,11 +661,13 @@ export function handleCodeHost({
 const SHOW_DEBUG = () => localStorage.getItem('debug') !== null
 
 export async function injectCodeIntelligenceToCodeHosts(
+    mutations: Observable<MutationRecordLike[]>,
     codeHosts: CodeHost[],
     showGlobalDebug = SHOW_DEBUG()
 ): Promise<Subscription> {
     const subscriptions = new Subscription()
 
+    // Find the right code host
     for (const codeHost of codeHosts) {
         const isCodeHost = await Promise.resolve(codeHost.check())
         if (isCodeHost) {
@@ -624,6 +675,7 @@ export async function injectCodeIntelligenceToCodeHosts(
             subscriptions.add(extensionsController)
             subscriptions.add(
                 handleCodeHost({
+                    mutations,
                     codeHost,
                     extensionsController,
                     platformContext,
@@ -644,8 +696,8 @@ export async function injectCodeIntelligenceToCodeHosts(
  * intelligence. Unsubscribing will clean up subscriptions for hoverify and any
  * incomplete setup requests.
  */
-export async function injectCodeIntelligence(): Promise<Subscription> {
+export async function injectCodeIntelligence(mutations: Observable<MutationRecordLike[]>): Promise<Subscription> {
     const codeHosts: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 
-    return await injectCodeIntelligenceToCodeHosts(codeHosts)
+    return await injectCodeIntelligenceToCodeHosts(mutations, codeHosts)
 }

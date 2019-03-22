@@ -6,7 +6,7 @@ import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import storage from '../../browser/storage'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { CodeHost, CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
 
@@ -103,7 +103,7 @@ const toolbarButtonProps = {
     iconStyle: { marginTop: '-1px', paddingRight: '4px', fontSize: '18px', height: '.8em', width: '.8em' },
     style: {},
 }
-const commitCodeView: CodeViewWithOutSelector = {
+const commitCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveRevisionFileInfo,
     adjustPosition,
@@ -124,7 +124,7 @@ const commitCodeView: CodeViewWithOutSelector = {
     toolbarButtonProps,
     isDiff: true,
 }
-const diffCodeView: CodeViewWithOutSelector = {
+const diffCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveDiffFileInfo,
     adjustPosition,
@@ -140,7 +140,7 @@ const diffCodeView: CodeViewWithOutSelector = {
     isDiff: true,
 }
 
-const resolveCodeView: CodeViewResolver['resolveCodeView'] = (codeView: HTMLElement) => {
+const resolveCodeView: CodeViewSpecResolver['resolveCodeViewSpec'] = (codeView: HTMLElement) => {
     if (window.location.pathname.match(/^\/r/)) {
         return commitCodeView
     }
@@ -148,12 +148,12 @@ const resolveCodeView: CodeViewResolver['resolveCodeView'] = (codeView: HTMLElem
     return diffCodeView
 }
 
-const codeViewResolver: CodeViewResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.differential-changeset',
-    resolveCodeView,
+    resolveCodeViewSpec: resolveCodeView,
 }
 
-const phabCodeViews: CodeView[] = [
+const phabCodeViews: CodeViewSpec[] = [
     {
         selector: '.diffusion-source',
         dom: diffusionDOMFns,
@@ -188,8 +188,8 @@ function checkIsPhabricator(): Promise<boolean> {
 }
 
 export const phabricatorCodeHost: CodeHost = {
-    codeViews: phabCodeViews,
-    codeViewResolver,
+    codeViewSpecs: phabCodeViews,
+    codeViewSpecResolver,
     name: 'phabricator',
     check: checkIsPhabricator,
 
