@@ -1,22 +1,31 @@
+import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
+class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
+    constructor(props: { onChange?: (isVisible: boolean) => void }) {
+        super(props)
+        if (props.onChange) {
+            props.onChange(true)
+        }
+    }
+
+    public render(): JSX.Element {
+        return <>{this.props.children}</>
+    }
+}
 
 jest.mock(
     'react-visibility-sensor',
-    (): typeof _VisibilitySensor => ({ children, onChange }) => {
-        if (onChange) {
-            onChange(true)
-        }
-        return <>{children}</>
-    }
+    (): typeof _VisibilitySensor => ({ children, onChange }) => (
+        <>
+            <MockVisibilitySensor onChange={onChange} children={children} />
+        </>
+    )
 )
 
-import * as React from 'react'
 import { cleanup, getAllByText, getByText, render } from 'react-testing-library'
 import { HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST } from '../../../web/src/search/results/testHelpers'
 import { CodeExcerpt } from './CodeExcerpt'
 
-// TODO(attfarhan): Factor out isVisible flag into a prop in CodeExcerpt so we can test the code excerpt
-// after it has fetched highlighted file lines.
 describe('CodeExcerpt', () => {
     afterAll(cleanup)
 
@@ -34,24 +43,38 @@ describe('CodeExcerpt', () => {
         fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     }
 
-    it('renders all code lines', () => {
+    it('renders correct number of rows', () => {
         const { container } = render(<CodeExcerpt {...defaultProps} />)
-        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(3)
+        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(4)
     })
 
-    it('displays line numbers', () => {
-        const { container } = render(<CodeExcerpt {...defaultProps} />)
-        expect(getAllByText(container, '1').length).toBe(1)
-        expect(getAllByText(container, '2').length).toBe(1)
-        expect(getAllByText(container, '3').length).toBe(1)
+    it('renders correct number of rows with context value as 5', () => {
+        const { container } = render(
+            <CodeExcerpt
+                {...defaultProps}
+                context={5}
+                highlightRanges={[{ line: 4, character: 1, highlightLength: 2 }]}
+            />
+        )
+        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(10)
     })
 
-    it('renders all code lines', () => {
+    it('renders the line number container on each row', () => {
+        // We can't evaluate the content of these containers since the numbers are drawn
+        // by CSS. This is a proxy to make sure the <td> tags with data-line attributes
+        // at least exist.
+        const { container } = render(<CodeExcerpt {...defaultProps} />)
+        const dataLines = container.querySelectorAll('[data-line]')
+        expect(dataLines.length).toBe(4)
+    })
+
+    it('renders the code portion of each row', () => {
         const { container } = render(<CodeExcerpt {...defaultProps} />)
         expect(getByText(container, 'first of code')).toBeTruthy()
         expect(getByText(container, 'second of code')).toBeTruthy()
         expect(getByText(container, 'third of code')).toBeTruthy()
         expect(getAllByText(container, 'line').length).toBe(3)
+        expect(getByText(container, 'fourth')).toBeTruthy()
     })
 
     it('highlights matches correctly', () => {
