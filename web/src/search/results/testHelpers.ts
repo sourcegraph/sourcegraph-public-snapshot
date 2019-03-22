@@ -150,10 +150,30 @@ export const SEARCH_REQUEST = sinon.fake.returns(SEARCH_RESULT)
 export const MULTIPLE_SEARCH_REQUEST = sinon.fake.returns(MULTIPLE_SEARCH_RESULT)
 export const OBSERVABLE_SEARCH_REQUEST = sinon.fake.returns(of(SEARCH_RESULT))
 
-export const HIGHLIGHTED_FILE_LINES =
-    '<table><tr><td class="line" data-line="1"></td><td class="code"><span style="color:#268bd2;">language</span><span style="color:#657b83;">: </span><span style="color:#2aa198;">go↵</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span style="color:#268bd2;">go</span><span style="color:#657b83;">:↵</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">tip↵</span></td></tr><tr><td class="line" data-line="5"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr><tr><td class="line" data-line="6"></td><td class="code"><span style="color:#268bd2;">install</span><span style="color:#657b83;">:↵</span></td></tr><tr><td class="line" data-line="7"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">export GOPATH=&#34;$HOME/gopath&#34;↵</span></td></tr><tr><td class="line" data-line="8"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">mkdir -p &#34;$GOPATH/src/golang.org/x&#34;↵</span></td></tr><tr><td class="line" data-line="9"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">mv &#34;$TRAVIS_BUILD_DIR&#34; &#34;$GOPATH/src/golang.org/x/oauth2&#34;↵</span></td></tr><tr><td class="line" data-line="10"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">go get -v -t -d golang.org/x/oauth2/...↵</span></td></tr><tr><td class="line" data-line="11"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr><tr><td class="line" data-line="12"></td><td class="code"><span style="color:#268bd2;">script</span><span style="color:#657b83;">:↵</span></td></tr><tr><td class="line" data-line="13"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">go test -v golang.org/x/oauth2/...</span></td></tr></table>'
+export const HIGHLIGHTED_FILE_LINES = [
+    '<tr><td class="line" data-line="1"></td><td class="code"><span style="color:#268bd2;">language</span><span style="color:#657b83;">: </span><span style="color:#2aa198;">go↵</span></td></tr>',
+    '<tr><td class="line" data-line="2"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
+    '<tr><td class="line" data-line="3"></td><td class="code"><span style="color:#268bd2;">go</span><span style="color:#657b83;">:↵</span></td></tr>',
+    '<tr><td class="line" data-line="4"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">tip↵</span></td></tr>',
+    '<tr><td class="line" data-line="5"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
+    '<tr><td class="line" data-line="6"></td><td class="code"><span style="color:#268bd2;">install</span><span style="color:#657b83;">:↵</span></td></tr>',
+    '<tr><td class="line" data-line="7"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">export GOPATH=&#34;$HOME/gopath&#34;↵</span></td></tr>',
+    '<tr><td class="line" data-line="8"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">mkdir -p &#34;$GOPATH/src/golang.org/x&#34;↵</span></td></tr>',
+    '<tr><td class="line" data-line="9"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">mv &#34;$TRAVIS_BUILD_DIR&#34; &#34;$GOPATH/src/golang.org/x/oauth2&#34;↵</span></td></tr>',
+    '<tr><td class="line" data-line="10"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">go get -v -t -d golang.org/x/oauth2/...↵</span></td></tr><tr>',
+    '<td class="line" data-line="11"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
+    '<tr><td class="line" data-line="12"></td><td class="code"><span style="color:#268bd2;">script</span><span style="color:#657b83;">:↵</span></td></tr><tr>',
+    '<td class="line" data-line="13"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">go test -v golang.org/x/oauth2/...</span></td></tr>',
+]
 
-export const HIGHLIGHTED_FILE_LINES_REQUEST = sinon.fake.returns(HIGHLIGHTED_FILE_LINES)
+export const HIGHLIGHTED_FILE_LINES_SIMPLE = [
+    '<tr><td class="line" data-line="1"></td><td class="code">first line of code</td></tr>',
+    '<tr><td class="line" data-line="2"></td><td class="code">second line of code</td></tr>',
+    '<tr><td class="line" data-line="3"></td><td class="code">third line of code</td></tr>',
+]
+
+export const HIGHLIGHTED_FILE_LINES_REQUEST = sinon.fake.returns(of(HIGHLIGHTED_FILE_LINES))
+export const HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST = sinon.fake.returns(of(HIGHLIGHTED_FILE_LINES_SIMPLE))
 
 export const NOOP_SETTINGS_CASCADE = {
     subjects: null,
