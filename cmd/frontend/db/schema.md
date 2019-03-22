@@ -433,6 +433,20 @@ Indexes:
 
 ```
 
+# Table "public.searches"
+```
+   Column   |            Type             |                       Modifiers                       
+------------+-----------------------------+-------------------------------------------------------
+ id         | integer                     | not null default nextval('searches_id_seq'::regclass)
+ query      | text                        | not null
+ created_at | timestamp without time zone | not null default now()
+Indexes:
+    "searches_pkey" PRIMARY KEY, btree (id)
+Triggers:
+    trigger_delete_old_rows AFTER INSERT ON searches FOR EACH STATEMENT EXECUTE PROCEDURE delete_old_rows()
+
+```
+
 # Table "public.settings"
 ```
      Column     |           Type           |                       Modifiers                       
