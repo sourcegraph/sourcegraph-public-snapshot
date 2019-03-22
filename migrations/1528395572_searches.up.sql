@@ -2,8 +2,6 @@ BEGIN;
 
 CREATE TABLE searches (
 	id serial PRIMARY KEY,
-	-- pkg/version.Version()
-	sourcegraph_version text NOT NULL,
 	query text NOT NULL,
 	created_at timestamp NOT NULL DEFAULT NOW()
 );
