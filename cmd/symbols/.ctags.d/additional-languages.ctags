@@ -43,13 +43,15 @@
 
 --langdef=swift
 --langmap=swift:.swift
---regex-swift=/^[[:space:]]*class[[:space:]]+([[:alnum:]_]+)/\1/c,class/
---regex-swift=/^[[:space:]]*enum[[:space:]]+([[:alnum:]_]+)/\1/e,enum/
---regex-swift=/^[[:space:]]*func[[:space:]]+([[:alnum:]_]+)/\1/f,function/
---regex-swift=/^[[:space:]]*protocol[[:space:]]+([[:alnum:]_]+)/\1/i,interface/
---regex-swift=/^[[:space:]]*struct[[:space:]]+([[:alnum:]_]+)/\1/s,struct/
---regex-swift=/^[[:space:]]*extension[[:space:]]+([[:alnum:]_]+)/\1/d,define/
---regex-swift=/^[[:space:]]*typealias[[:space:]]+([[:alnum:]_]+)/\1/a,alias/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*class[[:space:]]+([[:alnum:]_]+)/\3/c,class/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*let[[:space:]]+([[:alnum:]_]+)/\3/C,constant/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*var[[:space:]]+([[:alnum:]_]+)/\3/v,variable/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*enum[[:space:]]+([[:alnum:]_]+)/\3/e,enum/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*func[[:space:]]+([[:alnum:]_]+)/\3/f,function/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*protocol[[:space:]]+([[:alnum:]_]+)/\3/i,interface/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*struct[[:space:]]+([[:alnum:]_]+)/\3/s,struct/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*extension[[:space:]]+([[:alnum:]_]+)/\3/d,define/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((static|final)[[:space:]])*typealias[[:space:]]+([[:alnum:]_]+)/\3/a,alias/
 
 --langdef=kotlin
 --langmap=kotlin:+.kt
