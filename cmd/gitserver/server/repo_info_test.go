@@ -46,7 +46,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 
 		want := protocol.MultiRepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfoResponse{
-				"x": &protocol.RepoInfoResponse{},
+				"x": {},
 			},
 		}
 		if got := getMultiRepoInfo(t, "x"); !reflect.DeepEqual(got, want) {
@@ -61,7 +61,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 
 		want := protocol.MultiRepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfoResponse{
-				"a": &protocol.RepoInfoResponse{
+				"a": {
 					CloneInProgress: true,
 					CloneProgress:   "test status",
 				},
@@ -93,7 +93,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 
 		want := protocol.MultiRepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfoResponse{
-				"x": &protocol.RepoInfoResponse{
+				"x": {
 					Cloned:      true,
 					LastFetched: &lastFetched,
 					LastChanged: &lastChanged,
@@ -113,11 +113,11 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 
 		want := protocol.MultiRepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfoResponse{
-				"a": &protocol.RepoInfoResponse{
+				"a": {
 					CloneInProgress: true,
 					CloneProgress:   "test status",
 				},
-				"b": &protocol.RepoInfoResponse{}, // not cloned
+				"b": {}, // not cloned
 			},
 		}
 		if got := getMultiRepoInfo(t, "a", "b"); !reflect.DeepEqual(got, want) {
