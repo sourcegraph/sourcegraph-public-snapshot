@@ -374,6 +374,8 @@ export async function getPhabricatorState(
 /**
  * This hacks javelin Stratcom to ignore command + click actions on sg-clickable tokens.
  * Without this, two windows open when a user command + clicks on a token.
+ *
+ * TODO could this be eliminated with shadow DOM?
  */
 export function metaClickOverride(): void {
     const JX = (window as any).JX
