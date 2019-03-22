@@ -46,61 +46,129 @@ Our work generally falls into the following categories:
 
 ### Cross-feature-area
 
-- Better support for searching open-source repositories AND internal code
+- Seamless use of open-source repositories from a self-hosted Sourcegraph instance (in search, navigation, and code host integrations)
+- Better JIRA integration
+- Support for non-Git version control systems (Perforce, Subversion, TFS, etc.)
+
 
 ### Search
 
-- "Did you mean ...?" for common mistakes in search queries [#2772](https://github.com/sourcegraph/sourcegraph/issues/2772)
-- Nested search queries (e.g., in all repositories whose `package.json` contains `foo`, find matches of `bar`) [#1005](https://github.com/sourcegraph/sourcegraph/issues/1005)
-  - Multi-line searches (#35)(https://github.com/sourcegraph/sourcegraph/issues/35)
+- [Auto-fixup common mistakes in search queries](https://github.com/sourcegraph/sourcegraph/issues/2125)
+- [Nested search queries](https://github.com/sourcegraph/sourcegraph/issues/1005) (e.g., in all repositories whose `package.json` contains `foo`, find matches of `bar`)
+  - [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
+- [Enable indexed search by default](https://github.com/sourcegraph/sourcegraph/issues/2176)
 - More advanced search filters (provided by extensions), such as those using language-specific or dependency graph information <!-- TODO -->
-- More types/sources of search results (provided by extensions), such as documentation (wiki, Markdown, and Google Docs), issues, PR comments, and configuration data [#738](https://github.com/sourcegraph/sourcegraph/issues/738)
+- [More types/sources of search results](#738) (provided by extensions), such as documentation (wiki, Markdown, and Google Docs), issues, PR comments, logs, and configuration data
 - Improved search relevance and ranking <!-- TODO -->
 
 ### Code navigation and intelligence
 
-- Refine search-based (non-language-server-based) code intelligence for [all languages](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
-  - 
-- Analyze and expose dependency graph for all major languages and build systems <!-- TODO -->
-- Programming language statistics <!-- TODO -->
-- Cross-language, cross-repository definitions and references support for APIs/IDLs (GraphQL, Thrift, Protobuf, etc) [#981](https://github.com/sourcegraph/sourcegraph/issues/981)
-- Language-server-based (precise) code intelligence for [more languages](https://sourcegraph.com/extensions?query=tag%3Alanguage-server)
+- Continually refine code intelligence (hovers, go-to-definition, find-references, etc.) for all languages
+  - Search-based (non-language-server-based) code intelligence for [all languages](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
+  - Language-server-based (precise) code intelligence for [more languages](https://sourcegraph.com/extensions?query=tag%3Alanguage-server)
+- [Analyze and expose dependency graph for all major languages and build systems](https://github.com/sourcegraph/sourcegraph/issues/2928)
+- [Compute and expose programming language statistics](https://github.com/sourcegraph/sourcegraph/issues/2587)
+- [Cross-language, cross-repository definitions and references support for APIs/IDLs (GraphQL, Thrift, Protobuf, etc.)](https://github.com/sourcegraph/sourcegraph/issues/981)
+
+### Integrations
+
+We're refining and adding Sourcegraph integration with [code hosts](#code-hosts), [editors](#editors), and [other tools and services](#other-tools-and-services).
+
+#### Code hosts
+
+Code host integrations have (or will have) the following feature set (in order of priority):
+
+- Repository syncing (project metadata and Git data)
+- UI integration with hovers/go-to-definition/find-references/etc. (provided as a native plugin and/or by the [Sourcegraph browser extension](../../integration/browser_extension.md))
+- Repository permissions
+- User authentication
+
+We are targeting the following code hosts (many of which already support the features above):
+
+- [GitHub integration](https://github.com/sourcegraph/sourcegraph/issues/2915) (GitHub.com and GitHub Enterprise)
+- [GitLab integration](https://github.com/sourcegraph/sourcegraph/issues/2916) (GitLab.com and self-hosted GitLab instances)
+- [Bitbucket Server integration](https://github.com/sourcegraph/sourcegraph/issues/2917)
+- [Phabricator integration](https://github.com/sourcegraph/sourcegraph/issues/2918)
+- [AWS CodeCommit integration](https://github.com/sourcegraph/sourcegraph/issues/2919)
+- [Gitolite integration](https://github.com/sourcegraph/sourcegraph/issues/2922)
+- Future:
+  - [Gerrit integration](https://github.com/sourcegraph/sourcegraph/issues/871)
+  - [Bitbucket Cloud (bitbucket.org) integration](https://github.com/sourcegraph/sourcegraph/issues/2914)
+
+#### Editors
+
+Editor integrations have (or will have) the following feature set:
+
+- "View file at cursor location on Sourcegraph web interface" action
+- "Search code on Sourcegraph" action (for global or repository/directory-scoped searches)
+- Configurable single Sourcegraph URL (to support Sourcegraph.com or self-hosted Sourcegraph instance)
+- Future:
+  - [Support for Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/978)
+
+We are targeting the following editors (many of which already support the features above):
+
+- [VS Code integration](https://github.com/sourcegraph/sourcegraph/issues/2923)
+- [JetBrains IDE integration](https://github.com/sourcegraph/sourcegraph/issues/2926) (IntelliJ, WebStorm, PyCharm, GoLand, etc.)
+- [Emacs integration](https://github.com/sourcegraph/sourcegraph/issues/2924)
+- [Vim integration](https://github.com/sourcegraph/sourcegraph/issues/2927)
+- [Sublime Text integration](https://github.com/sourcegraph/sourcegraph/issues/2929)
+- Future:
+  - [Eclipse IDE integration](https://github.com/sourcegraph/sourcegraph/issues/2925)
+
+#### Other tools and services
+
+Sourcegraph integrates (or will integrate) with the following popular tools, providing features (dependent on the tool) such as contextual links to/from Sourcegraph and contextual information overlays on code in Sourcegraph.
+
+- [Codecov integration](https://github.com/sourcegraph/sourcegraph/issues/2920)
+- [Datadog integration](TODO)
+- [LightStep integration](TODO)
+- [Sentry integration](TODO)
+- [Slack integration](TODO)
+- Future: 
+  - [LaunchDarkly integration](https://github.com/sourcegraph/sourcegraph/issues/1249)
+  - FOSSA
+  - SonarQube
+  - Figma
+
+### Core services (repositories and authentication)
+
+See the "[Code hosts](#code-hosts)" section above for plans related to repositories, user authentication, and permissions for specific code hosts (such as GitHub).
+
+- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+- [Improve process for adding repositories from local disk](https://github.com/sourcegraph/sourcegraph/issues/1527)
+- Simpler configuration for HTTPS/SSH credentials for cloning repositories
+- [Support internal CA or self-signed TLS certificates for external communication](https://github.com/sourcegraph/sourcegraph/issues/71)
+
+### Extension API, authoring, and registry
+
+This section is only for extension API, authoring and registry improvements for [Sourcegraph extensions](../../extensions/index.md). Features that will be *provided by* extensions are listed in the other sections.
+
+- [Integration testing support for Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/733)
+- [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
+- [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
+
+### Deployment, configuration, and management
+
+- Better communication of license status and expiration <!-- TODO -->
+- Customization:
+  - [Custom branding (logo and brand icon) on the web interface](TODO)
+  - [Configurable welcome/homepage message](https://github.com/sourcegraph/sourcegraph/issues/653)
+  - Configurable site admin contact info and internal helpdesk link
+- Improved flow for common configuration use cases <!-- TODO -->
 
 ## Features
 
 Search
 
 - Improvements to saved searches
-
-Code intelligence and navigation
-
-- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
-- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
-- [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
-- [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
-- [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
-- [Scoped symbols sidebar](https://github.com/sourcegraph/sourcegraph/issues/1967)
-- PHP language support via extension
 - Bazel support
 
 Sourcegraph extensions
 
-- [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
-- Enhanced extensions for Codecov and Datadog
-- New 3rd-party extensions: Sentry, LightStep, FOSSA, SonarQube, [LaunchDarkly](https://github.com/sourcegraph/sourcegraph/issues/1249), Figma, etc.
-- [Configuration data search extension](https://github.com/sourcegraph/sourcegraph/issues/670)
-- Improved code host support for Sourcegraph extensions
-- [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
-- [Sourcegraph extension testing](https://github.com/sourcegraph/sourcegraph/issues/733)
-
 Other
 
-- [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
 - [Checklist-based repository reviews](https://github.com/sourcegraph/sourcegraph/issues/1526)
-- [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)
 - Enhanced notification preferences
-- Support for non-Git version control systems (Perforce, Subversion, TFS, etc.)
-- API access logging
 
 <!--
 
