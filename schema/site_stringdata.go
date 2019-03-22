@@ -156,11 +156,11 @@ const SiteSchemaJSON = `{
           "type": "object",
           "properties": {
             "logo": {
-              "description": "The URL to the logo used on the homepage.",
+              "description": "The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG",
               "type": "string"
             },
             "symbol": {
-              "description": "The URL to the symbol used as the search icon.",
+              "description": "The URL to the symbol used as the search icon. Recommended size: 24x24px. We recommend using the following file formats: SVG, PNG, ICO",
               "type": "string"
             }
           }
@@ -170,17 +170,17 @@ const SiteSchemaJSON = `{
           "type": "object",
           "properties": {
             "logo": {
-              "description": "The URL to the logo used on the homepage.",
+              "description": "The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG",
               "type": "string"
             },
             "symbol": {
-              "description": "The URL to the symbol used as the search icon.",
+              "description": "The URL to the symbol used as the search icon. Recommended size: 24x24px. We recommend using the following file formats: SVG, PNG, ICO",
               "type": "string"
             }
           }
         },
         "favicon": {
-          "description": "The URL of the favicon to be used for your instance",
+          "description": "The URL of the favicon to be used for your instance. We recommend using the following file format: ICO",
           "type": "string"
         }
       }
