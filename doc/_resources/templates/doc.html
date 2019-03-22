@@ -30,16 +30,20 @@
 					<section id="content">
 						<nav id="version">
 							{{/* Update these after each release. */}}
-							{{$currentReleaseRevspec := "v3.1.2"}}
-							{{$currentReleaseVersion := "3.1"}}
-							{{$nextReleaseVersion := "3.2"}}
+                            {{$previousReleaseRevspec := "v3.1.2"}}
+							{{$previousReleaseVersion := "3.1.2"}}
+							{{$currentReleaseRevspec := "v3.2.0"}}
+							{{$currentReleaseVersion := "3.2"}}
+							{{$nextReleaseVersion := "master"}}
 							Version:
 							{{if (and .ContentVersion (ne .ContentVersion $currentReleaseRevspec))}}
 								<strong>{{.ContentVersion}}</strong> /
 							{{end}}
-							<a rel="nofollow" class="{{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">{{$nextReleaseVersion}} (next)</a>
+							<a rel="nofollow" class="{{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">{{$nextReleaseVersion}}</a>
 							/
-							<a rel="nofollow" class="{{if eq .ContentVersion $currentReleaseRevspec}}active{{end}}" href="/@{{$currentReleaseRevspec}}/{{.ContentPagePath}}">{{$currentReleaseVersion}} (current)</a>
+                            <a rel="nofollow" class="{{if eq .ContentVersion $currentReleaseRevspec}}active{{end}}" href="/@{{$currentReleaseRevspec}}/{{.ContentPagePath}}">{{$currentReleaseVersion}} (current)</a>
+                            /
+							<a rel="nofollow" class="{{if eq .ContentVersion $previousReleaseRevspec}}active{{end}}" href="/@{{$previousReleaseRevspec}}/{{.ContentPagePath}}">{{$previousReleaseVersion}} (previous)</a>
 						</nav>
 						{{with .Content}}
 							<nav id="breadcrumbs" class="breadcrumbs">
