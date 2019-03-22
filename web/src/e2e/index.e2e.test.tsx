@@ -27,6 +27,14 @@ process.on('rejectionHandled', error => {
 })
 
 /**
+ * Changes the default options passed to `waitForSelector` to `{ visible: true }`
+ */
+function patchWaitForSelector(page: puppeteer.Page): void {
+    const original = page.waitForSelector.bind(page)
+    page.waitForSelector = (selector: string, options: any): any => original(selector, { visible: true, ...options })
+}
+
+/**
  * Used in the external service configuration.
  */
 export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
@@ -78,6 +86,7 @@ describe('e2e test suite', function(this: any): void {
             }
             browser = await puppeteer.launch(launchOpt)
             page = await browser.newPage()
+            patchWaitForSelector(page)
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2
