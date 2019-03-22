@@ -30,6 +30,8 @@ type Entry struct {
 
 const debug = false
 
+var logErrors = os.Getenv("DEPLOY_TYPE") == "dev"
+
 type Parser interface {
 	Parse(path string, content []byte) ([]Entry, error)
 	Close()
@@ -185,6 +187,9 @@ type reply struct {
 	File      bool   `json:"file"`
 	Signature string `json:"signature"`
 	Pattern   string `json:"pattern"`
+
+	// error
+	Message string `json:"message"`
 }
 
 func (p *ctagsProcess) Parse(name string, content []byte) (entries []Entry, err error) {
@@ -203,6 +208,9 @@ func (p *ctagsProcess) Parse(name string, content []byte) (entries []Entry, err 
 		var rep reply
 		if err := p.read(&rep); err != nil {
 			return nil, err
+		}
+		if rep.Typ == "error" && logErrors {
+			log.Printf("error parsing file %s: %s", name, rep.Message)
 		}
 		if rep.Typ == "completed" {
 			break
