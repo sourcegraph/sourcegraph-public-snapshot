@@ -145,7 +145,12 @@ describe('e2e test suite', function(this: any): void {
             },
         }
 
-        await (await page.waitForSelector(selector, { visible: true })).click()
+        // The Monaco editor sometimes detaches nodes from the DOM, causing
+        // `click()` to fail unpredictably.
+        await retry(async () => {
+            await page.waitForSelector(selector)
+            await page.click(selector)
+        })
         await selectAllByMethod[method]()
         await page.keyboard.press(Key.Backspace)
         await page.keyboard.type(newText)
