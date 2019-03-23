@@ -434,7 +434,7 @@ type FakeInternalAPI struct {
 	repoID api.RepoID
 }
 
-// NewFakeInternalAPI returns a new FakeInternalAPI initialised with the given data.
+// NewFakeInternalAPI returns a new FakeInternalAPI initialized with the given data.
 func NewFakeInternalAPI(svcs []*api.ExternalService, repos []*api.Repo) *FakeInternalAPI {
 	fa := FakeInternalAPI{
 		svcs:  map[string][]*api.ExternalService{},

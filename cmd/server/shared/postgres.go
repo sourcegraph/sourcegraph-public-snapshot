@@ -130,7 +130,7 @@ func maybeUpgradePostgres(path, newVersion string) (err error) {
 	// Use a fairly old Docker version for maximum compatibility.
 	cli, err := docker.NewClientWithOpts(client.FromEnv, client.WithVersion("1.28"))
 	if err != nil {
-		return errors.Wrap(err, "failed to initialise docker client")
+		return errors.Wrap(err, "failed to initialize docker client")
 	}
 
 	ctx := context.Background()

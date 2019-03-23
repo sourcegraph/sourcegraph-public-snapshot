@@ -47,7 +47,7 @@ func main() {
 
 	db, err := repos.NewDB(repos.NewDSNFromEnv())
 	if err != nil {
-		log.Fatalf("failed to initalise db store: %v", err)
+		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
