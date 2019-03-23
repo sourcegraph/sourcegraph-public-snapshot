@@ -416,8 +416,7 @@ describe('e2e test suite', function(this: any): void {
                 await page.goto(
                     baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
-                await page.waitForSelector(`[data-tree-path="godockerize.go"]`)
-                await page.click(`[data-tree-path="godockerize.go"]`)
+                await (await page.waitForSelector(`[data-tree-path="godockerize.go"]`, { visible: true })).click()
                 await assertWindowLocation(
                     '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
