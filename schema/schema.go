@@ -92,6 +92,17 @@ type BitbucketServerConnection struct {
 	Url                         string `json:"url"`
 	Username                    string `json:"username,omitempty"`
 }
+type BrandAssets struct {
+	Logo   string `json:"logo,omitempty"`
+	Symbol string `json:"symbol,omitempty"`
+}
+
+// Branding description: Customize Sourcegraph homepage logo and search icon.
+type Branding struct {
+	Dark    *BrandAssets `json:"dark,omitempty"`
+	Favicon string       `json:"favicon,omitempty"`
+	Light   *BrandAssets `json:"light,omitempty"`
+}
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
 type BuiltinAuthProvider struct {
@@ -377,6 +388,7 @@ type Settings struct {
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
+	Branding                          *Branding                   `json:"branding,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`

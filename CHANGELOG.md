@@ -9,6 +9,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Enterprise admins can now customize the appearance of the homepage and search icon.
+
 ### Changed
 
 - The symbols sidebar now only shows symbols defined in the current file or directory.

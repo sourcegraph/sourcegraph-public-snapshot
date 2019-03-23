@@ -146,6 +146,24 @@ const SiteSchemaJSON = `{
       ],
       "group": "Security"
     },
+    "branding": {
+      "description": "Customize Sourcegraph homepage logo and search icon.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "light": {
+          "$ref": "#/definitions/BrandAssets"
+        },
+        "dark": {
+          "$ref": "#/definitions/BrandAssets"
+        },
+        "favicon": {
+          "description": "The URL of the favicon to be used for your instance. We recommend using the following file format: ICO",
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
     "email.smtp": {
       "title": "SMTPServerConfig",
       "description": "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
@@ -285,6 +303,23 @@ const SiteSchemaJSON = `{
       },
       "group": "Experimental",
       "hide": true
+    }
+  },
+  "definitions": {
+    "BrandAssets": {
+      "type": "object",
+      "properties": {
+        "logo": {
+          "description": "The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG",
+          "type": "string",
+          "format": "uri"
+        },
+        "symbol": {
+          "description": "The URL to the symbol used as the search icon. Recommended size: 24x24px. We recommend using the following file formats: SVG, PNG, ICO",
+          "type": "string",
+          "format": "uri"
+        }
+      }
     }
   }
 }
