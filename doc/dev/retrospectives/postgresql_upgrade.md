@@ -4,7 +4,7 @@
 
 1. Master must always be in a releasable state. Don’t create breaking changes that block the next release.
 1. Estimate and plan work before scheduling it for a release.
-1. Prefer to share context using Github Issues instead of Slack.
+1. Prefer to share context using GitHub Issues instead of Slack.
 1. Warning signs to be careful with adopted issues: missed estimates, being passed around, and fixed deadline.
 
 ## Background
