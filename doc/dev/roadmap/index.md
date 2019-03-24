@@ -160,11 +160,11 @@ We want to make it easy to set up a self-hosted Sourcegraph instance in minutes,
 
 ---
 
-## Future: infrastructure for developer tools and data
+## Infrastructure for developer tools and data
 
 > NOTE: This section describes future capabilities that we're working toward.
 
-We want Sourcegraph to be the infrastructure for your developer tools and data, so you can:
+We want Sourcegraph to be the infrastructure for developer tools and data inside your organization, so you can:
 
 - [Build and adopt new developer tools organization-wide](#build-and-adopt-developer-tools-more-easily) more easily, with seamless integration into the editor, code review, and anywhere else developers interact with code
 - [Provide consistent, remote-capable development environments to developers](#consistent-remote-capable-development-environments)
