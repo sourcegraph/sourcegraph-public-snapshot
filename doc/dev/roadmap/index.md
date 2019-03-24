@@ -163,7 +163,7 @@ We want to make it easy to set up a self-hosted Sourcegraph instance in minutes,
 
 ## Future
 
-### Platform
+### Infrastructure for developer tools and data
 
 We want Sourcegraph to be the infrastructure for your developer tools and data, so you can:
 
@@ -177,8 +177,9 @@ By "developer tools and data", we mean things like:
 - Git history
 - Code ownership and review
 - Build process and environment
-- Test execution and status
+- Test execution, status, and coverage
 - Dependency graph (for imports/libraries and runtime services)
+- Static code analysis and metrics (such as code churn)
 - Cross-references
 - Deployment (where is this code running?)
 - Runtime monitoring and logging
@@ -189,7 +190,7 @@ Your existing tools to handle these things would integrate with Sourcegraph; no 
 
 ### Consistent, remote-capable development environments
 
-We want to let you connect their local editor to your organization's Sourcegraph instance and immediately get code intelligence, builds, tests, and other development tools on all of your code.
+We will let you connect your local editor to your organization's Sourcegraph instance and immediately get code intelligence, builds, tests, and other development tools on all of your code.
 
 - The development environment would be centrally configured from your Sourcegraph instance, so every developer would have a consistent environment (subject to user customizations).
 - Computationally intensive tasks (such as builds, code intelligence, and tests) could be offloaded to the remote server. (Some will be harder to make remote than others, and we expect to make gradual progress here.)
@@ -197,16 +198,28 @@ We want to let you connect their local editor to your organization's Sourcegraph
 
 ### Automated refactoring
 
-We want to let you perform safe, large-scale refactors of code across repositories, services, and languages.
+We will let you perform safe, large-scale refactors of code across repositories, services, and languages.
 
 - For simple large-scale edits that can be merged independently, you'll be able to preview and create multiple linked diffs/PRs for the edit, each assigned to the right code reviewer. You can track progress of merging all of the individual edits and monitor new candidates for the edit to be applied (such as when a developer merges code after you created the initial batch of diffs/PRs).
 - For refactors that need coordinated or staged deployment, you'll be able to define templates that codify how to make the change in multiple steps. For example, to change the signature of a service method, a template might codify a multi-step process where first the implementation changes to handle both the old and new arguments, then all callers are updated, and finally (1 month after all calling services are deployed) support for the old arguments is removed. This process relies on Sourcegraph's knowledge of the dependency graph, code generation steps, and deployment status.
 
 ### Data-driven insights and reporting
 
-We want to let you use data derived from development to make better decisions.
+We will let you use data derived from development to make better decisions.
+
+- Built-in reporting of usage trends for programming languages, dependencies, and services
+- Advanced reporting using information supplied by the developer tools you integrate into Sourcegraph (such as test coverage, code churn, etc.)
 
 ### Security, compliance, and licensing
+
+We will let you enforce policies and processes around security, compliance, and licensing in a developer-friendly way.
+
+- Existing tools for security and license analysis will provide the raw list of possible problems.
+- Sourcegraph will provide the workflow for triage, reporting, and fixing the issues (and ensuring they don't reoccur).
+  - Triage and reporting will use Sourcegraph's understanding of code ownership and review (for assignment) and the dependency graph (for prioritization, such as highlighting when a security issue is found in code used by a user-facing service).
+  - Fixing the issue and preventing regressions will rely on [automated refactoring](#automated-refactoring).
+
+> Example: For companies needing to be PCI compliant, [PCI DSS 3.0 rule 6.3.2](https://pcinetwork.org/forum/index.php?threads/pci-dss-3-0-6-3-2-review-custom-code-prior-to-release-to-production-or-customers-in-order-to-identify-any-potent.645/) requires someone other than the author to review each code change. Using Sourcegraph's knowledge of the dependency graph for libraries and services, you'll be able to guarantee that all code used by a PCI-compliant system has been properly reviewed (prior to merging and before release), even if it's in a separate repository or tree.
 
 <!--
 
