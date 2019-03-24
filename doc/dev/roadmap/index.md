@@ -26,6 +26,10 @@ We're also working toward making Sourcegraph the [**infrastructure for developer
 
 ## Search
 
+<!-- You'll be able to refine your search to find what you need more quickly, and search across more types of things (beyond code). -->
+
+We're making search faster, more accurate, and more comprehensive (so it includes issues, documents, and other data sources you might want to search).
+
 - [Auto-fixup common mistakes in search queries](https://github.com/sourcegraph/sourcegraph/issues/2125)
 - [Nested search queries](https://github.com/sourcegraph/sourcegraph/issues/1005) (e.g., in all repositories whose `package.json` contains `foo`, find matches of `bar`)
   - [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
@@ -44,9 +48,10 @@ TODO
 
 ## Code navigation and intelligence
 
-- Continually refine code intelligence (hovers, go-to-definition, find-references, etc.) for all languages
-  - Search-based (non-language-server-based) code intelligence for [all languages](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
-  - Language-server-based (precise) code intelligence for [more languages](https://sourcegraph.com/extensions?query=tag%3Alanguage-server)
+We're continually refining code intelligence (hovers, go-to-definition, find-references, etc.) for all languages and making our integration into code hosts (such as GitHub) more robust. We're also working toward features that let you navigate the dependency graph of imports, libraries, and services.
+
+- Search-based (non-language-server-based) code intelligence for [all languages](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
+- Language-server-based (precise) code intelligence for [more languages](https://sourcegraph.com/extensions?query=tag%3Alanguage-server)
 - Continually ensure code navigation/intelligence works on code hosts using our [browser extension](../../integration/browser_extension.md) and [native code host integrations](#code-hosts).
 - [Analyze and expose dependency graph for all major languages and build systems](https://github.com/sourcegraph/sourcegraph/issues/2928)
 - [Compute and expose programming language statistics](https://github.com/sourcegraph/sourcegraph/issues/2587)
@@ -56,7 +61,7 @@ TODO
 
 ## Integrations
 
-We're refining and adding Sourcegraph integration with [code hosts](#code-hosts), [editors](#editors), and [other tools and services](#other-tools-and-services).
+We're refining and adding Sourcegraph integration with [code hosts](#code-hosts), [editors](#editors), and [other tools and services](#other-tools-and-services), so that Sourcegraph searches across all your code and gives you contextual information from your favorite developer tools in your workflow.
 
 ### Code hosts
 
@@ -81,10 +86,10 @@ We are targeting the following code hosts (many of which already support the fea
 
 ### Editors
 
-Editor integrations have (or will have) the following feature set:
+We want to make it super fast to get the answer you need on Sourcegraph when you're in your editor, without switching to your browser and losing focus. We're focused on solving problems for you that local editor search and navigation can't answer. Editor integrations have (or will have) the following feature set:
 
 - "View file at cursor location on Sourcegraph web interface" action
-- "Search code on Sourcegraph" action (for global or repository/directory-scoped searches)
+- "Search code on Sourcegraph" action (for global searches or searches scoped to the current repository and its transitive dependencies/dependents)
 - Configurable single Sourcegraph URL (to support Sourcegraph.com or self-hosted Sourcegraph instance)
 - Future:
   - [Support for Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/978)
@@ -101,7 +106,7 @@ We are targeting the following editors (many of which already support the featur
 
 ### Other tools and services
 
-Sourcegraph integrates (or will integrate) with the following popular tools, providing features (dependent on the tool) such as contextual links to/from Sourcegraph and contextual information overlays on code in Sourcegraph.
+Sourcegraph integrations enhance your developer workflow, giving you vital information you need while coding. These integrations add features such as contextual links to/from Sourcegraph and contextual information overlays on code in Sourcegraph.
 
 - [Codecov integration](https://github.com/sourcegraph/sourcegraph/issues/2920) (code coverage)
 - [Datadog integration](TODO) (tracing and performance monitoring)
