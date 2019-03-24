@@ -285,6 +285,11 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
+type Notice struct {
+	Dismissible bool   `json:"dismissible,omitempty"`
+	Location    string `json:"location"`
+	Message     string `json:"message"`
+}
 type OAuthIdentity struct {
 	Type string `json:"type"`
 }
@@ -378,6 +383,7 @@ type Sentry struct {
 type Settings struct {
 	Extensions             map[string]bool           `json:"extensions,omitempty"`
 	Motd                   []string                  `json:"motd,omitempty"`
+	Notices                []*Notice                 `json:"notices,omitempty"`
 	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
 	SearchContextLines     int                       `json:"search.contextLines,omitempty"`
 	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`

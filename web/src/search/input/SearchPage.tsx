@@ -6,6 +6,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
+import { Notices } from '../../global/Notices'
 import { Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -123,6 +124,7 @@ export class SearchPage extends React.Component<Props, State> {
                             </div>
                         </>
                     )}
+                    <Notices className="my-3" location="home" settingsCascade={this.props.settingsCascade} />
                 </Form>
             </div>
         )
