@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"unicode/utf8"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
-	"sourcegraph.com/sourcegraph/go-diff/diff"
 )
 
 // compilePathMatcher compiles the path options into a PathMatcher.
