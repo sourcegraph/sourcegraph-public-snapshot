@@ -1,6 +1,11 @@
 # Sourcegraph roadmap
 
-We want Sourcegraph to be the best way to answer questions and get unblocked while writing, reviewing, or reading code. This roadmap shows what's planned for the next 12 months. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
+We want Sourcegraph to be:
+
+- **For developers:** the best way to answer questions and get unblocked while writing, reviewing, or reading code.
+- **For organizations** (engineering leaders and internal tools teams): the infrastructure for developer tools and data.
+
+This roadmap shows what's planned for the next 12 months. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
 
 **Next release:** [Sourcegraph 3.3 release plan](https://github.com/sourcegraph/sourcegraph/issues/2931) (ships on April 20, 2019).
 
@@ -17,13 +22,7 @@ We're continually improving Sourcegraph's core features for developers:
 - Robust API for automation and reporting on your code
 - Code change notifications (saved searches)
 
-We also want to help engineering leaders and internal tools team solve organization-wide problems with:
-
-- A platform for building and running dev tools in the developer workflow (in the editor, code review, and anywhere else they work with code):
-- Consistent, remote-capable development environments
-- Automated refactoring
-- Data-driven insights and reporting
-- Security, compliance, and licensing
+We're also working toward making Sourcegraph the [**infrastructure for developer tools and data**](#future-infrastructure-for-developer-tools-and-data), with integration into the entire developer workflow (in the editor, code review, and anywhere else they interact with code). In addition to helping developers, this also helps engineering leaders and internal tools teams solve organization-wide problems.
 
 ## Search
 
