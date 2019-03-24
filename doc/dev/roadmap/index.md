@@ -165,25 +165,46 @@ We want to make it easy to set up a self-hosted Sourcegraph instance in minutes,
 
 ### Platform
 
-We want Sourcegraph to be the one place that knows everything about your code and its history, owners, reviewers, build steps, dependencies, cross-references, CI/deployment status, runtime monitoring and logging, how it's built/used/deployed, etc. Your existing tools to handle these things will integrate with Sourcegraph; no need to switch.
+We want Sourcegraph to be the infrastructure for your developer tools and data, so you can:
 
-We want to enable these key use cases:
+- Adopt new developer tools organization-wide more easily, with seamless integration into the editor, code review, and anywhere else developers interact with code
+- Automate, analyze, and monitor development processes
+- Perform automated refactors programmatically across repositories and languages
 
-- Annotate code
-- Monitor changes, with configurable rules and actions
-- Perform automated refactors, programmatically and atomically across repositories
+By "developer tools and data", we mean things like:
+
+- Repositories and Git data
+- Git history
+- Code ownership and review
+- Build process and environment
+- Test execution and status
+- Dependency graph (for imports/libraries and runtime services)
+- Cross-references
+- Deployment (where is this code running?)
+- Runtime monitoring and logging
+
+Your existing tools to handle these things would integrate with Sourcegraph; no need to switch.
+
+> Example: You want to automatically ingest crash logs from your application and create issues from them. To do so, you'd build a tool that parses the stack traces and uses the Sourcegraph API to gather the information to include in the issue: assignment to the code owner of the most recently changed method in the stack trace, a link to the associated code review, logs and traces related to the stack trace, and a list of other services that depend on this code (to help triage). Without the infrastructure Sourcegraph will provide, this kind of automation would be extremely hard to build and fragile.
 
 ### Consistent, remote-capable development environments
 
-We want to let developers connect their local editor to a Sourcegraph instance and immediately get code intelligence, builds, tests, and other development tools on all of their code.
+We want to let you connect their local editor to your organization's Sourcegraph instance and immediately get code intelligence, builds, tests, and other development tools on all of your code.
 
-- The development environment would be centrally configured from the Sourcegraph instance, so every developer would have a consistent environment (subject to user customizations).
-- Computationally intensive tasks (such as builds, code intelligence, and tests) could be offloaded to the remote server.
-- Developers could also choose to launch a web-based cloud IDE session with a fully configured developer environment.
+- The development environment would be centrally configured from your Sourcegraph instance, so every developer would have a consistent environment (subject to user customizations).
+- Computationally intensive tasks (such as builds, code intelligence, and tests) could be offloaded to the remote server. (Some will be harder to make remote than others, and we expect to make gradual progress here.)
+- You could also choose to launch a web-based cloud IDE session with a fully configured developer environment.
 
 ### Automated refactoring
 
+We want to let you perform safe, large-scale refactors of code across repositories, services, and languages.
+
+- For simple large-scale edits that can be merged independently, you'll be able to preview and create multiple linked diffs/PRs for the edit, each assigned to the right code reviewer. You can track progress of merging all of the individual edits and monitor new candidates for the edit to be applied (such as when a developer merges code after you created the initial batch of diffs/PRs).
+- For refactors that need coordinated or staged deployment, you'll be able to define templates that codify how to make the change in multiple steps. For example, to change the signature of a service method, a template might codify a multi-step process where first the implementation changes to handle both the old and new arguments, then all callers are updated, and finally (1 month after all calling services are deployed) support for the old arguments is removed. This process relies on Sourcegraph's knowledge of the dependency graph, code generation steps, and deployment status.
+
 ### Data-driven insights and reporting
+
+We want to let you use data derived from development to make better decisions.
 
 ### Security, compliance, and licensing
 
