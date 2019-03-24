@@ -8,14 +8,22 @@ We ship a release on the [20th day of each month](../releases.md#releases-are-mo
 
 ---
 
-## Use cases
+## Overview
 
-- Code search TODO
-- Future:
-  - Seamless use of open-source repositories from a self-hosted Sourcegraph instance
-  - [Checklist-based repository reviews](https://github.com/sourcegraph/sourcegraph/issues/1526)
-  - Automated refactoring
-  - Remote development
+We're continually improving Sourcegraph's core features for developers:
+
+- Code search and navigation (with code intelligence)
+- Integration into code review
+- Robust API for automation and reporting on your code
+- Code change notifications (saved searches)
+
+We also want to help engineering leaders and internal tools team solve organization-wide problems with:
+
+- A platform for building and running dev tools in the developer workflow (in the editor, code review, and anywhere else they work with code):
+- Consistent, remote-capable development environments
+- Automated refactoring
+- Data-driven insights and reporting
+- Security, compliance, and licensing
 
 ## Search
 
@@ -28,7 +36,7 @@ We ship a release on the [20th day of each month](../releases.md#releases-are-mo
 - Investigate instant, as-you-type search (Livegrep-style)
 - Improved search relevance and ranking <!-- TODO -->
 
-### Saved searches
+## Saved searches
 
 TODO
 
@@ -102,7 +110,7 @@ Sourcegraph integrates (or will integrate) with the following popular tools, pro
 - [Sentry integration](TODO) (error monitoring)
 - [Slack integration](TODO) (team chat)
 - [G Suite integration](TODO) (Google domain management)
-- Future: 
+- Future:
   - [JIRA integration](https://github.com/sourcegraph/sourcegraph/issues/2930) (project planning and issue tracking)
   - [LaunchDarkly integration](https://github.com/sourcegraph/sourcegraph/issues/1249) (feature flags)
   - FOSSA integration (license compliance)
@@ -147,6 +155,37 @@ We want to make it easy to set up a self-hosted Sourcegraph instance in minutes,
   - Configurable site admin contact info and internal helpdesk link
 - Improved flow for common configuration use cases (e.g., "just make everything work well with my GitHub.com organization")
 
+## Other
+
+- [Seamless use of open-source repositories from a self-hosted Sourcegraph instance](https://github.com/sourcegraph/sourcegraph/issues/2954)
+
+---
+
+## Future
+
+### Platform
+
+We want Sourcegraph to be the one place that knows everything about your code and its history, owners, reviewers, build steps, dependencies, cross-references, CI/deployment status, runtime monitoring and logging, how it's built/used/deployed, etc. Your existing tools to handle these things will integrate with Sourcegraph; no need to switch.
+
+We want to enable these key use cases:
+
+- Annotate code
+- Monitor changes, with configurable rules and actions
+- Perform automated refactors, programmatically and atomically across repositories
+
+### Consistent, remote-capable development environments
+
+We want to let developers connect their local editor to a Sourcegraph instance and immediately get code intelligence, builds, tests, and other development tools on all of their code.
+
+- The development environment would be centrally configured from the Sourcegraph instance, so every developer would have a consistent environment (subject to user customizations).
+- Computationally intensive tasks (such as builds, code intelligence, and tests) could be offloaded to the remote server.
+- Developers could also choose to launch a web-based cloud IDE session with a fully configured developer environment.
+
+### Automated refactoring
+
+### Data-driven insights and reporting
+
+### Security, compliance, and licensing
 
 <!--
 
