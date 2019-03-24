@@ -154,9 +154,8 @@ We want to make it easy to set up a self-hosted Sourcegraph instance in minutes,
 
 - Better communication of license status and expiration <!-- TODO -->
 - Customization:
-  - [Custom branding (logo and brand icon) on the web interface](TODO)
-  - [Configurable welcome/homepage message](https://github.com/sourcegraph/sourcegraph/issues/653)
-  - Configurable site admin contact info and internal helpdesk link
+  - [Configurable welcome page](https://github.com/sourcegraph/sourcegraph/issues/2443)
+  - [Configurable site admin contact info and internal helpdesk link](https://github.com/sourcegraph/sourcegraph/issues/2442)
 - Improved flow for common configuration use cases (e.g., "just make everything work well with my GitHub.com organization")
 
 ## Other
