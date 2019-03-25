@@ -292,6 +292,8 @@ export class QueryInput extends React.Component<Props, State> {
                     autoCapitalize="off"
                     placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
                     ref={ref => (this.inputElement = ref!)}
+                    name="query"
+                    autoComplete="off"
                 />
                 {showSuggestions && (
                     <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
