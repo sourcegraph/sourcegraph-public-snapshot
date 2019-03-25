@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -82,7 +81,7 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 			}
 		}
 
-		all := srcs.ExternalServices().Filter(func(e *repos.ExternalService) bool {
+		all := srcs.ExternalServices().Filter(func(e *ExternalService) bool {
 			return e.ID != 0 // Skip any injected sources that are not persisted.
 		})
 
