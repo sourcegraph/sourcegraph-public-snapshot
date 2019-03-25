@@ -75,3 +75,19 @@ export const observeMutations = (target: Node, options?: MutationObserverInit): 
         mutationObserver.observe(target, options)
         return () => mutationObserver.disconnect()
     })
+
+/**
+ * Like `element.querySelectorAll()`, but will return (only) the element itself if it matches the selector.
+ */
+export function querySelectorAllOrSelf<K extends keyof HTMLElementTagNameMap>(
+    element: Element,
+    selectors: K
+): Iterable<HTMLElementTagNameMap[K]>
+export function querySelectorAllOrSelf<K extends keyof SVGElementTagNameMap>(
+    element: Element,
+    selectors: K
+): Iterable<SVGElementTagNameMap[K]>
+export function querySelectorAllOrSelf(element: Element, selectors: string): Iterable<Element>
+export function querySelectorAllOrSelf(element: Element, selectors: string): Iterable<Element> {
+    return element.matches(selectors) ? [element] : element.querySelectorAll(selectors)
+}

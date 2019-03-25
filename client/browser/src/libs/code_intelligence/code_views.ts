@@ -3,7 +3,7 @@ import { Observable, of, zip } from 'rxjs'
 import { catchError, concatAll, map, mergeMap } from 'rxjs/operators'
 
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { MutationRecordLike } from '../../shared/util/dom'
+import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
 import { CodeHost, FileInfo, ResolvedCodeView } from './code_intelligence'
 
 const findCodeViews = ({ codeViewSpecs, codeViewSpecResolver }: CodeHost, nodes: Iterable<Node>): ResolvedCodeView[] =>
@@ -16,18 +16,13 @@ const findCodeViews = ({ codeViewSpecs, codeViewSpecResolver }: CodeHost, nodes:
                       // (MutationObservers don't emit all descendant nodes of an addded node recursively)
                       .map(({ selector, ...info }) => ({
                           info,
-                          matches: element.matches(selector)
-                              ? [element]
-                              : [...element.querySelectorAll<HTMLElement>(selector)],
+                          matches: Array.from(querySelectorAllOrSelf(element, selector)),
                       }))
                       .flatMap(({ info, matches }) => matches.map(codeViewElement => ({ ...info, codeViewElement })))
                 : []),
             // code views from resolver
             ...(codeViewSpecResolver
-                ? (element.matches(codeViewSpecResolver.selector)
-                      ? [element]
-                      : [...element.querySelectorAll<HTMLElement>(codeViewSpecResolver.selector)]
-                  )
+                ? Array.from(querySelectorAllOrSelf(element, codeViewSpecResolver.selector))
                       .map(codeViewElement => ({
                           resolved: codeViewSpecResolver.resolveCodeViewSpec(codeViewElement),
                           codeViewElement,
