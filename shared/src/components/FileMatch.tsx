@@ -49,7 +49,7 @@ interface Props extends SettingsCascadeProps {
     repoDisplayName?: string
 
     /**
-     * The icon to show left to the title.
+     * The icon to show to the left of the title.
      */
     icon: React.ComponentType<{ className?: string }>
 
