@@ -74,7 +74,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
                         {this.state.siteFlags.productSubscription.license &&
                             differenceInDays(this.state.siteFlags.productSubscription.license.expiresAt, Date.now()) <=
-                                365 && (
+                                7 && (
                                 <LicenseExpirationAlert
                                     expiresAt={this.state.siteFlags.productSubscription.license.expiresAt}
                                     daysLeft={Math.floor(
