@@ -7,7 +7,7 @@ exports[`Notices shows notices for location 1`] = `
   className="notices "
 >
   <div
-    className="alert alert-info "
+    className="alert bg-transparent border "
   >
     <div
       className="markdown undefined"
@@ -20,7 +20,7 @@ exports[`Notices shows notices for location 1`] = `
     />
   </div>
   <div
-    className="alert dismissible-alert alert-info "
+    className="alert dismissible-alert bg-transparent border "
   >
     <div
       className="dismissible-alert__content"
