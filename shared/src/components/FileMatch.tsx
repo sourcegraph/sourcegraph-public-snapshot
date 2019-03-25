@@ -10,6 +10,7 @@ import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash } from '../util/url'
 import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
+import { FileMatchChildren } from './FileMatchChildren'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 import { RepoFileLink } from './RepoFileLink'
@@ -25,7 +26,7 @@ export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'symbols' | 'limitHit'>> &
 
 export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'>
 
-interface IMatchItem {
+export interface IMatchItem {
     highlightRanges: {
         start: number
         highlightLength: number
@@ -112,7 +113,16 @@ export class FileMatch extends React.PureComponent<Props> {
 
         let containerProps: ResultContainerProps
 
-        const expandedChildren = this.getChildren(items, result, true)
+        const expandedChildren = (
+            <FileMatchChildren
+                {...this.props}
+                items={items}
+                result={result}
+                allMatches={true}
+                subsetMatches={this.subsetMatches}
+            />
+        )
+
         if (this.props.showAllMatches) {
             containerProps = {
                 collapsible: true,
