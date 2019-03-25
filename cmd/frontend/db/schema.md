@@ -144,6 +144,8 @@ Referenced by:
  deleted_at   | timestamp with time zone | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "check_non_empty_config" CHECK (btrim(config) <> ''::text)
 
 ```
 
