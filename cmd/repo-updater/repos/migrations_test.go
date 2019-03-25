@@ -68,6 +68,12 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 			err    string
 		}{
 			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
+			{
 				name:   "non-github services are left unchanged",
 				stored: repos.ExternalServices{&gitlab},
 				assert: repos.Assert.ExternalServicesEqual(&gitlab),
