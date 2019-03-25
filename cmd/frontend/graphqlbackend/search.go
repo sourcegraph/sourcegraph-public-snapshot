@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
@@ -34,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // This file contains the root resolver for search. It currently has a lot of
@@ -67,6 +68,7 @@ func (r *schemaResolver) Search(args *struct {
 	Stats(context.Context) (*searchResultsStats, error)
 }, error) {
 
+	go addQueryToSearchesTable(args.Query)
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
@@ -75,6 +77,14 @@ func (r *schemaResolver) Search(args *struct {
 	return &searchResolver{
 		query: query,
 	}, nil
+}
+
+func addQueryToSearchesTable(q string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := db.Searches.Add(ctx, q); err != nil {
+		log15.Error(`adding query to searches table: %v`, err)
+	}
 }
 
 func asString(v *searchquerytypes.Value) string {
