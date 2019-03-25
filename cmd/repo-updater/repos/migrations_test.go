@@ -40,9 +40,7 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 			ServiceType: "github",
 			ServiceID:   "http://github.com",
 		},
-		Sources: map[string]*repos.SourceInfo{
-			githubDotCom.URN(): {ID: githubDotCom.URN()},
-		},
+		Sources: map[string]*repos.SourceInfo{},
 	}
 
 	excluded := func(t testing.TB, rs ...*repos.Repo) func(*repos.ExternalService) {

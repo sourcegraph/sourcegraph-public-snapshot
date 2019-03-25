@@ -126,6 +126,10 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 				}
 			}
 
+			if len(es) == 0 {
+				es = all
+			}
+
 			for _, svc := range es {
 				if err := svc.IncludeGithubRepos(r); err != nil {
 					return errors.Wrapf(err, "%s.enabled", prefix)
