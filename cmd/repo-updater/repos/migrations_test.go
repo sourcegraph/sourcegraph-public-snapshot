@@ -123,6 +123,19 @@ func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*te
 				err: "<nil>",
 			},
 			{
+				name: "enabled: was not deleted and is still not deleted, not included",
+				stored: repos.Repos{repo.With(func(r *repos.Repo) {
+					r.Enabled = true
+				})},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(githubDotCom.Clone(), nil,
+					repo.With(func(r *repos.Repo) {
+						r.Enabled = true
+					})),
+				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.Clone()),
+				err:    "<nil>",
+			},
+			{
 				name: "enabled: was not deleted and got deleted, then included",
 				stored: repos.Repos{repo.With(func(r *repos.Repo) {
 					r.Enabled = true
