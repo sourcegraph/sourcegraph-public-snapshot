@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A Migration performs a data migration in the given Store,
@@ -83,18 +82,14 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 			}
 		}
 
-		all := srcs.ExternalServices()
+		all := srcs.ExternalServices().Filter(func(e *repos.ExternalService) bool {
+			return e.ID != 0 // Skip any injected sources that are not persisted.
+		})
+
 		svcs := make(map[int64]*ExternalService, len(all))
 		now := clock()
 
-		pp.Printf("external services before: %s\n", all)
-
 		for _, svc := range all {
-			if svc.Config == "" {
-				log15.Error(prefix+".external-service-config-invalid", "external-service-id", svc.ID, "name", svc.DisplayName)
-				continue
-			}
-
 			svcs[svc.ID] = svc
 			if err = removeInitalRepositoryEnablement(svc, now); err != nil {
 				return errors.Wrapf(err, "%s.remove-initial-repository-enablement", prefix)
@@ -139,8 +134,6 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 				svc.UpdatedAt = now
 			}
 		}
-
-		pp.Printf("external services after: %s\n", all)
 
 		return s.UpsertExternalServices(ctx, all...)
 	})
