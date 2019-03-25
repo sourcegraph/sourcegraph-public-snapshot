@@ -22,10 +22,12 @@ What are we going to change to make sure customers get the correct license keys 
 
 A few things. These changes all have the goal of making the process less manual/artisinal/custom.
 
-1) Dan will add code that creates a dismissable site alert for admins 7 days out and 1 day out from license expiration.
+1) Dan will add code that creates a dismissable site alert for admins starting 7 days out from license expiration.
 
-1) Dan will add code (functional on Sourcegraph.com only) that sends an email to sales@sourcegraph.com whenever a license is 7 days away from expiration.
+1) Dan will add a page (or add functionality to an existing page) that shows licenses in ascending order by expiration date on Sourcegraph.com, so we can see which ones will be expiring soon.
 
 1) To prevent fixes to similar issues in the future from becoming bottlenecked on GTM team member availability, Engineers will be permanently formally approved to create licenses for unlimited numbers of users for up to 7 days.
 
     Dan will add information on dev team license key creation permissions, along with steps for creating the license key, to our dev docs at https://docs.sourcegraph.com/dev/incidents/index.md.
+
+1) Dan will audit all current license keys and remove tests and expired keys
