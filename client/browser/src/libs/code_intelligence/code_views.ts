@@ -1,48 +1,10 @@
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { Observable, of, Subject, zip } from 'rxjs'
-import { catchError, concatAll, filter, map, mergeMap } from 'rxjs/operators'
+import { Observable, of, zip } from 'rxjs'
+import { catchError, concatAll, map, mergeMap } from 'rxjs/operators'
 
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { CodeHost, FileInfo, ResolvedCodeView } from './code_intelligence'
-
-/**
- * Emits a ResolvedCodeView when it's DOM element is on or about to be on the page.
- */
-const emitWhenIntersecting = (margin: number) => {
-    const codeViewStash = new Map<HTMLElement, ResolvedCodeView>()
-
-    const intersectingElements = new Subject<HTMLElement>()
-
-    const intersectionObserver = new IntersectionObserver(
-        entries => {
-            for (const entry of entries) {
-                if (entry.isIntersecting) {
-                    intersectingElements.next(entry.target as HTMLElement)
-                }
-            }
-        },
-        {
-            rootMargin: `${margin}px`,
-            threshold: 0,
-        }
-    )
-
-    return (codeViews: Observable<ResolvedCodeView>) =>
-        new Observable<ResolvedCodeView>(observer => {
-            codeViews.subscribe(({ codeViewElement: codeView, ...rest }) => {
-                intersectionObserver.observe(codeView)
-                codeViewStash.set(codeView, { codeViewElement: codeView, ...rest })
-            })
-
-            intersectingElements
-                .pipe(
-                    map(element => codeViewStash.get(element)),
-                    filter(codeView => !!codeView)
-                )
-                .subscribe(observer)
-        })
-}
 
 const findCodeViews = ({ codeViewSpecs, codeViewSpecResolver }: CodeHost, nodes: Iterable<Node>): ResolvedCodeView[] =>
     [...nodes]
