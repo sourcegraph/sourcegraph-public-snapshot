@@ -240,6 +240,6 @@ func transact(ctx context.Context, tr Transactor, m Migration) (err error) {
 }
 
 func isSerializationError(err error) bool {
-	return strings.Contains(err.Error(),
+	return strings.Contains(strings.ToLower(err.Error()),
 		"could not serialize access due to concurrent update")
 }
