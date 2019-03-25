@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -86,6 +87,8 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 		svcs := make(map[int64]*ExternalService, len(all))
 		now := clock()
 
+		pp.Printf("external services before: %s\n", all)
+
 		for _, svc := range all {
 			if svc.Config == "" {
 				log15.Error(prefix+".external-service-config-invalid", "external-service-id", svc.ID, "name", svc.DisplayName)
@@ -136,6 +139,8 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 				svc.UpdatedAt = now
 			}
 		}
+
+		pp.Printf("external services after: %s\n", all)
 
 		return s.UpsertExternalServices(ctx, all...)
 	})
