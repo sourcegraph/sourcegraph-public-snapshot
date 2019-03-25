@@ -26,7 +26,7 @@ env \
 echo "Copying $IMAGE to the dedicated e2e testing node... done"
 
 echo "Running a daemonized $IMAGE as the test subject..."
-CONTAINER="$(docker container run -d $IMAGE)"
+CONTAINER="$(docker container run -d -e E2E_TEST=true $IMAGE)"
 trap 'kill $(jobs -p)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat

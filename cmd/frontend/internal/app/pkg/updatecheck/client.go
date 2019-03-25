@@ -205,6 +205,10 @@ func Start() {
 	}
 	started = true
 
+	if envvar.E2eTestMode() {
+		return
+	}
+
 	if channel := conf.UpdateChannel(); channel != "release" {
 		return // no update check
 	}

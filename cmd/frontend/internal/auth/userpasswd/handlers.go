@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -134,7 +135,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	}
 
 	// Track user data
-	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+	if r.UserAgent() != "Sourcegraph e2etest-bot" && !envvar.E2eTestMode() {
 		go tracking.SyncUser(creds.Email, hubspotutil.SignupEventID, nil)
 	}
 }
