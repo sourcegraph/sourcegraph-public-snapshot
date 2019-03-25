@@ -1,3 +1,4 @@
+import differenceInDays from 'date-fns/differenceInDays'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { Markdown } from '../../../shared/src/components/Markdown'
@@ -8,6 +9,7 @@ import { Settings } from '../schema/settings.schema'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
+import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
 import { UpdateAvailableAlert } from '../site/UpdateAvailableAlert'
@@ -69,6 +71,20 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {this.state.siteFlags.alerts.map((alert, i) => (
                             <GlobalAlert key={i} alert={alert} className="global-alerts__alert" />
                         ))}
+
+                        {this.state.siteFlags.productSubscription.license &&
+                            differenceInDays(this.state.siteFlags.productSubscription.license.expiresAt, Date.now()) <=
+                                365 && (
+                                <LicenseExpirationAlert
+                                    expiresAt={this.state.siteFlags.productSubscription.license.expiresAt}
+                                    daysLeft={Math.floor(
+                                        differenceInDays(
+                                            this.state.siteFlags.productSubscription.license.expiresAt,
+                                            Date.now()
+                                        )
+                                    )}
+                                />
+                            )}
                     </>
                 )}
                 {isSettingsValid<Settings>(this.props.settingsCascade) &&
