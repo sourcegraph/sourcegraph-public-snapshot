@@ -63,7 +63,7 @@ import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { fetchFileContents, trackCodeViews } from './code_views'
-import { applyDecorations, initializeExtensions, injectGlobalDebug } from './extensions'
+import { applyDecorations, initializeExtensions, injectCommandPalette, injectGlobalDebug } from './extensions'
 import { injectViewContextOnSourcegraph } from './external_links'
 
 registerHighlightContributions()
@@ -437,12 +437,12 @@ export function handleCodeHost({
             // TODO optimize
             // Maybe getMount() would have to be replaced by a function that determines if a new mount was added from a given mutation record
 
-            // injectCommandPalette({
-            //     extensionsController,
-            //     platformContext,
-            //     history,
-            //     getMount: codeHost.getCommandPaletteMount,
-            // })
+            injectCommandPalette({
+                extensionsController,
+                platformContext,
+                history,
+                getMount: codeHost.getCommandPaletteMount,
+            })
 
             injectGlobalDebug({
                 extensionsController,
