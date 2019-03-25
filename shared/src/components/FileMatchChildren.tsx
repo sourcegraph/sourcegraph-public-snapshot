@@ -79,12 +79,12 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     )
 
     return (
-        <div className="file-match__list">
+        <div className="file-match-children">
             {/* Symbols */}
             {(props.result.symbols || []).map(symbol => (
                 <Link
                     to={symbol.url}
-                    className="file-match__item e2e-file-match-item"
+                    className="file-match-children__item e2e-file-match-children-item"
                     key={`symbol:${symbol.name}${symbol.containerName}${symbol.url}`}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
@@ -101,7 +101,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     <Link
                         to={`${props.result.file.url}${toPositionOrRangeHash({ position })}`}
                         key={`linematch:${props.result.file.url}${position.line}:${position.character}`}
-                        className="file-match__item file-match__item-clickable e2e-file-match-item"
+                        className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
                         onClick={props.onSelect}
                     >
                         <CodeExcerpt
@@ -110,7 +110,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             filePath={props.result.file.path}
                             context={context}
                             highlightRanges={items}
-                            className="file-match__item-code-excerpt"
+                            className="file-match-children__item-code-excerpt"
                             isLightTheme={props.isLightTheme}
                             fetchHighlightedFileLines={props.fetchHighlightedFileLines}
                         />
