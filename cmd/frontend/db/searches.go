@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
@@ -10,6 +11,9 @@ type searches struct{}
 
 func (*searches) Add(ctx context.Context, q string) error {
 	insert := `INSERT INTO searches (query) VALUES ($1)`
+	if dbconn.Global == nil {
+		return errors.New("db connection is nil")
+	}
 	res, err := dbconn.Global.ExecContext(ctx, insert, q)
 	if err != nil {
 		return fmt.Errorf("inserting '%s' into searches table: %v", q, err)
