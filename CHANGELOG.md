@@ -9,6 +9,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Enterprise admins can now customize the appearance of the homepage and search icon.
+- A new settings property `notices` allows showing custom informational messages on the homepage and at the top of each page.
+
 ### Changed
 
 - The symbols sidebar now only shows symbols defined in the current file or directory.
@@ -166,7 +169,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migrat
 - The **Info** panel was removed. The information it presented can be viewed in the hover.
 - The top-level `repos.list` site configuration was removed in favour of each code-host's equivalent options,
   now configured via the new _External Services UI_ available at `/site-admin/external-services`. Equivalent options in code hosts configuration:
-  - Github via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
+  - GitHub via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
   - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
   - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
   - [Other external services](https://docs.sourcegraph.com/admin/repo/add_from_other_external_services)
@@ -818,7 +821,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migrat
 
 ### Phabricator Integration Changes
 
-We now display a "View on Phabricator" link rather than a "View on other code host" link if you are using Phabricator and hosting on Github or another code host with a UI. Commit links also will point to Phabricator.
+We now display a "View on Phabricator" link rather than a "View on other code host" link if you are using Phabricator and hosting on GitHub or another code host with a UI. Commit links also will point to Phabricator.
 
 ### Improvements to SAML authentication
 

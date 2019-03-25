@@ -109,6 +109,24 @@ interface SourcegraphContext {
         isBuiltin: boolean
         authenticationURL?: string
     }[]
+
+    /** Custom branding for the homepage and search icon. */
+    branding?: {
+        /** The URL of the favicon to be used for your instance */
+        favicon?: string
+
+        /** Override style for light themes */
+        light?: BrandAssets
+        /** Override style for dark themes */
+        dark?: BrandAssets
+    }
+}
+
+interface BrandAssets {
+    /** The URL to the logo used on the homepage */
+    logo?: string
+    /** The URL to the symbol used as the search icon */
+    symbol?: string
 }
 
 /**

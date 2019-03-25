@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/go-diff/diff"
 )
 
 func TestFilterAndHighlightDiff(t *testing.T) {

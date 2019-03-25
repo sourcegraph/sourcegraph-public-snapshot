@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"regexp"
 	"sort"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -233,6 +235,29 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		repoFilters = effectiveRepoFieldValues
 	}
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
+
+	// HACK: Demo mode for dotGo on 2019 Mar 25 to make it easier to use Sourcegraph.com as a demo
+	// of a self-hosted instance with a limited set of repositories. This limits a user to the
+	// repositories specified in their setting `search.defaultRepositories` if there are no
+	// repository filters in the search.
+	//
+	// TODO(sqs): Remove this after 2019 Mar 25.
+	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 && envvar.SourcegraphDotComMode() {
+		final, err := viewerFinalSettings(ctx)
+		if err != nil {
+			log.Println(err)
+		} else {
+			var settings struct {
+				SearchDefaultRepositories []string `json:"search.defaultRepositories"`
+			}
+			if err := jsonc.Unmarshal(final.Contents(), &settings); err != nil {
+				log.Println(err)
+			}
+			if len(settings.SearchDefaultRepositories) > 0 {
+				repoFilters = settings.SearchDefaultRepositories
+			}
+		}
+	}
 
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)

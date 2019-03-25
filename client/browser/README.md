@@ -105,7 +105,7 @@ Save a file and wait for webpack to finish rebuilding.
 
 The window that is spun up is completely separate from any existing sessions you have on Firefox.
 You'll have to sign into everything at the begining of each development session(each time you run `yarn run dev:firefox`).
-You should ensure you're signed into any Sourcegraph instance you point the extension at as well as Github.
+You should ensure you're signed into any Sourcegraph instance you point the extension at as well as GitHub.
 
 ### Firefox (manual)
 
