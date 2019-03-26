@@ -289,10 +289,14 @@ type SourceInfo struct {
 func (i SourceInfo) ExternalServiceID() int64 {
 	ps := strings.SplitN(i.ID, ":", 2)
 	if len(ps) != 2 {
-		return 0
+		return -1
 	}
 
-	id, _ := strconv.ParseInt(ps[1], 10, 64)
+	id, err := strconv.ParseInt(ps[1], 10, 64)
+	if err != nil {
+		return -1
+	}
+
 	return id
 }
 
