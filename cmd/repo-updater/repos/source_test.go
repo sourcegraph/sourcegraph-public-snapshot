@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestExternalServicesSourcer(t *testing.T) {
+func TestNewSourcer(t *testing.T) {
 	now := time.Now()
 
 	github := ExternalService{
@@ -41,53 +43,49 @@ func TestExternalServicesSourcer(t *testing.T) {
 		DeletedAt:   now,
 	}
 
-	sources := func(es ...*ExternalService) []Source {
+	sources := func(es ...*ExternalService) (srcs []Source) {
 		t.Helper()
 
-		srcs, err := NewSources(nil, es...)
-		if err != nil {
-			t.Fatal(err)
+		for _, e := range es {
+			src, err := NewSource(e, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			srcs = append(srcs, src)
 		}
 
 		return srcs
 	}
 
 	for _, tc := range []struct {
-		name   string
-		stored ExternalServices
-		kinds  []string
-		srcs   []Source
-		err    string
+		name string
+		svcs ExternalServices
+		srcs Sources
+		err  string
 	}{
 		{
-			name:   "deleted external services are excluded",
-			stored: ExternalServices{&github, &gitlab},
-			srcs:   sources(&github),
-			err:    "<nil>",
+			name: "deleted external services are excluded",
+			svcs: ExternalServices{&github, &gitlab},
+			srcs: sources(&github),
+			err:  "<nil>",
 		},
 		{
-			name:   "github.com is added when not existent",
-			stored: ExternalServices{},
-			srcs:   sources(&githubDotCom),
-			err:    "<nil>",
+			name: "github.com is added when not existent",
+			svcs: ExternalServices{},
+			srcs: sources(&githubDotCom),
+			err:  "<nil>",
 		},
 	} {
 		tc := tc
-		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			store := new(FakeStore)
-			if err := store.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
-				t.Errorf("failed to prepare store: %v", err)
-			}
-
-			srcs, err := NewExternalServicesSourcer(store, nil).ListSources(ctx, tc.kinds...)
+			srcs, err := NewSourcer(nil)(tc.svcs...)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
-			have := ExternalServicesFromSources(srcs...).With(Opt.ExternalServiceID(0))
-			want := ExternalServicesFromSources(tc.srcs...)
+			have := srcs.ExternalServices()
+			want := tc.srcs.ExternalServices()
 
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("sources:\n%s", cmp.Diff(have, want))
@@ -110,9 +108,30 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		name   string
 		ctx    context.Context
 		svc    ExternalService
-		assert func(testing.TB, Repos)
+		assert ReposAssertion
 		err    string
 	}{
+		{
+			name: "yielded repos are always enabled",
+			svc: ExternalService{
+				Kind: "GITHUB",
+				Config: config(&schema.GitHubConnection{
+					Url: "https://github.com",
+					RepositoryQuery: []string{
+						"user:tsenart in:name patrol",
+					},
+					Repos: []string{"sourcegraph/sourcegraph"},
+				}),
+			},
+			assert: func(t testing.TB, rs Repos) {
+				for _, r := range rs {
+					if !r.Enabled {
+						t.Errorf("repo %q is not enabled", r.Name)
+					}
+				}
+			},
+			err: "<nil>",
+		},
 		{
 			name: "excluded repos are never yielded",
 			svc: ExternalService{
@@ -150,7 +169,8 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			rec := newRecorder(t, "testdata/github-source", *update)
+			cassete := filepath.Join("testdata", "github", strings.Replace(tc.name, " ", "-", -1))
+			rec := newRecorder(t, cassete, *update)
 			defer save(t, rec)
 
 			mw := httpcli.NewMiddleware(

@@ -1,11 +1,19 @@
 package repos
 
 import (
+	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/goware/urlx"
+	multierror "github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // An ExternalService is defines a Source that yields Repos.
@@ -17,6 +25,12 @@ type ExternalService struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   time.Time
+}
+
+// URN returns a unique resource identifier of this external service,
+// used as the key in a repo's Sources map as well as the SourceInfo ID.
+func (e *ExternalService) URN() string {
+	return "extsvc:" + strconv.FormatInt(e.ID, 10)
 }
 
 // IsDeleted returns true if the external service is deleted.
@@ -50,6 +64,168 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 	}
 
 	return modified
+}
+
+// ExcludeGithubRepos changes the configuration of a Github external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("github", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.GitHubConnection)
+		set := make(map[string]bool, len(c.Exclude)*2)
+		for _, ex := range c.Exclude {
+			if ex.Id != "" {
+				set[ex.Id] = true
+			}
+
+			if ex.Name != "" {
+				set[strings.ToLower(ex.Name)] = true
+			}
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "github" {
+				continue
+			}
+
+			id := r.ExternalRepo.ID
+			name := githubNameWithOwner(r.Name)
+
+			if !set[name] && !set[id] {
+				c.Exclude = append(c.Exclude, &schema.Exclude{
+					Name: name,
+					Id:   id,
+				})
+
+				if id != "" {
+					set[id] = true
+				}
+
+				if name != "" {
+					set[name] = true
+				}
+			}
+		}
+
+		return "exclude", c.Exclude
+	})
+}
+
+func githubNameWithOwner(name string) string {
+	u, _ := urlx.Parse(name)
+	if u != nil {
+		name = strings.TrimPrefix(u.Path, "/")
+	}
+	return strings.ToLower(name)
+}
+
+// IncludeGithubRepos changes the configuration of a Github external service to explicitly enlist the
+// given repos to be synced.
+func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("github", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.GitHubConnection)
+
+		set := make(map[string]bool, len(c.Repos))
+		for _, name := range c.Repos {
+			set[strings.ToLower(name)] = true
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "github" {
+				continue
+			}
+
+			if name := githubNameWithOwner(r.Name); !set[name] {
+				c.Repos = append(c.Repos, name)
+				set[name] = true
+			}
+		}
+
+		return "repos", c.Repos
+	})
+}
+
+func (e *ExternalService) config(kind string, opt func(c interface{}) (string, interface{})) error {
+	if strings.ToLower(e.Kind) != kind {
+		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
+	}
+
+	var c interface{}
+	switch kind {
+	case "github":
+		c = new(schema.GitHubConnection)
+	default:
+		panic("not implemented")
+	}
+
+	if err := jsonc.Unmarshal(e.Config, c); err != nil {
+		return fmt.Errorf("external service id=%d config unmarshaling error: %s", e.ID, err)
+	}
+
+	path, val := opt(c)
+	edited, err := jsonc.Edit(e.Config, val, strings.Split(path, ".")...)
+	if err != nil {
+		return errors.Wrap(err, "edit")
+	}
+
+	e.Config = edited
+
+	return e.validateConfig()
+}
+
+func (e ExternalService) schema() string {
+	switch strings.ToLower(e.Kind) {
+	case "awscodecommit":
+		return schema.AWSCodeCommitSchemaJSON
+	case "bitbucketserver":
+		return schema.BitbucketServerSchemaJSON
+	case "github":
+		return schema.GitHubSchemaJSON
+	case "gitlab":
+		return schema.GitLabSchemaJSON
+	case "gitolite":
+		return schema.GitoliteSchemaJSON
+	case "phabricator":
+		return schema.PhabricatorSchemaJSON
+	case "other":
+		return schema.OtherExternalServiceSchemaJSON
+	default:
+		return ""
+	}
+}
+
+// validateConfig validates the config of an external service
+// against its JSON schema.
+func (e ExternalService) validateConfig() error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(e.schema()))
+	if err != nil {
+		return errors.Wrapf(err, "failed to compile schema for external service of kind %q", e.Kind)
+	}
+
+	normalized, err := jsonc.Parse(e.Config)
+	if err != nil {
+		return errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate config against schema")
+	}
+
+	errs := new(multierror.Error)
+	for _, err := range res.Errors() {
+		errs = multierror.Append(errs, errors.New(err.String()))
+	}
+
+	return errs.ErrorOrNil()
 }
 
 // Clone returns a clone of the given external service.
@@ -114,6 +290,22 @@ type Repo struct {
 type SourceInfo struct {
 	ID       string
 	CloneURL string
+}
+
+// ExternalServiceID returns the ID of the external service this
+// SourceInfo refers to.
+func (i SourceInfo) ExternalServiceID() int64 {
+	ps := strings.SplitN(i.ID, ":", 2)
+	if len(ps) != 2 {
+		return -1
+	}
+
+	id, err := strconv.ParseInt(ps[1], 10, 64)
+	if err != nil {
+		return -1
+	}
+
+	return id
 }
 
 // CloneURLs returns all the clone URLs this repo is clonable from.
@@ -250,6 +442,16 @@ func (rs Repos) Apply(opts ...func(*Repo)) {
 	}
 }
 
+// Filter returns all the Repos that match the given predicate.
+func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
+	for _, r := range rs {
+		if pred(r) {
+			fs = append(fs, r)
+		}
+	}
+	return fs
+}
+
 // ExternalServices is an utility type with
 // convenience methods for operating on lists of ExternalServices.
 type ExternalServices []*ExternalService
@@ -261,6 +463,15 @@ func (es ExternalServices) DisplayNames() []string {
 		names[i] = es[i].DisplayName
 	}
 	return names
+}
+
+// URNs returns the list of URNs from all ExternalServices.
+func (es ExternalServices) URNs() []string {
+	urns := make([]string, len(es))
+	for i := range es {
+		urns[i] = es[i].URN()
+	}
+	return urns
 }
 
 func (es ExternalServices) Len() int {

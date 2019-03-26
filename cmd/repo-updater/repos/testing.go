@@ -15,56 +15,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// FakeSourcer is a fake implementation of Sourcer to be used in tests.
-type FakeSourcer struct {
-	err  error
-	srcs []Source
-}
-
-// NewFakeSourcer returns an instance of FakeSourcer with the given error
-// and sources
-func NewFakeSourcer(err error, srcs ...Source) *FakeSourcer {
-	return &FakeSourcer{err: err, srcs: srcs}
-}
-
-// ListSources returns the Sources that FakeSourcer was instantiated with that have one
-// of the given kinds as well the error, if any.
-func (s FakeSourcer) ListSources(_ context.Context, kinds ...string) (srcs []Source, err error) {
-	if s.err != nil {
-		return nil, s.err
+// NewFakeSourcer returns a Sourcer which always returns the given error and sources,
+// ignoring the given external services.
+func NewFakeSourcer(err error, srcs ...Source) Sourcer {
+	return func(...*ExternalService) (Sources, error) {
+		return srcs, err
 	}
-
-	kindset := make(map[string]bool, len(kinds))
-	for _, k := range kinds {
-		kindset[k] = true
-	}
-
-	for _, src := range s.srcs {
-		switch s := src.(type) {
-		case *FakeSource:
-			if kindset[s.kind] {
-				srcs = append(srcs, s)
-			}
-		default:
-			panic(fmt.Errorf("FakeSourcer not compatible with %#v yet", s))
-		}
-	}
-
-	return srcs, s.err
 }
 
 // FakeSource is a fake implementation of Source to be used in tests.
 type FakeSource struct {
-	urn   string
-	kind  string
+	svc   *ExternalService
 	repos []*Repo
 	err   error
 }
 
 // NewFakeSource returns an instance of FakeSource with the given urn, error
 // and repos.
-func NewFakeSource(urn, kind string, err error, rs ...*Repo) *FakeSource {
-	return &FakeSource{urn: urn, kind: kind, err: err, repos: rs}
+func NewFakeSource(svc *ExternalService, err error, rs ...*Repo) *FakeSource {
+	return &FakeSource{svc: svc, err: err, repos: rs}
 }
 
 // ListRepos returns the Repos that FakeSource was instantiated with
@@ -72,7 +41,7 @@ func NewFakeSource(urn, kind string, err error, rs ...*Repo) *FakeSource {
 func (s FakeSource) ListRepos(context.Context) ([]*Repo, error) {
 	repos := make([]*Repo, len(s.repos))
 	for i, r := range s.repos {
-		repos[i] = r.With(Opt.RepoSources(s.urn))
+		repos[i] = r.With(Opt.RepoSources(s.svc.URN()))
 	}
 	return repos, s.err
 }
@@ -277,6 +246,7 @@ var Assert = struct {
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
 		want := Repos(rs)
+		want.Apply(Opt.RepoID(0))
 		return func(t testing.TB, have Repos) {
 			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
@@ -297,6 +267,7 @@ var Assert = struct {
 	},
 	ExternalServicesEqual: func(es ...*ExternalService) ExternalServicesAssertion {
 		want := append(ExternalServices{}, es...)
+		want.Apply(Opt.ExternalServiceID(0))
 		return func(t testing.TB, have ExternalServices) {
 			have = append(ExternalServices{}, have...)
 			have.Apply(Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
@@ -328,6 +299,7 @@ var Opt = struct {
 	ExternalServiceModifiedAt func(time.Time) func(*ExternalService)
 	ExternalServiceDeletedAt  func(time.Time) func(*ExternalService)
 	RepoID                    func(uint32) func(*Repo)
+	RepoName                  func(string) func(*Repo)
 	RepoCreatedAt             func(time.Time) func(*Repo)
 	RepoModifiedAt            func(time.Time) func(*Repo)
 	RepoDeletedAt             func(time.Time) func(*Repo)
@@ -355,6 +327,11 @@ var Opt = struct {
 	RepoID: func(n uint32) func(*Repo) {
 		return func(r *Repo) {
 			r.ID = n
+		}
+	},
+	RepoName: func(name string) func(*Repo) {
+		return func(r *Repo) {
+			r.Name = name
 		}
 	},
 	RepoCreatedAt: func(ts time.Time) func(*Repo) {
