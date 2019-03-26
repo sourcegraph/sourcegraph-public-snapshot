@@ -82,8 +82,11 @@ func (r *schemaResolver) Search(args *struct {
 func addQueryToSearchesTable(q string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := db.Searches.Add(ctx, q, 1e5); err != nil {
-		log15.Error(`adding query to searches table: %v`, err)
+	if err := db.Searches.Add(ctx, q); err != nil {
+		log15.Error("adding query to searches table: %v", err)
+	}
+	if err := db.Searches.DeleteExcessRows(ctx, 1e5); err != nil {
+		log15.Error("deleting excess rows from searches table: %v", err)
 	}
 }
 
