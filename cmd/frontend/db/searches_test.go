@@ -11,9 +11,9 @@ func TestSearches_Add(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
 
 	t.Run("basic usage", func(t *testing.T) {
+		ctx := dbtesting.TestContext(t)
 		q := fmt.Sprintf("fake query with random number %d", rand.Int())
 		if err := Searches.Add(ctx, q, 100); err != nil {
 			t.Fatal(err)
@@ -30,8 +30,9 @@ func TestSearches_Add(t *testing.T) {
 		}
 	})
 	t.Run("row count limit", func(t *testing.T) {
+		ctx := dbtesting.TestContext(t)
 		limit := 10
-		for i := 1; i <= limit * 2; i++ {
+		for i := 1; i <= limit + 1; i++ {
 			q := fmt.Sprintf("fake query for i = %d", i)
 			if err := Searches.Add(ctx, q, limit); err != nil {
 				t.Fatal(err)
@@ -42,7 +43,7 @@ func TestSearches_Add(t *testing.T) {
 			}
 			if i > limit {
 				if len(ss) != limit {
-					t.Errorf("for i = %d, got %d searches, want %d", i, len(ss), limit)
+					t.Errorf("got %d searches, want %d", len(ss), limit)
 				}
 			}
 		}
