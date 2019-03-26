@@ -118,11 +118,14 @@ func (c *Config) checkExpr(expr *syntax.Expr) (field string, fieldType FieldType
 	return resolvedField, fieldType, value, nil
 }
 
+var autoFixRx = regexp.MustCompile(`([({[])$`)
+
 func setValue(dst *Value, valueString string, valueType ValueType) error {
 	switch valueType {
 	case StringType:
 		dst.String = &valueString
 	case RegexpType:
+		valueString = autoFixRx.ReplaceAllString(valueString, `\$1`)
 		p, err := regexp.Compile(valueString)
 		if err != nil {
 			return err
