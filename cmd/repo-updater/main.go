@@ -62,7 +62,9 @@ func main() {
 
 	for _, m := range []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
-		repos.GithubReposEnabledStateDeprecationMigration(src, clock),
+		// TODO(tsenart): Enable the following migrations once we implement the
+		// functionality needed to run them only once.
+		//    repos.GithubReposEnabledStateDeprecationMigration(src, clock),
 	} {
 		if err := m.Run(ctx, store); err != nil {
 			log.Fatalf("failed to run migration: %s", err)
