@@ -15,8 +15,6 @@ Release date: 2019-04-20 ([draft announcement](https://docs.google.com/document/
 - [Distribution](https://github.com/sourcegraph/sourcegraph/issues/2809)
 - [Documentation](https://github.com/sourcegraph/sourcegraph/issues/2848)
 - [Code search](https://github.com/sourcegraph/sourcegraph/issues/2740)
-  - Working toward [subquery search](https://github.com/sourcegraph/sourcegraph/issues/1005)
-  - [Saved search improvements](https://github.com/sourcegraph/sourcegraph/issues/2824)
 - Code navigation
   - [Integrations quality](https://github.com/sourcegraph/sourcegraph/issues/2834)
   - [Code intelligence](https://github.com/sourcegraph/sourcegraph/issues/2856)
