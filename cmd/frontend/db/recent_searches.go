@@ -7,17 +7,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-type searches struct{}
+type recentSearches struct{}
 
-// Add adds the query q to the searches table in the db.
-func (*searches) Add(ctx context.Context, q string) error {
-	insert := `INSERT INTO searches (query) VALUES ($1)`
+// Add adds the query q to the recentSearches table in the db.
+func (*recentSearches) Add(ctx context.Context, q string) error {
+	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
 	if dbconn.Global == nil {
 		return errors.New("db connection is nil")
 	}
 	res, err := dbconn.Global.ExecContext(ctx, insert, q)
 	if err != nil {
-		return fmt.Errorf("inserting '%s' into searches table: %v", q, err)
+		return fmt.Errorf("inserting '%s' into recentSearches table: %v", q, err)
 	}
 	nrows, err := res.RowsAffected()
 	if err != nil {
@@ -29,25 +29,25 @@ func (*searches) Add(ctx context.Context, q string) error {
 	return nil
 }
 
-// DeleteExcessRows keeps the row count in the searches table below limit.
-func (*searches) DeleteExcessRows(ctx context.Context, limit int) error {
+// DeleteExcessRows keeps the row count in the recentSearches table below limit.
+func (*recentSearches) DeleteExcessRows(ctx context.Context, limit int) error {
 	enforceLimit := `
-DELETE FROM searches
+DELETE FROM recent_searches
 	WHERE id <
-		(SELECT id FROM searches
+		(SELECT id FROM recent_searches
 		 ORDER BY id
-		 OFFSET (SELECT (SELECT COUNT(*) FROM searches) - $1)
+		 OFFSET (SELECT (SELECT COUNT(*) FROM recentSearches) - $1)
 		 LIMIT 1)
 `
 	if _, err := dbconn.Global.ExecContext(ctx, enforceLimit, limit); err != nil {
-		return fmt.Errorf("deleting excess rows in searches table: %v", err)
+		return fmt.Errorf("deleting excess rows in recentSearches table: %v", err)
 	}
 	return nil
 }
 
-// Get returns all the search queries in the searches table.
-func (*searches) Get(ctx context.Context) ([]string, error) {
-	sel := `SELECT query FROM searches`
+// Get returns all the search queries in the recentSearches table.
+func (*recentSearches) Get(ctx context.Context) ([]string, error) {
+	sel := `SELECT query FROM recent_searches`
 	rows, err := dbconn.Global.QueryContext(ctx, sel)
 	var qs []string
 	if err != nil {

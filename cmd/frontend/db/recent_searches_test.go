@@ -8,16 +8,16 @@ import (
 	"testing"
 )
 
-func TestSearches_Add(t *testing.T) {
+func TestRecentSearches_Add(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := dbtesting.TestContext(t)
 	q := fmt.Sprintf("fake query with random number %d", rand.Int())
-	if err := Searches.Add(ctx, q); err != nil {
+	if err := RecentSearches.Add(ctx, q); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := Searches.Get(ctx)
+	ss, err := RecentSearches.Get(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func TestSearches_Add(t *testing.T) {
 	}
 }
 
-func TestSearches_DeleteExcessRows(t *testing.T) {
+func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -38,27 +38,27 @@ func TestSearches_DeleteExcessRows(t *testing.T) {
 		limit := 10
 		for i := 1; i <= limit+1; i++ {
 			q := fmt.Sprintf("fake query for i = %d", i)
-			if err := Searches.Add(ctx, q); err != nil {
+			if err := RecentSearches.Add(ctx, q); err != nil {
 				t.Fatal(err)
 			}
 		}
-		if err := Searches.DeleteExcessRows(ctx, limit); err != nil {
+		if err := RecentSearches.DeleteExcessRows(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
-		ss, err := Searches.Get(ctx)
+		ss, err := RecentSearches.Get(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(ss) != limit {
-			t.Errorf("searches table has %d rows, want %d", len(ss), limit)
+			t.Errorf("recent_searches table has %d rows, want %d", len(ss), limit)
 		}
 	})
 	t.Run("id gap", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
 		addQueryWithRandomId := func(q string) {
-			insert := `INSERT INTO searches (id, query) VALUES ((1e6*RANDOM())::int, $1)`
+			insert := `INSERT INTO recent_searches (id, query) VALUES ((1e6*RANDOM())::int, $1)`
 			if _, err := dbconn.Global.ExecContext(ctx, insert, q); err != nil {
-				t.Fatalf("inserting '%s' into searches table: %v", q, err)
+				t.Fatalf("inserting '%s' into recent_searches table: %v", q, err)
 			}
 		}
 		limit := 10
@@ -66,29 +66,29 @@ func TestSearches_DeleteExcessRows(t *testing.T) {
 			q := fmt.Sprintf("fake query for i = %d", i)
 			addQueryWithRandomId(q)
 		}
-		if err := Searches.DeleteExcessRows(ctx, limit); err != nil {
+		if err := RecentSearches.DeleteExcessRows(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
-		ss, err := Searches.Get(ctx)
+		ss, err := RecentSearches.Get(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(ss) != limit {
-			t.Errorf("searches table has %d rows, want %d", len(ss), limit)
+			t.Errorf("recent_searches table has %d rows, want %d", len(ss), limit)
 		}
 
 	})
 }
 
-func BenchmarkSearches_AddEtc(b *testing.B) {
+func BenchmarkRecentSearches_AddAndDeleteExcessRows(b *testing.B) {
 	ctx := dbtesting.TestContext(b)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		q := fmt.Sprintf("fake query for i = %d", i)
-		if err := Searches.Add(ctx, q); err != nil {
+		if err := RecentSearches.Add(ctx, q); err != nil {
 			b.Fatal(err)
 		}
-		if err := Searches.DeleteExcessRows(ctx, b.N); err != nil {
+		if err := RecentSearches.DeleteExcessRows(ctx, b.N); err != nil {
 			b.Fatal(err)
 		}
 	}

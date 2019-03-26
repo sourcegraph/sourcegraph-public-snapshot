@@ -1,5 +1,5 @@
 BEGIN;
 
-DROP TABLE IF EXISTS searches;
+DROP TABLE IF EXISTS recent_searches;
 
 COMMIT;

@@ -11,7 +11,7 @@ var (
 	SavedQueries              = &savedQueries{}
 	Orgs                      = &orgs{}
 	OrgMembers                = &orgMembers{}
-	Searches                  = &searches{}
+	RecentSearches            = &recentSearches{}
 	Settings                  = &settings{}
 	Users                     = &users{}
 	UserEmails                = &userEmails{}
