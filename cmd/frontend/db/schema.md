@@ -444,8 +444,6 @@ Indexes:
  created_at | timestamp without time zone | not null default now()
 Indexes:
     "searches_pkey" PRIMARY KEY, btree (id)
-Triggers:
-    trigger_delete_old_rows AFTER INSERT ON searches FOR EACH STATEMENT EXECUTE PROCEDURE delete_old_rows()
 
 ```
 
