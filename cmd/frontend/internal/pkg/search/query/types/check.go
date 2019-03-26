@@ -96,7 +96,7 @@ func (c *Config) checkExpr(expr *syntax.Expr) (field string, fieldType FieldType
 	value = &Value{syntax: expr}
 	switch expr.ValueType {
 	case syntax.TokenLiteral:
-		if err := setValue(value, expr.Value, fieldType.Literal); err != nil {
+		if err := setValue(value, expr.Value, fieldType.Literal, resolvedField); err != nil {
 			return "", FieldType{}, nil, &TypeError{Pos: expr.Pos, Err: err}
 		}
 
@@ -105,12 +105,12 @@ func (c *Config) checkExpr(expr *syntax.Expr) (field string, fieldType FieldType
 		if err != nil {
 			return "", FieldType{}, nil, &TypeError{Pos: expr.Pos, Err: err}
 		}
-		if err := setValue(value, stringValue, fieldType.Quoted); err != nil {
+		if err := setValue(value, stringValue, fieldType.Quoted, resolvedField); err != nil {
 			return "", FieldType{}, nil, &TypeError{Pos: expr.Pos, Err: err}
 		}
 
 	case syntax.TokenPattern:
-		if err := setValue(value, expr.Value, RegexpType); err != nil {
+		if err := setValue(value, expr.Value, RegexpType, resolvedField); err != nil {
 			return "", FieldType{}, nil, &TypeError{Pos: expr.Pos, Err: err}
 		}
 	}
@@ -118,14 +118,22 @@ func (c *Config) checkExpr(expr *syntax.Expr) (field string, fieldType FieldType
 	return resolvedField, fieldType, value, nil
 }
 
-func setValue(dst *Value, valueString string, valueType ValueType) error {
+func setValue(dst *Value, valueString string, valueType ValueType, field string) error {
 	switch valueType {
 	case StringType:
 		dst.String = &valueString
 	case RegexpType:
 		p, err := regexp.Compile(valueString)
 		if err != nil {
-			return err
+			switch field {
+			case "":
+				if shouldQuoteQuery(err) {
+					return setValue(dst, `"`+valueString+`"`, StringType, field)
+				}
+				return err
+			default:
+				return err
+			}
 		}
 		dst.Regexp = p
 	case BoolType:
@@ -138,6 +146,16 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 		return errors.New("no type for literal")
 	}
 	return nil
+}
+
+func shouldQuoteQuery(err error) bool {
+	switch {
+	case strings.Contains(err.Error(), "error parsing regexp: missing closing"):
+		return true
+	default:
+		return false
+	}
+
 }
 
 // unquoteString is like strings.Unquote except that it supports single-quoted

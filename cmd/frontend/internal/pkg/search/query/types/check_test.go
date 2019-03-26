@@ -144,3 +144,45 @@ func TestUnquoteString(t *testing.T) {
 		})
 	}
 }
+
+func TestSetValue(t *testing.T) {
+	t.Run("quotes certain broken queries", func(t *testing.T) {
+		tests := []struct {
+			input     string
+			want      string
+			field     string
+			valueType ValueType
+			tokenType syntax.TokenType
+		}{
+			{`foo(`, `"foo("`, "", RegexpType, syntax.TokenLiteral},
+			{`foo[`, `"foo["`, "", RegexpType, syntax.TokenLiteral},
+		}
+
+		for _, test := range tests {
+			expr := &syntax.Expr{
+				Pos:       0,
+				Not:       false,
+				Field:     test.field,
+				Value:     test.input,
+				ValueType: test.tokenType,
+			}
+			value := &Value{syntax: expr}
+			err := setValue(value, test.input, test.valueType, test.field)
+			if err != nil {
+				t.Fatalf("unexpected error: %v\n", err)
+			}
+
+			if value.String != nil {
+				if *value.String != test.want {
+					t.Errorf("unexpected value result:\ngot: `%v`\nwant: `%v`\n", *value.String, test.want)
+				}
+			}
+
+			if value.Regexp != nil {
+				if got := regexp.MustCompile(test.want); !reflect.DeepEqual(*value.Regexp, got) {
+					t.Errorf("unexpected value result:\ngot: `%v`\nwant: `%v`\n", *value.Regexp, got)
+				}
+			}
+		}
+	})
+}
