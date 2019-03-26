@@ -63,82 +63,100 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 			return errors.Wrapf(err, "%s.store.list-repos", prefix)
 		}
 
+		type service struct {
+			svc     *ExternalService
+			include Repos
+			exclude Repos
+		}
+
+		all := srcs.ExternalServices()
+		svcs := make(map[int64]*service, len(all))
+		upserts := make(ExternalServices, 0, len(all))
+
+		for _, e := range all {
+			// Skip any injected sources that are not persisted.
+			if e.ID != 0 {
+				svcs[e.ID] = &service{svc: e}
+				upserts = append(upserts, e)
+			}
+		}
+
+		group := func(pred func(*Repo) bool, bucket func(*service) *Repos, repos ...Repos) error {
+			for _, rs := range repos {
+				for _, r := range rs {
+					if !pred(r) {
+						continue
+					}
+
+					es := make(map[int64]*service, len(r.Sources))
+					for _, si := range r.Sources {
+						id := si.ExternalServiceID()
+						if e := svcs[id]; e != nil {
+							es[id] = e
+						} else {
+							return fmt.Errorf("external service with id=%d does not exist", id)
+						}
+					}
+
+					if len(es) == 0 {
+						es = svcs
+					}
+
+					for _, e := range es {
+						b := bucket(e)
+						*b = append(*b, r)
+					}
+				}
+			}
+
+			return nil
+		}
+
 		diff := NewDiff(sourced, stored)
 
-		var disabled Repos
-		for _, rs := range [...]Repos{diff.Added, diff.Modified, diff.Unmodified} {
-			for _, r := range rs {
-				if !r.Enabled {
-					disabled = append(disabled, r)
-				}
-			}
+		err = group(
+			func(r *Repo) bool { return !r.Enabled },
+			func(s *service) *Repos { return &s.exclude },
+			diff.Added, diff.Modified, diff.Unmodified,
+		)
+
+		if err != nil {
+			return err
 		}
 
-		var enabled Repos
-		for _, r := range diff.Deleted {
-			if r.Enabled {
-				enabled = append(enabled, r)
-			}
+		err = group(
+			func(r *Repo) bool { return r.Enabled },
+			func(s *service) *Repos { return &s.include },
+			diff.Deleted,
+		)
+
+		if err != nil {
+			return err
 		}
 
-		all := srcs.ExternalServices().Filter(func(e *ExternalService) bool {
-			return e.ID != 0 // Skip any injected sources that are not persisted.
-		})
-
-		svcs := make(map[int64]*ExternalService, len(all))
 		now := clock()
-
-		for _, svc := range all {
-			svcs[svc.ID] = svc
-			if err = removeInitalRepositoryEnablement(svc, now); err != nil {
+		for _, e := range svcs {
+			if err = removeInitalRepositoryEnablement(e.svc, now); err != nil {
 				return errors.Wrapf(err, "%s.remove-initial-repository-enablement", prefix)
 			}
+
+			if len(e.exclude) > 0 {
+				if err = e.svc.ExcludeGithubRepos(e.exclude...); err != nil {
+					return errors.Wrapf(err, "%s.exclude", prefix)
+				}
+				e.svc.UpdatedAt = now
+			}
+
+			if len(e.include) > 0 {
+				if err = e.svc.IncludeGithubRepos(e.include...); err != nil {
+					return errors.Wrapf(err, "%s.include", prefix)
+				}
+				e.svc.UpdatedAt = now
+			}
+
 		}
 
-		for _, r := range disabled {
-			var es ExternalServices
-			for _, si := range r.Sources {
-				if svc := svcs[si.ExternalServiceID()]; svc != nil {
-					es = append(es, svc)
-				}
-			}
-
-			if len(es) == 0 {
-				// If the repo was deleted, and it is still deleted, it has no
-				// sources stored. So we add it to all Github external services
-				// just to be sure.
-				es = all
-			}
-
-			for _, svc := range es {
-				if err := svc.ExcludeGithubRepos(r); err != nil {
-					return errors.Wrapf(err, "%s.disabled", prefix)
-				}
-				svc.UpdatedAt = now
-			}
-		}
-
-		for _, r := range enabled {
-			var es ExternalServices
-			for _, si := range r.Sources {
-				if svc := svcs[si.ExternalServiceID()]; svc != nil {
-					es = append(es, svc)
-				}
-			}
-
-			if len(es) == 0 {
-				es = all
-			}
-
-			for _, svc := range es {
-				if err := svc.IncludeGithubRepos(r); err != nil {
-					return errors.Wrapf(err, "%s.enabled", prefix)
-				}
-				svc.UpdatedAt = now
-			}
-		}
-
-		return s.UpsertExternalServices(ctx, all...)
+		return s.UpsertExternalServices(ctx, upserts...)
 	})
 }
 

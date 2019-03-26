@@ -69,6 +69,10 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 // ExcludeGithubRepos changes the configuration of a Github external service to exclude the
 // given repos from being synced.
 func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
 	return e.config("github", func(v interface{}) (string, interface{}) {
 		c := v.(*schema.GitHubConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
@@ -121,6 +125,10 @@ func githubNameWithOwner(name string) string {
 // IncludeGithubRepos changes the configuration of a Github external service to explicitly enlist the
 // given repos to be synced.
 func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
 	return e.config("github", func(v interface{}) (string, interface{}) {
 		c := v.(*schema.GitHubConnection)
 
