@@ -1,18 +1,23 @@
+import * as sgtypes from '@sourcegraph/extension-api-types'
 import * as H from 'history'
+import { merge } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { Observable, Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
-import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../../shared/src/api/client/services/view'
+import { Observable, of, Subscription } from 'rxjs'
+import { catchError, endWith, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
 import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ActionsNavItems } from '../actions/ActionsNavItems'
+import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../api/client/services/view'
 import { ActivationProps } from '../components/activation/Activation'
 import { FetchFileCtx } from '../components/CodeExcerpt'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeProps } from '../settings/settings'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
+import { combineLatestOrDefault } from '../util/rxjs/combineLatestOrDefault'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 
@@ -24,9 +29,16 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps, Setting
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
+interface T extends Pick<sourcegraph.PanelView, 'title' | 'content' | 'priority'> {
+    id: string
+    locationsOrCustom:
+        | { locations: { results?: Location[]; loading: boolean } | ErrorLike }
+        | { custom: React.ReactFragment }
+}
+
 interface State {
     /** Panel views contributed by extensions. */
-    panelViews?: (PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>)[] | null
+    panelViews?: T[]
 }
 
 /**
@@ -50,6 +62,29 @@ interface PanelItem extends Tab<string> {
     hasLocations?: boolean
 }
 
+function munch(
+    props: any,
+    a: Observable<sgtypes.Location[] | null>
+): Observable<{ locations: { results?: Location[]; loading: boolean } | ErrorLike }> {
+    return a.pipe(
+        catchError((error): [ErrorLike] => [asError(error)]),
+        map(result => ({
+            locations: isErrorLike(result) ? result : { results: result || [], loading: true },
+        })),
+        startWith<any>({
+            locations: { loading: true },
+        }),
+        tap(({ locations }) => {
+            props.extensionsController.services.context.data.next({
+                ...props.extensionsController.services.context.data.value,
+                'panel.locations.hasResults':
+                    locations && !isErrorLike(locations) && !!locations.results && locations.results.length > 0,
+            })
+        }),
+        endWith({ locations: { loading: false } })
+    )
+}
+
 /**
  * The panel, which is a tabbed component with contextual information. Components rendering the panel should
  * generally use ResizablePanel, not Panel.
@@ -65,8 +100,28 @@ export class Panel extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.props.extensionsController.services.views
                 .getViews(ContributableViewContainer.Panel)
-                .pipe(map(panelViews => ({ panelViews })))
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .pipe(
+                    switchMap((panelViews: (PanelViewWithComponent & ViewProviderRegistrationOptions)[]) =>
+                        combineLatestOrDefault(
+                            // must emit immedyetleh
+                            panelViews.map<Observable<T>>(x =>
+                                'locations' in x.locationsOrCustom
+                                    ? x.locationsOrCustom.locations.pipe(
+                                          mergeMap(z => munch(this.props, z)),
+                                          map(f => ({ ...x, locationsOrCustom: f }))
+                                      )
+                                    : of({ ...x, locationsOrCustom: { custom: x.locationsOrCustom.custom } })
+                            )
+                        )
+                    ),
+                    map(v => ({ panelViews: v }))
+                )
+                .subscribe(
+                    stateUpdate => {
+                        this.setState(old => merge({}, old, stateUpdate))
+                    },
+                    error => console.error(error)
+                )
         )
     }
 
@@ -82,8 +137,9 @@ export class Panel extends React.PureComponent<Props, State> {
                           label: panelView.title,
                           id: panelView.id,
                           priority: panelView.priority,
-                          element: <PanelView {...this.props} panelView={panelView} />,
-                          hasLocations: !!panelView.locationProvider,
+                          // TypeScript doesn't know theses two panelViews have the same type
+                          element: <PanelView {...this.props} panelView={panelView as any} />,
+                          hasLocations: 'locations' in panelView.locationsOrCustom,
                       })
                   )
                   .sort(byPriority)

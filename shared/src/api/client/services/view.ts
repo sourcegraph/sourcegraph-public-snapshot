@@ -1,8 +1,9 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import React from 'react'
 import { Observable } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
+import { ErrorLike } from '../../../util/errors'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableViewContainer } from '../../protocol'
 import { Entry, FeatureProviderRegistry } from './registry'
@@ -13,15 +14,7 @@ export interface ViewProviderRegistrationOptions {
 }
 
 export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'title' | 'content' | 'priority'> {
-    /**
-     * The location provider whose results to render in the panel view.
-     */
-    locationProvider?: Observable<Observable<Location[] | null>>
-
-    /**
-     * The React element to render in the panel view.
-     */
-    reactElement?: React.ReactFragment
+    locationsOrCustom: { locations: Observable<Observable<Location[] | null>> } | { custom: React.ReactFragment }
 }
 
 export type ProvideViewSignature = Observable<PanelViewWithComponent | null>

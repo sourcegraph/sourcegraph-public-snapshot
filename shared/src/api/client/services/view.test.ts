@@ -1,4 +1,4 @@
-import { Observable, of, throwError } from 'rxjs'
+import { EMPTY, Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ContributableViewContainer } from '../../protocol'
 import { Entry } from './registry'
@@ -8,13 +8,23 @@ const FIXTURE_CONTAINER = ContributableViewContainer.Panel
 
 const FIXTURE_ENTRY_1: Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>> = {
     registrationOptions: { container: FIXTURE_CONTAINER, id: '1' },
-    provider: of<PanelViewWithComponent>({ title: 't1', content: 'c1', priority: 0 }),
+    provider: of<PanelViewWithComponent>({
+        title: 't1',
+        content: 'c1',
+        priority: 0,
+        locationsOrCustom: { locations: EMPTY },
+    }),
 }
 const FIXTURE_RESULT_1 = { container: FIXTURE_CONTAINER, id: '1', title: 't1', content: 'c1', priority: 0 }
 
 const FIXTURE_ENTRY_2: Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent>> = {
     registrationOptions: { container: FIXTURE_CONTAINER, id: '2' },
-    provider: of<PanelViewWithComponent>({ title: 't2', content: 'c2', priority: 0 }),
+    provider: of<PanelViewWithComponent>({
+        title: 't2',
+        content: 'c2',
+        priority: 0,
+        locationsOrCustom: { locations: EMPTY },
+    }),
 }
 const FIXTURE_RESULT_2 = { container: FIXTURE_CONTAINER, id: '2', title: 't2', content: 'c2', priority: 0 }
 

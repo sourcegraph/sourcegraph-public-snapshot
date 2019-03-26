@@ -1,29 +1,28 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import { merge } from 'lodash'
 import * as React from 'react'
-import { Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { Observable, of, Subscription } from 'rxjs'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../components/RepoLink'
 import { Resizable } from '../../components/Resizable'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { SettingsCascadeProps } from '../../settings/settings'
-import { ErrorLike, isErrorLike } from '../../util/errors'
-import { asError } from '../../util/errors'
+import { isErrorLike } from '../../util/errors'
 import { parseRepoURI } from '../../util/url'
 import { registerPanelToolbarContributions } from './contributions'
-import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
+import { FileLocations, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 
 export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
     location: H.Location
+
     /**
-     * The higher-order observable that emits the locations.
+     * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
+     * to load.
      */
-    locations: Observable<Observable<Location[] | null>>
+    locations: { results?: Location[]; loading: boolean }
 
     /**
      * In the grouping (i.e., by repository and, optionally, then by file), this is the URI of the first group.
@@ -46,12 +45,6 @@ export interface HierarchicalLocationsViewProps extends ExtensionsControllerProp
 }
 
 interface State {
-    /**
-     * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
-     * to load.
-     */
-    locationsOrError: { results?: Location[]; loading: boolean } | ErrorLike
-
     selectedGroups?: string[]
 }
 
@@ -59,62 +52,11 @@ interface State {
  * Displays a multi-column view to drill down (by repository, file, etc.) to a list of locations in files.
  */
 export class HierarchicalLocationsView extends React.PureComponent<HierarchicalLocationsViewProps, State> {
-    public state: State = { locationsOrError: { loading: true } }
-
-    private componentUpdates = new Subject<HierarchicalLocationsViewProps>()
+    public state: State = {}
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const locationProvidersChanges = this.componentUpdates.pipe(
-            map(({ locations }) => locations),
-            distinctUntilChanged()
-        )
-
-        this.subscriptions.add(
-            locationProvidersChanges
-                .pipe(
-                    switchMap(locationProviderResults =>
-                        locationProviderResults.pipe(
-                            switchMap(locations =>
-                                locations.pipe(
-                                    catchError((error): [ErrorLike] => [asError(error)]),
-                                    map(result => ({
-                                        locationsOrError: isErrorLike(result)
-                                            ? result
-                                            : { results: result || [], loading: true },
-                                    })),
-                                    startWith<Pick<State, 'locationsOrError'>>({
-                                        locationsOrError: { loading: true },
-                                    }),
-                                    tap(({ locationsOrError }) => {
-                                        this.props.extensionsController.services.context.data.next({
-                                            ...this.props.extensionsController.services.context.data.value,
-                                            'panel.locations.hasResults':
-                                                locationsOrError &&
-                                                !isErrorLike(locationsOrError) &&
-                                                !!locationsOrError.results &&
-                                                locationsOrError.results.length > 0,
-                                        })
-                                    }),
-                                    endWith({ locationsOrError: { loading: false } })
-                                )
-                            )
-                        )
-                    )
-                )
-                .subscribe(
-                    stateUpdate => this.setState(old => merge({}, old, stateUpdate)),
-                    error => console.error(error)
-                )
-        )
-
         this.subscriptions.add(registerPanelToolbarContributions(this.props))
-
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillReceiveProps(nextProps: HierarchicalLocationsViewProps): void {
-        this.componentUpdates.next(nextProps)
     }
 
     public componentWillUnmount(): void {
@@ -122,16 +64,13 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
     }
 
     public render(): JSX.Element | null {
-        if (isErrorLike(this.state.locationsOrError)) {
-            return <FileLocationsError error={this.state.locationsOrError} />
-        }
         if (
-            this.state.locationsOrError.loading &&
-            (!this.state.locationsOrError.results || this.state.locationsOrError.results.length === 0)
+            this.props.locations.loading &&
+            (!this.props.locations.results || this.props.locations.results.length === 0)
         ) {
             return <LoadingSpinner className="icon-inline m-1" />
         }
-        if (this.state.locationsOrError.results && this.state.locationsOrError.results.length === 0) {
+        if (this.props.locations.results && this.props.locations.results.length === 0) {
             return <FileLocationsNotFound />
         }
 
@@ -159,7 +98,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         }
 
         const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
-            this.state.locationsOrError.results || [],
+            this.props.locations.results || [],
             this.state.selectedGroups || null,
             GROUPS.map(({ key }) => key),
             { uri: this.props.defaultGroup }
@@ -234,10 +173,9 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                     </span>
                                                 </span>
                                             ))}
-                                            {!isErrorLike(this.state.locationsOrError) &&
-                                                this.state.locationsOrError.loading && (
-                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
-                                                )}
+                                            {!isErrorLike(this.props.locations) && this.props.locations.loading && (
+                                                <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
+                                            )}
                                         </div>
                                     }
                                 />

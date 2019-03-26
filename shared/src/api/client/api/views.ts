@@ -67,7 +67,7 @@ export class ClientViews implements ClientViewsAPI {
                         title,
                         content,
                         priority,
-                        locationProvider,
+                        locationsOrCustom: { locations: locationProvider },
                     }
                     return panelView
                 })

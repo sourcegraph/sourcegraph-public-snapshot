@@ -113,22 +113,24 @@ export class BlobPanel extends React.PureComponent<Props> {
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
                         // tslint:disable-next-line:no-object-literal-type-assertion
-                        locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
-                            tap(locationsObservable =>
-                                locationsObservable.pipe(
-                                    tap(locations => {
-                                        if (
-                                            this.props.activation &&
-                                            id === 'references' &&
-                                            locations &&
-                                            locations.length > 0
-                                        ) {
-                                            this.props.activation.update({ FoundReferences: true })
-                                        }
-                                    })
+                        locationsOrCustom: {
+                            locations: registry.getLocations({ ...params, ...extraParams } as P).pipe(
+                                tap(locationsObservable =>
+                                    locationsObservable.pipe(
+                                        tap(locations => {
+                                            if (
+                                                this.props.activation &&
+                                                id === 'references' &&
+                                                locations &&
+                                                locations.length > 0
+                                            ) {
+                                                this.props.activation.update({ FoundReferences: true })
+                                            }
+                                        })
+                                    )
                                 )
-                            )
-                        ),
+                            ),
+                        },
                     }
                 })
             ),
@@ -161,18 +163,19 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 title: 'History',
                                 content: '',
                                 priority: 150,
-                                locationProvider: null,
-                                reactElement: (
-                                    <RepoRevSidebarCommits
-                                        key="commits"
-                                        repoName={subject.repoName}
-                                        repoID={this.props.repoID}
-                                        rev={subject.rev}
-                                        filePath={subject.filePath}
-                                        history={this.props.history}
-                                        location={this.props.location}
-                                    />
-                                ),
+                                locationsOrCustom: {
+                                    custom: (
+                                        <RepoRevSidebarCommits
+                                            key="commits"
+                                            repoName={subject.repoName}
+                                            repoID={this.props.repoID}
+                                            rev={subject.rev}
+                                            filePath={subject.filePath}
+                                            history={this.props.history}
+                                            location={this.props.location}
+                                        />
+                                    ),
+                                },
                             }))
                         ),
                     },
@@ -187,19 +190,20 @@ export class BlobPanel extends React.PureComponent<Props> {
                                           title: 'Discussions',
                                           content: '',
                                           priority: 140,
-                                          locationProvider: null,
-                                          reactElement: (
-                                              <DiscussionsTree
-                                                  repoID={this.props.repoID}
-                                                  repoName={subject.repoName}
-                                                  commitID={subject.commitID}
-                                                  rev={subject.rev}
-                                                  filePath={subject.filePath}
-                                                  history={this.props.history}
-                                                  location={this.props.location}
-                                                  compact={true}
-                                              />
-                                          ),
+                                          locationsOrCustom: {
+                                              custom: (
+                                                  <DiscussionsTree
+                                                      repoID={this.props.repoID}
+                                                      repoName={subject.repoName}
+                                                      commitID={subject.commitID}
+                                                      rev={subject.rev}
+                                                      filePath={subject.filePath}
+                                                      history={this.props.history}
+                                                      location={this.props.location}
+                                                      compact={true}
+                                                  />
+                                              ),
+                                          },
                                       }
                                     : null
                             )
