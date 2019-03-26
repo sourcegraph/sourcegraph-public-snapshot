@@ -118,14 +118,12 @@ func (c *Config) checkExpr(expr *syntax.Expr) (field string, fieldType FieldType
 	return resolvedField, fieldType, value, nil
 }
 
-var autoFixRx = regexp.MustCompile(`([({[])$`)
-
 func setValue(dst *Value, valueString string, valueType ValueType) error {
 	switch valueType {
 	case StringType:
 		dst.String = &valueString
 	case RegexpType:
-		valueString = autoFixRx.ReplaceAllString(valueString, `\$1`)
+		valueString = autoFix(valueString)
 		p, err := regexp.Compile(valueString)
 		if err != nil {
 			return err
@@ -141,6 +139,13 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 		return errors.New("no type for literal")
 	}
 	return nil
+}
+
+var autoFixRx = regexp.MustCompile(`([({[])$`)
+
+// autoFix escapes (, [ and { if they appear at the end of pat.
+func autoFix(pat string) string {
+	return autoFixRx.ReplaceAllString(pat, `\$1`)
 }
 
 // unquoteString is like strings.Unquote except that it supports single-quoted

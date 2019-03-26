@@ -1,7 +1,5 @@
 package types
 
-//lint:file-ignore SA6004 We rather have a collection of regular expressions.
-
 import (
 	"errors"
 	"reflect"
@@ -140,6 +138,29 @@ func TestUnquoteString(t *testing.T) {
 			}
 			if got != want {
 				t.Errorf("got %q, want %q", got, want)
+			}
+		})
+	}
+}
+
+func Test_autoFix(t *testing.T) {
+	tests := []struct {
+		pat string
+		want string
+	}{
+		{"", ""},
+		{ "a", "a"},
+		{ "(", `\(`},
+		{ "[", `\[`},
+		{ "{", `\{`},
+		{"a(", `a\(`},
+		{"(a", `(a`},
+		{"(a)", "(a)"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.pat, func(t *testing.T) {
+			if got := autoFix(tt.pat); got != tt.want {
+				t.Errorf("autoFix() = %v, want %v", got, tt.want)
 			}
 		})
 	}
