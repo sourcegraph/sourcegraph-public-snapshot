@@ -123,17 +123,24 @@ func main() {
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "0"))
 
-		pipeline.AddStep(":webpack: :moneybag:",
+		pipeline.AddStep(":webpack::moneybag:",
 			bk.Cmd("dev/ci/yarn-build.sh web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"))
 
-		pipeline.AddStep(":typescript:",
+		// Webapp tests
+		pipeline.AddStep(":jest::globe_with_meridians:",
 			bk.Cmd("dev/ci/yarn-test.sh web"),
 			bk.ArtifactPaths("web/coverage/coverage-final.json"))
 	}
 
-	pipeline.AddStep(":typescript:",
+	// Browser extension tests
+	pipeline.AddStep(":jest::chrome:",
+		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+		bk.ArtifactPaths("client/browser/coverage/coverage-final.json"))
+
+	// Shared tests
+	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
