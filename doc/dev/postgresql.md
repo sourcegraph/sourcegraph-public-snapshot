@@ -205,6 +205,18 @@ Join tables should be named based on the two tables being joined (e.g. `foo_bar`
 
 To the extent that certain fields require validation (e.g. username) we should perform that validation in client AND EITHER the database when possible, OR the graphql api. This results in the best experience for the client, and protects us from corrupt data.
 
-## Trigger functions
+## Triggers
 
-Trigger functions perform some action when data is inserted or updated. We don't use trigger functions.
+Because a trigger resides in the database and anyone who has the required privilege can use it, a trigger lets you write a set of SQL statements that multiple applications can use. It lets you avoid redundant code when multiple programs need to perform the same database operation.
+
+Triggers are usually a good tool for:
+
+- Computing derived column values automatically.
+- Enforcing complex integrity constraints (e.g. when a faster CHECK constraint isn't powerful enough).
+- Maintaining derived tables (e.g creating an audit trail of activity in the database).
+
+Triggers are often not a good tool for:
+
+- Implementing complex application logic.
+
+If you're uncertain about using triggers as part of your work, do some research before committing to a solution.
