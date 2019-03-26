@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -16,10 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -50,7 +50,7 @@ func SyncBitbucketServerConnections(ctx context.Context) {
 
 		var conns []*bitbucketServerConnection
 		for _, c := range config {
-			conn, err := newBitbucketServerConnection(c)
+			conn, err := newBitbucketServerConnection(c, nil)
 			if err != nil {
 				log15.Error("Error processing configured Bitbucket Server connection. Skipping it.", "url", c.Url, "error", err)
 				continue
@@ -224,7 +224,7 @@ var bitbucketServerWorker = &worker{
 					reservationTime := time.Now()
 					r := c.client.RateLimit.ReserveN(reservationTime, rateLimitReservationSize)
 					if !r.OK() {
-						log15.Error("Bitbucket worker cannot reserve requests. Is the maximum burst size lower than the reservation size?", "reservation_size", rateLimitReservationSize, "max_burst_size", rateLimitMaxBurstRequests)
+						log15.Error("Bitbucket worker cannot reserve requests. Is the maximum burst size lower than the reservation size?", "reservation_size", rateLimitReservationSize, "max_burst_size", bitbucketserver.RateLimitMaxBurstRequests)
 					}
 					delay := r.Delay()
 					// Since we're not actually planning to use the reservation, cancel it now.
@@ -286,56 +286,51 @@ func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnec
 	}
 }
 
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
-// not have a concept of rate limiting in HTTP response headers).
+// rateLimitReservationSize is the minimum number of requests (tokens in the bucket)
+// that must be available for us to perform work without waiting first.
 //
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// The limits chosen here are based on the following logic: Bitbucket Cloud restricts
-// "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
-// and they restrict "List a user or team's repositories" requests (which are roughly equal
-// to our repository lookup requests) to 1,000/hr. We peform a list repositories request
-// for every 100 repositories on Bitbucket every 1m by default, so for someone with 20,000
-// Bitbucket repositories we need 20,000/100 requests per minute (1200/hr) + overhead for
-// repository lookup requests by users. So we use a generous 7,200/hr here until we hear
-// from someone that these values do not work well for them.
-const (
-	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
-	rateLimitMaxBurstRequests  = 500
+// We choose this number because each reservation lets us list 100
+// repositories, so having at least 250 lets us list 20,000 repositories and
+// still have 50 API requests left-over to serve users.
+const rateLimitReservationSize = 250
 
-	// rateLimitReservationSize is the minimum number of requests (tokens in the bucket)
-	// that must be available for us to perform work without waiting first.
-	//
-	// We choose this number because each reservation lets us list 100 repositories, so
-	// having at least 250 lets us list 20,000 repositories and still have 50 API requests
-	// left-over to serve users.
-	rateLimitReservationSize = 250
-)
-
-func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bitbucketServerConnection, error) {
+func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf httpcli.Factory) (*bitbucketServerConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
 	baseURL = NormalizeBaseURL(baseURL)
 
-	transport, err := cachedTransportWithCertTrusted(config.Certificate)
+	if cf == nil {
+		cf = httpcli.NewFactory(
+			nil, // No middleware for now. Use this for Prometheus instrumentation later.
+			httpcli.TracedTransportOpt,
+			httpcli.NewCachedTransportOpt(httputil.Cache, true),
+		)
+	}
+
+	var opts []httpcli.Opt
+	if config.Certificate != "" {
+		pool, err := newCertPool(config.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+	}
+
+	cli, err := cf.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
 
+	client := bitbucketserver.NewClient(baseURL, cli)
+	client.Token = config.Token
+	client.Username = config.Username
+	client.Password = config.Password
+
 	return &bitbucketServerConnection{
 		config: config,
-		client: &bitbucketserver.Client{
-			URL:      baseURL,
-			Token:    config.Token,
-			Username: config.Username,
-			Password: config.Password,
-			HTTPClient: &http.Client{
-				Transport: bitbucketserver.WithRequestCounter(transport),
-			},
-			RateLimit: rate.NewLimiter(rateLimitRequestsPerSecond, rateLimitMaxBurstRequests),
-		},
+		client: client,
 	}, nil
 }
 
