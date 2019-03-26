@@ -23,7 +23,10 @@ jest.mock(
 )
 
 import { cleanup, getAllByText, getByText, render } from 'react-testing-library'
-import { HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST } from '../../../web/src/search/results/testHelpers'
+import {
+    HIGHLIGHTED_FILE_LINES_REQUEST,
+    HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+} from '../../../web/src/search/testHelpers'
 import { CodeExcerpt } from './CodeExcerpt'
 
 describe('CodeExcerpt', () => {
@@ -83,6 +86,22 @@ describe('CodeExcerpt', () => {
         expect(highlightedSpans.length).toBe(3)
         for (const span of highlightedSpans) {
             expect(span.textContent === 'line')
+        }
+    })
+
+    it('highlights matches correctly in syntax highlighted code blocks', () => {
+        const highlightRange = [{ line: 12, character: 7, highlightLength: 4 }]
+        const { container } = render(
+            <CodeExcerpt
+                {...defaultProps}
+                highlightRanges={highlightRange}
+                fetchHighlightedFileLines={HIGHLIGHTED_FILE_LINES_REQUEST}
+            />
+        )
+        const highlightedSpans = container.querySelectorAll('.selection-highlight')
+        expect(highlightedSpans.length).toBe(1)
+        for (const span of highlightedSpans) {
+            expect(span.textContent === 'test')
         }
     })
 })

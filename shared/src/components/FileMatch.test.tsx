@@ -3,7 +3,7 @@ import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
 import { cleanup, getAllByTestId, getByTestId, getByText, render } from 'react-testing-library'
 import sinon from 'sinon'
-import { NOOP_SETTINGS_CASCADE, RESULT, SEARCH_REQUEST } from '../../../web/src/search/results/testHelpers'
+import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../../../web/src/search/testHelpers'
 import { FileMatch, IFileMatch } from './FileMatch'
 import { setLinkComponent } from './Link'
 
@@ -23,7 +23,7 @@ describe('FileMatch', () => {
         expanded: true,
         showAllMatches: true,
         isLightTheme: true,
-        fetchHighlightedFileLines: SEARCH_REQUEST,
+        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
         settingsCascade: NOOP_SETTINGS_CASCADE,
     }
 

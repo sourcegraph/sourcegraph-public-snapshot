@@ -4,8 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, getByText, queryByTestId, render } from 'react-testing-library'
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
+import { HIGHLIGHTED_FILE_LINES_REQUEST, MULTIPLE_SEARCH_REQUEST, SEARCH_REQUEST } from '../testHelpers'
 import { SearchResultsList } from './SearchResultsList'
-import { HIGHLIGHTED_FILE_LINES_REQUEST, MULTIPLE_SEARCH_REQUEST, SEARCH_REQUEST } from './testHelpers'
 
 describe('SearchResultsList', () => {
     setLinkComponent((props: any) => <a {...props} />)

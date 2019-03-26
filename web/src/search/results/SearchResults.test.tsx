@@ -4,13 +4,13 @@ import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from 'react-testing-library'
 import { noop } from 'rxjs'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
-import { SearchResults } from './SearchResults'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     NOOP_SETTINGS_CASCADE,
     OBSERVABLE_SEARCH_REQUEST,
-} from './testHelpers'
+} from '../testHelpers'
+import { SearchResults } from './SearchResults'
 
 describe('SearchResults', () => {
     setLinkComponent((props: any) => <a {...props} />)
