@@ -2,7 +2,6 @@ package syntax
 
 import (
 	"fmt"
-	"log"
 )
 
 // ParseError describes an error in query parsing.
@@ -36,7 +35,6 @@ type context struct {
 //   fieldExpr := lit ":" value
 //   value     := lit | quoted
 func Parse(input string) (*Query, error) {
-	log.Printf(`parser.Parse("%s")`, input)
 	tokens := Scan(input)
 	p := parser{tokens: tokens}
 	ctx := context{field: ""}
