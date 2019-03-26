@@ -3,6 +3,7 @@ import { flatMap } from 'lodash'
 import * as React from 'react'
 import { Observable } from 'rxjs'
 import { Settings } from '../../../web/src/schema/settings.schema'
+import { ThemeProps } from '../../../web/src/theme'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash } from '../util/url'
@@ -12,7 +13,7 @@ import { IFileMatch, IMatchItem } from './FileMatch'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 
-interface FileMatchProps extends SettingsCascadeProps {
+interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     items: IMatchItem[]
     result: IFileMatch
@@ -23,7 +24,6 @@ interface FileMatchProps extends SettingsCascadeProps {
      * Called when the file's search result is selected.
      */
     onSelect: () => void
-    isLightTheme: boolean
 }
 
 // Dev flag for disabling syntax highlighting on search results pages.
