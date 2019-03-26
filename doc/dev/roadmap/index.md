@@ -39,12 +39,13 @@ We're making search faster, more accurate, and more comprehensive (so it include
 
 ## Saved searches
 
-TODO
+We want to help you stay on top of the code changes you care about, with better notifications, better integration with code reviews and PRs, and an easier way to add new saved searches and triage results.
 
-<!--
-- Enhanced notification preferences
-- TODO: Start with better search results and saved searches interface
--->
+- Improve UI for adding and editing saved searches
+- More configurable notification destinations per-saved search
+- Add GitHub/GitLab PR commit status integration for saved searches
+- Show read/unread saved search results
+- Allow creating issues (GitHub/GitLab/JIRA/etc.) from saved search results
 
 ## Code navigation and intelligence
 
