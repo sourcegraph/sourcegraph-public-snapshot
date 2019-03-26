@@ -4,6 +4,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"regexp"
 	"testing"
@@ -185,4 +186,56 @@ func TestSetValue(t *testing.T) {
 			}
 		}
 	})
+}
+
+// TODO(isaac): remove this test before PR is merged. It's here as a proof.
+func TestCheckNeedToQuoteCurlyBraces(t *testing.T) {
+	tests := []struct {
+		regexp  string
+		sub     string
+		matches []string
+	}{
+		{
+			regexp:  "foo{",
+			sub:     "foo",
+			matches: []string{},
+		},
+		{
+			regexp:  "foo{",
+			sub:     "foo{",
+			matches: []string{"foo{"},
+		},
+		{
+			regexp:  "foo{0,1}",
+			sub:     "foo{",
+			matches: []string{"foo"},
+		},
+		{
+			regexp:  "foo{0,1}",
+			sub:     "",
+			matches: []string{},
+		},
+		{
+			regexp:  "foo{0,1}",
+			sub:     "foo",
+			matches: []string{"foo"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("regepx %s; sub %s", test.regexp, test.sub), func(t *testing.T) {
+			p, _ := regexp.Compile(test.regexp)
+			matches := p.FindAllString(test.sub, -1)
+
+			if len(matches) != len(test.matches) {
+				t.Fatalf("unexpected FindAllString results\ngot: %v\nwant: %v\n", matches, test.matches)
+			}
+
+			for i := range matches {
+				if matches[i] != test.matches[i] {
+					t.Errorf("unexpected FindAllString results\ngot: %v\nwant: %v\n", matches, test.matches)
+				}
+			}
+		})
+	}
 }
