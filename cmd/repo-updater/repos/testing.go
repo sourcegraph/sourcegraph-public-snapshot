@@ -296,8 +296,9 @@ var Assert = struct {
 		}
 	},
 	ExternalServicesEqual: func(es ...*ExternalService) ExternalServicesAssertion {
-		want := ExternalServices(es)
+		want := append(ExternalServices{}, es...)
 		return func(t testing.TB, have ExternalServices) {
+			have = append(ExternalServices{}, have...)
 			have.Apply(Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("external services: %s", cmp.Diff(have, want))

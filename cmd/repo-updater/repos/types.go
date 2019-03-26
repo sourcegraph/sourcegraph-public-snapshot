@@ -29,8 +29,8 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		return false
 	}
 
-	if kind := strings.ToUpper(n.Kind); strings.ToUpper(e.Kind) != kind {
-		e.Kind, modified = kind, true
+	if !strings.EqualFold(e.Kind, n.Kind) {
+		e.Kind, modified = strings.ToUpper(n.Kind), true
 	}
 
 	if e.DisplayName != n.DisplayName {
