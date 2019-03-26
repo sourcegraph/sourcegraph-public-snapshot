@@ -78,7 +78,7 @@ type Client struct {
 	RateLimit *ratelimit.Monitor
 }
 
-// APIError is an error type returned by Client when the Github API responds with
+// APIError is an error type returned by Client when the GitHub API responds with
 // an error.
 type APIError struct {
 	URL              string

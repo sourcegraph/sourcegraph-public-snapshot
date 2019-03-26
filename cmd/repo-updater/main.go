@@ -47,13 +47,24 @@ func main() {
 
 	db, err := repos.NewDB(repos.NewDSNFromEnv())
 	if err != nil {
-		log.Fatalf("failed to initalise db store: %v", err)
+		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
+	cliFactory := httpcli.NewFactory(
+		nil, // No middleware for now. Use this for Prometheus instrumentation later.
+		httpcli.TracedTransportOpt,
+		httpcli.NewCachedTransportOpt(httputil.Cache, true),
+	)
+
+	src := repos.NewSourcer(cliFactory)
+
 	for _, m := range []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
+		// TODO(tsenart): Enable the following migrations once we implement the
+		// functionality needed to run them only once.
+		//    repos.GithubReposEnabledStateDeprecationMigration(src, clock),
 	} {
 		if err := m.Run(ctx, store); err != nil {
 			log.Fatalf("failed to run migration: %s", err)
@@ -124,16 +135,7 @@ func main() {
 	var syncer *repos.Syncer
 
 	if syncerEnabled {
-
 		diffs := make(chan repos.Diff)
-
-		cliFactory := httpcli.NewFactory(
-			nil, // No middleware for now. Use this for Prometheus instrumentation later.
-			httpcli.TracedTransportOpt,
-			httpcli.NewCachedTransportOpt(httputil.Cache, true),
-		)
-
-		src := repos.NewExternalServicesSourcer(store, cliFactory)
 		syncer = repos.NewSyncer(store, src, diffs, clock)
 
 		log15.Info("starting new syncer", "external service kinds", kinds)

@@ -30,7 +30,7 @@ const GitHubSchemaJSON = `{
       "default": "http"
     },
     "token": {
-      "description": "A GitHub personal access token with repo and org scope.",
+      "description": "A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?scopes=repo&description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). The \"repo\" scope is required to mirror private repositories. If using only public repositories, you can create the token with no scopes.",
       "type": "string",
       "minLength": 1
     },
@@ -45,7 +45,7 @@ const GitHubSchemaJSON = `{
       "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" }
     },
     "exclude": {
-      "description": "A list of repos to never mirror from this GitHub instance. Takes precedence over \"repos\" and \"repositoryQuery\" configuration.",
+      "description": "A list of repositories to never mirror from this GitHub instance. Takes precedence over \"repos\" and \"repositoryQuery\" configuration.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -54,12 +54,12 @@ const GitHubSchemaJSON = `{
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
           "name": {
-            "description": "The name of a GitHub repo (\"owner/name\") to exclude from mirroring.",
+            "description": "The name of a GitHub repository (\"owner/name\") to exclude from mirroring.",
             "type": "string",
             "pattern": "^[\\w-]+/[\\w.-]+$"
           },
           "id": {
-            "description": "The id of a GitHub repo (as returned by the GitHub instance's API) to exclude from mirroring.",
+            "description": "The ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring.",
             "type": "string",
             "minLength": 1
           }
@@ -82,7 +82,7 @@ const GitHubSchemaJSON = `{
       "default": "{host}/{nameWithOwner}"
     },
     "initialRepositoryEnablement": {
-      "description": "Defines whether repositories from this GitHub instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitHub repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitHub); site admins can still disable them explicitly, and they'll remain disabled.",
+      "description": "Deprecated and ignored field which will be removed entirely in the next release. GitHub repositories can no longer be enabled or disabled explicitly. Configure repositories to be mirrored via \"repos\", \"exclude\" and \"repositoryQuery\" instead.",
       "type": "boolean"
     },
     "authorization": {
@@ -91,7 +91,7 @@ const GitHubSchemaJSON = `{
       "type": "object",
       "properties": {
         "ttl": {
-          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
+          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
           "type": "string",
           "default": "3h"
         }

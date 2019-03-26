@@ -26,7 +26,7 @@ type Store interface {
 // ErrNoResults is returned by Store method invocations that yield no result set.
 var ErrNoResults = errors.New("store: no results")
 
-// A Transactor can initialise and return a TxStore which operates
+// A Transactor can initialize and return a TxStore which operates
 // within the context of a transaction.
 type Transactor interface {
 	Transact(context.Context) (TxStore, error)

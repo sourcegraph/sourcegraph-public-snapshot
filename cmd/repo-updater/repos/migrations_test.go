@@ -6,9 +6,247 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
+
+func TestGithubReposEnabledStateDeprecationMigration(t *testing.T) {
+	testGithubReposEnabledStateDeprecationMigration(new(repos.FakeStore))(t)
+}
+
+func testGithubReposEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
+	githubDotCom := repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://github.com",
+				"token": "secret"
+			}
+		`),
+	}
+
+	githubDotComDuplicate :=
+		githubDotCom.With(repos.Opt.ExternalServiceID(2))
+
+	repo := repos.Repo{
+		Name:    "github.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+	}
+
+	excluded := func(t testing.TB, rs ...*repos.Repo) func(*repos.ExternalService) {
+		t.Helper()
+		return func(e *repos.ExternalService) {
+			if err := e.ExcludeGithubRepos(rs...); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	included := func(t testing.TB, rs ...*repos.Repo) func(*repos.ExternalService) {
+		t.Helper()
+		return func(e *repos.ExternalService) {
+			if err := e.IncludeGithubRepos(rs...); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name    string
+			sourcer repos.Sourcer
+			stored  repos.Repos
+			assert  repos.ExternalServicesAssertion
+			err     string
+		}{
+			{
+				name:   "disabled: was deleted, got added, then excluded",
+				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(githubDotCom.Clone(), nil, repo.Clone()),
+				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(t, &repo),
+				)),
+				err: "<nil>",
+			},
+			{
+				name:   "disabled: was not deleted and was not modified, got excluded",
+				stored: repos.Repos{&repo},
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(githubDotCom.Clone(), nil, repo.Clone()),
+				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(t, &repo),
+				)),
+				err: "<nil>",
+			},
+			{
+				name:   "disabled: was not deleted, got modified, then excluded",
+				stored: repos.Repos{&repo},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(githubDotCom.Clone(), nil,
+					repo.With(func(r *repos.Repo) {
+						r.Description = "some updated description"
+					})),
+				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(t, &repo),
+				)),
+				err: "<nil>",
+			},
+			{
+				name:    "disabled: was deleted and is still deleted, got excluded",
+				stored:  repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(githubDotCom.Clone(), nil)),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(t, &repo),
+				)),
+				err: "<nil>",
+			},
+			{
+				name: "enabled: was not deleted and is still not deleted, not included",
+				stored: repos.Repos{repo.With(func(r *repos.Repo) {
+					r.Enabled = true
+				})},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(githubDotCom.Clone(), nil,
+					repo.With(func(r *repos.Repo) {
+						r.Enabled = true
+					})),
+				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.Clone()),
+				err:    "<nil>",
+			},
+			{
+				name: "enabled: was not deleted and got deleted, then included",
+				stored: repos.Repos{repo.With(func(r *repos.Repo) {
+					r.Enabled = true
+				})},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(githubDotCom.Clone(), nil)),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					included(t, &repo),
+				)),
+				err: "<nil>",
+			},
+			{
+				name:   "enabled: got added for the first time, so not included",
+				stored: repos.Repos{},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(githubDotCom.Clone(), nil,
+					repo.With(func(r *repos.Repo) {
+						r.Enabled = true
+					})),
+				),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.Clone()),
+				err:    "<nil>",
+			},
+			{
+				name: "initialRepositoryEnablement gets deleted",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(
+					githubDotCom.With(func(e *repos.ExternalService) {
+						e.Config = formatJSON(`
+						{
+							// Some comment
+							"url": "https://github.com",
+							"token": "secret",
+							"initialRepositoryEnablement": false
+						}`)
+					}), nil,
+				)),
+				assert: repos.Assert.ExternalServicesEqual(githubDotCom.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+				)),
+				err: "<nil>",
+			},
+			{
+				name:   "disabled: repo is excluded in all of its sources",
+				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(githubDotCom.Clone(), nil, repo.Clone()),
+					repos.NewFakeSource(githubDotComDuplicate.Clone(), nil, repo.Clone()),
+				),
+				assert: repos.Assert.ExternalServicesEqual(
+					githubDotCom.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						excluded(t, &repo),
+					),
+					githubDotComDuplicate.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						excluded(t, &repo),
+					),
+				),
+				err: "<nil>",
+			},
+			{
+				name: "enabled: repo is included in all of its sources",
+				stored: repos.Repos{repo.With(
+					repos.Opt.RepoSources(githubDotCom.URN(), githubDotComDuplicate.URN()),
+					func(r *repos.Repo) { r.Enabled = true },
+				)},
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(githubDotCom.Clone(), nil),
+					repos.NewFakeSource(githubDotComDuplicate.Clone(), nil),
+				),
+				assert: repos.Assert.ExternalServicesEqual(
+					githubDotCom.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						included(t, &repo),
+					),
+					githubDotComDuplicate.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						included(t, &repo),
+					),
+				),
+				err: "<nil>",
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
+					t.Errorf("failed to prepare store: %v", err)
+					return
+				}
+
+				err := repos.GithubReposEnabledStateDeprecationMigration(tc.sourcer, clock.Now).Run(ctx, tx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+					return
+				}
+
+				svcs, err := tx.ListExternalServices(ctx)
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, svcs)
+				}
+			}))
+		}
+
+	}
+}
 
 func TestGithubSetDefaultRepositoryQueryMigration(t *testing.T) {
 	t.Parallel()
@@ -19,7 +257,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	githubDotCom := repos.ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github.com - Test",
-		Config: jsonFormat(`
+		Config: formatJSON(`
 			{
 				// Some comment
 				"url": "https://github.com"
@@ -30,7 +268,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	githubNone := repos.ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github.com - Test",
-		Config: jsonFormat(`
+		Config: formatJSON(`
 			{
 				// Some comment
 				"url": "https://github.com",
@@ -42,7 +280,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	githubEnterprise := repos.ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github Enterprise - Test",
-		Config: jsonFormat(`
+		Config: formatJSON(`
 			{
 				// Some comment
 				"url": "https://github.mycorp.com"
@@ -53,7 +291,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	gitlab := repos.ExternalService{
 		Kind:        "GITLAB",
 		DisplayName: "Gitlab - Test",
-		Config:      jsonFormat(`{"url": "https://gitlab.com"}`),
+		Config:      formatJSON(`{"url": "https://gitlab.com"}`),
 	}
 
 	clock := repos.NewFakeClock(time.Now(), 0)
@@ -67,6 +305,12 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 			assert repos.ExternalServicesAssertion
 			err    string
 		}{
+			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
 			{
 				name:   "non-github services are left unchanged",
 				stored: repos.ExternalServices{&gitlab},
@@ -86,7 +330,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 					githubDotCom.With(
 						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
 						func(e *repos.ExternalService) {
-							e.Config = jsonFormat(`
+							e.Config = formatJSON(`
 								{
 									// Some comment
 									"url": "https://github.com",
@@ -105,7 +349,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 					githubEnterprise.With(
 						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
 						func(e *repos.ExternalService) {
-							e.Config = jsonFormat(`
+							e.Config = formatJSON(`
 								{
 									// Some comment
 									"url": "https://github.mycorp.com",
@@ -147,16 +391,10 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	}
 }
 
-func jsonFormat(s string) string {
-	opts := jsonx.FormatOptions{
-		InsertSpaces: true,
-		TabSize:      2,
-	}
-
-	formatted, err := jsonx.ApplyEdits(s, jsonx.Format(s, opts)...)
+func formatJSON(s string) string {
+	formatted, err := jsonc.Format(s, true, 2)
 	if err != nil {
 		panic(err)
 	}
-
 	return formatted
 }

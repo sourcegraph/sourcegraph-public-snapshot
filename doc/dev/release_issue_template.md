@@ -14,7 +14,7 @@ for the patch release checklist.
     - [ ] Tagging the final release.
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
-- [ ] Schedule the [retrospective](retrospectives/index.md) meeting within a few days _after_ the release.
+- [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release (send calendar invites to team@sourcegraph.com).
 
 ## 5 working days before release (YYYY-MM-DD)
 
@@ -71,7 +71,7 @@ for the patch release checklist.
 - [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
 - [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
 - [ ] Review all open issues in the release milestone that aren't blocking and ask assignees to triage them to a different milestone (backlog preferred).
-- [ ] Start [collecting retrospective feedback](retrospectives/index.md). It should be due at the same time as the release.
+- [ ] Remind the team that they should submit [retrospective feedback](retrospectives/index.md) 24 hours before the scheduled retrospective meeting.
 
 ## As necessary
 
@@ -82,6 +82,9 @@ for the patch release checklist.
 ## 1 working day before release (YYYY-MM-DD)
 
 - [ ] **HH:MM AM/PM PT** Tag the final release.
+    ```
+    VERSION=v3.2.0; git tag -a $VERSION -m $VERSION; git push origin $VERSION
+    ```
 - [ ] Send a message to #dev-announce to announce the final release.
 - [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
@@ -89,6 +92,9 @@ for the patch release checklist.
     - [ ] Wait for Renovate to open a PR to update the image tags and merge that PR ([example](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)).
     - [ ] Create the `MAJOR.MINOR` release branch from this commit.
     - [ ] Tag the `vMAJOR.MINOR.0` release at this commit.
+        ```
+        VERSION=v3.2.0; git tag -a $VERSION -m $VERSION; git push origin $VERSION
+        ```
 - [ ] Open (but do not merge) PRs that do the following:
     - [ ] Update the documented version of Sourcegraph ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/701780fefa5809abb16669c9fb29738ec3bb2039)).
     ```
