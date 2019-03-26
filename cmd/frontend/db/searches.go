@@ -31,7 +31,14 @@ func (*searches) Add(ctx context.Context, q string) error {
 
 // DeleteExcessRows keeps the row count in the searches table below limit.
 func (*searches) DeleteExcessRows(ctx context.Context, limit int) error {
-	enforceLimit := `DELETE FROM searches WHERE id <= (SELECT MAX(id) FROM SEARCHES) - $1`
+	enforceLimit := `
+DELETE FROM searches
+	WHERE id <
+		(SELECT id FROM searches
+		 ORDER BY id
+		 OFFSET (SELECT (SELECT COUNT(*) FROM searches) - $1)
+		 LIMIT 1)
+`
 	if _, err := dbconn.Global.ExecContext(ctx, enforceLimit, limit); err != nil {
 		return fmt.Errorf("deleting excess rows in searches table: %v", err)
 	}
