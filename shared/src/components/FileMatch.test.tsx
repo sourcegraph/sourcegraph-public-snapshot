@@ -5,6 +5,7 @@ import { cleanup, getAllByTestId, getByTestId, getByText, render } from 'react-t
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../../../web/src/search/testHelpers'
+import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatch, IFileMatch } from './FileMatch'
 import { setLinkComponent } from './Link'
 
