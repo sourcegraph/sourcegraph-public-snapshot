@@ -11,7 +11,6 @@ func TestSearches_Add(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
 	ctx := dbtesting.TestContext(t)
 	q := fmt.Sprintf("fake query with random number %d", rand.Int())
 	if err := Searches.Add(ctx, q); err != nil {
@@ -30,6 +29,9 @@ func TestSearches_Add(t *testing.T) {
 }
 
 func TestSearches_DeleteExcessRows(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
 	ctx := dbtesting.TestContext(t)
 	limit := 10
 	for i := 1; i <= limit+1; i++ {
