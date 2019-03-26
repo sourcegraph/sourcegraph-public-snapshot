@@ -36,9 +36,12 @@ DELETE FROM recent_searches
 	WHERE id <
 		(SELECT id FROM recent_searches
 		 ORDER BY id
-		 OFFSET (SELECT (SELECT COUNT(*) FROM recentSearches) - $1)
+		 OFFSET (SELECT (SELECT COUNT(*) FROM recent_searches) - $1)
 		 LIMIT 1)
 `
+	if dbconn.Global == nil {
+		return errors.New("db connection is nil")
+	}
 	if _, err := dbconn.Global.ExecContext(ctx, enforceLimit, limit); err != nil {
 		return fmt.Errorf("deleting excess rows in recentSearches table: %v", err)
 	}
