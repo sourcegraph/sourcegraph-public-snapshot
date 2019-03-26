@@ -32,7 +32,7 @@ func TestSearches_Add(t *testing.T) {
 	t.Run("row count limit", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
 		limit := 10
-		for i := 1; i <= limit + 1; i++ {
+		for i := 1; i <= limit+1; i++ {
 			q := fmt.Sprintf("fake query for i = %d", i)
 			if err := Searches.Add(ctx, q, limit); err != nil {
 				t.Fatal(err)
