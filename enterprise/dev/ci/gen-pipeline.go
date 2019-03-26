@@ -114,16 +114,19 @@ func main() {
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
 
-	pipeline.AddStep(":ie:",
+	// Browser extension build
+	pipeline.AddStep(":webpack::chrome:",
 		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
 	if !isBextReleaseBranch {
-		pipeline.AddStep(":webpack:",
+		// Webapp build
+		pipeline.AddStep(":webpack::globe_with_meridians:",
 			bk.Cmd("dev/ci/yarn-build.sh web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "0"))
 
-		pipeline.AddStep(":webpack::moneybag:",
+		// Webapp enterprise build
+		pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
 			bk.Cmd("dev/ci/yarn-build.sh web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"))
