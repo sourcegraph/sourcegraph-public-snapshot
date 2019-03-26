@@ -18,7 +18,7 @@ import {
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
     RESULT,
-} from '../../../web/src/search/results/testHelpers'
+} from '../../../web/src/search/testHelpers'
 import { FileMatchChildren } from './FileMatchChildren'
 import { setLinkComponent } from './Link'
 
