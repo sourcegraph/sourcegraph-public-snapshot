@@ -1,19 +1,8 @@
 import * as H from 'history'
 import * as React from 'react'
 import { cleanup, fireEvent, render } from 'react-testing-library'
-
-export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
-    constructor(props: { onChange?: (isVisible: boolean) => void }) {
-        super(props)
-        if (props.onChange) {
-            props.onChange(true)
-        }
-    }
-
-    public render(): JSX.Element {
-        return <>{this.props.children}</>
-    }
-}
+import _VisibilitySensor from 'react-visibility-sensor'
+import { MockVisibilitySensor } from './CodeExcerpt.test'
 
 jest.mock(
     'react-visibility-sensor',
@@ -24,7 +13,6 @@ jest.mock(
     )
 )
 
-import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 import {
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
