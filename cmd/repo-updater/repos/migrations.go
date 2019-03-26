@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -224,7 +224,7 @@ func transactional(m Migration) Migration {
 		}
 
 		for {
-			if err = transact(ctx, tr, m); err == nil || !isSerializationError(err) {
+			if err = transact(ctx, tr, m); err == nil || !isRetryable(err) {
 				return err
 			}
 		}
@@ -242,7 +242,19 @@ func transact(ctx context.Context, tr Transactor, m Migration) (err error) {
 	return m(ctx, tx)
 }
 
-func isSerializationError(err error) bool {
-	return strings.Contains(strings.ToLower(err.Error()),
-		"could not serialize access due to concurrent update")
+func isRetryable(err error) bool {
+	switch e := errors.Cause(err).(type) {
+	case *pq.Error:
+		switch e.Code.Class() {
+		case "40":
+			// Class 40 — Transaction Rollback
+			// 40000	transaction_rollback
+			// 40002	transaction_integrity_constraint_violation
+			// 40001	serialization_failure
+			// 40003	statement_completion_unknown
+			// 40P01	deadlock_detected
+			return true
+		}
+	}
+	return false
 }
