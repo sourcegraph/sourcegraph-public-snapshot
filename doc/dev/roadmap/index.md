@@ -26,25 +26,25 @@ We're also working toward making Sourcegraph the [**infrastructure for developer
 
 ## Search
 
-<!-- You'll be able to refine your search to find what you need more quickly, and search across more types of things (beyond code). -->
-
 We're making search faster, more accurate, and more comprehensive (so it includes issues, documents, and other data sources you might want to search).
 
 - [Auto-fixup common mistakes in search queries](https://github.com/sourcegraph/sourcegraph/issues/2125)
+- [Enable indexed search by default](https://github.com/sourcegraph/sourcegraph/issues/2176)
 - [Nested search queries](https://github.com/sourcegraph/sourcegraph/issues/1005) (e.g., in all repositories whose `package.json` contains `foo`, find matches of `bar`)
   - [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
-- [Enable indexed search by default](https://github.com/sourcegraph/sourcegraph/issues/2176)
-- More advanced search filters (provided by extensions), such as those using language-specific or dependency graph information <!-- TODO -->
+- More ways to filter queries (provided by extensions), such as by authorship, recency, and language-specific or dependency graph information
 - [More types/sources of search results](https://github.com/sourcegraph/sourcegraph/issues/738) (provided by extensions), such as documentation (wiki, Markdown, and Google Docs), issues, PR comments, logs, and configuration data
 - Investigate instant, as-you-type search (Livegrep-style)
-- Improved search relevance and ranking <!-- TODO -->
+- Improved search relevance and ranking
 
 ## Saved searches
 
 TODO
 
+<!--
 - Enhanced notification preferences
 - TODO: Start with better search results and saved searches interface
+-->
 
 ## Code navigation and intelligence
 
@@ -57,6 +57,7 @@ We're continually refining code intelligence (hovers, go-to-definition, find-ref
 - [Compute and expose programming language statistics](https://github.com/sourcegraph/sourcegraph/issues/2587)
 - Show panel (with references/etc.) UI in code host integrations
 - Allow extensions to handle diffs and pull requests as a first-class concern
+- [Bazel support roadmap](https://github.com/sourcegraph/sourcegraph/issues/2982)
 - [Cross-language, cross-repository definitions and references support for APIs/IDLs (GraphQL, Thrift, Protobuf, etc.)](https://github.com/sourcegraph/sourcegraph/issues/981)
 
 ## Integrations
@@ -109,16 +110,17 @@ We are targeting the following editors (many of which already support the featur
 Sourcegraph integrations enhance your developer workflow, giving you vital information you need while coding. These integrations add features such as contextual links to/from Sourcegraph and contextual information overlays on code in Sourcegraph.
 
 - [Codecov integration](https://github.com/sourcegraph/sourcegraph/issues/2920) (code coverage)
-- [Datadog integration](TODO) (tracing and performance monitoring)
-- [LightStep integration](TODO) (tracing and performance monitoring)
-- [Sentry integration](TODO) (error monitoring)
-- [Slack integration](TODO) (team chat)
-- [G Suite integration](TODO) (Google domain management)
+- [Datadog integration](https://github.com/sourcegraph/sourcegraph/issues/2983) (tracing and performance monitoring)
+- [LightStep integration](https://github.com/sourcegraph/sourcegraph/issues/2984) (tracing and performance monitoring)
+- [Sentry integration](https://github.com/sourcegraph/sourcegraph/issues/2985) (error monitoring)
+- [Slack integration](https://github.com/sourcegraph/sourcegraph/issues/2986) (team chat)
+- [G Suite integration](https://github.com/sourcegraph/sourcegraph/issues/2987) (Google domain management)
 - Future:
   - [JIRA integration](https://github.com/sourcegraph/sourcegraph/issues/2930) (project planning and issue tracking)
+  - [Bazel integration](https://github.com/sourcegraph/sourcegraph/issues/2982) (builds)
   - [LaunchDarkly integration](https://github.com/sourcegraph/sourcegraph/issues/1249) (feature flags)
-  - FOSSA integration (license compliance)
-  - SonarQube integration (static analysis)
+  - [FOSSA integration](https://github.com/sourcegraph/sourcegraph/issues/2988) (license compliance)
+  - [SonarQube integration](https://github.com/sourcegraph/sourcegraph/issues/2989) (static analysis)
 
 ## Core UX
 
@@ -152,7 +154,7 @@ This section is only for extension API, authoring and registry improvements for 
 
 We want to make it easy to set up a self-hosted Sourcegraph instance in minutes, locally or on the most popular cloud providers. It needs to scale to the needs of organizations with thousands of developers, tens of thousands of repositories, and complex cluster and security needs.
 
-- Better communication of license status and expiration <!-- TODO -->
+- [Better communication of license expiration](https://github.com/sourcegraph/sourcegraph/pull/2969)
 - Customization:
   - [Configurable welcome page](https://github.com/sourcegraph/sourcegraph/issues/2443)
   - [Configurable site admin contact info and internal helpdesk link](https://github.com/sourcegraph/sourcegraph/issues/2442)
@@ -241,5 +243,6 @@ Prior art:
 
 https://about.gitlab.com/direction
 https://docs.microsoft.com/en-us/visualstudio/productinfo/vs-roadmap
+https://github.com/Microsoft/vscode/wiki/Roadmap
 
 -->
