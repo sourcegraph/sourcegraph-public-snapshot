@@ -1,8 +1,6 @@
 package syntax
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // ParseError describes an error in query parsing.
 type ParseError struct {
