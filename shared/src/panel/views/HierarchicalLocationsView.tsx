@@ -76,10 +76,8 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         locationProviderResults.pipe(
                             switchMap(locations =>
                                 locations.pipe(
+                                    map(result => ({ results: result || [], loading: true })),
                                     catchError((error): [ErrorLike] => [asError(error)]),
-                                    map(result =>
-                                        isErrorLike(result) ? result : { results: result || [], loading: true }
-                                    ),
                                     startWith<State['locationsOrError']>({ loading: true }),
                                     tap(locationsOrError => {
                                         this.props.extensionsController.services.context.data.next({
