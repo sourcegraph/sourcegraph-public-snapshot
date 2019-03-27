@@ -213,9 +213,11 @@ type GitLabAuthorization struct {
 type GitLabConnection struct {
 	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
 	Certificate                 string               `json:"certificate,omitempty"`
+	Exclude                     []*Exclude           `json:"exclude,omitempty"`
 	GitURLType                  string               `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool                 `json:"initialRepositoryEnablement,omitempty"`
 	ProjectQuery                []string             `json:"projectQuery,omitempty"`
+	Projects                    []*Projects          `json:"projects,omitempty"`
 	RepositoryPathPattern       string               `json:"repositoryPathPattern,omitempty"`
 	Token                       string               `json:"token"`
 	Url                         string               `json:"url"`
@@ -328,6 +330,10 @@ type PhabricatorConnection struct {
 	Repos []*Repos `json:"repos,omitempty"`
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
+}
+type Projects struct {
+	Id   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 type Repos struct {
 	Callsign string `json:"callsign"`

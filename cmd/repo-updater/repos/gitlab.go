@@ -264,8 +264,20 @@ func newGitLabConnection(config *schema.GitLabConnection, cf httpcli.Factory) (*
 		return nil, err
 	}
 
+	exclude := make(map[string]bool, len(config.Exclude))
+	for _, r := range config.Exclude {
+		if r.Name != "" {
+			exclude[r.Name] = true
+		}
+
+		if r.Id != "" {
+			exclude[r.Id] = true
+		}
+	}
+
 	return &gitlabConnection{
 		config:  config,
+		exclude: exclude,
 		baseURL: baseURL,
 		client:  gitlab.NewClientProvider(baseURL, cli).GetPATClient(config.Token, ""),
 	}, nil
@@ -273,6 +285,7 @@ func newGitLabConnection(config *schema.GitLabConnection, cf httpcli.Factory) (*
 
 type gitlabConnection struct {
 	config  *schema.GitLabConnection
+	exclude map[string]bool
 	baseURL *url.URL // URL with path /api/v4 (no trailing slash)
 	client  *gitlab.Client
 }
@@ -294,6 +307,10 @@ func (c *gitlabConnection) authenticatedRemoteURL(proj *gitlab.Project) string {
 	// Any username works; "git" is not special.
 	u.User = url.UserPassword("git", c.config.Token)
 	return u.String()
+}
+
+func (c *gitlabConnection) excludes(p *gitlab.Project) bool {
+	return c.exclude[p.PathWithNamespace] || c.exclude[strconv.Itoa(p.ID)]
 }
 
 func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Project, error) {
@@ -322,18 +339,18 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(1)
+	for _, projectQuery := range configProjectQuery {
+		if projectQuery == "none" {
+			continue
+		}
 
-	go func() {
-		defer wg.Done()
-		for _, projectQuery := range configProjectQuery {
-			if projectQuery == "none" {
-				continue
-			}
+		wg.Add(1)
+		go func(projectQuery string) {
+			defer wg.Done()
 			q, err := normalizeQuery(projectQuery)
 			if err != nil {
 				ch <- batch{err: errors.Wrapf(err, "invalid GitLab projectQuery=%q", projectQuery)}
-				continue
+				return
 			}
 			q.Set("per_page", "100")
 
@@ -346,16 +363,16 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 				projects, nextPageURL, err := c.client.ListProjects(ctx, url)
 				if err != nil {
 					ch <- batch{err: errors.Wrapf(err, "error listing GitLab projects: url=%q", url)}
-					break
+					return
 				}
 				ch <- batch{projs: projects}
 				if nextPageURL == nil {
-					break
+					return
 				}
 				url = *nextPageURL
 			}
-		}
-	}()
+		}(projectQuery)
+	}
 
 	go func() {
 		wg.Wait()
@@ -368,8 +385,13 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 	for b := range ch {
 		if b.err != nil {
 			errs = multierror.Append(errs, b.err)
-		} else {
-			projects = append(projects, b.projs...)
+			continue
+		}
+
+		for _, proj := range b.projs {
+			if !c.excludes(proj) {
+				projects = append(projects, proj)
+			}
 		}
 	}
 

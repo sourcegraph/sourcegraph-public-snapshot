@@ -34,6 +34,50 @@
       "type": "string",
       "pattern": "^-----BEGIN CERTIFICATE-----\n"
     },
+    "projects": {
+      "description": "A list of projects to mirror from this GitLab instance.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a GitLab project (\"owner/name\") to mirror.",
+            "type": "string",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          },
+          "id": {
+            "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to mirror.",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "exclude": {
+      "description": "A list of projects to never mirror from this GitLab instance. Takes precedence over \"projects\" and \"projectQuery\" configuration.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a GitLab project (\"owner/name\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          },
+          "id": {
+            "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "projectQuery": {
       "description": "An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
       "type": "array",

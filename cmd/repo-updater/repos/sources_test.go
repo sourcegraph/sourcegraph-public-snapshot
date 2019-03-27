@@ -122,7 +122,7 @@ func TestSources_ListRepos(t *testing.T) {
 					Url:   "https://gitlab.com",
 					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{
-						"?search=vegeta",
+						"?search=gokulkarthick",
 					},
 				}),
 			},
@@ -178,6 +178,20 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url: "https://gitlab.com",
+					ProjectQuery: []string{
+						"?search=gokulkarthick",
+						"?search=dotfiles-vegetableman",
+					},
+					Exclude: []*schema.Exclude{
+						{Name: "gokulkarthick/gokulkarthick"},
+						{Id: "7789240"},
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -196,6 +210,8 @@ func TestSources_ListRepos(t *testing.T) {
 					var exclude []*schema.Exclude
 					switch cfg := c.(type) {
 					case *schema.GitHubConnection:
+						exclude = cfg.Exclude
+					case *schema.GitLabConnection:
 						exclude = cfg.Exclude
 					}
 

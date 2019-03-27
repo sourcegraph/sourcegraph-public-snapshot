@@ -11,6 +11,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Enterprise admins can now customize the appearance of the homepage and search icon.
 - A new settings property `notices` allows showing custom informational messages on the homepage and at the top of each page.
+- The `gitlab.exclude` setting was added to the [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) to allow excluding repositories yielded by `gitlab.projectQuery` from being synced.
 
 ### Changed
 
