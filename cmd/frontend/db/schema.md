@@ -447,18 +447,6 @@ Indexes:
 
 ```
 
-# Table "public.searches"
-```
-   Column   |            Type             |                       Modifiers                       
-------------+-----------------------------+-------------------------------------------------------
- id         | integer                     | not null default nextval('searches_id_seq'::regclass)
- query      | text                        | not null
- created_at | timestamp without time zone | not null default now()
-Indexes:
-    "searches_pkey" PRIMARY KEY, btree (id)
-
-```
-
 # Table "public.settings"
 ```
      Column     |           Type           |                       Modifiers                       
