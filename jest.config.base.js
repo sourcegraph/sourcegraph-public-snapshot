@@ -4,6 +4,7 @@
 const config = {
   collectCoverage: true,
   coverageDirectory: '<rootDir>/coverage',
+  coveragePathIgnorePatterns: [/\.test\.tsx?$/.source],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   preset: 'ts-jest/presets/js-with-ts',
   roots: ['<rootDir>/src'],
