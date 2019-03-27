@@ -30,7 +30,7 @@ type ExternalService struct {
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
-	return "extsvc:" + strconv.FormatInt(e.ID, 10)
+	return "extsvc:" + strings.ToLower(e.Kind) + ":" + strconv.FormatInt(e.ID, 10)
 }
 
 // IsDeleted returns true if the external service is deleted.
@@ -295,12 +295,12 @@ type SourceInfo struct {
 // ExternalServiceID returns the ID of the external service this
 // SourceInfo refers to.
 func (i SourceInfo) ExternalServiceID() int64 {
-	ps := strings.SplitN(i.ID, ":", 2)
-	if len(ps) != 2 {
+	ps := strings.SplitN(i.ID, ":", 3)
+	if len(ps) != 3 {
 		return -1
 	}
 
-	id, err := strconv.ParseInt(ps[1], 10, 64)
+	id, err := strconv.ParseInt(ps[2], 10, 64)
 	if err != nil {
 		return -1
 	}

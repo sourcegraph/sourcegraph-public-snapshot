@@ -94,16 +94,7 @@ func TestNewSourcer(t *testing.T) {
 	}
 }
 
-func TestGithubSource_ListRepos(t *testing.T) {
-	config := func(cfg *schema.GitHubConnection) string {
-		t.Helper()
-		bs, err := json.Marshal(cfg)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return string(bs)
-	}
-
+func TestSources_ListRepos(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		ctx    context.Context
@@ -112,10 +103,10 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		err    string
 	}{
 		{
-			name: "yielded repos are always enabled",
+			name: "github/yielded repos are always enabled",
 			svc: ExternalService{
 				Kind: "GITHUB",
-				Config: config(&schema.GitHubConnection{
+				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
 					RepositoryQuery: []string{
 						"user:tsenart in:name patrol",
@@ -133,10 +124,35 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			err: "<nil>",
 		},
 		{
-			name: "excluded repos are never yielded",
+			name: "gitlab/yielded repos are always enabled",
+			svc: ExternalService{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url: "https://gitlab.com",
+					ProjectQuery: []string{
+						"?search=vegeta",
+					},
+					// Repos: []string{"sourcegraph/sourcegraph"},
+				}),
+			},
+			assert: func(t testing.TB, rs Repos) {
+				if len(rs) == 0 {
+					t.Fatal("expected Gitlab repositories")
+				}
+
+				for _, r := range rs {
+					if !r.Enabled {
+						t.Errorf("repo %q is not enabled", r.Name)
+					}
+				}
+			},
+			err: "<nil>",
+		},
+		{
+			name: "github/excluded repos are never yielded",
 			svc: ExternalService{
 				Kind: "GITHUB",
-				Config: config(&schema.GitHubConnection{
+				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
 					RepositoryQuery: []string{
 						"user:tsenart in:name patrol",
@@ -169,18 +185,10 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			cassete := filepath.Join("testdata", "github", strings.Replace(tc.name, " ", "-", -1))
-			rec := newRecorder(t, cassete, *update)
-			defer save(t, rec)
+			cf, save := newClientFactory(t, tc.name, &tc.svc)
+			defer save(t)
 
-			mw := httpcli.NewMiddleware(
-				redirect(map[string]string{"github-proxy": "api.github.com"}),
-				auth(os.Getenv("GITHUB_ACCESS_TOKEN")),
-			)
-
-			cf := httpcli.NewFactory(mw, newRecorderOpt(t, rec))
-
-			s, err := NewGithubSource(&tc.svc, cf)
+			s, err := NewSource(&tc.svc, cf)
 			if err != nil {
 				t.Error(err)
 				return // Let defers run
@@ -201,6 +209,27 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newClientFactory(t testing.TB, name string, svc *ExternalService) (httpcli.Factory, func(testing.TB)) {
+	cassete := filepath.Join("testdata", strings.Replace(name, " ", "-", -1))
+	rec := newRecorder(t, cassete, *update)
+
+	var mw httpcli.Middleware
+	switch strings.ToLower(svc.Kind) {
+	case "github":
+		mw = httpcli.NewMiddleware(
+			redirect(map[string]string{"github-proxy": "api.github.com"}),
+			auth(os.Getenv("GITHUB_ACCESS_TOKEN")),
+		)
+	case "gitlab":
+		mw = httpcli.NewMiddleware(
+			auth(os.Getenv("GITLAB_ACCESS_TOKEN")),
+		)
+	}
+
+	return httpcli.NewFactory(mw, newRecorderOpt(t, rec)),
+		func(t testing.TB) { save(t, rec) }
 }
 
 func redirect(rules map[string]string) httpcli.Middleware {
@@ -244,9 +273,14 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 		// these headers from the casseste effectively disables rate-limiting
 		// in tests which replay HTTP interactions, which is desired behaviour.
 		for _, name := range [...]string{
-			"X-RateLimit-Reset",
-			"X-RateLimit-Remaining",
+			"RateLimit-Limit",
+			"RateLimit-Observed",
+			"RateLimit-Remaining",
+			"RateLimit-Reset",
+			"RateLimit-Resettime",
 			"X-RateLimit-Limit",
+			"X-RateLimit-Remaining",
+			"X-RateLimit-Reset",
 		} {
 			i.Response.Headers.Del(name)
 		}
@@ -316,4 +350,15 @@ type roundTripFunc httpcli.DoerFunc
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
+}
+
+func marshalJSON(t testing.TB, v interface{}) string {
+	t.Helper()
+
+	bs, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(bs)
 }

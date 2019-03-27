@@ -8,6 +8,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -55,6 +56,8 @@ func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":
 		return NewGithubSource(svc, cf)
+	case "gitlab":
+		return NewGitLabSource(svc, cf)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
@@ -201,5 +204,62 @@ func githubRepoToRepo(
 			},
 		},
 		Metadata: ghrepo,
+	}
+}
+
+// A GitLabSource yields repositories from a single GitLab connection configured
+// in Sourcegraph via the external services configuration.
+type GitLabSource struct {
+	svc  *ExternalService
+	conn *gitlabConnection
+}
+
+// NewGitLabSource returns a new GitLabSource from the given external service.
+func NewGitLabSource(svc *ExternalService, cf httpcli.Factory) (*GitLabSource, error) {
+	var c schema.GitLabConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newGitLabSource(svc, &c, cf)
+}
+
+func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf httpcli.Factory) (*GitLabSource, error) {
+	conn, err := newGitLabConnection(c, cf)
+	if err != nil {
+		return nil, err
+	}
+	return &GitLabSource{svc: svc, conn: conn}, nil
+}
+
+// ListRepos returns all GitLab repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s GitLabSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+	projs, err := s.conn.listAllProjects(ctx)
+	for _, proj := range projs {
+		repos = append(repos, gitlabProjectToRepo(s.svc, proj, s.conn))
+	}
+	return repos, err
+}
+
+func gitlabProjectToRepo(
+	svc *ExternalService,
+	proj *gitlab.Project,
+	conn *gitlabConnection,
+) *Repo {
+	urn := svc.URN()
+	return &Repo{
+		Name:         string(gitlabProjectToRepoPath(conn, proj)),
+		ExternalRepo: *gitlab.ExternalRepoSpec(proj, *conn.baseURL),
+		Description:  proj.Description,
+		Fork:         proj.ForkedFromProject != nil,
+		Enabled:      true,
+		Archived:     proj.Archived,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: conn.authenticatedRemoteURL(proj),
+			},
+		},
+		Metadata: proj,
 	}
 }

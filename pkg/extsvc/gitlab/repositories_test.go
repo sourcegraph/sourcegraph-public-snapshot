@@ -27,7 +27,7 @@ func TestListTree(t *testing.T) {
 ]
 `}
 	c := newTestClient(t)
-	c.httpClient.Transport = &mock
+	c.httpClient = &mock
 
 	want := []*Tree{
 		{
