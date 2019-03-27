@@ -20,7 +20,7 @@ We're continually improving Sourcegraph's core features for developers:
 - Robust API for automation and reporting on your code
 - Code change notifications (saved searches)
 
-We're also working toward making Sourcegraph the [**infrastructure for developer tools and data**](#future-infrastructure-for-developer-tools-and-data), with integration into the entire developer workflow (in the editor, code review, and anywhere else they interact with code). In addition to helping developers, this also helps engineering leaders and internal tools teams solve organization-wide problems.
+We're also working toward making Sourcegraph the [**infrastructure for developer tools and data**](#infrastructure-for-developer-tools-and-data), with integration into the entire developer workflow (in the editor, code review, and anywhere else they interact with code). In addition to helping developers, this also helps engineering leaders and internal tools teams solve organization-wide problems.
 
 ## Search
 
