@@ -161,7 +161,7 @@ Open `web/src/e2e/index.e2e.test.tsx` and add a new e2e test:
 ```TypeScript
         test('Repositories list', async () => {
             await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
-            await page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
+            await page.waitForSelector('[e2e-repository-name="/github.com/gorilla/mux"]', { visible: true })
             await percySnapshot(page, 'Repositories list')
         })
 ```
