@@ -100,7 +100,20 @@ The easiest way to write CSS selectors is to inspect the element in your browser
 
 ![image](https://user-images.githubusercontent.com/1387653/54873834-6c605400-4d9c-11e9-823b-faa8871df395.png)
 
-It's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
+CSS selectors in e2e tests should always refer to CSS classes prefixed with `e2e-`. This makes them easy to spot in the implementation and therefor less likely to accidentally break. `e2e-` classes are never referenced in stylesheets, they are added _in addition_ to styling classes. If an element you are trying to select does not have an `e2e-` class yet, modify the implementation to add it.
+
+If the element you are trying to select appears multiple times on the page (e.g. a button in a list) and you need to select a specific instance, you can use `data-e2e-*` attributes in the implementation:
+
+```HTML
+<div data-e2e-item-name={this.props.name}>
+  <span>{this.props.name}</span>
+  <button>Delete</span>
+</div>
+```
+
+Then you can select the button with `div[data-e2e-item-name="foo"] .button`.
+
+Tip: it's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
 
 ```
 const elem = page.selector(".selector")
@@ -112,17 +125,6 @@ Do this:
 ```
 page.click(".selector")
 ```
-
-CSS selectors in e2e tests should always refer to CSS classes prefixed with `e2e-`. This makes them easy to spot in the implementation and therefor less likely to accidentally break. `e2e-` classes are never referenced in stylesheets, they are added _in addition_ to styling classes. If an element you are trying to select does not have an `e2e-` class yet, modify the implementation to add it. You can see the classes of an element in the inspector:
-
-```HTML
-<div data-e2e-item-name={this.props.name}>
-  <span>{this.props.name}</span>
-  <button>Delete</span>
-</div>
-```
-
-Then you can select the button with `div[data-e2e-item-name="foo"] .button`.
 
 ### E2e caveats
 
