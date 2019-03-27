@@ -15,8 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - The symbols sidebar now only shows symbols defined in the current file or directory.
-
 - The default `github.repositoryQuery` of a [GitHub external service configuration](https://docs.sourcegraph.com/admin/external_service/github#configuration) has been changed to `["none"]`. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["affiliated", "public"]`).
+- Certain invalid regular expressions are automatically treated as string literals. [See the issue for more information.](https://github.com/sourcegraph/sourcegraph/issues/2125)
 
 ### Fixed
 
