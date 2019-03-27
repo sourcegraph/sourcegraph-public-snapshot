@@ -1,7 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import { merge } from 'lodash'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -78,15 +77,11 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                             switchMap(locations =>
                                 locations.pipe(
                                     catchError((error): [ErrorLike] => [asError(error)]),
-                                    map(result => ({
-                                        locationsOrError: isErrorLike(result)
-                                            ? result
-                                            : { results: result || [], loading: true },
-                                    })),
-                                    startWith<Pick<State, 'locationsOrError'>>({
-                                        locationsOrError: { loading: true },
-                                    }),
-                                    tap(({ locationsOrError }) => {
+                                    map(result =>
+                                        isErrorLike(result) ? result : { results: result || [], loading: true }
+                                    ),
+                                    startWith<State['locationsOrError']>({ loading: true }),
+                                    tap(locationsOrError => {
                                         this.props.extensionsController.services.context.data.next({
                                             ...this.props.extensionsController.services.context.data.value,
                                             'panel.locations.hasResults':
@@ -96,14 +91,20 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                 locationsOrError.results.length > 0,
                                         })
                                     }),
-                                    endWith({ locationsOrError: { loading: false } })
+                                    endWith<State['locationsOrError']>({ loading: false })
                                 )
                             )
                         )
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(old => merge({}, old, stateUpdate)),
+                    locationsOrError =>
+                        this.setState(old => ({
+                            locationsOrError: isErrorLike(locationsOrError)
+                                ? locationsOrError
+                                : { ...old.locationsOrError, ...locationsOrError },
+                            selectedGroups: old.selectedGroups,
+                        })),
                     error => console.error(error)
                 )
         )
