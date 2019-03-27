@@ -1,4 +1,4 @@
-# Customer P0 retrospective: license expiration
+# Customer license expiration P0 retrospective
 
 ## Incident details
 
@@ -8,7 +8,7 @@
 
 ## Why did this happen?
 
-Customer's contract originally provided them with an opt-out clause after 1 year. That 1 year mark fell on Mar 21, 2019.
+The customer's contract originally provided them with an opt-out clause after 1 year. That 1 year mark fell on Mar 21, 2019.
 
 I (Dan) emailed customer's A/P department on Jan 17, 2019 indicating to them that the second invoice was about to come due. They asked some questions, indicated it had been approved, and the wire went out. This occurred much faster than I expected, as compared to the first year's 60-day payment terms (the original email had been sent so the payment date would fall before the license key expiration intentionally).
 
