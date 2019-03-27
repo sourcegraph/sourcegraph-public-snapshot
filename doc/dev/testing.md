@@ -44,6 +44,7 @@ Here are common failure modes:
 - Timed out waiting for a selector to match because the page was still loading: use `waitForSelector(selector, { visible: true })`
 - Page disconnected or browser session closed: another part of the test code might have called `page.close()` asynchronously, the browser crashed (check the video), or the build got canceled
 - Node was detached from the DOM: the Monaco editor changes its DOM asynchronously, so wrap interactions with it in `retry()`
+- `retry` is the preferred way to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`)
 
 Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, disable it with `test.skip` and file an issue on the author.
 
