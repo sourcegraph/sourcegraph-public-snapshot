@@ -183,6 +183,9 @@ func Test_autoFix(t *testing.T) {
 			if got := autoFix(tt.pat); got != tt.want {
 				t.Errorf("autoFix() = '%v', want '%v'", got, tt.want)
 			}
+			if _, err := regexp.Compile(tt.want); err != nil {
+				t.Errorf("want %q regexp fails to compile: %s", tt.want, err)
+			}
 		})
 	}
 }
