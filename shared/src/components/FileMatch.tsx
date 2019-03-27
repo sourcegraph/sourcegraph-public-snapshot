@@ -134,7 +134,7 @@ export class FileMatch extends React.PureComponent<Props> {
                         {...this.props}
                         items={items}
                         result={result}
-                        allMatches={true}
+                        allMatches={false}
                         subsetMatches={this.subsetMatches}
                     />
                 ),
