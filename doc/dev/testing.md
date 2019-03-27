@@ -111,7 +111,7 @@ If the element you are trying to select appears multiple times on the page (e.g.
 </div>
 ```
 
-Then you can select the button with `div[data-e2e-item-name="foo"] .button`.
+Then you can select the button with `[data-e2e-item-name="foo"] .e2e-item-delete-button`.
 
 Tip: it's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
 
