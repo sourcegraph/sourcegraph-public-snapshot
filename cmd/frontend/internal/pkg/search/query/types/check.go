@@ -141,11 +141,18 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 	return nil
 }
 
-var autoFixRx = regexp.MustCompile(`([([])$`)
+var autoFixRx = regexp.MustCompile(`(^[*$]|[([]$)`)
+var autoFixRx2 = regexp.MustCompile(`\(([^)]+$)`)
+var autoFixRx3 = regexp.MustCompile(`^([^(]*)\)`)
 
-// autoFix escapes (, [ and { if they appear at the end of pat.
+// autoFix escapes various patterns that are very likely not meant to be
+// treated as regular expressions.
 func autoFix(pat string) string {
-	return autoFixRx.ReplaceAllString(pat, `\$1`)
+	pat = autoFixRx.ReplaceAllString(pat, `\$1`)
+	pat = strings.Replace(pat, "()", `\(\)`, -1)
+	pat = autoFixRx2.ReplaceAllString(pat, `\($1`)
+	pat = autoFixRx3.ReplaceAllString(pat, `$1\)`)
+	return pat
 }
 
 // unquoteString is like strings.Unquote except that it supports single-quoted

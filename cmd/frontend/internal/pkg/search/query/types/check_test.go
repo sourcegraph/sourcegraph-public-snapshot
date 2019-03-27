@@ -160,17 +160,28 @@ func Test_autoFix(t *testing.T) {
 		{"a", "a"},
 		{"(", `\(`},
 		{"[", `\[`},
-		// Unclosed curly braces are already valid regexps.
+		// Unclosed curly braces are already valid regular expressions.
 		{"{", `{`},
 		{"a(", `a\(`},
-		{"(a", `(a`},
+		{"(a", `\(a`},
 		{"(a)", "(a)"},
 		{`\bfoo(`, `\bfoo\(`},
+		{"*myvar", `\*myvar`},
+		// For PHP:
+		{"$myvar", `\$myvar`},
+		{"$f(", `\$f\(`},
+		// No one is likely to want a group that can only contain nothing.
+		{"f()", `f\(\)`},
+		{"()", `\(\)`},
+		{"()f", `\(\)f`},
+		{"f(a", `f\(a`},
+		{"f(a,", `f\(a,`},
+		{"b)", `b\)`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.pat, func(t *testing.T) {
 			if got := autoFix(tt.pat); got != tt.want {
-				t.Errorf("autoFix() = %v, want %v", got, tt.want)
+				t.Errorf("autoFix() = '%v', want '%v'", got, tt.want)
 			}
 		})
 	}
