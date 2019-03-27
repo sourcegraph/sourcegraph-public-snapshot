@@ -65,7 +65,7 @@ func TestContextErrorMiddleware(t *testing.T) {
 func newFakeClient(code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()
-		rr.Write(body)
+		_, _ = rr.Write(body)
 		rr.WriteHeader(code)
 		return rr.Result(), err
 	})
