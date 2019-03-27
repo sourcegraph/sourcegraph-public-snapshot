@@ -51,9 +51,7 @@ export class ClientViews implements ClientViewsAPI {
                     map(locationProvider =>
                         from(this.modelService.model).pipe(
                             switchMap(model => {
-                                const params: TextDocumentPositionParams | null = modelToTextDocumentPositionParams(
-                                    model
-                                )
+                                const params = modelToTextDocumentPositionParams(model)
                                 if (!params) {
                                     return of(of(null))
                                 }
