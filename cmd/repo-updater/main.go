@@ -23,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -52,12 +50,7 @@ func main() {
 
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
-	cliFactory := httpcli.NewFactory(
-		nil, // No middleware for now. Use this for Prometheus instrumentation later.
-		httpcli.TracedTransportOpt,
-		httpcli.NewCachedTransportOpt(httputil.Cache, true),
-	)
-
+	cliFactory := repos.NewHTTPClientFactory()
 	src := repos.NewSourcer(cliFactory)
 
 	for _, m := range []repos.Migration{
