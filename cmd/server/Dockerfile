@@ -5,7 +5,7 @@ RUN apk --no-cache add --virtual build-deps curl jansson-dev \
     libseccomp-dev linux-headers autoconf pkgconfig make automake \
     gcc g++ binutils
 
-ENV CTAGS_VERSION=08a69b5a030cf56c079e3006238b992b34c9cc51
+ENV CTAGS_VERSION=5b4865cc2d4831db9d638a647ff2f5a0dced2133
 
 # hadolint ignore=DL3003
 RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" && \
