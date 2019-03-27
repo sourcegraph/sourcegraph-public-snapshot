@@ -702,7 +702,7 @@ describe('e2e test suite', function(this: any): void {
                         await assertNonemptyLocalRefs()
 
                         // verify the appropriate # of references are fetched
-                        await page.waitForSelector('.panel__tabs-content .file-match__list')
+                        await page.waitForSelector('.panel__tabs-content .file-match-children')
                         await retry(async () =>
                             expect(
                                 await page.evaluate(
