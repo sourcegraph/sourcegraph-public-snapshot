@@ -45,7 +45,7 @@ func main() {
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	db, err := repos.NewDB(repos.NewDSNFromEnv())
+	db, err := repos.NewDB(repos.NewDSN().String())
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
