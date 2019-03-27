@@ -25,7 +25,7 @@ Usually while developing you will either have `yarn test --watch` running in a t
 
 ## End-to-end (e2e) browser-based tests
 
-E2e tests act like a user by opening a browser and clicking, typing, and navigating around in an automated fashion.
+E2e tests act like a user by opening a browser and clicking, typing, and navigating around in an automated fashion. They test the whole app: JS, CSS, and backend.
 
 ### Troubleshooting failing e2e tests
 
@@ -100,8 +100,6 @@ The easiest way to write CSS selectors is to inspect the element in your browser
 
 ![image](https://user-images.githubusercontent.com/1387653/54873834-6c605400-4d9c-11e9-823b-faa8871df395.png)
 
-Sometimes it's easier to add `data-e2e-*` attributes to the web app code than to construct a monstrous CSS or XPath selector to match an element. Clicking on a button corresponding to a particular element in a list is especially difficult, but easy with a `data-e2e-*` attribute:
-
 It's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
 
 ```
@@ -115,6 +113,8 @@ Do this:
 page.click(".selector")
 ```
 
+CSS selectors in e2e tests should always refer to CSS classes prefixed with `e2e-`. This makes them easy to spot in the implementation and therefor less likely to accidentally break. `e2e-` classes are never referenced in stylesheets, they are added _in addition_ to styling classes. If an element you are trying to select does not have an `e2e-` class yet, modify the implementation to add it. You can see the classes of an element in the inspector:
+
 ```HTML
 <div data-e2e-item-name={this.props.name}>
   <span>{this.props.name}</span>
@@ -124,7 +124,9 @@ page.click(".selector")
 
 Then you can select the button with `div[data-e2e-item-name="foo"] .button`.
 
-### E2e tests vs unit tests
+### E2e caveats
+
+In the testing pyramid, e2e tests account for a small minority of all of the tests in an app. Only reach for e2e testing when it's too difficult to unit test something.
 
 In comparison to unit tests, e2e tests are slower and flakier but often more convenient.
 
