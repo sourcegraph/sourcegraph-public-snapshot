@@ -16,6 +16,7 @@ Add links to completed retrospective docs here. These are publicly visible, so m
 - [Sourcegraph 3.0 retrospective](3_0.md)
 - [Tomás’ notes on the PostgreSQL upgrade](postgresql_upgrade.md)
 - [Sourcegraph 3.2 retrospective](3_2.md)
+- [Sourcegraph customer license expiration retrospective](customer_license_expiration.md)
 
 ## How to facilitate a retrospective
 

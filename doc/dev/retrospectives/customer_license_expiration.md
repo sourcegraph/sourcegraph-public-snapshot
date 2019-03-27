@@ -1,7 +1,3 @@
----
-ignoreDisconnectedPageCheck: true
----
-
 # Customer P0 retrospective: license expiration
 
 ## Incident details
