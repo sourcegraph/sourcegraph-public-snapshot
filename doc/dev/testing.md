@@ -102,6 +102,19 @@ The easiest way to write CSS selectors is to inspect the element in your browser
 
 Sometimes it's easier to add `data-e2e-*` attributes to the web app code than to construct a monstrous CSS or XPath selector to match an element. Clicking on a button corresponding to a particular element in a list is especially difficult, but easy with a `data-e2e-*` attribute:
 
+It's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
+
+```
+const elem = page.selector(".selector")
+elem.click()
+```
+
+Do this:
+
+```
+page.click(".selector")
+```
+
 ```HTML
 <div data-e2e-item-name={this.props.name}>
   <span>{this.props.name}</span>
