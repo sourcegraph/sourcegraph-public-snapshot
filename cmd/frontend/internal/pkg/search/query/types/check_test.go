@@ -143,6 +143,14 @@ func TestUnquoteString(t *testing.T) {
 	}
 }
 
+func TestRegexpCompile(t *testing.T) {
+	t.Run("curly brace", func(t *testing.T) {
+		if _, err := regexp.Compile("{"); err != nil {
+			t.Error(err)
+		}
+	})
+}
+
 func Test_autoFix(t *testing.T) {
 	tests := []struct {
 		pat  string
@@ -152,7 +160,8 @@ func Test_autoFix(t *testing.T) {
 		{"a", "a"},
 		{"(", `\(`},
 		{"[", `\[`},
-		{"{", `\{`},
+		// Unclosed curly braces are already valid regexps.
+		{"{", `{`},
 		{"a(", `a\(`},
 		{"(a", `(a`},
 		{"(a)", "(a)"},

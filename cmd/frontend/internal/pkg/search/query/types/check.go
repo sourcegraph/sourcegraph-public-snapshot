@@ -141,7 +141,7 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 	return nil
 }
 
-var autoFixRx = regexp.MustCompile(`([({[])$`)
+var autoFixRx = regexp.MustCompile(`([([])$`)
 
 // autoFix escapes (, [ and { if they appear at the end of pat.
 func autoFix(pat string) string {
