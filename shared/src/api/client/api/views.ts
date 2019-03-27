@@ -1,10 +1,10 @@
 import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { isEqual } from 'lodash'
+import { isEqual, omit } from 'lodash'
 import { combineLatest, from, of, ReplaySubject, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'
 import { isDefined } from '../../../util/types'
-import { ContributableViewContainer, TextDocumentPositionParams } from '../../protocol'
+import { ContributableViewContainer } from '../../protocol'
 import { modelToTextDocumentPositionParams } from '../model'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { ModelService } from '../services/modelService'
@@ -40,7 +40,7 @@ export class ClientViews implements ClientViewsAPI {
             { ...provider, container: ContributableViewContainer.Panel },
             combineLatest(
                 panelView.pipe(
-                    map(({ title, content, priority }) => ({ title, content, priority })),
+                    map(data => omit(data, 'component')),
                     distinctUntilChanged((x, y) => isEqual(x, y))
                 ),
                 panelView.pipe(
