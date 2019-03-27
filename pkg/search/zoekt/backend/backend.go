@@ -7,22 +7,22 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-// Mock is a mock search.Searcher
+// Mock is a mock zoekt.Searcher
 type Mock struct {
-	Result *search.Result
+	Result *zoekt.Result
 	Error  error
 
 	LastQ    query.Q
-	LastOpts *search.Options
+	LastOpts *zoekt.Options
 }
 
-func (m *Mock) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
+func (m *Mock) Search(ctx context.Context, q query.Q, opts *zoekt.Options) (*zoekt.Result, error) {
 	m.LastQ = q
 	m.LastOpts = opts
 	return m.Result, m.Error
@@ -33,17 +33,17 @@ func (m *Mock) Close() {}
 func (m *Mock) String() string { return "mock" }
 
 type shard struct {
-	search.Searcher
+	zoekt.Searcher
 	query.Q
-	*search.Options
+	*zoekt.Options
 }
 
 type searchResponse struct {
-	*search.Result
+	*zoekt.Result
 	error
 }
 
-func shardedSearch(ctx context.Context, shards <-chan shard) (*search.Result, error) {
+func shardedSearch(ctx context.Context, shards <-chan shard) (*zoekt.Result, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -64,7 +64,7 @@ func shardedSearch(ctx context.Context, shards <-chan shard) (*search.Result, er
 		close(resC)
 	}()
 
-	all := search.Result{}
+	all := zoekt.Result{}
 	for r := range resC {
 		if r.error != nil {
 			// Drain resC
@@ -79,24 +79,24 @@ func shardedSearch(ctx context.Context, shards <-chan shard) (*search.Result, er
 	return &all, nil
 }
 
-func handleError(source search.Source, r search.Repository, err error) (*search.RepositoryStatus, error) {
-	status := search.RepositoryStatusSearched
+func handleError(source zoekt.Source, r zoekt.Repository, err error) (*zoekt.RepositoryStatus, error) {
+	status := zoekt.RepositoryStatusSearched
 	if vcs.IsRepoNotExist(err) {
 		if vcs.IsCloneInProgress(err) {
-			status = search.RepositoryStatusCloning
+			status = zoekt.RepositoryStatusCloning
 		} else {
-			status = search.RepositoryStatusMissing
+			status = zoekt.RepositoryStatusMissing
 		}
 	} else if git.IsRevisionNotFound(err) {
-		status = search.RepositoryStatusCommitMissing
+		status = zoekt.RepositoryStatusCommitMissing
 	} else if errcode.IsNotFound(err) {
-		status = search.RepositoryStatusMissing
+		status = zoekt.RepositoryStatusMissing
 	} else if errcode.IsTimeout(err) || errcode.IsTemporary(err) {
-		status = search.RepositoryStatusTimedOut
+		status = zoekt.RepositoryStatusTimedOut
 	} else if err != nil {
 		return nil, err
 	}
-	return &search.RepositoryStatus{
+	return &zoekt.RepositoryStatus{
 		Repository: r,
 		Source:     source,
 		Status:     status,

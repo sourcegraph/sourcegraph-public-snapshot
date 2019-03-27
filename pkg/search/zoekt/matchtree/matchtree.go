@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
 )
 
 // ContentProvider is an abstraction to treat matches for names and content
