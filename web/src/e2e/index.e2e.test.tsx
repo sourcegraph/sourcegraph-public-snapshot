@@ -706,7 +706,9 @@ describe('e2e test suite', function(this: any): void {
                         await retry(async () =>
                             expect(
                                 await page.evaluate(
-                                    () => document.querySelectorAll('.panel__tabs-content .file-match-children__item').length
+                                    () =>
+                                        document.querySelectorAll('.panel__tabs-content .file-match-children__item')
+                                            .length
                                 )
                             ).toEqual(
                                 // Basic code intel finds 8 references with some overlapping context, resulting in 4 hunks.
