@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -302,11 +301,7 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf h
 	baseURL = NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewFactory(
-			nil, // No middleware for now. Use this for Prometheus instrumentation later.
-			httpcli.TracedTransportOpt,
-			httpcli.NewCachedTransportOpt(httputil.Cache, true),
-		)
+		cf = NewHTTPClientFactory()
 	}
 
 	var opts []httpcli.Opt
