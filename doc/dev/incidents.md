@@ -41,6 +41,12 @@ The goal of triage is to either quickly resolve the incident using basic procedu
         - You can find out who is on-call by typing `/genie whoisoncall` in Slack.
         - If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing `/genie <description of incident and link to Slack thread> with ops_team`.
 
+## Go-to-market (license and subscription) issues
+
+If a customer is experiencing an issue related to their license key or subscription status, any member of the Sourcegraph team has authority to generate a new, valid license key for any customer for any number of users that is **valid for up to 7 days** in the site-admin Subscriptions page on Sourcegraph.com. This will prevent the initial incident responder from being bottlenecked on a member of the go-to-market team that can validate the customer's subscription status.
+
+The incident responder will need to select a Sourcegraph.com account to attach the subscription to (typically the account should belong to the customer, so they can access the license key directly from their user profile, but in an emergency, the incident responder can use their own account in lieu of asking the customer), and can then manually generate a license key. No license "tags" are necessary.
+
 ## Resolution owner
 
 The resolution owner is responsible for resolving the incident as quickly and safely as possible. 
