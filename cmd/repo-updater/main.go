@@ -23,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -52,8 +50,14 @@ func main() {
 
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
+	cliFactory := repos.NewHTTPClientFactory()
+	src := repos.NewSourcer(cliFactory)
+
 	for _, m := range []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
+		// TODO(tsenart): Enable the following migrations once we implement the
+		// functionality needed to run them only once.
+		//    repos.GithubReposEnabledStateDeprecationMigration(src, clock),
 	} {
 		if err := m.Run(ctx, store); err != nil {
 			log.Fatalf("failed to run migration: %s", err)
@@ -124,16 +128,7 @@ func main() {
 	var syncer *repos.Syncer
 
 	if syncerEnabled {
-
 		diffs := make(chan repos.Diff)
-
-		cliFactory := httpcli.NewFactory(
-			nil, // No middleware for now. Use this for Prometheus instrumentation later.
-			httpcli.TracedTransportOpt,
-			httpcli.NewCachedTransportOpt(httputil.Cache, true),
-		)
-
-		src := repos.NewExternalServicesSourcer(store, cliFactory)
 		syncer = repos.NewSyncer(store, src, diffs, clock)
 
 		log15.Info("starting new syncer", "external service kinds", kinds)

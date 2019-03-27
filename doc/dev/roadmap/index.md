@@ -11,8 +11,6 @@ This roadmap shows what's planned for the next 12 months. See the [Sourcegraph m
 
 We ship a release on the [20th day of each month](../releases.md#releases-are-monthly). See [previous Sourcegraph releases](previous_releases.md).
 
----
-
 ## Overview
 
 We're continually improving Sourcegraph's core features for developers:
