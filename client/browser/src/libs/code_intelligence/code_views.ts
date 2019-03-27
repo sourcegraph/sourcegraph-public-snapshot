@@ -1,36 +1,27 @@
-import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { Observable, of, zip } from 'rxjs'
-import { catchError, concatAll, map, mergeMap } from 'rxjs/operators'
-
+import { from, merge, Observable, of, zip } from 'rxjs'
+import { catchError, concatAll, filter, map, mergeMap } from 'rxjs/operators'
+import { isDefined } from '../../../../../shared/src/util/types'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
-import { CodeHost, FileInfo, ResolvedCodeView } from './code_intelligence'
+import { CodeHost, CodeViewSpec, CodeViewSpecResolver, FileInfo, ResolvedCodeView } from './code_intelligence'
 
-const findCodeViews = ({ codeViewSpecs, codeViewSpecResolver }: CodeHost, nodes: Iterable<Node>): ResolvedCodeView[] =>
-    [...nodes]
-        .filter((node): node is HTMLElement => node instanceof HTMLElement)
-        .flatMap(element => [
-            ...(codeViewSpecs
-                ? codeViewSpecs
-                      // Find all new code views within the added element
-                      // (MutationObservers don't emit all descendant nodes of an addded node recursively)
-                      .map(({ selector, ...info }) => ({
-                          info,
-                          matches: Array.from(querySelectorAllOrSelf(element, selector)),
-                      }))
-                      .flatMap(({ info, matches }) => matches.map(codeViewElement => ({ ...info, codeViewElement })))
-                : []),
-            // code views from resolver
-            ...(codeViewSpecResolver
-                ? Array.from(querySelectorAllOrSelf(element, codeViewSpecResolver.selector))
-                      .map(codeViewElement => ({
-                          resolved: codeViewSpecResolver.resolveCodeViewSpec(codeViewElement),
-                          codeViewElement,
-                      }))
-                      .filter(propertyIsDefined('resolved'))
-                      .map(({ resolved, ...rest }) => ({ ...resolved, ...rest }))
-                : []),
-        ])
+export interface AddedCodeView extends ResolvedCodeView {
+    type: 'added'
+}
+
+export interface RemovedCodeView extends Pick<ResolvedCodeView, 'codeViewElement'> {
+    type: 'removed'
+}
+
+export type CodeViewEvent = AddedCodeView | RemovedCodeView
+
+const isHTMLElement = (node: unknown): node is HTMLElement => node instanceof HTMLElement
+
+/** Converts a static CodeViewSpec to a dynamic CodeViewSpecResolver */
+const toCodeViewResolver = ({ selector, ...spec }: CodeViewSpec): CodeViewSpecResolver => ({
+    selector,
+    resolveCodeViewSpec: () => spec,
+})
 
 /**
  * Find all the code views on a page given a CodeHostSpec from DOM mutations.
@@ -39,23 +30,63 @@ const findCodeViews = ({ codeViewSpecs, codeViewSpecResolver }: CodeHost, nodes:
  *
  * At any given time, there can be 0-n code views on a page.
  */
-export const trackCodeViews = (codeHost: CodeHost) => (
+export const trackCodeViews = ({
+    codeViewSpecs = [],
+    codeViewSpecResolver,
+}: Pick<CodeHost, 'codeViewSpecs' | 'codeViewSpecResolver'>) => (
     mutations: Observable<MutationRecordLike[]>
-): Observable<ResolvedCodeView & { type: 'added' | 'removed' }> =>
-    mutations.pipe(
+): Observable<CodeViewEvent> => {
+    const codeViewSpecResolvers = codeViewSpecs.map(toCodeViewResolver)
+    if (codeViewSpecResolver) {
+        codeViewSpecResolvers.push(codeViewSpecResolver)
+    }
+    return mutations.pipe(
         concatAll(),
-        mergeMap(mutation => [
-            ...findCodeViews(codeHost, mutation.addedNodes).map(codeView => ({
-                type: 'added' as 'added',
-                ...codeView,
-            })),
-            ...findCodeViews(codeHost, mutation.removedNodes).map(codeView => ({
-                type: 'removed' as 'removed',
-                ...codeView,
-            })),
-        ])
+        mergeMap(mutation =>
+            merge(
+                // Find all new code views within the added nodes
+                // (MutationObservers don't emit all descendant nodes of an addded node recursively)
+                from(mutation.addedNodes).pipe(
+                    filter(isHTMLElement),
+                    mergeMap(addedElement =>
+                        from(codeViewSpecResolvers).pipe(
+                            mergeMap(spec =>
+                                [...(querySelectorAllOrSelf(addedElement, spec.selector) as Iterable<HTMLElement>)]
+                                    .map(codeViewElement => {
+                                        const codeViewSpec = spec.resolveCodeViewSpec(codeViewElement)
+                                        return (
+                                            codeViewSpec && {
+                                                ...codeViewSpec,
+                                                codeViewElement,
+                                                type: 'added' as 'added',
+                                            }
+                                        )
+                                    })
+                                    .filter(isDefined)
+                            )
+                        )
+                    )
+                ),
+                // For removed nodes, find the removed elements, but don't resolve the kind (it's not relevant)
+                from(mutation.removedNodes).pipe(
+                    filter(isHTMLElement),
+                    mergeMap(removedElement =>
+                        from(codeViewSpecResolvers).pipe(
+                            mergeMap(
+                                ({ selector }) =>
+                                    querySelectorAllOrSelf(removedElement, selector) as Iterable<HTMLElement>
+                            ),
+                            map(codeViewElement => ({
+                                codeViewElement,
+                                type: 'removed' as 'removed',
+                            }))
+                        )
+                    )
+                )
+            )
+        )
     )
-// .pipe(emitWhenIntersecting(250))
+}
 
 export interface FileInfoWithContents extends FileInfo {
     content?: string

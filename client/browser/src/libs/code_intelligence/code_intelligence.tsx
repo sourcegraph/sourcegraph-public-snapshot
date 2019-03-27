@@ -475,21 +475,19 @@ export function handleCodeHost({
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
         tap(codeView => console.log('CodeView ' + codeView.type, codeView.codeViewElement)),
-        mergeMap(({ type, codeViewElement, resolveFileInfo, ...rest }) =>
-            type === 'added'
-                ? resolveFileInfo(codeViewElement).pipe(
+        mergeMap(codeViewEvent =>
+            codeViewEvent.type === 'added'
+                ? codeViewEvent.resolveFileInfo(codeViewEvent.codeViewElement).pipe(
                       mergeMap(fileInfo =>
                           fetchFileContents(fileInfo).pipe(
                               map(fileInfoWithContents => ({
                                   fileInfo: fileInfoWithContents,
-                                  type,
-                                  codeViewElement,
-                                  ...rest,
+                                  ...codeViewEvent,
                               }))
                           )
                       )
                   )
-                : [{ type, codeViewElement, resolveFileInfo, ...rest }]
+                : [codeViewEvent]
         ),
         catchError(err => {
             if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
