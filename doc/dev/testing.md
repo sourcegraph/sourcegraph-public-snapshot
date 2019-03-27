@@ -107,7 +107,7 @@ If the element you are trying to select appears multiple times on the page (e.g.
 ```HTML
 <div data-e2e-item-name={this.props.name}>
   <span>{this.props.name}</span>
-  <button>Delete</span>
+  <button className="e2e-item-delete-button">Delete</button>
 </div>
 ```
 
