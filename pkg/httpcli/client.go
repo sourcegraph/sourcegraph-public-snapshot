@@ -99,10 +99,8 @@ func ContextErrorMiddleware(cli Doer) Doer {
 		if err != nil {
 			// If we got an error, and the context has been canceled,
 			// the context's error is probably more useful.
-			if ctx := req.Context(); ctx != nil {
-				if e := ctx.Err(); e != nil {
-					err = e
-				}
+			if e := req.Context().Err(); e != nil {
+				err = e
 			}
 		}
 		return resp, err
