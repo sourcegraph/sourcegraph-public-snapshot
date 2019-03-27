@@ -156,7 +156,7 @@ func Test_autoFix(t *testing.T) {
 		{"a(", `a\(`},
 		{"(a", `(a`},
 		{"(a)", "(a)"},
-		{"\bfoo(", `\bfoo\(`},
+		{`\bfoo(`, `\bfoo\(`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.pat, func(t *testing.T) {
