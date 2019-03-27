@@ -3,6 +3,7 @@ import { isEqual } from 'lodash'
 import { combineLatest, from, of, ReplaySubject, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'
+import { isDefined } from '../../../util/types'
 import { ContributableViewContainer, TextDocumentPositionParams } from '../../protocol'
 import { modelToTextDocumentPositionParams } from '../model'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
@@ -44,7 +45,7 @@ export class ClientViews implements ClientViewsAPI {
                 ),
                 panelView.pipe(
                     map(({ component }) => component),
-                    filter((component): component is { locationProvider: string } => Boolean(component)),
+                    filter(isDefined),
                     map(({ locationProvider }) => locationProvider),
                     distinctUntilChanged(),
                     map(locationProvider =>
