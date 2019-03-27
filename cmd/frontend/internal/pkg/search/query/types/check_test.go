@@ -186,6 +186,9 @@ func Test_autoFix(t *testing.T) {
 			if _, err := regexp.Compile(tt.want); err != nil {
 				t.Errorf("want %q regexp fails to compile: %s", tt.want, err)
 			}
+			if got := autoFix(tt.want); got != tt.want {
+				t.Errorf("autoFix is not idempotent. autoFix(%q) = %q", tt.want, got)
+			}
 		})
 	}
 }
