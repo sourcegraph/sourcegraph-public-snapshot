@@ -145,14 +145,14 @@ func TestUnquoteString(t *testing.T) {
 
 func Test_autoFix(t *testing.T) {
 	tests := []struct {
-		pat string
+		pat  string
 		want string
 	}{
 		{"", ""},
-		{ "a", "a"},
-		{ "(", `\(`},
-		{ "[", `\[`},
-		{ "{", `\{`},
+		{"a", "a"},
+		{"(", `\(`},
+		{"[", `\[`},
+		{"{", `\{`},
 		{"a(", `a\(`},
 		{"(a", `(a`},
 		{"(a)", "(a)"},
