@@ -6,7 +6,6 @@ import (
 	"database/sql/driver"
 	"net/url"
 	"os"
-	"os/user"
 	"strconv"
 	"time"
 
@@ -34,29 +33,11 @@ type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
-// NewDSN returns a default DSN overriden with PGXXX environment variables.
-func NewDSN() *url.URL {
-	u := DefaultDSN()
+// NewDSNFromEnv returns a DSN based on PGXXX environment variables.
+func NewDSNFromEnv() string {
+	u := &url.URL{Scheme: "postgres"}
 	UpdateDSNFromEnv(u)
-	return u
-}
-
-// DefaultDSN returns the default DSN used by repo updater.
-func DefaultDSN() *url.URL {
-	username := "postgres"
-
-	user, err := user.Current()
-	if err == nil {
-		username = user.Username
-	}
-
-	return &url.URL{
-		Scheme:   "postgres",
-		User:     url.User(username),
-		Host:     "127.0.0.1:5432",
-		Path:     "/sourcegraph",
-		RawQuery: "sslmode=false",
-	}
+	return u.String()
 }
 
 // UpdateDSNFromEnv updates dsn based on PGXXX environment variables.
