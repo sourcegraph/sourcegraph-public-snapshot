@@ -149,15 +149,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	resp, err := c.httpClient.Do(req.WithContext(ctx))
-	// If we got an error, and the context has been canceled,
-	// the context's error is probably more useful.
 	if err != nil {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			return err
-		}
+		return err
 	}
 
 	defer resp.Body.Close()
