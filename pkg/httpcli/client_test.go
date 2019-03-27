@@ -20,14 +20,13 @@ func TestContextErrorMiddleware(t *testing.T) {
 		err  string
 	}{
 		{
-			name: "no context, with doer error",
-			cli:  newFakeClient(http.StatusOK, nil, errors.New("boom")),
-			err:  "boom",
+			name: "no context error, no doer error",
+			cli:  newFakeClient(http.StatusOK, nil, nil),
+			err:  "<nil>",
 		},
 		{
-			name: "with context and doer error",
+			name: "no context error, with doer error",
 			cli:  newFakeClient(http.StatusOK, nil, errors.New("boom")),
-			ctx:  context.Background(),
 			err:  "boom",
 		},
 		{
