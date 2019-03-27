@@ -53,7 +53,7 @@ func DefaultDSN() *url.URL {
 	return &url.URL{
 		Scheme:   "postgres",
 		User:     url.User(username),
-		Host:     "localhost:5432",
+		Host:     "127.0.0.1:5432",
 		Path:     "/sourcegraph",
 		RawQuery: "sslmode=false",
 	}
