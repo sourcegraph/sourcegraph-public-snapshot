@@ -265,7 +265,7 @@ describe('e2e test suite', function(this: any): void {
             "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
-        await page.waitForSelector('.panel__tabs-content .file-match__item')
+        await page.waitForSelector('.panel__tabs-content .file-match-children__item')
     }
 
     const assertNonemptyExternalRefs = async (): Promise<void> => {
@@ -817,7 +817,7 @@ describe('e2e test suite', function(this: any): void {
                 )
                 expect(label.includes('results')).toEqual(true)
             })
-            await page.waitForSelector('.e2e-file-match-item')
+            await page.waitForSelector('.e2e-file-match-children-item')
         })
 
         test('renders results for sourcegraph/go-diff (no search group)', async () => {
@@ -833,10 +833,13 @@ describe('e2e test suite', function(this: any): void {
                 expect(label.includes('results')).toEqual(true)
             })
 
-            const firstFileMatchHref = await page.$eval('.e2e-file-match-item', a => (a as HTMLAnchorElement).href)
+            const firstFileMatchHref = await page.$eval(
+                '.e2e-file-match-children-item',
+                a => (a as HTMLAnchorElement).href
+            )
 
             // navigate to result on click
-            await page.click('.e2e-file-match-item')
+            await page.click('.e2e-file-match-children-item')
 
             await retry(async () => {
                 expect(await page.evaluate(() => window.location.href)).toEqual(firstFileMatchHref)
