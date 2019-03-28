@@ -34,6 +34,6 @@ You can see a demo of this below.
 
 Save time when you're (for example) writing a new HTTP transport:
 
-1. [**Search for `http.(RoundTripper|Transport)`**](/search?q=http.%28Transport%7CRoundTripper%29)
+1. [**Search for `http.(RoundTripper|Transport)`**](https://sourcegraph.com/search?q=http.%28Transport%7CRoundTripper%29)
 1. Add [`type:diff author:Keegan`](https://sourcegraph.com/search?q=http.%28Transport%7CRoundTripper%29+type:diff+author:keegan) to the query to find recent code from your smart teammate
 1. Explore from there!
