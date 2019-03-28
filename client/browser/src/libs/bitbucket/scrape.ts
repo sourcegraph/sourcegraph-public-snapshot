@@ -6,13 +6,8 @@ interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
     repoSlug: string
 }
 
-const getFileInfoFromLink = (codeView: HTMLElement, linkSelector: string, fileInfoRegexp: RegExp) => {
-    const rawViewLink = codeView.querySelector<HTMLAnchorElement>(linkSelector)
-    if (!rawViewLink) {
-        throw new Error(`could not find raw view link for code view (${linkSelector})`)
-    }
-
-    const url = new URL(rawViewLink.href)
+const getFileInfoFromLink = (linkElement: HTMLLinkElement, fileInfoRegexp: RegExp): PageInfo => {
+    const url = new URL(linkElement.href)
 
     const host = window.location.hostname
 
@@ -45,21 +40,53 @@ const getFileInfoFromLink = (codeView: HTMLElement, linkSelector: string, fileIn
         repoSlug,
     }
 }
-
-export const getFileInfoFromCodeView = (codeView: HTMLElement): PageInfo & Pick<FileInfo, 'commitID'> => {
-    const { repoName, filePath, rev, project, repoSlug } = getFileInfoFromLink(
-        codeView,
-        'a.raw-view-link',
+const LINK_SPECS: { selector: string; regex: RegExp }[] = [
+    {
+        selector: 'a.raw-view-link',
         // Looks like '/projects/<project>/repos/<repo name>/raw/<file path>'
-        /\/projects\/(.*?)\/repos\/(.*?)\/raw\/(.*)$/
-    )
+        regex: /\/projects\/(.*?)\/repos\/(.*?)\/raw\/(.*)$/,
+    },
+    {
+        selector: 'a.source-view-link',
+        // Looks like /projects/<project>/repos/<repo>/browse/<file path>?at=<rev>
+        regex: /\/projects\/(.*?)\/repos\/(.*?)\/browse\/(.*)$/,
+    },
+    {
+        selector: 'a.mode-source',
+        // Looks like /projects/<project>/repos/<repo>/browse/<file path>?at=<rev>
+        regex: /\/projects\/(.*?)\/repos\/(.*?)\/browse\/(.*)$/,
+    },
+]
 
+const getPageInfoFromLinkSpecs = (codeView: HTMLElement): PageInfo => {
+    for (const { selector, regex } of LINK_SPECS) {
+        const linkElement = codeView.querySelector(selector) as HTMLLinkElement | null
+        if (linkElement) {
+            try {
+                return getFileInfoFromLink(linkElement, regex)
+            } catch (err) {
+                continue
+            }
+        }
+    }
+    throw new Error('Could not get PageInfo from links')
+}
+
+const getCommitIDFromLink = (): string | null => {
     const commitLink = document.querySelector<HTMLElement>('a.commitid')
     if (!commitLink) {
-        throw new Error('Could not find commit id link')
+        return null
     }
 
-    const commitID = commitLink.dataset.commitid!
+    return commitLink.dataset.commitid!
+}
+
+export const getFileInfoFromCodeView = (codeView: HTMLElement): PageInfo & Pick<FileInfo, 'commitID'> => {
+    const { repoName, filePath, rev, project, repoSlug } = getPageInfoFromLinkSpecs(codeView)
+    const commitID = getCommitIDFromLink()
+    if (!commitID) {
+        throw new Error('Could not find commit ID from link')
+    }
 
     return {
         repoName,
@@ -117,16 +144,10 @@ export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
     let filePath: string
     let project: string
     let repoSlug: string
-    let commitID: string | undefined
+    let commitID: string | null | undefined
 
     try {
-        const info = getFileInfoFromLink(
-            codeView,
-            'a.source-view-link',
-            // Looks like /projects/<project>/repos/<repo>/browse/<file path>?at=<rev>
-            /\/projects\/(.*?)\/repos\/(.*?)\/browse\/(.*)$/
-        )
-
+        const info = getPageInfoFromLinkSpecs(codeView)
         repoName = info.repoName
         filePath = info.filePath
         project = info.project
@@ -144,17 +165,7 @@ export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
     const prIDMatch = window.location.pathname.match(/pull-requests\/(\d*?)\/(diff|overview|commits)/)
 
     if (!commitID) {
-        const fromCommitLink = document.querySelector<HTMLAnchorElement>('.file-tree-header a.commitid')
-        if (fromCommitLink) {
-            commitID = fromCommitLink.dataset.commitid!
-        }
-
-        // Commit page
-        if (!commitID) {
-            const commitLink = document.querySelector<HTMLElement>('.commit-metadata-details .commitid')
-
-            commitID = commitLink ? commitLink.dataset.commitid! : undefined
-        }
+        commitID = getCommitIDFromLink()
     }
 
     return {
