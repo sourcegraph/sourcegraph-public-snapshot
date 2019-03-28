@@ -167,38 +167,37 @@ func Test_autoFix(t *testing.T) {
 			// Unclosed curly braces are already valid regular expressions.
 			{"{", `{`},
 			{"a(", `a\(`},
-			{"(a", `\(a`},
+			{"(a", `(a`},
 			{"(a)", "(a)"},
 			{`\ba(`, `\ba\(`},
 			{`\bfoo(`, `\bfoo\(`},
-			{"*", `\*`},
-			{"*a", `\*a`},
+			{"*", `*`},
+			{"*a", `*a`},
 			{"a*", "a*"},
-			// For PHP:
-			{"$myvar", `\$myvar`},
-			{"$f(", `\$f\(`},
-			// No one is likely to want a group that can only contain nothing.
-			{"f()", `f\(\)`},
-			{"()", `\(\)`},
+			{"$myvar", `$myvar`},
+			{"$f(", `$f\(`},
+			{"f()", `f()`},
+			{"()", `()`},
 			{`(\()`, `(\()`},
-			{"()f", `\(\)f`},
-			{"f(a", `f\(a`},
-			{"f(a,", `f\(a,`},
-			{"b)", `b\)`},
-			// The parens in [)(] could be escaped or not. It doesn't really matter.
+			{"()f", `()f`},
+			{"f(a", `f(a`},
+			{"f(a,", `f(a,`},
+			{"b)", `b)`},
 			{"[)(]", `[)(]`},
-			// Special characters can appear in character classes.
-			// These escapes arguably aren't necessary, but they should not cause any problem in practice.
-			{"[(]", `[\(]`},
-			{"[()]", `[\(\)]`},
+			{"[(]", `[(]`},
+			{"[()]", `[()]`},
 		}
 		for _, tt := range tests {
 			t.Run(tt.pat, func(t *testing.T) {
 				if got := autoFix(tt.pat); got != tt.want {
 					t.Errorf("autoFix(`%v`) = `%v`, want `%v`", tt.pat, got, tt.want)
 				}
-				if _, err := regexp.Compile(tt.want); err != nil {
-					t.Errorf("want %q regexp fails to compile: %s", tt.want, err)
+				// Make sure autoFix never causes regexes that compile to no longer compile.
+				_, err := regexp.Compile(tt.pat)
+				if err == nil {
+					if _, err := regexp.Compile(tt.want); err != nil {
+						t.Errorf("want %q regexp fails to compile: %s", tt.want, err)
+					}
 				}
 				once := autoFix(tt.pat)
 				twice := autoFix(once)
