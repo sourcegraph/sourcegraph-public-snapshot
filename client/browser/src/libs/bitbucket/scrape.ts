@@ -6,70 +6,53 @@ interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
     repoSlug: string
 }
 
-const getFileInfoFromLink = (linkElement: HTMLLinkElement, fileInfoRegexp: RegExp): PageInfo => {
-    const url = new URL(linkElement.href)
+const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source']
 
-    const host = window.location.hostname
+const getFileInfoFromLink = (codeView: HTMLElement): PageInfo => {
+    const pageInfo = LINK_SELECTORS.map(
+        (selector): PageInfo | null => {
+            const linkElement = codeView.querySelector(selector) as HTMLLinkElement | null
+            if (!linkElement) {
+                return null
+            }
+            const url = new URL(linkElement.href)
+            const host = window.location.hostname
+            const path = url.pathname
 
-    const path = url.pathname
+            // Looks like /projects/<project>/repos/<repo>/(browse|raw)/<file path>?at=<rev>
+            const pathMatch = path.match(/\/projects\/(.*?)\/repos\/(.*?)\/(browse|raw)\/(.*)$/)
+            if (!pathMatch) {
+                return null
+            }
 
-    const pathMatch = path.match(fileInfoRegexp)
-    if (!pathMatch) {
-        throw new Error('Unable to parse file information')
-    }
+            const project = pathMatch[1]
+            const repoSlug = pathMatch[2]
+            const filePath = pathMatch[4]
 
-    const project = pathMatch[1]
-    const repoSlug = pathMatch[2]
-    const filePath = pathMatch[3]
+            // Looks like 'refs/heads/<rev>'
+            const at = url.searchParams.get('at')
+            if (!at) {
+                return null
+            }
 
-    // Looks like 'refs/heads/<rev>'
-    const at = url.searchParams.get('at')
-    if (!at) {
-        throw new Error('No `at` query param found')
-    }
+            const atMatch = at.match(/refs\/heads\/(.*?)$/)
 
-    const atMatch = at.match(/refs\/heads\/(.*?)$/)
+            const rev = atMatch ? atMatch[1] : at
 
-    const rev = atMatch ? atMatch[1] : at
-
-    return {
-        repoName: [host, project, repoSlug].join('/'),
-        filePath,
-        rev,
-        project,
-        repoSlug,
-    }
-}
-const LINK_SPECS: { selector: string; regex: RegExp }[] = [
-    {
-        selector: 'a.raw-view-link',
-        // Looks like '/projects/<project>/repos/<repo name>/raw/<file path>'
-        regex: /\/projects\/(.*?)\/repos\/(.*?)\/raw\/(.*)$/,
-    },
-    {
-        selector: 'a.source-view-link',
-        // Looks like /projects/<project>/repos/<repo>/browse/<file path>?at=<rev>
-        regex: /\/projects\/(.*?)\/repos\/(.*?)\/browse\/(.*)$/,
-    },
-    {
-        selector: 'a.mode-source',
-        // Looks like /projects/<project>/repos/<repo>/browse/<file path>?at=<rev>
-        regex: /\/projects\/(.*?)\/repos\/(.*?)\/browse\/(.*)$/,
-    },
-]
-
-const getPageInfoFromLinkSpecs = (codeView: HTMLElement): PageInfo => {
-    for (const { selector, regex } of LINK_SPECS) {
-        const linkElement = codeView.querySelector(selector) as HTMLLinkElement | null
-        if (linkElement) {
-            try {
-                return getFileInfoFromLink(linkElement, regex)
-            } catch (err) {
-                continue
+            return {
+                repoName: [host, project, repoSlug].join('/'),
+                filePath,
+                rev,
+                project,
+                repoSlug,
             }
         }
+    ).find(value => value !== null)
+    if (!pageInfo) {
+        throw new Error('Could not parse page info from link element')
+    } else {
+        return pageInfo
     }
-    throw new Error('Could not get PageInfo from links')
 }
 
 const getCommitIDFromLink = (): string | null => {
@@ -82,7 +65,7 @@ const getCommitIDFromLink = (): string | null => {
 }
 
 export const getFileInfoFromCodeView = (codeView: HTMLElement): PageInfo & Pick<FileInfo, 'commitID'> => {
-    const { repoName, filePath, rev, project, repoSlug } = getPageInfoFromLinkSpecs(codeView)
+    const { repoName, filePath, rev, project, repoSlug } = getFileInfoFromLink(codeView)
     const commitID = getCommitIDFromLink()
     if (!commitID) {
         throw new Error('Could not find commit ID from link')
@@ -147,7 +130,7 @@ export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
     let commitID: string | null | undefined
 
     try {
-        const info = getPageInfoFromLinkSpecs(codeView)
+        const info = getFileInfoFromLink(codeView)
         repoName = info.repoName
         filePath = info.filePath
         project = info.project
