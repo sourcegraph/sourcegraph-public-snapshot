@@ -10,9 +10,7 @@ We loved meeting so many awesome and talented engineers at dotGo EU 2019. The Go
   <img src="https://user-images.githubusercontent.com/133014/55120082-ba819a00-50b1-11e9-8823-6a1fead17a42.jpg" style="width:60%;" />
 </p>
 
-> NOTE: If you weren't able to chat with us at the conference and want guidance for setting up Sourcegraph for your team, head to the [dotGo page](https://about.sourcegraph.com/dotgo) to leave your contact info.
->
-> And don't worry, we're not going to spam you, or add you to any mailing lists.
+> NOTE: If you weren't able to chat with us at the conference and want guidance for setting up Sourcegraph for your team, [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:hi@sourcegraph.com?subject=dotGo%202019).
 
 The demos you saw at the conference are below:
 
