@@ -56,7 +56,7 @@ func TestSearchResults(t *testing.T) {
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 
-		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.Args, limit int32) ([]*searchResultResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -88,7 +88,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
@@ -99,13 +99,13 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.Args, limit int32) ([]*searchResultResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
-			return []*fileMatchResolver{
-				{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},
+			return []*searchResultResolver{
+				{fileMatch: &fileMatchResolver{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}}},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()

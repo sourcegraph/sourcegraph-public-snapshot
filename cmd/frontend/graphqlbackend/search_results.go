@@ -803,7 +803,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, int(r.maxResults()))
+				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, r.maxResults())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -811,6 +811,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					multiErrMu.Unlock()
 				}
 				for _, symbolFileMatch := range symbolFileMatches {
+					symbolFileMatch := symbolFileMatch.fileMatch
 					key := symbolFileMatch.uri
 					fileMatchesMu.Lock()
 					if m, ok := fileMatches[key]; ok {
@@ -840,7 +841,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
+				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.maxResults())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -848,6 +849,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					multiErrMu.Unlock()
 				}
 				for _, r := range fileResults {
+					r := r.fileMatch
 					key := r.uri
 					fileMatchesMu.Lock()
 					m, ok := fileMatches[key]
@@ -874,7 +876,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
+				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args, r.maxResults())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -898,7 +900,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
+				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args, r.maxResults())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
