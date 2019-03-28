@@ -292,7 +292,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
-				`file:\.md$`:      {},
+				`lang:markdown`:   {},
 				`case:yes`:        {},
 			},
 		},
@@ -306,7 +306,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$@develop`: {},
-				`file:\.md$`:              {},
+				`lang:markdown`:           {},
 				`case:yes`:                {},
 			},
 		},
