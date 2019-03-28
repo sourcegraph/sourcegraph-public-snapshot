@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -329,11 +328,7 @@ func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewFactory(
-			nil, // No middleware for now. Use this for Prometheus instrumentation later.
-			httpcli.TracedTransportOpt,
-			httpcli.NewCachedTransportOpt(httputil.Cache, true),
-		)
+		cf = NewHTTPClientFactory()
 	}
 
 	var opts []httpcli.Opt

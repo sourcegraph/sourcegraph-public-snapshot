@@ -40,3 +40,42 @@ func Normalize(input string) []byte {
 	}
 	return output
 }
+
+// Remove returns the input JSON with the given path removed.
+func Remove(input string, path ...string) (string, error) {
+	edits, _, err := jsonx.ComputePropertyRemoval(input,
+		jsonx.PropertyPath(path...),
+		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
+	)
+
+	if err != nil {
+		return input, err
+	}
+
+	return jsonx.ApplyEdits(input, edits...)
+}
+
+// Edit returns the input JSON with the given path set to v.
+func Edit(input string, v interface{}, path ...string) (string, error) {
+	edits, _, err := jsonx.ComputePropertyEdit(input,
+		jsonx.PropertyPath(path...),
+		v,
+		nil,
+		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
+	)
+
+	if err != nil {
+		return input, err
+	}
+
+	return jsonx.ApplyEdits(input, edits...)
+}
+
+// Format returns the input JSON formatted with the given options.
+func Format(input string, spaces bool, tabsize int) (string, error) {
+	opts := jsonx.FormatOptions{
+		InsertSpaces: spaces,
+		TabSize:      tabsize,
+	}
+	return jsonx.ApplyEdits(input, jsonx.Format(input, opts)...)
+}

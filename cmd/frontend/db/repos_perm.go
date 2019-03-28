@@ -76,6 +76,11 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 	accepted = make(map[api.RepoName]struct{})  // repositories that have been claimed and have read permissions
 	unverified := make(map[authz.Repo]struct{}) // repositories that have not been claimed by any authz provider
 	for repo := range repos {
+		// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
+		// where they came from, so can't reliably enforce permissions)
+		if s := repo.ExternalRepoSpec; s.ID == "" || s.ServiceID == "" || s.ServiceType == "" {
+			continue
+		}
 		unverified[repo] = struct{}{}
 	}
 

@@ -20,10 +20,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
+	sgzoekt "github.com/sourcegraph/sourcegraph/pkg/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/rpc"
 )
 
 func TestText(t *testing.T) {
@@ -157,7 +157,7 @@ func TestText(t *testing.T) {
 				}
 				t.Log(q)
 			}
-			_, err := s.Search(context.Background(), q, &search.Options{Repositories: repoList(c.Repos)})
+			_, err := s.Search(context.Background(), q, &sgzoekt.Options{Repositories: repoList(c.Repos)})
 			assertError(t, err, c.WantError)
 
 			var gotIndexParts []string
@@ -197,7 +197,7 @@ func TestText(t *testing.T) {
 	}
 }
 
-func openServer(t *testing.T, s search.Searcher) (string, func()) {
+func openServer(t *testing.T, s sgzoekt.Searcher) (string, func()) {
 	server, err := rpc.Server(s)
 	if err != nil {
 		t.Fatal(err)
@@ -218,7 +218,7 @@ func TestText_error(t *testing.T) {
 		Client:       mz,
 		DisableCache: true,
 	}
-	fallback := &backend.Mock{Result: &search.Result{}}
+	fallback := &backend.Mock{Result: &sgzoekt.Result{}}
 	s := &backend.Text{
 		Index:    index,
 		Fallback: fallback,
@@ -229,7 +229,7 @@ func TestText_error(t *testing.T) {
 	defer s.Close()
 
 	expectError := func(e string) {
-		_, err := s.Search(context.Background(), &query.Const{Value: true}, &search.Options{Repositories: repoList("a b")})
+		_, err := s.Search(context.Background(), &query.Const{Value: true}, &sgzoekt.Options{Repositories: repoList("a b")})
 		assertError(t, err, e)
 	}
 
@@ -277,7 +277,7 @@ func TestZoekt(t *testing.T) {
 		Name string
 
 		Q          query.Q
-		Opts       *search.Options
+		Opts       *sgzoekt.Options
 		WantResult string
 		WantError  string
 
@@ -288,40 +288,40 @@ func TestZoekt(t *testing.T) {
 	}{{
 		Name: "simple",
 		Q:    parse("foo"),
-		Opts: &search.Options{Repositories: repoList("a")},
+		Opts: &sgzoekt.Options{Repositories: repoList("a")},
 
 		ZoektResult: &zoekt.SearchResult{},
 		WantZoektQ:  `(and (reposet a) substr:"foo")`,
 	}, {
 		Name: "ref",
 		Q:    parse("(foo ref:x) or bar"),
-		Opts: &search.Options{Repositories: repoList("a")},
+		Opts: &sgzoekt.Options{Repositories: repoList("a")},
 
 		ZoektResult: &zoekt.SearchResult{},
 		WantZoektQ:  `(and (reposet a) substr:"bar")`,
 	}, {
 		Name: "complex",
 		Q:    query.NewAnd(parse("type:file -foo$"), query.NewRepoSet("a")),
-		Opts: &search.Options{Repositories: repoList("a")},
+		Opts: &sgzoekt.Options{Repositories: repoList("a")},
 
 		ZoektResult: &zoekt.SearchResult{},
 		WantZoektQ:  `(and (reposet a) (type:filematch (not regex:"foo(?m:$)")) (reposet a))`,
 	}, {
 		Name: "error-repo",
 		Q:    parse("foo r:a"),
-		Opts: &search.Options{Repositories: repoList("a")},
+		Opts: &sgzoekt.Options{Repositories: repoList("a")},
 
 		WantError: "zoekt does not allow repo atom",
 	}, {
 		Name: "error-empty",
 		Q:    parse("foo"),
-		Opts: &search.Options{},
+		Opts: &sgzoekt.Options{},
 
 		WantError: "repository list empty",
 	}, {
 		Name: "results",
 		Q:    parse("foo"),
-		Opts: &search.Options{Repositories: repoList("a")},
+		Opts: &sgzoekt.Options{Repositories: repoList("a")},
 		WantResult: `
 a:src/do_foo.go
 a:src/do_test.go:6:func foo() {
@@ -451,7 +451,7 @@ func assertError(t *testing.T, err error, contains string) bool {
 	return err != nil
 }
 
-func assertResults(t *testing.T, r *search.Result, want string) {
+func assertResults(t *testing.T, r *sgzoekt.Result, want string) {
 	t.Helper()
 	var got string
 	if r == nil {
@@ -513,10 +513,10 @@ func diff(b1, b2 string) (string, error) {
 
 type mockCollectRepos struct {
 	mu    sync.Mutex
-	Repos []search.Repository
+	Repos []sgzoekt.Repository
 }
 
-func (m *mockCollectRepos) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
+func (m *mockCollectRepos) Search(ctx context.Context, q query.Q, opts *sgzoekt.Options) (*sgzoekt.Result, error) {
 	var commits []api.CommitID
 	var patterns []string
 	query.VisitAtoms(q, func(q query.Q) {
@@ -532,24 +532,24 @@ func (m *mockCollectRepos) Search(ctx context.Context, q query.Q, opts *search.O
 	defer m.mu.Unlock()
 	for _, name := range opts.Repositories {
 		if len(commits) == 0 && len(patterns) == 0 {
-			m.Repos = append(m.Repos, search.Repository{
+			m.Repos = append(m.Repos, sgzoekt.Repository{
 				Name: name,
 			})
 		}
 		for _, c := range commits {
-			m.Repos = append(m.Repos, search.Repository{
+			m.Repos = append(m.Repos, sgzoekt.Repository{
 				Name:   name,
 				Commit: c,
 			})
 		}
 		for _, p := range patterns {
-			m.Repos = append(m.Repos, search.Repository{
+			m.Repos = append(m.Repos, sgzoekt.Repository{
 				Name:       name,
 				RefPattern: p,
 			})
 		}
 	}
-	return &search.Result{}, nil
+	return &sgzoekt.Result{}, nil
 }
 
 func (m *mockCollectRepos) Close() {}

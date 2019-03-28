@@ -86,6 +86,28 @@ func NewFactory(stack Middleware, common ...Opt) Factory {
 }
 
 //
+// Common Middleware
+//
+
+// ContextErrorMiddleware wraps a Doer with context.Context error
+// handling.  It checks if the request context is done, and if so,
+// returns its error. Otherwise it returns the error from the inner
+// Doer call.
+func ContextErrorMiddleware(cli Doer) Doer {
+	return DoerFunc(func(req *http.Request) (*http.Response, error) {
+		resp, err := cli.Do(req)
+		if err != nil {
+			// If we got an error, and the context has been canceled,
+			// the context's error is probably more useful.
+			if e := req.Context().Err(); e != nil {
+				err = e
+			}
+		}
+		return resp, err
+	})
+}
+
+//
 // Common Opts
 //
 
