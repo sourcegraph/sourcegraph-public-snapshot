@@ -14,7 +14,7 @@ We loved meeting so many awesome and talented engineers at dotGo EU 2019. The Go
 >
 > And don't worry, we're not going to spam you, or add you to any mailing lists.
 
-The content for the two demos we showed at the conference are below.
+The demos you saw at the conference are below:
 
 ## 👉 IDE-like code intelligence on GitHub PRs
 
