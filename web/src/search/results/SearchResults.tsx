@@ -26,7 +26,7 @@ import { SearchResultsList } from './SearchResultsList'
 
 const UI_PAGE_SIZE = 75
 
-export interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
+interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
