@@ -1,4 +1,5 @@
 import { FileInfo } from '../code_intelligence'
+import { DiffResolvedRevSpec } from '../../shared/repo'
 
 interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
     project: string
@@ -163,5 +164,17 @@ export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
         prID: prIDMatch ? parseInt(prIDMatch[1], 10) : undefined,
         project: project!,
         repoSlug: repoSlug!,
+    }
+}
+
+export function getResolvedDiffFromBranchComparePage(): DiffResolvedRevSpec {
+    const headCommitElement = document.querySelector('#branch-compare .source-selector a.commitid[data-commitid]')
+    const baseCommitElement = document.querySelector('#branch-compare .target-selector a.commitid[data-commitid]')
+    if (!headCommitElement || !baseCommitElement) {
+        throw new Error('Could not resolve Bitbucket compare diff spec')
+    }
+    return {
+        headCommitID: headCommitElement.getAttribute('data-commitid')!,
+        baseCommitID: baseCommitElement.getAttribute('data-commitid')!,
     }
 }

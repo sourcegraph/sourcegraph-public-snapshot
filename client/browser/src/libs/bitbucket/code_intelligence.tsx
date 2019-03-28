@@ -4,7 +4,7 @@ import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../sha
 import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
-import { resolveDiffFileInfo, resolveFileInfo } from './file_info'
+import { resolveCompareFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
 
 const createToolbarMount = (codeView: HTMLElement) => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
@@ -81,12 +81,21 @@ const diffCodeView: CodeViewWithOutSelector = {
     },
 }
 
+const branchCompareCodeView: CodeViewWithOutSelector = {
+    ...diffCodeView,
+    resolveFileInfo: resolveCompareFileInfo,
+}
+
 const resolveCodeView: CodeViewResolver['resolveCodeView'] = codeView => {
     const contentView = codeView.querySelector('.content-view')
     if (!contentView) {
         return null
     }
 
+    const isBranchCompare = document.querySelector('#branch-compare')
+    if (isBranchCompare) {
+        return branchCompareCodeView
+    }
     const isDiff = contentView.classList.contains('diff-view')
 
     return isDiff ? diffCodeView : singleFileCodeView
