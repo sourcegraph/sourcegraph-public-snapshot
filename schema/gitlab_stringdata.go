@@ -86,7 +86,7 @@ const GitLabSchemaJSON = `{
     "projectQuery": {
       "description": "An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
       "type": "array",
-      "default": ["?membership=true"],
+      "default": ["none"],
       "items": {
         "type": "string"
       }
