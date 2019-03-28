@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -95,65 +94,77 @@ func TestNewSourcer(t *testing.T) {
 }
 
 func TestSources_ListRepos(t *testing.T) {
-	for _, tc := range []struct {
+	type testCase struct {
 		name   string
 		ctx    context.Context
-		svc    ExternalService
+		svcs   ExternalServices
 		assert ReposAssertion
 		err    string
-	}{
-		{
-			name: "github/yielded repos are always enabled",
-			svc: ExternalService{
+	}
+
+	var testCases []testCase
+	{
+		svcs := ExternalServices{
+			{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
-					Url: "https://github.com",
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 					RepositoryQuery: []string{
 						"user:tsenart in:name patrol",
 					},
 					Repos: []string{"sourcegraph/sourcegraph"},
 				}),
 			},
-			assert: func(t testing.TB, rs Repos) {
-				for _, r := range rs {
-					if !r.Enabled {
-						t.Errorf("repo %q is not enabled", r.Name)
-					}
-				}
-			},
-			err: "<nil>",
-		},
-		{
-			name: "gitlab/yielded repos are always enabled",
-			svc: ExternalService{
+			{
 				Kind: "GITLAB",
 				Config: marshalJSON(t, &schema.GitLabConnection{
-					Url: "https://gitlab.com",
+					Url:   "https://gitlab.com",
+					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{
 						"?search=vegeta",
 					},
-					// Repos: []string{"sourcegraph/sourcegraph"},
 				}),
 			},
+		}
+
+		kinds := make(map[string]struct{})
+		for _, s := range svcs {
+			kinds[strings.ToLower(s.Kind)] = struct{}{}
+		}
+
+		testCases = append(testCases, testCase{
+			name: "yielded repos are always enabled",
+			svcs: svcs,
 			assert: func(t testing.TB, rs Repos) {
-				if len(rs) == 0 {
-					t.Fatal("expected Gitlab repositories")
-				}
+				t.Helper()
+
+				set := make(map[string]bool)
 
 				for _, r := range rs {
+					set[r.ExternalRepo.ServiceType] = true
 					if !r.Enabled {
 						t.Errorf("repo %q is not enabled", r.Name)
 					}
 				}
+
+				for kind := range kinds {
+					if !set[kind] {
+						t.Errorf("external service of kind %q didn't yield any repos", kind)
+					}
+				}
 			},
 			err: "<nil>",
-		},
-		{
-			name: "github/excluded repos are never yielded",
-			svc: ExternalService{
+		})
+	}
+
+	{
+		svcs := ExternalServices{
+			{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
-					Url: "https://github.com",
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 					RepositoryQuery: []string{
 						"user:tsenart in:name patrol",
 					},
@@ -167,28 +178,57 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "excluded repos are never yielded",
+			svcs: svcs,
 			assert: func(t testing.TB, rs Repos) {
 				t.Helper()
 
-				have := rs.Names()
-				want := []string{"github.com/sourcegraph/sourcegraph"}
+				set := make(map[string]bool)
+				for _, s := range svcs {
+					c, err := s.Configuration()
+					if err != nil {
+						t.Fatal(err)
+					}
 
-				sort.Strings(have)
-				sort.Strings(want)
+					var exclude []*schema.Exclude
+					switch cfg := c.(type) {
+					case *schema.GitHubConnection:
+						exclude = cfg.Exclude
+					}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Errorf("\nhave: %s\nwant: %s", have, want)
+					if len(exclude) == 0 {
+						t.Fatal("exclude list must not be empty")
+					}
+
+					for _, e := range exclude {
+						name := e.Name
+						if s.Kind == "GITHUB" {
+							name = strings.ToLower(name)
+						}
+						set[name], set[e.Id] = true, true
+					}
+				}
+
+				for _, r := range rs {
+					if set[r.Name] || set[r.ExternalRepo.ID] {
+						t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
+					}
 				}
 			},
 			err: "<nil>",
-		},
-	} {
+		})
+	}
+
+	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			cf, save := newClientFactory(t, tc.name, &tc.svc)
+			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			s, err := NewSource(&tc.svc, cf)
+			srcs, err := NewSourcer(cf)(tc.svcs...)
 			if err != nil {
 				t.Error(err)
 				return // Let defers run
@@ -199,7 +239,7 @@ func TestSources_ListRepos(t *testing.T) {
 				ctx = context.Background()
 			}
 
-			repos, err := s.ListRepos(ctx)
+			repos, err := srcs.ListRepos(ctx)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -211,23 +251,12 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 }
 
-func newClientFactory(t testing.TB, name string, svc *ExternalService) (httpcli.Factory, func(testing.TB)) {
-	cassete := filepath.Join("testdata", strings.Replace(name, " ", "-", -1))
+func newClientFactory(t testing.TB, name string) (httpcli.Factory, func(testing.TB)) {
+	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
 	rec := newRecorder(t, cassete, *update)
-
-	var mw httpcli.Middleware
-	switch strings.ToLower(svc.Kind) {
-	case "github":
-		mw = httpcli.NewMiddleware(
-			redirect(map[string]string{"github-proxy": "api.github.com"}),
-			auth(os.Getenv("GITHUB_ACCESS_TOKEN")),
-		)
-	case "gitlab":
-		mw = httpcli.NewMiddleware(
-			auth(os.Getenv("GITLAB_ACCESS_TOKEN")),
-		)
-	}
-
+	mw := httpcli.NewMiddleware(
+		redirect(map[string]string{"github-proxy": "api.github.com"}),
+	)
 	return httpcli.NewFactory(mw, newRecorderOpt(t, rec)),
 		func(t testing.TB) { save(t, rec) }
 }
@@ -237,17 +266,6 @@ func redirect(rules map[string]string) httpcli.Middleware {
 		return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
 			if host, ok := rules[req.URL.Hostname()]; ok {
 				req.URL.Host = host
-			}
-			return cli.Do(req)
-		})
-	}
-}
-
-func auth(token string) httpcli.Middleware {
-	return func(cli httpcli.Doer) httpcli.Doer {
-		return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-			if token != "" {
-				req.Header.Set("Authorization", "bearer "+token)
 			}
 			return cli.Do(req)
 		})

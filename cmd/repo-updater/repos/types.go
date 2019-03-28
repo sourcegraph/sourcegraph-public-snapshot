@@ -66,6 +66,29 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 	return modified
 }
 
+// Configuration returns the external service config.
+func (e ExternalService) Configuration() (cfg interface{}, _ error) {
+	switch strings.ToLower(e.Kind) {
+	case "awscodecommit":
+		cfg = &schema.AWSCodeCommitConnection{}
+	case "bitbucketserver":
+		cfg = &schema.BitbucketServerConnection{}
+	case "github":
+		cfg = &schema.GitHubConnection{}
+	case "gitlab":
+		cfg = &schema.GitLabConnection{}
+	case "gitolite":
+		cfg = &schema.GitoliteConnection{}
+	case "phabricator":
+		cfg = &schema.PhabricatorConnection{}
+	case "other":
+		cfg = &schema.OtherExternalServiceConnection{}
+	default:
+		return nil, fmt.Errorf("unknown external service kind %q", e.Kind)
+	}
+	return cfg, jsonc.Unmarshal(e.Config, cfg)
+}
+
 // ExcludeGithubRepos changes the configuration of a Github external service to exclude the
 // given repos from being synced.
 func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
@@ -157,16 +180,9 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
 	}
 
-	var c interface{}
-	switch kind {
-	case "github":
-		c = new(schema.GitHubConnection)
-	default:
-		panic("not implemented")
-	}
-
-	if err := jsonc.Unmarshal(e.Config, c); err != nil {
-		return fmt.Errorf("external service id=%d config unmarshaling error: %s", e.ID, err)
+	c, err := e.Configuration()
+	if err != nil {
+		return errors.Wrap(err, "config")
 	}
 
 	path, val := opt(c)
