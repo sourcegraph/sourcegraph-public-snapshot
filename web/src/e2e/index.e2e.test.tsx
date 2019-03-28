@@ -273,7 +273,7 @@ describe('e2e test suite', function(this: any): void {
             "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
-        await page.waitForSelector('.panel__tabs-content .file-match__item', { visible: true })
+        await page.waitForSelector('.panel__tabs-content .file-match-children__item', { visible: true })
     }
 
     const assertNonemptyExternalRefs = async (): Promise<void> => {
@@ -706,11 +706,13 @@ describe('e2e test suite', function(this: any): void {
                         await assertNonemptyLocalRefs()
 
                         // verify the appropriate # of references are fetched
-                        await page.waitForSelector('.panel__tabs-content .file-match__list', { visible: true })
+                        await page.waitForSelector('.panel__tabs-content .file-match-children', { visible: true })
                         await retry(async () =>
                             expect(
                                 await page.evaluate(
-                                    () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
+                                    () =>
+                                        document.querySelectorAll('.panel__tabs-content .file-match-children__item')
+                                            .length
                                 )
                             ).toEqual(
                                 // Basic code intel finds 8 references with some overlapping context, resulting in 4 hunks.
@@ -821,7 +823,7 @@ describe('e2e test suite', function(this: any): void {
                 )
                 expect(label.includes('results')).toEqual(true)
             })
-            await page.waitForSelector('.e2e-file-match-item', { visible: true })
+            await page.waitForSelector('.e2e-file-match-children-item', { visible: true })
         })
 
         test('renders results for sourcegraph/go-diff (no search group)', async () => {
@@ -837,10 +839,13 @@ describe('e2e test suite', function(this: any): void {
                 expect(label.includes('results')).toEqual(true)
             })
 
-            const firstFileMatchHref = await page.$eval('.e2e-file-match-item', a => (a as HTMLAnchorElement).href)
+            const firstFileMatchHref = await page.$eval(
+                '.e2e-file-match-children-item',
+                a => (a as HTMLAnchorElement).href
+            )
 
             // navigate to result on click
-            await page.click('.e2e-file-match-item')
+            await page.click('.e2e-file-match-children-item')
 
             await retry(async () => {
                 expect(await page.evaluate(() => window.location.href)).toEqual(firstFileMatchHref)

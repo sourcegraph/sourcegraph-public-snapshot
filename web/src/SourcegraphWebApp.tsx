@@ -31,9 +31,11 @@ import { KeybindingsProps } from './keybindings'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { createPlatformContext } from './platform/context'
+import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
+import { search } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -257,9 +259,12 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         // Search query
                                         navbarSearchQuery={this.state.navbarSearchQuery}
                                         onNavbarQueryChange={this.onNavbarQueryChange}
+                                        fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                        searchRequest={search}
                                         // Extensions
                                         platformContext={this.state.platformContext}
                                         extensionsController={this.state.extensionsController}
+                                        eventLogger={eventLogger}
                                         isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     />
                                 )}
