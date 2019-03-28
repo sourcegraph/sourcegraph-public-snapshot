@@ -321,6 +321,18 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
+			desc:   "empty projectQuery",
+			config: `{"projectQuery": []}`,
+			assert: includes(`projectQuery: Array must have at least 1 items`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "empty projectQuery item",
+			config: `{"projectQuery": [""]}`,
+			assert: includes(`projectQuery.0: String length must be greater than or equal to 1`),
+		},
+		{
+			kind:   "GITLAB",
 			desc:   "invalid empty exclude",
 			config: `{"exclude": []}`,
 			assert: includes(`exclude: Array must have at least 1 items`),
