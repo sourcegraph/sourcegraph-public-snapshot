@@ -1,5 +1,5 @@
-import { FileInfo } from '../code_intelligence'
 import { DiffResolvedRevSpec } from '../../shared/repo'
+import { FileInfo } from '../code_intelligence'
 
 interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
     project: string
