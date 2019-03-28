@@ -15,6 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - The symbols sidebar now only shows symbols defined in the current file or directory.
+- The dynamic filters on search results pages will now display `lang:` instead of `file:` filters.
 
 - The default `github.repositoryQuery` of a [GitHub external service configuration](https://docs.sourcegraph.com/admin/external_service/github#configuration) has been changed to `["none"]`. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["affiliated", "public"]`).
 
