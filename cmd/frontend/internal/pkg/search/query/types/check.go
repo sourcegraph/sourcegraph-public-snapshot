@@ -141,16 +141,15 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 	return nil
 }
 
-var autoFixRx1 = regexp.MustCompile(`(^[*$])`)
+var starDollarRx = regexp.MustCompile(`(^[*$])`)
 var leftParenRx = regexp.MustCompile(`([^\\]|^)\(`)
 var rightParenRx = regexp.MustCompile(`([^\\]|^)\)`)
-var autoFixRx3 = regexp.MustCompile(`^([^(]*)([^\\]|^)\)`)
-var autoFixRx4 = regexp.MustCompile(`([^\\]|^)([([])$`)
+var squareBraceRx = regexp.MustCompile(`([^\\]|^)\[$`)
 
 // autoFix escapes various patterns that are very likely not meant to be
 // treated as regular expressions.
 func autoFix(pat string) string {
-	pat = autoFixRx1.ReplaceAllString(pat, `\$1`)
+	pat = starDollarRx.ReplaceAllString(pat, `\$1`)
 	pat = strings.Replace(pat, "()", `\(\)`, -1)
 	if !strings.Contains(pat, ")") && strings.Count(pat, "(") == 1 {
 		pat = leftParenRx.ReplaceAllString(pat, `$1\(`)
@@ -158,7 +157,7 @@ func autoFix(pat string) string {
 	if !strings.Contains(pat, "(") && strings.Count(pat, ")") == 1 {
 		pat = rightParenRx.ReplaceAllString(pat, `$1\)`)
 	}
-	pat = autoFixRx4.ReplaceAllString(pat, `$1\$2`)
+	pat = squareBraceRx.ReplaceAllString(pat, `$1\[`)
 	return pat
 }
 
