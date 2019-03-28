@@ -180,6 +180,7 @@ func Test_autoFix(t *testing.T) {
 			// No one is likely to want a group that can only contain nothing.
 			{"f()", `f\(\)`},
 			{"()", `\(\)`},
+			{`(\()`, `(\()`},
 			{"()f", `\(\)f`},
 			{"f(a", `f\(a`},
 			{"f(a,", `f\(a,`},
