@@ -67,6 +67,7 @@ const GitLabSchemaJSON = `{
       "minItems": 1,
       "items": {
         "type": "object",
+        "title": "ExcludedGitLabProject",
         "additionalProperties": false,
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
