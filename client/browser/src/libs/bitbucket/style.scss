@@ -38,3 +38,22 @@
         box-sizing: border-box;
     }
 }
+
+.code-view-toolbar__bitbucket-server {
+    ul {
+        list-style-type: none;
+    }
+
+    .open-on-sourcegraph {
+        margin-bottom: 10px;
+    }
+}
+
+.action-item__bitbucket-server {
+    margin-bottom: 10px !important;
+}
+
+.action-item__bitbucket-server.action-item--pressed {
+    background-color: #344563;
+    color: #ffffff;
+}

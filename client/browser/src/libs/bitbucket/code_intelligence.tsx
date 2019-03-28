@@ -123,4 +123,8 @@ export const bitbucketServerCodeHost: CodeHost = {
     codeViewResolver,
     getCommandPaletteMount,
     commandPalettePopoverClassName: 'command-palette-popover__bitbucket-server',
+    actionNavItemClassProps: {
+        actionItemClass: 'aui-button action-item__bitbucket-server',
+    },
+    codeViewToolbarClassName: 'code-view-toolbar__bitbucket-server',
 }

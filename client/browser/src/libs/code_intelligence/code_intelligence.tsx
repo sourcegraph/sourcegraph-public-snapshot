@@ -199,6 +199,9 @@ export interface CodeHost {
 
     /** Optional class to set on the command palette popover element */
     commandPalettePopoverClassName?: string
+
+    /** Optional class to set on the code view toolbar element */
+    codeViewToolbarClassName?: string
 }
 
 export interface FileInfo {
@@ -607,6 +610,7 @@ export function handleCodeHost({
                                 }
                             }
                             location={H.createLocation(window.location)}
+                            className={codeHost.codeViewToolbarClassName}
                         />
                     </TelemetryContext.Provider>,
                     mount
