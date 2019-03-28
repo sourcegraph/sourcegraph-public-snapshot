@@ -177,12 +177,11 @@ func Test_autoFix(t *testing.T) {
 		{"f(a", `f\(a`},
 		{"f(a,", `f\(a,`},
 		{"b)", `b\)`},
-		// Special characters can appear in character classes
-		{"[(]", "[(]"},
-		{"[()]", "[()]"},
-		{"[)(]", "[)(]"},
-		// Already escaped regexs
-		{`foo\(`, `foo\(`},
+		// Special characters can appear in character classes.
+		// These escapes arguably aren't necessary, but they should not cause any problem in practice.
+		{"[(]", `[\(]`},
+		{"[()]", `[\(\)]`},
+		{"[)(]", `[\)\(]`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.pat, func(t *testing.T) {
