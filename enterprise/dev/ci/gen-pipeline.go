@@ -60,6 +60,16 @@ func main() {
 		bk.Env("DATE", now.Format(time.RFC3339)),
 	)
 
+	if os.Getenv("MUST_INCLUDE_COMMIT") != "" {
+		output, err := exec.Command("git", "merge-base", "--is-ancestor", os.Getenv("MUST_INCLUDE_COMMIT"), "HEAD").CombinedOutput()
+		if err != nil {
+			fmt.Printf("This branch %s at commit %s does not include commit %s.\n", branch, commit, os.Getenv("MUST_INCLUDE_COMMIT"))
+			fmt.Println("Rebase onto the latest master to get the latest CI fixes.")
+			fmt.Println(string(output))
+			panic(err)
+		}
+	}
+
 	isPR := !isBextReleaseBranch &&
 		!releaseBranch &&
 		!taggedRelease &&
@@ -104,26 +114,36 @@ func main() {
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
 
-	pipeline.AddStep(":ie:",
+	// Browser extension build
+	pipeline.AddStep(":webpack::chrome:",
 		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
 	if !isBextReleaseBranch {
-		pipeline.AddStep(":webpack:",
+		// Webapp build
+		pipeline.AddStep(":webpack::globe_with_meridians:",
 			bk.Cmd("dev/ci/yarn-build.sh web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "0"))
 
-		pipeline.AddStep(":webpack: :moneybag:",
+		// Webapp enterprise build
+		pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
 			bk.Cmd("dev/ci/yarn-build.sh web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"))
 
-		pipeline.AddStep(":typescript:",
+		// Webapp tests
+		pipeline.AddStep(":jest::globe_with_meridians:",
 			bk.Cmd("dev/ci/yarn-test.sh web"),
 			bk.ArtifactPaths("web/coverage/coverage-final.json"))
 	}
 
-	pipeline.AddStep(":typescript:",
+	// Browser extension tests
+	pipeline.AddStep(":jest::chrome:",
+		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+		bk.ArtifactPaths("client/browser/coverage/coverage-final.json"))
+
+	// Shared tests
+	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 

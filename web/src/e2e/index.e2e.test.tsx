@@ -64,21 +64,27 @@ describe('e2e test suite', function(this: any): void {
     }
 
     // Start browser.
-    beforeAll(async () => {
-        let args: string[] = []
-        if (process.getuid() === 0) {
-            // TODO don't run as root in CI
-            console.warn('Running as root, disabling sandbox')
-            args = ['--no-sandbox', '--disable-setuid-sandbox']
-        }
-        const launchOpt: LaunchOptions = {
-            args: [...args, '--window-size=1280,1024'],
-            headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
-        }
-        browser = await puppeteer.launch(launchOpt)
-        page = await browser.newPage()
-        await init()
-    })
+    beforeAll(
+        async () => {
+            let args: string[] = []
+            if (process.getuid() === 0) {
+                // TODO don't run as root in CI
+                console.warn('Running as root, disabling sandbox')
+                args = ['--no-sandbox', '--disable-setuid-sandbox']
+            }
+            const launchOpt: LaunchOptions = {
+                args: [...args, '--window-size=1280,1024'],
+                headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+            }
+            browser = await puppeteer.launch(launchOpt)
+            page = await browser.newPage()
+            await init()
+        },
+        // Cloning the repositories takes ~1 minute, so give initialization 2
+        // minutes instead of 1 (which would be inherited from
+        // `jest.setTimeout(1 * 60 * 1000)` above).
+        2 * 60 * 1000
+    )
 
     // Close browser.
     afterAll(async () => {
@@ -139,6 +145,8 @@ describe('e2e test suite', function(this: any): void {
             },
         }
 
+        // The Monaco editor sometimes detaches nodes from the DOM, causing
+        // `click()` to fail unpredictably.
         await retry(async () => {
             await page.waitForSelector(selector)
             await page.click(selector)
@@ -166,16 +174,12 @@ describe('e2e test suite', function(this: any): void {
                 page.off('dialog', accept)
             }
             page.on('dialog', accept)
-            await retry(async () => {
-                await page.waitForSelector(deleteButtonSelector)
-                await page.click(deleteButtonSelector)
-            })
+            await page.click(deleteButtonSelector)
         }
 
-        await (await page.waitForSelector('.e2e-goto-add-external-service-page')).click()
+        await (await page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
 
-        const githubButton = await await page.waitForSelector(`.linked-external-service-card--${kind}`)
-        await githubButton.click()
+        await (await page.waitForSelector(`.linked-external-service-card--${kind}`, { visible: true })).click()
 
         await replaceText({ selector: '#e2e-external-service-form-display-name', newText: displayName })
 
@@ -200,7 +204,9 @@ describe('e2e test suite', function(this: any): void {
             // Clone the repositories
             for (const slug of ensureRepos) {
                 await page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
-                await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`)
+                await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`, {
+                    visible: true,
+                })
                 if (
                     await page.$(`.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='false']`)
                 ) {
@@ -209,11 +215,13 @@ describe('e2e test suite', function(this: any): void {
                     )
                     if (slug === 'sourcegraphtest/AlwaysCloningTest') {
                         await page.waitForSelector(
-                            `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`
+                            `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`,
+                            { visible: true }
                         )
                     } else {
                         await page.waitForSelector(
-                            `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true'][data-e2e-cloned='true']`
+                            `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true'][data-e2e-cloned='true']`,
+                            { visible: true }
                         )
                     }
                 }
@@ -244,7 +252,7 @@ describe('e2e test suite', function(this: any): void {
     }
 
     const assertStickyHighlightedToken = async (label: string): Promise<void> => {
-        await page.waitForSelector('.selection-highlight-sticky') // make sure matched token is highlighted
+        await page.waitForSelector('.selection-highlight-sticky', { visible: true }) // make sure matched token is highlighted
         await retry(async () =>
             expect(
                 await page.evaluate(() => document.querySelector('.selection-highlight-sticky')!.textContent)
@@ -265,7 +273,7 @@ describe('e2e test suite', function(this: any): void {
             "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
-        await page.waitForSelector('.panel__tabs-content .file-match-children__item')
+        await page.waitForSelector('.panel__tabs-content .file-match-children__item', { visible: true })
     }
 
     const assertNonemptyExternalRefs = async (): Promise<void> => {
@@ -274,7 +282,7 @@ describe('e2e test suite', function(this: any): void {
             "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
-        await page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item')
+        await page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item', { visible: true })
     }
 
     describe('External services', () => {
@@ -286,13 +294,9 @@ describe('e2e test suite', function(this: any): void {
                 '{"url": "https://github.myenterprise.com", "token": "initial-token"}'
             )
             await page.goto(baseURL + '/site-admin/external-services')
-            await page.waitFor('.e2e-filtered-connection')
-            await page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
-            const editButton = await page.$(
+            await (await page.waitForSelector(
                 `[data-e2e-external-service-name="${displayName}"] .e2e-edit-external-service-button`
-            )
-            expect(editButton).not.toBeNull()
-            await editButton!.click()
+            )).click()
 
             // Type in a new external service configuration.
             await replaceText({
@@ -301,24 +305,22 @@ describe('e2e test suite', function(this: any): void {
                 method: 'keyboard',
             })
             await page.click('.e2e-update-external-service-button')
-            await page.waitForSelector('.e2e-update-external-service-button:not([disabled])')
+            // Must wait for the operation to complete, or else a "Discard changes?" dialog will pop up
+            await page.waitForSelector('.e2e-update-external-service-button:not([disabled])', { visible: true })
 
-            await page.waitForSelector('.list-group-item[href="/site-admin/external-services"]')
-            await page.click('.list-group-item[href="/site-admin/external-services"]')
-            await page.waitFor('.e2e-filtered-connection')
-            await page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+            await (await page.waitForSelector('.list-group-item[href="/site-admin/external-services"]', {
+                visible: true,
+            })).click()
 
-            const deleteButtonSelector = `[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button`
-            await page.waitForSelector(deleteButtonSelector)
             const accept = async (dialog: puppeteer.Dialog) => {
                 await dialog.accept()
                 page.off('dialog', accept)
             }
             page.on('dialog', accept)
-            await retry(async () => {
-                await page.waitForSelector(deleteButtonSelector)
-                await page.click(deleteButtonSelector)
-            })
+            await (await page.waitForSelector(
+                `[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button`,
+                { visible: true }
+            )).click()
 
             await page.waitFor(() => !document.querySelector('[data-e2e-external-service-name="e2e-github-test-2"]'))
         })
@@ -327,28 +329,27 @@ describe('e2e test suite', function(this: any): void {
     describe('Visual tests', () => {
         test('Repositories list', async () => {
             await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
-            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             await percySnapshot(page, 'Repositories list')
         })
 
         test('Search results repo', async () => {
-            await page.goto(baseURL + '/github.com/gorilla/mux')
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
-            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results repo')
         })
 
         test('Search results file', async () => {
             await page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
-            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results file')
         })
 
         test('Search results code', async () => {
             await page.goto(baseURL + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"')
-            await page.waitForSelector('a[href="/github.com/gorilla/mux"]')
+            await page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results code')
         })
@@ -357,7 +358,7 @@ describe('e2e test suite', function(this: any): void {
     describe('Theme switcher', () => {
         test('changes the theme', async () => {
             await page.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
-            await page.waitForSelector('.theme')
+            await page.waitForSelector('.theme', { visible: true })
             const currentThemes = await page.evaluate(() =>
                 Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
             )
@@ -420,8 +421,7 @@ describe('e2e test suite', function(this: any): void {
                 await page.goto(
                     baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
-                await page.waitForSelector(`[data-tree-path="godockerize.go"]`)
-                await page.click(`[data-tree-path="godockerize.go"]`)
+                await (await page.waitForSelector(`[data-tree-path="godockerize.go"]`, { visible: true })).click()
                 await assertWindowLocation(
                     '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
@@ -429,19 +429,19 @@ describe('e2e test suite', function(this: any): void {
 
             test('expands directory on row click (no navigation)', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
-                await page.waitForSelector('.tree__row-icon')
+                await page.waitForSelector('.tree__row-icon', { visible: true })
                 await page.click('.tree__row-icon')
-                await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]')
-                await page.waitForSelector('.tree__row--expanded [data-tree-path="websocket"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]', { visible: true })
+                await page.waitForSelector('.tree__row--expanded [data-tree-path="websocket"]', { visible: true })
                 await assertWindowLocation('/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
             })
 
             test('does navigation on directory row click', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
-                await page.waitForSelector('.tree__row-label')
+                await page.waitForSelector('.tree__row-label', { visible: true })
                 await page.click('.tree__row-label')
-                await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]')
-                await page.waitForSelector('.tree__row--expanded [data-tree-path="websocket"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]', { visible: true })
+                await page.waitForSelector('.tree__row--expanded [data-tree-path="websocket"]', { visible: true })
                 await assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
@@ -452,7 +452,7 @@ describe('e2e test suite', function(this: any): void {
                     baseURL +
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
-                await page.waitForSelector('.tree__row--active [data-tree-path="godockerize.go"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="godockerize.go"]', { visible: true })
             })
 
             test('shows partial tree when opening directory', async () => {
@@ -460,7 +460,7 @@ describe('e2e test suite', function(this: any): void {
                     baseURL +
                         '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
-                await page.waitForSelector('.tree__row')
+                await page.waitForSelector('.tree__row', { visible: true })
                 expect(await page.evaluate(() => document.querySelectorAll('.tree__row').length)).toEqual(1)
             })
 
@@ -475,38 +475,40 @@ describe('e2e test suite', function(this: any): void {
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/.travis.yml'
                 )
-                await page.waitForSelector('.tree__row') // waitForSelector for tree to render
+                await page.waitForSelector('.tree__row', { visible: true }) // waitForSelector for tree to render
 
                 await page.click('.tree')
                 await page.keyboard.press('ArrowUp') // arrow up to 'diff' directory
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]', { visible: true })
                 await page.keyboard.press('ArrowRight') // arrow right (expand 'diff' directory)
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]')
-                await page.waitForSelector('.tree__row--expanded [data-tree-path="diff"]')
-                await page.waitForSelector('.tree__row [data-tree-path="diff/testdata"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]', { visible: true })
+                await page.waitForSelector('.tree__row--expanded [data-tree-path="diff"]', { visible: true })
+                await page.waitForSelector('.tree__row [data-tree-path="diff/testdata"]', { visible: true })
                 await page.keyboard.press('ArrowRight') // arrow right (move to nested 'diff/testdata' directory)
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]', { visible: true })
                 await assertNumRowsExpanded(1) // only `diff` directory is expanded, though `diff/testdata` is expanded
 
                 await page.keyboard.press('ArrowRight') // arrow right (expand 'diff/testdata' directory)
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
-                await page.waitForSelector('.tree__row--expanded [data-tree-path="diff/testdata"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]', { visible: true })
+                await page.waitForSelector('.tree__row--expanded [data-tree-path="diff/testdata"]', { visible: true })
                 await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
-                await page.waitForSelector('.tree__row [data-tree-path="diff/testdata/empty.diff"]')
+                await page.waitForSelector('.tree__row [data-tree-path="diff/testdata/empty.diff"]', { visible: true })
                 // select some file nested under `diff/testdata`
                 await page.keyboard.press('ArrowDown') // arrow down
                 await page.keyboard.press('ArrowDown') // arrow down
                 await page.keyboard.press('ArrowDown') // arrow down
                 await page.keyboard.press('ArrowDown') // arrow down
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata/empty_orig.diff"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata/empty_orig.diff"]', {
+                    visible: true,
+                })
 
                 await page.keyboard.press('ArrowLeft') // arrow left (navigate immediately up to parent directory `diff/testdata`)
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]', { visible: true })
                 await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
                 await page.keyboard.press('ArrowLeft') // arrow left
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]') // `diff/testdata` still selected
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]', { visible: true }) // `diff/testdata` still selected
                 await assertNumRowsExpanded(1) // only `diff` directory expanded
             })
         })
@@ -517,7 +519,7 @@ describe('e2e test suite', function(this: any): void {
             it('shows a row for each file in the directory', async () => {
                 await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.tree-page__entries-directories')
+                await page.waitForSelector('.tree-page__entries-directories', { visible: true })
                 await retry(async () =>
                     assert.equal(
                         await page.evaluate(
@@ -541,7 +543,7 @@ describe('e2e test suite', function(this: any): void {
                 await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983', {
                     waitUntil: 'domcontentloaded',
                 })
-                await page.waitForSelector('.git-commit-node__message')
+                await page.waitForSelector('.git-commit-node__message', { visible: true })
                 await retry(async () =>
                     expect(
                         await page.evaluate(() => document.querySelectorAll('.git-commit-node__message')[2].textContent)
@@ -567,7 +569,7 @@ describe('e2e test suite', function(this: any): void {
                 await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
                 await enableOrAddRepositoryIfNeeded()
                 // click on directory
-                await page.waitForSelector('.tree-entry')
+                await page.waitForSelector('.tree-entry', { visible: true })
                 await page.click('.tree-entry')
                 await assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
@@ -579,7 +581,7 @@ describe('e2e test suite', function(this: any): void {
         describe('rev resolution', () => {
             test('shows clone in progress interstitial page', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraphtest/AlwaysCloningTest')
-                await page.waitForSelector('.hero-page__subtitle')
+                await page.waitForSelector('.hero-page__subtitle', { visible: true })
                 await retry(async () =>
                     expect(
                         await page.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent)
@@ -589,7 +591,7 @@ describe('e2e test suite', function(this: any): void {
 
             test('resolves default branch when unspecified', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
-                await page.waitForSelector('.repo-header__rev')
+                await page.waitForSelector('.repo-header__rev', { visible: true })
                 await retry(async () => {
                     expect(
                         await page.evaluate(() => document.querySelector('.repo-header__rev')!.textContent!.trim())
@@ -602,11 +604,11 @@ describe('e2e test suite', function(this: any): void {
             test('updates rev with switcher', async () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
                 // Open rev switcher
-                await page.waitForSelector('.repo-header__rev')
+                await page.waitForSelector('.repo-header__rev', { visible: true })
                 await page.click('.repo-header__rev')
                 // Click "Tags" tab
                 await page.click('.revisions-popover .tab-bar__tab:nth-child(2)')
-                await page.waitForSelector('a.git-ref-node[href*="0.1.0"]')
+                await page.waitForSelector('a.git-ref-node[href*="0.1.0"]', { visible: true })
                 await page.click('a.git-ref-node[href*="0.1.0"]')
                 await assertWindowLocation('/github.com/sourcegraph/checkup@v0.1.0/-/blob/s3.go')
             })
@@ -670,7 +672,9 @@ describe('e2e test suite', function(this: any): void {
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
                         )
                         // Verify file tree is highlighting the new path.
-                        return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]')
+                        return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]', {
+                            visible: true,
+                        })
                     })
 
                     // basic code intel doesn't support cross-repo jump-to-definition yet.
@@ -702,7 +706,7 @@ describe('e2e test suite', function(this: any): void {
                         await assertNonemptyLocalRefs()
 
                         // verify the appropriate # of references are fetched
-                        await page.waitForSelector('.panel__tabs-content .file-match-children')
+                        await page.waitForSelector('.panel__tabs-content .file-match-children', { visible: true })
                         await retry(async () =>
                             expect(
                                 await page.evaluate(
@@ -780,7 +784,7 @@ describe('e2e test suite', function(this: any): void {
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19',
                     { waitUntil: 'domcontentloaded' }
                 )
-                await page.waitForSelector('.nav-link[href*="https://github"]')
+                await page.waitForSelector('.nav-link[href*="https://github"]', { visible: true })
                 await retry(async () =>
                     expect(
                         await page.evaluate(
@@ -812,14 +816,14 @@ describe('e2e test suite', function(this: any): void {
                 .join('+')
 
             await page.goto(`${baseURL}/search?q=diff+${operatorsQuery}`)
-            await page.waitForSelector('.e2e-search-results-stats')
+            await page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
                 const label = await page.evaluate(
                     () => document.querySelector('.e2e-search-results-stats')!.textContent || ''
                 )
                 expect(label.includes('results')).toEqual(true)
             })
-            await page.waitForSelector('.e2e-file-match-children-item')
+            await page.waitForSelector('.e2e-file-match-children-item', { visible: true })
         })
 
         test('renders results for sourcegraph/go-diff (no search group)', async () => {
@@ -827,7 +831,7 @@ describe('e2e test suite', function(this: any): void {
             await page.goto(
                 baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
             )
-            await page.waitForSelector('.e2e-search-results-stats')
+            await page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
                 const label = await page.evaluate(
                     () => document.querySelector('.e2e-search-results-stats')!.textContent || ''
@@ -852,7 +856,7 @@ describe('e2e test suite', function(this: any): void {
             await page.goto(baseURL + '/search')
 
             // Update the input value
-            await page.waitForSelector('.e2e-query-input')
+            await page.waitForSelector('.e2e-query-input', { visible: true })
             await page.keyboard.type('test repo:sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
 
             // TODO: test search scopes
@@ -860,7 +864,7 @@ describe('e2e test suite', function(this: any): void {
             // Submit the search
             await page.click('.search-button')
 
-            await page.waitForSelector('.e2e-search-results-stats')
+            await page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
                 const label = await page.evaluate(
                     () => document.querySelector('.e2e-search-results-stats')!.textContent || ''

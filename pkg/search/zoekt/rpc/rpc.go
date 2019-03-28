@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/keegancsmith/rpc"
-	"github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/search/rpc/internal/srv"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/rpc/internal/srv"
 )
 
 // DefaultRPCPath is the rpc path
@@ -20,7 +20,7 @@ const DefaultRPCPath = "/rpc"
 
 // Server returns an http.Handler for searcher which is the server side of the
 // RPC calls.
-func Server(searcher search.Searcher) (http.Handler, error) {
+func Server(searcher zoekt.Searcher) (http.Handler, error) {
 	registerGob()
 	server := rpc.NewServer()
 	err := server.Register(&srv.Searcher{Searcher: searcher})
@@ -29,13 +29,13 @@ func Server(searcher search.Searcher) (http.Handler, error) {
 
 // Client connects to a Searcher HTTP RPC server at address (host:port) using
 // DefaultRPCPath path.
-func Client(address string) search.Searcher {
+func Client(address string) zoekt.Searcher {
 	return ClientAtPath(address, DefaultRPCPath)
 }
 
 // ClientAtPath connects to a Searcher HTTP RPC server at address and path
 // (http://host:port/path).
-func ClientAtPath(address, path string) search.Searcher {
+func ClientAtPath(address, path string) zoekt.Searcher {
 	registerGob()
 	return &client{addr: address, path: path}
 }
@@ -48,7 +48,7 @@ type client struct {
 	gen int // incremented each time we dial
 }
 
-func (c *client) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
+func (c *client) Search(ctx context.Context, q query.Q, opts *zoekt.Options) (*zoekt.Result, error) {
 	var reply srv.SearchReply
 	err := c.call(ctx, "Searcher.Search", &srv.SearchArgs{Q: q, Opts: opts}, &reply)
 	return reply.Result, err
@@ -129,13 +129,13 @@ func registerGob() {
 		gob.RegisterName("*sgquery.Repo", &query.Repo{})
 		gob.RegisterName("*sgquery.Substring", &query.Substring{})
 		gob.RegisterName("*sgquery.Type", &query.Type{})
-		gob.RegisterName("*sgsearch.Repository", &search.Repository{})
-		gob.RegisterName("*sgsearch.FileMatch", &search.FileMatch{})
-		gob.RegisterName("*sgsearch.LineFragmentMatch", &search.LineFragmentMatch{})
-		gob.RegisterName("*sgsearch.LineMatch", &search.LineMatch{})
-		gob.RegisterName("*sgsearch.Options", &search.Options{})
-		gob.RegisterName("*sgsearch.RepositoryStatus", &search.RepositoryStatus{})
-		gob.RegisterName("*sgsearch.Result", &search.Result{})
-		gob.RegisterName("*sgsearch.Stats", &search.Stats{})
+		gob.RegisterName("*sgsearch.Repository", &zoekt.Repository{})
+		gob.RegisterName("*sgsearch.FileMatch", &zoekt.FileMatch{})
+		gob.RegisterName("*sgsearch.LineFragmentMatch", &zoekt.LineFragmentMatch{})
+		gob.RegisterName("*sgsearch.LineMatch", &zoekt.LineMatch{})
+		gob.RegisterName("*sgsearch.Options", &zoekt.Options{})
+		gob.RegisterName("*sgsearch.RepositoryStatus", &zoekt.RepositoryStatus{})
+		gob.RegisterName("*sgsearch.Result", &zoekt.Result{})
+		gob.RegisterName("*sgsearch.Stats", &zoekt.Stats{})
 	})
 }

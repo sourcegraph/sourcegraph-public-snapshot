@@ -12,6 +12,7 @@ import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfig
 import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
 import { UpdateAvailableAlert } from '../site/UpdateAvailableAlert'
 import { GlobalAlert } from './GlobalAlert'
+import { Notices } from './Notices'
 
 interface Props extends SettingsCascadeProps {
     isSiteAdmin: boolean
@@ -82,6 +83,11 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             <Markdown dangerousInnerHTML={renderMarkdown(m)} />
                         </DismissibleAlert>
                     ))}
+                <Notices
+                    alertClassName="global-alerts__alert"
+                    location="top"
+                    settingsCascade={this.props.settingsCascade}
+                />
             </div>
         )
     }

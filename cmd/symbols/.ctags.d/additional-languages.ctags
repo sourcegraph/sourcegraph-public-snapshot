@@ -43,13 +43,15 @@
 
 --langdef=swift
 --langmap=swift:.swift
---regex-swift=/^[[:space:]]*class[[:space:]]+([[:alnum:]_]+)/\1/c,class/
---regex-swift=/^[[:space:]]*enum[[:space:]]+([[:alnum:]_]+)/\1/e,enum/
---regex-swift=/^[[:space:]]*func[[:space:]]+([[:alnum:]_]+)/\1/f,function/
---regex-swift=/^[[:space:]]*protocol[[:space:]]+([[:alnum:]_]+)/\1/i,interface/
---regex-swift=/^[[:space:]]*struct[[:space:]]+([[:alnum:]_]+)/\1/s,struct/
---regex-swift=/^[[:space:]]*extension[[:space:]]+([[:alnum:]_]+)/\1/d,define/
---regex-swift=/^[[:space:]]*typealias[[:space:]]+([[:alnum:]_]+)/\1/a,alias/
+--regex-swift=/^[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|var)[[:space:]])*class[[:space:]]+([[:alnum:]_]+)/\3/c,class/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|final)[[:space:]])*let[[:space:]]+([[:alnum:]_]+)/\3/C,constant/
+--regex-swift=/^[[:space:]]*public[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|final|lazy|mutating|nonmutating|optional|override|required|unowned|weak)[[:space:]])*var[[:space:]]+([[:alnum:]_]+)/\3/v,variable/
+--regex-swift=/^[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|var)[[:space:]])*enum[[:space:]]+([[:alnum:]_]+)/\3/e,enum/
+--regex-swift=/^[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|var|convenience|dynamic|final|mutating|nonmutating|optional|override|required)[[:space:]])*func[[:space:]]+([[:alnum:]_]+)/\3/f,function/
+--regex-swift=/^[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|var)[[:space:]])*protocol[[:space:]]+([[:alnum:]_]+)/\3/i,interface/
+--regex-swift=/^[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|var)[[:space:]])*struct[[:space:]]+([[:alnum:]_]+)/\3/s,struct/
+--regex-swift=/^[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|var)[[:space:]])*extension[[:space:]]+([[:alnum:]_]+)/\3/d,define/
+--regex-swift=/^[[:space:]]*((associatedtype|class|deinit|enum|extension|fileprivate|func|import|init|inout|internal|let|open|operator|private|protocol|public|static|struct|subscript|typealias|var)[[:space:]])*typealias[[:space:]]+([[:alnum:]_]+)/\3/a,alias/
 
 --langdef=kotlin
 --langmap=kotlin:+.kt
@@ -63,20 +65,6 @@
 --regex-kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy|override|private[^ ]*|protected)[[:space:]]*)*(const[[:space:]])*val[[:space:]]+([[:alnum:]_]+)/\4/C,constant/
 --regex-kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy|override|private[^ ]*|protected)[[:space:]]*)*(lateinit[[:space:]]*)*var[[:space:]]+([[:alnum:]_]+)/\4/v,variable/
 --regex-kotlin=/^[[:space:]]*package[[:space:]]+([[:alnum:]_.:]+)/\1/p,package/
-
---langdef=Elixir
---langmap=Elixir:.ex.exs
---regex-Elixir=/^[ \t]*def(p?)[ \t]+([a-z_][a-zA-Z0-9_?!]*)/\2/f,function/
---regex-Elixir=/^[ \t]*defcallback[ \t]+([a-z_][a-zA-Z0-9_?!]*)/\1/f,function/
---regex-Elixir=/^[ \t]*defdelegate[ \t]+([a-z_][a-zA-Z0-9_?!]*)/\1/d,define/
---regex-Elixir=/^[ \t]*defexception[ \t]+([A-Z][a-zA-Z0-9_]*\.)*([A-Z][a-zA-Z0-9_?!]*)/\2/d,define/
---regex-Elixir=/^[ \t]*defimpl[ \t]+([A-Z][a-zA-Z0-9_]*\.)*([A-Z][a-zA-Z0-9_?!]*)/\2/d,define/
---regex-Elixir=/^[ \t]*defmacro(p?)[ \t]+([a-z_][a-zA-Z0-9_?!]*)\(/\2/a,macro/
---regex-Elixir=/^[ \t]*defmacro(p?)[ \t]+([a-zA-Z0-9_?!]+)?[ \t]+([^ \tA-Za-z0-9_]+)[ \t]*[a-zA-Z0-9_!?!]/\3/a,macro/
---regex-Elixir=/^[ \t]*defmodule[ \t]+([A-Z][a-zA-Z0-9_]*\.)*([A-Z][a-zA-Z0-9_?!]*)/\2/m,module/
---regex-Elixir=/^[ \t]*defprotocol[ \t]+([A-Z][a-zA-Z0-9_]*\.)*([A-Z][a-zA-Z0-9_?!]*)/\2/d,define/
---regex-Elixir=/^[ \t]*Record\.defrecord[ \t]+:([a-zA-Z0-9_]+)/\1/s,struct/
---regex-Elixir=/^[ \t]*test[ \t]+\"([a-z_][a-zA-Z0-9_?! ]*)\"*/\1/d,define/
 
 --langdef=haskell
 --langmap=haskell:.hs

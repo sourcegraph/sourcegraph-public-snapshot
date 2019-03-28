@@ -92,6 +92,17 @@ type BitbucketServerConnection struct {
 	Url                         string `json:"url"`
 	Username                    string `json:"username,omitempty"`
 }
+type BrandAssets struct {
+	Logo   string `json:"logo,omitempty"`
+	Symbol string `json:"symbol,omitempty"`
+}
+
+// Branding description: Customize Sourcegraph homepage logo and search icon.
+type Branding struct {
+	Dark    *BrandAssets `json:"dark,omitempty"`
+	Favicon string       `json:"favicon,omitempty"`
+	Light   *BrandAssets `json:"light,omitempty"`
+}
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
 type BuiltinAuthProvider struct {
@@ -108,6 +119,7 @@ type CloneURLToRepositoryName struct {
 // CriticalConfiguration description: Critical configuration for a Sourcegraph site.
 type CriticalConfiguration struct {
 	AuthDisableUsernameChanges bool                `json:"auth.disableUsernameChanges,omitempty"`
+	AuthEnableUsernameChanges  bool                `json:"auth.enableUsernameChanges,omitempty"`
 	AuthProviders              []AuthProviders     `json:"auth.providers,omitempty"`
 	AuthPublic                 bool                `json:"auth.public,omitempty"`
 	AuthSessionExpiry          string              `json:"auth.sessionExpiry,omitempty"`
@@ -274,6 +286,11 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
+type Notice struct {
+	Dismissible bool   `json:"dismissible,omitempty"`
+	Location    string `json:"location"`
+	Message     string `json:"message"`
+}
 type OAuthIdentity struct {
 	Type string `json:"type"`
 }
@@ -367,6 +384,7 @@ type Sentry struct {
 type Settings struct {
 	Extensions             map[string]bool           `json:"extensions,omitempty"`
 	Motd                   []string                  `json:"motd,omitempty"`
+	Notices                []*Notice                 `json:"notices,omitempty"`
 	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
 	SearchContextLines     int                       `json:"search.contextLines,omitempty"`
 	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
@@ -377,6 +395,7 @@ type Settings struct {
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
+	Branding                          *Branding                   `json:"branding,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`

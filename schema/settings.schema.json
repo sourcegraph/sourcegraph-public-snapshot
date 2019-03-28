@@ -65,9 +65,34 @@
       "$ref": "#/definitions/SlackNotificationsConfig"
     },
     "motd": {
-      "description": "An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
+      "description": "DEPRECATED: Use `notices` instead.\n\nAn array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
       "type": "array",
       "items": { "type": "string" }
+    },
+    "notices": {
+      "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",
+      "type": "array",
+      "items": {
+        "title": "Notice",
+        "type": "object",
+        "required": ["message", "location"],
+        "properties": {
+          "message": {
+            "description": "The message to display. Markdown formatting is supported.",
+            "type": "string"
+          },
+          "location": {
+            "description": "The location where this notice is shown: \"top\" for the top of every page, \"home\" for the homepage.",
+            "type": "string",
+            "enum": ["top", "home"]
+          },
+          "dismissible": {
+            "description": "Whether this notice can be dismissed (closed) by the user.",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
     },
     "extensions": {
       "description": "The Sourcegraph extensions to use. Enable an extension by adding a property `\"my/extension\": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.",

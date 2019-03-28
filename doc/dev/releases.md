@@ -11,6 +11,7 @@ The goal of our release process is to make releases boring, regular, and eventua
 We release Sourcegraph **by** 10am PT on the 20th day of each month.
 
 "Release" means:
+
 - The Docker images are available for download.
 - The blog post is published.
 - The release is documented on docs.sourcegraph.com.
@@ -42,7 +43,7 @@ On rare occasions we may decide to increase the major version number (e.g. 2.13 
 
 What is the process we follow to release?
 
-### Release captains
+### Release captain
 
 The release captain is _responsible_ for managing the release process and ensuring that the release happens on time. The release captain may _delegate_ work to other teammates, but such delegation does not absolve the release captain of their responsibility to ensure that delegated work gets done.
 
@@ -70,7 +71,7 @@ No later than 5 _working days_ before the release day the release captain create
 
 Release captains may trade rotations with each other by updating this schedule.
 
-If a release captain is unexpectedly unavailable and did not arrange a replacement, the captain from the previous release becomes the release captain for the current release.
+If a release captain is unexpectedly unavailable and did not arrange a replacement, the release captain's manager is responsible for identifying a new release captain.
 
 ### Release branches
 

@@ -136,22 +136,27 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     defaultDisplayName: 'GitHub',
     defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-  // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/external_service/github#configuration
+  // Docs: https://docs.sourcegraph.com/admin/external_service/github#configuration
 
-  "url": "https://github.com",
+  "url": "https://github.com", // change to use with GitHub Enterprise
 
-  // A token is required for access to private repos, but is also helpful for public repos
-  // because it grants a higher hourly rate limit to Sourcegraph.
-  // Create one with the repo scope at https://[your-github-instance]/settings/tokens/new
+  // Enter an access token to mirror GitHub repositories. Create one for GitHub.com at
+  // https://github.com/settings/tokens/new?scopes=repo&description=Sourcegraph
+  // (for GitHub Enterprise, replace github.com with your instance's hostname).
+  // The "repo" scope is required to mirror private repositories.
   "token": "",
 
-  // Sync public repositories from https://github.com by adding them to "repos".
-  // (This is not necessary for GitHub Enterprise instances)
-  // "repos": [
-  //     "sourcegraph/sourcegraph"
-  // ]
+  // An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.
+  // See the repositoryQuery documentation at https://docs.sourcegraph.com/admin/external_service/github#configuration for details.
+  "repositoryQuery": [
+      "none"
+      // "org:sourcegraph"
+  ],
 
+  // Sync specific repositories by name (in addition to those matched in the repositoryQuery).
+  "repos": [
+      // "sourcegraph/sourcegraph"
+  ]
 }`,
 }
 

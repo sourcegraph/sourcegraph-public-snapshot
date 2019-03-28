@@ -2,7 +2,7 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { from, Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, map, startWith, tap } from 'rxjs/operators'
 import { modelToTextDocumentPositionParams } from '../../../../../shared/src/api/client/model'
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
@@ -12,6 +12,7 @@ import {
     ViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/view'
 import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
+import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -30,7 +31,8 @@ interface Props
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        ActivationProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
@@ -111,7 +113,22 @@ export class BlobPanel extends React.PureComponent<Props> {
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
                         // tslint:disable-next-line:no-object-literal-type-assertion
-                        locationProvider: registry.getLocations({ ...params, ...extraParams } as P),
+                        locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
+                            tap(locationsObservable =>
+                                locationsObservable.pipe(
+                                    tap(locations => {
+                                        if (
+                                            this.props.activation &&
+                                            id === 'references' &&
+                                            locations &&
+                                            locations.length > 0
+                                        ) {
+                                            this.props.activation.update({ FoundReferences: true })
+                                        }
+                                    })
+                                )
+                            )
+                        ),
                     }
                 })
             ),

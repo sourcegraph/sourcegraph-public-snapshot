@@ -1,9 +1,10 @@
 import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { Location } from '@sourcegraph/extension-api-types'
-import { from, Observable, of, ReplaySubject, Unsubscribable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { isEqual, omit } from 'lodash'
+import { combineLatest, from, of, ReplaySubject, Unsubscribable } from 'rxjs'
+import { distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'
-import { ContributableViewContainer, TextDocumentPositionParams } from '../../protocol'
+import { isDefined } from '../../../util/types'
+import { ContributableViewContainer } from '../../protocol'
 import { modelToTextDocumentPositionParams } from '../model'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { ModelService } from '../services/modelService'
@@ -37,21 +38,30 @@ export class ClientViews implements ClientViewsAPI {
         const panelView = new ReplaySubject<PanelViewData>(1)
         const registryUnsubscribable = this.viewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
-            panelView.pipe(
-                map(({ title, content, priority, component }) => {
-                    const locationProvider: Observable<Observable<Location[] | null>> | undefined = component
-                        ? from(this.modelService.model).pipe(
-                              switchMap(model => {
-                                  const params: TextDocumentPositionParams | null = modelToTextDocumentPositionParams(
-                                      model
-                                  )
-                                  if (!params) {
-                                      return of(of(null))
-                                  }
-                                  return this.textDocumentLocations.getLocations(component.locationProvider, params)
-                              })
-                          )
-                        : undefined
+            combineLatest(
+                panelView.pipe(
+                    map(data => omit(data, 'component')),
+                    distinctUntilChanged((x, y) => isEqual(x, y))
+                ),
+                panelView.pipe(
+                    map(({ component }) => component),
+                    filter(isDefined),
+                    map(({ locationProvider }) => locationProvider),
+                    distinctUntilChanged(),
+                    map(locationProvider =>
+                        from(this.modelService.model).pipe(
+                            switchMap(model => {
+                                const params = modelToTextDocumentPositionParams(model)
+                                if (!params) {
+                                    return of(of(null))
+                                }
+                                return this.textDocumentLocations.getLocations(locationProvider, params)
+                            })
+                        )
+                    )
+                )
+            ).pipe(
+                map(([{ title, content, priority }, locationProvider]) => {
                     const panelView: PanelViewWithComponent = {
                         title,
                         content,

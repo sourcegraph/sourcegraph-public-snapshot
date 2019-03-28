@@ -28,7 +28,7 @@ If you're working on a docs template change involving multiple content versions 
 DOCSITE_CONFIG=$(cat <<-'DOCSITE'
 {
   "templates": "_resources/templates",
-  "content": "https://codeload.github.com/sourcegraph/sourcegraph/zip/$VERSION#*/doc/",
+  "content": "https://codeload.github.com/sourcegraph/sourcegraph/zip/refs/heads/$VERSION#*/doc/",
   "baseURLPath": "/",
   "assets": "_resources/assets",
   "assetsBaseURLPath": "/assets/"
@@ -50,7 +50,7 @@ DOCSITE_CONFIG=$(cat <<-'DOCSITE'
 {
   "templates": "https://codeload.github.com/sourcegraph/sourcegraph/zip/master#*/doc/_resources/templates/",
   "assets": "https://codeload.github.com/sourcegraph/sourcegraph/zip/master#*/doc/_resources/assets/",
-  "content": "https://codeload.github.com/sourcegraph/sourcegraph/zip/$VERSION#*/doc/",
+  "content": "https://codeload.github.com/sourcegraph/sourcegraph/zip/refs/heads/$VERSION#*/doc/",
   "baseURLPath": "/",
   "assetsBaseURLPath": "/assets/"
 }

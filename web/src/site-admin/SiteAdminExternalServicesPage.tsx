@@ -178,7 +178,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
                     <h2 className="mb-0">External services</h2>
                     <Link
                         className="btn btn-primary e2e-goto-add-external-service-page"
-                        to="/site-admin/external-services/add"
+                        to="/site-admin/external-services/new"
                     >
                         <AddIcon className="icon-inline" /> Add external service
                     </Link>

@@ -78,7 +78,7 @@ type Client struct {
 	RateLimit *ratelimit.Monitor
 }
 
-// APIError is an error type returned by Client when the Github API responds with
+// APIError is an error type returned by Client when the GitHub API responds with
 // an error.
 type APIError struct {
 	URL              string
@@ -210,15 +210,8 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 	}()
 
 	resp, err = c.httpClient.Do(req.WithContext(ctx))
-	// If we got an error, and the context has been canceled,
-	// the context's error is probably more useful.
 	if err != nil {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			return err
-		}
+		return err
 	}
 
 	defer resp.Body.Close()

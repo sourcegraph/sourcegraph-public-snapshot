@@ -91,7 +91,7 @@ export async function integrationTestContext(
     const extensionAPI = await extensionHost.extensionAPI
     services.model.model.next(initModel)
 
-    // Wait for initModel to be initialised
+    // Wait for initModel to be initialized
     await Promise.all([
         from(extensionAPI.workspace.openedTextDocuments)
             .pipe(take((initModel.visibleViewComponents || []).length))

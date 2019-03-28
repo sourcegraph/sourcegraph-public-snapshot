@@ -162,7 +162,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 
 func TestRepoLookup(t *testing.T) {
 	s := Server{
-		Store:            repos.NewFakeStore(nil, nil, nil),
+		Store:            new(repos.FakeStore),
 		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
 		InternalAPI:      &internalAPIFake{},
 	}
@@ -231,7 +231,7 @@ func TestRepoLookup_found(t *testing.T) {
 		metadataUpdate: make(chan *api.ReposUpdateMetadataRequest, 1),
 	}
 	s := Server{
-		Store:            repos.NewFakeStore(nil, nil, nil),
+		Store:            new(repos.FakeStore),
 		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
 		InternalAPI:      fa,
 	}
@@ -282,38 +282,41 @@ func TestRepoLookup_found(t *testing.T) {
 func TestRepoLookup_syncer(t *testing.T) {
 	now := time.Now().UTC()
 	ctx := context.Background()
+
+	store := new(repos.FakeStore)
+	_ = store.UpsertRepos(ctx, &repos.Repo{
+		Name:        "github.com/foo/bar",
+		Description: "The description",
+		Language:    "barlang",
+		Enabled:     true,
+		Archived:    false,
+		Fork:        false,
+		CreatedAt:   now,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+		Metadata: &github.Repository{
+			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:           "github.com/foo/bar",
+			DatabaseID:    1234,
+			Description:   "The description",
+			NameWithOwner: "foo/bar",
+		},
+	})
+
 	s := Server{
 		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
 		Syncer:           &repos.Syncer{},
-		Store: repos.NewFakeStore(nil, nil, nil,
-			&repos.Repo{
-				Name:        "github.com/foo/bar",
-				Description: "The description",
-				Language:    "barlang",
-				Enabled:     true,
-				Archived:    false,
-				Fork:        false,
-				CreatedAt:   now,
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: "github",
-					ServiceID:   "https://github.com/",
-				},
-				Sources: map[string]*repos.SourceInfo{
-					"extsvc:123": {
-						ID:       "extsvc:123",
-						CloneURL: "git@github.com:foo/bar.git",
-					},
-				},
-				Metadata: &github.Repository{
-					ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					URL:           "github.com/foo/bar",
-					DatabaseID:    1234,
-					Description:   "The description",
-					NameWithOwner: "foo/bar",
-				},
-			}),
-		InternalAPI: &internalAPIFake{},
+		Store:            store,
+		InternalAPI:      &internalAPIFake{},
 	}
 
 	t.Run("not found", func(t *testing.T) {

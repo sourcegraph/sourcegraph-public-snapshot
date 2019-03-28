@@ -26,8 +26,8 @@ env \
 echo "Copying $IMAGE to the dedicated e2e testing node... done"
 
 echo "Running a daemonized $IMAGE as the test subject..."
-CONTAINER="$(docker container run -d $IMAGE)"
-trap 'kill $(jobs -p)'" ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
+CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev $IMAGE)"
+trap 'kill $(jobs -p)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
 # Connect the server container's port 7080 to localhost:7080 so that e2e tests
@@ -58,6 +58,3 @@ pushd web
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
 env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
 popd
-
-echo "Logs from the sourcegraph/server Docker container that was subject to e2e tests:"
-docker logs --timestamps "$CONTAINER"

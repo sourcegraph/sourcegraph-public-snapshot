@@ -291,3 +291,7 @@ func IsBuiltinSignupAllowed() bool {
 	}
 	return false
 }
+
+func Branding() *schema.Branding {
+	return Get().Branding
+}

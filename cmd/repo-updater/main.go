@@ -23,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -39,9 +37,32 @@ func main() {
 	env.HandleHelpFlag()
 	tracer.Init()
 
+	clock := func() time.Time { return time.Now().UTC() }
+
 	// Syncing relies on access to frontend and git-server, so wait until they started up.
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
+
+	db, err := repos.NewDB(repos.NewDSN().String())
+	if err != nil {
+		log.Fatalf("failed to initialize db store: %v", err)
+	}
+
+	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+
+	cliFactory := repos.NewHTTPClientFactory()
+	src := repos.NewSourcer(cliFactory)
+
+	for _, m := range []repos.Migration{
+		repos.GithubSetDefaultRepositoryQueryMigration(clock),
+		// TODO(tsenart): Enable the following migrations once we implement the
+		// functionality needed to run them only once.
+		//    repos.GithubReposEnabledStateDeprecationMigration(src, clock),
+	} {
+		if err := m.Run(ctx, store); err != nil {
+			log.Fatalf("failed to run migration: %s", err)
+		}
+	}
 
 	var kinds []string
 	if syncerEnabled {
@@ -104,31 +125,11 @@ func main() {
 		}
 	}
 
-	var (
-		store  repos.Store
-		syncer *repos.Syncer
-	)
+	var syncer *repos.Syncer
 
 	if syncerEnabled {
-		db, err := repos.NewDB(repos.NewDSNFromEnv())
-		if err != nil {
-			log.Fatalf("failed to initalise db store: %v", err)
-		}
-
 		diffs := make(chan repos.Diff)
-
-		cliFactory := httpcli.NewFactory(
-			nil, // No middleware for now. Use this for Prometheus instrumentation later.
-			httpcli.TracedTransportOpt,
-			httpcli.NewCachedTransportOpt(httputil.Cache, true),
-		)
-
-		src := repos.NewExternalServicesSourcer(frontendAPI, cliFactory)
-
-		store = repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
-		syncer = repos.NewSyncer(store, src, diffs, func() time.Time {
-			return time.Now().UTC()
-		})
+		syncer = repos.NewSyncer(store, src, diffs, clock)
 
 		log15.Info("starting new syncer", "external service kinds", kinds)
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval(), kinds...)) }()
