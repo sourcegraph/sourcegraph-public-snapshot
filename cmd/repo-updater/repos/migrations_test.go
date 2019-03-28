@@ -391,6 +391,124 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 	}
 }
 
+func TestGitLabSetDefaultProjectQueryMigration(t *testing.T) {
+	t.Parallel()
+	testGitLabSetDefaultProjectQueryMigration(new(repos.FakeStore))(t)
+}
+
+func testGitLabSetDefaultProjectQueryMigration(store repos.Store) func(*testing.T) {
+	github := repos.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "Github.com - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://github.com"
+			}
+		`),
+	}
+
+	gitlabNone := repos.ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "Gitlab - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://gitlab.com",
+				"projectQuery": ["none"]
+			}
+		`),
+	}
+
+	gitlab := repos.ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "Gitlab - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://gitlab.com"
+			}
+		`),
+	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name   string
+			stored repos.ExternalServices
+			assert repos.ExternalServicesAssertion
+			err    string
+		}{
+			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
+			{
+				name:   "non-gitlab services are left unchanged",
+				stored: repos.ExternalServices{&github},
+				assert: repos.Assert.ExternalServicesEqual(&github),
+				err:    "<nil>",
+			},
+			{
+				name:   "gitlab services with projectQuery set are left unchanged",
+				stored: repos.ExternalServices{&gitlabNone},
+				assert: repos.Assert.ExternalServicesEqual(&gitlabNone),
+				err:    "<nil>",
+			},
+			{
+				name:   "gitlab services are set to ?membership=true",
+				stored: repos.ExternalServices{&gitlab},
+				assert: repos.Assert.ExternalServicesEqual(
+					gitlab.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							e.Config = formatJSON(`
+								{
+									// Some comment
+									"url": "https://gitlab.com",
+									"projectQuery": ["?membership=true"]
+								}
+							`)
+						},
+					),
+				),
+				err: "<nil>",
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+					t.Errorf("failed to prepare store: %v", err)
+					return
+				}
+
+				err := repos.GitLabSetDefaultProjectQueryMigration(clock.Now).Run(ctx, tx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				es, err := tx.ListExternalServices(ctx)
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, es)
+				}
+			}))
+		}
+
+	}
+}
+
 func formatJSON(s string) string {
 	formatted, err := jsonc.Format(s, true, 2)
 	if err != nil {

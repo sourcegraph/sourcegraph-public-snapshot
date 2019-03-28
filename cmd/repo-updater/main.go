@@ -55,6 +55,7 @@ func main() {
 
 	for _, m := range []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
+		repos.GitLabSetDefaultProjectQueryMigration(clock),
 		// TODO(tsenart): Enable the following migrations once we implement the
 		// functionality needed to run them only once.
 		//    repos.GithubReposEnabledStateDeprecationMigration(src, clock),
