@@ -101,7 +101,6 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                             locationsOrError: isErrorLike(locationsOrError)
                                 ? locationsOrError
                                 : { ...old.locationsOrError, ...locationsOrError },
-                            selectedGroups: old.selectedGroups,
                         })),
                     error => console.error(error)
                 )
