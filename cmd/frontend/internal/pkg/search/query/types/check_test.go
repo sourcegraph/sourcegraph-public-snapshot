@@ -215,7 +215,7 @@ func Test_autoFix(t *testing.T) {
 				twice := autoFix(once)
 				return once == twice
 			},
-			gen.AnyString(),
+			gen.RegexMatch(`^?[abc123()\[\]{}.?\\^$*+]*$?`),
 		))
 		props.TestingRun(t)
 	})
