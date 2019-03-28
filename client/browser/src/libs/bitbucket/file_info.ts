@@ -60,9 +60,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                     map(baseCommitID => ({ baseCommitID, headCommitID: commitID, ...rest }))
                 )
             } else if (prID) {
-                return getCommitsForPR({ project, repoSlug, prID: prID! }).pipe(
-                    map(commits => ({ ...rest, ...commits }))
-                )
+                return getCommitsForPR({ project, repoSlug, prID }).pipe(map(commits => ({ ...rest, ...commits })))
             } else {
                 throw new Error('Cannot resolve diff: no commitID or prID')
             }
