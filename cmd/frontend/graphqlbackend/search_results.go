@@ -22,6 +22,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -230,14 +231,23 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		repoToMatchCount[uri] += lineMatchCount
 		add(filter, uri, repoToMatchCount[uri], limitHit, "repo")
 	}
-	addFileFilter := func(filematchPath string, lineMatchCount int, limitHit bool) {
-		if ext := path.Ext(filematchPath); ext != "" {
-			value := fmt.Sprintf(`file:%s$`, regexp.QuoteMeta(ext))
-			add(value, value, lineMatchCount, false, "file")
+
+	addLangFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
+		extensionToLanguageLookup := func(ext string) string {
+			for _, lang := range filelang.Langs {
+				for _, langExt := range lang.Extensions {
+					if ext == langExt {
+						return strings.ToLower(lang.Name)
+					}
+				}
+			}
+			return ""
 		}
-		for _, ff := range commonFileFilters {
-			if ff.Regexp.MatchString(filematchPath) {
-				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file")
+		if ext := path.Ext(fileMatchPath); ext != "" {
+			language := extensionToLanguageLookup(path.Ext(fileMatchPath))
+			if language != "" {
+				value := fmt.Sprintf(`lang:%s`, language)
+				add(value, value, lineMatchCount, limitHit, "lang")
 			}
 		}
 	}
@@ -249,7 +259,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 				rev = *result.fileMatch.inputRev
 			}
 			addRepoFilter(string(result.fileMatch.repo.Name), rev, len(result.fileMatch.LineMatches()))
-			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
+			addLangFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
 
 			if len(result.fileMatch.symbols) > 0 {
 				add("type:symbol", "type:symbol", 1, result.fileMatch.JLimitHit, "symbol")
@@ -305,7 +315,7 @@ type searchFilterResolver struct {
 	// whether the results returned for a repository are incomplete
 	limitHit bool
 
-	// the kind of filter. Should be "repo" or "file".
+	// the kind of filter. Should be "repo" or "lang".
 	kind string
 
 	// score is used to select potential filters
