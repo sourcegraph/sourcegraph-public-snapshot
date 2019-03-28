@@ -142,7 +142,8 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 }
 
 var autoFixRx1 = regexp.MustCompile(`(^[*$])`)
-var autoFixRx2 = regexp.MustCompile(`([^\\]|^)\(([^)]+$)`)
+var leftParenRx = regexp.MustCompile(`([^\\]|^)\(`)
+var rightParenRx = regexp.MustCompile(`([^\\]|^)\)`)
 var autoFixRx3 = regexp.MustCompile(`^([^(]*)([^\\]|^)\)`)
 var autoFixRx4 = regexp.MustCompile(`([^\\]|^)([([])$`)
 
@@ -151,8 +152,12 @@ var autoFixRx4 = regexp.MustCompile(`([^\\]|^)([([])$`)
 func autoFix(pat string) string {
 	pat = autoFixRx1.ReplaceAllString(pat, `\$1`)
 	pat = strings.Replace(pat, "()", `\(\)`, -1)
-	pat = autoFixRx2.ReplaceAllString(pat, `$1\($2`)
-	pat = autoFixRx3.ReplaceAllString(pat, `$1$2\)`)
+	if !strings.Contains(pat, ")") && strings.Count(pat, "(") == 1 {
+		pat = leftParenRx.ReplaceAllString(pat, `$1\(`)
+	}
+	if !strings.Contains(pat, "(") && strings.Count(pat, ")") == 1 {
+		pat = rightParenRx.ReplaceAllString(pat, `$1\)`)
+	}
 	pat = autoFixRx4.ReplaceAllString(pat, `$1\$2`)
 	return pat
 }
