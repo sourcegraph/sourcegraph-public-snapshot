@@ -141,9 +141,10 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 	return nil
 }
 
-var autoFixRx = regexp.MustCompile(`(^[*$]|[([]$)`)
+var autoFixRx = regexp.MustCompile(`(^[*$])`)
 var autoFixRx2 = regexp.MustCompile(`\(([^)]+$)`)
 var autoFixRx3 = regexp.MustCompile(`^([^(]*)\)`)
+var autoFixRx4 = regexp.MustCompile(`([^\\]|^)([([])$`)
 
 // autoFix escapes various patterns that are very likely not meant to be
 // treated as regular expressions.
@@ -152,6 +153,7 @@ func autoFix(pat string) string {
 	pat = strings.Replace(pat, "()", `\(\)`, -1)
 	pat = autoFixRx2.ReplaceAllString(pat, `\($1`)
 	pat = autoFixRx3.ReplaceAllString(pat, `$1\)`)
+	pat = autoFixRx4.ReplaceAllString(pat, `$1\$2`)
 	return pat
 }
 
