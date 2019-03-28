@@ -1,6 +1,6 @@
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
-class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
+export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
     constructor(props: { onChange?: (isVisible: boolean) => void }) {
         super(props)
         if (props.onChange) {
