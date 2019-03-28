@@ -165,8 +165,11 @@ func Test_autoFix(t *testing.T) {
 		{"a(", `a\(`},
 		{"(a", `\(a`},
 		{"(a)", "(a)"},
+		{`\ba(`, `\ba\(`},
 		{`\bfoo(`, `\bfoo\(`},
-		{"*myvar", `\*myvar`},
+		{"*", `\*`},
+		{"*a", `\*a`},
+		{"a*", "a*"},
 		// For PHP:
 		{"$myvar", `\$myvar`},
 		{"$f(", `\$f\(`},
