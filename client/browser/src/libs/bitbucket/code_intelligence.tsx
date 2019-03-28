@@ -102,17 +102,17 @@ function getCommandPaletteMount(): HTMLElement {
         throw new Error('Unable to find command palette mount')
     }
 
-    const commandListClass = 'command-palette-button command-palette-button__bitbucket-server'
+    const commandListClasses = ['command-palette-button', 'command-palette-button__bitbucket-server']
 
     const createCommandList = (): HTMLElement => {
         const commandListElem = document.createElement('li')
-        commandListElem.className = commandListClass
+        commandListElem.className = commandListClasses.join(' ')
         headerElem!.insertAdjacentElement('beforeend', commandListElem)
 
         return commandListElem
     }
 
-    return document.querySelector<HTMLElement>('.' + commandListClass) || createCommandList()
+    return document.querySelector<HTMLElement>(commandListClasses.map(c => `.${c}`).join('')) || createCommandList()
 }
 
 export const bitbucketServerCodeHost: CodeHost = {
