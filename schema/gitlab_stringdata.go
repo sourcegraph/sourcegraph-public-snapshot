@@ -45,6 +45,7 @@ const GitLabSchemaJSON = `{
       "minItems": 1,
       "items": {
         "type": "object",
+        "title": "GitLabProject",
         "additionalProperties": false,
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
@@ -55,8 +56,7 @@ const GitLabSchemaJSON = `{
           },
           "id": {
             "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to mirror.",
-            "type": "string",
-            "minLength": 1
+            "type": "integer"
           }
         }
       }
@@ -78,8 +78,7 @@ const GitLabSchemaJSON = `{
           },
           "id": {
             "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.",
-            "type": "string",
-            "minLength": 1
+            "type": "integer"
           }
         }
       }

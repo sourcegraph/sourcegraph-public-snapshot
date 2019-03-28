@@ -540,6 +540,12 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 			}
 			repo, err := c.client.GetRepository(ctx, owner, name)
 			if err != nil {
+				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+				// 404 errors on external service config validation.
+				if github.IsNotFound(err) {
+					log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
+					continue
+				}
 				b.err = errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)
 				break
 			}

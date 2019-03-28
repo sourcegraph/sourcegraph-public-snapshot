@@ -270,8 +270,8 @@ func newGitLabConnection(config *schema.GitLabConnection, cf httpcli.Factory) (*
 			exclude[r.Name] = true
 		}
 
-		if r.Id != "" {
-			exclude[r.Id] = true
+		if r.Id != 0 {
+			exclude[strconv.Itoa(r.Id)] = true
 		}
 	}
 
@@ -339,6 +339,49 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 	}
 
 	var wg sync.WaitGroup
+
+	projch := make(chan *schema.GitLabProject)
+	for i := 0; i < 5; i++ { // 5 concurrent requests
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for p := range projch {
+				proj, err := c.client.GetProject(ctx, gitlab.GetProjectOp{
+					ID:                p.Id,
+					PathWithNamespace: p.Name,
+					CommonOp:          gitlab.CommonOp{NoCache: true},
+				})
+
+				if err != nil {
+					// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+					// 404 errors on external service config validation.
+					if gitlab.IsNotFound(err) {
+						log15.Warn("skipping missing gitlab.projects entry:", "name", p.Name, "id", p.Id, "err", err)
+						continue
+					}
+					ch <- batch{err: errors.Wrapf(err, "gitlab.projects: id: %d, name: %q", p.Id, p.Name)}
+				} else {
+					ch <- batch{projs: []*gitlab.Project{proj}}
+				}
+
+				time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(1))
+			}
+		}()
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer close(projch)
+		for _, p := range c.config.Projects {
+			select {
+			case projch <- p:
+			case <-ctx.Done():
+				break
+			}
+		}
+	}()
+
 	for _, projectQuery := range configProjectQuery {
 		if projectQuery == "none" {
 			continue
@@ -370,6 +413,9 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 					return
 				}
 				url = *nextPageURL
+
+				// 0-duration sleep unless nearing rate limit exhaustion
+				time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}

@@ -345,14 +345,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
-			desc:   "invalid empty exclude item id",
-			config: `{"exclude": [{"id": ""}]}`,
-			assert: includes(`exclude.0.id: String length must be greater than or equal to 1`),
-		},
-		{
-			kind:   "GITLAB",
 			desc:   "invalid additional exclude item properties",
-			config: `{"exclude": [{"id": "foo", "bar": "baz"}]}`,
+			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
 			assert: includes(`bar: Additional property bar is not allowed`),
 		},
 		{
@@ -363,7 +357,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://gitlab.corp.com",
 				"token": "very-secret-token",
 				"exclude": [
-					{"name": "foo/bar", "id": "AAAAA="}
+					{"name": "foo/bar", "id": 1234}
 				]
 			}`,
 			assert: equals(`<nil>`),
@@ -394,14 +388,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
-			desc:   "invalid empty projects item id",
-			config: `{"projects": [{"id": ""}]}`,
-			assert: includes(`projects.0.id: String length must be greater than or equal to 1`),
-		},
-		{
-			kind:   "GITLAB",
 			desc:   "invalid additional projects item properties",
-			config: `{"projects": [{"id": "foo", "bar": "baz"}]}`,
+			config: `{"projects": [{"id": 1234, "bar": "baz"}]}`,
 			assert: includes(`bar: Additional property bar is not allowed`),
 		},
 		{
@@ -412,7 +400,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://gitlab.corp.com",
 				"token": "very-secret-token",
 				"projects": [
-					{"name": "foo/bar", "id": "AAAAA="}
+					{"name": "foo/bar", "id": 1234}
 				]
 			}`,
 			assert: equals(`<nil>`),

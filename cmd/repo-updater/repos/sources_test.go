@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -188,7 +190,7 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 					Exclude: []*schema.ExcludedGitLabProject{
 						{Name: "gokulkarthick/gokulkarthick"},
-						{Id: "7789240"},
+						{Id: 7789240},
 					},
 				}),
 			},
@@ -219,7 +221,7 @@ func TestSources_ListRepos(t *testing.T) {
 						}
 					case *schema.GitLabConnection:
 						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: e.Id})
+							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id)})
 						}
 					}
 
@@ -240,6 +242,58 @@ func TestSources_ListRepos(t *testing.T) {
 					if set[r.Name] || set[r.ExternalRepo.ID] {
 						t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
 					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+					Repos: []string{
+						"sourcegraph/Sourcegraph",
+						"tsenart/Vegeta",
+						"tsenart/vegeta-missing",
+					},
+				}),
+			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:          "https://gitlab.com",
+					ProjectQuery: []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+						{Name: "gnachman/iterm2-missing"},
+						{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "included repos that exist are yielded",
+			svcs: svcs,
+			assert: func(t testing.TB, rs Repos) {
+				t.Helper()
+
+				have := rs.Names()
+				sort.Strings(have)
+
+				want := []string{
+					"github.com/sourcegraph/sourcegraph",
+					"github.com/tsenart/vegeta",
+					"gitlab.com/gitlab-org/gitlab-ce",
+					"gitlab.com/gnachman/iterm2",
+				}
+
+				if !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
 				}
 			},
 			err: "<nil>",

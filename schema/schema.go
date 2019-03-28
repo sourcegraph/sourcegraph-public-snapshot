@@ -147,7 +147,7 @@ type ExcludedGitHubRepo struct {
 	Name string `json:"name,omitempty"`
 }
 type ExcludedGitLabProject struct {
-	Id   string `json:"id,omitempty"`
+	Id   int    `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 }
 
@@ -221,10 +221,14 @@ type GitLabConnection struct {
 	GitURLType                  string                   `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool                     `json:"initialRepositoryEnablement,omitempty"`
 	ProjectQuery                []string                 `json:"projectQuery,omitempty"`
-	Projects                    []*Projects              `json:"projects,omitempty"`
+	Projects                    []*GitLabProject         `json:"projects,omitempty"`
 	RepositoryPathPattern       string                   `json:"repositoryPathPattern,omitempty"`
 	Token                       string                   `json:"token"`
 	Url                         string                   `json:"url"`
+}
+type GitLabProject struct {
+	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -334,10 +338,6 @@ type PhabricatorConnection struct {
 	Repos []*Repos `json:"repos,omitempty"`
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
-}
-type Projects struct {
-	Id   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
 }
 type Repos struct {
 	Callsign string `json:"callsign"`
