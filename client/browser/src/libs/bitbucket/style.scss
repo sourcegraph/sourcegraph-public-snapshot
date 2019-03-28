@@ -19,3 +19,22 @@
         display: block;
     }
 }
+
+.command-palette-popover__bitbucket-server {
+    border-radius: 3px;
+
+    .command-list {
+        input {
+            height: 30px;
+            border-radius: 3px;
+            box-sizing: border-box;
+            border: 1px solid #dfe1e6;
+            font-size: 14px;
+            margin-top: 0.5rem;
+        }
+    }
+
+    .action-item {
+        box-sizing: border-box;
+    }
+}

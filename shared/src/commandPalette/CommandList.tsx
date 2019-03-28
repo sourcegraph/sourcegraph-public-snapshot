@@ -17,6 +17,7 @@ import { PlatformContextProps } from '../platform/context'
 interface Props
     extends ExtensionsControllerProps<'services' | 'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip'> {
+    popoverClassName?: string
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
@@ -271,7 +272,7 @@ export class CommandListPopoverButton extends React.PureComponent<
     public render(): JSX.Element | null {
         return (
             <PopoverButton
-                popoverClassName="rounded"
+                popoverClassName={this.props.popoverClassName || 'rounded'}
                 placement="auto-end"
                 toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 hideOnChange={this.state.hideOnChange}

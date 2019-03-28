@@ -196,6 +196,9 @@ export interface CodeHost {
 
     /** Optional classes for ActionNavItems, useful to customize the style of buttons contributed to the code view toolbar */
     actionNavItemClassProps?: ActionNavItemsClassProps
+
+    /** Optional class to set on the command palette popover element */
+    commandPalettePopoverClassName?: string
 }
 
 export interface FileInfo {
@@ -447,7 +450,13 @@ export function handleCodeHost({
     subscriptions.add(hoverifier)
 
     // Inject UI components
-    injectCommandPalette({ extensionsController, platformContext, history, getMount: codeHost.getCommandPaletteMount })
+    injectCommandPalette({
+        extensionsController,
+        platformContext,
+        history,
+        getMount: codeHost.getCommandPaletteMount,
+        popoverClassName: codeHost.commandPalettePopoverClassName,
+    })
     injectGlobalDebug({
         extensionsController,
         platformContext,

@@ -122,4 +122,5 @@ export const bitbucketServerCodeHost: CodeHost = {
         !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket'),
     codeViewResolver,
     getCommandPaletteMount,
+    commandPalettePopoverClassName: 'command-palette-popover__bitbucket-server',
 }
