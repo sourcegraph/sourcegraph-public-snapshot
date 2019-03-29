@@ -9,7 +9,7 @@ import (
 
 type recentSearches struct{}
 
-// Add adds the query q to the recentSearches table in the db.
+// Add inserts the query q to the recentSearches table in the db.
 func (*recentSearches) Add(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
 	if dbconn.Global == nil {
