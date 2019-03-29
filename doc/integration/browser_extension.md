@@ -28,51 +28,74 @@ When you hover your mouse over code in files, diffs, pull requests, etc., the So
 - **Go to definition** button
 - **Find references** button
 
-### Search shortcut in location bar
+### Search shortcut in URL location bar
+
+![Sourcegraph search shortcut](img/SearchShortcut2.gif)
 
 The Sourcegraph extension adds a search engine shortcut to your web browser that performs a search on your Sourcegraph instance. After you've installed it (see above), use the search shortcut it provides to perform a search:
 
-1.  In the Chrome or Firefox location bar, type <kbd>src</kbd> <kbd>Space</kbd>.
-1.  Start typing your search query.
-1.  Select an instant search suggestion or press <kbd>Enter</kbd> to see all results.
+1. Place cursor in the URL location bar, then type <kbd>src</kbd> <kbd>Space</kbd>.
+1. Start typing your search query.
+1. Select an instant search suggestion or press <kbd>Enter</kbd> to see all results.
 
 To install this search engine shortcut manually, and for more information, see "[Browser search engine shortcuts](browser_search_engine.md)".
 
-## Configuration
+## Configuring the Sourcegraph instance to use
 
-### Configuring the Sourcegraph instance to use
+![Sourcegraph search shortcut](img/ConfigureSourcegraphInstanceUse.gif)
 
 By default, the browser extension communicates with [Sourcegraph.com](https://sourcegraph.com), which has only public code.
 
 To use the browser extension with a different Sourcegraph instance:
 
-1.  Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
-1.  Click **Update** and enter the URL of a Sourcegraph instance (such as `https://sourcegraph.example.com` or `https://sourcegraph.com`).
-1.  Click **Save**.
+1. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
+1. Enter the URL (including the protocol) of your Sourcegraph instance (such as `https://sourcegraph.example.com`).
+1. Hit return/enter and the extension will indicate its connection status.
 
-### Enabling the browser extension on your code host
+## Enabling the browser extension on your code host
 
 By default, the Sourcegraph browser extension will only provide code intelligence on [github.com](https://github.com/). It needs additional permissions in order to run on other code hosts.
 
 To grant these permissions:
 
-1.  Navigate to any page on your code host.
-1.  Right-click the Sourcegraph icon in the browser extension toolbar.
-1.  Click "Enable Sourcegraph on this domain".
-1.  Click "Allow" in the permissions request popup.
+1. Navigate to any page on your code host.
+1. Right-click the Sourcegraph icon in the browser extension toolbar.
+1. Click "Enable Sourcegraph on this domain".
+1. Click "Allow" in the permissions request popup.
 
-### Troubleshooting
+## Troubleshooting
 
 The most common problem is:
 
-#### No code intelligence or buttons ("View repository", "View file", etc.) are displayed on the code host.
+### No code intelligence or buttons ("View repository", "View file", etc.) are displayed on the code host
+
+![Browser extension not working on code host](img/BrowserExtensionNotWorkingCodeHost.gif)
 
 Try the following:
 
-1.  Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
+1. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
     - Ensure that the Sourcegraph URL is correct. It must point to your own Sourcegraph instance to work on private code.
     - Check whether any permissions must be granted. If so, the settings page will offer you to "grant the Sourcegraph browser extension additional permissions".
 1. On some code hosts, you need to be signed in (to the code host) to use the browser extension. Try signing in.
+
+### The *Enable Sourcegraph on this domain* option is not available
+
+In rare cases, Chrome can get into the state where the option to **Enable Sourcegraph on this domain** is not available when right-clicking on the extension icon.
+
+In this case:
+
+1. Remove/uninstall the browser extension
+1. [Re-install the extension](https://docs.sourcegraph.com/integration/browser_extension)
+1. Click on the extension icon and enter the URL of your Sourcegraph instance.
+1. Navigate to your code host, e.g. GitLab.com, then again, right-click on the extension icon and select **Enable Sourcegraph on this domain**.
+
+### Viewing browser extension console and network activity in Chrome
+
+The next step is to inspect the browser extension console output and network activity, often revealing subtle configuration errors.
+
+![Chrome extension console and network activity](img/ChromeExtensionConsoleNetworkActivity.gif)
+
+If that still doesn't help, take a screenshot of the console and network activity and attach it [to a new issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=Browser%20extension%20-%20)so we can investigate further.
 
 ## Privacy
 
