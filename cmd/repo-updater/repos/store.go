@@ -695,7 +695,7 @@ func scanRepo(r *Repo, s scanner) error {
 		return nil
 	}
 
-	if err = json.Unmarshal(metadata, &r.Metadata); err != nil {
+	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
 		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
 	}
 
