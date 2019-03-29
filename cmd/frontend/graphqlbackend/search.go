@@ -83,9 +83,6 @@ func addQueryToSearchesTable(q string) {
 	if err := db.RecentSearches.Add(ctx, q); err != nil {
 		log15.Error("adding query to searches table", "error", err)
 	}
-	if err := db.RecentSearches.DeleteExcessRows(ctx, 1e5); err != nil {
-		log15.Error("deleting excess rows from searches table", "error", err)
-	}
 }
 
 func asString(v *searchquerytypes.Value) string {
