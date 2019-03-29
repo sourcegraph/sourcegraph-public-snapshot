@@ -207,13 +207,13 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     filter(isDefined),
                     switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
                     // Ignore click events caused by the user selecting text
-                    filter(() => window.getSelection().toString() === '')
+                    filter(() => window.getSelection()!.toString() === '')
                 )
                 .subscribe(event => {
                     // Prevent selecting text on shift click (click+drag to select will still work)
                     // Note that this is only called if the selection was empty initially (see above),
                     // so this only clears a selection caused by this click.
-                    window.getSelection().removeAllRanges()
+                    window.getSelection()!.removeAllRanges()
 
                     const position = locateTarget(event.target as HTMLElement, domFunctions)
                     let hash: string
@@ -293,7 +293,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     ...this.props.extensionsController.services.model.model.value,
                     visibleViewComponents: [
                         {
-                            type: 'textEditor' as 'textEditor',
+                            type: 'textEditor' as const,
                             item: {
                                 uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
                                 languageId: model.mode,
