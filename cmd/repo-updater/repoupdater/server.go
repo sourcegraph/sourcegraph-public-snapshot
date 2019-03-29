@@ -112,7 +112,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	switch req.ExternalService.Kind {
-	case "GITHUB":
+	case "GITHUB", "GITLAB":
 		_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
 		switch {
 		case err == nil:
@@ -182,11 +182,13 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return info, true, nil
 		}})
 	} else {
-		fns = append(fns, getfn{"GITHUB", repos.GetGitHubRepository})
+		fns = append(fns,
+			getfn{"GITHUB", repos.GetGitHubRepository},
+			getfn{"GITLAB", repos.GetGitLabRepository},
+		)
 	}
 
 	fns = append(fns,
-		getfn{"GITLAB", repos.GetGitLabRepository},
 		getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
 		getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
 		getfn{"GITOLITE", repos.GetGitoliteRepository},

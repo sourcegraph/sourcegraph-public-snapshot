@@ -7,14 +7,17 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -65,7 +68,7 @@ func SyncGitLabConnections(ctx context.Context) {
 
 		var conns []*gitlabConnection
 		for _, c := range gitlabConf {
-			conn, err := newGitLabConnection(c)
+			conn, err := newGitLabConnection(c, nil)
 			if err != nil {
 				log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)
 				continue
@@ -213,12 +216,15 @@ func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.R
 
 // updateGitLabProjects ensures that all provided repositories exist in the repository table.
 func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
-	projs := conn.listAllProjects(ctx)
+	projs, err := conn.listAllProjects(ctx)
+	if err != nil {
+		log15.Error("failed to list some gitlab projects", "error", err.Error())
+	}
 
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("gitlab:%s", conn.config.Token), repoChan)
-	for proj := range projs {
+	for _, proj := range projs {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoName:     gitlabProjectToRepoPath(conn, proj),
@@ -233,14 +239,27 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 	}
 }
 
-func newGitLabConnection(config *schema.GitLabConnection) (*gitlabConnection, error) {
+func newGitLabConnection(config *schema.GitLabConnection, cf httpcli.Factory) (*gitlabConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
 	baseURL = NormalizeBaseURL(baseURL)
 
-	transport, err := cachedTransportWithCertTrusted(config.Certificate)
+	if cf == nil {
+		cf = NewHTTPClientFactory()
+	}
+
+	var opts []httpcli.Opt
+	if config.Certificate != "" {
+		pool, err := newCertPool(config.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+	}
+
+	cli, err := cf.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +267,7 @@ func newGitLabConnection(config *schema.GitLabConnection) (*gitlabConnection, er
 	return &gitlabConnection{
 		config:  config,
 		baseURL: baseURL,
-		client:  gitlab.NewClientProvider(baseURL, transport).GetPATClient(config.Token, ""),
+		client:  gitlab.NewClientProvider(baseURL, cli).GetPATClient(config.Token, ""),
 	}, nil
 }
 
@@ -277,7 +296,14 @@ func (c *gitlabConnection) authenticatedRemoteURL(proj *gitlab.Project) string {
 	return u.String()
 }
 
-func (c *gitlabConnection) listAllProjects(ctx context.Context) <-chan *gitlab.Project {
+func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Project, error) {
+	type batch struct {
+		projs []*gitlab.Project
+		err   error
+	}
+
+	ch := make(chan batch)
+
 	configProjectQuery := c.config.ProjectQuery
 	if len(configProjectQuery) == 0 {
 		configProjectQuery = []string{"?membership=true"}
@@ -295,39 +321,57 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) <-chan *gitlab.P
 		return q, nil
 	}
 
-	const perPage = 100 // max GitLab API per_page parameter
-	ch := make(chan *gitlab.Project, perPage)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	go func() {
-	projectsQueries:
+		defer wg.Done()
 		for _, projectQuery := range configProjectQuery {
 			if projectQuery == "none" {
 				continue
 			}
 			q, err := normalizeQuery(projectQuery)
 			if err != nil {
-				log15.Error("Skipping invalid GitLab projectQuery", "projectQuery", projectQuery, "error", err)
+				ch <- batch{err: errors.Wrapf(err, "invalid GitLab projectQuery=%q", projectQuery)}
 				continue
 			}
-			q.Set("per_page", strconv.Itoa(perPage))
+			q.Set("per_page", "100")
 
 			url := "projects?" + q.Encode() // first page URL
 			for {
+				if err := ctx.Err(); err != nil {
+					ch <- batch{err: err}
+					return
+				}
 				projects, nextPageURL, err := c.client.ListProjects(ctx, url)
 				if err != nil {
-					log15.Error("Error listing GitLab projects", "url", url, "error", err)
-					continue projectsQueries
+					ch <- batch{err: errors.Wrapf(err, "error listing GitLab projects: url=%q", url)}
+					break
 				}
-				for _, p := range projects {
-					ch <- p
-				}
+				ch <- batch{projs: projects}
 				if nextPageURL == nil {
 					break
 				}
 				url = *nextPageURL
 			}
 		}
+	}()
+
+	go func() {
+		wg.Wait()
 		close(ch)
 	}()
 
-	return ch
+	var projects []*gitlab.Project
+	errs := new(multierror.Error)
+
+	for b := range ch {
+		if b.err != nil {
+			errs = multierror.Append(errs, b.err)
+		} else {
+			projects = append(projects, b.projs...)
+		}
+	}
+
+	return projects, errs.ErrorOrNil()
 }

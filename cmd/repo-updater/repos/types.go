@@ -30,7 +30,7 @@ type ExternalService struct {
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
-	return "extsvc:" + strconv.FormatInt(e.ID, 10)
+	return "extsvc:" + strings.ToLower(e.Kind) + ":" + strconv.FormatInt(e.ID, 10)
 }
 
 // IsDeleted returns true if the external service is deleted.
@@ -64,6 +64,29 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 	}
 
 	return modified
+}
+
+// Configuration returns the external service config.
+func (e ExternalService) Configuration() (cfg interface{}, _ error) {
+	switch strings.ToLower(e.Kind) {
+	case "awscodecommit":
+		cfg = &schema.AWSCodeCommitConnection{}
+	case "bitbucketserver":
+		cfg = &schema.BitbucketServerConnection{}
+	case "github":
+		cfg = &schema.GitHubConnection{}
+	case "gitlab":
+		cfg = &schema.GitLabConnection{}
+	case "gitolite":
+		cfg = &schema.GitoliteConnection{}
+	case "phabricator":
+		cfg = &schema.PhabricatorConnection{}
+	case "other":
+		cfg = &schema.OtherExternalServiceConnection{}
+	default:
+		return nil, fmt.Errorf("unknown external service kind %q", e.Kind)
+	}
+	return cfg, jsonc.Unmarshal(e.Config, cfg)
 }
 
 // ExcludeGithubRepos changes the configuration of a Github external service to exclude the
@@ -157,16 +180,9 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
 	}
 
-	var c interface{}
-	switch kind {
-	case "github":
-		c = new(schema.GitHubConnection)
-	default:
-		panic("not implemented")
-	}
-
-	if err := jsonc.Unmarshal(e.Config, c); err != nil {
-		return fmt.Errorf("external service id=%d config unmarshaling error: %s", e.ID, err)
+	c, err := e.Configuration()
+	if err != nil {
+		return errors.Wrap(err, "config")
 	}
 
 	path, val := opt(c)
@@ -295,12 +311,12 @@ type SourceInfo struct {
 // ExternalServiceID returns the ID of the external service this
 // SourceInfo refers to.
 func (i SourceInfo) ExternalServiceID() int64 {
-	ps := strings.SplitN(i.ID, ":", 2)
-	if len(ps) != 2 {
+	ps := strings.SplitN(i.ID, ":", 3)
+	if len(ps) != 3 {
 		return -1
 	}
 
-	id, err := strconv.ParseInt(ps[1], 10, 64)
+	id, err := strconv.ParseInt(ps[2], 10, 64)
 	if err != nil {
 		return -1
 	}
@@ -442,6 +458,13 @@ func (rs Repos) Apply(opts ...func(*Repo)) {
 	}
 }
 
+// With returns a clone of the given repos with the given functional options applied.
+func (rs Repos) With(opts ...func(*Repo)) Repos {
+	clone := rs.Clone()
+	clone.Apply(opts...)
+	return clone
+}
+
 // Filter returns all the Repos that match the given predicate.
 func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	for _, r := range rs {
@@ -463,6 +486,18 @@ func (es ExternalServices) DisplayNames() []string {
 		names[i] = es[i].DisplayName
 	}
 	return names
+}
+
+// Kinds returns the unique set of Kinds in the given external services list.
+func (es ExternalServices) Kinds() (kinds []string) {
+	set := make(map[string]bool, len(es))
+	for _, e := range es {
+		if !set[e.Kind] {
+			kinds = append(kinds, e.Kind)
+			set[e.Kind] = true
+		}
+	}
+	return kinds
 }
 
 // URNs returns the list of URNs from all ExternalServices.

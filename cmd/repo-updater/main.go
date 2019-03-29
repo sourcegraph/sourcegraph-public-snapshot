@@ -66,7 +66,10 @@ func main() {
 
 	var kinds []string
 	if syncerEnabled {
-		kinds = append(kinds, "GITHUB")
+		kinds = append(kinds,
+			"GITHUB",
+			"GITLAB",
+		)
 	}
 
 	newSyncerEnabled := make(map[string]bool, len(kinds))
