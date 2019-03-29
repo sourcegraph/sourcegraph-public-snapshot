@@ -18,7 +18,6 @@
     "all:typecheck": "gulp generate && dev/foreach-ts-project.sh $PWD/node_modules/.bin/tsc -p tsconfig.json",
     "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
-    "prepublish": "gulp generate && yarn --cwd shared -s run tslint:build-rules",
     "test": "jest --testPathIgnorePatterns e2e"
   },
   "browserslist": [
