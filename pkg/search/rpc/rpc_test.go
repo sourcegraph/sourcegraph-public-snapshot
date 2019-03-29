@@ -8,16 +8,16 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/rpc"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 )
 
 func TestClientServer(t *testing.T) {
 	mock := &mockSearcher{
 		wantSearch: query.NewAnd(mustParse("hello world|universe"), query.NewRepoSet("foo/bar", "baz/bam")),
-		searchResult: &zoekt.Result{
-			Files: []zoekt.FileMatch{
+		searchResult: &search.Result{
+			Files: []search.FileMatch{
 				{Path: "bin.go"},
 			},
 		},
@@ -36,7 +36,7 @@ func TestClientServer(t *testing.T) {
 	client := rpc.Client(u.Host)
 	defer client.Close()
 
-	r, err := client.Search(context.Background(), mock.wantSearch, &zoekt.Options{})
+	r, err := client.Search(context.Background(), mock.wantSearch, &search.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,10 +47,10 @@ func TestClientServer(t *testing.T) {
 
 type mockSearcher struct {
 	wantSearch   query.Q
-	searchResult *zoekt.Result
+	searchResult *search.Result
 }
 
-func (s *mockSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Options) (*zoekt.Result, error) {
+func (s *mockSearcher) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
 	if q.String() != s.wantSearch.String() {
 		return nil, fmt.Errorf("got query %s != %s", q.String(), s.wantSearch.String())
 	}

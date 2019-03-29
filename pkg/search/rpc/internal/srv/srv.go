@@ -4,21 +4,21 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 type SearchArgs struct {
 	Q    query.Q
-	Opts *zoekt.Options
+	Opts *search.Options
 }
 
 type SearchReply struct {
-	Result *zoekt.Result
+	Result *search.Result
 }
 
 type Searcher struct {
-	Searcher zoekt.Searcher
+	Searcher search.Searcher
 }
 
 func (s *Searcher) Search(ctx context.Context, args *SearchArgs, reply *SearchReply) error {

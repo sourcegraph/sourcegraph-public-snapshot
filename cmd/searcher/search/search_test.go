@@ -24,8 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	searchapi "github.com/sourcegraph/sourcegraph/pkg/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
+	searchapi "github.com/sourcegraph/sourcegraph/pkg/search"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 func TestSearch(t *testing.T) {
