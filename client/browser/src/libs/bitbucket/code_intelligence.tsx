@@ -136,7 +136,7 @@ function getViewContextOnSourcegraphMount(): HTMLElement | null {
     }
     const mount = document.createElement('span')
     mount.id = 'open-on-sourcegraph'
-    mount.className = 'open-on-sourcegraph__bitbucket-server'
+    mount.className = 'open-on-sourcegraph--bitbucket-server'
     branchSelectorButtons.insertAdjacentElement('beforeend', mount)
     return mount
 }
