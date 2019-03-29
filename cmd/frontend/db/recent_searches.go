@@ -16,14 +16,14 @@ func (*recentSearches) Add(ctx context.Context, q string) error {
 	}
 	res, err := dbconn.Global.ExecContext(ctx, insert, q)
 	if err != nil {
-		return errors.Errorf("inserting '%s' into recentSearches table: %v", q, err)
+		return errors.Errorf("inserting %q into recentSearches table: %v", q, err)
 	}
 	nrows, err := res.RowsAffected()
 	if err != nil {
 		return errors.Errorf("getting number of affected rows: %v", err)
 	}
 	if nrows == 0 {
-		return errors.Errorf("failed to insert row for query '%s'", q)
+		return errors.Errorf("failed to insert row for query %q", q)
 	}
 	return nil
 }
