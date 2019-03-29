@@ -91,7 +91,7 @@ In this case:
 
 ### Viewing browser extension console and network activity in Chrome
 
-The next step is to inspect the browser extension console output and network activity, often revealing subtle configuration errors.
+If still experiencing issues, the next step is to inspect the browser extension console output and network activity, often revealing subtle configuration errors.
 
 ![Chrome extension console and network activity](img/ChromeExtensionConsoleNetworkActivity.gif)
 
