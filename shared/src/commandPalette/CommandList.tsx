@@ -272,7 +272,7 @@ export class CommandListPopoverButton extends React.PureComponent<
     public render(): JSX.Element | null {
         return (
             <PopoverButton
-                popoverClassName={this.props.popoverClassName || 'rounded'}
+                popoverClassName={`rounded ${this.props.popoverClassName || ''}`}
                 placement="auto-end"
                 toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 hideOnChange={this.state.hideOnChange}
