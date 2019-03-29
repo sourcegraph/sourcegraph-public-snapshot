@@ -48,12 +48,11 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		Kind:        "GITHUB",
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
-				{
-					// Some comment
-					"url": "https://github.com",
-					"token": "secret"
-				}
-			`),
+		{
+			// Some comment
+			"url": "https://github.com",
+			"token": "secret"
+		}`),
 	}
 
 	githubRepo := repos.Repo{
@@ -72,12 +71,11 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		Kind:        "GITLAB",
 		DisplayName: "gitlab.com - test",
 		Config: formatJSON(`
-					{
-						// Some comment
-						"url": "https://gitlab.com",
-						"token": "secret"
-					}
-				`),
+		{
+			// Some comment
+			"url": "https://gitlab.com",
+			"token": "secret"
+		}`),
 	}
 
 	gitlabRepo := repos.Repo{
