@@ -196,6 +196,12 @@ export interface CodeHost {
 
     /** Optional classes for ActionNavItems, useful to customize the style of buttons contributed to the code view toolbar */
     actionNavItemClassProps?: ActionNavItemsClassProps
+
+    /** Optional class to set on the command palette popover element */
+    commandPalettePopoverClassName?: string
+
+    /** Optional class to set on the code view toolbar element */
+    codeViewToolbarClassName?: string
 }
 
 export interface FileInfo {
@@ -447,7 +453,13 @@ export function handleCodeHost({
     subscriptions.add(hoverifier)
 
     // Inject UI components
-    injectCommandPalette({ extensionsController, platformContext, history, getMount: codeHost.getCommandPaletteMount })
+    injectCommandPalette({
+        extensionsController,
+        platformContext,
+        history,
+        getMount: codeHost.getCommandPaletteMount,
+        popoverClassName: codeHost.commandPalettePopoverClassName,
+    })
     injectGlobalDebug({
         extensionsController,
         platformContext,
@@ -598,6 +610,7 @@ export function handleCodeHost({
                                 }
                             }
                             location={H.createLocation(window.location)}
+                            className={codeHost.codeViewToolbarClassName}
                         />
                     </TelemetryContext.Provider>,
                     mount

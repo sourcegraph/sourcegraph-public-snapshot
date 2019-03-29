@@ -22,22 +22,22 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 	return m(ctx, s)
 }
 
-// GithubReposEnabledStateDeprecationMigration returns a Migration that changes
-// existing Github external services to maintain the same set of mirrored repos
+// EnabledStateDeprecationMigration returns a Migration that changes
+// existing external services to maintain the same set of mirrored repos
 // without recourse to the now deprecated enabled column of a repository.
 //
 // This is done by:
-//  1. Explicitly adding enabled repos that would have been deleted to github.repos
-//  2. Explicitly adding disabled repos that would have been added to github.exclude
-//  3. Removing the deprecated github.initialRepositoryEnablement field.
+//  1. Explicitly adding enabled repos that would have been deleted to an explicit include list.
+//  2. Explicitly adding disabled repos that would have been added to an explicit exclude list.
+//  3. Removing the deprecated initialRepositoryEnablement field.
 //
 // This migration must be rolled-out together with the UI changes that remove the admin's
 // ability to explicitly enabled / disable individual repos.
-func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time) Migration {
+func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, kinds ...string) Migration {
 	return transactional(func(ctx context.Context, s Store) error {
-		const prefix = "migrate.github-repos-enabled-state-deprecation"
+		const prefix = "migrate.repos-enabled-state-deprecation"
 
-		githubs, err := s.ListExternalServices(ctx, "github")
+		githubs, err := s.ListExternalServices(ctx, kinds...)
 		if err != nil {
 			return errors.Wrapf(err, "%s.list-external-services", prefix)
 		}
@@ -58,7 +58,7 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 			return errors.Wrapf(err, "%s.sources.list-repos", prefix)
 		}
 
-		stored, err := s.ListRepos(ctx, "github")
+		stored, err := s.ListRepos(ctx, kinds...)
 		if err != nil {
 			return errors.Wrapf(err, "%s.store.list-repos", prefix)
 		}
@@ -141,14 +141,14 @@ func GithubReposEnabledStateDeprecationMigration(sourcer Sourcer, clock func() t
 			}
 
 			if len(e.exclude) > 0 {
-				if err = e.svc.ExcludeGithubRepos(e.exclude...); err != nil {
+				if err = e.svc.Exclude(e.exclude...); err != nil {
 					return errors.Wrapf(err, "%s.exclude", prefix)
 				}
 				e.svc.UpdatedAt = now
 			}
 
 			if len(e.include) > 0 {
-				if err = e.svc.IncludeGithubRepos(e.include...); err != nil {
+				if err = e.svc.Include(e.include...); err != nil {
 					return errors.Wrapf(err, "%s.include", prefix)
 				}
 				e.svc.UpdatedAt = now
@@ -210,6 +210,48 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 			}
 
 			edited, err := jsonc.Edit(svc.Config, c.RepositoryQuery, "repositoryQuery")
+			if err != nil {
+				return errors.Wrapf(err, "%s.edit-json", prefix)
+			}
+
+			svc.Config = edited
+			svc.UpdatedAt = now
+		}
+
+		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
+			return errors.Wrapf(err, "%s.upsert-external-services", prefix)
+		}
+
+		return nil
+	})
+}
+
+// GitLabSetDefaultProjectQueryMigration returns a Migration that changes all
+// configurations of GitLab external services which have an empty "projectQuery"
+// migration to its explicit default.
+func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
+	return transactional(func(ctx context.Context, s Store) error {
+		const prefix = "migrate.gitlab-set-default-project-query"
+
+		svcs, err := s.ListExternalServices(ctx, "gitlab")
+		if err != nil {
+			return errors.Wrapf(err, "%s.list-external-services", prefix)
+		}
+
+		now := clock()
+		for _, svc := range svcs {
+			var c schema.GitLabConnection
+			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+				return fmt.Errorf("%s: external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+			}
+
+			if len(c.ProjectQuery) != 0 {
+				continue
+			}
+
+			c.ProjectQuery = append(c.ProjectQuery, "?membership=true")
+
+			edited, err := jsonc.Edit(svc.Config, c.ProjectQuery, "projectQuery")
 			if err != nil {
 				return errors.Wrapf(err, "%s.edit-json", prefix)
 			}

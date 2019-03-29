@@ -42,8 +42,10 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/Sync", testSyncerSync(store)},
 		{"Migrations/GithubSetDefaultRepositoryQuery",
 			testGithubSetDefaultRepositoryQueryMigration(store)},
-		{"Migrations/GithubReposEnabledStateDeprecationMigration",
-			testGithubReposEnabledStateDeprecationMigration(store)},
+		{"Migrations/GitLabSetDefaultProjectQueryMigration",
+			testGitLabSetDefaultProjectQueryMigration(store)},
+		{"Migrations/EnabledStateDeprecationMigration",
+			testEnabledStateDeprecationMigration(store)},
 	} {
 		t.Run(tc.name, tc.test)
 	}

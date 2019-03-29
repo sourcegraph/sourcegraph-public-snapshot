@@ -214,7 +214,13 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
 
   // Create a personal access token with api scope at
   // https://[your-gitlab-hostname]/profile/personal_access_tokens
-  "token": ""
+  "token": "",
+
+  // An array of strings specifying GitLab project search queries to mirror on Sourcegraph.
+  // See the repositoryQuery documentation at https://docs.sourcegraph.com/admin/external_service/gitlab#configuration for details.
+  "projectQuery": [
+      "none"
+  ]
 }`,
     },
     [GQL.ExternalServiceKind.GITOLITE]: {

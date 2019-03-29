@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -94,50 +95,78 @@ func TestNewSourcer(t *testing.T) {
 	}
 }
 
-func TestGithubSource_ListRepos(t *testing.T) {
-	config := func(cfg *schema.GitHubConnection) string {
-		t.Helper()
-		bs, err := json.Marshal(cfg)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return string(bs)
-	}
-
-	for _, tc := range []struct {
+func TestSources_ListRepos(t *testing.T) {
+	type testCase struct {
 		name   string
 		ctx    context.Context
-		svc    ExternalService
+		svcs   ExternalServices
 		assert ReposAssertion
 		err    string
-	}{
-		{
-			name: "yielded repos are always enabled",
-			svc: ExternalService{
+	}
+
+	var testCases []testCase
+	{
+		svcs := ExternalServices{
+			{
 				Kind: "GITHUB",
-				Config: config(&schema.GitHubConnection{
-					Url: "https://github.com",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 					RepositoryQuery: []string{
 						"user:tsenart in:name patrol",
 					},
 					Repos: []string{"sourcegraph/sourcegraph"},
 				}),
 			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:   "https://gitlab.com",
+					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
+					ProjectQuery: []string{
+						"?search=gokulkarthick",
+					},
+				}),
+			},
+		}
+
+		kinds := make(map[string]struct{})
+		for _, s := range svcs {
+			kinds[strings.ToLower(s.Kind)] = struct{}{}
+		}
+
+		testCases = append(testCases, testCase{
+			name: "yielded repos are always enabled",
+			svcs: svcs,
 			assert: func(t testing.TB, rs Repos) {
+				t.Helper()
+
+				set := make(map[string]bool)
+
 				for _, r := range rs {
+					set[r.ExternalRepo.ServiceType] = true
 					if !r.Enabled {
 						t.Errorf("repo %q is not enabled", r.Name)
 					}
 				}
+
+				for kind := range kinds {
+					if !set[kind] {
+						t.Errorf("external service of kind %q didn't yield any repos", kind)
+					}
+				}
 			},
 			err: "<nil>",
-		},
-		{
-			name: "excluded repos are never yielded",
-			svc: ExternalService{
+		})
+	}
+
+	{
+		svcs := ExternalServices{
+			{
 				Kind: "GITHUB",
-				Config: config(&schema.GitHubConnection{
-					Url: "https://github.com",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 					RepositoryQuery: []string{
 						"user:tsenart in:name patrol",
 					},
@@ -145,42 +174,139 @@ func TestGithubSource_ListRepos(t *testing.T) {
 						"sourcegraph/Sourcegraph",
 						"tsenart/VEGETA",
 					},
-					Exclude: []*schema.Exclude{
+					Exclude: []*schema.ExcludedGitHubRepo{
 						{Name: "tsenart/Vegeta"},
 						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
 					},
 				}),
 			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url: "https://gitlab.com",
+					ProjectQuery: []string{
+						"?search=gokulkarthick",
+						"?search=dotfiles-vegetableman",
+					},
+					Exclude: []*schema.ExcludedGitLabProject{
+						{Name: "gokulkarthick/gokulkarthick"},
+						{Id: 7789240},
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "excluded repos are never yielded",
+			svcs: svcs,
+			assert: func(t testing.TB, rs Repos) {
+				t.Helper()
+
+				set := make(map[string]bool)
+				for _, s := range svcs {
+					c, err := s.Configuration()
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					type excluded struct {
+						name, id string
+					}
+
+					var ex []excluded
+					switch cfg := c.(type) {
+					case *schema.GitHubConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name, id: e.Id})
+						}
+					case *schema.GitLabConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id)})
+						}
+					}
+
+					if len(ex) == 0 {
+						t.Fatal("exclude list must not be empty")
+					}
+
+					for _, e := range ex {
+						name := e.name
+						if s.Kind == "GITHUB" {
+							name = strings.ToLower(name)
+						}
+						set[name], set[e.id] = true, true
+					}
+				}
+
+				for _, r := range rs {
+					if set[r.Name] || set[r.ExternalRepo.ID] {
+						t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+					Repos: []string{
+						"sourcegraph/Sourcegraph",
+						"tsenart/Vegeta",
+						"tsenart/vegeta-missing",
+					},
+				}),
+			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:          "https://gitlab.com",
+					ProjectQuery: []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+						{Name: "gnachman/iterm2-missing"},
+						{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "included repos that exist are yielded",
+			svcs: svcs,
 			assert: func(t testing.TB, rs Repos) {
 				t.Helper()
 
 				have := rs.Names()
-				want := []string{"github.com/sourcegraph/sourcegraph"}
-
 				sort.Strings(have)
-				sort.Strings(want)
+
+				want := []string{
+					"github.com/sourcegraph/sourcegraph",
+					"github.com/tsenart/vegeta",
+					"gitlab.com/gitlab-org/gitlab-ce",
+					"gitlab.com/gnachman/iterm2",
+				}
 
 				if !reflect.DeepEqual(have, want) {
-					t.Errorf("\nhave: %s\nwant: %s", have, want)
+					t.Error(cmp.Diff(have, want))
 				}
 			},
 			err: "<nil>",
-		},
-	} {
+		})
+	}
+
+	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			cassete := filepath.Join("testdata", "github", strings.Replace(tc.name, " ", "-", -1))
-			rec := newRecorder(t, cassete, *update)
-			defer save(t, rec)
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
 
-			mw := httpcli.NewMiddleware(
-				redirect(map[string]string{"github-proxy": "api.github.com"}),
-				auth(os.Getenv("GITHUB_ACCESS_TOKEN")),
-			)
-
-			cf := httpcli.NewFactory(mw, newRecorderOpt(t, rec))
-
-			s, err := NewGithubSource(&tc.svc, cf)
+			srcs, err := NewSourcer(cf)(tc.svcs...)
 			if err != nil {
 				t.Error(err)
 				return // Let defers run
@@ -191,7 +317,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				ctx = context.Background()
 			}
 
-			repos, err := s.ListRepos(ctx)
+			repos, err := srcs.ListRepos(ctx)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -203,22 +329,21 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	}
 }
 
+func newClientFactory(t testing.TB, name string) (httpcli.Factory, func(testing.TB)) {
+	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
+	rec := newRecorder(t, cassete, *update)
+	mw := httpcli.NewMiddleware(
+		redirect(map[string]string{"github-proxy": "api.github.com"}),
+	)
+	return httpcli.NewFactory(mw, newRecorderOpt(t, rec)),
+		func(t testing.TB) { save(t, rec) }
+}
+
 func redirect(rules map[string]string) httpcli.Middleware {
 	return func(cli httpcli.Doer) httpcli.Doer {
 		return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
 			if host, ok := rules[req.URL.Hostname()]; ok {
 				req.URL.Host = host
-			}
-			return cli.Do(req)
-		})
-	}
-}
-
-func auth(token string) httpcli.Middleware {
-	return func(cli httpcli.Doer) httpcli.Doer {
-		return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-			if token != "" {
-				req.Header.Set("Authorization", "bearer "+token)
 			}
 			return cli.Do(req)
 		})
@@ -244,9 +369,14 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 		// these headers from the casseste effectively disables rate-limiting
 		// in tests which replay HTTP interactions, which is desired behaviour.
 		for _, name := range [...]string{
-			"X-RateLimit-Reset",
-			"X-RateLimit-Remaining",
+			"RateLimit-Limit",
+			"RateLimit-Observed",
+			"RateLimit-Remaining",
+			"RateLimit-Reset",
+			"RateLimit-Resettime",
 			"X-RateLimit-Limit",
+			"X-RateLimit-Remaining",
+			"X-RateLimit-Reset",
 		} {
 			i.Response.Headers.Del(name)
 		}
@@ -316,4 +446,15 @@ type roundTripFunc httpcli.DoerFunc
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
+}
+
+func marshalJSON(t testing.TB, v interface{}) string {
+	t.Helper()
+
+	bs, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(bs)
 }

@@ -39,13 +39,59 @@ const GitLabSchemaJSON = `{
       "type": "string",
       "pattern": "^-----BEGIN CERTIFICATE-----\n"
     },
+    "projects": {
+      "description": "A list of projects to mirror from this GitLab instance.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "GitLabProject",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a GitLab project (\"owner/name\") to mirror.",
+            "type": "string",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          },
+          "id": {
+            "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to mirror.",
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "exclude": {
+      "description": "A list of projects to never mirror from this GitLab instance. Takes precedence over \"projects\" and \"projectQuery\" configuration.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedGitLabProject",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a GitLab project (\"owner/name\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          },
+          "id": {
+            "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.",
+            "type": "integer"
+          }
+        }
+      }
+    },
     "projectQuery": {
       "description": "An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
       "type": "array",
-      "default": ["?membership=true"],
+      "default": ["none"],
       "items": {
-        "type": "string"
-      }
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
     },
     "repositoryPathPattern": {
       "description": "The pattern used to generate a the corresponding Sourcegraph repository name for a GitLab project. In the pattern, the variable \"{host}\" is replaced with the GitLab URL's host (such as gitlab.example.com), and \"{pathWithNamespace}\" is replaced with the GitLab project's \"namespace/path\" (such as \"myteam/myproject\").\n\nFor example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{pathWithNamespace}\" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",

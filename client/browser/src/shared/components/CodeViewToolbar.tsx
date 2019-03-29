@@ -28,6 +28,7 @@ interface CodeViewToolbarProps
 
     buttonProps: ButtonProps
     location: H.Location
+    className?: string
 }
 
 interface CodeViewToolbarState {
@@ -52,7 +53,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     public render(): JSX.Element | null {
         return (
             <div
-                className="code-view-toolbar"
+                className={`code-view-toolbar ${this.props.className || ''}`}
                 style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}
             >
                 <ul className={`nav ${this.props.platformContext ? 'pr-1' : ''}`}>

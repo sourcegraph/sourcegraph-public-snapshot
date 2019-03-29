@@ -5,7 +5,7 @@ import { ajax } from 'rxjs/ajax'
 import { filter, map } from 'rxjs/operators'
 
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
-import { PRPageInfo } from './scrape'
+import { BitbucketRepoInfo } from './scrape'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1
@@ -39,16 +39,11 @@ interface PRResponse {
     toRef: Ref
 }
 
-interface GetCommitsForPRInput extends Pick<PRPageInfo, 'project' | 'repoSlug'> {
-    /** Required here. */
-    prID: number
-}
-
 /**
  * Get the base commit ID for a merge request.
  */
 export const getCommitsForPR: (
-    info: GetCommitsForPRInput
+    info: BitbucketRepoInfo & { prID: number }
 ) => Observable<{ baseCommitID: string; headCommitID: string }> = memoizeObservable(
     ({ project, repoSlug, prID }) =>
         get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
@@ -57,7 +52,7 @@ export const getCommitsForPR: (
     ({ prID }) => prID.toString()
 )
 
-interface GetBaseCommitInput extends Pick<PRPageInfo, 'project' | 'repoSlug'> {
+interface GetBaseCommitInput extends BitbucketRepoInfo {
     commitID: string
 }
 

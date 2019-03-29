@@ -23,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -45,23 +43,19 @@ func main() {
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	db, err := repos.NewDB(repos.NewDSNFromEnv())
+	db, err := repos.NewDB(repos.NewDSN().String())
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
 	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
 
-	cliFactory := httpcli.NewFactory(
-		nil, // No middleware for now. Use this for Prometheus instrumentation later.
-		httpcli.TracedTransportOpt,
-		httpcli.NewCachedTransportOpt(httputil.Cache, true),
-	)
-
+	cliFactory := repos.NewHTTPClientFactory()
 	src := repos.NewSourcer(cliFactory)
 
 	for _, m := range []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
+		repos.GitLabSetDefaultProjectQueryMigration(clock),
 		// TODO(tsenart): Enable the following migrations once we implement the
 		// functionality needed to run them only once.
 		//    repos.GithubReposEnabledStateDeprecationMigration(src, clock),
@@ -73,7 +67,10 @@ func main() {
 
 	var kinds []string
 	if syncerEnabled {
-		kinds = append(kinds, "GITHUB")
+		kinds = append(kinds,
+			"GITHUB",
+			"GITLAB",
+		)
 	}
 
 	newSyncerEnabled := make(map[string]bool, len(kinds))

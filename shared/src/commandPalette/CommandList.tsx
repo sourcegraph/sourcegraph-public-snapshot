@@ -17,6 +17,7 @@ import { PlatformContextProps } from '../platform/context'
 interface Props
     extends ExtensionsControllerProps<'services' | 'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip'> {
+    popoverClassName?: string
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
@@ -130,7 +131,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                             id="command-list__input"
                             ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
                             type="text"
-                            className="form-control px-2 py-1 rounded-0"
+                            className="form-control px-2 py-1 rounded-0 command-list__input"
                             value={this.state.input}
                             placeholder="Run Sourcegraph action..."
                             spellCheck={false}
@@ -271,7 +272,7 @@ export class CommandListPopoverButton extends React.PureComponent<
     public render(): JSX.Element | null {
         return (
             <PopoverButton
-                popoverClassName="rounded"
+                popoverClassName={`rounded ${this.props.popoverClassName || ''}`}
                 placement="auto-end"
                 toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 hideOnChange={this.state.hideOnChange}
