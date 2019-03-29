@@ -1,7 +1,7 @@
 [38;5;57m✱[0m [38;5;2m3+ results[0m for [38;5;68m"repogroup:sample type:diff error max:3 repo:^github\.com/golang/oauth2$"[0m in [38;5;2m39ms[0m
 [38;5;239m--------------------------------------------------------------------------------
 [0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29[0m[38;5;239m)
-[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mTim Cooper[0m [38;5;68m"oauth2: close request body if errors occur before base RoundTripper is invoked"[0m [38;5;23m(2 months ago)[0m
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mTim Cooper[0m [38;5;68m"oauth2: close request body if errors occur before base RoundTripper is invoked"[0m [38;5;23m(N months ago)[0m
 [38;5;239m--------------------------------------------------------------------------------
 [0m  diff --git transport_test.go transport_test.go
   index d6e8087..faa87d5 100644
@@ -24,7 +24,7 @@
 
 [38;5;239m--------------------------------------------------------------------------------
 [0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/088f8e1d436e8d636f13cd83a345b3d6ff2f04ae[0m[38;5;239m)
-[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mGuillaume J. Charmes[0m [38;5;68m"oauth2: Add support for custom params in Exchange"[0m [38;5;23m(3 months ago)[0m
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mGuillaume J. Charmes[0m [38;5;68m"oauth2: Add support for custom params in Exchange"[0m [38;5;23m(N months ago)[0m
 [38;5;239m--------------------------------------------------------------------------------
 [0m  diff --git oauth2.go oauth2.go
   index 10299d2..16775d0 100644
@@ -55,7 +55,7 @@
 
 [38;5;239m--------------------------------------------------------------------------------
 [0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/921ae394b9430ed4fb549668d7b087601bd60a81[0m[38;5;239m)
-[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mBob Briski[0m [38;5;68m"jira: add JIRA provider"[0m [38;5;23m(5 months ago)[0m
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mBob Briski[0m [38;5;68m"jira: add JIRA provider"[0m [38;5;23m(1 year ago)[0m
 [38;5;239m--------------------------------------------------------------------------------
 [0m  diff --git jira/jira.go jira/jira.go
   new file mode 100644
