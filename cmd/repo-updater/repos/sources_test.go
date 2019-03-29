@@ -122,7 +122,7 @@ func TestSources_ListRepos(t *testing.T) {
 					Url:   "https://gitlab.com",
 					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{
-						"?search=vegeta",
+						"?search=gokulkarthick",
 					},
 				}),
 			},
@@ -172,9 +172,23 @@ func TestSources_ListRepos(t *testing.T) {
 						"sourcegraph/Sourcegraph",
 						"tsenart/VEGETA",
 					},
-					Exclude: []*schema.Exclude{
+					Exclude: []*schema.ExcludedGitHubRepo{
 						{Name: "tsenart/Vegeta"},
 						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
+					},
+				}),
+			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url: "https://gitlab.com",
+					ProjectQuery: []string{
+						"?search=gokulkarthick",
+						"?search=dotfiles-vegetableman",
+					},
+					Exclude: []*schema.ExcludedGitLabProject{
+						{Name: "gokulkarthick/gokulkarthick"},
+						{Id: "7789240"},
 					},
 				}),
 			},
@@ -193,22 +207,32 @@ func TestSources_ListRepos(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					var exclude []*schema.Exclude
-					switch cfg := c.(type) {
-					case *schema.GitHubConnection:
-						exclude = cfg.Exclude
+					type excluded struct {
+						name, id string
 					}
 
-					if len(exclude) == 0 {
+					var ex []excluded
+					switch cfg := c.(type) {
+					case *schema.GitHubConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name, id: e.Id})
+						}
+					case *schema.GitLabConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name, id: e.Id})
+						}
+					}
+
+					if len(ex) == 0 {
 						t.Fatal("exclude list must not be empty")
 					}
 
-					for _, e := range exclude {
-						name := e.Name
+					for _, e := range ex {
+						name := e.name
 						if s.Kind == "GITHUB" {
 							name = strings.ToLower(name)
 						}
-						set[name], set[e.Id] = true, true
+						set[name], set[e.id] = true, true
 					}
 				}
 

@@ -118,7 +118,7 @@ func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
 			name := githubNameWithOwner(r.Name)
 
 			if !set[name] && !set[id] {
-				c.Exclude = append(c.Exclude, &schema.Exclude{
+				c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{
 					Name: name,
 					Id:   id,
 				})

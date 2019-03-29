@@ -50,6 +50,7 @@ const GitHubSchemaJSON = `{
       "minItems": 1,
       "items": {
         "type": "object",
+        "title": "ExcludedGitHubRepo",
         "additionalProperties": false,
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
