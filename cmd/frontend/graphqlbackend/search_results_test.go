@@ -255,6 +255,16 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		repo:  repo,
 	}
 
+	tsFileMatch := &fileMatchResolver{
+		JPath: "/testFile.ts",
+		repo:  repo,
+	}
+
+	tsxFileMatch := &fileMatchResolver{
+		JPath: "/testFile.tsx",
+		repo:  repo,
+	}
+
 	rev := "develop"
 	fileMatchRev := &fileMatchResolver{
 		JPath:    "/testFile.md",
@@ -308,6 +318,32 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`repo:^testRepo$@develop`: {},
 				`lang:markdown`:           {},
 				`case:yes`:                {},
+			},
+		},
+		{
+			descr: "file match from a language with two file extensions, using first extension",
+			searchResults: []*searchResultResolver{
+				{
+					fileMatch: tsFileMatch,
+				},
+			},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:^testRepo$`: {},
+				`lang:typescript`: {},
+				`case:yes`:        {},
+			},
+		},
+		{
+			descr: "file match from a language with two file extensions, using second extension",
+			searchResults: []*searchResultResolver{
+				{
+					fileMatch: tsxFileMatch,
+				},
+			},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:^testRepo$`: {},
+				`lang:typescript`: {},
+				`case:yes`:        {},
 			},
 		},
 
