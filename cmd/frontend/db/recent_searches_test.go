@@ -33,6 +33,29 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	t.Run("empty case", func(t *testing.T) {
+		ctx := dbtesting.TestContext(t)
+		if err := RecentSearches.DeleteExcessRows(ctx, 1); err != nil {
+			t.Error(err)
+		}
+	})
+	t.Run("single case", func(t *testing.T) {
+		ctx := dbtesting.TestContext(t)
+		q := "fake query"
+		if err := RecentSearches.Add(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+		if err := RecentSearches.DeleteExcessRows(ctx, 2); err != nil {
+			t.Error(err)
+		}
+		ss, err := RecentSearches.Get(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(ss) != 1 {
+			t.Errorf("recent_searches table has %d rows, want %d", len(ss), 1)
+		}
+	})
 	t.Run("simple case", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
 		limit := 10
