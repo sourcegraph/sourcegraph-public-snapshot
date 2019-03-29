@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -35,7 +34,7 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 // This migration must be rolled-out together with the UI changes that remove the admin's
 // ability to explicitly enabled / disable individual repos.
 func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, kinds ...string) Migration {
-	return transactional(func(ctx context.Context, s Store) error {
+	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.repos-enabled-state-deprecation"
 
 		es, err := s.ListExternalServices(ctx, kinds...)
@@ -94,8 +93,6 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 						id := si.ExternalServiceID()
 						if e := svcs[id]; e != nil {
 							es[id] = e
-						} else {
-							return fmt.Errorf("external service with id=%d does not exist", id)
 						}
 					}
 
@@ -200,7 +197,7 @@ func removeInitalRepositoryEnablement(svc *ExternalService, ts time.Time) error 
 // configurations of GitHub external services which have an empty "repositoryQuery"
 // migration to its explicit default.
 func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration {
-	return transactional(func(ctx context.Context, s Store) error {
+	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.github-set-default-repository-query"
 
 		svcs, err := s.ListExternalServices(ctx, "github")
@@ -252,7 +249,7 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 // configurations of GitLab external services which have an empty "projectQuery"
 // migration to its explicit default.
 func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
-	return transactional(func(ctx context.Context, s Store) error {
+	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.gitlab-set-default-project-query"
 
 		svcs, err := s.ListExternalServices(ctx, "gitlab")
@@ -295,20 +292,22 @@ func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 // interface upgraded to a Transactor.
 var ErrNoTransactor = errors.New("Store is not a Transactor")
 
-// transactional wraps a Migration with transactional semantics. It retries
-// the migration when a serialization transactional error is returned
-// (i.e. ERROR: could not serialize access due to concurrent update)
-func transactional(m Migration) Migration {
+// migrate wraps a Migration with transactional and retries.
+func migrate(m Migration) Migration {
 	return func(ctx context.Context, s Store) (err error) {
 		tr, ok := s.(Transactor)
 		if !ok {
 			return ErrNoTransactor
 		}
 
+		const wait = 5 * time.Second
 		for {
-			if err = transact(ctx, tr, m); err == nil || !isRetryable(err) {
-				return err
+			if err = transact(ctx, tr, m); err == nil {
+				return nil
 			}
+
+			log15.Error("migrate", "error", err, "waiting", wait)
+			time.Sleep(wait)
 		}
 	}
 }
@@ -322,21 +321,4 @@ func transact(ctx context.Context, tr Transactor, m Migration) (err error) {
 	defer tx.Done(&err)
 
 	return m(ctx, tx)
-}
-
-func isRetryable(err error) bool {
-	switch e := errors.Cause(err).(type) {
-	case *pq.Error:
-		switch e.Code.Class() {
-		case "40":
-			// Class 40 — Transaction Rollback
-			// 40000	transaction_rollback
-			// 40002	transaction_integrity_constraint_violation
-			// 40001	serialization_failure
-			// 40003	statement_completion_unknown
-			// 40P01	deadlock_detected
-			return true
-		}
-	}
-	return false
 }
