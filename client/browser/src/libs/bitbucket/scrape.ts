@@ -8,6 +8,17 @@ interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
 
 const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source']
 
+/**
+ * Attempts to parse the file info from a link element contained in the code view.
+ * Depending on the configuration of the page, this can be a link to the raw file,
+ * or to the original source view, so a few different selectors are tried.
+ *
+ * The href of these links contains:
+ * - project name
+ * - repo name
+ * - file path
+ * - rev (through the query parameter 'at')
+ */
 const getFileInfoFromLink = (codeView: HTMLElement): PageInfo => {
     const pageInfo = LINK_SELECTORS.map(
         (selector): PageInfo | null => {
