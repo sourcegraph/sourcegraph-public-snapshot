@@ -3,7 +3,6 @@
 # https://help.github.com/articles/about-codeowners/
 
 *git*/* @sourcegraph/core-services
-/cmd/searcher/ @keegancsmith
 /web/src/ @felixfbecker
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
@@ -25,6 +24,7 @@
 # Search
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
 */search/**/* @sourcegraph/code-search
+/cmd/searcher/ @sourcegraph/code-search
 
 # Deployment
 Dockerfile @ggilmore

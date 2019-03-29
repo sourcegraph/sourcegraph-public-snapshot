@@ -28,9 +28,9 @@ import (
 	srcapi "github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	api "github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/matchtree"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	api "github.com/sourcegraph/sourcegraph/pkg/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/matchtree"
+	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
 	"golang.org/x/net/trace"
 )
 
