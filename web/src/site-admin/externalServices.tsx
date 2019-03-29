@@ -1,4 +1,4 @@
-import { FormattingOptions } from '@sqs/jsonc-parser'
+import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { flatMap, map } from 'lodash'
 import AmazonIcon from 'mdi-react/AmazonIcon'
@@ -77,50 +77,89 @@ const defaultFormattingOptions: FormattingOptions = {
     tabSize: 2,
 }
 
-const githubEditorActions: EditorAction[] = [
-    {
-        id: 'setAccessToken',
-        label: 'Set access token',
-        run: config => {
-            const value = '<GitHub personal access token>'
-            const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
-            return { edits, selectText: '<GitHub personal access token>' }
-        },
-    },
-    {
-        id: 'addOrgRepo',
-        label: 'Add organization repositories',
-        run: config => {
-            const value = 'org:<organization name>'
-            const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
-            return { edits, selectText: '<organization name>' }
-        },
-    },
-    {
-        id: 'addSingleRepo',
-        label: 'Add single repository',
-        run: config => {
-            const value = '<GitHub owner>/<GitHub repository name>'
-            const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
-            return { edits, selectText: '<GitHub owner>/<GitHub repository name>' }
-        },
-    },
-    {
-        id: 'addSearchQueryRepos',
-        label: 'Add repositories matching search query',
-        run: config => {
-            const value = '<GitHub search query>'
-            const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
-            return { edits, selectText: '<GitHub search query>' }
-        },
-    },
-]
+/**
+ * editWithComment returns a Monaco edit action that sets the value of a JSON field with a
+ * "//" comment annotating the field. The comment is inserted wherever
+ * `"COMMENT_SENTINEL": true` appears in the JSON.
+ */
+function editWithComment(config: string, path: JSONPath, value: any, comment: string): Edit {
+    const edit = setProperty(config, path, value, defaultFormattingOptions)[0]
+    edit.content = edit.content.replace('"COMMENT_SENTINEL": true', comment)
+    return edit
+}
+
+const editorActionComments = {
+    enablePermissions:
+        '// Prerequisite: you must configure GitHub as an OAuth auth provider in the critical site config (https://docs.sourcegraph.com/admin/auth#github). Otherwise, access to all repositories will be disallowed.',
+    enforcePermissionsOAuth: `// Prerequisite: you must first update the critical site configuration to
+    // include GitLab OAuth as an auth provider.
+    // See https://docs.sourcegraph.com/admin/auth#gitlab for instructions.`,
+    enforcePermissionsSSO: `// Prerequisite: You will need a sudo-level access token. If you can configure
+    // GitLab as an OAuth identity provider for Sourcegraph, we recommend that
+    // option instead.
+    //
+    // 1. Ensure the personal access token in this config has admin privileges
+    //    (https://docs.gitlab.com/ee/api/#sudo).
+    // 2. Update the critical site configuration in the management console to
+    //    include the SSO auth provider for GitLab (https://docs.sourcegraph.com/admin/auth).
+    // 3. Update the fields below to match the properties of this auth provider
+    //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
+}
 
 export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     title: 'GitHub repositories',
     icon: <GithubCircleIcon size={ICON_SIZE} />,
     jsonSchema: githubSchemaJSON,
-    editorActions: githubEditorActions,
+    editorActions: [
+        {
+            id: 'setAccessToken',
+            label: 'Set access token',
+            run: config => {
+                const value = '<GitHub personal access token>'
+                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                return { edits, selectText: '<GitHub personal access token>' }
+            },
+        },
+        {
+            id: 'addOrgRepo',
+            label: 'Add organization repositories',
+            run: config => {
+                const value = 'org:<organization name>'
+                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<organization name>' }
+            },
+        },
+        {
+            id: 'addSingleRepo',
+            label: 'Add single repository',
+            run: config => {
+                const value = '<GitHub owner>/<GitHub repository name>'
+                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<GitHub owner>/<GitHub repository name>' }
+            },
+        },
+        {
+            id: 'addSearchQueryRepos',
+            label: 'Add repositories matching search query',
+            run: config => {
+                const value = '<GitHub search query>'
+                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<GitHub search query>' }
+            },
+        },
+        {
+            id: 'enablePermissions',
+            label: 'Enforce permissions',
+            run: config => {
+                const value = {
+                    COMMENT_SENTINEL: true,
+                }
+                const comment = editorActionComments.enablePermissions
+                const edit = editWithComment(config, ['authorization'], value, comment)
+                return { edits: [edit], selectText: comment }
+            },
+        },
+    ],
     iconBrandColor: 'github',
     shortDescription: 'Add GitHub repositories.',
     longDescription: (
@@ -178,6 +217,35 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   "accessKeyID": "",
   "secretAccessKey": ""
 }`,
+        editorActions: [
+            {
+                id: 'setRegion',
+                label: 'Set AWS region',
+                run: config => {
+                    const value = '<AWS region>'
+                    const edits = setProperty(config, ['region'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setAccessKeyID',
+                label: 'Set access key ID',
+                run: config => {
+                    const value = '<AWS access key ID>'
+                    const edits = setProperty(config, ['accessKeyID'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setSecretAccessKey',
+                label: 'Set AWS secret access key',
+                run: config => {
+                    const value = '<AWS secret access key>'
+                    const edits = setProperty(config, ['secretAccessKey'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+        ],
     },
     [GQL.ExternalServiceKind.BITBUCKETSERVER]: {
         title: 'Bitbucket Server repositories',
@@ -197,6 +265,35 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   // https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add
   "token": ""
 }`,
+        editorActions: [
+            {
+                id: 'setURL',
+                label: 'Set Bitbucket Server URL',
+                run: config => {
+                    const value = 'https://bitbucket.example.com'
+                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setPersonalAccessToken',
+                label: 'Set personal access token',
+                run: config => {
+                    const value = '<Bitbucket Server personal access token>'
+                    const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setSelfSignedCert',
+                label: 'Set internal or self-signed certificate',
+                run: config => {
+                    const value = '<internal-CA- or self-signed certificate>'
+                    const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+        ],
     },
     [GQL.ExternalServiceKind.GITLAB]: {
         title: 'GitLab projects',
@@ -222,6 +319,127 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
       "none"
   ]
 }`,
+        editorActions: [
+            {
+                id: 'setURL',
+                label: 'Set GitLab URL',
+                run: config => {
+                    const value = 'https://gitlab.example.com'
+                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setPersonalAccessToken',
+                label: 'Set personal access token',
+                run: config => {
+                    const value = '<GitLab personal access token>'
+                    const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setSelfSignedCert',
+                label: 'Set internal or self-signed certificate',
+                run: config => {
+                    const value = '<internal-CA- or self-signed certificate>'
+                    const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'syncInternalProjects',
+                label: 'Sync internal projects',
+                run: config => {
+                    const value = '?visibility=internal'
+                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'syncPrivateProjects',
+                label: 'Sync private projects',
+                run: config => {
+                    const value = '?visibility=private'
+                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'syncPublicProjects',
+                label: 'Sync public projects',
+                run: config => {
+                    const value = '?visibility=public'
+                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'syncGroupProjects',
+                label: 'Sync group projects',
+                run: config => {
+                    const value = 'groups/<group ID>/projects'
+                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: '<group ID>' }
+                },
+            },
+            {
+                id: 'syncMembershipProjects',
+                label: 'Sync all projects the access token user is a member of',
+                run: config => {
+                    const value = '?membership=true'
+                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'syncProjectsMatchingSearch',
+                label: 'Sync projects matching search',
+                run: config => ({
+                    edits: setProperty(
+                        config,
+                        ['projectQuery', -1],
+                        '?search=<search query>',
+                        defaultFormattingOptions
+                    ),
+                    selectText: '<search query>',
+                }),
+            },
+            {
+                id: 'enforcePermissionsOAuth',
+                label: 'Enforce permissions (OAuth)',
+                run: config => {
+                    const value = {
+                        identityProvider: {
+                            COMMENT_SENTINEL: true,
+                            type: 'oauth',
+                        },
+                    }
+                    const comment = editorActionComments.enforcePermissionsOAuth
+                    const edit = editWithComment(config, ['authorization'], value, comment)
+                    return { edits: [edit], selectText: comment }
+                },
+            },
+            {
+                id: 'enforcePermissionsSSO',
+                label: 'Enforce permissions (SSO)',
+                run: config => {
+                    const value = {
+                        COMMENT_SENTINEL: true,
+                        identityProvider: {
+                            type: 'external',
+                            authProviderID: '<configID field of the auth provider>',
+                            authProviderType: '<type field of the auth provider>',
+                            gitlabProvider:
+                                '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
+                        },
+                    }
+                    const comment = editorActionComments.enforcePermissionsSSO
+                    const edit = editWithComment(config, ['authorization'], value, comment)
+                    return { edits: [edit], selectText: comment }
+                },
+            },
+        ],
     },
     [GQL.ExternalServiceKind.GITOLITE]: {
         title: 'Gitolite repositories',
@@ -238,6 +456,26 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   "prefix": "gitolite.example.com/",
   "host": "git@gitolite.example.com"
 }`,
+        editorActions: [
+            {
+                id: 'setPrefix',
+                label: 'Set prefix',
+                run: config => {
+                    const value = 'gitolite.example.com/'
+                    const edits = setProperty(config, ['prefix'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setHost',
+                label: 'Set host',
+                run: config => {
+                    const value = 'git@gitolite.example.com'
+                    const edits = setProperty(config, ['host'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+        ],
     },
     [GQL.ExternalServiceKind.PHABRICATOR]: {
         title: 'Phabricator connection',
@@ -255,6 +493,38 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   "token": "",
   "repos": []
 }`,
+        editorActions: [
+            {
+                id: 'setPhabricatorURL',
+                label: 'Set Phabricator URL',
+                run: config => {
+                    const value = 'https://phabricator.example.com'
+                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setAccessToken',
+                label: 'Set Phabricator access token',
+                run: config => {
+                    const value = '<Phabricator access token>'
+                    const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'addRepository',
+                label: 'Add repository',
+                run: config => {
+                    const value = {
+                        callsign: '<Phabricator repository callsign>',
+                        path: '<Sourcegraph repository full name>',
+                    }
+                    const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: '<Phabricator repository callsign>' }
+                },
+            },
+        ],
     },
     [GQL.ExternalServiceKind.OTHER]: {
         title: 'Single Git repositories',
@@ -274,6 +544,26 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   // Repository clone paths may be relative to the url (preferred) or absolute.
   "repos": []
 }`,
+        editorActions: [
+            {
+                id: 'setURL',
+                label: 'Set Git host URL',
+                run: config => {
+                    const value = 'https://my-other-githost.example.com'
+                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'addRepo',
+                label: 'Add repository',
+                run: config => {
+                    const value = 'path/to/repository'
+                    const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+        ],
     },
 }
 
@@ -304,8 +594,7 @@ const externalServiceAddVariants: Partial<
         dotcom: {
             title: 'GitHub.com repositories',
             shortDescription: 'Add GitHub.com repositories.',
-            editorActions: [
-                ...githubEditorActions,
+            editorActions: (GITHUB_EXTERNAL_SERVICE.editorActions || []).concat([
                 {
                     id: 'addPublicRepo',
                     label: 'Add public repository',
@@ -315,7 +604,7 @@ const externalServiceAddVariants: Partial<
                         return { edits, selectText: '<GitHub owner>/<GitHub repository name>' }
                     },
                 },
-            ],
+            ]),
         },
         enterprise: {
             title: 'GitHub Enterprise repositories',

@@ -59,7 +59,7 @@ const BitbucketServerSchemaJSON = `{
       "examples": ["ssh"]
     },
     "certificate": {
-      "description": "TLS certificate of a Bitbucket Server instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
+      "description": "TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
       "type": "string",
       "pattern": "^-----BEGIN CERTIFICATE-----\n",
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
