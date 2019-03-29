@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A Migration performs a data migration in the given Store,
@@ -37,12 +38,12 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 	return transactional(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.repos-enabled-state-deprecation"
 
-		githubs, err := s.ListExternalServices(ctx, kinds...)
+		es, err := s.ListExternalServices(ctx, kinds...)
 		if err != nil {
 			return errors.Wrapf(err, "%s.list-external-services", prefix)
 		}
 
-		srcs, err := sourcer(githubs...)
+		srcs, err := sourcer(es...)
 		if err != nil {
 			return errors.Wrapf(err, "%s.list-sources", prefix)
 		}
@@ -145,6 +146,8 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 					return errors.Wrapf(err, "%s.exclude", prefix)
 				}
 				e.svc.UpdatedAt = now
+
+				log15.Info(prefix+".exclude", "service", e.svc.DisplayName, "repos", fmt.Sprint(len(e.exclude)))
 			}
 
 			if len(e.include) > 0 {
@@ -152,11 +155,30 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 					return errors.Wrapf(err, "%s.include", prefix)
 				}
 				e.svc.UpdatedAt = now
+
+				log15.Info(prefix+".include", "service", e.svc.DisplayName, "repos", fmt.Sprint(len(e.include)))
 			}
 
 		}
 
-		return s.UpsertExternalServices(ctx, upserts...)
+		if err = s.UpsertExternalServices(ctx, upserts...); err != nil {
+			return errors.Wrapf(err, "%s.upsert-external-services", prefix)
+		}
+
+		var deleted Repos
+		for _, r := range stored {
+			if !r.Enabled {
+				r.DeletedAt = now
+				r.Enabled = true
+				deleted = append(deleted, r)
+			}
+		}
+
+		if err = s.UpsertRepos(ctx, deleted...); err != nil {
+			return errors.Wrapf(err, "%s.upsert-repos", prefix)
+		}
+
+		return nil
 	})
 }
 
