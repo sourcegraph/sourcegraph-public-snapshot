@@ -7,13 +7,13 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { Overwrite } from 'utility-types'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
 import { VirtualList } from '../../components/VirtualList'
 import { SettingsCascadeProps } from '../../settings/settings'
 import { asError } from '../../util/errors'
 import { ErrorLike, isErrorLike } from '../../util/errors'
+import { propertyIsDefined } from '../../util/types'
 import { parseRepoURI, toPrettyBlobURL } from '../../util/url'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
@@ -183,18 +183,14 @@ function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
             url: toRepoURL(p.repoName),
         },
         limitHit: false,
-        lineMatches: refs
-            .filter((ref: Location): ref is Overwrite<Location, Required<Pick<Location, 'range'>>> => !!ref.range)
-            .map(
-                (ref): ILineMatch => ({
-                    preview: '',
-                    limitHit: false,
-                    lineNumber: ref.range.start.line,
-                    offsetAndLengths: [
-                        [ref.range.start.character, ref.range.end.character - ref.range.start.character],
-                    ],
-                })
-            ),
+        lineMatches: refs.filter(propertyIsDefined('range')).map(
+            (ref): ILineMatch => ({
+                preview: '',
+                limitHit: false,
+                lineNumber: ref.range.start.line,
+                offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
+            })
+        ),
     }
 }
 

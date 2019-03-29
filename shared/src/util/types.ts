@@ -10,4 +10,4 @@ export const isDefined = <T>(val: T): val is NonNullable<T> => val !== undefined
  */
 export const propertyIsDefined = <T extends object, K extends keyof T>(key: K) => (
     val: T
-): val is K extends any ? T & { [k in K]: NonNullable<T[k]> } : never => isDefined(val[key])
+): val is K extends unknown ? T & { [k in K]-?: NonNullable<T[k]> } : never => isDefined(val[key])
