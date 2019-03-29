@@ -43,12 +43,19 @@ interface InjectProps
     history: H.History
 }
 
-export function injectCommandPalette({ extensionsController, platformContext, getMount, history }: InjectProps): void {
+export function injectCommandPalette({
+    extensionsController,
+    platformContext,
+    getMount,
+    history,
+    popoverClassName,
+}: InjectProps & { popoverClassName?: string }): void {
     if (getMount) {
         render(
             <ShortcutProvider>
                 <TelemetryContext.Provider value={eventLogger}>
                     <CommandListPopoverButton
+                        popoverClassName={popoverClassName}
                         extensionsController={extensionsController}
                         menu={ContributableMenu.CommandPalette}
                         platformContext={platformContext}

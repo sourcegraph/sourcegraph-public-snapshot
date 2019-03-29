@@ -2,8 +2,9 @@ import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegrap
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
-import { resolveDiffFileInfo, resolveFileInfo } from './file_info'
+import { resolveCompareFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
 
 const createToolbarMount = (codeView: HTMLElement) => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
@@ -80,12 +81,21 @@ const diffCodeView: CodeViewWithOutSelector = {
     },
 }
 
+const branchCompareCodeView: CodeViewWithOutSelector = {
+    ...diffCodeView,
+    resolveFileInfo: resolveCompareFileInfo,
+}
+
 const resolveCodeView: CodeViewResolver['resolveCodeView'] = codeView => {
     const contentView = codeView.querySelector('.content-view')
     if (!contentView) {
         return null
     }
 
+    const isBranchCompare = document.querySelector('#branch-compare')
+    if (isBranchCompare) {
+        return branchCompareCodeView
+    }
     const isDiff = contentView.classList.contains('diff-view')
 
     return isDiff ? diffCodeView : singleFileCodeView
@@ -115,6 +125,22 @@ function getCommandPaletteMount(): HTMLElement {
     return document.querySelector<HTMLElement>(commandListClasses.map(c => `.${c}`).join('')) || createCommandList()
 }
 
+function getViewContextOnSourcegraphMount(): HTMLElement | null {
+    const branchSelectorButtons = document.querySelector('.branch-selector-toolbar .aui-buttons')
+    if (!branchSelectorButtons) {
+        return null
+    }
+    const preexisting = branchSelectorButtons.querySelector('#open-on-sourcegraph') as HTMLElement | null
+    if (preexisting) {
+        return preexisting
+    }
+    const mount = document.createElement('span')
+    mount.id = 'open-on-sourcegraph'
+    mount.className = 'open-on-sourcegraph--bitbucket-server'
+    branchSelectorButtons.insertAdjacentElement('beforeend', mount)
+    return mount
+}
+
 export const bitbucketServerCodeHost: CodeHost = {
     name: 'bitbucket-server',
     check: () =>
@@ -122,4 +148,12 @@ export const bitbucketServerCodeHost: CodeHost = {
         !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket'),
     codeViewResolver,
     getCommandPaletteMount,
+    commandPalettePopoverClassName: 'command-palette-popover--bitbucket-server',
+    actionNavItemClassProps: {
+        actionItemClass: 'aui-button action-item__bitbucket-server',
+    },
+    codeViewToolbarClassName: 'code-view-toolbar--bitbucket-server',
+    getViewContextOnSourcegraphMount,
+    getContext,
+    contextButtonClassName: 'aui-button',
 }
