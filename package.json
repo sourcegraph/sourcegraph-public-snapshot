@@ -18,7 +18,6 @@
     "all:tsgql": "yarn --cwd web run tsgql validate -p . --exitOnWarn && yarn --cwd shared run tsgql validate -p . --exitOnWarn && yarn --cwd browser run tsgql validate -p . --exitOnWarn",
     "build-ts": "tsc -b .",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
-    "prepublish": "gulp generate",
     "build-web": "yarn --cwd web run build",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
     "test-integration": "TS_NODE_PROJECT=web/src/integration/tsconfig.json NODE_NO_WARNINGS=1 mocha ./web/src/integration/**/*.test.ts",
