@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -20,7 +20,7 @@ func TestShardedSearch_error(t *testing.T) {
 	// First shard just fails
 	shards <- shard{Searcher: &Mock{Error: errors.New("intentional failure")}}
 	// Second shard waits to be cancelled
-	shards <- shard{Searcher: searchFunc(func(ctx context.Context, q query.Q, opts *zoekt.Options) (*zoekt.Result, error) {
+	shards <- shard{Searcher: searchFunc(func(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
 		select {
 		case <-ctx.Done():
 		case <-time.After(5 * time.Second):
@@ -39,33 +39,33 @@ func TestShardedSearch_error(t *testing.T) {
 func TestHandleError(t *testing.T) {
 	cases := []struct {
 		Error  error
-		Status zoekt.RepositoryStatusType
+		Status search.RepositoryStatusType
 	}{{
-		Status: zoekt.RepositoryStatusSearched,
+		Status: search.RepositoryStatusSearched,
 	}, {
 		Error:  &vcs.RepoNotExistError{},
-		Status: zoekt.RepositoryStatusMissing,
+		Status: search.RepositoryStatusMissing,
 	}, {
 		Error:  notFound{},
-		Status: zoekt.RepositoryStatusMissing,
+		Status: search.RepositoryStatusMissing,
 	}, {
 		Error:  &vcs.RepoNotExistError{CloneInProgress: true},
-		Status: zoekt.RepositoryStatusCloning,
+		Status: search.RepositoryStatusCloning,
 	}, {
 		Error:  &git.RevisionNotFoundError{},
-		Status: zoekt.RepositoryStatusCommitMissing,
+		Status: search.RepositoryStatusCommitMissing,
 	}, {
 		Error:  context.DeadlineExceeded,
-		Status: zoekt.RepositoryStatusTimedOut,
+		Status: search.RepositoryStatusTimedOut,
 	}, {
 		Error: context.Canceled,
 		// Does not get a status
 	}}
 
 	for _, c := range cases {
-		want := &zoekt.RepositoryStatus{
-			Repository: zoekt.Repository{Name: "test"},
-			Source:     zoekt.Source("testsource"),
+		want := &search.RepositoryStatus{
+			Repository: search.Repository{Name: "test"},
+			Source:     search.Source("testsource"),
 			Status:     c.Status,
 		}
 		got, err := handleError(want.Source, want.Repository, c.Error)
@@ -86,9 +86,9 @@ type notFound struct{}
 func (notFound) Error() string  { return "" }
 func (notFound) NotFound() bool { return true }
 
-type searchFunc func(ctx context.Context, q query.Q, opts *zoekt.Options) (*zoekt.Result, error)
+type searchFunc func(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error)
 
-func (fn searchFunc) Search(ctx context.Context, q query.Q, opts *zoekt.Options) (*zoekt.Result, error) {
+func (fn searchFunc) Search(ctx context.Context, q query.Q, opts *search.Options) (*search.Result, error) {
 	return fn(ctx, q, opts)
 }
 

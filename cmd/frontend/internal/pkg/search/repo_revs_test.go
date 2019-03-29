@@ -8,7 +8,7 @@ import (
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 func TestParseRepositoryRevisions(t *testing.T) {

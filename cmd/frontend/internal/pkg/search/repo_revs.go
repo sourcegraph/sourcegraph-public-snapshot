@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/search/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
