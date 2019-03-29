@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -30,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // This file contains the root resolver for search. It currently has a lot of
@@ -66,7 +65,6 @@ func (r *schemaResolver) Search(args *struct {
 		return newSearcherResolver(strings.TrimPrefix(args.Query, "!hier!"))
 	}
 
-	go addQueryToSearchesTable(args.Query)
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
@@ -75,17 +73,6 @@ func (r *schemaResolver) Search(args *struct {
 	return &searchResolver{
 		query: query,
 	}, nil
-}
-
-func addQueryToSearchesTable(q string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	if err := db.RecentSearches.Add(ctx, q); err != nil {
-		log15.Error("adding query to searches table: %v", err)
-	}
-	if err := db.RecentSearches.DeleteExcessRows(ctx, 1e5); err != nil {
-		log15.Error("deleting excess rows from searches table: %v", err)
-	}
 }
 
 func asString(v *searchquerytypes.Value) string {

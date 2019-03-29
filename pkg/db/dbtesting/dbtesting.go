@@ -58,7 +58,7 @@ var (
 // Callers (other than github.com/sourcegraph/sourcegraph/cmd/frontend/db) must set a name in this
 // package's DBNameSuffix var that is unique among all other test packages that call TestContext, so
 // that each package's tests run in separate DBs and do not conflict.
-func TestContext(t testing.TB) context.Context {
+func TestContext(t *testing.T) context.Context {
 	useFastPasswordMocks()
 
 	if testing.Short() {

@@ -317,18 +317,6 @@ Referenced by:
 
 ```
 
-# Table "public.recent_searches"
-```
-   Column   |            Type             |                          Modifiers                           
-------------+-----------------------------+--------------------------------------------------------------
- id         | integer                     | not null default nextval('recent_searches_id_seq'::regclass)
- query      | text                        | not null
- created_at | timestamp without time zone | not null default now()
-Indexes:
-    "recent_searches_pkey" PRIMARY KEY, btree (id)
-
-```
-
 # Table "public.registry_extension_releases"
 ```
         Column         |           Type           |                                Modifiers                                 
