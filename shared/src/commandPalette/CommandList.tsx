@@ -131,7 +131,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                             id="command-list__input"
                             ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
                             type="text"
-                            className="form-control px-2 py-1 rounded-0"
+                            className="form-control px-2 py-1 rounded-0 command-list__input"
                             value={this.state.input}
                             placeholder="Run Sourcegraph action..."
                             spellCheck={false}
