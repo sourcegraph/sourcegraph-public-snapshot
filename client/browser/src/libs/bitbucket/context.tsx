@@ -20,9 +20,7 @@ interface RevisionRefInfo {
 }
 
 function getRevSpecFromRevisionSelector(): RevSpec | null {
-    const branchNameElement = document.querySelector(
-        '#repository-layout-revision-selector span.name[data-revision-ref]'
-    )
+    const branchNameElement = document.querySelector('#repository-layout-revision-selector .name[data-revision-ref]')
     if (!branchNameElement) {
         return null
     }
