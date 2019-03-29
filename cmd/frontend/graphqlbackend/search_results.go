@@ -232,6 +232,14 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		add(filter, uri, repoToMatchCount[uri], limitHit, "repo")
 	}
 
+	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
+		for _, ff := range commonFileFilters {
+			if ff.Regexp.MatchString(fileMatchPath) {
+				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file")
+			}
+		}
+	}
+
 	addLangFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		extensionToLanguageLookup := func(ext string) string {
 			for _, lang := range filelang.Langs {
@@ -260,6 +268,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			}
 			addRepoFilter(string(result.fileMatch.repo.Name), rev, len(result.fileMatch.LineMatches()))
 			addLangFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
+			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
 
 			if len(result.fileMatch.symbols) > 0 {
 				add("type:symbol", "type:symbol", 1, result.fileMatch.JLimitHit, "symbol")
@@ -315,7 +324,7 @@ type searchFilterResolver struct {
 	// whether the results returned for a repository are incomplete
 	limitHit bool
 
-	// the kind of filter. Should be "repo" or "lang".
+	// the kind of filter. Should be "repo", "file", or "lang".
 	kind string
 
 	// score is used to select potential filters
