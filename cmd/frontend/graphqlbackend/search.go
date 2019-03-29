@@ -81,10 +81,10 @@ func addQueryToSearchesTable(q string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := db.RecentSearches.Add(ctx, q); err != nil {
-		log15.Error("adding query to searches table: %v", err)
+		log15.Error("adding query to searches table", "error", err)
 	}
 	if err := db.RecentSearches.DeleteExcessRows(ctx, 1e5); err != nil {
-		log15.Error("deleting excess rows from searches table: %v", err)
+		log15.Error("deleting excess rows from searches table", "error", err)
 	}
 }
 
