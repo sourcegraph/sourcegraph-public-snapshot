@@ -2,8 +2,7 @@ package db
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -17,14 +16,14 @@ func (*recentSearches) Add(ctx context.Context, q string) error {
 	}
 	res, err := dbconn.Global.ExecContext(ctx, insert, q)
 	if err != nil {
-		return fmt.Errorf("inserting '%s' into recentSearches table: %v", q, err)
+		return errors.Errorf("inserting '%s' into recentSearches table: %v", q, err)
 	}
 	nrows, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("getting number of affected rows: %v", err)
+		return errors.Errorf("getting number of affected rows: %v", err)
 	}
 	if nrows == 0 {
-		return fmt.Errorf("failed to insert row for query '%s'", q)
+		return errors.Errorf("failed to insert row for query '%s'", q)
 	}
 	return nil
 }
@@ -43,7 +42,7 @@ DELETE FROM recent_searches
 		return errors.New("db connection is nil")
 	}
 	if _, err := dbconn.Global.ExecContext(ctx, enforceLimit, limit); err != nil {
-		return fmt.Errorf("deleting excess rows in recentSearches table: %v", err)
+		return errors.Errorf("deleting excess rows in recentSearches table: %v", err)
 	}
 	return nil
 }
@@ -54,7 +53,7 @@ func (*recentSearches) Get(ctx context.Context) ([]string, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, sel)
 	var qs []string
 	if err != nil {
-		return nil, fmt.Errorf("running SELECT query: %v", err)
+		return nil, errors.Errorf("running SELECT query: %v", err)
 	}
 	for rows.Next() {
 		var q string
