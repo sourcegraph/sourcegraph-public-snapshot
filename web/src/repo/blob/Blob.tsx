@@ -293,7 +293,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     ...this.props.extensionsController.services.model.model.value,
                     visibleViewComponents: [
                         {
-                            type: 'textEditor' as 'textEditor',
+                            type: 'textEditor' as const,
                             item: {
                                 uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
                                 languageId: model.mode,
