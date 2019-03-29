@@ -9,6 +9,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- In search queries, some characters that are normally treated specially within regular expressions are automatically
+  escaped when it is clear by their configuration that they are meant to be treated literally.
 - Enterprise admins can now customize the appearance of the homepage and search icon.
 - A new settings property `notices` allows showing custom informational messages on the homepage and at the top of each page.
 - The new `gitlab.exclude` setting in [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) allows you to exclude specific repositories matched by `gitlab.projectQuery` and `gitlab.projects` (so that they won't be synced).
