@@ -95,7 +95,7 @@ If still experiencing issues, the next step is to inspect the browser extension 
 
 ![Chrome extension console and network activity](img/ChromeExtensionConsoleNetworkActivity.gif)
 
-If that still doesn't help, take a screenshot of the console and network activity and attach it [to a new issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=Browser%20extension%20-%20)so we can investigate further.
+If that still doesn't help, take a screenshot of the console and network activity and attach it [to a new issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=Browser%20extension%20-%20) so we can investigate further.
 
 ## Privacy
 
