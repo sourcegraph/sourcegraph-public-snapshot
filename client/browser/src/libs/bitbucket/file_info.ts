@@ -7,7 +7,12 @@ import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { getBaseCommit, getCommitsForPR } from './api'
-import { getFileInfoFromCodeView, getPRInfoFromCodeView, getResolvedDiffFromBranchComparePage } from './scrape'
+import {
+    getFileInfoFromCodeView,
+    getPRIDFromPathName,
+    getDiffFileInfoFromCodeView,
+    getResolvedDiffFromBranchComparePage,
+} from './scrape'
 
 /**
  * Resolves file information for a page with a single file, not including diffs with only one file.
@@ -53,16 +58,15 @@ const fetchDiffFiles = (
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
-        map(getPRInfoFromCodeView),
-        switchMap(({ commitID, project, repoSlug, prID, ...rest }) => {
+        map(getDiffFileInfoFromCodeView),
+        switchMap(({ commitID, project, repoSlug, ...rest }) => {
             if (commitID) {
                 return getBaseCommit({ commitID, project, repoSlug }).pipe(
                     map(baseCommitID => ({ baseCommitID, headCommitID: commitID, ...rest }))
                 )
-            } else if (prID) {
-                return getCommitsForPR({ project, repoSlug, prID }).pipe(map(commits => ({ ...rest, ...commits })))
             } else {
-                throw new Error('Cannot resolve diff: no commitID or prID')
+                const prID = getPRIDFromPathName()
+                return getCommitsForPR({ project, repoSlug, prID }).pipe(map(commits => ({ ...rest, ...commits })))
             }
         }),
         switchMap(fetchDiffFiles)
@@ -71,7 +75,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
 export const resolveCompareFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
         map(codeView => ({
-            ...getPRInfoFromCodeView(codeView),
+            ...getDiffFileInfoFromCodeView(codeView),
             ...getResolvedDiffFromBranchComparePage(),
         })),
         switchMap(fetchDiffFiles)

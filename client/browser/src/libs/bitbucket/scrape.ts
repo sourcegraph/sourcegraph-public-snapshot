@@ -1,9 +1,9 @@
 import { DiffResolvedRevSpec } from '../../shared/repo'
 import { FileInfo } from '../code_intelligence'
 
-interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
-    project: string
+export interface BitbucketRepoInfo {
     repoSlug: string
+    project: string
 }
 
 const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source']
@@ -19,7 +19,9 @@ const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source'
  * - file path
  * - rev (through the query parameter 'at')
  */
-const getFileInfoFromLink = (codeView: HTMLElement): PageInfo => {
+const getFileInfoFromLink = (
+    codeView: HTMLElement
+): Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> & BitbucketRepoInfo => {
     const errors: Error[] = []
     for (const selector of LINK_SELECTORS) {
         try {
@@ -66,6 +68,10 @@ const getFileInfoFromLink = (codeView: HTMLElement): PageInfo => {
     throw new Error(`Could not parse file info from links in code view:\n${errors.map(e => `${e}`).join('\n')}`)
 }
 
+/**
+ * Attempts to retreive the commitid from a link to the commit,
+ * found on single file "diff to previous" views.
+ */
 const getCommitIDFromLink = (): string => {
     const commitLink = document.querySelector<HTMLElement>('a.commitid')
     if (!commitLink) {
@@ -78,7 +84,9 @@ const getCommitIDFromLink = (): string => {
     return commitID
 }
 
-export const getFileInfoFromCodeView = (codeView: HTMLElement): PageInfo & Pick<FileInfo, 'commitID'> => {
+export const getFileInfoFromCodeView = (
+    codeView: HTMLElement
+): BitbucketRepoInfo & Pick<FileInfo, 'repoName' | 'filePath' | 'rev' | 'commitID'> => {
     const { repoName, filePath, rev, project, repoSlug } = getFileInfoFromLink(codeView)
     const commitID = getCommitIDFromLink()
     return {
@@ -127,17 +135,17 @@ const getFileInfoFromFilePathLink = (codeView: HTMLElement) => {
     }
 }
 
-export interface PRPageInfo extends PageInfo {
-    prID?: number
-    commitID?: string // FileInfo.commitID is required but we won't always have it from the PR page DOM.
-}
-
-export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
+export const getDiffFileInfoFromCodeView = (
+    codeView: HTMLElement
+): BitbucketRepoInfo & {
+    // FileInfo.commitID is required but we won't always have it from the page DOM.
+    commitID?: string
+} & Pick<FileInfo, 'repoName' | 'filePath'> => {
     let repoName: string
     let filePath: string
     let project: string
     let repoSlug: string
-    let commitID: string | null | undefined
+    let commitID: string | undefined
 
     try {
         const info = getFileInfoFromLink(codeView)
@@ -155,20 +163,29 @@ export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
         commitID = info.commitID
     }
 
-    const prIDMatch = window.location.pathname.match(/pull-requests\/(\d*?)\/(diff|overview|commits)/)
-
     if (!commitID) {
-        commitID = getCommitIDFromLink()
+        try {
+            commitID = getCommitIDFromLink()
+        } catch (err) {
+            console.error('unable to get commitID from link', err)
+        }
     }
 
     return {
-        repoName: repoName!,
-        filePath: filePath!,
-        commitID: commitID!,
-        prID: prIDMatch ? parseInt(prIDMatch[1], 10) : undefined,
-        project: project!,
-        repoSlug: repoSlug!,
+        repoName,
+        filePath,
+        commitID,
+        project,
+        repoSlug,
     }
+}
+
+export function getPRIDFromPathName(): number {
+    const prIDMatch = window.location.pathname.match(/pull-requests\/(\d*?)\/(diff|overview|commits)/)
+    if (!prIDMatch) {
+        throw new Error(`Could not parse PR ID from pathname: ${window.location.pathname}`)
+    }
+    return parseInt(prIDMatch[1], 10)
 }
 
 export function getResolvedDiffFromBranchComparePage(): DiffResolvedRevSpec {
