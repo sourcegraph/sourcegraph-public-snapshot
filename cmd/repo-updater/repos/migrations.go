@@ -231,7 +231,7 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 // migration to its explicit default.
 func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 	return transactional(func(ctx context.Context, s Store) error {
-		const prefix = "migrate.gitlab-set-default-repository-query"
+		const prefix = "migrate.gitlab-set-default-project-query"
 
 		svcs, err := s.ListExternalServices(ctx, "gitlab")
 		if err != nil {
