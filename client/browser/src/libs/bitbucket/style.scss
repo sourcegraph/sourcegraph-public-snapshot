@@ -20,7 +20,7 @@
     }
 }
 
-.command-palette-popover__bitbucket-server {
+.command-palette-popover--bitbucket-server {
     border-radius: 3px;
 
     .command-list {
@@ -39,7 +39,7 @@
     }
 }
 
-.code-view-toolbar__bitbucket-server {
+.code-view-toolbar--bitbucket-server {
     ul {
         list-style-type: none;
     }
@@ -51,11 +51,10 @@
 
 .action-item__bitbucket-server {
     margin-bottom: 10px !important;
-}
-
-.action-item__bitbucket-server.action-item--pressed {
-    background-color: #344563;
-    color: #ffffff;
+    &.action-item--pressed {
+        background-color: #344563;
+        color: #ffffff;
+    }
 }
 
 .open-on-sourcegraph--bitbucket-server {

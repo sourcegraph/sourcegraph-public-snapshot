@@ -1,3 +1,4 @@
+import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { DiffResolvedRevSpec } from '../../shared/repo'
 import { FileInfo } from '../code_intelligence'
 
@@ -65,7 +66,7 @@ const getFileInfoFromLink = (
             continue
         }
     }
-    throw new Error(`Could not parse file info from links in code view:\n${errors.map(e => `${e}`).join('\n')}`)
+    throw createAggregateError(errors)
 }
 
 /**
@@ -77,7 +78,7 @@ const getCommitIDFromLink = (): string => {
     if (!commitLink) {
         throw new Error('No element found matching a.commitid')
     }
-    const commitID = commitLink.dataset.commitid!
+    const commitID = commitLink.dataset.commitid
     if (!commitID) {
         throw new Error('Element matching a.commitid has no data-commitid')
     }

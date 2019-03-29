@@ -8,9 +8,9 @@ import { FileInfo } from '../code_intelligence'
 import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { getBaseCommit, getCommitsForPR } from './api'
 import {
+    getDiffFileInfoFromCodeView,
     getFileInfoFromCodeView,
     getPRIDFromPathName,
-    getDiffFileInfoFromCodeView,
     getResolvedDiffFromBranchComparePage,
 } from './scrape'
 

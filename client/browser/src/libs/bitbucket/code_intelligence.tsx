@@ -148,11 +148,11 @@ export const bitbucketServerCodeHost: CodeHost = {
         !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket'),
     codeViewResolver,
     getCommandPaletteMount,
-    commandPalettePopoverClassName: 'command-palette-popover__bitbucket-server',
+    commandPalettePopoverClassName: 'command-palette-popover--bitbucket-server',
     actionNavItemClassProps: {
         actionItemClass: 'aui-button action-item__bitbucket-server',
     },
-    codeViewToolbarClassName: 'code-view-toolbar__bitbucket-server',
+    codeViewToolbarClassName: 'code-view-toolbar--bitbucket-server',
     getViewContextOnSourcegraphMount,
     getContext,
     contextButtonClassName: 'aui-button',
