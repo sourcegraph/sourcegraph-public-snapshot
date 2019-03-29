@@ -458,6 +458,13 @@ func (rs Repos) Apply(opts ...func(*Repo)) {
 	}
 }
 
+// With returns a clone of the given repos with the given functional options applied.
+func (rs Repos) With(opts ...func(*Repo)) Repos {
+	clone := rs.Clone()
+	clone.Apply(opts...)
+	return clone
+}
+
 // Filter returns all the Repos that match the given predicate.
 func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	for _, r := range rs {
@@ -479,6 +486,18 @@ func (es ExternalServices) DisplayNames() []string {
 		names[i] = es[i].DisplayName
 	}
 	return names
+}
+
+// Kinds returns the unique set of Kinds in the given external services list.
+func (es ExternalServices) Kinds() (kinds []string) {
+	set := make(map[string]bool, len(es))
+	for _, e := range es {
+		if !set[e.Kind] {
+			kinds = append(kinds, e.Kind)
+			set[e.Kind] = true
+		}
+	}
+	return kinds
 }
 
 // URNs returns the list of URNs from all ExternalServices.
