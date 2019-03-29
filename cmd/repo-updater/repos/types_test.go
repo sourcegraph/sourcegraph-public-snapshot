@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -9,14 +8,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
-func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
+func TestExternalService_IncludeExclude(t *testing.T) {
 	now := time.Now()
+
+	type testCase struct {
+		method string
+		name   string
+		svcs   ExternalServices
+		repos  Repos
+		assert ExternalServicesAssertion
+	}
+
 	github := ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github",
 		Config: `{
 			// Some comment
 			"url": "https://github.com",
+			"token": "secret"
+		}`,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	gitlab := ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "GitLab",
+		Config: `{
+			// Some comment
+			"url": "https://gitlab.com",
 			"token": "secret"
 		}`,
 		CreatedAt: now,
@@ -33,11 +53,11 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 			},
 		},
 		{
-			Name: "github.com/org/bar",
+			Name: "gitlab.com/org/foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",
-				ID:          "bar",
+				ID:          "1",
 			},
 		},
 		{
@@ -47,71 +67,55 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 				ServiceID:   "https://github.mycorp.com/",
 			},
 		},
-	}
-
-	type testCase struct {
-		method string
-		name   string
-		svc    *ExternalService
-		repos  Repos
-		assert ExternalServicesAssertion
-		err    string
+		{
+			Name: "gitlab.com/org/baz",
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceType: "gitlab",
+				ServiceID:   "https://gitlab.mycorp.com/",
+			},
+		},
 	}
 
 	var testCases []testCase
 	{
-		svc := github.With(func(e *ExternalService) {
-			e.Config = formatJSON(t, `
-			{
-				// Some comment
-				"url": "https://github.com",
-				"token": "secret",
-				"exclude": [
-					{"id": "foo"},
-					{"name": "org/BAZ"}
-				]
-			}`)
-		})
+		svcs := ExternalServices{
+			github.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://github.com",
+					"token": "secret",
+					"exclude": [
+						{"id": "foo"},
+						{"name": "org/BAZ"}
+					]
+				}`)
+			}),
+			gitlab.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://gitlab.com",
+					"token": "secret",
+					"exclude": [
+						{"id": 1},
+						{"name": "org/baz"}
+					]
+				}`)
+			}),
+		}
 
 		testCases = append(testCases, testCase{
 			method: "exclude",
-			name:   "already excluded repos and non-github repos are ignored",
-			svc:    svc,
+			name:   "already excluded repos are ignored",
+			svcs:   svcs,
 			repos:  repos,
-			assert: Assert.ExternalServicesEqual(svc),
-			err:    "<nil>",
+			assert: Assert.ExternalServicesEqual(svcs...),
 		})
 	}
 	{
-		svc := ExternalService{Kind: "GITLAB"}
-		testCases = append(testCases, testCase{
-			method: "exclude",
-			name:   "non github external services return an error",
-			svc:    &svc,
-			repos:  repos,
-			assert: Assert.ExternalServicesEqual(&svc),
-			err:    `config: unexpected external service kind "GITLAB"`,
-		})
-	}
-	{
-		svc := github.With(func(e *ExternalService) {
-			e.Config = formatJSON(t, `
-			{
-				// Some comment
-				"url": "https://github.com",
-				"token": "secret",
-				"exclude": [
-					{"name": "org/boo"}
-				]
-			}`)
-		})
-
-		testCases = append(testCases, testCase{
-			method: "exclude",
-			name:   "github repos are excluded",
-			svc:    svc,
-			repos:  repos,
-			assert: Assert.ExternalServicesEqual(svc.With(func(e *ExternalService) {
+		svcs := ExternalServices{
+			github.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -119,51 +123,98 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 					"token": "secret",
 					"exclude": [
 						{"name": "org/boo"},
-						{"id": "foo", "name": "org/foo"},
+					]
+				}`)
+			}),
+			gitlab.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://gitlab.com",
+					"token": "secret",
+					"exclude": [
+						{"name": "org/boo"},
+					]
+				}`)
+			}),
+		}
+
+		testCases = append(testCases, testCase{
+			method: "exclude",
+			name:   "repos are excluded",
+			svcs:   svcs,
+			repos:  repos,
+			assert: Assert.ExternalServicesEqual(
+				github.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"url": "https://github.com",
+						"token": "secret",
+						"exclude": [
+							{"name": "org/boo"},
+							{"id": "foo", "name": "org/foo"},
+							{"name": "org/baz"}
+						]
+					}`)
+				}),
+				gitlab.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"url": "https://gitlab.com",
+						"token": "secret",
+						"exclude": [
+							{"name": "org/boo"},
+							{"id": 1, "name": "org/foo"},
+							{"name": "org/baz"}
+						]
+					}`)
+				}),
+			),
+		})
+	}
+	{
+		svcs := ExternalServices{
+			github.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"url": "https://github.com",
+						"token": "secret",
+						"repos": [
+							"org/FOO",
+							"org/baz"
+						]
+					}`)
+			}),
+			gitlab.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://gitlab.com",
+					"token": "secret",
+					"projects": [
+						{"id": 1},
 						{"name": "org/baz"}
 					]
 				}`)
-			})),
-			err: `<nil>`,
-		})
-	}
-	{
-		svc := github.With(func(e *ExternalService) {
-			e.Config = formatJSON(t, `
-				{
-					// Some comment
-					"url": "https://github.com",
-					"token": "secret",
-					"repos": [
-						"org/FOO",
-						"org/baz"
-					]
-				}`)
-		})
+			}),
+		}
 
 		testCases = append(testCases, testCase{
 			method: "include",
-			name:   "already included repos and non-github repos are ignored",
-			svc:    svc,
+			name:   "already included repos are ignored",
+			svcs:   svcs,
 			repos:  repos,
-			assert: Assert.ExternalServicesEqual(svc),
-			err:    "<nil>",
+			assert: Assert.ExternalServicesEqual(svcs...),
 		})
 	}
+
 	{
-		svc := ExternalService{Kind: "GITLAB"}
-		testCases = append(testCases, testCase{
-			method: "include",
-			name:   "non github external services return an error",
-			svc:    &svc,
-			repos:  repos,
-			assert: Assert.ExternalServicesEqual(&svc),
-			err:    `config: unexpected external service kind "GITLAB"`,
-		})
-	}
-	{
-		svc := github.With(func(e *ExternalService) {
-			e.Config = formatJSON(t, `
+		svcs := ExternalServices{
+			github.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
 				{
 					// Some comment
 					"url": "https://github.com",
@@ -172,15 +223,28 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 						"org/boo"
 					]
 				}`)
-		})
+			}),
+			gitlab.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://gitlab.com",
+					"token": "secret",
+					"projects": [
+						{"name": "org/boo"},
+					]
+				}`)
+			}),
+		}
 
 		testCases = append(testCases, testCase{
 			method: "include",
-			name:   "github repos are included",
-			svc:    svc,
+			name:   "repos are included",
+			svcs:   svcs,
 			repos:  repos,
-			assert: Assert.ExternalServicesEqual(svc.With(func(e *ExternalService) {
-				e.Config = formatJSON(t, `
+			assert: Assert.ExternalServicesEqual(
+				github.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
 					{
 						// Some comment
 						"url": "https://github.com",
@@ -191,30 +255,45 @@ func TestExternalService_IncludeExcludeGithubRepos(t *testing.T) {
 							"org/baz"
 						]
 					}`)
-			})),
-			err: `<nil>`,
+				}),
+				gitlab.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"url": "https://gitlab.com",
+						"token": "secret",
+						"projects": [
+							{"name": "org/boo"},
+							{"id": 1, "name": "org/foo"},
+							{"name": "org/baz"}
+						]
+					}`)
+				}),
+			),
 		})
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			svc, repos := tc.svc.Clone(), tc.repos.Clone()
+			svcs, repos := tc.svcs.Clone(), tc.repos.Clone()
 
 			var err error
-			switch tc.method {
-			case "include":
-				err = svc.IncludeGithubRepos(repos...)
-			case "exclude":
-				err = svc.ExcludeGithubRepos(repos...)
-			}
+			for _, svc := range svcs {
+				switch tc.method {
+				case "include":
+					err = svc.Include(repos...)
+				case "exclude":
+					err = svc.Exclude(repos...)
+				}
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 
 			if tc.assert != nil {
-				tc.assert(t, ExternalServices{svc})
+				tc.assert(t, svcs)
 			}
 		})
 	}

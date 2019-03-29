@@ -89,9 +89,84 @@ func (e ExternalService) Configuration() (cfg interface{}, _ error) {
 	return cfg, jsonc.Unmarshal(e.Config, cfg)
 }
 
-// ExcludeGithubRepos changes the configuration of a Github external service to exclude the
+// Exclude changes the configuration of an external service to exclude the given
+// repos from being synced.
+func (e *ExternalService) Exclude(rs ...*Repo) error {
+	switch strings.ToLower(e.Kind) {
+	case "github":
+		return e.excludeGithubRepos(rs...)
+	case "gitlab":
+		return e.excludeGitLabRepos(rs...)
+	default:
+		return errors.Errorf("external service kind %q doesn't have an exclude list", e.Kind)
+	}
+}
+
+// Include changes the configuration of an external service to explicitly enlist the
+// given repos to be synced.
+func (e *ExternalService) Include(rs ...*Repo) error {
+	switch strings.ToLower(e.Kind) {
+	case "github":
+		return e.includeGithubRepos(rs...)
+	case "gitlab":
+		return e.includeGitLabRepos(rs...)
+	default:
+		return errors.Errorf("external service kind %q doesn't have an include list", e.Kind)
+	}
+}
+
+// excludeGitLabRepos changes the configuration of a GitLab external service to exclude the
 // given repos from being synced.
-func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
+func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("gitlab", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.GitLabConnection)
+		set := make(map[string]bool, len(c.Exclude)*2)
+		for _, ex := range c.Exclude {
+			if ex.Id != 0 {
+				set[strconv.Itoa(ex.Id)] = true
+			}
+
+			if ex.Name != "" {
+				set[strings.ToLower(ex.Name)] = true
+			}
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "gitlab" {
+				continue
+			}
+
+			id := r.ExternalRepo.ID
+			name := nameWithOwner(r.Name)
+
+			if !set[name] && !set[id] {
+				n, _ := strconv.Atoi(id)
+				c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{
+					Name: name,
+					Id:   n,
+				})
+
+				if id != "" {
+					set[id] = true
+				}
+
+				if name != "" {
+					set[name] = true
+				}
+			}
+		}
+
+		return "exclude", c.Exclude
+	})
+}
+
+// excludeGithubRepos changes the configuration of a Github external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -115,7 +190,7 @@ func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
 			}
 
 			id := r.ExternalRepo.ID
-			name := githubNameWithOwner(r.Name)
+			name := nameWithOwner(r.Name)
 
 			if !set[name] && !set[id] {
 				c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{
@@ -137,7 +212,7 @@ func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
 	})
 }
 
-func githubNameWithOwner(name string) string {
+func nameWithOwner(name string) string {
 	u, _ := urlx.Parse(name)
 	if u != nil {
 		name = strings.TrimPrefix(u.Path, "/")
@@ -145,9 +220,9 @@ func githubNameWithOwner(name string) string {
 	return strings.ToLower(name)
 }
 
-// IncludeGithubRepos changes the configuration of a Github external service to explicitly enlist the
+// includeGithubRepos changes the configuration of a Github external service to explicitly enlist the
 // given repos to be synced.
-func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
+func (e *ExternalService) includeGithubRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -165,13 +240,49 @@ func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
 				continue
 			}
 
-			if name := githubNameWithOwner(r.Name); !set[name] {
+			if name := nameWithOwner(r.Name); !set[name] {
 				c.Repos = append(c.Repos, name)
 				set[name] = true
 			}
 		}
 
 		return "repos", c.Repos
+	})
+}
+
+// includeGitLabRepos changes the configuration of a GitLab external service to explicitly enlist the
+// given repos to be synced.
+func (e *ExternalService) includeGitLabRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("gitlab", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.GitLabConnection)
+
+		set := make(map[string]bool, len(c.Projects))
+		for _, p := range c.Projects {
+			set[p.Name] = true
+			set[strconv.Itoa(p.Id)] = true
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "gitlab" {
+				continue
+			}
+
+			if name := nameWithOwner(r.Name); !set[name] && !set[r.ExternalRepo.ID] {
+				n, _ := strconv.Atoi(r.ExternalRepo.ID)
+				c.Projects = append(c.Projects, &schema.GitLabProject{
+					Name: name,
+					Id:   n,
+				})
+				set[name] = true
+				set[r.ExternalRepo.ID] = true
+			}
+		}
+
+		return "projects", c.Projects
 	})
 }
 
