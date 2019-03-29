@@ -16,20 +16,18 @@ func TestEnabledStateDeprecationMigration(t *testing.T) {
 }
 
 func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
-	excluded := func(t testing.TB, rs ...*repos.Repo) func(*repos.ExternalService) {
-		t.Helper()
+	excluded := func(rs ...*repos.Repo) func(*repos.ExternalService) {
 		return func(e *repos.ExternalService) {
 			if err := e.Exclude(rs...); err != nil {
-				t.Fatal(err)
+				panic(err)
 			}
 		}
 	}
 
-	included := func(t testing.TB, rs ...*repos.Repo) func(*repos.ExternalService) {
-		t.Helper()
+	included := func(rs ...*repos.Repo) func(*repos.ExternalService) {
 		return func(e *repos.ExternalService) {
 			if err := e.Include(rs...); err != nil {
-				t.Fatal(err)
+				panic(err)
 			}
 		}
 	}
@@ -37,223 +35,223 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
+	type testCase struct {
+		name    string
+		sourcer repos.Sourcer
+		stored  repos.Repos
+		assert  repos.ExternalServicesAssertion
+		err     string
+	}
+
+	githubService := repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+		Config: formatJSON(`
+				{
+					// Some comment
+					"url": "https://github.com",
+					"token": "secret"
+				}
+			`),
+	}
+
+	githubRepo := repos.Repo{
+		Name:    "github.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+	}
+
+	gitlabService := repos.ExternalService{
+		ID:          2,
+		Kind:        "GITLAB",
+		DisplayName: "gitlab.com - test",
+		Config: formatJSON(`
+					{
+						// Some comment
+						"url": "https://gitlab.com",
+						"token": "secret"
+					}
+				`),
+	}
+
+	gitlabRepo := repos.Repo{
+		Name:    "gitlab.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "1",
+			ServiceType: "gitlab",
+			ServiceID:   "http://gitlab.com",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+	}
+
+	var testCases []testCase
+	for _, k := range []struct {
+		svc  repos.ExternalService
+		repo repos.Repo
+	}{
+		{svc: githubService, repo: githubRepo},
+		{svc: gitlabService, repo: gitlabRepo},
+	} {
+		repo, svc := k.repo, k.svc
+		testCases = append(testCases,
+			testCase{
+				name:   "disabled: was deleted, got added, then excluded",
+				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
+				),
+				assert: repos.Assert.ExternalServicesEqual(svc.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(&repo),
+				)),
+				err: "<nil>",
+			},
+			testCase{
+				name:   "disabled: was not deleted and was not modified, got excluded",
+				stored: repos.Repos{&repo},
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
+				),
+				assert: repos.Assert.ExternalServicesEqual(svc.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(&repo),
+				)),
+				err: "<nil>",
+			},
+			testCase{
+				name:   "disabled: was not deleted, got modified, then excluded",
+				stored: repos.Repos{&repo},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
+					repo.With(func(r *repos.Repo) {
+						r.Description = "some updated description"
+					})),
+				),
+				assert: repos.Assert.ExternalServicesEqual(svc.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(&repo),
+				)),
+				err: "<nil>",
+			},
+			testCase{
+				name:    "disabled: was deleted and is still deleted, got excluded",
+				stored:  repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
+				assert: repos.Assert.ExternalServicesEqual(svc.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					excluded(&repo),
+				)),
+				err: "<nil>",
+			},
+			testCase{
+				name: "enabled: was not deleted and is still not deleted, not included",
+				stored: repos.Repos{repo.With(func(r *repos.Repo) {
+					r.Enabled = true
+				})},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
+					repo.With(func(r *repos.Repo) {
+						r.Enabled = true
+					})),
+				),
+				assert: repos.Assert.ExternalServicesEqual(svc.Clone()),
+				err:    "<nil>",
+			},
+			testCase{
+				name: "enabled: was not deleted and got deleted, then included",
+				stored: repos.Repos{repo.With(func(r *repos.Repo) {
+					r.Enabled = true
+				})},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
+				assert: repos.Assert.ExternalServicesEqual(svc.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+					included(&repo),
+				)),
+				err: "<nil>",
+			},
+			testCase{
+				name:   "enabled: got added for the first time, so not included",
+				stored: repos.Repos{},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
+					repo.With(func(r *repos.Repo) {
+						r.Enabled = true
+					})),
+				),
+				assert: repos.Assert.ExternalServicesEqual(svc.Clone()),
+				err:    "<nil>",
+			},
+			testCase{
+				name: "initialRepositoryEnablement gets deleted",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(
+					svc.With(func(e *repos.ExternalService) {
+						var err error
+						e.Config, err = jsonc.Edit(e.Config, false, "initialRepositoryEnablement")
+						if err != nil {
+							panic(err)
+						}
+					}), nil,
+				)),
+				assert: repos.Assert.ExternalServicesEqual(svc.With(
+					repos.Opt.ExternalServiceModifiedAt(now),
+				)),
+				err: "<nil>",
+			},
+			testCase{
+				name:   "disabled: repo is excluded in all of its sources",
+				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
+					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil, repo.Clone()),
+				),
+				assert: repos.Assert.ExternalServicesEqual(
+					svc.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						excluded(&repo),
+					),
+					svc.With(
+						repos.Opt.ExternalServiceID(23),
+						repos.Opt.ExternalServiceModifiedAt(now),
+						excluded(&repo),
+					),
+				),
+				err: "<nil>",
+			},
+			testCase{
+				name: "enabled: repo is included in all of its sources",
+				stored: repos.Repos{repo.With(
+					repos.Opt.RepoSources(
+						svc.URN(),
+						svc.With(repos.Opt.ExternalServiceID(23)).URN(),
+					),
+					func(r *repos.Repo) { r.Enabled = true },
+				)},
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(svc.Clone(), nil),
+					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil),
+				),
+				assert: repos.Assert.ExternalServicesEqual(
+					svc.With(
+						repos.Opt.ExternalServiceModifiedAt(now),
+						included(&repo),
+					),
+					svc.With(
+						repos.Opt.ExternalServiceID(23),
+						repos.Opt.ExternalServiceModifiedAt(now),
+						included(&repo),
+					),
+				),
+				err: "<nil>",
+			},
+		)
+	}
+
 	return func(t *testing.T) {
 		t.Helper()
-
-		type testCase struct {
-			name    string
-			sourcer repos.Sourcer
-			stored  repos.Repos
-			assert  repos.ExternalServicesAssertion
-			err     string
-		}
-
-		var testCases []testCase
-		for _, k := range []struct {
-			svc  repos.ExternalService
-			repo repos.Repo
-		}{
-			{
-				svc: repos.ExternalService{
-					ID:          1,
-					Kind:        "GITHUB",
-					DisplayName: "github.com - test",
-					Config: formatJSON(`
-						{
-							// Some comment
-							"url": "https://github.com",
-							"token": "secret"
-						}
-					`),
-				},
-				repo: repos.Repo{
-					Name:    "github.com/foo/bar",
-					Enabled: false,
-					ExternalRepo: api.ExternalRepoSpec{
-						ID:          "bar",
-						ServiceType: "github",
-						ServiceID:   "http://github.com",
-					},
-					Sources: map[string]*repos.SourceInfo{},
-				},
-			},
-			{
-				svc: repos.ExternalService{
-					ID:          2,
-					Kind:        "GITLAB",
-					DisplayName: "gitlab.com - test",
-					Config: formatJSON(`
-						{
-							// Some comment
-							"url": "https://gitlab.com",
-							"token": "secret"
-						}
-					`),
-				},
-				repo: repos.Repo{
-					Name:    "gitlab.com/foo/bar",
-					Enabled: false,
-					ExternalRepo: api.ExternalRepoSpec{
-						ID:          "1",
-						ServiceType: "gitlab",
-						ServiceID:   "http://gitlab.com",
-					},
-					Sources: map[string]*repos.SourceInfo{},
-				},
-			},
-		} {
-			repo, svc := k.repo, k.svc
-			testCases = append(testCases,
-				testCase{
-					name:   "disabled: was deleted, got added, then excluded",
-					stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
-					sourcer: repos.NewFakeSourcer(nil,
-						repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
-					),
-					assert: repos.Assert.ExternalServicesEqual(svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-						excluded(t, &repo),
-					)),
-					err: "<nil>",
-				},
-				testCase{
-					name:   "disabled: was not deleted and was not modified, got excluded",
-					stored: repos.Repos{&repo},
-					sourcer: repos.NewFakeSourcer(nil,
-						repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
-					),
-					assert: repos.Assert.ExternalServicesEqual(svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-						excluded(t, &repo),
-					)),
-					err: "<nil>",
-				},
-				testCase{
-					name:   "disabled: was not deleted, got modified, then excluded",
-					stored: repos.Repos{&repo},
-					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
-						repo.With(func(r *repos.Repo) {
-							r.Description = "some updated description"
-						})),
-					),
-					assert: repos.Assert.ExternalServicesEqual(svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-						excluded(t, &repo),
-					)),
-					err: "<nil>",
-				},
-				testCase{
-					name:    "disabled: was deleted and is still deleted, got excluded",
-					stored:  repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
-					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-					assert: repos.Assert.ExternalServicesEqual(svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-						excluded(t, &repo),
-					)),
-					err: "<nil>",
-				},
-				testCase{
-					name: "enabled: was not deleted and is still not deleted, not included",
-					stored: repos.Repos{repo.With(func(r *repos.Repo) {
-						r.Enabled = true
-					})},
-					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
-						repo.With(func(r *repos.Repo) {
-							r.Enabled = true
-						})),
-					),
-					assert: repos.Assert.ExternalServicesEqual(svc.Clone()),
-					err:    "<nil>",
-				},
-				testCase{
-					name: "enabled: was not deleted and got deleted, then included",
-					stored: repos.Repos{repo.With(func(r *repos.Repo) {
-						r.Enabled = true
-					})},
-					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-					assert: repos.Assert.ExternalServicesEqual(svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-						included(t, &repo),
-					)),
-					err: "<nil>",
-				},
-				testCase{
-					name:   "enabled: got added for the first time, so not included",
-					stored: repos.Repos{},
-					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
-						repo.With(func(r *repos.Repo) {
-							r.Enabled = true
-						})),
-					),
-					assert: repos.Assert.ExternalServicesEqual(svc.Clone()),
-					err:    "<nil>",
-				},
-				testCase{
-					name: "initialRepositoryEnablement gets deleted",
-					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(
-						svc.With(func(e *repos.ExternalService) {
-							e.Config = formatJSON(`
-							{
-								// Some comment
-								"url": "https://github.com",
-								"token": "secret",
-								"initialRepositoryEnablement": false
-							}`)
-						}), nil,
-					)),
-					assert: repos.Assert.ExternalServicesEqual(svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-					)),
-					err: "<nil>",
-				},
-				testCase{
-					name:   "disabled: repo is excluded in all of its sources",
-					stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
-					sourcer: repos.NewFakeSourcer(nil,
-						repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
-						repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil, repo.Clone()),
-					),
-					assert: repos.Assert.ExternalServicesEqual(
-						svc.With(
-							repos.Opt.ExternalServiceModifiedAt(now),
-							excluded(t, &repo),
-						),
-						svc.With(
-							repos.Opt.ExternalServiceID(23),
-							repos.Opt.ExternalServiceModifiedAt(now),
-							excluded(t, &repo),
-						),
-					),
-					err: "<nil>",
-				},
-				testCase{
-					name: "enabled: repo is included in all of its sources",
-					stored: repos.Repos{repo.With(
-						repos.Opt.RepoSources(
-							svc.URN(),
-							svc.With(repos.Opt.ExternalServiceID(23)).URN(),
-						),
-						func(r *repos.Repo) { r.Enabled = true },
-					)},
-					sourcer: repos.NewFakeSourcer(nil,
-						repos.NewFakeSource(svc.Clone(), nil),
-						repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil),
-					),
-					assert: repos.Assert.ExternalServicesEqual(
-						svc.With(
-							repos.Opt.ExternalServiceModifiedAt(now),
-							included(t, &repo),
-						),
-						svc.With(
-							repos.Opt.ExternalServiceID(23),
-							repos.Opt.ExternalServiceModifiedAt(now),
-							included(t, &repo),
-						),
-					),
-					err: "<nil>",
-				},
-			)
-		}
 
 		for _, tc := range testCases {
 			tc := tc
