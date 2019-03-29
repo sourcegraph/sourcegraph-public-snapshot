@@ -35,7 +35,7 @@ DELETE FROM recent_searches
 	WHERE id <
 		(SELECT id FROM recent_searches
 		 ORDER BY id
-		 OFFSET (SELECT (SELECT COUNT(*) FROM recent_searches) - $1)
+		 OFFSET GREATEST(0, (SELECT (SELECT COUNT(*) FROM recent_searches) - $1))
 		 LIMIT 1)
 `
 	if dbconn.Global == nil {
