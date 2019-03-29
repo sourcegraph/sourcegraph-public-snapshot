@@ -38,8 +38,9 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		firstFlag           = flagSet.Int("first", 1000, "Returns the first n repositories from the list. (use -1 for unlimited)")
-		queryFlag           = flagSet.String("query", "", `Returns repositories whose names match the query. (e.g. "myorg/")`)
+		firstFlag = flagSet.Int("first", 1000, "Returns the first n repositories from the list. (use -1 for unlimited)")
+		queryFlag = flagSet.String("query", "", `Returns repositories whose names match the query. (e.g. "myorg/")`)
+		// TODO: add support for "names" field.
 		enabledFlag         = flagSet.Bool("enabled", true, "Include enabled repositories.")
 		disabledFlag        = flagSet.Bool("disabled", false, "Include disabled repositories.")
 		clonedFlag          = flagSet.Bool("cloned", true, "Include cloned repositories.")
@@ -47,8 +48,6 @@ Examples:
 		notClonedFlag       = flagSet.Bool("not-cloned", true, "Include repositories that are not yet cloned and for which cloning is not in progress.")
 		indexedFlag         = flagSet.Bool("indexed", true, "Include repositories that have a text search index.")
 		notIndexedFlag      = flagSet.Bool("not-indexed", true, "Include repositories that do not have a text search index.")
-		ciIndexedFlag       = flagSet.Bool("ci-indexed", false, "Filter for repositories that have been indexed for cross-repository code intelligence.")
-		notCIIndexedFlag    = flagSet.Bool("not-ci-indexed", false, "Filter for repositories that have NOT been indexed for cross-repository code intelligence.")
 		orderByFlag         = flagSet.String("order-by", "name", `How to order the results; possible choices are: "name", "created-at"`)
 		descendingFlag      = flagSet.Bool("descending", false, "Whether or not results should be in descending order.")
 		apiFlags            = newAPIFlags(flagSet)
@@ -67,9 +66,7 @@ Examples:
   $notCloned: Boolean,
   $indexed: Boolean,
   $notIndexed: Boolean,
-  $ciIndexed: Boolean,
-  $notCIIndexed: Boolean,
-  $orderBy: RepoOrderBy,
+  $orderBy: RepositoryOrderBy,
   $descending: Boolean,
 ) {
   repositories(
@@ -82,8 +79,6 @@ Examples:
     notCloned: $notCloned,
     indexed: $indexed,
     notIndexed: $notIndexed,
-    ciIndexed: $ciIndexed,
-    notCIIndexed: $notCIIndexed,
     orderBy: $orderBy,
     descending: $descending,
   ) {
@@ -122,8 +117,6 @@ Examples:
 				"notCloned":       *notClonedFlag,
 				"indexed":         *indexedFlag,
 				"notIndexed":      *notIndexedFlag,
-				"ciIndexed":       *ciIndexedFlag,
-				"notCIIndexed":    *notCIIndexedFlag,
 				"orderBy":         orderBy,
 				"descending":      *descendingFlag,
 			},
