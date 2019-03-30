@@ -217,7 +217,7 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
-	settings, err := db.Settings.ListAll(r.Context())
+	settings, err := db.Settings.ListAll(r.Context(), "")
 	if err != nil {
 		return errors.Wrap(err, "db.Settings.ListAll")
 	}
