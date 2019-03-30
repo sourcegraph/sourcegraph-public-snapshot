@@ -10,7 +10,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { ExternalServiceCard } from './ExternalServiceCard'
+import { ExternalServiceCard } from './../components/ExternalServiceCard'
 import { getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 

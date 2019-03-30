@@ -3,7 +3,7 @@ import React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
 import { ThemeProps } from '../theme'
-import { LinkedExternalServiceCard } from './ExternalServiceCard'
+import { ExternalServiceCard } from './../components/ExternalServiceCard'
 import {
     AddExternalServiceMetadata,
     ALL_EXTERNAL_SERVICE_ADD_VARIANTS,
@@ -66,7 +66,7 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
                     <p>Choose an external service to add to Sourcegraph.</p>
                     {ALL_EXTERNAL_SERVICE_ADD_VARIANTS.map((service, i) => (
                         <div className="add-external-services-page__card" key={i}>
-                            <LinkedExternalServiceCard
+                            <ExternalServiceCard
                                 to={SiteAdminAddExternalServicesPage.getAddURL(service)}
                                 {...service}
                             />
