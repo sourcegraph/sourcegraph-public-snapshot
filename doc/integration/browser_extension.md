@@ -80,14 +80,11 @@ Try the following:
 
 ### The *Enable Sourcegraph on this domain* option is not available
 
-In rare cases, Chrome can get into the state where the option to **Enable Sourcegraph on this domain** is not available when right-clicking on the extension icon.
+In rare cases, Chrome can get into the state where the option to **Enable Sourcegraph on this domain** is not available when right-clicking on the extension icon. One fix we've observed is to toggle the site access from on, to off, then on again (see below).
 
-In this case:
+![Toggle site access for browser extension ](img/ToggleSiteAccess.gif)
 
-1. Remove/uninstall the browser extension
-1. [Re-install the extension](https://docs.sourcegraph.com/integration/browser_extension)
-1. Click on the extension icon and enter the URL of your Sourcegraph instance.
-1. Navigate to your code host, e.g. GitLab.com, then again, right-click on the extension icon and select **Enable Sourcegraph on this domain**.
+If that still doesn't work, viewing the console and network activity of the extension is the next step.
 
 ### Viewing browser extension console and network activity in Chrome
 
