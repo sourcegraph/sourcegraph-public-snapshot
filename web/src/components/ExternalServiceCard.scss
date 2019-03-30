@@ -21,7 +21,7 @@ $icon-colors: (
     border-top: 1px solid $color-light-border;
     border-right: 1px solid $color-light-border;
     border-bottom: 1px solid $color-light-border;
-    border-radius: 0px 2px 2px 0px;
+    border-radius: 0 2px 2px 0;
 
     &__icon {
         flex: 0 0 0;
@@ -73,7 +73,7 @@ $icon-colors: (
         }
         @each $icon, $color in $icon-colors {
             &--#{$icon}:hover {
-                box-shadow: 0 6px 14px 0px transparentize($color, 0.8);
+                box-shadow: 0 6px 14px 0 transparentize($color, 0.8);
             }
         }
     }
