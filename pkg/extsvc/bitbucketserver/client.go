@@ -90,8 +90,24 @@ func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, 
 	return &resp, err
 }
 
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {
-	u := fmt.Sprintf("rest/api/1.0/repos%s", pageToken.Query())
+func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries ...string) ([]*Repo, *PageToken, error) {
+	qry := make(url.Values)
+	for k, vs := range pageToken.Values() {
+		qry[k] = append(qry[k], vs...)
+	}
+
+	for _, q := range searchQueries {
+		sq, err := url.ParseQuery(q)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for k, vs := range sq {
+			qry[k] = append(qry[k], vs...)
+		}
+	}
+
+	u := fmt.Sprintf("rest/api/1.0/repos?%s", qry.Encode())
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, nil, err
@@ -207,6 +223,14 @@ func (t *PageToken) Query() string {
 	if t == nil {
 		return ""
 	}
+	v := t.Values()
+	if len(v) == 0 {
+		return ""
+	}
+	return "?" + v.Encode()
+}
+
+func (t *PageToken) Values() url.Values {
 	v := url.Values{}
 	if t.NextPageStart != 0 {
 		v.Set("start", strconv.Itoa(t.NextPageStart))
@@ -214,10 +238,7 @@ func (t *PageToken) Query() string {
 	if t.Limit != 0 {
 		v.Set("limit", strconv.Itoa(t.Limit))
 	}
-	if len(v) == 0 {
-		return ""
-	}
-	return "?" + v.Encode()
+	return v
 }
 
 type Repo struct {
