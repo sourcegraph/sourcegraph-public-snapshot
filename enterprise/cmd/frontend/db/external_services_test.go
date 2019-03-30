@@ -321,6 +321,104 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
+			desc:   "empty projectQuery",
+			config: `{"projectQuery": []}`,
+			assert: includes(`projectQuery: Array must have at least 1 items`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "empty projectQuery item",
+			config: `{"projectQuery": [""]}`,
+			assert: includes(`projectQuery.0: String length must be greater than or equal to 1`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid empty exclude",
+			config: `{"exclude": []}`,
+			assert: includes(`exclude: Array must have at least 1 items`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": "bar"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid additional exclude item properties",
+			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
+			assert: includes(`bar: Additional property bar is not allowed`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "both name and id can be specified in exclude",
+			config: `
+			{
+				"url": "https://gitlab.corp.com",
+				"token": "very-secret-token",
+				"exclude": [
+					{"name": "foo/bar", "id": 1234}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid empty projects",
+			config: `{"projects": []}`,
+			assert: includes(`projects: Array must have at least 1 items`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid empty projects item",
+			config: `{"projects": [{}]}`,
+			assert: includes(`projects.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid projects item",
+			config: `{"projects": [{"foo": "bar"}]}`,
+			assert: includes(`projects.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid projects item name",
+			config: `{"projects": [{"name": "bar"}]}`,
+			assert: includes(`projects.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind:   "GITLAB",
+			desc:   "invalid additional projects item properties",
+			config: `{"projects": [{"id": 1234, "bar": "baz"}]}`,
+			assert: includes(`bar: Additional property bar is not allowed`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "both name and id can be specified in projects",
+			config: `
+			{
+				"url": "https://gitlab.corp.com",
+				"token": "very-secret-token",
+				"projects": [
+					{"name": "foo/bar", "id": 1234}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "GITLAB",
 			desc:   "without url nor token",
 			config: `{}`,
 			assert: includes(

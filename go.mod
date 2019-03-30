@@ -15,7 +15,6 @@ require (
 	github.com/daviddengcn/go-colortext v0.0.0-20190211032704-186a3d44e920
 	github.com/dghubble/gologin v1.0.2-0.20181013174641-0e442dd5bb73
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/die-net/lrucache v0.0.0-20190123005519-19a39ef22a11
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/docker v0.7.3-0.20190108045446-77df18c24acf
 	github.com/emersion/go-imap v1.0.0-beta.1
@@ -78,9 +77,9 @@ require (
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8
 	github.com/kevinburke/go-bindata v3.12.0+incompatible
-	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/kr/text v0.1.0
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348
+	github.com/leanovate/gopter v0.2.4
 	github.com/lib/pq v1.0.0
 	github.com/lightstep/lightstep-tracer-go v0.15.6
 	github.com/mattn/go-colorable v0.1.0 // indirect

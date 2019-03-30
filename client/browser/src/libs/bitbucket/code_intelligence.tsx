@@ -2,8 +2,9 @@ import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegrap
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
+import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
-import { resolveDiffFileInfo, resolveFileInfo } from './file_info'
+import { resolveCompareFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
 
 const createToolbarMount = (codeView: HTMLElement) => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
@@ -80,12 +81,21 @@ const diffCodeView: CodeViewSpecWithOutSelector = {
     },
 }
 
+const branchCompareCodeView: CodeViewSpecWithOutSelector = {
+    ...diffCodeView,
+    resolveFileInfo: resolveCompareFileInfo,
+}
+
 const resolveCodeViewSpec: CodeViewSpecResolver['resolveCodeViewSpec'] = codeView => {
     const contentView = codeView.querySelector('.content-view')
     if (!contentView) {
         return null
     }
 
+    const isBranchCompare = document.querySelector('#branch-compare')
+    if (isBranchCompare) {
+        return branchCompareCodeView
+    }
     const isDiff = contentView.classList.contains('diff-view')
 
     return isDiff ? diffCodeView : singleFileCodeView
@@ -102,17 +112,33 @@ function getCommandPaletteMount(): HTMLElement {
         throw new Error('Unable to find command palette mount')
     }
 
-    const commandListClass = 'command-palette-button command-palette-button__bitbucket-server'
+    const commandListClasses = ['command-palette-button', 'command-palette-button__bitbucket-server']
 
     const createCommandList = (): HTMLElement => {
         const commandListElem = document.createElement('li')
-        commandListElem.className = commandListClass
+        commandListElem.className = commandListClasses.join(' ')
         headerElem!.insertAdjacentElement('beforeend', commandListElem)
 
         return commandListElem
     }
 
-    return document.querySelector<HTMLElement>('.' + commandListClass) || createCommandList()
+    return document.querySelector<HTMLElement>(commandListClasses.map(c => `.${c}`).join('')) || createCommandList()
+}
+
+function getViewContextOnSourcegraphMount(): HTMLElement | null {
+    const branchSelectorButtons = document.querySelector('.branch-selector-toolbar .aui-buttons')
+    if (!branchSelectorButtons) {
+        return null
+    }
+    const preexisting = branchSelectorButtons.querySelector('#open-on-sourcegraph') as HTMLElement | null
+    if (preexisting) {
+        return preexisting
+    }
+    const mount = document.createElement('span')
+    mount.id = 'open-on-sourcegraph'
+    mount.className = 'open-on-sourcegraph--bitbucket-server'
+    branchSelectorButtons.insertAdjacentElement('beforeend', mount)
+    return mount
 }
 
 export const bitbucketServerCodeHost: CodeHost = {
@@ -122,4 +148,12 @@ export const bitbucketServerCodeHost: CodeHost = {
         !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket'),
     codeViewSpecResolver: codeViewResolver,
     getCommandPaletteMount,
+    commandPalettePopoverClassName: 'command-palette-popover--bitbucket-server',
+    actionNavItemClassProps: {
+        actionItemClass: 'aui-button action-item__bitbucket-server',
+    },
+    codeViewToolbarClassName: 'code-view-toolbar--bitbucket-server',
+    getViewContextOnSourcegraphMount,
+    getContext,
+    contextButtonClassName: 'aui-button',
 }

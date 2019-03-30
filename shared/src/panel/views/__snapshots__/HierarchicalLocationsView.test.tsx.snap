@@ -14,6 +14,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       >
         <div
           className="result-container"
+          data-testid="result-container"
         >
           <div
             className="result-container__header result-container__header--collapsible"
@@ -47,6 +48,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             </svg>
             <div
               className="result-container__header-title "
+              data-testid="result-container-header"
             >
               <span
                 onClick={[Function]}
@@ -84,10 +86,10 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             </small>
           </div>
           <div
-            className="file-match__list"
+            className="file-match-children"
           >
             <a
-              className="file-match__item file-match__item-clickable e2e-file-match-item"
+              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
               onClick={[Function]}
               to="/github.com/foo/bar/-/blob/undefined#L2:1"
             >
@@ -101,7 +103,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 partialVisibility={true}
               >
                 <code
-                  className="code-excerpt file-match__item-code-excerpt"
+                  className="code-excerpt file-match-children__item-code-excerpt"
                 >
                   <table>
                     <tbody>
@@ -224,6 +226,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       >
         <div
           className="result-container"
+          data-testid="result-container"
         >
           <div
             className="result-container__header result-container__header--collapsible"
@@ -257,6 +260,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </svg>
             <div
               className="result-container__header-title "
+              data-testid="result-container-header"
             >
               <span
                 onClick={[Function]}
@@ -294,10 +298,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </small>
           </div>
           <div
-            className="file-match__list"
+            className="file-match-children"
           >
             <a
-              className="file-match__item file-match__item-clickable e2e-file-match-item"
+              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
               onClick={[Function]}
               to="/github.com/foo/bar/-/blob/file1.txt#L2:1"
             >
@@ -311,7 +315,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 partialVisibility={true}
               >
                 <code
-                  className="code-excerpt file-match__item-code-excerpt"
+                  className="code-excerpt file-match-children__item-code-excerpt"
                 >
                   <table>
                     <tbody>
@@ -390,6 +394,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       >
         <div
           className="result-container"
+          data-testid="result-container"
         >
           <div
             className="result-container__header result-container__header--collapsible"
@@ -423,6 +428,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             </svg>
             <div
               className="result-container__header-title "
+              data-testid="result-container-header"
             >
               <span
                 onClick={[Function]}
@@ -460,10 +466,10 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             </small>
           </div>
           <div
-            className="file-match__list"
+            className="file-match-children"
           >
             <a
-              className="file-match__item file-match__item-clickable e2e-file-match-item"
+              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
               onClick={[Function]}
               to="/github.com/foo/bar/-/blob/undefined#L2:1"
             >
@@ -477,7 +483,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 partialVisibility={true}
               >
                 <code
-                  className="code-excerpt file-match__item-code-excerpt"
+                  className="code-excerpt file-match-children__item-code-excerpt"
                 >
                   <table>
                     <tbody>

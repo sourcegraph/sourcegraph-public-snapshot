@@ -7,14 +7,17 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -65,7 +68,7 @@ func SyncGitLabConnections(ctx context.Context) {
 
 		var conns []*gitlabConnection
 		for _, c := range gitlabConf {
-			conn, err := newGitLabConnection(c)
+			conn, err := newGitLabConnection(c, nil)
 			if err != nil {
 				log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)
 				continue
@@ -213,12 +216,15 @@ func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.R
 
 // updateGitLabProjects ensures that all provided repositories exist in the repository table.
 func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
-	projs := conn.listAllProjects(ctx)
+	projs, err := conn.listAllProjects(ctx)
+	if err != nil {
+		log15.Error("failed to list some gitlab projects", "error", err.Error())
+	}
 
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("gitlab:%s", conn.config.Token), repoChan)
-	for proj := range projs {
+	for _, proj := range projs {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoName:     gitlabProjectToRepoPath(conn, proj),
@@ -233,27 +239,53 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 	}
 }
 
-func newGitLabConnection(config *schema.GitLabConnection) (*gitlabConnection, error) {
+func newGitLabConnection(config *schema.GitLabConnection, cf httpcli.Factory) (*gitlabConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
 	baseURL = NormalizeBaseURL(baseURL)
 
-	transport, err := cachedTransportWithCertTrusted(config.Certificate)
+	if cf == nil {
+		cf = NewHTTPClientFactory()
+	}
+
+	var opts []httpcli.Opt
+	if config.Certificate != "" {
+		pool, err := newCertPool(config.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+	}
+
+	cli, err := cf.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
 
+	exclude := make(map[string]bool, len(config.Exclude))
+	for _, r := range config.Exclude {
+		if r.Name != "" {
+			exclude[r.Name] = true
+		}
+
+		if r.Id != 0 {
+			exclude[strconv.Itoa(r.Id)] = true
+		}
+	}
+
 	return &gitlabConnection{
 		config:  config,
+		exclude: exclude,
 		baseURL: baseURL,
-		client:  gitlab.NewClientProvider(baseURL, transport).GetPATClient(config.Token, ""),
+		client:  gitlab.NewClientProvider(baseURL, cli).GetPATClient(config.Token, ""),
 	}, nil
 }
 
 type gitlabConnection struct {
 	config  *schema.GitLabConnection
+	exclude map[string]bool
 	baseURL *url.URL // URL with path /api/v4 (no trailing slash)
 	client  *gitlab.Client
 }
@@ -277,57 +309,157 @@ func (c *gitlabConnection) authenticatedRemoteURL(proj *gitlab.Project) string {
 	return u.String()
 }
 
-func (c *gitlabConnection) listAllProjects(ctx context.Context) <-chan *gitlab.Project {
+func (c *gitlabConnection) excludes(p *gitlab.Project) bool {
+	return c.exclude[p.PathWithNamespace] || c.exclude[strconv.Itoa(p.ID)]
+}
+
+func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Project, error) {
+	type batch struct {
+		projs []*gitlab.Project
+		err   error
+	}
+
+	ch := make(chan batch)
+
 	configProjectQuery := c.config.ProjectQuery
 	if len(configProjectQuery) == 0 {
 		configProjectQuery = []string{"?membership=true"}
 	}
 
-	normalizeQuery := func(projectQuery string) (url.Values, error) {
-		q, err := url.ParseQuery(strings.TrimPrefix(projectQuery, "?"))
-		if err != nil {
-			return nil, err
-		}
-		if q.Get("order_by") == "" && q.Get("sort") == "" {
-			// Apply default ordering to get the likely more relevant projects first.
-			q.Set("order_by", "last_activity_at")
-		}
-		return q, nil
+	var wg sync.WaitGroup
+
+	projch := make(chan *schema.GitLabProject)
+	for i := 0; i < 5; i++ { // 5 concurrent requests
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for p := range projch {
+				proj, err := c.client.GetProject(ctx, gitlab.GetProjectOp{
+					ID:                p.Id,
+					PathWithNamespace: p.Name,
+					CommonOp:          gitlab.CommonOp{NoCache: true},
+				})
+
+				if err != nil {
+					// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+					// 404 errors on external service config validation.
+					if gitlab.IsNotFound(err) {
+						log15.Warn("skipping missing gitlab.projects entry:", "name", p.Name, "id", p.Id, "err", err)
+						continue
+					}
+					ch <- batch{err: errors.Wrapf(err, "gitlab.projects: id: %d, name: %q", p.Id, p.Name)}
+				} else {
+					ch <- batch{projs: []*gitlab.Project{proj}}
+				}
+
+				time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(1))
+			}
+		}()
 	}
 
-	const perPage = 100 // max GitLab API per_page parameter
-	ch := make(chan *gitlab.Project, perPage)
+	wg.Add(1)
 	go func() {
-	projectsQueries:
-		for _, projectQuery := range configProjectQuery {
-			if projectQuery == "none" {
-				continue
-			}
-			q, err := normalizeQuery(projectQuery)
-			if err != nil {
-				log15.Error("Skipping invalid GitLab projectQuery", "projectQuery", projectQuery, "error", err)
-				continue
-			}
-			q.Set("per_page", strconv.Itoa(perPage))
-
-			url := "projects?" + q.Encode() // first page URL
-			for {
-				projects, nextPageURL, err := c.client.ListProjects(ctx, url)
-				if err != nil {
-					log15.Error("Error listing GitLab projects", "url", url, "error", err)
-					continue projectsQueries
-				}
-				for _, p := range projects {
-					ch <- p
-				}
-				if nextPageURL == nil {
-					break
-				}
-				url = *nextPageURL
+		defer wg.Done()
+		defer close(projch)
+		for _, p := range c.config.Projects {
+			select {
+			case projch <- p:
+			case <-ctx.Done():
+				break
 			}
 		}
+	}()
+
+	for _, projectQuery := range configProjectQuery {
+		if projectQuery == "none" {
+			continue
+		}
+
+		const perPage = 100
+		wg.Add(1)
+		go func(projectQuery string) {
+			defer wg.Done()
+
+			url, err := projectQueryToURL(projectQuery, perPage) // first page URL
+			if err != nil {
+				ch <- batch{err: errors.Wrapf(err, "invalid GitLab projectQuery=%q", projectQuery)}
+				return
+			}
+
+			for {
+				if err := ctx.Err(); err != nil {
+					ch <- batch{err: err}
+					return
+				}
+				projects, nextPageURL, err := c.client.ListProjects(ctx, url)
+				if err != nil {
+					ch <- batch{err: errors.Wrapf(err, "error listing GitLab projects: url=%q", url)}
+					return
+				}
+				ch <- batch{projs: projects}
+				if nextPageURL == nil {
+					return
+				}
+				url = *nextPageURL
+
+				// 0-duration sleep unless nearing rate limit exhaustion
+				time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(1))
+			}
+		}(projectQuery)
+	}
+
+	go func() {
+		wg.Wait()
 		close(ch)
 	}()
 
-	return ch
+	var projects []*gitlab.Project
+	errs := new(multierror.Error)
+
+	for b := range ch {
+		if b.err != nil {
+			errs = multierror.Append(errs, b.err)
+			continue
+		}
+
+		for _, proj := range b.projs {
+			if !c.excludes(proj) {
+				projects = append(projects, proj)
+			}
+		}
+	}
+
+	return projects, errs.ErrorOrNil()
+}
+
+var schemeOrHostNotEmptyErr = errors.New("scheme and host should be empty")
+
+func projectQueryToURL(projectQuery string, perPage int) (string, error) {
+	// If all we have is the URL query, prepend "projects"
+	if strings.HasPrefix(projectQuery, "?") {
+		projectQuery = "projects" + projectQuery
+	} else if projectQuery == "" {
+		projectQuery = "projects"
+	}
+
+	u, err := url.Parse(projectQuery)
+	if err != nil {
+		return "", err
+	}
+	if u.Scheme != "" || u.Host != "" {
+		return "", schemeOrHostNotEmptyErr
+	}
+	normalizeQuery(u, perPage)
+
+	return u.String(), nil
+}
+
+func normalizeQuery(u *url.URL, perPage int) {
+	q := u.Query()
+	if q.Get("order_by") == "" && q.Get("sort") == "" {
+		// Apply default ordering to get the likely more relevant projects first.
+		q.Set("order_by", "last_activity_at")
+	}
+	q.Set("per_page", strconv.Itoa(perPage))
+	u.RawQuery = q.Encode()
 }

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 
 	"github.com/gregjones/httpcache"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -33,6 +34,19 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 		baseURL.Path += "/"
 	}
 	return baseURL
+}
+
+// NewHTTPClientFactory returns an httpcli.Factory with common
+// options and middleware pre-set.
+func NewHTTPClientFactory() httpcli.Factory {
+	return httpcli.NewFactory(
+		// TODO(tsenart): Use middle for Prometheus instrumentation later.
+		httpcli.NewMiddleware(
+			httpcli.ContextErrorMiddleware,
+		),
+		httpcli.TracedTransportOpt,
+		httpcli.NewCachedTransportOpt(httputil.Cache, true),
+	)
 }
 
 // cachedRoundTripper wraps another http.RoundTripper with caching.

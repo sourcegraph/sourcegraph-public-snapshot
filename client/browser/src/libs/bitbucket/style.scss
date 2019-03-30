@@ -19,3 +19,44 @@
         display: block;
     }
 }
+
+.command-palette-popover--bitbucket-server {
+    border-radius: 3px;
+
+    .command-list {
+        &__input {
+            height: 30px;
+            border-radius: 3px;
+            box-sizing: border-box;
+            border: 1px solid #dfe1e6;
+            font-size: 14px;
+            margin-top: 0.5rem;
+        }
+    }
+
+    .action-item {
+        box-sizing: border-box;
+    }
+}
+
+.code-view-toolbar--bitbucket-server {
+    ul {
+        list-style-type: none;
+    }
+
+    .open-on-sourcegraph {
+        margin-bottom: 10px;
+    }
+}
+
+.action-item__bitbucket-server {
+    margin-bottom: 10px !important;
+    &.action-item--pressed {
+        background-color: #344563;
+        color: #ffffff;
+    }
+}
+
+.open-on-sourcegraph--bitbucket-server {
+    margin-left: 2px;
+}

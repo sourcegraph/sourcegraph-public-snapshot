@@ -9,14 +9,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- In search queries, treat `foo(` as `foo\(` and `bar[` as `bar\[` rather than failing with an error message.
 - Enterprise admins can now customize the appearance of the homepage and search icon.
 - A new settings property `notices` allows showing custom informational messages on the homepage and at the top of each page.
+- The new `gitlab.exclude` setting in [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) allows you to exclude specific repositories matched by `gitlab.projectQuery` and `gitlab.projects` (so that they won't be synced).
+- The new `gitlab.projects` setting in [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) allows you to select specific repositories to be synced.
+- "Quick configure" buttons for common actions have been added to the config editor for all external services.
 
 ### Changed
 
 - The symbols sidebar now only shows symbols defined in the current file or directory.
 
 - The default `github.repositoryQuery` of a [GitHub external service configuration](https://docs.sourcegraph.com/admin/external_service/github#configuration) has been changed to `["none"]`. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["affiliated", "public"]`).
+- The default `gitlab.projectQuery` of a [GitLab external service configuration](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) has been changed to `["none"]`. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["?membership=true"]`).
 
 ### Fixed
 

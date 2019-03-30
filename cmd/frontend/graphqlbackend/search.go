@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
-	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -24,17 +24,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // This file contains the root resolver for search. It currently has a lot of
@@ -66,7 +62,11 @@ func (r *schemaResolver) Search(args *struct {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 }, error) {
+	if strings.HasPrefix(args.Query, "!hier!") {
+		return newSearcherResolver(strings.TrimPrefix(args.Query, "!hier!"))
+	}
 
+	go addQueryToSearchesTable(args.Query)
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
@@ -75,6 +75,17 @@ func (r *schemaResolver) Search(args *struct {
 	return &searchResolver{
 		query: query,
 	}, nil
+}
+
+func addQueryToSearchesTable(q string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := db.RecentSearches.Add(ctx, q); err != nil {
+		log15.Error("adding query to searches table", "error", err)
+	}
+	if err := db.RecentSearches.DeleteExcessRows(ctx, 1e5); err != nil {
+		log15.Error("deleting excess rows from searches table", "error", err)
+	}
 }
 
 func asString(v *searchquerytypes.Value) string {
@@ -739,69 +750,3 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev search.Reposito
 }
 
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
-
-// SearchProviders contains instances of our search providers.
-type SearchProviders struct {
-	// Text is our root text searcher.
-	Text *searchbackend.Text
-
-	// SearcherURLs is an endpoint map to our searcher service replicas.
-	SearcherURLs *endpoint.Map
-
-	// Index is a search.Searcher for Zoekt.
-	Index *searchbackend.Zoekt
-}
-
-var (
-	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
-	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-
-	searchOnce sync.Once
-	searchP    *SearchProviders
-)
-
-// Search returns instances of our search providers.
-func Search() *SearchProviders {
-	searchOnce.Do(func() {
-		// Zoekt
-		index := &searchbackend.Zoekt{}
-		if zoektAddr != "" {
-			index.Client = zoektrpc.Client(zoektAddr)
-		}
-		go func() {
-			conf.Watch(func() {
-				index.SetEnabled(conf.SearchIndexEnabled())
-			})
-		}()
-
-		// Searcher
-		var searcherURLs *endpoint.Map
-		if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-		} else {
-			searcherURLs = endpoint.New(searcherURL)
-		}
-
-		text := &searchbackend.Text{
-			Index: index,
-			Fallback: &searchbackend.TextJIT{
-				Endpoints: searcherURLs,
-				Resolve: func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error) {
-					// Do not trigger a repo-updater lookup (e.g.,
-					// backend.{GitRepo,Repos.ResolveRev}) because that would
-					// slow this operation down by a lot (if we're looping
-					// over many repos). This means that it'll fail if a repo
-					// is not on gitserver.
-					return git.ResolveRevision(ctx, gitserver.Repo{Name: name}, nil, spec, &git.ResolveRevisionOptions{NoEnsureRevision: true})
-				},
-			},
-		}
-
-		searchP = &SearchProviders{
-			Text:         text,
-			SearcherURLs: searcherURLs,
-			Index:        index,
-		}
-	})
-	return searchP
-}

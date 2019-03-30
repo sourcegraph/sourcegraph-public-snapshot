@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -688,11 +689,13 @@ func scanRepo(r *Repo, s scanner) error {
 	switch typ {
 	case "github":
 		r.Metadata = new(github.Repository)
+	case "gitlab":
+		r.Metadata = new(gitlab.Project)
 	default:
 		return nil
 	}
 
-	if err = json.Unmarshal(metadata, &r.Metadata); err != nil {
+	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
 		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
 	}
 

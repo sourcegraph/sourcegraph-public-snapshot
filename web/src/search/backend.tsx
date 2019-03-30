@@ -9,7 +9,7 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export function search(
     query: string,
-    { extensionsController }: ExtensionsControllerProps
+    { extensionsController }: ExtensionsControllerProps<'services'>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.

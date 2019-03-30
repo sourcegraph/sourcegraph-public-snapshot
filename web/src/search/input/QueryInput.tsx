@@ -198,12 +198,12 @@ export class QueryInput extends React.Component<Props, State> {
                         switchMap(event => {
                             event.preventDefault()
                             // Use selection as query
-                            const selection = window.getSelection().toString()
-                            if (selection) {
+                            const selection = window.getSelection()
+                            if (selection && selection.toString() !== '') {
                                 return new Observable<void>(observer =>
                                     this.setState(
                                         {
-                                            // query: selection, TODO(sqs): add back this behavior
+                                            // query: selection.toString(), TODO(sqs): add back this behavior
                                             suggestions: [],
                                             selectedSuggestion: -1,
                                         },
