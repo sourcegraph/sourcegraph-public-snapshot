@@ -7,6 +7,9 @@ export interface BitbucketRepoInfo {
     project: string
 }
 
+/** Regular expression to check if a string looks like a git commit SHA1 */
+const COMMIT_ID_REGEXP = /^[a-f0-9]{40}$/
+
 const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source']
 
 /**
@@ -22,7 +25,7 @@ const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source'
  */
 const getFileInfoFromLink = (
     codeView: HTMLElement
-): Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> & BitbucketRepoInfo => {
+): Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> & { commitID?: string } & BitbucketRepoInfo => {
     const errors: Error[] = []
     for (const selector of LINK_SELECTORS) {
         try {
@@ -35,14 +38,12 @@ const getFileInfoFromLink = (
             const path = url.pathname
 
             // Looks like /projects/<project>/repos/<repo>/(browse|raw)/<file path>?at=<rev>
-            const pathMatch = path.match(/\/projects\/(.*?)\/repos\/(.*?)\/(browse|raw)\/(.*)$/)
+            const pathMatch = path.match(/\/projects\/(.*?)\/repos\/(.*?)\/(?:browse|raw)\/(.*)$/)
             if (!pathMatch) {
                 throw new Error(`Path of link matching selector ${selector} did not match path regex: ${path}`)
             }
 
-            const project = pathMatch[1]
-            const repoSlug = pathMatch[2]
-            const filePath = pathMatch[4]
+            const [, project, repoSlug, filePath] = pathMatch
 
             // Looks like 'refs/heads/<rev>'
             const at = url.searchParams.get('at')
@@ -54,10 +55,13 @@ const getFileInfoFromLink = (
 
             const rev = atMatch ? atMatch[1] : at
 
+            const commitID = COMMIT_ID_REGEXP.test(rev) ? rev : undefined
+
             return {
                 repoName: [host, project, repoSlug].join('/'),
                 filePath,
                 rev,
+                commitID,
                 project,
                 repoSlug,
             }
@@ -88,19 +92,20 @@ const getCommitIDFromLink = (): string => {
 export const getFileInfoFromCodeView = (
     codeView: HTMLElement
 ): BitbucketRepoInfo & Pick<FileInfo, 'repoName' | 'filePath' | 'rev' | 'commitID'> => {
-    const { repoName, filePath, rev, project, repoSlug } = getFileInfoFromLink(codeView)
-    const commitID = getCommitIDFromLink()
+    const { repoName, filePath, rev, project, repoSlug, commitID } = getFileInfoFromLink(codeView)
     return {
         repoName,
         filePath,
         rev,
-        commitID,
+        commitID: commitID || getCommitIDFromLink(),
         project,
         repoSlug,
     }
 }
 
-const getFileInfoFromFilePathLink = (codeView: HTMLElement) => {
+const getFileInfoFromFilePathLink = (
+    codeView: HTMLElement
+): Pick<FileInfo, 'repoName' | 'filePath'> & Partial<Pick<FileInfo, 'commitID'>> & BitbucketRepoInfo => {
     const rawViewLink = codeView.querySelector<HTMLAnchorElement>('.breadcrumbs a.stub')
     if (!rawViewLink) {
         throw new Error('could not find raw view link for code view (.breadcrumbs a.stub)')
@@ -149,19 +154,9 @@ export const getDiffFileInfoFromCodeView = (
     let commitID: string | undefined
 
     try {
-        const info = getFileInfoFromLink(codeView)
-        repoName = info.repoName
-        filePath = info.filePath
-        project = info.project
-        repoSlug = info.repoSlug
+        ;({ repoName, filePath, project, repoSlug, commitID } = getFileInfoFromLink(codeView))
     } catch (e) {
-        const info = getFileInfoFromFilePathLink(codeView)
-
-        repoName = info.repoName
-        filePath = info.filePath
-        project = info.project
-        repoSlug = info.repoSlug
-        commitID = info.commitID
+        ;({ repoName, filePath, project, repoSlug, commitID } = getFileInfoFromFilePathLink(codeView))
     }
 
     if (!commitID) {
