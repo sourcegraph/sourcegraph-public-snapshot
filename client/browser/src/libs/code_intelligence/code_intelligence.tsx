@@ -553,7 +553,7 @@ export function handleCodeHost({
                 }
                 codeViewStates.set(codeViewElement, codeViewState)
 
-                // When codeView is a diff, add BASE too.
+                // When codeView is a diff (and not an added file), add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
                     codeViewState.visibleViewComponents.push({
                         type: 'textEditor' as const,

@@ -4,7 +4,14 @@ import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../sha
 import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
-import { resolveCompareFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
+import {
+    resolveCommitViewFileInfo,
+    resolveCompareFileInfo,
+    resolveFileInfoForSingleFileSourceView,
+    resolvePullRequestFileInfo,
+    resolveSingleFileDiffFileInfo,
+} from './file_info'
+import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
 
 const createToolbarMount = (codeView: HTMLElement) => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
@@ -59,51 +66,84 @@ const createPositionAdjuster = (
     return of(newPos)
 }
 
-const singleFileCodeView: CodeViewSpecWithOutSelector = {
+const toolbarButtonProps = {
+    className: 'aui-button',
+    style: { marginLeft: 10 },
+}
+
+/**
+ * A code view spec for single file code view in the "source" view (not diff).
+ */
+const singleFileSourceCodeView: CodeViewSpecWithOutSelector = {
     getToolbarMount: createToolbarMount,
     dom: singleFileDOMFunctions,
-    resolveFileInfo,
+    resolveFileInfo: resolveFileInfoForSingleFileSourceView,
     adjustPosition: createPositionAdjuster(singleFileDOMFunctions),
-    toolbarButtonProps: {
-        className: 'aui-button',
-        style: { marginLeft: 10 },
-    },
+    toolbarButtonProps,
 }
 
-const diffCodeView: CodeViewSpecWithOutSelector = {
+const baseDiffCodeView = {
     getToolbarMount: createToolbarMount,
     dom: diffDOMFunctions,
-    resolveFileInfo: resolveDiffFileInfo,
     adjustPosition: createPositionAdjuster(diffDOMFunctions),
-    toolbarButtonProps: {
-        className: 'aui-button',
-        style: { marginLeft: 10 },
-    },
+    toolbarButtonProps,
 }
 
-const branchCompareCodeView: CodeViewSpecWithOutSelector = {
-    ...diffCodeView,
+/**
+ * A code view spec for a single file "diff to previous" view
+ */
+const singleFileDiffCodeView: CodeViewSpecWithOutSelector = {
+    ...baseDiffCodeView,
+    resolveFileInfo: resolveSingleFileDiffFileInfo,
+}
+
+/**
+ * A code view spec for pull requests
+ */
+const pullRequestDiffCodeView: CodeViewSpecWithOutSelector = {
+    ...baseDiffCodeView,
+    resolveFileInfo: resolvePullRequestFileInfo,
+}
+
+/**
+ * A code view spec for compare pages
+ */
+const compareDiffCodeView: CodeViewSpecWithOutSelector = {
+    ...baseDiffCodeView,
     resolveFileInfo: resolveCompareFileInfo,
 }
 
-const resolveCodeViewSpec: CodeViewSpecResolver['resolveCodeViewSpec'] = codeView => {
-    const contentView = codeView.querySelector('.content-view')
-    if (!contentView) {
-        return null
-    }
-
-    const isBranchCompare = document.querySelector('#branch-compare')
-    if (isBranchCompare) {
-        return branchCompareCodeView
-    }
-    const isDiff = contentView.classList.contains('diff-view')
-
-    return isDiff ? diffCodeView : singleFileCodeView
+/**
+ * A code view spec for commit pages
+ */
+const commitDiffCodeView: CodeViewSpecWithOutSelector = {
+    ...baseDiffCodeView,
+    resolveFileInfo: resolveCommitViewFileInfo,
 }
 
 const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file-content',
-    resolveCodeViewSpec,
+    resolveCodeViewSpec: codeView => {
+        const contentView = codeView.querySelector('.content-view')
+        if (!contentView) {
+            return null
+        }
+        if (isCompareView()) {
+            return compareDiffCodeView
+        }
+        if (isCommitsView()) {
+            return commitDiffCodeView
+        }
+        if (isSingleFileView(codeView)) {
+            const isDiff = contentView.classList.contains('diff-view')
+            return isDiff ? singleFileDiffCodeView : singleFileSourceCodeView
+        }
+        if (isPullRequestView()) {
+            return pullRequestDiffCodeView
+        }
+        console.error('Unknown code view', codeView)
+        return null
+    },
 }
 
 function getCommandPaletteMount(): HTMLElement {
