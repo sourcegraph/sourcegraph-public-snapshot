@@ -11,24 +11,23 @@ $icon-colors: (
 .external-service-card {
     display: flex;
 
-	@each $icon, $color in $icon-colors {
-		&--#{$icon} {
-			border-left: 2px solid $color;
-			border-radius: 2px;
-		}
-	}
+    @each $icon, $color in $icon-colors {
+        &--#{$icon} {
+            border-left: 2px solid $color;
+            border-radius: 2px;
+        }
+    }
 
-	border-top: 1px solid $color-light-border;
-	border-right: 1px solid $color-light-border;
-	border-bottom: 1px solid $color-light-border;
-	border-radius: 0px 2px 2px 0px;
+    border-top: 1px solid $color-light-border;
+    border-right: 1px solid $color-light-border;
+    border-bottom: 1px solid $color-light-border;
+    border-radius: 0px 2px 2px 0px;
 
     &__icon {
         flex: 0 0 0;
         padding: 0.25rem 0.5rem;
         display: flex;
         align-items: center;
-
     }
     &__main {
         flex: 1 1 0;
