@@ -10,7 +10,7 @@ import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { ThemeProps } from '../theme'
-import { ExternalServiceCard } from './ExternalServiceCard'
+import { ExternalServiceCard } from './../components/ExternalServiceCard'
 import { ExternalServiceVariant, getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 

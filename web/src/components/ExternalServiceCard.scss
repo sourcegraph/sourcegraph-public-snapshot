@@ -3,17 +3,25 @@ $icon-colors: (
     aws: #f8991d,
     bitbucket: #2684ff,
     gitlab: #fc6e26,
-    gitolite: #e0e0e0,
+    gitolite: #1c7ed6,
     phabricator: #4a5f88,
     git: #f14e32,
 );
 
 .external-service-card {
     display: flex;
-    border-top: 1px solid $color-light-border;
-    border-right: 1px solid $color-light-border;
-    border-bottom: 1px solid $color-light-border;
-    border-radius: 2px;
+
+	@each $icon, $color in $icon-colors {
+		&--#{$icon} {
+			border-left: 2px solid $color;
+			border-radius: 2px;
+		}
+	}
+
+	border-top: 1px solid $color-light-border;
+	border-right: 1px solid $color-light-border;
+	border-bottom: 1px solid $color-light-border;
+	border-radius: 0px 2px 2px 0px;
 
     &__icon {
         flex: 0 0 0;
@@ -21,12 +29,6 @@ $icon-colors: (
         display: flex;
         align-items: center;
 
-        border-left: 2px solid $color-light-border;
-        @each $icon, $color in $icon-colors {
-            &--#{$icon} {
-                border-left: 2px solid $color;
-            }
-        }
     }
     &__main {
         flex: 1 1 0;
@@ -44,22 +46,22 @@ $icon-colors: (
     }
 
     .theme-dark & {
-        background-image: linear-gradient(116deg, #0c1e41, #171941);
-        border-color: #184bb1;
+        background-color: #0e121b;
+        border-color: var(--input-border-color);
         .phabricator-icon.mdi-icon {
             fill: $color-text;
         }
     }
 
     .theme-light & {
-        background-image: linear-gradient(116deg, #ffffff, #fdfdfe);
+        background-color: #ffffff;
         border-color: $border-color;
     }
 }
 
 .linked-external-service-card {
     display: block;
-    transition: all 150ms ease;
+    transition: all 200ms ease-in-out;
     &:hover {
         text-decoration: none;
         transform: translateY(-2px);
@@ -72,7 +74,7 @@ $icon-colors: (
         }
         @each $icon, $color in $icon-colors {
             &--#{$icon}:hover {
-                box-shadow: 0 6px 12px 2px transparentize($color, 0.875);
+                box-shadow: 0 6px 14px 0px transparentize($color, 0.8);
             }
         }
     }
