@@ -9666,10 +9666,10 @@ merge2@^1.2.3:
   resolved "https://registry.npmjs.org/merge2/-/merge2-1.2.3.tgz#7ee99dbd69bb6481689253f018488a1b902b0ed5"
   integrity sha512-gdUU1Fwj5ep4kplwcmftruWofEFt6lfpkkr3h860CXbAB9c3hGb55EOL2ali0Td5oebvW0E1+3Sr+Ur7XfKpRA==
 
-message-port-polyfill@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.npmjs.org/message-port-polyfill/-/message-port-polyfill-0.1.0.tgz#0d6c9201e5e15301f36930c4b7fe0a56c17bc7a7"
-  integrity sha512-CKP0YTyLUnGZU+1SCqIm/QFE/oqo0oA4mLTb6BWSx5/YPlvlut32dpmYSr8u55xqAzy89Tc9X7bMdSwXtZJ2Ew==
+message-port-polyfill@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.npmjs.org/message-port-polyfill/-/message-port-polyfill-0.2.0.tgz#fcffa2b15d1b414ff4ab88976bea05211253b5a7"
+  integrity sha512-bDET4Uvtw8p92Knys7X/2wj5QlX9OfuPxA0EVsYhkKYbqiE6tHdFR6k7NPShRx/ZAR/hVh4bo355iwHMSbE14A==
 
 methods@~1.1.2:
   version "1.1.2"
