@@ -11,7 +11,7 @@ import {
 } from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { CodeHost, CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
@@ -23,7 +23,7 @@ const toolbarButtonProps = {
     style: { marginRight: '5px', textDecoration: 'none', color: 'inherit' },
 }
 
-const diffCodeView: CodeViewWithOutSelector = {
+const diffCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDomFunctions,
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
@@ -31,12 +31,12 @@ const diffCodeView: CodeViewWithOutSelector = {
     isDiff: true,
 }
 
-const diffConversationCodeView: CodeViewWithOutSelector = {
+const diffConversationCodeView: CodeViewSpecWithOutSelector = {
     ...diffCodeView,
     getToolbarMount: undefined,
 }
 
-const singleFileCodeView: CodeViewWithOutSelector = {
+const singleFileCodeView: CodeViewSpecWithOutSelector = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo,
@@ -80,7 +80,7 @@ const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec &
         })
     )
 
-const searchResultCodeView: CodeView = {
+const searchResultCodeView: CodeViewSpec = {
     selector: '.code-list-item',
     dom: searchCodeSnippetDOMFunctions,
     adjustPosition: adjustPositionForSnippet,
@@ -89,7 +89,7 @@ const searchResultCodeView: CodeView = {
     isDiff: false,
 }
 
-const commentSnippetCodeView: CodeView = {
+const commentSnippetCodeView: CodeViewSpec = {
     selector: '.js-comment-body',
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveSnippetFileInfo,
@@ -98,7 +98,7 @@ const commentSnippetCodeView: CodeView = {
     isDiff: false,
 }
 
-const fileLineContainerCodeView: CodeView = {
+const fileLineContainerCodeView: CodeViewSpec = {
     selector: '.js-file-line-container',
     dom: singleFileDOMFunctions,
     getToolbarMount: fileLineContainer => {
@@ -129,35 +129,34 @@ const fileLineContainerCodeView: CodeView = {
     isDiff: false,
 }
 
-const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
-    if (elem.querySelector('article.markdown-body')) {
-        // This code view is rendered markdown, we shouldn't add code intelligence
-        return null
-    }
-
-    // This is a suggested change on a GitHub PR
-    if (elem.closest('.js-suggested-changes-blob')) {
-        return null
-    }
-
-    const files = document.getElementsByClassName('file')
-    const { filePath } = parseURL()
-    const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
-
-    if (isSingleCodeFile) {
-        return singleFileCodeView
-    }
-
-    if (elem.closest('.discussion-item-body')) {
-        return diffConversationCodeView
-    }
-
-    return diffCodeView
-}
-
-const codeViewResolver: CodeViewResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file',
-    resolveCodeView,
+    resolveCodeViewSpec: (elem: HTMLElement): CodeViewSpecWithOutSelector | null => {
+        if (elem.querySelector('article.markdown-body')) {
+            // This code view is rendered markdown, we shouldn't add code intelligence
+            return null
+        }
+
+        // This is a suggested change on a GitHub PR
+        if (elem.closest('.js-suggested-changes-blob')) {
+            return null
+        }
+
+        const files = document.getElementsByClassName('file')
+        const { filePath } = parseURL()
+        const isSingleCodeFile =
+            files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
+
+        if (isSingleCodeFile) {
+            return singleFileCodeView
+        }
+
+        if (elem.closest('.discussion-item-body')) {
+            return diffConversationCodeView
+        }
+
+        return diffCodeView
+    },
 }
 
 function checkIsGithub(): boolean {
@@ -184,8 +183,8 @@ const getOverlayMount = () => {
 
 export const githubCodeHost: CodeHost = {
     name: 'github',
-    codeViews: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
-    codeViewResolver,
+    codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
+    codeViewSpecResolver,
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     contextButtonClassName: 'btn btn-sm tooltipped tooltipped-s',

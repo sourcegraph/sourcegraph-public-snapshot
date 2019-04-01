@@ -84,6 +84,7 @@ describe('handleCodeHost()', () => {
         const { services } = await integrationTestContext()
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
@@ -104,6 +105,7 @@ describe('handleCodeHost()', () => {
         const commandPaletteMount = createTestElement()
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
@@ -122,6 +124,7 @@ describe('handleCodeHost()', () => {
         const { services } = await integrationTestContext()
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
@@ -142,6 +145,7 @@ describe('handleCodeHost()', () => {
         const globalDebugMount = createTestElement()
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
@@ -169,10 +173,11 @@ describe('handleCodeHost()', () => {
         }
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
-                    codeViews: [
+                    codeViewSpecs: [
                         {
                             selector: `#code`,
                             dom: {
@@ -231,10 +236,11 @@ describe('handleCodeHost()', () => {
         codeView.appendChild(line)
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
-                    codeViews: [
+                    codeViewSpecs: [
                         {
                             selector: `#code`,
                             dom: {

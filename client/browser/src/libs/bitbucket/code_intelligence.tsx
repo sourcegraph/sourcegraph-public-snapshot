@@ -1,7 +1,7 @@
 import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
-import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { resolveCompareFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
@@ -59,7 +59,7 @@ const createPositionAdjuster = (
     return of(newPos)
 }
 
-const singleFileCodeView: CodeViewWithOutSelector = {
+const singleFileCodeView: CodeViewSpecWithOutSelector = {
     getToolbarMount: createToolbarMount,
     dom: singleFileDOMFunctions,
     resolveFileInfo,
@@ -70,7 +70,7 @@ const singleFileCodeView: CodeViewWithOutSelector = {
     },
 }
 
-const diffCodeView: CodeViewWithOutSelector = {
+const diffCodeView: CodeViewSpecWithOutSelector = {
     getToolbarMount: createToolbarMount,
     dom: diffDOMFunctions,
     resolveFileInfo: resolveDiffFileInfo,
@@ -81,12 +81,12 @@ const diffCodeView: CodeViewWithOutSelector = {
     },
 }
 
-const branchCompareCodeView: CodeViewWithOutSelector = {
+const branchCompareCodeView: CodeViewSpecWithOutSelector = {
     ...diffCodeView,
     resolveFileInfo: resolveCompareFileInfo,
 }
 
-const resolveCodeView: CodeViewResolver['resolveCodeView'] = codeView => {
+const resolveCodeViewSpec: CodeViewSpecResolver['resolveCodeViewSpec'] = codeView => {
     const contentView = codeView.querySelector('.content-view')
     if (!contentView) {
         return null
@@ -101,9 +101,9 @@ const resolveCodeView: CodeViewResolver['resolveCodeView'] = codeView => {
     return isDiff ? diffCodeView : singleFileCodeView
 }
 
-const codeViewResolver: CodeViewResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file-content',
-    resolveCodeView,
+    resolveCodeViewSpec,
 }
 
 function getCommandPaletteMount(): HTMLElement {
@@ -146,7 +146,7 @@ export const bitbucketServerCodeHost: CodeHost = {
     check: () =>
         !!document.querySelector('.bitbucket-header-logo') ||
         !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket'),
-    codeViewResolver,
+    codeViewSpecResolver,
     getCommandPaletteMount,
     commandPalettePopoverClassName: 'command-palette-popover--bitbucket-server',
     actionNavItemClassProps: {

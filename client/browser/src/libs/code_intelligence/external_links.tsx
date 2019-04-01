@@ -92,6 +92,9 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
     }
 }
 
+/**
+ * Idempotent.
+ */
 export function injectViewContextOnSourcegraph(
     sourcegraphUrl: string,
     {
