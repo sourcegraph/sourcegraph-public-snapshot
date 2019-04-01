@@ -43,6 +43,18 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
+	bitbucketServer := ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "Bitbucket Server",
+		Config: `{
+			// Some comment
+			"url": "https://bitbucketserver.mycorp.com",
+			"token": "secret"
+		}`,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
 	repos := Repos{
 		{
 			Name: "github.com/org/foo",
@@ -74,6 +86,21 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 				ServiceID:   "https://gitlab.mycorp.com/",
 			},
 		},
+		{
+			Name: "bitbucketserver.mycorp.com/org/foo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1",
+				ServiceType: "bitbucketServer",
+				ServiceID:   "https://bitbucketserver.mycorp.com/",
+			},
+		},
+		{
+			Name: "bitbucketserver.mycorp.com/org/baz",
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceType: "bitbucketServer",
+				ServiceID:   "https://bitbucketserver.mycorp.com/",
+			},
+		},
 	}
 
 	var testCases []testCase
@@ -96,6 +123,18 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 				{
 					// Some comment
 					"url": "https://gitlab.com",
+					"token": "secret",
+					"exclude": [
+						{"id": 1},
+						{"name": "org/baz"}
+					]
+				}`)
+			}),
+			bitbucketServer.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://bitbucketserver.mycorp.com",
 					"token": "secret",
 					"exclude": [
 						{"id": 1},
@@ -127,6 +166,17 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 				}`)
 			}),
 			gitlab.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://gitlab.com",
+					"token": "secret",
+					"exclude": [
+						{"name": "org/boo"},
+					]
+				}`)
+			}),
+			bitbucketServer.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -171,6 +221,19 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 						]
 					}`)
 				}),
+				bitbucketServer.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"url": "https://gitlab.com",
+						"token": "secret",
+						"exclude": [
+							{"name": "org/boo"},
+							{"id": 1, "name": "org/foo"},
+							{"name": "org/baz"}
+						]
+					}`)
+				}),
 			),
 		})
 	}
@@ -197,6 +260,18 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					"projects": [
 						{"id": 1},
 						{"name": "org/baz"}
+					]
+				}`)
+			}),
+			bitbucketServer.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://bitbucketserver.mycorp.com",
+					"token": "secret",
+					"repos": [
+						"org/FOO",
+						"org/baz"
 					]
 				}`)
 			}),
@@ -235,6 +310,17 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					]
 				}`)
 			}),
+			bitbucketServer.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"url": "https://bitbucketserver.mycorp.com",
+					"token": "secret",
+					"repos": [
+						"org/boo"
+					]
+				}`)
+			}),
 		}
 
 		testCases = append(testCases, testCase{
@@ -266,6 +352,19 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 							{"name": "org/boo"},
 							{"id": 1, "name": "org/foo"},
 							{"name": "org/baz"}
+						]
+					}`)
+				}),
+				bitbucketServer.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"url": "https://bitbucketserver.mycorp.com",
+						"token": "secret",
+						"repos": [
+							"org/boo",
+							"org/foo",
+							"org/baz"
 						]
 					}`)
 				}),
@@ -306,4 +405,12 @@ func formatJSON(t testing.TB, s string) string {
 	}
 
 	return formatted
+}
+
+func editJSON(t testing.TB, s string, v interface{}, path ...string) string {
+	edited, err := jsonc.Edit(s, v, path...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return edited
 }
