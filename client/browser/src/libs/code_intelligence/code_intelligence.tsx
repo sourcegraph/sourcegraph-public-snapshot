@@ -22,7 +22,6 @@ import {
     mergeMap,
     observeOn,
     startWith,
-    tap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
@@ -488,7 +487,6 @@ export function handleCodeHost({
     /** A stream of added or removed code views */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
-        tap(codeView => console.log('CodeView ' + codeView.type, codeView.codeViewElement)),
         mergeMap(codeViewEvent =>
             codeViewEvent.type === 'added'
                 ? codeViewEvent.resolveFileInfo(codeViewEvent.codeViewElement).pipe(
