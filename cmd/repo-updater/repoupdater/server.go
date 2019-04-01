@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -274,6 +275,20 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
 			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
+		}
+	case "bitbucketserver":
+		repo := r.Metadata.(*bitbucketserver.Repo)
+		if len(repo.Links.Self) == 0 {
+			break
+		}
+
+		href := repo.Links.Self[0].Href
+		root := strings.TrimSuffix(href, "/browse")
+		info.Links = &protocol.RepoLinks{
+			Root:   href,
+			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Commit: pathAppend(root, "/commits/{commit}"),
 		}
 	}
 
