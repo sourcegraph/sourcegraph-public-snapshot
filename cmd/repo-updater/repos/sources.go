@@ -59,6 +59,8 @@ func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
 		return NewGithubSource(svc, cf)
 	case "gitlab":
 		return NewGitLabSource(svc, cf)
+	case "bitbucketserver":
+		return NewBitbucketServerSource(svc, cf)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}

@@ -120,6 +120,7 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries 
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return resp.Values, resp.PageToken, nil
 }
 
@@ -160,6 +161,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if err := c.RateLimit.Wait(ctx); err != nil {
 		return err
 	}
+
 	if d := time.Since(startWait); d > 200*time.Millisecond {
 		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}

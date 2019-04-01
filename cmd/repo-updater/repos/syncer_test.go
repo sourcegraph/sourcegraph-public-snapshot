@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 )
@@ -261,6 +262,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &github.Repository{IsArchived: true}
 				case "gitlab":
 					update = &gitlab.Project{Archived: true}
+				case "bitbucketserver":
+					update = &bitbucketserver.Repo{Public: true}
 				default:
 					panic("test must be extended with new external service kind")
 				}

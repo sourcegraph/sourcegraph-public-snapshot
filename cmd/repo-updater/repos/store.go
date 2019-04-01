@@ -10,6 +10,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 )
@@ -691,6 +692,8 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(github.Repository)
 	case "gitlab":
 		r.Metadata = new(gitlab.Project)
+	case "bitbucketserver":
+		r.Metadata = new(bitbucketserver.Repo)
 	default:
 		return nil
 	}

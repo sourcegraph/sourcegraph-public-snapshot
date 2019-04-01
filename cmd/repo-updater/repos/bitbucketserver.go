@@ -417,13 +417,16 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbuc
 		go func(q string) {
 			defer wg.Done()
 
-			page := bitbucketserver.PageToken{Limit: 100}
+			page := &bitbucketserver.PageToken{Limit: 100}
 			for page.HasMore() {
-				repos, page, err := c.client.Repos(ctx, &page, q)
-				if err != nil {
+				var err error
+				var repos []*bitbucketserver.Repo
+
+				if repos, page, err = c.client.Repos(ctx, page, q); err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bibucketserver.repositoryQuery: item=%q, page=%+v", q, page)}
 					break
 				}
+
 				ch <- batch{repos: repos}
 			}
 		}(q)
@@ -450,6 +453,7 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbuc
 				seen[repo.ID] = true
 			}
 		}
+
 	}
 
 	return repos, errs.ErrorOrNil()
