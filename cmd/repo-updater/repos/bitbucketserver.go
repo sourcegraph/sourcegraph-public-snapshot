@@ -149,7 +149,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	return &protocol.RepoInfo{
 		Name: repoName,
 		ExternalRepo: &api.ExternalRepoSpec{
-			ID:          project + "/" + repo.Slug,
+			ID:          strconv.Itoa(repo.ID),
 			ServiceType: bitbucketserver.ServiceType,
 			ServiceID:   host.String(),
 		},
