@@ -114,7 +114,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                         //
                         // tslint:disable-next-line:no-object-literal-type-assertion
                         locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
-                            tap(locationsObservable =>
+                            map(locationsObservable =>
                                 locationsObservable.pipe(
                                     tap(locations => {
                                         if (
