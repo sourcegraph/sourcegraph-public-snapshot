@@ -321,11 +321,6 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 
 	ch := make(chan batch)
 
-	configProjectQuery := c.config.ProjectQuery
-	if len(configProjectQuery) == 0 {
-		configProjectQuery = []string{"?membership=true"}
-	}
-
 	var wg sync.WaitGroup
 
 	projch := make(chan *schema.GitLabProject)
@@ -370,7 +365,7 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 		}
 	}()
 
-	for _, projectQuery := range configProjectQuery {
+	for _, projectQuery := range c.config.ProjectQuery {
 		if projectQuery == "none" {
 			continue
 		}
