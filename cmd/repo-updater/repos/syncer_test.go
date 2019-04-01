@@ -3,6 +3,7 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -109,6 +110,23 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(gitlabService.URN()),
 	)
 
+	bitbucketServerService := &repos.ExternalService{
+		ID:   20,
+		Kind: "BITBUCKETSERVER",
+	}
+
+	bitbucketServerRepo := (&repos.Repo{
+		Name:     "bitbucketserver.mycorp.com/org/foo",
+		Metadata: &bitbucketserver.Repo{},
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "23456",
+			ServiceID:   "https://bitbucketserver.mycorp.com/",
+			ServiceType: "bitbucketServer",
+		},
+	}).With(
+		repos.Opt.RepoSources(bitbucketServerService.URN()),
+	)
+
 	clock := repos.NewFakeClock(time.Now(), 0)
 
 	type testCase struct {
@@ -129,6 +147,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	}{
 		{repo: githubRepo, svc: githubService},
 		{repo: gitlabRepo, svc: gitlabService},
+		{repo: bitbucketServerRepo, svc: bitbucketServerService},
 	} {
 		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
 		testCases = append(testCases,
@@ -257,7 +276,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			},
 			func() testCase {
 				var update interface{}
-				switch tc.repo.ExternalRepo.ServiceType {
+				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
 				case "github":
 					update = &github.Repository{IsArchived: true}
 				case "gitlab":
@@ -291,11 +310,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
-		kinds := []string{
-			"GITHUB",
-			"GITLAB",
-		}
-
 		for _, tc := range testCases {
 			tc := tc
 			ctx := context.Background()
@@ -325,7 +339,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
-				diff, err := syncer.Sync(ctx, kinds...)
+				diff, err := syncer.Sync(ctx)
 
 				var want repos.Repos
 				want.Concat(diff.Added, diff.Modified, diff.Unmodified, diff.Deleted)
