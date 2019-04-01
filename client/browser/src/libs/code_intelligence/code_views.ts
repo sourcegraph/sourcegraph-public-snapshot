@@ -58,7 +58,7 @@ export const trackCodeViews = ({
                                             codeViewSpec && {
                                                 ...codeViewSpec,
                                                 codeViewElement,
-                                                type: 'added' as 'added',
+                                                type: 'added' as const,
                                             }
                                         )
                                     })
@@ -78,7 +78,7 @@ export const trackCodeViews = ({
                             ),
                             map(codeViewElement => ({
                                 codeViewElement,
-                                type: 'removed' as 'removed',
+                                type: 'removed' as const,
                             }))
                         )
                     )

@@ -12,7 +12,7 @@ import { metaClickOverride } from './util'
 async function injectModules(): Promise<void> {
     // This is added so that the browser extension doesn't
     // interfere with the native Phabricator integration.
-    // TODO is this racy?
+    // TODO this is racy because the script is loaded async
     const extensionMarker = document.createElement('div')
     extensionMarker.id = 'sourcegraph-app-background'
     extensionMarker.style.display = 'none'

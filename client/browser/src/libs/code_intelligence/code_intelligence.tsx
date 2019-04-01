@@ -104,7 +104,14 @@ export interface CodeViewSpec {
 export type CodeViewSpecWithOutSelector = Pick<CodeViewSpec, Exclude<keyof CodeViewSpec, 'selector'>>
 
 export interface CodeViewSpecResolver {
+    /**
+     * Selector that is used to find code views on the page with `querySelectorAll()`.
+     */
     selector: string
+
+    /**
+     * Function that is called for each element that was found with `selector` to determine which code view the element is.
+     */
     resolveCodeViewSpec: (elem: HTMLElement) => CodeViewSpecWithOutSelector | null
 }
 
@@ -157,16 +164,18 @@ export interface CodeHost {
      */
     getOverlayMount?: () => HTMLElement | null
 
-    // Code views and code view resolver form a union
-
     /**
      * The list of types of code views to try to annotate.
+     *
+     * The set of code views tracked on a page is the union of all code views found using `codeViewSpecs` and `codeViewResolver`.
      */
     codeViewSpecs?: CodeViewSpec[]
 
     /**
      * Resolve `CodeView`s from the DOM. This is useful when each code view type
-     * doesn't have a distinct selector
+     * doesn't have a distinct selector.
+     *
+     * The set of code views tracked on a page is the union of all code views found using `codeViewSpecs` and `codeViewResolver`.
      */
     codeViewSpecResolver?: CodeViewSpecResolver
 
@@ -532,7 +541,7 @@ export function handleCodeHost({
                     subscriptions: new Subscription(),
                     visibleViewComponents: [
                         {
-                            type: 'textEditor' as 'textEditor',
+                            type: 'textEditor' as const,
                             item: {
                                 uri: toURIWithPath(fileInfo),
                                 languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
@@ -549,7 +558,7 @@ export function handleCodeHost({
                 // When codeView is a diff, add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
                     codeViewState.visibleViewComponents.push({
-                        type: 'textEditor',
+                        type: 'textEditor' as const,
                         item: {
                             uri: toURIWithPath({
                                 repoName: fileInfo.baseRepoName,
