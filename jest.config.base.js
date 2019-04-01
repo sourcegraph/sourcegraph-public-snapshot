@@ -2,6 +2,9 @@
 
 /** @type {jest.InitialOptions} */
 const config = {
+  // exposes jsdom as a global, for example to change the URL in window.location
+  testEnvironment: 'jest-environment-jsdom-global',
+
   collectCoverage: true,
   coverageDirectory: '<rootDir>/coverage',
   coveragePathIgnorePatterns: [/\.test\.tsx?$/.source],
@@ -28,6 +31,7 @@ const config = {
     'ts-jest': {
       diagnostics: {
         pathRegex: '(client/browser|shared|web)/src',
+        warnOnly: true,
       },
     },
   },
