@@ -2569,10 +2569,10 @@
   resolved "https://registry.npmjs.org/@types/textarea-caret/-/textarea-caret-3.0.0.tgz#4c5c5e3de5c59511f93ffe929e5383471b828896"
   integrity sha512-RNXko6Kl+oQibqxuQZJZ+RgsQAGez4VQxeC4zq+GXjUlHcfjy5EthnsPIQXC5wUSRf5WbyA+4+//mVSc6XwxNw==
 
-"@types/tmp@0.0.34":
-  version "0.0.34"
-  resolved "https://registry.npmjs.org/@types/tmp/-/tmp-0.0.34.tgz#4d01c0afce0ac9be316c5fc52b6407c6fc8cd440"
-  integrity sha512-Tx7JYeYR+pkAnDQjN1Cj43KuOuUvyybZHl+fAezReXuH/SQoxLhsuPvHZH/SA4XtrBEhaTcbb5gVc1WQcjQgdg==
+"@types/tmp@0.1.0":
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/@types/tmp/-/tmp-0.1.0.tgz#19cf73a7bcf641965485119726397a096f0049bd"
+  integrity sha512-6IwZ9HzWbCq6XoQWhxLpDjuADodH/MKXRUIDFudvgjcVdjFknvmR+DNsoUeer4XPrEnrZs04Jj+kfV9pFsrhmA==
 
 "@types/tough-cookie@*":
   version "2.3.5"
