@@ -86,25 +86,12 @@ const BitbucketServerSchemaJSON = `{
       "minItems": 1
     },
     "repos": {
-      "description": "A list of repositories to mirror from this Bitbucket Server instance.",
+      "description": "An array of repository \"projectKey/repositorySlug\" strings specifying  repositories to mirror on Sourcegraph.",
       "type": "array",
       "minItems": 1,
       "items": {
-        "type": "object",
-        "title": "BitbucketServerRepo",
-        "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
-        "properties": {
-          "name": {
-            "description": "The name of a Bitbucket Server repo (\"projectKey/repositorySlug\") to mirror.",
-            "type": "string",
-            "pattern": "^[\\w-]+/[\\w.-]+$"
-          },
-          "id": {
-            "description": "The ID of a Bitbucket Server repo (as returned by the Bitbucket Server instance's API) to mirror.",
-            "type": "integer"
-          }
-        }
+        "type": "string",
+        "pattern": "^[\\w-]+/[\\w.-]+$"
       }
     },
     "exclude": {

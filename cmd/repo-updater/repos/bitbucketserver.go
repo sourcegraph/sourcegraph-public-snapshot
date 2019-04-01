@@ -381,11 +381,11 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbuc
 		repos := make([]*bitbucketserver.Repo, 0, len(c.config.Repos))
 		errs := new(multierror.Error)
 
-		for _, r := range c.config.Repos {
-			ps := strings.SplitN(r.Name, "/", 2)
+		for _, name := range c.config.Repos {
+			ps := strings.SplitN(name, "/", 2)
 			if len(ps) != 2 {
 				errs = multierror.Append(errs,
-					errors.Errorf("bitbucketserver.repos: name=%q", r.Name))
+					errors.Errorf("bitbucketserver.repos: name=%q", name))
 				continue
 			}
 
@@ -395,11 +395,11 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbuc
 				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 				// 404 errors on external service config validation.
 				if bitbucketserver.IsNotFound(err) {
-					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", r.Name, "id", fmt.Sprint(r.Id), "err", err)
+					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", name, "err", err)
 					continue
 				}
 				errs = multierror.Append(errs,
-					errors.Wrapf(err, "bitbucketserver.repos: id: %d, name: %q", r.Id, r.Name))
+					errors.Wrapf(err, "bitbucketserver.repos: name: %q", name))
 			} else {
 				repos = append(repos, repo)
 			}
