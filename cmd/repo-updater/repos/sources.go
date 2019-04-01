@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -261,5 +262,63 @@ func gitlabProjectToRepo(
 			},
 		},
 		Metadata: proj,
+	}
+}
+
+// A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
+// in Sourcegraph via the external services configuration.
+type BitbucketServerSource struct {
+	svc  *ExternalService
+	conn *bitbucketServerConnection
+}
+
+// NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
+func NewBitbucketServerSource(svc *ExternalService, cf httpcli.Factory) (*BitbucketServerSource, error) {
+	var c schema.BitbucketServerConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newBitbucketServerSource(svc, &c, cf)
+}
+
+func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf httpcli.Factory) (*BitbucketServerSource, error) {
+	conn, err := newBitbucketServerConnection(c, cf)
+	if err != nil {
+		return nil, err
+	}
+	return &BitbucketServerSource{svc: svc, conn: conn}, nil
+}
+
+// ListRepos returns all BitbucketServer repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s BitbucketServerSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+	rs, err := s.conn.listAllRepos(ctx)
+	for _, r := range rs {
+		repos = append(repos, bitbucketserverRepoToRepo(s.svc, r, s.conn))
+	}
+	return repos, err
+}
+
+func bitbucketserverRepoToRepo(
+	svc *ExternalService,
+	repo *bitbucketserver.Repo,
+	conn *bitbucketServerConnection,
+) *Repo {
+	info := bitbucketServerRepoInfo(conn.config, repo)
+	urn := svc.URN()
+	return &Repo{
+		Name:         string(info.Name),
+		ExternalRepo: *info.ExternalRepo,
+		Description:  info.Description,
+		Fork:         info.Fork,
+		Enabled:      true,
+		Archived:     info.Archived,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: info.VCS.URL,
+			},
+		},
+		Metadata: repo,
 	}
 }
