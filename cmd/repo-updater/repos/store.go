@@ -483,7 +483,7 @@ updated AS (
     deleted_at            = batch.deleted_at,
     external_service_type = COALESCE(NULLIF(BTRIM(batch.external_service_type), ''), repo.external_service_type),
     external_service_id   = COALESCE(NULLIF(BTRIM(batch.external_service_id), ''), repo.external_service_id),
-    external_id           = COALESCE(NULLIF(BTRIM(batch.external_id), ''), repo.external_service_id),
+    external_id           = COALESCE(NULLIF(BTRIM(batch.external_id), ''), repo.external_id),
     enabled               = batch.enabled,
     archived              = batch.archived,
     fork                  = batch.fork,
