@@ -281,6 +281,15 @@ type Project struct {
 	} `json:"links"`
 }
 
+// IsNotFound reports whether err is a Bitbucket Server API not found error.
+func IsNotFound(err error) bool {
+	switch e := errors.Cause(err).(type) {
+	case *httpError:
+		return e.NotFound()
+	}
+	return false
+}
+
 type httpError struct {
 	StatusCode int
 	URL        *url.URL
