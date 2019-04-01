@@ -406,11 +406,3 @@ func formatJSON(t testing.TB, s string) string {
 
 	return formatted
 }
-
-func editJSON(t testing.TB, s string, v interface{}, path ...string) string {
-	edited, err := jsonc.Edit(s, v, path...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return edited
-}
