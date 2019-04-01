@@ -267,6 +267,14 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
 		}
+	case "gitlab":
+		proj := r.Metadata.(*gitlab.Project)
+		info.Links = &protocol.RepoLinks{
+			Root:   proj.WebURL,
+			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
+		}
 	}
 
 	return &info, nil
