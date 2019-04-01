@@ -15,6 +15,7 @@ for the patch release checklist.
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
 - [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release (send calendar invites to team@sourcegraph.com).
+- [ ] Create reminders for yourself to preform the remaining sections in this checklist at appropriate times.
 
 ## 5 working days before release (YYYY-MM-DD)
 
@@ -27,7 +28,6 @@ for the patch release checklist.
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
 - [ ] Tag the first release candidate `vMAJOR.MINOR.0-rc.1`.
 - [ ] Send a message to #dev-announce to announce the release candidate.
-- [ ] Ensure that `master` is deployed to dogfood.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] Run the new version of Sourcegraph.
         ```
