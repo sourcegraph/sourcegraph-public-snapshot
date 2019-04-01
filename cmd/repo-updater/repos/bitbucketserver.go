@@ -355,7 +355,11 @@ type bitbucketServerConnection struct {
 }
 
 func (c *bitbucketServerConnection) excludes(r *bitbucketserver.Repo) bool {
-	return c.exclude[strings.ToLower(r.Project.Key+"/"+r.Slug)] ||
+	name := r.Slug
+	if r.Project != nil {
+		name = r.Project.Key + "/" + name
+	}
+	return c.exclude[strings.ToLower(name)] ||
 		c.exclude[strconv.Itoa(r.ID)] ||
 		c.config.ExcludePersonalRepositories && r.IsPersonalRepository()
 }
