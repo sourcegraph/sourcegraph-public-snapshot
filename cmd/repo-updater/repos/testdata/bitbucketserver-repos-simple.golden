@@ -14,7 +14,7 @@
       "Commit": "https://bitbucket.example.com/projects/SG/repos/go-langserver/commits/{commit}"
     },
     "ExternalRepo": {
-      "ID": "SG/go-langserver",
+      "ID": "1",
       "ServiceType": "bitbucketServer",
       "ServiceID": "bitbucket.example.com/"
     }
@@ -34,7 +34,7 @@
       "Commit": "https://bitbucket.example.com/projects/SG/repos/python-langserver/commits/{commit}"
     },
     "ExternalRepo": {
-      "ID": "SG/python-langserver",
+      "ID": "2",
       "ServiceType": "bitbucketServer",
       "ServiceID": "bitbucket.example.com/"
     }
@@ -54,7 +54,7 @@
       "Commit": "https://bitbucket.example.com/projects/SG/repos/python-langserver-fork/commits/{commit}"
     },
     "ExternalRepo": {
-      "ID": "SG/python-langserver-fork",
+      "ID": "5",
       "ServiceType": "bitbucketServer",
       "ServiceID": "bitbucket.example.com/"
     }
@@ -74,7 +74,7 @@
       "Commit": "https://bitbucket.example.com/users/keegan/repos/rgp/commits/{commit}"
     },
     "ExternalRepo": {
-      "ID": "~KEEGAN/rgp",
+      "ID": "4",
       "ServiceType": "bitbucketServer",
       "ServiceID": "bitbucket.example.com/"
     }
