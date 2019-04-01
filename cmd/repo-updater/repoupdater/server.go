@@ -186,11 +186,11 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		fns = append(fns,
 			getfn{"GITHUB", repos.GetGitHubRepository},
 			getfn{"GITLAB", repos.GetGitLabRepository},
+			getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
 		)
 	}
 
 	fns = append(fns,
-		getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
 		getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
 		getfn{"GITOLITE", repos.GetGitoliteRepository},
 	)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -94,6 +95,30 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		Metadata: new(gitlab.Project),
 	}
 
+	bitbucketServerService := repos.ExternalService{
+		ID:          2,
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "Bitbucket Server - Test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://bitbucketserver.mycorp.com",
+			"token": "secret"
+		}`),
+	}
+
+	bitbucketServerRepo := repos.Repo{
+		Name:    "bitbucketserver.mycorp.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "1",
+			ServiceType: "bitbucketServer",
+			ServiceID:   "http://bitbucketserver.mycorp.com",
+		},
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(bitbucketserver.Repo),
+	}
+
 	var testCases []testCase
 	for _, k := range []struct {
 		svc  repos.ExternalService
@@ -101,6 +126,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 	}{
 		{svc: githubService, repo: githubRepo},
 		{svc: gitlabService, repo: gitlabRepo},
+		{svc: bitbucketServerService, repo: bitbucketServerRepo},
 	} {
 		repo, svc := k.repo, k.svc
 		testCases = append(testCases,
