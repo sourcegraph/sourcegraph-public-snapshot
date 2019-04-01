@@ -2255,10 +2255,10 @@
   resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.121.tgz#9327e20d49b95fc2bf983fc2f045b2c6effc80b9"
   integrity sha512-ORj7IBWj13iYufXt/VXrCNMbUuCTJfhzme5kx9U/UtcIPdJYuvPDUAlHlbNhz/8lKCLy9XGIZnGrqXOtQbPGoQ==
 
-"@types/marked@*", "@types/marked@0.6.1":
-  version "0.6.1"
-  resolved "https://registry.npmjs.org/@types/marked/-/marked-0.6.1.tgz#4281d0fbdb7bbefb69905cf44558297bc3c446aa"
-  integrity sha512-yE2cXQELHabu4t+RJIrFu0dVZEG7+zr0cHDSlb8SOJbXiAss/bY9PvSubgaoG7dyn9Bb+GT2Xl4HVhChuU5mEQ==
+"@types/marked@*", "@types/marked@0.6.4":
+  version "0.6.4"
+  resolved "https://registry.npmjs.org/@types/marked/-/marked-0.6.4.tgz#7c1238662976dde4c74f89c0a94c573474edae02"
+  integrity sha512-rJe6ToeWAUmR6I7eY87gxb2CTwXKqfwfrkDAr9ododuha9D/d57DWWK0xdtKZ2C6yTdP60pAg5fJwC5PHguzyA==
 
 "@types/marked@^0.4.0":
   version "0.4.2"
