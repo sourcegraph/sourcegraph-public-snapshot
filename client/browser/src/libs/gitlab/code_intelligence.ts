@@ -81,7 +81,7 @@ const resolveCodeViewSpec = (codeView: HTMLElement): CodeViewSpecWithOutSelector
     return commitCodeView
 }
 
-const codeViewResolver: CodeViewSpecResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file-holder',
     resolveCodeViewSpec,
 }
@@ -89,7 +89,7 @@ const codeViewResolver: CodeViewSpecResolver = {
 export const gitlabCodeHost: CodeHost = {
     name: 'gitlab',
     check: checkIsGitlab,
-    codeViewSpecResolver: codeViewResolver,
+    codeViewSpecResolver,
     adjustOverlayPosition,
     getCommandPaletteMount,
     actionNavItemClassProps: {

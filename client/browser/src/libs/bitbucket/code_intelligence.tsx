@@ -101,7 +101,7 @@ const resolveCodeViewSpec: CodeViewSpecResolver['resolveCodeViewSpec'] = codeVie
     return isDiff ? diffCodeView : singleFileCodeView
 }
 
-const codeViewResolver: CodeViewSpecResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file-content',
     resolveCodeViewSpec,
 }
@@ -146,7 +146,7 @@ export const bitbucketServerCodeHost: CodeHost = {
     check: () =>
         !!document.querySelector('.bitbucket-header-logo') ||
         !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket'),
-    codeViewSpecResolver: codeViewResolver,
+    codeViewSpecResolver,
     getCommandPaletteMount,
     commandPalettePopoverClassName: 'command-palette-popover--bitbucket-server',
     actionNavItemClassProps: {
