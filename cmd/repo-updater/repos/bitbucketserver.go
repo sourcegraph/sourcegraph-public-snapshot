@@ -366,7 +366,6 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbuc
 		err   error
 	}
 
-	const perPage = 1000
 	ch := make(chan batch)
 
 	var wg sync.WaitGroup
@@ -414,7 +413,7 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbuc
 		go func(q string) {
 			defer wg.Done()
 
-			page := bitbucketserver.PageToken{Limit: perPage}
+			page := bitbucketserver.PageToken{Limit: 100}
 			for page.HasMore() {
 				repos, page, err := c.client.Repos(ctx, &page, q)
 				if err != nil {
