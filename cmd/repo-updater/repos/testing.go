@@ -248,6 +248,7 @@ var Assert = struct {
 		want := Repos(rs)
 		want.Apply(Opt.RepoID(0))
 		return func(t testing.TB, have Repos) {
+			t.Helper()
 			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("repos: %s", cmp.Diff(have, want))
@@ -256,6 +257,7 @@ var Assert = struct {
 	},
 	ReposOrderedBy: func(ord func(a, b *Repo) bool) ReposAssertion {
 		return func(t testing.TB, have Repos) {
+			t.Helper()
 			want := have.Clone()
 			sort.Slice(want, func(i, j int) bool {
 				return ord(want[i], want[j])
@@ -269,6 +271,7 @@ var Assert = struct {
 		want := append(ExternalServices{}, es...)
 		want.Apply(Opt.ExternalServiceID(0))
 		return func(t testing.TB, have ExternalServices) {
+			t.Helper()
 			have = append(ExternalServices{}, have...)
 			have.Apply(Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
@@ -278,6 +281,7 @@ var Assert = struct {
 	},
 	ExternalServicesOrderedBy: func(ord func(a, b *ExternalService) bool) ExternalServicesAssertion {
 		return func(t testing.TB, have ExternalServices) {
+			t.Helper()
 			want := have.Clone()
 			sort.Slice(want, func(i, j int) bool {
 				return ord(want[i], want[j])
