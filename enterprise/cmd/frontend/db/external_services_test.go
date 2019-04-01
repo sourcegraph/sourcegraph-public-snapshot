@@ -268,36 +268,19 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		{
 			kind:   "BITBUCKETSERVER",
 			desc:   "invalid empty repos item",
-			config: `{"repos": [{}]}`,
-			assert: includes(`repos.0: Must validate at least one schema (anyOf)`),
-		},
-		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "invalid repos item",
-			config: `{"repos": [{"foo": "bar"}]}`,
-			assert: includes(`repos.0: Must validate at least one schema (anyOf)`),
-		},
-		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "invalid repos item name",
-			config: `{"repos": [{"name": "bar"}]}`,
-			assert: includes(`repos.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
-		},
-		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "invalid additional repos item properties",
-			config: `{"repos": [{"id": 1234, "bar": "baz"}]}`,
-			assert: includes(`bar: Additional property bar is not allowed`),
+			config: `{"repos": [""]}`,
+			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
 			kind: "BITBUCKETSERVER",
-			desc: "both name and id can be specified in repos",
+			desc: "valid repos",
 			config: `
 			{
 				"url": "https://bitbucketserver.corp.com",
 				"token": "very-secret-token",
 				"repos": [
-					{"name": "foo/bar", "id": 1234}
+					"foo/bar",
+					"bar/baz"
 				]
 			}`,
 			assert: equals(`<nil>`),

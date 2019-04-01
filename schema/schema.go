@@ -88,16 +88,12 @@ type BitbucketServerConnection struct {
 	GitURLType                  string                         `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool                           `json:"initialRepositoryEnablement,omitempty"`
 	Password                    string                         `json:"password,omitempty"`
-	Repos                       []*BitbucketServerRepo         `json:"repos,omitempty"`
+	Repos                       []string                       `json:"repos,omitempty"`
 	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
 	RepositoryQuery             []string                       `json:"repositoryQuery,omitempty"`
 	Token                       string                         `json:"token,omitempty"`
 	Url                         string                         `json:"url"`
 	Username                    string                         `json:"username,omitempty"`
-}
-type BitbucketServerRepo struct {
-	Id   int    `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
 }
 type BrandAssets struct {
 	Logo   string `json:"logo,omitempty"`
