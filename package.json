@@ -102,7 +102,7 @@
     "@types/socket.io-client": "1.4.32",
     "@types/storybook__addon-actions": "3.4.2",
     "@types/storybook__addon-info": "3.4.2",
-    "@types/storybook__addon-notes": "4.0.0",
+    "@types/storybook__addon-notes": "4.0.2",
     "@types/storybook__addon-options": "4.0.0",
     "@types/storybook__addon-storyshots": "3.4.4",
     "@types/storybook__react": "4.0.0",

@@ -2521,10 +2521,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/storybook__addon-notes@4.0.0":
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/@types/storybook__addon-notes/-/storybook__addon-notes-4.0.0.tgz#1d3354d995445c7b128c13c1cd76a6991fbe131c"
-  integrity sha512-jh4dqUo4iflX2lK2CmbCnwKFMFDp6d48d6fo9FrHzzqcWXoeaSmWIqdLDytBpvdr2VbG8/Zo3Z4inOzw99p2Xg==
+"@types/storybook__addon-notes@4.0.2":
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/@types/storybook__addon-notes/-/storybook__addon-notes-4.0.2.tgz#8c888ab5fa2c62ef72125b565d50c5af510cd6cb"
+  integrity sha512-AHdkV7O1VIb3qIkhOsw2rhCBhDiQ8+909LvMWM6XYUAO/5bENN30OqBMPpiYxmL3UL361FkC19f2LfdHTc4Rug==
   dependencies:
     "@types/marked" "*"
     "@types/react" "*"
