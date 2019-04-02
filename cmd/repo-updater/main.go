@@ -53,16 +53,9 @@ func main() {
 	cliFactory := repos.NewHTTPClientFactory()
 	src := repos.NewSourcer(cliFactory)
 
-	for _, m := range []repos.Migration{
+	migrations := []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
 		repos.GitLabSetDefaultProjectQueryMigration(clock),
-		// TODO(tsenart): Enable the following migrations once we implement the
-		// functionality needed to run them only once.
-		//    repos.GithubReposEnabledStateDeprecationMigration(src, clock),
-	} {
-		if err := m.Run(ctx, store); err != nil {
-			log.Fatalf("failed to run migration: %s", err)
-		}
 	}
 
 	var kinds []string
@@ -71,6 +64,15 @@ func main() {
 			"GITHUB",
 			"GITLAB",
 		)
+		migrations = append(migrations,
+			repos.EnabledStateDeprecationMigration(src, clock, kinds...),
+		)
+	}
+
+	for _, m := range migrations {
+		if err := m.Run(ctx, store); err != nil {
+			log.Fatalf("failed to run migration: %s", err)
+		}
 	}
 
 	newSyncerEnabled := make(map[string]bool, len(kinds))
