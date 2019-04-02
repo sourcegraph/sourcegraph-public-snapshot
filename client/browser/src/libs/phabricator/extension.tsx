@@ -1,30 +1,18 @@
 import '../../config/polyfill'
 
-import { Observable } from 'rxjs'
-import { startWith } from 'rxjs/operators'
 import { setSourcegraphUrl } from '../../shared/util/context'
-import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { injectCodeIntelligence } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
 import { metaClickOverride } from './util'
 
-// NOT idempotent.
+// NOTE: injectModules is idempotent, so safe to call multiple times on the same page.
 async function injectModules(): Promise<void> {
-    // This is added so that the browser extension doesn't
-    // interfere with the native Phabricator integration.
-    // TODO this is racy because the script is loaded async
     const extensionMarker = document.createElement('div')
     extensionMarker.id = 'sourcegraph-app-background'
     extensionMarker.style.display = 'none'
     document.body.appendChild(extensionMarker)
 
-    const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
-        childList: true,
-        subtree: true,
-    }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-
-    // TODO handle subscription
-    await injectCodeIntelligence(mutations)
+    await injectCodeIntelligence()
 }
 
 function init(): void {
@@ -62,6 +50,7 @@ function init(): void {
             })
             .catch(e => console.error(e))
     } else {
+        // tslint:disable-next-line
         console.log(
             `Sourcegraph on Phabricator is disabled because window.localStorage.getItem('SOURCEGRAPH_DISABLED') is set to ${window.localStorage.getItem(
                 'SOURCEGRAPH_DISABLED'

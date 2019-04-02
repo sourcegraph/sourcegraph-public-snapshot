@@ -14,8 +14,8 @@ import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
-    className?: string
-    style?: React.CSSProperties
+    className: string
+    style: React.CSSProperties
     iconStyle?: React.CSSProperties
 }
 
@@ -26,7 +26,7 @@ interface CodeViewToolbarProps
         ActionNavItemsClassProps {
     onEnabledChange?: (enabled: boolean) => void
 
-    buttonProps?: ButtonProps
+    buttonProps: ButtonProps
     location: H.Location
     className?: string
 }
@@ -91,9 +91,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                 headRev: this.props.rev!,
                             },
                         }}
-                        className={this.props.buttonProps && this.props.buttonProps.className}
-                        style={this.props.buttonProps && this.props.buttonProps.style}
-                        iconStyle={this.props.buttonProps && this.props.buttonProps.iconStyle}
+                        className={this.props.buttonProps.className}
+                        style={this.props.buttonProps.style}
+                        iconStyle={this.props.buttonProps.iconStyle}
                     />
                 )}
 
@@ -117,9 +117,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                   }
                                 : undefined,
                         }}
-                        className={this.props.buttonProps && this.props.buttonProps.className}
-                        style={this.props.buttonProps && this.props.buttonProps.style}
-                        iconStyle={this.props.buttonProps && this.props.buttonProps.iconStyle}
+                        className={this.props.buttonProps.className}
+                        style={this.props.buttonProps.style}
+                        iconStyle={this.props.buttonProps.iconStyle}
                     />
                 )}
             </div>

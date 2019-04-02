@@ -1,9 +1,9 @@
+// We want to polyfill first.
+// prettier-ignore
 import '../../config/polyfill'
 
 import H from 'history'
 import React from 'react'
-import { Observable } from 'rxjs'
-import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../../shared/src/components/Link'
 import { getURL } from '../../browser/extension'
 import storage from '../../browser/storage'
@@ -14,7 +14,6 @@ import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
 import { setInlineSymbolSearchEnabled, setSourcegraphUrl } from '../../shared/util/context'
-import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -31,12 +30,7 @@ setLinkComponent(({ to, children, ...props }) => (
 /**
  * Main entry point into browser extension.
  */
-function observe(): void {
-    const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
-        childList: true,
-        subtree: true,
-    }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-
+function injectApplication(): void {
     const extensionMarker = document.createElement('div')
     extensionMarker.id = 'sourcegraph-app-background'
     extensionMarker.style.display = 'none'
@@ -99,8 +93,16 @@ function observe(): void {
         }
 
         if (isGitHub || isGitHubEnterprise || isPhabricator || isGitlab || isBitbucket) {
-            const subscriptions = await injectCodeIntelligence(mutations)
-            window.addEventListener('unload', () => subscriptions.unsubscribe())
+            if (
+                isGitHub ||
+                isGitHubEnterprise ||
+                isGitlab ||
+                isBitbucket ||
+                (await featureFlags.isEnabled('newInject'))
+            ) {
+                const subscriptions = await injectCodeIntelligence()
+                window.addEventListener('unload', () => subscriptions.unsubscribe())
+            }
         }
     }
 
@@ -115,7 +117,7 @@ function observe(): void {
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     // document is already ready to go
-    observe()
+    injectApplication()
 } else {
-    document.addEventListener('DOMContentLoaded', observe)
+    document.addEventListener('DOMContentLoaded', injectApplication)
 }

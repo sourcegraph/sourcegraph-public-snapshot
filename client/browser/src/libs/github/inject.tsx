@@ -119,7 +119,7 @@ const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 export function createOpenOnSourcegraphIfNotExists(): HTMLElement | null {
     let container = document.getElementById(OPEN_ON_SOURCEGRAPH_ID)
     if (container) {
-        return container
+        container.remove()
     }
 
     container = document.createElement('li')
