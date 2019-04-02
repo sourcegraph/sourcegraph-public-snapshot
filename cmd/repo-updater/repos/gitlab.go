@@ -339,7 +339,7 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 					// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 					// 404 errors on external service config validation.
 					if gitlab.IsNotFound(err) {
-						log15.Warn("skipping missing gitlab.projects entry:", "name", p.Name, "id", fmt.Sprint(p.Id), "err", err)
+						log15.Warn("skipping missing gitlab.projects entry:", "name", p.Name, "id", p.Id, "err", err)
 						continue
 					}
 					ch <- batch{err: errors.Wrapf(err, "gitlab.projects: id: %d, name: %q", p.Id, p.Name)}
