@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols"
+	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols/client"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 )
 

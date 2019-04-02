@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
 
@@ -13,13 +12,12 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	lsp "github.com/sourcegraph/go-lsp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -123,21 +121,21 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.Name) + "?" + url.QueryEscape(inputRev))
+
+	symbols, err := symbols.ComputeSymbols(ctx, symbols.ComputeSymbolsArgs{
+		CommitID:        commitID,
+		RepoName:        repoRevs.Repo.Name,
+		Query:           &patternInfo.Pattern,
+		IncludePatterns: &patternInfo.IncludePatterns,
+		ExcludePattern:  &patternInfo.ExcludePattern,
+		IsCaseSensitive: &patternInfo.IsCaseSensitive,
+		IsRegExp:        &patternInfo.IsRegExp,
+		First:           &limit,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
-		Repo:            repoRevs.Repo.Name,
-		CommitID:        commitID,
-		Query:           patternInfo.Pattern,
-		IsCaseSensitive: patternInfo.IsCaseSensitive,
-		IsRegExp:        patternInfo.IsRegExp,
-		IncludePatterns: patternInfo.IncludePatterns,
-		ExcludePattern:  patternInfo.ExcludePattern,
-		First:           int(limit),
-	})
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
 	fileMatches := make([]*fileMatchResolver, 0)
 	for _, symbol := range symbols {
@@ -150,7 +148,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		if inputRev != "" {
 			commit.inputRev = &inputRev
 		}
-		symbolRes := toSymbolResolver(symbol, baseURI, strings.ToLower(symbol.Language), commit)
+		symbolRes := toSymbolResolver(symbol, commit)
 		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)

@@ -118,19 +118,19 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		for _, fileMatchResult := range fileMatchResults {
 			for _, sr := range fileMatchResult.fileMatch.symbols {
 				score := 20
-				if sr.symbol.Parent == "" {
+				if sr.symbol.Symbol.Parent == "" {
 					score++
 				}
-				if len(sr.symbol.Name) < 12 {
+				if len(sr.symbol.Symbol.Name) < 12 {
 					score++
 				}
-				switch ctagsKindToLSPSymbolKind(sr.symbol.Kind) {
+				switch ctagsKindToLSPSymbolKind(sr.symbol.Symbol.Kind) {
 				case lsp.SKFunction, lsp.SKMethod:
 					score += 2
 				case lsp.SKClass:
 					score += 3
 				}
-				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri.String()), strings.ToLower(sr.symbol.Name)) {
+				if len(sr.symbol.Symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.symbol.URI.String()), strings.ToLower(sr.symbol.Symbol.Name)) {
 					score++
 				}
 				results = append(results, newSearchResultResolver(sr, score))
@@ -246,7 +246,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			k.file = s.path
 		case *symbolResolver:
 			k.repoName = s.location.resource.commit.repo.repo.Name
-			k.symbol = s.symbol.Name + s.symbol.Parent
+			k.symbol = s.symbol.Symbol.Name + s.symbol.Symbol.Parent
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))
 		}
