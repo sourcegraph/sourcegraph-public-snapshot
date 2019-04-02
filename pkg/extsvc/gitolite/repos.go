@@ -1,4 +1,5 @@
-//go:generate mockgen -destination mock_gitolite/mocks.go github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite Command
+//go:generate env GOBIN=$PWD/.bin GO111MODULE=on go install github.com/golang/mock/mockgen
+//go:generate $PWD/.bin/mockgen -destination mock_gitolite/mocks.go github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite Command
 package gitolite
 
 import (

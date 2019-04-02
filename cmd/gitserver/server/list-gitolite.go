@@ -1,3 +1,5 @@
+//go:generate env GOBIN=$PWD/.bin GO111MODULE=on go install github.com/golang/mock/mockgen
+//go:generate $PWD/.bin/mockgen -destination mock_server/mocks.go github.com/sourcegraph/sourcegraph/cmd/gitserver/server IConfig,IGitoliteClient
 package server
 
 import (
