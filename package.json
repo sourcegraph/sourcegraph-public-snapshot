@@ -73,7 +73,7 @@
     "@types/highlight.js": "9.12.3",
     "@types/jest": "24.0.11",
     "@types/jsdom": "12.2.3",
-    "@types/lodash": "4.14.121",
+    "@types/lodash": "4.14.123",
     "@types/marked": "0.6.4",
     "@types/mini-css-extract-plugin": "0.2.0",
     "@types/mkdirp-promise": "5.0.0",
