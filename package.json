@@ -112,7 +112,7 @@
     "@types/webpack": "4.4.22",
     "@types/webpack-dev-server": "3.1.1",
     "@types/whatwg-url": "6.4.0",
-    "@types/yargs": "12.0.9",
+    "@types/yargs": "12.0.11",
     "abort-controller": "^2.0.0",
     "autoprefixer": "^9.4.3",
     "babel-loader": "^8.0.0",
