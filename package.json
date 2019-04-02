@@ -90,7 +90,7 @@
     "@types/react-router": "4.4.5",
     "@types/react-router-dom": "4.3.1",
     "@types/react-stripe-elements": "1.1.10",
-    "@types/react-test-renderer": "16.0.3",
+    "@types/react-test-renderer": "16.8.1",
     "@types/react-visibility-sensor": "5.0.1",
     "@types/reactstrap": "6.4.4",
     "@types/sanitize-html": "1.18.3",
