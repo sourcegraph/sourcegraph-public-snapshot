@@ -179,6 +179,19 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
+				name:    "updated external_id",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
+				store:   s,
+				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
+					r.ExternalRepo.ID = "old-and-out-of-date"
+				})},
+				now: clock.Now,
+				diff: repos.Diff{Modified: repos.Repos{
+					tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
+				}},
+				err: "<nil>",
+			},
+			testCase{
 				name: "new repo sources",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
