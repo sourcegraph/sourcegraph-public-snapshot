@@ -2537,10 +2537,10 @@
   dependencies:
     "@types/storybook__react" "*"
 
-"@types/storybook__addon-storyshots@3.4.4":
-  version "3.4.4"
-  resolved "https://registry.npmjs.org/@types/storybook__addon-storyshots/-/storybook__addon-storyshots-3.4.4.tgz#bc34d425b8ca2f1e73e3c1ecb6afc178b9fa9ace"
-  integrity sha512-Zwu+fk/zqCNAnRnLlOvLRMPi2KrUuXMW/HWZ4RMOHfu2OGqp9bkNF59whI4XwLM/aZUN27nne8bGaHIDL0rRTg==
+"@types/storybook__addon-storyshots@3.4.8":
+  version "3.4.8"
+  resolved "https://registry.npmjs.org/@types/storybook__addon-storyshots/-/storybook__addon-storyshots-3.4.8.tgz#c0a30629efd10b1632f2f0283910e3c49a0f6505"
+  integrity sha512-nsMZbRbs4zNbu1bHfB5qguhJusEe/S/MbfADDJ/qvNmxPh1mhyQ8/xtbDwOd4ZsRgaWgPVsPFT9p9jxxoFUGnw==
   dependencies:
     "@types/puppeteer" "*"
     "@types/react" "*"
