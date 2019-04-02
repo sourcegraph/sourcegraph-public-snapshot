@@ -2418,10 +2418,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-visibility-sensor@5.0.0":
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/@types/react-visibility-sensor/-/react-visibility-sensor-5.0.0.tgz#23e3bf4a7e6bc15ad83ad1101bcd6856f7f06607"
-  integrity sha512-ABSiWdpApg0hxyGNkJvb5rBEFBP7xoy+ID9dGoA6TPBJlYpvfoRrtk82YO6IIBgHBJ/QNml+wJjSVsZ1otbATQ==
+"@types/react-visibility-sensor@5.0.1":
+  version "5.0.1"
+  resolved "https://registry.npmjs.org/@types/react-visibility-sensor/-/react-visibility-sensor-5.0.1.tgz#614cf7c68a1e5a0ad8685d4ddcf47646e16a3cab"
+  integrity sha512-Pzyz6KtripJh2/fKyhOLFKni0+2RaI/4sFAyB+bURrpY8HLdHXRQo/V2BcMjt4u8gJYVTXIhBU5KhOXl5/70MA==
   dependencies:
     "@types/react" "*"
 
