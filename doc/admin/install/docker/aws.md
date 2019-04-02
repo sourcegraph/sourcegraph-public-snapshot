@@ -8,6 +8,8 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 
 ## Deploy to EC2
 
+> NOTE: While these instructions recommend opening up port `443`, additional work is required to [configure NGINX to support SSL](https://docs.sourcegraph.com/admin/nginx#nginx-ssl-https-configuration).
+
 ### Option A: use the AWS wizard
 
 - Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
