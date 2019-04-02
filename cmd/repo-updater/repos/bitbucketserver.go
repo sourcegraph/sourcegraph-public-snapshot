@@ -361,7 +361,7 @@ func (c *bitbucketServerConnection) excludes(r *bitbucketserver.Repo) bool {
 	}
 	return c.exclude[strings.ToLower(name)] ||
 		c.exclude[strconv.Itoa(r.ID)] ||
-		c.config.ExcludePersonalRepositories && r.IsPersonalRepository()
+		(c.config.ExcludePersonalRepositories && r.IsPersonalRepository())
 }
 
 func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbucketserver.Repo, error) {
