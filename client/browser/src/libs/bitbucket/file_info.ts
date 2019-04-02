@@ -64,10 +64,9 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                 return getBaseCommit({ commitID, project, repoSlug }).pipe(
                     map(baseCommitID => ({ baseCommitID, headCommitID: commitID, ...rest }))
                 )
-            } else {
-                const prID = getPRIDFromPathName()
-                return getCommitsForPR({ project, repoSlug, prID }).pipe(map(commits => ({ ...rest, ...commits })))
             }
+            const prID = getPRIDFromPathName()
+            return getCommitsForPR({ project, repoSlug, prID }).pipe(map(commits => ({ ...rest, ...commits })))
         }),
         switchMap(fetchDiffFiles)
     )
