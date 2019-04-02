@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -73,9 +74,10 @@ func computeSymbols(ctx context.Context, args computeSymbolsArgs) (res []*symbol
 	}
 
 	resolvers := make([]*symbolResolver, len(symbols))
-	for _, s := range symbols {
+	for i, s := range symbols {
 		resolver := toSymbolResolver(s, args.commit)
-		resolvers = append(resolvers, resolver)
+		fmt.Println(resolver, s)
+		resolvers[i] = resolver
 	}
 
 	return resolvers, nil
