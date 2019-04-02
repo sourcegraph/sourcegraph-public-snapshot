@@ -256,86 +256,86 @@ func main() {
 		return
 	}
 
-	addBrowserExtensionReleaseSteps := func() {
-		// Run e2e tests
-		pipeline.AddStep(":chromium:",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd client/browser"),
-			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s run test-e2e"),
-			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+	// addBrowserExtensionReleaseSteps := func() {
+	// Run e2e tests
+	pipeline.AddStep(":chromium:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd client/browser"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("yarn -s run test-e2e"),
+		bk.Cmd("popd"),
+		bk.ArtifactPaths("./puppeteer/*.png"))
 
-		pipeline.AddWait()
+	// pipeline.AddWait()
 
-		// Release to the Chrome Webstore
-		pipeline.AddStep(":chrome:",
-			bk.Env("FORCE_COLOR", "1"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd client/browser"),
-			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn release:chrome"),
-			bk.Cmd("popd"))
+	// // Release to the Chrome Webstore
+	// pipeline.AddStep(":chrome:",
+	// 	bk.Env("FORCE_COLOR", "1"),
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd client/browser"),
+	// 	bk.Cmd("yarn -s run build"),
+	// 	bk.Cmd("yarn release:chrome"),
+	// 	bk.Cmd("popd"))
 
-		// Build and self sign the FF extension and upload it to ...
-		pipeline.AddStep(":firefox:",
-			bk.Env("FORCE_COLOR", "1"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd client/browser"),
-			bk.Cmd("yarn release:ff"),
-			bk.Cmd("popd"))
-	}
+	// Build and self sign the FF extension and upload it to ...
+	pipeline.AddStep(":firefox:",
+		bk.Env("FORCE_COLOR", "1"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd client/browser"),
+		bk.Cmd("yarn release:ff"),
+		bk.Cmd("popd"))
+	// }
 
-	if isBextReleaseBranch {
-		addBrowserExtensionReleaseSteps()
-		return
-	}
+	// if isBextReleaseBranch {
+	// addBrowserExtensionReleaseSteps()
+	// return
+	// }
 
-	pipeline.AddWait()
+	// pipeline.AddWait()
 
-	allDockerImages := []string{
-		"frontend",
-		"github-proxy",
-		"gitserver",
-		"management-console",
-		"query-runner",
-		"repo-updater",
-		"searcher",
-		"server",
-		"symbols",
-	}
+	// allDockerImages := []string{
+	// 	"frontend",
+	// 	"github-proxy",
+	// 	"gitserver",
+	// 	"management-console",
+	// 	"query-runner",
+	// 	"repo-updater",
+	// 	"searcher",
+	// 	"server",
+	// 	"symbols",
+	// }
 
-	switch {
-	case taggedRelease:
-		for _, dockerImage := range allDockerImages {
-			addDockerImageStep(dockerImage, false)
-		}
-		pipeline.AddWait()
+	// switch {
+	// case taggedRelease:
+	// 	for _, dockerImage := range allDockerImages {
+	// 		addDockerImageStep(dockerImage, false)
+	// 	}
+	// 	pipeline.AddWait()
 
-	case releaseBranch:
-		addDockerImageStep("server", false)
-		pipeline.AddWait()
+	// case releaseBranch:
+	// 	addDockerImageStep("server", false)
+	// 	pipeline.AddWait()
 
-	case branch == "master":
-		for _, dockerImage := range allDockerImages {
-			addDockerImageStep(dockerImage, true)
-		}
-		pipeline.AddWait()
+	// case branch == "master":
+	// 	for _, dockerImage := range allDockerImages {
+	// 		addDockerImageStep(dockerImage, true)
+	// 	}
+	// 	pipeline.AddWait()
 
-	case strings.HasPrefix(branch, "master-dry-run/"): // replicates `master` build but does not deploy
-		for _, dockerImage := range allDockerImages {
-			addDockerImageStep(dockerImage, true)
-		}
-		pipeline.AddWait()
+	// case strings.HasPrefix(branch, "master-dry-run/"): // replicates `master` build but does not deploy
+	// 	for _, dockerImage := range allDockerImages {
+	// 		addDockerImageStep(dockerImage, true)
+	// 	}
+	// 	pipeline.AddWait()
 
-	case strings.HasPrefix(branch, "docker-images-patch/"):
-		version = version + "_patch"
-		addDockerImageStep(branch[20:], false)
-		pipeline.AddWait()
-	}
+	// case strings.HasPrefix(branch, "docker-images-patch/"):
+	// 	version = version + "_patch"
+	// 	addDockerImageStep(branch[20:], false)
+	// 	pipeline.AddWait()
+	// }
 
-	// Clean up to help avoid running out of disk.
-	pipeline.AddStep(":sparkles:",
-		bk.Cmd("docker image rm -f sourcegraph/server:"+version+"_candidate"))
+	// // Clean up to help avoid running out of disk.
+	// pipeline.AddStep(":sparkles:",
+	// 	bk.Cmd("docker image rm -f sourcegraph/server:"+version+"_candidate"))
 }
