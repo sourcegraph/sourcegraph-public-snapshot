@@ -302,10 +302,7 @@ export function initCodeIntelligence({
             map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
             filter(propertyIsDefined('hoverOverlayElement'))
         ),
-        getHover: ({ line, character, part, ...rest }) =>
-            getHover({ ...rest, position: { line, character } }).pipe(
-                map(hover => (hover ? (hover as HoverMerged) : hover))
-            ),
+        getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
     })
 
@@ -369,8 +366,8 @@ export function initCodeIntelligence({
                       <HoverOverlay
                           {...hoverOverlayProps}
                           hoverRef={nextOverlayElement}
-                          extensionsController={extensionsController!}
-                          platformContext={platformContext!}
+                          extensionsController={extensionsController}
+                          platformContext={platformContext}
                           location={H.createLocation(window.location)}
                           onCloseButtonClick={nextCloseButtonClick}
                       />,
@@ -598,6 +595,9 @@ export function handleCodeHost({
                     codeViewState.subscriptions.add(
                         extensionsController.services.textDocumentDecoration
                             .getDecorations(toTextDocumentIdentifier(fileInfo))
+                            // The nested subscribe cannot be replaced with a switchMap()
+                            // We manage the subscription correctly.
+                            // tslint:disable-next-line: rxjs-no-nested-subscribe
                             .subscribe(decorations => {
                                 decoratedLines = applyDecorations(
                                     domFunctions,

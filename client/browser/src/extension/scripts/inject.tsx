@@ -59,7 +59,7 @@ function observe(): void {
             Boolean(items.enterpriseUrls.find(url => url === window.location.origin))
 
         const isGitHub = /^https?:\/\/(www.)?github.com/.test(href)
-        const ogSiteName = document.head!.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
+        const ogSiteName = document.head.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
         const isGitHubEnterprise = ogSiteName ? ogSiteName.content === 'GitHub Enterprise' : false
         const isBitbucket =
             document.querySelector('.bitbucket-header-logo') ||
@@ -68,12 +68,12 @@ function observe(): void {
 
         if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
             if (isPhabricator || isGitHub || isGitHubEnterprise || isBitbucket || isGitlab) {
-                const styleSheet = document.createElement('link') as HTMLLinkElement
+                const styleSheet = document.createElement('link')
                 styleSheet.id = 'ext-style-sheet'
                 styleSheet.rel = 'stylesheet'
                 styleSheet.type = 'text/css'
                 styleSheet.href = getURL('css/style.bundle.css')
-                document.head!.appendChild(styleSheet)
+                document.head.appendChild(styleSheet)
             }
         }
 

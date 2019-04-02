@@ -81,7 +81,7 @@ function injectInlineSearch(): void {
 
         const className = 'symbols-autocomplete'
 
-        const existingMount = parentDiv.querySelector(`.${className}`) as HTMLDivElement | null
+        const existingMount = parentDiv.querySelector<HTMLDivElement>(`.${className}`)
         if (existingMount) {
             return existingMount
         }

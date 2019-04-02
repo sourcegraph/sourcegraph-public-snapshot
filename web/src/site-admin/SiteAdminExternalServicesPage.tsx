@@ -80,7 +80,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                 () => {
                     // Refresh site flags so that global site alerts
                     // reflect the latest configuration.
-                    refreshSiteFlags().subscribe(undefined, err => console.error(err))
+                    refreshSiteFlags().subscribe({ error: err => console.error(err) })
 
                     this.setState({ loading: false })
                     if (this.props.onDidUpdate) {
@@ -163,7 +163,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
                 }
                 return data.externalServices
             }),
-            tap(this.completeConnectedCodeHostActivation)
+            tap(externalServices => this.completeConnectedCodeHostActivation(externalServices))
         )
 
     public render(): JSX.Element | null {

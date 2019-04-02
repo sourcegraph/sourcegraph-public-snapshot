@@ -19,16 +19,18 @@ const renderShallow = (element: React.ReactElement<NavLinks['props']>): any => {
     const getDisplayName = (element: React.ReactChild): string | string[] => {
         if (element === null) {
             return []
-        } else if (typeof element === 'string' || typeof element === 'number') {
+        }
+        if (typeof element === 'string' || typeof element === 'number') {
             return element.toString()
-        } else if (element.type === 'li' && (element.props.children.props.href || element.props.children.props.to)) {
+        }
+        if (element.type === 'li' && (element.props.children.props.href || element.props.children.props.to)) {
             return `${element.props.children.props.children} ${element.props.children.props.href ||
                 element.props.children.props.to}`
-        } else if (typeof element.type === 'symbol' || typeof element.type === 'string') {
-            return flatten(React.Children.map(element.props.children, element => getDisplayName(element)))
-        } else {
-            return (element.type as any).displayName || element.type.name || 'Unknown'
         }
+        if (typeof element.type === 'symbol' || typeof element.type === 'string') {
+            return flatten(React.Children.map(element.props.children, element => getDisplayName(element)))
+        }
+        return (element.type as any).displayName || element.type.name || 'Unknown'
     }
 
     return flatten(

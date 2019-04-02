@@ -57,7 +57,7 @@ export class UserAccountPasswordPage extends React.Component<Props, State> {
                         }).pipe(
                             // Change URL after updating to trigger Chrome to show "Update password?" dialog.
                             tap(() => this.props.history.replace({ hash: 'updated' })),
-                            catchError(this.handleError)
+                            catchError(err => this.handleError(err))
                         )
                     )
                 )
@@ -71,7 +71,7 @@ export class UserAccountPasswordPage extends React.Component<Props, State> {
                             newPasswordConfirmation: '',
                             saved: true,
                         }),
-                    this.handleError
+                    err => this.handleError(err)
                 )
         )
     }

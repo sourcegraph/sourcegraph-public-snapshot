@@ -95,7 +95,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             try {
                                 const settings = subject.settings
                                 if (settings && settings['notifications.slack']) {
-                                    slackWebhookURL = settings['notifications.slack']!.webhookURL
+                                    slackWebhookURL = settings['notifications.slack'].webhookURL
                                 }
                             } catch (e) {
                                 slackWebhookURL = null
@@ -328,7 +328,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         return []
                     })
                 )
-                .subscribe(this.props.onDidCommit)
+                .subscribe(() => this.props.onDidCommit())
         )
     }
 

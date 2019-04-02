@@ -76,8 +76,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                 onClick={stopPropagationToCollapseOrExpand}
                 onMouseDown={logClickOnPerson}
             >
-                <UserAvatar user={props.result.commit.author.person!} size={32} className="mr-1 icon-inline" />
-                {props.result.commit.author.person!.displayName}
+                <UserAvatar user={props.result.commit.author.person} size={32} className="mr-1 icon-inline" />
+                {props.result.commit.author.person.displayName}
             </Link>
             <Link
                 to={props.result.commit.url}
@@ -159,9 +159,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
             if (ignoreUntilAtAt && !line.startsWith('@@')) {
                 lineClasses.push({ line: i + 1, className: 'hidden' })
                 continue
-            } else {
-                ignoreUntilAtAt = false
             }
+            ignoreUntilAtAt = false
             if (line.startsWith('diff ')) {
                 ignoreUntilAtAt = true
 

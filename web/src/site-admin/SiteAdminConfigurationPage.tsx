@@ -82,7 +82,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         } else {
                             // Refresh site flags so that global site alerts
                             // reflect the latest configuration.
-                            refreshSiteFlags().subscribe(undefined, err => console.error(err))
+                            refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         }
                         this.setState({ restartToApply })
                         this.remoteRefreshes.next()

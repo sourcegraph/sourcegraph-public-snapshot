@@ -103,7 +103,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 this.props.history.push(location.pathname + location.search + '#' + hash.toString())
             }),
             map(thread => undefined),
-            catchError(e => throwError('Error creating thread: ' + asError(e).message))
+            catchError(e => throwError(new Error('Error creating thread: ' + asError(e).message)))
         )
     }
 

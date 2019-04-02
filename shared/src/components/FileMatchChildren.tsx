@@ -95,7 +95,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 </Link>
             ))}
             {groupsOfItems.map(items => {
-                const item = items[0]!
+                const item = items[0]
                 const position = { line: item.line + 1, character: item.character + 1 }
                 return (
                     <Link

@@ -36,9 +36,8 @@ function getRevSpecFromRevisionSelector(): RevSpec {
         return {
             rev: revisionRefInfo.latestCommit,
         }
-    } else {
-        throw new Error(`revisionRefInfo is empty or has no latestCommit (revisionRefStr: ${revisionRefStr})`)
     }
+    throw new Error(`revisionRefInfo is empty or has no latestCommit (revisionRefStr: ${revisionRefStr})`)
 }
 
 export function getContext(): CodeHostContext {

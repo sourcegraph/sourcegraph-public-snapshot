@@ -143,7 +143,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
                         return fetchUser({ username }).pipe(
                             catchError(error => [error]),
-                            map(c => ({ userOrError: c } as PartialStateUpdate)),
+                            map((c): PartialStateUpdate => ({ userOrError: c })),
 
                             // Don't clear old user data while we reload, to avoid unmounting all components during
                             // loading.

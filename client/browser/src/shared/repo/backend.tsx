@@ -141,7 +141,7 @@ export const fetchBlobContentLines = memoizeObservable(
                 ) {
                     return []
                 }
-                return data.repository.commit.file!.content.split('\n')
+                return data.repository.commit.file.content.split('\n')
             }),
             catchError(({ errors, ...rest }) => {
                 if (errors && errors.length === 1) {

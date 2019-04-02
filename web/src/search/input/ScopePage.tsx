@@ -16,8 +16,7 @@ import { SearchScope, Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchReposByQuery } from '../backend'
 import { submitSearch } from '../helpers'
-import { queryUpdates } from './QueryInput'
-import { QueryInput } from './QueryInput'
+import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
 
 const ScopeNotFound = () => (

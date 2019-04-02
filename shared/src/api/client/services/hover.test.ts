@@ -87,7 +87,7 @@ describe('getHover', () => {
                 expectObservable(
                     getHover(
                         cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_RESULT), () => throwError('err')],
+                            a: [() => of(FIXTURE_RESULT), () => throwError(new Error('err'))],
                         }),
                         FIXTURE.TextDocumentPositionParams,
                         false

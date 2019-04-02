@@ -64,10 +64,9 @@ export function getDeltaFileName(container: HTMLElement): { headFilePath: string
     if (info.title) {
         // for PR conversation snippets
         return getPathNamesFromElement(info)
-    } else {
-        const link = info.querySelector('a') as HTMLElement
-        return getPathNamesFromElement(link)
     }
+    const link = info.querySelector('a') as HTMLElement
+    return getPathNamesFromElement(link)
 }
 
 function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | null } {
@@ -99,20 +98,18 @@ export function isDomSplitDiff(): boolean {
             (disabledToggle && !disabledToggle.href.includes('diff=split')) ||
             !!document.querySelector('.file-diff-split')
         )
-    } else {
-        // delta for a commit view
-        const headerBar = document.getElementsByClassName('details-collapse table-of-contents js-details-container')
-        if (!headerBar || headerBar.length !== 1) {
-            return false
-        }
-
-        const diffToggles = headerBar[0].getElementsByClassName('BtnGroup float-right')
-        const selectedToggle = diffToggles[0].querySelector('.selected') as HTMLAnchorElement
-        return (
-            (selectedToggle && selectedToggle.href.includes('diff=split')) ||
-            !!document.querySelector('.file-diff-split')
-        )
     }
+    // delta for a commit view
+    const headerBar = document.getElementsByClassName('details-collapse table-of-contents js-details-container')
+    if (!headerBar || headerBar.length !== 1) {
+        return false
+    }
+
+    const diffToggles = headerBar[0].getElementsByClassName('BtnGroup float-right')
+    const selectedToggle = diffToggles[0].querySelector('.selected') as HTMLAnchorElement
+    return (
+        (selectedToggle && selectedToggle.href.includes('diff=split')) || !!document.querySelector('.file-diff-split')
+    )
 }
 
 /**
@@ -193,7 +190,7 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
     }
 
     if (baseCommitID === '' || headCommitID === '') {
-        return getDiffResolvedRevFromPageSource(document.documentElement!.innerHTML, isPullRequest!)
+        return getDiffResolvedRevFromPageSource(document.documentElement.innerHTML, isPullRequest!)
     }
     return { baseCommitID, headCommitID }
 }
@@ -216,7 +213,7 @@ function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolve
     }
     const headCommitID = match[3]
     // The file header may not contain the base commit ID, so we get it from the page source.
-    const resolvedRevFromPageSource = getDiffResolvedRevFromPageSource(document.documentElement!.innerHTML, true)
+    const resolvedRevFromPageSource = getDiffResolvedRevFromPageSource(document.documentElement.innerHTML, true)
     return headCommitID && resolvedRevFromPageSource
         ? {
               ...resolvedRevFromPageSource,
@@ -226,9 +223,7 @@ function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolve
 }
 
 function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
-    const branchElements = document.querySelectorAll('.commitish-suggester .select-menu-button span') as NodeListOf<
-        HTMLSpanElement
-    >
+    const branchElements = document.querySelectorAll<HTMLElement>('.commitish-suggester .select-menu-button span')
     if (branchElements && branchElements.length === 2) {
         return { baseCommitID: branchElements[0].innerText, headCommitID: branchElements[1].innerText }
     }
@@ -344,7 +339,7 @@ function getBranchName(): string | null {
         return null
     }
     // otherwise, the branch name is fully rendered in the button
-    return (innerButtonEls[0] as HTMLElement).innerText as string
+    return (innerButtonEls[0] as HTMLElement).innerText
 }
 
 function getRevOrBranch(revAndPath: string): string | null {

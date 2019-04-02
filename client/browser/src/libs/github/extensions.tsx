@@ -9,7 +9,7 @@ export function getCommandPaletteMount(): HTMLElement {
     const createCommandList = (): HTMLElement => {
         const commandListElem = document.createElement('div')
         commandListElem.className = commandListClass
-        headerElem!.insertAdjacentElement('afterbegin', commandListElem)
+        headerElem.insertAdjacentElement('afterbegin', commandListElem)
 
         return commandListElem
     }
