@@ -37,7 +37,7 @@ export function scrollIntoView(el: Element, scrollRoot: Element): void {
 export const getDomElement = (path: string): Element | null => document.querySelector(`[data-tree-path='${path}']`)
 
 export const treePadding = (depth: number, isTree: boolean) => ({
-    marginLeft: depth * 12 + (isTree ? 0 : 12) + 12 + 'px',
+    marginLeft: `${depth * 12 + (isTree ? 0 : 12) + 12}px`,
     paddingRight: '16px',
 })
 

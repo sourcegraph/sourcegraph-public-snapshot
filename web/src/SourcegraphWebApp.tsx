@@ -159,16 +159,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     this.setState(() => {
                         if (authenticatedUser) {
                             return { viewerSubject: authenticatedUser }
-                        } else if (
-                            cascade &&
-                            !isErrorLike(cascade) &&
-                            cascade.subjects &&
-                            cascade.subjects.length > 0
-                        ) {
-                            return { viewerSubject: cascade.subjects[0].subject }
-                        } else {
-                            return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
                         }
+                        if (cascade && !isErrorLike(cascade) && cascade.subjects && cascade.subjects.length > 0) {
+                            return { viewerSubject: cascade.subjects[0].subject }
+                        }
+                        return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
                     })
                 }
             )

@@ -10,7 +10,7 @@ const toolbarButtonProps = {
 }
 
 export function checkIsGitlab(): boolean {
-    return !!document.head!.querySelector('meta[content="GitLab"]')
+    return !!document.head.querySelector('meta[content="GitLab"]')
 }
 
 const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left }) => {

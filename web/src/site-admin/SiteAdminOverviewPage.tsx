@@ -143,11 +143,11 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 <OverviewItem
                                     link="/site-admin/repositories"
                                     actions="View all repositories"
-                                    title={`${numberWithCommas(this.state.info.repositories)} ${
-                                        this.state.info.repositories !== null
-                                            ? pluralize('repository', this.state.info.repositories, 'repositories')
-                                            : '?'
-                                    }`}
+                                    title={`${numberWithCommas(this.state.info.repositories)} ${pluralize(
+                                        'repository',
+                                        this.state.info.repositories,
+                                        'repositories'
+                                    )}`}
                                 />
                             )}
                             {this.state.info.users > 1 && (

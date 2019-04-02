@@ -32,7 +32,7 @@ const getFileInfoFromLinkInSingleFileView = (
     const errors: Error[] = []
     for (const selector of LINK_SELECTORS) {
         try {
-            const linkElement = codeView.querySelector(selector) as HTMLLinkElement | null
+            const linkElement = codeView.querySelector<HTMLLinkElement>(selector)
             if (!linkElement) {
                 throw new Error(`Could not find selector ${selector} in code view`)
             }

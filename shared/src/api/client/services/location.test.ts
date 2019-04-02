@@ -143,7 +143,7 @@ describe('getLocationsFromProviders', () => {
             expectObservable(
                 getLocationsFromProviders(
                     cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                        a: [() => of([FIXTURE_LOCATION]), () => throwError('x')],
+                        a: [() => of([FIXTURE_LOCATION]), () => throwError(new Error('x'))],
                     }),
                     FIXTURE.TextDocumentPositionParams,
                     false

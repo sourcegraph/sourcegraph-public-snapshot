@@ -60,8 +60,7 @@ export class ExternalServiceCard extends React.PureComponent<ExternalServiceCard
                     {cardContent}
                 </LinkOrButton>
             )
-        } else {
-            return <div className={`external-service-card--${this.props.iconBrandColor}`}>{cardContent}</div>
         }
+        return <div className={`external-service-card--${this.props.iconBrandColor}`}>{cardContent}</div>
     }
 }

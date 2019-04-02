@@ -136,11 +136,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         //  Update the `at` query param with the latest first visible item
         this.subscriptions.add(
             firstVisibleItemChanges
-                .pipe(
-                    // Skip page load
-                    skip(1)
-                )
-                .subscribe(this.setCheckpoint)
+                // Skip page load
+                .pipe(skip(1))
+                .subscribe(checkpoint => this.setCheckpoint(checkpoint))
         )
 
         // Remove the "Jump to top" button when the user starts scrolling

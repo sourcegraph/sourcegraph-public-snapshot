@@ -45,7 +45,7 @@ function init(): void {
             .then(sourcegraphUrl => {
                 getPhabricatorCSS()
                     .then(css => {
-                        const style = document.createElement('style') as HTMLStyleElement
+                        const style = document.createElement('style')
                         style.setAttribute('type', 'text/css')
                         style.id = 'sourcegraph-styles'
                         style.textContent = css

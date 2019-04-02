@@ -11,8 +11,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { createAggregateError } from '../../../../shared/src/util/errors'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -134,7 +133,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                         type PartialStateUpdate = Pick<ExtensionAreaState, 'extensionOrError'>
                         return queryExtension(extensionID).pipe(
                             catchError(error => [error]),
-                            map(c => ({ extensionOrError: c } as PartialStateUpdate)),
+                            map((c): PartialStateUpdate => ({ extensionOrError: c })),
 
                             // Don't clear old data while we reload, to avoid unmounting all components during
                             // loading.

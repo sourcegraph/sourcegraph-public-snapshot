@@ -157,7 +157,7 @@ function getCommandPaletteMount(): HTMLElement {
     const createCommandList = (): HTMLElement => {
         const commandListElem = document.createElement('li')
         commandListElem.className = commandListClasses.join(' ')
-        headerElem!.insertAdjacentElement('beforeend', commandListElem)
+        headerElem.insertAdjacentElement('beforeend', commandListElem)
 
         return commandListElem
     }
@@ -170,7 +170,7 @@ function getViewContextOnSourcegraphMount(): HTMLElement | null {
     if (!branchSelectorButtons) {
         return null
     }
-    const preexisting = branchSelectorButtons.querySelector('#open-on-sourcegraph') as HTMLElement | null
+    const preexisting = branchSelectorButtons.querySelector<HTMLElement>('#open-on-sourcegraph')
     if (preexisting) {
         return preexisting
     }

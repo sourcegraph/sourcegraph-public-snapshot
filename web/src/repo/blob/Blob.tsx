@@ -387,7 +387,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         }
 
                         if (decoration.after) {
-                            const codeCell = row.cells[1]!
+                            const codeCell = row.cells[1]
                             this.createLineDecorationAttachmentDOMNode(line, codeCell)
                         }
                     }

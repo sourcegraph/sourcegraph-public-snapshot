@@ -42,8 +42,10 @@ export function memoizeObservable<P, T>(
         const obs = func(params).pipe(
             publishReplay(),
             refCount(),
-            tap(undefined as any, e => {
-                cache.delete(key)
+            tap({
+                error: () => {
+                    cache.delete(key)
+                },
             })
         )
         cache.set(key, obs)

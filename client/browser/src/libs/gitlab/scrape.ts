@@ -157,7 +157,7 @@ export function getHeadCommitIDFromCodeView(codeView: HTMLElement): FileInfo['co
         throw buildFileError('no-commit-sha')
     }
 
-    const commitAnchor = commitSHA.closest('a')! as HTMLAnchorElement
+    const commitAnchor = commitSHA.closest('a')!
     const revMatch = new URL(commitAnchor.href).pathname.match(/blob\/(.*?)\//)
     if (!revMatch) {
         throw new Error('Unable to determine head revision from code view')

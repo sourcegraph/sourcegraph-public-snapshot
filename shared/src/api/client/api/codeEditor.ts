@@ -39,6 +39,7 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
     }
 
     public $setDecorations(resource: string, decorationType: string, decorations: TextDocumentDecoration[]): void {
+        // tslint:disable-next-line: rxjs-no-ignored-observable
         this.getDecorationsSubject(resource, decorationType, decorations)
     }
 

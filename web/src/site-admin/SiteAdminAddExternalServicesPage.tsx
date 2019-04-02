@@ -58,22 +58,18 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
         const { kind, variant } = this.getExternalServiceKind()
         if (kind) {
             return <SiteAdminAddExternalServicePage {...this.props} kind={kind} variant={variant} />
-        } else {
-            return (
-                <div className="add-external-services-page mt-3">
-                    <PageTitle title="Choose an external service type to add" />
-                    <h1>Add external service</h1>
-                    <p>Choose an external service to add to Sourcegraph.</p>
-                    {ALL_EXTERNAL_SERVICE_ADD_VARIANTS.map((service, i) => (
-                        <div className="add-external-services-page__card" key={i}>
-                            <ExternalServiceCard
-                                to={SiteAdminAddExternalServicesPage.getAddURL(service)}
-                                {...service}
-                            />
-                        </div>
-                    ))}
-                </div>
-            )
         }
+        return (
+            <div className="add-external-services-page mt-3">
+                <PageTitle title="Choose an external service type to add" />
+                <h1>Add external service</h1>
+                <p>Choose an external service to add to Sourcegraph.</p>
+                {ALL_EXTERNAL_SERVICE_ADD_VARIANTS.map((service, i) => (
+                    <div className="add-external-services-page__card" key={i}>
+                        <ExternalServiceCard to={SiteAdminAddExternalServicesPage.getAddURL(service)} {...service} />
+                    </div>
+                ))}
+            </div>
+        )
     }
 }
