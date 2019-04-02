@@ -2467,10 +2467,10 @@
   dependencies:
     "@types/shelljs" "*"
 
-"@types/shelljs@*", "@types/shelljs@0.8.2", "@types/shelljs@^0.8.0":
-  version "0.8.2"
-  resolved "https://registry.npmjs.org/@types/shelljs/-/shelljs-0.8.2.tgz#6fa9314497ec7b61c28a21485bfa915e64894751"
-  integrity sha512-vVp7BCQn0yUQgpiohrdxAhHdm/bTlXshB4HG3LEBq1PgvjKiyeYHohIPIv0QBt/jipb140iMS5Xy1iR6qKovKw==
+"@types/shelljs@*", "@types/shelljs@0.8.4", "@types/shelljs@^0.8.0":
+  version "0.8.4"
+  resolved "https://registry.npmjs.org/@types/shelljs/-/shelljs-0.8.4.tgz#b903e41ad5e5195b7d5e34d3cd33c94bdbd07895"
+  integrity sha512-UNACC6scKFVljWEvO3rHBkbbKXu3QkKPBOMCisxI7au9cnFK7tjOGPsKh5OjedAPLmtsKSarmk+YeehKTQSKtg==
   dependencies:
     "@types/glob" "*"
     "@types/node" "*"
