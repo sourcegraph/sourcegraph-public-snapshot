@@ -135,7 +135,7 @@
     "get-graphql-schema": "^2.1.2",
     "gql2ts": "^1.2.1",
     "graphql": "^14.0.2",
-    "graphql-schema-linter": "^0.1.6",
+    "graphql-schema-linter": "^0.2.0",
     "gulp": "^4.0.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^24.5.0",
