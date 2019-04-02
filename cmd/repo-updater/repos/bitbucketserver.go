@@ -359,7 +359,8 @@ func (c *bitbucketServerConnection) excludes(r *bitbucketserver.Repo) bool {
 	if r.Project != nil {
 		name = r.Project.Key + "/" + name
 	}
-	return c.exclude[strings.ToLower(name)] ||
+	return r.State == "AVAILABLE" &&
+		c.exclude[strings.ToLower(name)] ||
 		c.exclude[strconv.Itoa(r.ID)] ||
 		(c.config.ExcludePersonalRepositories && r.IsPersonalRepository())
 }
@@ -447,7 +448,7 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbuc
 		}
 
 		for _, repo := range r.repos {
-			if !seen[repo.ID] && !c.excludes(repo) && repo.State == "AVAILABLE" {
+			if !seen[repo.ID] && !c.excludes(repo) {
 				repos = append(repos, repo)
 				seen[repo.ID] = true
 			}
