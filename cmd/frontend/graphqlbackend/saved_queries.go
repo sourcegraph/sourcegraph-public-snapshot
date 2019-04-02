@@ -77,7 +77,7 @@ func unmarshalSavedQueryID(id graphql.ID) (spec api.SavedQueryIDSpec, err error)
 }
 
 func (r savedQueryResolver) ShowOnHomepage() bool {
-	return r.showOnHomepage
+	return false
 }
 
 func (r savedQueryResolver) Notify() bool {
@@ -110,7 +110,7 @@ func toSavedQueryResolver(index int, subject *settingsSubject, entry api.ConfigS
 		index:          index,
 		description:    entry.Description,
 		query:          entry.Query,
-		showOnHomepage: entry.ShowOnHomepage,
+		showOnHomepage: false,
 		notify:         entry.Notify,
 		notifySlack:    entry.NotifySlack,
 	}
@@ -158,12 +158,11 @@ func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
 		key = generateUniqueSavedQueryKey(config.SavedQueries)
 
 		value := api.ConfigSavedQuery{
-			Key:            key,
-			Description:    args.Description,
-			Query:          args.Query,
-			ShowOnHomepage: args.ShowOnHomepage,
-			Notify:         args.Notify,
-			NotifySlack:    args.NotifySlack,
+			Key:         key,
+			Description: args.Description,
+			Query:       args.Query,
+			Notify:      args.Notify,
+			NotifySlack: args.NotifySlack,
 		}
 		edits, _, err = jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", -1), value, nil, conf.FormatOptions)
 		return edits, err
@@ -185,7 +184,7 @@ func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
 		index:          index,
 		description:    args.Description,
 		query:          args.Query,
-		showOnHomepage: args.ShowOnHomepage,
+		showOnHomepage: false,
 		notify:         args.Notify,
 		notifySlack:    args.NotifySlack,
 	}, nil

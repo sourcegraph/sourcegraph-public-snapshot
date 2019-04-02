@@ -43,9 +43,9 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
             getLastIDForSubject(props.settingsCascade, fields.subject),
             fields.description,
             fields.query,
-            fields.showOnHomepage,
             fields.notify,
             fields.notifySlack,
+            fields.showOnHomepage,
             true
         ).pipe(
             mergeMap(() =>

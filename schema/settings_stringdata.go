@@ -30,7 +30,7 @@ const SettingsSchemaJSON = `{
           },
           "showOnHomepage": {
             "type": "boolean",
-            "description": "Show this saved query on the homepage"
+            "description": "DEPRECATED: saved searches are no longer shown on the homepage. This will be removed in a future release.\n\nShow this saved query on the homepage"
           },
           "notify": {
             "type": "boolean",

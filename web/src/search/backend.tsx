@@ -290,9 +290,9 @@ export function createSavedQuery(
     settingsLastID: number | null,
     description: string,
     query: string,
-    showOnHomepage: boolean,
     notify: boolean,
     notifySlack: boolean,
+    showOnHomepage?: boolean,
     disableSubscriptionNotifications?: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateGraphQL(
@@ -302,7 +302,6 @@ export function createSavedQuery(
                 $lastID: Int
                 $description: String!
                 $query: String!
-                $showOnHomepage: Boolean
                 $notify: Boolean
                 $notifySlack: Boolean
                 $disableSubscriptionNotifications: Boolean
@@ -311,7 +310,6 @@ export function createSavedQuery(
                     createSavedQuery(
                         description: $description
                         query: $query
-                        showOnHomepage: $showOnHomepage
                         notify: $notify
                         notifySlack: $notifySlack
                         disableSubscriptionNotifications: $disableSubscriptionNotifications
@@ -325,7 +323,6 @@ export function createSavedQuery(
         {
             description,
             query,
-            showOnHomepage,
             notify,
             notifySlack,
             disableSubscriptionNotifications: disableSubscriptionNotifications || false,

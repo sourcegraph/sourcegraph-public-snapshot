@@ -31,9 +31,9 @@ export const SavedQueryCreateForm: React.FunctionComponent<Props> = props => (
                 getLastIDForSubject(props.settingsCascade, fields.subject),
                 fields.description,
                 fields.query,
-                fields.showOnHomepage,
                 fields.notify,
-                fields.notifySlack
+                fields.notifySlack,
+                fields.showOnHomepage
             ).pipe(mapTo(void 0))
         }
     />
