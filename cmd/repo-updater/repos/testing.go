@@ -303,6 +303,7 @@ var Opt = struct {
 	RepoCreatedAt             func(time.Time) func(*Repo)
 	RepoModifiedAt            func(time.Time) func(*Repo)
 	RepoDeletedAt             func(time.Time) func(*Repo)
+	RepoEnabled               func(bool) func(*Repo)
 	RepoSources               func(...string) func(*Repo)
 	RepoMetadata              func(interface{}) func(*Repo)
 	RepoExternalID            func(string) func(*Repo)
@@ -354,7 +355,11 @@ var Opt = struct {
 			r.UpdatedAt = ts
 			r.DeletedAt = ts
 			r.Sources = map[string]*SourceInfo{}
-			r.Enabled = false
+		}
+	},
+	RepoEnabled: func(enabled bool) func(*Repo) {
+		return func(r *Repo) {
+			r.Enabled = enabled
 		}
 	},
 	RepoSources: func(srcs ...string) func(*Repo) {

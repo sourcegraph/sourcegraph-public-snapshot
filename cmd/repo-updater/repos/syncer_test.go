@@ -221,8 +221,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				)},
 				now: clock.Now,
 				diff: repos.Diff{Deleted: repos.Repos{tc.repo.With(
-					repos.Opt.RepoDeletedAt(clock.Time(1))),
-				}},
+					repos.Opt.RepoDeletedAt(clock.Time(1)),
+					repos.Opt.RepoEnabled(true),
+				)}},
 				err: "<nil>",
 			},
 			testCase{

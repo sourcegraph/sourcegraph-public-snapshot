@@ -144,7 +144,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 				}
 				e.svc.UpdatedAt = now
 
-				log15.Info(prefix+".exclude", "service", e.svc.DisplayName, "repos", fmt.Sprint(len(e.exclude)))
+				log15.Info(prefix+".exclude", "service", e.svc.DisplayName, "repos", len(e.exclude))
 			}
 
 			if len(e.include) > 0 {
@@ -153,7 +153,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 				}
 				e.svc.UpdatedAt = now
 
-				log15.Info(prefix+".include", "service", e.svc.DisplayName, "repos", fmt.Sprint(len(e.include)))
+				log15.Info(prefix+".include", "service", e.svc.DisplayName, "repos", len(e.include))
 			}
 
 		}
