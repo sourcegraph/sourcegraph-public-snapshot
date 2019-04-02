@@ -59,6 +59,9 @@ export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
 export ZOEKT_HOST=localhost:6070
 
+# Feature flag for repo-updater's new syncer
+export SRC_SYNCER_ENABLED=true
+
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
 # until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
 # Sourcegraph running on port 3082). That is why Sourcegraph listens on 3081 despite the externalURL
