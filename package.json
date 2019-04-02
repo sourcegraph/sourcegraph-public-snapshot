@@ -105,7 +105,7 @@
     "@types/storybook__addon-notes": "4.0.2",
     "@types/storybook__addon-options": "4.0.0",
     "@types/storybook__addon-storyshots": "3.4.8",
-    "@types/storybook__react": "4.0.0",
+    "@types/storybook__react": "4.0.1",
     "@types/textarea-caret": "3.0.0",
     "@types/tmp": "0.0.34",
     "@types/uuid": "3.4.4",
