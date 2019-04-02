@@ -444,7 +444,6 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbuc
 	for r := range ch {
 		if r.err != nil {
 			errs = multierror.Append(errs, r.err)
-			continue
 		}
 
 		for _, repo := range r.repos {
