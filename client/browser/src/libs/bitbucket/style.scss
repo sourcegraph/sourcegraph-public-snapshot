@@ -42,6 +42,7 @@
 .code-view-toolbar--bitbucket-server {
     ul {
         list-style-type: none;
+        display: inline-flex;
     }
 
     .open-on-sourcegraph {
