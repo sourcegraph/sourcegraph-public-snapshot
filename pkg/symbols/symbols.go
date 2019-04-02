@@ -67,17 +67,18 @@ func ComputeSymbols(ctx context.Context, args ComputeSymbolsArgs) (res []*Symbol
 	}
 
 	symbols, err := backend.Symbols.ListTags(ctx, args.toSearchArgs())
-	out := make([]*Symbol, 0, len(symbols))
-	for _, symbol := range symbols {
+	out := make([]*Symbol, len(symbols))
+	for i, symbol := range symbols {
 		srange := symbolRange(symbol)
-		out = append(out, &Symbol{
+
+		out[i] = &Symbol{
 			Symbol:   symbol,
 			Range:    &srange,
 			Language: strings.ToLower(symbol.Language),
 			CommitID: args.CommitID,
 			RepoName: args.RepoName,
 			URI:      baseURI,
-		})
+		}
 	}
 
 	return out, err
