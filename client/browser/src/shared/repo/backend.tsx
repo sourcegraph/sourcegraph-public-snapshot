@@ -109,12 +109,6 @@ const trimRepoName = <T extends { repoName: string }>({ repoName, ...rest }: T):
         ...rest,
     } as T)
 
-/**
- * Fetches the lines of a given file at a given commit from the Sourcegraph API.
- * Will return an empty array if the repo, commit or file does not exist or an error happened (TODO change this!).
- *
- * Only emits once.
- */
 export const fetchBlobContentLines = memoizeObservable(
     (ctx: RepoSpec & ResolvedRevSpec & FileSpec): Observable<string[]> =>
         queryGraphQL({
