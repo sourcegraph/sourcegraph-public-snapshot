@@ -103,7 +103,11 @@ func (BillingResolver) ProductPlans(ctx context.Context) ([]graphqlbackend.Produ
 	plans := plan.List(params)
 	var gqlPlans []graphqlbackend.ProductPlan
 	for plans.Next() {
-		gqlPlan, err := ToProductPlan(plans.Plan())
+		plan := plans.Plan()
+		if plan.Interval != stripe.PlanIntervalYear {
+			continue
+		}
+		gqlPlan, err := ToProductPlan(plan)
 		if err != nil {
 			return nil, err
 		}
