@@ -1,6 +1,6 @@
 import '../../config/polyfill'
 
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { startWith } from 'rxjs/operators'
