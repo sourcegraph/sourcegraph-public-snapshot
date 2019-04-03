@@ -887,14 +887,13 @@ optionalSearches:
 		multiErr = nil
 	}
 
-	resultsResolver := &searchResultsResolver{
+	sortResults(results)
+	return &searchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
 		results:             results,
 		alert:               alert,
-	}
-	sortResults(resultsResolver.results)
-	return resultsResolver, multiErr.ErrorOrNil()
+	}, multiErr.ErrorOrNil()
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
