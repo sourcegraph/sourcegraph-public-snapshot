@@ -78,38 +78,38 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
 }
 
 /**
- * isDomSplitDiff returns if the current view shows diffs with split (vs. unified) view.
+ * Checks if split diff is enabled in a given toolbar.
+ *
+ * @param toolbar A PR or commit view toolbar element
+ */
+const isSplitDiffEnabledInToolbar = (toolbar: HTMLElement): boolean => {
+    // Quick toggle matching those used on commit pages and by Refined GitHub
+    const quickToggle = toolbar.querySelector('a[href$="?diff=split"]')
+    if (quickToggle) {
+        return quickToggle.classList.contains('selected')
+    }
+    // Switcher used on PR pages
+    const splitRadioButton = toolbar.querySelector<HTMLInputElement>('input[type="radio"][name="diff"][value="split"]')
+    if (!splitRadioButton) {
+        throw new Error('Expected split view toggle in toolbar')
+    }
+    return splitRadioButton.checked
+}
+
+/**
+ * Returns if the current view shows diffs with split (vs. unified) view.
  */
 export function isDomSplitDiff(): boolean {
     const { isDelta, isPullRequest } = parseURL()
     if (!isDelta) {
         return false
     }
-
-    if (isPullRequest) {
-        const headerBar = document.getElementsByClassName('float-right pr-review-tools')
-        if (!headerBar || headerBar.length !== 1) {
-            return false
-        }
-
-        const diffToggles = headerBar[0].getElementsByClassName('BtnGroup')
-        const disabledToggle = diffToggles[0].getElementsByTagName('A')[0] as HTMLAnchorElement
-        return (
-            (disabledToggle && !disabledToggle.href.includes('diff=split')) ||
-            !!document.querySelector('.file-diff-split')
-        )
+    const toolbarSelector = isPullRequest ? '.pr-review-tools' : '#toc'
+    const toolbar = document.querySelector<HTMLElement>(toolbarSelector)
+    if (!toolbar) {
+        throw new Error(`Could not find out if split diff is enabled, expected toolbar ${toolbarSelector} to exist`)
     }
-    // delta for a commit view
-    const headerBar = document.getElementsByClassName('details-collapse table-of-contents js-details-container')
-    if (!headerBar || headerBar.length !== 1) {
-        return false
-    }
-
-    const diffToggles = headerBar[0].getElementsByClassName('BtnGroup float-right')
-    const selectedToggle = diffToggles[0].querySelector('.selected') as HTMLAnchorElement
-    return (
-        (selectedToggle && selectedToggle.href.includes('diff=split')) || !!document.querySelector('.file-diff-split')
-    )
+    return isSplitDiffEnabledInToolbar(toolbar)
 }
 
 /**
