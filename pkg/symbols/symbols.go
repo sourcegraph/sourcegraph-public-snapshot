@@ -71,13 +71,15 @@ func ComputeSymbols(ctx context.Context, args ComputeSymbolsArgs) (res []*Symbol
 	for i, symbol := range symbols {
 		srange := symbolRange(symbol)
 
+		uri := baseURI.WithFilePath(symbol.Path)
+
 		out[i] = &Symbol{
 			Symbol:   symbol,
 			Range:    &srange,
 			Language: strings.ToLower(symbol.Language),
 			CommitID: args.CommitID,
 			RepoName: args.RepoName,
-			URI:      baseURI,
+			URI:      uri,
 		}
 	}
 
