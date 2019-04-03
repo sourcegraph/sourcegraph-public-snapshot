@@ -950,6 +950,8 @@ type SavedQuery {
     description: String!
     # The query.
     query: String!
+    # DEPRECATED: we no longer show saved searches on the homepage. This will be removed in a future release.
+    #
     # Whether or not to show on the homepage.
     showOnHomepage: Boolean!
     # Whether or not to notify.

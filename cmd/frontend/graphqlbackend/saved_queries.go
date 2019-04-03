@@ -240,7 +240,6 @@ func (r *settingsMutation) UpdateSavedQuery(ctx context.Context, args *struct {
 		fieldUpdates["query"] = *args.Query
 	}
 
-	fieldUpdates["showOnHomepage"] = args.ShowOnHomepage
 	fieldUpdates["notify"] = args.Notify
 	fieldUpdates["notifySlack"] = args.NotifySlack
 

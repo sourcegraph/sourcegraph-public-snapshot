@@ -260,7 +260,6 @@ const savedQueryFragment = gql`
         }
         index
         description
-        showOnHomepage
         notify
         notifySlack
         query
