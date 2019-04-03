@@ -184,7 +184,7 @@
     "yargs": "^13.2.0"
   },
   "dependencies": {
-    "@sentry/browser": "^4.5.4",
+    "@sentry/browser": "^4.6.6",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^6.0.6",
     "@sourcegraph/comlink": "^3.1.1-fork.3",
