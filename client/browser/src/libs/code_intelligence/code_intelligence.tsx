@@ -154,7 +154,7 @@ export interface CodeHost {
     /**
      * Mount getter for the repository "View on Sourcegraph" button.
      *
-     * If undefined, won't render a repository "View on Sourcegraph" button on the code host.
+     * If undefined, the "View on Sourcegraph" button won't be rendered on the code host.
      */
     getViewContextOnSourcegraphMount?: MountGetter
 
