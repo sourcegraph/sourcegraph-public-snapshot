@@ -84,9 +84,9 @@ func TestCreateSavedQuery(t *testing.T) {
 	created, err := mutation.CreateSavedQuery(ctx, &struct {
 		Description                      string
 		Query                            string
-		ShowOnHomepage                   bool
 		Notify                           bool
 		NotifySlack                      bool
+		ShowOnHomepage                   bool
 		DisableSubscriptionNotifications bool
 	}{
 		Description: "d2",
