@@ -127,7 +127,7 @@
     "chrome-webstore-upload-cli": "^1.2.0",
     "cpy": "^7.0.1",
     "cross-env": "^5.2.0",
-    "css-loader": "^2.0.2",
+    "css-loader": "^2.1.1",
     "error-stack-parser": "^2.0.2",
     "esm": "^3.0.82",
     "execa": "^1.0.0",
