@@ -203,7 +203,7 @@ export interface CodeHost {
     /**
      * Mount getter for the command palette button for extensions.
      *
-     * If undefined, won't render a command palette button on the code host.
+     * If undefined, the command palette button won't be rendered on the code host.
      */
     getCommandPaletteMount?: MountGetter
 
