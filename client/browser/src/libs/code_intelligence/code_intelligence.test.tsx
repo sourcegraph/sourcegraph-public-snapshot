@@ -80,7 +80,7 @@ describe('handleCodeHost()', () => {
         return el
     }
 
-    test('renders the hoverlay container', async () => {
+    test('renders the hover overlay mount', async () => {
         const { services } = await integrationTestContext()
         subscriptions.add(
             handleCodeHost({
@@ -95,7 +95,7 @@ describe('handleCodeHost()', () => {
             })
         )
         const overlayMount = document.body.firstChild! as HTMLElement
-        expect(overlayMount.className).toBe('overlay-mount-container')
+        expect(overlayMount.className).toBe('hover-overlay-mount hover-overlay-mount__test')
         const renderedOverlay = elementRenderedAtMount(overlayMount)
         expect(renderedOverlay).not.toBeUndefined()
     })

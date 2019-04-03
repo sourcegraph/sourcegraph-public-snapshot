@@ -14,7 +14,6 @@ import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
-import { TelemetryContext } from '../../shared/src/telemetry/telemetryContext'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -235,39 +234,37 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         return (
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
-                    <TelemetryContext.Provider value={eventLogger}>
-                        <BrowserRouter key={0}>
-                            <Route
-                                path="/"
-                                // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                                render={routeComponentProps => (
-                                    <LayoutWithActivation
-                                        {...props}
-                                        {...routeComponentProps}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
-                                        // Theme
-                                        isLightTheme={this.isLightTheme()}
-                                        themePreference={this.state.themePreference}
-                                        onThemePreferenceChange={this.onThemePreferenceChange}
-                                        // Search query
-                                        navbarSearchQuery={this.state.navbarSearchQuery}
-                                        onNavbarQueryChange={this.onNavbarQueryChange}
-                                        fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                        searchRequest={search}
-                                        // Extensions
-                                        platformContext={this.state.platformContext}
-                                        extensionsController={this.state.extensionsController}
-                                        eventLogger={eventLogger}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    />
-                                )}
-                            />
-                        </BrowserRouter>
-                        <Tooltip key={1} />
-                        <Notifications key={2} extensionsController={this.state.extensionsController} />
-                    </TelemetryContext.Provider>
+                    <BrowserRouter key={0}>
+                        <Route
+                            path="/"
+                            // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                            render={routeComponentProps => (
+                                <LayoutWithActivation
+                                    {...props}
+                                    {...routeComponentProps}
+                                    authenticatedUser={authenticatedUser}
+                                    viewerSubject={this.state.viewerSubject}
+                                    settingsCascade={this.state.settingsCascade}
+                                    // Theme
+                                    isLightTheme={this.isLightTheme()}
+                                    themePreference={this.state.themePreference}
+                                    onThemePreferenceChange={this.onThemePreferenceChange}
+                                    // Search query
+                                    navbarSearchQuery={this.state.navbarSearchQuery}
+                                    onNavbarQueryChange={this.onNavbarQueryChange}
+                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                    searchRequest={search}
+                                    // Extensions
+                                    platformContext={this.state.platformContext}
+                                    extensionsController={this.state.extensionsController}
+                                    telemetryService={eventLogger}
+                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                />
+                            )}
+                        />
+                    </BrowserRouter>
+                    <Tooltip key={1} />
+                    <Notifications key={2} extensionsController={this.state.extensionsController} />
                 </ShortcutProvider>
             </ErrorBoundary>
         )

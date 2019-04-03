@@ -7,6 +7,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { toURIWithPath } from '../../../../../shared/src/util/url'
 import { FileInfo } from '../../libs/code_intelligence'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
@@ -23,6 +24,7 @@ interface CodeViewToolbarProps
     extends PlatformContextProps<'forceUpdateTooltip'>,
         ExtensionsControllerProps,
         FileInfo,
+        TelemetryProps,
         ActionNavItemsClassProps {
     onEnabledChange?: (enabled: boolean) => void
 

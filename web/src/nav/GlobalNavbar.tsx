@@ -12,14 +12,15 @@ import { KeybindingsProps } from '../keybindings'
 import { parseSearchURLQuery } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
-
 interface Props
     extends SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeybindingsProps,
+        EventLoggerProps,
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps {

@@ -1,7 +1,8 @@
 import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
-import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
+import { querySelectorOrSelf } from '../../shared/util/dom'
+import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import {
@@ -146,27 +147,24 @@ const codeViewSpecResolver: CodeViewSpecResolver = {
     },
 }
 
-function getCommandPaletteMount(): HTMLElement {
-    const headerElem = document.querySelector('.aui-header-primary .aui-nav')
-    if (!headerElem) {
-        throw new Error('Unable to find command palette mount')
+const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const headerElement = querySelectorOrSelf(container, '.aui-header-primary .aui-nav')
+    if (!headerElement) {
+        return null
     }
-
-    const commandListClasses = ['command-palette-button', 'command-palette-button__bitbucket-server']
-
-    const createCommandList = (): HTMLElement => {
-        const commandListElem = document.createElement('li')
-        commandListElem.className = commandListClasses.join(' ')
-        headerElem.insertAdjacentElement('beforeend', commandListElem)
-
-        return commandListElem
+    const classes = ['command-palette-button', 'command-palette-button__bitbucket-server']
+    const create = (): HTMLElement => {
+        const mount = document.createElement('li')
+        mount.className = classes.join(' ')
+        headerElement.insertAdjacentElement('beforeend', mount)
+        return mount
     }
-
-    return document.querySelector<HTMLElement>(commandListClasses.map(c => `.${c}`).join('')) || createCommandList()
+    const preexisting = headerElement.querySelector<HTMLElement>(classes.map(c => `.${c}`).join(''))
+    return preexisting || create()
 }
 
-function getViewContextOnSourcegraphMount(): HTMLElement | null {
-    const branchSelectorButtons = document.querySelector('.branch-selector-toolbar .aui-buttons')
+function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement | null {
+    const branchSelectorButtons = querySelectorOrSelf(container, '.branch-selector-toolbar .aui-buttons')
     if (!branchSelectorButtons) {
         return null
     }

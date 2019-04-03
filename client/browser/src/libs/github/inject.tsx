@@ -1,27 +1,11 @@
 import * as React from 'react'
 import { render } from 'react-dom'
-import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
 import { Alerts } from '../../shared/components/Alerts'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
-import { eventLogger, inlineSymbolSearchEnabled } from '../../shared/util/context'
+import { inlineSymbolSearchEnabled } from '../../shared/util/context'
+import { querySelectorOrSelf } from '../../shared/util/dom'
+import { MountGetter } from '../code_intelligence'
 import { getFileContainers, parseURL } from './util'
-
-async function refreshModules(): Promise<void> {
-    for (const el of Array.from(document.getElementsByClassName('sourcegraph-app-annotator'))) {
-        el.remove()
-    }
-    for (const el of Array.from(document.getElementsByClassName('sourcegraph-app-annotator-base'))) {
-        el.remove()
-    }
-    for (const el of Array.from(document.querySelectorAll('.sg-annotated'))) {
-        el.classList.remove('sg-annotated')
-    }
-    await inject()
-}
-
-window.addEventListener('pjax:end', async () => {
-    await refreshModules()
-})
 
 export async function injectGitHubApplication(marker: HTMLElement): Promise<void> {
     document.body.appendChild(marker)
@@ -59,12 +43,7 @@ function injectServerBanner(): void {
         }
         container.appendChild(mount)
     }
-    render(
-        <TelemetryContext.Provider value={eventLogger}>
-            <Alerts repoName={repoName} />
-        </TelemetryContext.Provider>,
-        mount
-    )
+    render(<Alerts repoName={repoName} />, mount)
 }
 
 function injectInlineSearch(): void {
@@ -116,22 +95,20 @@ function injectInlineSearch(): void {
 
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
-export function createOpenOnSourcegraphIfNotExists(): HTMLElement | null {
-    let container = document.getElementById(OPEN_ON_SOURCEGRAPH_ID)
-    if (container) {
-        return container
-    }
-
-    container = document.createElement('li')
-    container.id = OPEN_ON_SOURCEGRAPH_ID
-
-    const pageheadActions = document.querySelector('.pagehead-actions')
+export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const pageheadActions = querySelectorOrSelf(container, '.pagehead-actions')
     // If ran on page that isn't under a repository namespace.
-    if (!pageheadActions || !pageheadActions.children.length) {
+    if (!pageheadActions || pageheadActions.children.length === 0) {
         return null
     }
-
-    pageheadActions.insertAdjacentElement('afterbegin', container)
-
-    return container
+    // Check for existing
+    let mount = pageheadActions.querySelector<HTMLElement>('#' + OPEN_ON_SOURCEGRAPH_ID)
+    if (mount) {
+        return mount
+    }
+    // Create new
+    mount = document.createElement('li')
+    mount.id = OPEN_ON_SOURCEGRAPH_ID
+    pageheadActions.insertAdjacentElement('afterbegin', mount)
+    return mount
 }

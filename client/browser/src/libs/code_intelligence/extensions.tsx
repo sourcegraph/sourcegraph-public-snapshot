@@ -16,12 +16,10 @@ import {
     ExtensionsControllerProps,
 } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
-import { eventLogger } from '../../shared/util/context'
-import { getGlobalDebugMount } from '../github/extensions'
 import { CodeHost } from './code_intelligence'
 
 /**
@@ -39,53 +37,44 @@ export function initializeExtensions({
 interface InjectProps
     extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL'>,
         ExtensionsControllerProps {
-    getMount?: () => HTMLElement
     history: H.History
 }
 
-export function injectCommandPalette({
+export const renderCommandPalette = ({
     extensionsController,
     platformContext,
-    getMount,
     history,
     popoverClassName,
-}: InjectProps & { popoverClassName?: string }): void {
-    if (getMount) {
-        render(
-            <ShortcutProvider>
-                <TelemetryContext.Provider value={eventLogger}>
-                    <CommandListPopoverButton
-                        popoverClassName={popoverClassName}
-                        extensionsController={extensionsController}
-                        menu={ContributableMenu.CommandPalette}
-                        platformContext={platformContext}
-                        location={history.location}
-                    />
-                    <Notifications extensionsController={extensionsController} />
-                </TelemetryContext.Provider>
-            </ShortcutProvider>,
-            getMount()
-        )
-    }
+}: InjectProps & { popoverClassName?: string }) => (mount: HTMLElement): void => {
+    render(
+        <ShortcutProvider>
+            <CommandListPopoverButton
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                popoverClassName={popoverClassName}
+                extensionsController={extensionsController}
+                menu={ContributableMenu.CommandPalette}
+                platformContext={platformContext}
+                location={history.location}
+            />
+            <Notifications extensionsController={extensionsController} />
+        </ShortcutProvider>,
+        mount
+    )
 }
 
-export function injectGlobalDebug({
+export const renderGlobalDebug = ({
     extensionsController,
     platformContext,
     history,
-    showGlobalDebug,
-    getMount = getGlobalDebugMount,
-}: InjectProps & { showGlobalDebug?: boolean }): void {
-    if (showGlobalDebug) {
-        render(
-            <GlobalDebug
-                extensionsController={extensionsController}
-                location={history.location}
-                platformContext={platformContext}
-            />,
-            getMount()
-        )
-    }
+}: InjectProps & { showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
+    render(
+        <GlobalDebug
+            extensionsController={extensionsController}
+            location={history.location}
+            platformContext={platformContext}
+        />,
+        mount
+    )
 }
 
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)

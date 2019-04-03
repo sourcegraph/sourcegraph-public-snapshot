@@ -8,6 +8,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreference } from '../theme'
+import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
@@ -53,6 +54,7 @@ describe('NavLinks', () => {
     const commonProps = {
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
+        telemetryService: eventLogger,
         isLightTheme: true,
         themePreference: ThemePreference.Light,
         onThemePreferenceChange: noop,

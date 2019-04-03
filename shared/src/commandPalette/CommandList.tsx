@@ -13,10 +13,12 @@ import { PopoverButton } from '../components/PopoverButton'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
+import { TelemetryProps } from '../telemetry/telemetryService'
 
 interface Props
     extends ExtensionsControllerProps<'services' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+        PlatformContextProps<'forceUpdateTooltip'>,
+        TelemetryProps {
     popoverClassName?: string
     /** The menu whose commands to display. */
     menu: ContributableMenu
@@ -145,6 +147,7 @@ export class CommandList extends React.PureComponent<Props, State> {
                 {items.length > 0 ? (
                     items.map((item, i) => (
                         <ActionItem
+                            {...this.props}
                             className={`list-group-item list-group-item-action px-3 ${
                                 i === selectedIndex ? 'active border-primary' : ''
                             }`}
@@ -159,9 +162,6 @@ export class CommandList extends React.PureComponent<Props, State> {
                                 />
                             }
                             onDidExecute={this.onActionDidExecute}
-                            extensionsController={this.props.extensionsController}
-                            platformContext={this.props.platformContext}
-                            location={this.props.location}
                         />
                     ))
                 ) : (

@@ -11,3 +11,11 @@ export const isDefined = <T>(val: T): val is NonNullable<T> => val !== undefined
 export const propertyIsDefined = <T extends object, K extends keyof T>(key: K) => (
     val: T
 ): val is K extends unknown ? T & { [k in K]-?: NonNullable<T[k]> } : never => isDefined(val[key])
+
+/**
+ * Returns a function that returns `true` if the given value is an instance of the given class.
+ *
+ * @param of A reference to a class, e.g. `HTMLElement`
+ */
+export const isInstanceOf = <C extends new () => object>(of: C) => (val: unknown): val is InstanceType<C> =>
+    val instanceof of
