@@ -36,7 +36,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     ...props
 }) => (
     <div className={`options-menu ${isFullPage() ? 'options-menu--full' : ''}`}>
-        <OptionsHeader {...props} className="options-menu__section options-menu__no-border" />
+        <OptionsHeader {...props} className="options-menu__section" />
         <ServerURLForm
             {...props}
             value={sourcegraphURL}
