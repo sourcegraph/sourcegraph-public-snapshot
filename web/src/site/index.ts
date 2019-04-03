@@ -9,4 +9,5 @@ export type SiteFlags = Pick<
     | 'disableBuiltInSearches'
     | 'sendsEmailVerificationEmails'
     | 'updateCheck'
+    | 'productSubscription'
 >
