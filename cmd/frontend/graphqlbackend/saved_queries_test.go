@@ -84,9 +84,9 @@ func TestCreateSavedQuery(t *testing.T) {
 	created, err := mutation.CreateSavedQuery(ctx, &struct {
 		Description                      string
 		Query                            string
+		ShowOnHomepage                   bool
 		Notify                           bool
 		NotifySlack                      bool
-		ShowOnHomepage                   bool
 		DisableSubscriptionNotifications bool
 	}{
 		Description: "d2",
@@ -154,9 +154,9 @@ func TestUpdateSavedQuery(t *testing.T) {
 		ID             graphql.ID
 		Description    *string
 		Query          *string
+		ShowOnHomepage bool
 		Notify         bool
 		NotifySlack    bool
-		ShowOnHomepage bool
 	}{
 		ID:          marshalSavedQueryID(api.SavedQueryIDSpec{Subject: subject.toSubject(), Key: "a"}),
 		Description: &newDescription,
