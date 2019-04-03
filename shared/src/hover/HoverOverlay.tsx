@@ -7,8 +7,7 @@ import * as React from 'react'
 import { MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemComponentProps, ActionItemProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
-import { TelemetryContext } from '../telemetry/telemetryContext'
-import { TelemetryService } from '../telemetry/telemetryService'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { isErrorLike } from '../util/errors'
 import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
@@ -26,7 +25,8 @@ export type HoverData = HoverMerged
 
 export interface HoverOverlayProps
     extends GenericHoverOverlayProps<HoverContext, HoverData, ActionItemProps>,
-        ActionItemComponentProps {
+        ActionItemComponentProps,
+        TelemetryProps {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 
@@ -46,7 +46,7 @@ const isEmptyHover = ({
     ((!hoverOrError || hoverOrError === LOADING || isErrorLike(hoverOrError)) &&
         (!actionsOrError || actionsOrError === LOADING || isErrorLike(actionsOrError)))
 
-class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemetryService: TelemetryService }> {
+export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
     public componentDidMount(): void {
         this.logTelemetryEvent()
     }
@@ -71,9 +71,6 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
             showCloseButton,
             actionsOrError,
             className = '',
-            extensionsController,
-            platformContext,
-            location,
         } = this.props
 
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
@@ -180,9 +177,10 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
                                     disabledDuringExecution={true}
                                     showLoadingSpinnerDuringExecution={true}
                                     showInlineError={true}
-                                    extensionsController={extensionsController}
-                                    platformContext={platformContext}
-                                    location={location}
+                                    platformContext={this.props.platformContext}
+                                    telemetryService={this.props.telemetryService}
+                                    extensionsController={this.props.extensionsController}
+                                    location={this.props.location}
                                 />
                             ))}
                         </div>
@@ -195,9 +193,3 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
         this.props.telemetryService.log('hover')
     }
 }
-
-export const HoverOverlay = React.forwardRef<BaseHoverOverlay, HoverOverlayProps>((props, ref) => (
-    <TelemetryContext.Consumer>
-        {telemetryService => <BaseHoverOverlay {...props} telemetryService={telemetryService} ref={ref} />}
-    </TelemetryContext.Consumer>
-))

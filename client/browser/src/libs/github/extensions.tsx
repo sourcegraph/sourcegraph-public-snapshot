@@ -1,32 +1,32 @@
-export function getCommandPaletteMount(): HTMLElement {
-    const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
-    if (!headerElem) {
-        throw new Error('Unable to find command palette mount')
+import { querySelectorOrSelf } from '../../shared/util/dom'
+import { MountGetter } from '../code_intelligence'
+
+export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const headerElement = querySelectorOrSelf(container, 'div.HeaderMenu > div:last-child')
+    if (!headerElement) {
+        return null
     }
-
-    const commandListClass = 'command-palette-button'
-
-    const createCommandList = (): HTMLElement => {
-        const commandListElem = document.createElement('div')
-        commandListElem.className = commandListClass
-        headerElem.insertAdjacentElement('afterbegin', commandListElem)
-
-        return commandListElem
+    const className = 'command-palette-button'
+    const createCommandPaletteMount = (): HTMLElement => {
+        const mount = document.createElement('div')
+        mount.className = className
+        headerElement.insertAdjacentElement('afterbegin', mount)
+        return mount
     }
-
-    return document.querySelector<HTMLElement>('.' + commandListClass) || createCommandList()
+    return headerElement.querySelector<HTMLElement>('.' + className) || createCommandPaletteMount()
 }
 
-export function getGlobalDebugMount(): HTMLElement {
+export const getGlobalDebugMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
     const globalDebugClass = 'global-debug'
-
-    const createGlobalDebugMount = (): HTMLElement => {
-        const globalDebugElem = document.createElement('div')
-        globalDebugElem.className = globalDebugClass
-        document.body.appendChild(globalDebugElem)
-
-        return globalDebugElem
+    const parentElement = querySelectorOrSelf(container, 'body')
+    if (!parentElement) {
+        return null
     }
-
-    return document.querySelector<HTMLElement>('.' + globalDebugClass) || createGlobalDebugMount()
+    const createGlobalDebugMount = (): HTMLElement => {
+        const mount = document.createElement('div')
+        mount.className = globalDebugClass
+        parentElement.appendChild(mount)
+        return mount
+    }
+    return container.querySelector<HTMLElement>('.' + globalDebugClass) || createGlobalDebugMount()
 }

@@ -33,6 +33,7 @@ import {
 import { getHover } from '../../backend/features'
 import { isDiscussionsEnabled } from '../../discussions'
 import { ThemeProps } from '../../theme'
+import { EventLoggerProps } from '../../tracking/eventLogger'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
@@ -46,6 +47,7 @@ interface BlobProps
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps {
     /** The raw content of the blob. */
@@ -464,12 +466,11 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 />
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
+                        {...this.props}
                         {...this.state.hoverOverlayProps}
                         hoverRef={this.nextOverlayElement}
+                        telemetryService={this.props.telemetryService}
                         onCloseButtonClick={this.nextCloseButtonClick}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
                     />
                 )}
                 {this.state.decorationsOrError &&

@@ -10,8 +10,15 @@ import {
     ViewStateSpec,
 } from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
+import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import { CodeHost, CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
+import {
+    CodeHost,
+    CodeViewSpec,
+    CodeViewSpecResolver,
+    CodeViewSpecWithOutSelector,
+    MountGetter,
+} from '../code_intelligence'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
@@ -169,15 +176,18 @@ function checkIsGithub(): boolean {
     return isGithub || isGitHubEnterprise
 }
 
-const getOverlayMount = () => {
-    const container = document.querySelector('#js-repo-pjax-container')
-    if (!container) {
-        throw new Error('unable to find repo pjax container')
+const getOverlayMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const jsRepoPjaxContainer = querySelectorOrSelf(container, '#js-repo-pjax-container')
+    if (!jsRepoPjaxContainer) {
+        return null
     }
-
-    const mount = document.createElement('div')
-    container.appendChild(mount)
-
+    let mount = jsRepoPjaxContainer.querySelector<HTMLElement>('.hover-overlay-mount')
+    if (mount) {
+        return mount
+    }
+    mount = document.createElement('div')
+    mount.className = 'hover-overlay-mount'
+    jsRepoPjaxContainer.appendChild(mount)
     return mount
 }
 

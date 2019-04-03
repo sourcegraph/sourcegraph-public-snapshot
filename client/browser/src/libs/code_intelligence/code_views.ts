@@ -1,6 +1,6 @@
 import { from, merge, Observable, of, zip } from 'rxjs'
 import { catchError, concatAll, filter, map, mergeMap } from 'rxjs/operators'
-import { isDefined } from '../../../../../shared/src/util/types'
+import { isDefined, isInstanceOf } from '../../../../../shared/src/util/types'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
 import { CodeHost, CodeViewSpec, CodeViewSpecResolver, FileInfo, ResolvedCodeView } from './code_intelligence'
@@ -14,8 +14,6 @@ export interface RemovedCodeView extends Pick<ResolvedCodeView, 'codeViewElement
 }
 
 export type CodeViewEvent = AddedCodeView | RemovedCodeView
-
-const isHTMLElement = (node: unknown): node is HTMLElement => node instanceof HTMLElement
 
 /** Converts a static CodeViewSpec to a dynamic CodeViewSpecResolver */
 const toCodeViewResolver = ({ selector, ...spec }: CodeViewSpec): CodeViewSpecResolver => ({
@@ -47,7 +45,7 @@ export const trackCodeViews = ({
                 // Find all new code views within the added nodes
                 // (MutationObservers don't emit all descendant nodes of an addded node recursively)
                 from(mutation.addedNodes).pipe(
-                    filter(isHTMLElement),
+                    filter(isInstanceOf(HTMLElement)),
                     mergeMap(addedElement =>
                         from(codeViewSpecResolvers).pipe(
                             mergeMap(spec =>
@@ -69,7 +67,7 @@ export const trackCodeViews = ({
                 ),
                 // For removed nodes, find the removed elements, but don't resolve the kind (it's not relevant)
                 from(mutation.removedNodes).pipe(
-                    filter(isHTMLElement),
+                    filter(isInstanceOf(HTMLElement)),
                     mergeMap(removedElement =>
                         from(codeViewSpecResolvers).pipe(
                             mergeMap(

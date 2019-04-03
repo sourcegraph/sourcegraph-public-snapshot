@@ -10,7 +10,7 @@ import {
     NOOP_SETTINGS_CASCADE,
     OBSERVABLE_SEARCH_REQUEST,
 } from '../testHelpers'
-import { SearchResults } from './SearchResults'
+import { SearchResults, SearchResultsProps } from './SearchResults'
 
 describe('SearchResults', () => {
     setLinkComponent((props: any) => <a {...props} />)
@@ -23,7 +23,7 @@ describe('SearchResults', () => {
     const history = createBrowserHistory()
     history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
-    const defaultProps = {
+    const defaultProps: SearchResultsProps = {
         authenticatedUser: null,
         location: history.location,
         history,
@@ -33,9 +33,8 @@ describe('SearchResults', () => {
         isLightTheme: true,
         settingsCascade: NOOP_SETTINGS_CASCADE,
         extensionsController,
-        platformContext: {},
         isSourcegraphDotCom: false,
-        eventLogger: { log: noop, logViewEvent: noop },
+        telemetryService: { log: noop, logViewEvent: noop },
     }
 
     it('calls the search request once', () => {

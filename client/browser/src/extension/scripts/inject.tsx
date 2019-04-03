@@ -1,6 +1,6 @@
 import '../../config/polyfill'
 
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { startWith } from 'rxjs/operators'
@@ -32,6 +32,8 @@ setLinkComponent(({ to, children, ...props }) => (
  * Main entry point into browser extension.
  */
 function observe(): void {
+    console.log('Sourcegraph browser extension is running')
+
     const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
         childList: true,
         subtree: true,

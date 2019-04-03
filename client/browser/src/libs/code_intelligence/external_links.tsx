@@ -51,6 +51,10 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         this.componentUpdates.next(this.props)
     }
 
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): React.ReactNode {
         if (this.state.repoExists === undefined) {
             return null
@@ -92,28 +96,18 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
     }
 }
 
-/**
- * Idempotent.
- */
-export function injectViewContextOnSourcegraph(
-    sourcegraphUrl: string,
-    {
-        getContext,
-        getViewContextOnSourcegraphMount,
-        contextButtonClassName,
-    }: Pick<CodeHost, 'getContext' | 'getViewContextOnSourcegraphMount' | 'contextButtonClassName'>,
-    ensureRepoExists: ViewOnSourcegraphButtonProps['ensureRepoExists'],
+export const renderViewContextOnSourcegraph = ({
+    sourcegraphUrl,
+    getContext,
+    contextButtonClassName,
+    ensureRepoExists,
+    onConfigureSourcegraphClick,
+}: {
+    sourcegraphUrl: string
+    ensureRepoExists: ViewOnSourcegraphButtonProps['ensureRepoExists']
     onConfigureSourcegraphClick?: ViewOnSourcegraphButtonProps['onConfigureSourcegraphClick']
-): void {
-    if (!getContext || !getViewContextOnSourcegraphMount) {
-        return
-    }
-
-    const mount = getViewContextOnSourcegraphMount()
-    if (!mount) {
-        return
-    }
-
+} & Required<Pick<CodeHost, 'getContext'>> &
+    Pick<CodeHost, 'contextButtonClassName'>) => (mount: HTMLElement): void => {
     render(
         <ViewOnSourcegraphButton
             context={getContext()}

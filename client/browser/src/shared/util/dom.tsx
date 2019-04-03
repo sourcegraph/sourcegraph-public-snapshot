@@ -91,3 +91,19 @@ export function querySelectorAllOrSelf(element: Element, selectors: string): Ite
 export function querySelectorAllOrSelf(element: Element, selectors: string): Iterable<Element> {
     return element.matches(selectors) ? [element] : element.querySelectorAll(selectors)
 }
+
+/**
+ * Like `element.querySelector()`, but will return the element itself if it matches the selector.
+ */
+export function querySelectorOrSelf<K extends keyof HTMLElementTagNameMap>(
+    element: Element,
+    selectors: K
+): HTMLElementTagNameMap[K] | null
+export function querySelectorOrSelf<K extends keyof SVGElementTagNameMap>(
+    element: Element,
+    selectors: K
+): SVGElementTagNameMap[K] | null
+export function querySelectorOrSelf<E extends Element = Element>(element: Element, selectors: string): E | null
+export function querySelectorOrSelf(element: Element, selectors: string): Element | null {
+    return element.matches(selectors) ? element : element.querySelector(selectors)
+}

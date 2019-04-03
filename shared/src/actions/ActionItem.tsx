@@ -10,7 +10,7 @@ import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
-import { TelemetryContext } from '../telemetry/telemetryContext'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
 export interface ActionItemProps {
@@ -67,7 +67,7 @@ export interface ActionItemComponentProps
     location: H.Location
 }
 
-interface Props extends ActionItemProps, ActionItemComponentProps {}
+interface Props extends ActionItemProps, ActionItemComponentProps, TelemetryProps {}
 
 const LOADING: 'loading' = 'loading'
 
@@ -78,9 +78,6 @@ interface State {
 
 export class ActionItem extends React.PureComponent<Props, State> {
     public state: State = { actionOrError: null }
-
-    public static contextType = TelemetryContext
-    public context!: React.ContextType<typeof TelemetryContext>
 
     private commandExecutions = new Subject<ExecuteCommandParams>()
     private subscriptions = new Subscription()
@@ -230,7 +227,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
         }
 
         // Record action ID (but not args, which might leak sensitive data).
-        this.context.log(action.id)
+        this.props.telemetryService.log(action.id)
 
         if (urlForClientCommandOpen(action, this.props.location)) {
             if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {

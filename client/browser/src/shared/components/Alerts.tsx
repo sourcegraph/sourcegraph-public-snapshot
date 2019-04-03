@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Subscription } from 'rxjs'
 import storage from '../../browser/storage'
 import { resolveRev } from '../repo/backend'
 import { isSourcegraphDotCom } from '../util/context'
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export class Alerts extends React.Component<Props, State> {
+    private subscriptions = new Subscription()
     constructor(props: Props) {
         super(props)
         this.state = {
@@ -25,11 +27,17 @@ export class Alerts extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.updateAlerts()
-        resolveRev({ repoName: this.props.repoName })
-            .toPromise()
-            .catch(e => {
-                this.setState(() => ({ ...this.state, needsConfig: true }))
+        this.subscriptions.add(
+            resolveRev({ repoName: this.props.repoName }).subscribe({
+                error: e => {
+                    this.setState(() => ({ ...this.state, needsConfig: true }))
+                },
             })
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     private updateAlerts = () => {
