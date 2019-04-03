@@ -195,7 +195,7 @@
     "abortable-rx": "^1.0.9",
     "bootstrap": "^4.3.1",
     "classnames": "^2.2.6",
-    "copy-to-clipboard": "^3.0.7",
+    "copy-to-clipboard": "^3.0.8",
     "d3-axis": "^1.0.7",
     "d3-scale": "^2.0.0",
     "d3-selection": "^1.2.0",
