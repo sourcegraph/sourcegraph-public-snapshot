@@ -424,6 +424,8 @@ export function handleCodeHost({
     platformContext,
     showGlobalDebug,
 }: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
+    console.log('Handling code host', codeHost.name)
+
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
 
@@ -569,6 +571,8 @@ export function handleCodeHost({
 
     subscriptions.add(
         codeViews.pipe(withLatestFrom(selectionsChanges)).subscribe(([codeViewEvent, selections]) => {
+            console.log(`Code view ${codeViewEvent.type}`)
+
             // Handle added or removed view component, workspace root and subscriptions
             if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.codeViewElement)) {
                 const { codeViewElement, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent

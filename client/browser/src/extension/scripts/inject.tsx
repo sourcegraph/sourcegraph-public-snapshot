@@ -32,6 +32,8 @@ setLinkComponent(({ to, children, ...props }) => (
  * Main entry point into browser extension.
  */
 function observe(): void {
+    console.log('Sourcegraph browser extension is running')
+
     const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
         childList: true,
         subtree: true,
