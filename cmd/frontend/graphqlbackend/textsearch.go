@@ -669,12 +669,12 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 	return indexed, unindexed, nil
 }
 
-var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *search.Args, limit int32) ([]*searchResultResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *search.Args, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
-		return mockSearchFilesInRepos(args)
+		return mockSearchFilesInRepos(args, limit)
 	}
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
@@ -862,7 +862,11 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	}
 
 	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
-	return flattened, common, nil
+	final := make([]*searchResultResolver, len(flattened))
+	for i, fileMatch := range flattened {
+		final[i] = &searchResultResolver{fileMatch: fileMatch}
+	}
+	return final, common, nil
 }
 
 func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) []*fileMatchResolver {

@@ -26,13 +26,13 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *search.Args, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, limit)
 	}
@@ -72,7 +72,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit := len(res) > limit
+			limitHit := int32(len(res)) > limit
 			repoErr = handleRepoSearchResult(common, *repoRevs, limitHit, false, repoErr)
 			if repoErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
@@ -83,7 +83,9 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 				common.searched = append(common.searched, repoRevs.Repo)
 			}
 			if repoSymbols != nil {
-				res = append(res, repoSymbols...)
+				for _, fileMatch := range repoSymbols {
+					res = append(res, &searchResultResolver{fileMatch: fileMatch})
+				}
 				if limitHit {
 					cancelAll()
 				}
@@ -92,14 +94,14 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	}
 	err = run.Wait()
 
-	if len(res) > limit {
+	if int32(len(res)) > limit {
 		common.limitHit = true
 		res = res[:limit]
 	}
 	return res, common, err
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*fileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int32) (res []*fileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -134,7 +136,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		IsRegExp:        patternInfo.IsRegExp,
 		IncludePatterns: patternInfo.IncludePatterns,
 		ExcludePattern:  patternInfo.ExcludePattern,
-		First:           limit,
+		First:           int(limit),
 	})
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
 	fileMatches := make([]*fileMatchResolver, 0)
