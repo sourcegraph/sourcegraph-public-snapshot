@@ -230,9 +230,7 @@ func (r *gitCommitResolver) Blob(ctx context.Context, args *struct {
 func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
 }) (*gitTreeEntryResolver, error) {
-	f, e := r.Blob(ctx, args)
-	fmt.Printf(">>>>>>>>>> %+v %v %s\n", f, e, args.Path)
-	return f, e
+	return r.Blob(ctx, args)
 }
 
 func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
