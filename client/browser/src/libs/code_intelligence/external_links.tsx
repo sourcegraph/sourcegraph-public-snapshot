@@ -51,6 +51,10 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         this.componentUpdates.next(this.props)
     }
 
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): React.ReactNode {
         if (this.state.repoExists === undefined) {
             return null
