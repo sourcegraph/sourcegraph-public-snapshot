@@ -21,7 +21,6 @@ export const SavedQueryUpdateForm: React.FunctionComponent<Props> = props => (
             description: props.savedQuery.description,
             query: props.savedQuery.query,
             subject: props.savedQuery.subject.id,
-            showOnHomepage: props.savedQuery.showOnHomepage,
             notify: props.savedQuery.notify,
             notifySlack: props.savedQuery.notifySlack,
         }}
@@ -45,7 +44,6 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
             fields.query,
             fields.notify,
             fields.notifySlack,
-            fields.showOnHomepage,
             true
         ).pipe(
             mergeMap(() =>

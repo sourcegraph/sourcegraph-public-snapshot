@@ -291,7 +291,6 @@ export function createSavedQuery(
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    showOnHomepage?: boolean,
     disableSubscriptionNotifications?: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateGraphQL(
@@ -345,8 +344,7 @@ export function updateSavedQuery(
     description: string,
     query: string,
     notify: boolean,
-    notifySlack: boolean,
-    showOnHomepage?: boolean
+    notifySlack: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateGraphQL(
         gql`

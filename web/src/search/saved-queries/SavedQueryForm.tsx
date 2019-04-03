@@ -13,7 +13,6 @@ export interface SavedQueryFields {
     description: string
     query: string
     subject: GQL.ID
-    showOnHomepage?: boolean
     notify: boolean
     notifySlack: boolean
 }
@@ -58,7 +57,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 query: (defaultValues && defaultValues.query) || '',
                 description: (defaultValues && defaultValues.description) || '',
                 subject: (defaultValues && defaultValues.subject) || '',
-                showOnHomepage: defaultValues && defaultValues.showOnHomepage ? defaultValues.showOnHomepage : false,
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
             },

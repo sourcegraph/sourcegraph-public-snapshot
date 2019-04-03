@@ -54,8 +54,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             duplicate(props.savedQuery.description),
                             props.savedQuery.query,
                             props.savedQuery.notify,
-                            props.savedQuery.notifySlack,
-                            props.savedQuery.showOnHomepage
+                            props.savedQuery.notifySlack
                         )
                     ),
                     mapTo(void 0)
