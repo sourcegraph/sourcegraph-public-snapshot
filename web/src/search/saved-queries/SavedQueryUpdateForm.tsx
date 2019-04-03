@@ -67,7 +67,6 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
         props.savedQuery.id,
         fields.description,
         fields.query,
-        fields.showOnHomepage,
         fields.notify,
         fields.notifySlack
     ).pipe(mapTo(void 0))

@@ -345,9 +345,9 @@ export function updateSavedQuery(
     id: GQL.ID,
     description: string,
     query: string,
-    showOnHomepage: boolean,
     notify: boolean,
-    notifySlack: boolean
+    notifySlack: boolean,
+    showOnHomepage?: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateGraphQL(
         gql`
@@ -357,7 +357,6 @@ export function updateSavedQuery(
                 $id: ID!
                 $description: String
                 $query: String
-                $showOnHomepage: Boolean
                 $notify: Boolean
                 $notifySlack: Boolean
             ) {
@@ -366,7 +365,6 @@ export function updateSavedQuery(
                         id: $id
                         description: $description
                         query: $query
-                        showOnHomepage: $showOnHomepage
                         notify: $notify
                         notifySlack: $notifySlack
                     ) {
@@ -376,7 +374,7 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, showOnHomepage, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
+        { id, description, query, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.settingsMutation || !data.settingsMutation.updateSavedQuery) {

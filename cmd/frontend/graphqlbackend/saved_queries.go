@@ -141,10 +141,11 @@ func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolve
 }
 
 func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
-	Description                         string
-	Query                               string
-	ShowOnHomepage, Notify, NotifySlack bool
-	DisableSubscriptionNotifications    bool
+	Description                      string
+	Query                            string
+	Notify, NotifySlack              bool
+	ShowOnHomepage                   bool
+	DisableSubscriptionNotifications bool
 }) (*savedQueryResolver, error) {
 	var index int
 	var key string
@@ -206,10 +207,11 @@ func (r *settingsMutation) getSavedQueryIndex(ctx context.Context, key string) (
 }
 
 func (r *settingsMutation) UpdateSavedQuery(ctx context.Context, args *struct {
-	ID                                  graphql.ID
-	Description                         *string
-	Query                               *string
-	ShowOnHomepage, Notify, NotifySlack bool
+	ID                  graphql.ID
+	Description         *string
+	Query               *string
+	Notify, NotifySlack bool
+	ShowOnHomepage      bool
 }) (*savedQueryResolver, error) {
 	spec, err := unmarshalSavedQueryID(args.ID)
 	if err != nil {
