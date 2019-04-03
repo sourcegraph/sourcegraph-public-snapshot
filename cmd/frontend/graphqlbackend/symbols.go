@@ -74,8 +74,7 @@ func computeSymbols(ctx context.Context, args computeSymbolsArgs) (res []*symbol
 
 	resolvers := make([]*symbolResolver, len(symbols))
 	for i, s := range symbols {
-		resolver := toSymbolResolver(s, args.commit)
-		resolvers[i] = resolver
+		resolvers[i] = toSymbolResolver(s, args.commit)
 	}
 
 	return resolvers, nil
