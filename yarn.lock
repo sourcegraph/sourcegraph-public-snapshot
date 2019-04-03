@@ -1282,10 +1282,10 @@
   resolved "https://registry.npmjs.org/@oclif/screen/-/screen-1.0.4.tgz#b740f68609dfae8aa71c3a6cab15d816407ba493"
   integrity sha512-60CHpq+eqnTxLZQ4PGHYNwUX572hgpMHGPtTWMjdTMsAvlm69lZV/4ly6O3sAYkomo4NggGcomrDpBe34rxUqw==
 
-"@percy/agent@^0.1.12":
-  version "0.1.16"
-  resolved "https://registry.npmjs.org/@percy/agent/-/agent-0.1.16.tgz#20ed7189cfc75f408eb4f4a98a8836334885c6da"
-  integrity sha512-ixxl9j1GBmU477bF3Ecse6qPlH3JpBssha4VnlP0mcgVIWY3ju6IHkGO3Gu3j/WKV6lS4uPZOxi2vq5MsvJkXA==
+"@percy/agent@^0.1.18":
+  version "0.1.18"
+  resolved "https://registry.npmjs.org/@percy/agent/-/agent-0.1.18.tgz#cc86b28ca728c0e78acb41421a2c67b5966378d5"
+  integrity sha512-u37KNlLhrmHeCCa2C97Ni/jDZmuhD4Hwq2lZcGSmktIUXkbbp0RDqf3GQ5Dk3/EeMObWTAvguQTYVgEBJAHNvQ==
   dependencies:
     "@oclif/command" "^1"
     "@oclif/config" "^1"
@@ -1302,17 +1302,17 @@
     express "^4.16.3"
     js-yaml "^3.12.0"
     percy-client "^3.0.3"
-    puppeteer "1.11.0"
+    puppeteer "^1.13.0"
     retry-axios "^0.4.1"
     sinon "7.2.3"
     winston "^2.0.0"
 
-"@percy/puppeteer@^1.0.5":
-  version "1.0.5"
-  resolved "https://registry.npmjs.org/@percy/puppeteer/-/puppeteer-1.0.5.tgz#ce067fc7911f3b839c319f399b250a10590225ea"
-  integrity sha512-BITaTJXygNiKrkYOFkZ1lTvritlWYVkf+HYPl7TFRykbm78Uh0zbDtdl6A1CXGtJsS0oUpgTvQ2FStFjsgfqVA==
+"@percy/puppeteer@^1.0.6":
+  version "1.0.6"
+  resolved "https://registry.npmjs.org/@percy/puppeteer/-/puppeteer-1.0.6.tgz#072a8de76ab0676749ac37c33a16f989bf4a7822"
+  integrity sha512-VWOh83fCEuhLse/GHzH+5jPOwcggsdKEQMKqsemI83rk3jVYMkwsEibttokQVkJpExK3p0wAXQdRm2k6YGhDAA==
   dependencies:
-    "@percy/agent" "^0.1.12"
+    "@percy/agent" "^0.1.18"
 
 "@phenomnomnominal/tsquery@^3.0.0":
   version "3.0.0"
@@ -11720,10 +11720,10 @@ punycode@^2.1.0:
   resolved "https://registry.npmjs.org/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
 
-puppeteer@1.11.0:
-  version "1.11.0"
-  resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-1.11.0.tgz#63cdbe12b07275cd6e0b94bce41f3fcb20305770"
-  integrity sha512-iG4iMOHixc2EpzqRV+pv7o3GgmU2dNYEMkvKwSaQO/vMZURakwSOn/EYJ6OIRFYOque1qorzIBvrytPIQB3YzQ==
+puppeteer@1.12.2:
+  version "1.12.2"
+  resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-1.12.2.tgz#dbc36afc3ba2d7182b1a37523c0081a0e8507c9a"
+  integrity sha512-xWSyCeD6EazGlfnQweMpM+Hs6X6PhUYhNTHKFj/axNZDq4OmrVERf70isBf7HsnFgB3zOC1+23/8+wCAZYg+Pg==
   dependencies:
     debug "^4.1.0"
     extract-zip "^1.6.6"
@@ -11734,10 +11734,10 @@ puppeteer@1.11.0:
     rimraf "^2.6.1"
     ws "^6.1.0"
 
-puppeteer@1.12.2:
-  version "1.12.2"
-  resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-1.12.2.tgz#dbc36afc3ba2d7182b1a37523c0081a0e8507c9a"
-  integrity sha512-xWSyCeD6EazGlfnQweMpM+Hs6X6PhUYhNTHKFj/axNZDq4OmrVERf70isBf7HsnFgB3zOC1+23/8+wCAZYg+Pg==
+puppeteer@^1.13.0:
+  version "1.14.0"
+  resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-1.14.0.tgz#828c1926b307200d5fc8289b99df4e13e962d339"
+  integrity sha512-SayS2wUX/8LF8Yo2Rkpc5nkAu4Jg3qu+OLTDSOZtisVQMB2Z5vjlY2TdPi/5CgZKiZroYIiyUN3sRX63El9iaw==
   dependencies:
     debug "^4.1.0"
     extract-zip "^1.6.6"
