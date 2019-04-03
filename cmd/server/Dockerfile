@@ -32,7 +32,7 @@ RUN apk update && apk add --no-cache \
   # from our *Minimum Supported Version* which alone dictates
   # the features we can depend on. See this link for more information:
   # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
-  'bash=4.4.19-r1' 'postgresql-contrib=11.1-r0' 'postgresql=11.1-r0' \
+  'bash=4.4.19-r1' 'postgresql-contrib=11.2-r0' 'postgresql=11.2-r0' \
   'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
   mailcap nginx openssh-client su-exec tini
 
