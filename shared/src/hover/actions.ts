@@ -139,8 +139,7 @@ export function getHoverActionsContext(
                     definitionURLOrError !== LOADING &&
                     !isErrorLike(definitionURLOrError) &&
                     definitionURLOrError === null,
-                'goToDefinition.error':
-                    isErrorLike(definitionURLOrError) && ((definitionURLOrError as any).stack as any),
+                'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
                 'findReferences.url':
                     hasReferenceProvider && showFindReferences

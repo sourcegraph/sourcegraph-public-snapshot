@@ -106,7 +106,7 @@ describe('getDecorations', () => {
                         FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-|', {
-                    a: [...FIXTURE_RESULT!, ...FIXTURE_RESULT!],
+                    a: [...FIXTURE_RESULT, ...FIXTURE_RESULT],
                 })
             ))
     })

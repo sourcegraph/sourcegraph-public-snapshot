@@ -132,6 +132,11 @@ exports[`HoverOverlay actions and hover present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
@@ -254,6 +259,11 @@ exports[`HoverOverlay actions present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
@@ -315,6 +325,11 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
@@ -414,6 +429,11 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>

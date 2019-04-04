@@ -31,9 +31,8 @@ export const ensureRevisionsAreCloned = (files: Observable<FileInfo>): Observabl
                 catchError(err => {
                     if (err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
                         return [{ repoName, commitID, baseCommitID, ...rest }]
-                    } else {
-                        throw err
                     }
+                    throw err
                 })
             )
         })

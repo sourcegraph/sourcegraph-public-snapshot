@@ -16,17 +16,17 @@
 
         font-weight: 600;
         color: $color-light-bg-5;
+    }
 
-        &__settings {
-            background-color: transparent;
-            color: inherit;
+    &__settings {
+        background-color: transparent;
+        color: inherit;
 
-            padding: 0.5rem;
+        padding: 0.5rem;
 
-            &:hover,
-            &:focus {
-                color: $gray-23;
-            }
+        &:hover,
+        &:focus {
+            color: $gray-23;
         }
     }
 }

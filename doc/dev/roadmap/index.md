@@ -54,7 +54,7 @@ We're continually refining code intelligence (hovers, go-to-definition, find-ref
 - Continually ensure code navigation/intelligence works on code hosts using our [browser extension](../../integration/browser_extension.md) and [native code host integrations](#code-hosts).
 - [Analyze and expose dependency graph for all major languages and build systems](https://github.com/sourcegraph/sourcegraph/issues/2928)
 - [Compute and expose programming language statistics](https://github.com/sourcegraph/sourcegraph/issues/2587)
-- Show panel (with references/etc.) UI in code host integrations
+- [Show panel (with references/etc.) UI in code host integrations](https://github.com/sourcegraph/sourcegraph/issues/3089)
 - Allow extensions to handle diffs and pull requests as a first-class concern
 - [Bazel support roadmap](https://github.com/sourcegraph/sourcegraph/issues/2982)
 - [Cross-language, cross-repository definitions and references support for APIs/IDLs (GraphQL, Thrift, Protobuf, etc.)](https://github.com/sourcegraph/sourcegraph/issues/981)

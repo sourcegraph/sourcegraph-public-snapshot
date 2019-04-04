@@ -2,7 +2,6 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { asyncScheduler, Observable, of } from 'rxjs'
 import { observeOn, switchMap, take, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { createBarrier, integrationTestContext } from './testHelpers'
@@ -107,7 +106,7 @@ function testLocationProvider<P>({
     providerWithImplementation,
     getResult,
 }: {
-    name: keyof typeof sourcegraphLanguages
+    name: keyof typeof sourcegraph.languages
     registerProvider: (
         extensionAPI: typeof sourcegraph
     ) => (selector: sourcegraph.DocumentSelector, provider: P) => sourcegraph.Unsubscribable

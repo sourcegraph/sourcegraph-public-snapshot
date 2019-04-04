@@ -80,11 +80,11 @@ function score1(selector: DocumentSelector[0], candidateUri: string, candidateLa
         // Shorthand notation: "mylang" -> {language: "mylang"}, "*" -> {language: "*""}.
         if (selector === '*') {
             return 5
-        } else if (selector === candidateLanguage) {
-            return 10
-        } else {
-            return 0
         }
+        if (selector === candidateLanguage) {
+            return 10
+        }
+        return 0
     }
 
     const { language, scheme, pattern } = selector

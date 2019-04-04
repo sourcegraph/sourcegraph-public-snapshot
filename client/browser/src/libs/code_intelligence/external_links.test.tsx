@@ -1,32 +1,23 @@
 import { fireEvent } from 'react-testing-library'
 import { of } from 'rxjs'
 import * as sinon from 'sinon'
-import { injectViewContextOnSourcegraph } from './external_links'
+import { renderViewContextOnSourcegraph } from './external_links'
 
 describe('<ViewOnSourcegraphButton />', () => {
+    let mount: HTMLElement
     beforeEach(() => {
-        for (const test of document.querySelectorAll('.test')) {
-            test.remove()
-        }
+        document.body.innerHTML = ''
+        mount = document.createElement('div')
+        document.body.append(mount)
     })
 
     it('renders a link', () => {
-        injectViewContextOnSourcegraph(
-            'https://test.com',
-            {
-                getContext: () => ({
-                    repoName: 'test',
-                }),
-                getViewContextOnSourcegraphMount: () => {
-                    const div = document.createElement('div')
-                    document.body.appendChild(div)
-                    return div
-                },
-                contextButtonClassName: 'test',
-            },
-            () => of(true),
-            undefined
-        )
+        renderViewContextOnSourcegraph({
+            sourcegraphUrl: 'https://test.com',
+            getContext: () => ({ repoName: 'test' }),
+            contextButtonClassName: 'test',
+            ensureRepoExists: () => of(true),
+        })(mount)
 
         const link = document.querySelector<HTMLAnchorElement>('.test')
         expect(link).toBeInstanceOf(HTMLAnchorElement)
@@ -34,23 +25,15 @@ describe('<ViewOnSourcegraphButton />', () => {
     })
 
     it('renders a link with the rev when provided', () => {
-        injectViewContextOnSourcegraph(
-            'https://test.com',
-            {
-                getContext: () => ({
-                    repoName: 'test',
-                    rev: 'test',
-                }),
-                getViewContextOnSourcegraphMount: () => {
-                    const div = document.createElement('div')
-                    document.body.appendChild(div)
-                    return div
-                },
-                contextButtonClassName: 'test',
-            },
-            () => of(true),
-            undefined
-        )
+        renderViewContextOnSourcegraph({
+            sourcegraphUrl: 'https://test.com',
+            getContext: () => ({
+                repoName: 'test',
+                rev: 'test',
+            }),
+            contextButtonClassName: 'test',
+            ensureRepoExists: () => of(true),
+        })(mount)
 
         const link = document.querySelector<HTMLAnchorElement>('.test')
         expect(link).toBeInstanceOf(HTMLAnchorElement)
@@ -60,23 +43,16 @@ describe('<ViewOnSourcegraphButton />', () => {
     it('renders configure sourcegraph button when pointing at sourcegraph.com', () => {
         const configureClickSpy = sinon.spy()
 
-        injectViewContextOnSourcegraph(
-            'https://sourcegraph.com',
-            {
-                getContext: () => ({
-                    repoName: 'test',
-                    rev: 'test',
-                }),
-                getViewContextOnSourcegraphMount: () => {
-                    const div = document.createElement('div')
-                    document.body.appendChild(div)
-                    return div
-                },
-                contextButtonClassName: 'test',
-            },
-            () => of(false),
-            configureClickSpy
-        )
+        renderViewContextOnSourcegraph({
+            sourcegraphUrl: 'https://sourcegraph.com',
+            getContext: () => ({
+                repoName: 'test',
+                rev: 'test',
+            }),
+            contextButtonClassName: 'test',
+            ensureRepoExists: () => of(false),
+            onConfigureSourcegraphClick: configureClickSpy,
+        })(mount)
 
         const link = document.querySelector<HTMLAnchorElement>('.test')
         expect(link).toBeInstanceOf(HTMLAnchorElement)
@@ -89,23 +65,16 @@ describe('<ViewOnSourcegraphButton />', () => {
     it('still renders "View Repository" if repo doesn\'t exist and its not pointed at .com', () => {
         const configureClickSpy = sinon.spy()
 
-        injectViewContextOnSourcegraph(
-            'https://test.com',
-            {
-                getContext: () => ({
-                    repoName: 'test',
-                    rev: 'test',
-                }),
-                getViewContextOnSourcegraphMount: () => {
-                    const div = document.createElement('div')
-                    document.body.appendChild(div)
-                    return div
-                },
-                contextButtonClassName: 'test',
-            },
-            () => of(false),
-            configureClickSpy
-        )
+        renderViewContextOnSourcegraph({
+            sourcegraphUrl: 'https://test.com',
+            getContext: () => ({
+                repoName: 'test',
+                rev: 'test',
+            }),
+            contextButtonClassName: 'test',
+            ensureRepoExists: () => of(false),
+            onConfigureSourcegraphClick: configureClickSpy,
+        })(mount)
 
         const link = document.querySelector<HTMLAnchorElement>('.test')
         expect(link).toBeInstanceOf(HTMLAnchorElement)

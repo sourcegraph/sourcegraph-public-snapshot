@@ -121,7 +121,7 @@ describe('requestGraphQL()', () => {
     })
 
     it('errors if the repository is private and the user is logged out of his private instance', async () => {
-        const ajaxRequest = () => throwError({ status: 401 })
+        const ajaxRequest = () => throwError(Object.assign(new Error(), { status: 401 }))
         await expect(
             requestGraphQL({
                 ctx: MOCK_CONTEXT_PRIVATE,
@@ -137,7 +137,7 @@ describe('requestGraphQL()', () => {
     })
 
     it('errors without retrying the user is logged out of his private instance and retry is false', async () => {
-        const ajaxRequest = () => throwError({ status: 401 })
+        const ajaxRequest = () => throwError(Object.assign(new Error(), { status: 401 }))
         await expect(
             requestGraphQL({
                 ctx: MOCK_CONTEXT_PRIVATE,

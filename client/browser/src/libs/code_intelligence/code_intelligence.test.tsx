@@ -80,10 +80,11 @@ describe('handleCodeHost()', () => {
         return el
     }
 
-    test('renders the hoverlay container', async () => {
+    test('renders the hover overlay mount', async () => {
         const { services } = await integrationTestContext()
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
@@ -94,7 +95,7 @@ describe('handleCodeHost()', () => {
             })
         )
         const overlayMount = document.body.firstChild! as HTMLElement
-        expect(overlayMount.className).toBe('overlay-mount-container')
+        expect(overlayMount.className).toBe('hover-overlay-mount hover-overlay-mount__test')
         const renderedOverlay = elementRenderedAtMount(overlayMount)
         expect(renderedOverlay).not.toBeUndefined()
     })
@@ -104,6 +105,7 @@ describe('handleCodeHost()', () => {
         const commandPaletteMount = createTestElement()
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
@@ -122,6 +124,7 @@ describe('handleCodeHost()', () => {
         const { services } = await integrationTestContext()
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
@@ -142,6 +145,7 @@ describe('handleCodeHost()', () => {
         const globalDebugMount = createTestElement()
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
@@ -169,10 +173,11 @@ describe('handleCodeHost()', () => {
         }
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
-                    codeViews: [
+                    codeViewSpecs: [
                         {
                             selector: `#code`,
                             dom: {
@@ -231,10 +236,11 @@ describe('handleCodeHost()', () => {
         codeView.appendChild(line)
         subscriptions.add(
             handleCodeHost({
+                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                 codeHost: {
                     name: 'test',
                     check: () => true,
-                    codeViews: [
+                    codeViewSpecs: [
                         {
                             selector: `#code`,
                             dom: {

@@ -44,6 +44,11 @@ var (
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
 	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
+
+	// dev browser browser extension ID. You can find this by going to chrome://extensions
+	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
+	// production browser extension ID. This is found by viewing our extension in the chrome store.
+	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
 
 func init() {

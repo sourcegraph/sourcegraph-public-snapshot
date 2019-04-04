@@ -402,7 +402,7 @@ function formatFieldForQuery(field: string, value: string, alwaysQuote?: boolean
     // if they do, then be helpful and remove it for them to avoid double fields like
     // 'repo:repo:foo'.
     if (field) {
-        value = value.replace(new RegExp('^' + field + ':', 'g'), '')
+        value = value.replace(new RegExp(`^${field}:`, 'g'), '')
     }
 
     // See if we need to double-quote value.

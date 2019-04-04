@@ -96,9 +96,8 @@ class TelligentWrapper {
         const match = window.document.cookie.match(matcher)
         if (match && match[1]) {
             return match[1].split('.')
-        } else {
-            return null
         }
+        return null
     }
 }
 

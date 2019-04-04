@@ -62,6 +62,11 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
         )
         this.componentUpdates.next(this.props)
     }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): JSX.Element {
         const url = this.getOpenInSourcegraphUrl(this.props.openProps)
         return <Button {...this.props} className={`open-on-sourcegraph ${this.props.className}`} url={url} />

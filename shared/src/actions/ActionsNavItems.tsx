@@ -3,6 +3,7 @@ import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ContributionScope } from '../api/client/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { ActionItem } from './ActionItem'
 import { ActionsState } from './actions'
 import { ActionsProps } from './ActionsContainer'
@@ -13,11 +14,11 @@ export interface ActionNavItemsClassProps {
     listItemClass?: string
 }
 
-interface Props extends ActionsProps, ActionNavItemsClassProps {
+interface Props extends ActionsProps, ActionNavItemsClassProps, TelemetryProps {
     /**
-     * If true, it renders a <ul className="nav">...</ul> around the items. If there are no items, it renders null.
+     * If true, it renders a `<ul className="nav">...</ul>` around the items. If there are no items, it renders `null`.
      *
-     * If falsey (the default behavior), it emits a fragment of just the <li>s.
+     * If falsey (the default behavior), it emits a fragment of just the `<li>`s.
      */
     wrapInList?: boolean
 
@@ -63,12 +64,10 @@ export class ActionsNavItems extends React.PureComponent<Props, ActionsState> {
                 <ActionItem
                     key={i}
                     {...item}
+                    {...this.props}
                     variant="actionItem"
-                    extensionsController={this.props.extensionsController}
-                    platformContext={this.props.platformContext}
                     className={this.props.actionItemClass}
                     pressedClassName={this.props.actionItemPressedClass}
-                    location={this.props.location}
                 />
             </li>
         ))

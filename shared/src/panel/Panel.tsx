@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../../shared/src/api/client/services/view'
 import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { ThemeProps } from '../../../web/src/theme'
 import { ActionsNavItems } from '../actions/ActionsNavItems'
 import { ActivationProps } from '../components/activation/Activation'
 import { FetchFileCtx } from '../components/CodeExcerpt'
@@ -13,14 +14,20 @@ import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeProps } from '../settings/settings'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps, SettingsCascadeProps, ActivationProps {
+interface Props
+    extends ExtensionsControllerProps,
+        PlatformContextProps,
+        SettingsCascadeProps,
+        ActivationProps,
+        TelemetryProps,
+        ThemeProps {
     location: H.Location
     history: H.History
     repoName?: string
-    isLightTheme: boolean
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 

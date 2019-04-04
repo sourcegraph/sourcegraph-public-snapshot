@@ -507,12 +507,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             .pipe(
                                 catchError(error => [asError(error)]),
                                 map(
-                                    c =>
-                                        ({
-                                            connectionOrError: c,
-                                            connectionQuery: query,
-                                            loading: false,
-                                        } as PartialStateUpdate)
+                                    (c): PartialStateUpdate => ({
+                                        connectionOrError: c,
+                                        connectionQuery: query,
+                                        loading: false,
+                                    })
                                 ),
                                 publishReplay<PartialStateUpdate>(),
                                 refCount()

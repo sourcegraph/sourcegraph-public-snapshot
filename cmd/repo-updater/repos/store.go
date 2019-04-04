@@ -10,6 +10,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 )
@@ -483,7 +484,7 @@ updated AS (
     deleted_at            = batch.deleted_at,
     external_service_type = COALESCE(NULLIF(BTRIM(batch.external_service_type), ''), repo.external_service_type),
     external_service_id   = COALESCE(NULLIF(BTRIM(batch.external_service_id), ''), repo.external_service_id),
-    external_id           = COALESCE(NULLIF(BTRIM(batch.external_id), ''), repo.external_service_id),
+    external_id           = COALESCE(NULLIF(BTRIM(batch.external_id), ''), repo.external_id),
     enabled               = batch.enabled,
     archived              = batch.archived,
     fork                  = batch.fork,
@@ -691,6 +692,8 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(github.Repository)
 	case "gitlab":
 		r.Metadata = new(gitlab.Project)
+	case "bitbucketserver":
+		r.Metadata = new(bitbucketserver.Repo)
 	default:
 		return nil
 	}

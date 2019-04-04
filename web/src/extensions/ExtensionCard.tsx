@@ -5,7 +5,6 @@ import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { Path } from '../../../shared/src/components/Path'
 import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { SettingsSubject } from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ExtensionManifest } from '../../../shared/src/schema/extension.schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
@@ -25,7 +24,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
         >,
         'id' | 'manifest' | 'registryExtension'
     >
-    subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
+    subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
 }
 
 /** Displays an extension as a card. */

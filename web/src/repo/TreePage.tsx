@@ -35,7 +35,7 @@ import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { ThemeProps } from '../theme'
-import { eventLogger } from '../tracking/eventLogger'
+import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
@@ -126,6 +126,7 @@ interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
+        EventLoggerProps,
         ActivationProps {
     repoName: string
     repoID: GQL.ID

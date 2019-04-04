@@ -9,7 +9,7 @@ describe('Windows (integration)', () => {
         test('returns the active window', async () => {
             const { extensionAPI } = await integrationTestContext()
             const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
-                type: 'CodeEditor' as 'CodeEditor',
+                type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
             assertToJSON(extensionAPI.app.activeWindow, {
@@ -70,7 +70,7 @@ describe('Windows (integration)', () => {
         test('lists windows', async () => {
             const { extensionAPI } = await integrationTestContext()
             const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
-                type: 'CodeEditor' as 'CodeEditor',
+                type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
             assertToJSON(extensionAPI.app.windows, [
@@ -100,7 +100,7 @@ describe('Windows (integration)', () => {
                 .toPromise()
 
             const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
-                type: 'CodeEditor' as 'CodeEditor',
+                type: 'CodeEditor' as const,
                 document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             }
             assertToJSON(extensionAPI.app.windows, [
@@ -138,11 +138,11 @@ describe('Windows (integration)', () => {
 
             assertToJSON(extensionAPI.app.windows[0].visibleViewComponents, [
                 {
-                    type: 'CodeEditor' as 'CodeEditor',
+                    type: 'CodeEditor' as const,
                     document: { uri: 'file:///inactive', languageId: 'inactive', text: 'inactive' },
                 },
                 {
-                    type: 'CodeEditor' as 'CodeEditor',
+                    type: 'CodeEditor' as const,
                     document: { uri: 'file:///f', languageId: 'l', text: 't' },
                 },
             ] as ViewComponent[])
@@ -170,7 +170,7 @@ describe('Windows (integration)', () => {
             await extensionAPI.internal.sync()
 
             assertToJSON(extensionAPI.app.windows[0].activeViewComponent, {
-                type: 'CodeEditor' as 'CodeEditor',
+                type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             } as ViewComponent)
         })

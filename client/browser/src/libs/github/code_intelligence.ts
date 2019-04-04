@@ -10,8 +10,15 @@ import {
     ViewStateSpec,
 } from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
+import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import {
+    CodeHost,
+    CodeViewSpec,
+    CodeViewSpecResolver,
+    CodeViewSpecWithOutSelector,
+    MountGetter,
+} from '../code_intelligence'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
@@ -23,7 +30,7 @@ const toolbarButtonProps = {
     style: { marginRight: '5px', textDecoration: 'none', color: 'inherit' },
 }
 
-const diffCodeView: CodeViewWithOutSelector = {
+const diffCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDomFunctions,
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
@@ -31,12 +38,12 @@ const diffCodeView: CodeViewWithOutSelector = {
     isDiff: true,
 }
 
-const diffConversationCodeView: CodeViewWithOutSelector = {
+const diffConversationCodeView: CodeViewSpecWithOutSelector = {
     ...diffCodeView,
     getToolbarMount: undefined,
 }
 
-const singleFileCodeView: CodeViewWithOutSelector = {
+const singleFileCodeView: CodeViewSpecWithOutSelector = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo,
@@ -80,7 +87,7 @@ const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec &
         })
     )
 
-const searchResultCodeView: CodeView = {
+const searchResultCodeView: CodeViewSpec = {
     selector: '.code-list-item',
     dom: searchCodeSnippetDOMFunctions,
     adjustPosition: adjustPositionForSnippet,
@@ -89,7 +96,7 @@ const searchResultCodeView: CodeView = {
     isDiff: false,
 }
 
-const commentSnippetCodeView: CodeView = {
+const commentSnippetCodeView: CodeViewSpec = {
     selector: '.js-comment-body',
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveSnippetFileInfo,
@@ -98,7 +105,7 @@ const commentSnippetCodeView: CodeView = {
     isDiff: false,
 }
 
-const fileLineContainerCodeView: CodeView = {
+const fileLineContainerCodeView: CodeViewSpec = {
     selector: '.js-file-line-container',
     dom: singleFileDOMFunctions,
     getToolbarMount: fileLineContainer => {
@@ -129,63 +136,65 @@ const fileLineContainerCodeView: CodeView = {
     isDiff: false,
 }
 
-const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector | null => {
-    if (elem.querySelector('article.markdown-body')) {
-        // This code view is rendered markdown, we shouldn't add code intelligence
-        return null
-    }
-
-    // This is a suggested change on a GitHub PR
-    if (elem.closest('.js-suggested-changes-blob')) {
-        return null
-    }
-
-    const files = document.getElementsByClassName('file')
-    const { filePath } = parseURL()
-    const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
-
-    if (isSingleCodeFile) {
-        return singleFileCodeView
-    }
-
-    if (elem.closest('.discussion-item-body')) {
-        return diffConversationCodeView
-    }
-
-    return diffCodeView
-}
-
-const codeViewResolver: CodeViewResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file',
-    resolveCodeView,
+    resolveCodeViewSpec: (elem: HTMLElement): CodeViewSpecWithOutSelector | null => {
+        if (elem.querySelector('article.markdown-body')) {
+            // This code view is rendered markdown, we shouldn't add code intelligence
+            return null
+        }
+
+        // This is a suggested change on a GitHub PR
+        if (elem.closest('.js-suggested-changes-blob')) {
+            return null
+        }
+
+        const files = document.getElementsByClassName('file')
+        const { filePath } = parseURL()
+        const isSingleCodeFile =
+            files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
+
+        if (isSingleCodeFile) {
+            return singleFileCodeView
+        }
+
+        if (elem.closest('.discussion-item-body')) {
+            return diffConversationCodeView
+        }
+
+        return diffCodeView
+    },
 }
 
 function checkIsGithub(): boolean {
     const href = window.location.href
 
     const isGithub = /^https?:\/\/(www.)?github.com/.test(href)
-    const ogSiteName = document.head!.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
+    const ogSiteName = document.head.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
     const isGitHubEnterprise = ogSiteName ? ogSiteName.content === 'GitHub Enterprise' : false
 
     return isGithub || isGitHubEnterprise
 }
 
-const getOverlayMount = () => {
-    const container = document.querySelector('#js-repo-pjax-container')
-    if (!container) {
-        throw new Error('unable to find repo pjax container')
+const getOverlayMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const jsRepoPjaxContainer = querySelectorOrSelf(container, '#js-repo-pjax-container')
+    if (!jsRepoPjaxContainer) {
+        return null
     }
-
-    const mount = document.createElement('div')
-    container.appendChild(mount)
-
+    let mount = jsRepoPjaxContainer.querySelector<HTMLElement>('.hover-overlay-mount')
+    if (mount) {
+        return mount
+    }
+    mount = document.createElement('div')
+    mount.className = 'hover-overlay-mount'
+    jsRepoPjaxContainer.appendChild(mount)
     return mount
 }
 
 export const githubCodeHost: CodeHost = {
     name: 'github',
-    codeViews: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
-    codeViewResolver,
+    codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
+    codeViewSpecResolver,
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     contextButtonClassName: 'btn btn-sm tooltipped tooltipped-s',
