@@ -114,13 +114,19 @@ func Init(options ...Option) {
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
 	if conf.Get().Critical.UseJaeger {
 		log15.Info("Distributed tracing enabled", "tracer", "jaeger")
-		cfg := jaegercfg.Configuration{
-			Sampler: &jaegercfg.SamplerConfig{
-				Type:  jaeger.SamplerTypeConst,
-				Param: 1,
-			},
+		cfg, err := jaegercfg.FromEnv()
+		if err != nil {
+			log.Printf("Could not initialize jaeger tracer from env: %s", err.Error())
+			return
 		}
-		_, err := cfg.InitGlobalTracer(
+		if *cfg.Sampler == (jaegercfg.SamplerConfig{}) {
+			// Default sampler configuration for when it is not specified via
+			// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
+			// enough to connect Sourcegraph to Jaeger without any env vars.
+			cfg.Sampler.Type = jaeger.SamplerTypeConst
+			cfg.Sampler.Param = 1
+		}
+		_, err = cfg.InitGlobalTracer(
 			opts.serviceName,
 			jaegercfg.Logger(jaegerlog.StdLogger),
 			jaegercfg.Metrics(jaegermetrics.NullFactory),
