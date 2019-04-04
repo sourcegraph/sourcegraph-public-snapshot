@@ -42,7 +42,7 @@ func main() {
 	if strings.HasPrefix(branch, "docker-images-debug/") {
 		// A branch like "docker-images-debug/foobar" will produce Docker images
 		// tagged as "debug-foobar-$COMMIT".
-		version = fmt.Sprintf("debug-%s-%s", strings.TrimPrefix(version, "debug-release/"), commit)
+		version = fmt.Sprintf("debug-%s-%s", strings.TrimPrefix(branch, "docker-images-debug/"), commit)
 	} else if strings.HasPrefix(version, "v") {
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		version = strings.TrimPrefix(version, "v")
