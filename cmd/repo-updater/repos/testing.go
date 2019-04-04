@@ -95,9 +95,8 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 // changes made during the transaction.
 func (s *FakeStore) Done(...*error) {}
 
-// ListExternalServices lists all stored external services that are not deleted and have one of the
-// specified kinds.
-func (s FakeStore) ListExternalServices(ctx context.Context, kinds ...string) ([]*ExternalService, error) {
+// ListExternalServices lists all stored external services that match the given args.
+func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
 	if s.ListExternalServicesError != nil {
 		return nil, s.ListExternalServicesError
 	}
@@ -106,15 +105,25 @@ func (s FakeStore) ListExternalServices(ctx context.Context, kinds ...string) ([
 		s.svcByID = make(map[int64]*ExternalService)
 	}
 
-	kindset := make(map[string]bool, len(kinds))
-	for _, kind := range kinds {
-		kindset[strings.ToLower(kind)] = true
+	kinds := make(map[string]bool, len(args.Kinds))
+	for _, kind := range args.Kinds {
+		kinds[strings.ToLower(kind)] = true
 	}
 
+	ids := make(map[int64]bool, len(args.IDs))
+	for _, id := range args.IDs {
+		ids[id] = true
+	}
+
+	set := make(map[*ExternalService]bool, len(s.svcByID))
 	svcs := make(ExternalServices, 0, len(s.svcByID))
 	for _, svc := range s.svcByID {
-		if len(kinds) == 0 || kindset[strings.ToLower(svc.Kind)] {
+		if !set[svc] &&
+			(len(kinds) == 0 || kinds[strings.ToLower(svc.Kind)]) &&
+			(len(ids) == 0 || ids[svc.ID]) {
+
 			svcs = append(svcs, svc)
+			set[svc] = true
 		}
 	}
 

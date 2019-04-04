@@ -212,7 +212,10 @@ func merge(o, n *Repo) {
 }
 
 func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) {
-	svcs, err := s.store.ListExternalServices(ctx, kinds...)
+	svcs, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{
+		Kinds: kinds,
+	})
+
 	if err != nil {
 		return nil, err
 	}

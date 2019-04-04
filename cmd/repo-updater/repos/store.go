@@ -17,21 +17,30 @@ import (
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
-	ListExternalServices(ctx context.Context, kinds ...string) ([]*ExternalService, error)
+	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
 
-	ListRepos(ctx context.Context, args StoreListReposArgs) ([]*Repo, error)
+	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 }
 
-// StoreListReposArgs is a query arguments type used by the ListRepos method of Store
-// implementations.
+// StoreListReposArgs is a query arguments type used by
+// the ListRepos method of Store implementations.
 type StoreListReposArgs struct {
 	// Names of repos to list.
 	Names []string
 	// IDs of repos to list.
 	IDs []uint32
 	// Kinds of repos to list.
+	Kinds []string
+}
+
+// StoreListExternalServicesArgs is a query arguments type used by
+// the ListExternalServices method of Store implementations.
+type StoreListExternalServicesArgs struct {
+	// IDs of external services to list.
+	IDs []int64
+	// Kinds of external services to list.
 	Kinds []string
 }
 
@@ -109,10 +118,9 @@ func (s *DBStore) Done(errs ...*error) {
 	}
 }
 
-// ListExternalServices lists all stored external services that are not deleted and have one of the
-// specified kinds.
-func (s DBStore) ListExternalServices(ctx context.Context, kinds ...string) (svcs []*ExternalService, _ error) {
-	return svcs, s.paginate(ctx, listExternalServicesQuery(kinds), func(sc scanner) (int64, error) {
+// ListExternalServices lists all stored external services matching the given args.
+func (s DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
+	return svcs, s.paginate(ctx, listExternalServicesQuery(args), func(sc scanner) (int64, error) {
 		var svc ExternalService
 		err := scanExternalService(&svc, sc)
 		if err != nil {
@@ -139,21 +147,37 @@ AND %s
 ORDER BY id ASC LIMIT %s
 `
 
-func listExternalServicesQuery(kinds []string) paginatedQuery {
-	kq := sqlf.Sprintf("TRUE")
-	if len(kinds) > 0 {
-		ks := make([]*sqlf.Query, 0, len(kinds))
-		for _, kind := range kinds {
+func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuery {
+	var preds []*sqlf.Query
+
+	if len(args.IDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(args.IDs))
+		for _, id := range args.IDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
+	if len(args.Kinds) > 0 {
+		ks := make([]*sqlf.Query, 0, len(args.Kinds))
+		for _, kind := range args.Kinds {
 			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(kind)))
 		}
-		kq = sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ","))
+		preds = append(preds,
+			sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ",")))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listExternalServicesQueryFmtstr,
 			cursor,
-			kq,
+			sqlf.Join(preds, "\n AND "),
 			limit,
 		)
 	}
@@ -279,7 +303,9 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 	if len(args.IDs) > 0 {
 		ids := make([]*sqlf.Query, 0, len(args.IDs))
 		for _, id := range args.IDs {
-			ids = append(ids, sqlf.Sprintf("%d", id))
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
 		}
 		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
 	}

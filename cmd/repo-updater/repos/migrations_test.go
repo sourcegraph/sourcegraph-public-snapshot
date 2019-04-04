@@ -311,7 +311,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				}
 
 				if tc.svcs != nil {
-					svcs, err := tx.ListExternalServices(ctx)
+					svcs, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 					if err != nil {
 						t.Error(err)
 						return
@@ -461,7 +461,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				es, err := tx.ListExternalServices(ctx)
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 				if err != nil {
 					t.Error(err)
 					return
@@ -579,7 +579,7 @@ func testGitLabSetDefaultProjectQueryMigration(store repos.Store) func(*testing.
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				es, err := tx.ListExternalServices(ctx)
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 				if err != nil {
 					t.Error(err)
 					return
@@ -694,7 +694,7 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				es, err := tx.ListExternalServices(ctx)
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 				if err != nil {
 					t.Error(err)
 					return

@@ -37,7 +37,10 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.repos-enabled-state-deprecation"
 
-		es, err := s.ListExternalServices(ctx, kinds...)
+		es, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: kinds,
+		})
+
 		if err != nil {
 			return errors.Wrapf(err, "%s.list-external-services", prefix)
 		}
@@ -203,7 +206,10 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.github-set-default-repository-query"
 
-		svcs, err := s.ListExternalServices(ctx, "github")
+		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: []string{"github"},
+		})
+
 		if err != nil {
 			return errors.Wrapf(err, "%s.list-external-services", prefix)
 		}
@@ -255,7 +261,10 @@ func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.gitlab-set-default-project-query"
 
-		svcs, err := s.ListExternalServices(ctx, "gitlab")
+		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: []string{"gitlab"},
+		})
+
 		if err != nil {
 			return errors.Wrapf(err, "%s.list-external-services", prefix)
 		}
@@ -298,7 +307,10 @@ func BitbucketServerSetDefaultRepositoryQueryMigration(clock func() time.Time) M
 	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.bitbucketserver-set-default-repository-query"
 
-		svcs, err := s.ListExternalServices(ctx, "bitbucketserver")
+		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: []string{"bitbucketserver"},
+		})
+
 		if err != nil {
 			return errors.Wrapf(err, "%s.list-external-services", prefix)
 		}

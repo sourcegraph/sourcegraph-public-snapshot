@@ -122,7 +122,10 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 					return
 				}
 
-				es, err := tx.ListExternalServices(ctx, tc.kinds...)
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+					Kinds: tc.kinds,
+				})
+
 				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
@@ -198,7 +201,10 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 
 			sort.Sort(want)
 
-			have, err := tx.ListExternalServices(ctx, svcs.Kinds()...)
+			have, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+				Kinds: svcs.Kinds(),
+			})
+
 			if err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
 				return
@@ -221,7 +227,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 
 			if err = tx.UpsertExternalServices(ctx, want...); err != nil {
 				t.Errorf("UpsertExternalServices error: %s", err)
-			} else if have, err = tx.ListExternalServices(ctx); err != nil {
+			} else if have, err = tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{}); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
@@ -231,7 +237,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 
 			if err = tx.UpsertExternalServices(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertExternalServices error: %s", err)
-			} else if have, err = tx.ListExternalServices(ctx); err != nil {
+			} else if have, err = tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{}); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
