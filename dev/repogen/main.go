@@ -62,7 +62,11 @@ func inDir(d string, f func() error) error {
 	if err != nil {
 		return errors.Wrapf(err, "getting working dir: %s", d0)
 	}
-	defer os.Chdir(d0)
+	defer func() {
+		if err := os.Chdir(d0); err != nil {
+			log.Println(err)
+		}
+	}()
 	if err := os.Chdir(d); err != nil {
 		return errors.Wrapf(err, "changing dir to %s", d)
 	}
@@ -84,7 +88,11 @@ func writeIthFile(i, size int, dir string) error {
 	if err != nil {
 		return errors.Wrapf(err, "creating file %s", name)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
 	if err := write(f, size, 'a'); err != nil {
 		return errors.Wrapf(err, "writing to file %s", name)
 	}
