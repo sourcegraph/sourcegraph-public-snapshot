@@ -90,14 +90,14 @@ func writeIthFile(i, size int, dir string) error {
 // write writes a file with lots of the given byte b, up to the given size in bytes.
 func write(w io.Writer, size int, b byte) error {
 	bw := bufio.NewWriter(w)
-	for N := 1; N <= size; N++{
+	for N := 1; N <= size; N++ {
 		b2 := b
-		if N % 80 == 0 {
+		if N%80 == 0 {
 			b2 = '\n'
 		}
-		bw.WriteByte(b2)
+		if err := bw.WriteByte(b2); err != nil {
+			return errors.Wrap(err, "writing byte")
+		}
 	}
 	return nil
 }
-
-
