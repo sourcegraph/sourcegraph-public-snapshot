@@ -1,4 +1,4 @@
-// Command bigrepo creates a repository with a given number of files
+// Command repogen creates a repository with a given number of files
 // (given by --nf), each of a particular size (given by --size), in order to
 // stress test search.
 
@@ -22,14 +22,14 @@ var fileSize = flag.Int("size", 1024*1024, "size of each file")
 func main() {
 	flag.Parse()
 	log.SetFlags(0)
-	if err := bigrepo(*numFiles, *fileSize); err != nil {
-		log.Fatalf("bigrepo: %v", err)
+	if err := repogen(*numFiles, *fileSize); err != nil {
+		log.Fatalf("repogen: %v", err)
 	}
 }
 
-// bigrepo creates a repo with nf files, each of the given size.
-func bigrepo(nf, size int) error {
-	d, err := ioutil.TempDir("/tmp", "bigrepo")
+// repogen creates a repo with nf files, each of the given size.
+func repogen(nf, size int) error {
+	d, err := ioutil.TempDir("/tmp", "repogen")
 	if err != nil {
 		return errors.Wrap(err, "creating temp dir")
 	}
