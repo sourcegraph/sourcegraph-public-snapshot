@@ -3,7 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -14,7 +14,6 @@ import { fetchRepository } from './backend'
 import { RepoSettingsIndexPage } from './RepoSettingsIndexPage'
 import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
 import { RepoSettingsOptionsPage } from './RepoSettingsOptionsPage'
-import { RepoSettingsSidebar } from './RepoSettingsSidebar'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -103,46 +102,10 @@ export class RepoSettingsArea extends React.Component<Props> {
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <RepoSettingsSidebar className="area__sidebar" {...this.props} {...transferProps} />
                 <div className="area__content">
-                    <Switch>
-                        <Route
-                            path={`${this.props.match.url}`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RepoSettingsOptionsPage
-                                    {...routeComponentProps}
-                                    {...transferProps}
-                                    onDidUpdateRepository={this.props.onDidUpdateRepository}
-                                />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/index`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RepoSettingsIndexPage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/mirror`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RepoSettingsMirrorPage
-                                    {...routeComponentProps}
-                                    {...transferProps}
-                                    onDidUpdateRepository={this.props.onDidUpdateRepository}
-                                />
-                            )}
-                        />
-                        <Route key="hardcoded-key" component={NotFoundPage} />
-                    </Switch>
+                    <RepoSettingsOptionsPage {...this.props} {...transferProps} />
+                    <RepoSettingsIndexPage {...this.props} {...transferProps} />
+                    <RepoSettingsMirrorPage {...this.props} {...transferProps} />
                 </div>
             </div>
         )
