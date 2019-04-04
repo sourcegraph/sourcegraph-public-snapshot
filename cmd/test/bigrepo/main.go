@@ -52,6 +52,7 @@ func bigrepo(nf, size int) error {
 	})
 }
 
+// inDir runs function f in directory d.
 func inDir(d string, f func() error) error {
 	d0, err := os.Getwd()
 	if err != nil {
@@ -64,6 +65,7 @@ func inDir(d string, f func() error) error {
 	return f()
 }
 
+// run executes an external command.
 func run(args ...string) error {
 	out, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
