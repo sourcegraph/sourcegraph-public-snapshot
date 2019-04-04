@@ -16,7 +16,10 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -280,6 +283,241 @@ func TestRepoLookup_found(t *testing.T) {
 	}
 }
 
+func TestServer_SetRepoEnabled(t *testing.T) {
+	githubService := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://github.com",
+			"token": "secret"
+		}`),
+	}
+
+	githubRepo := (&repos.Repo{
+		Name:    "github.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(github.Repository),
+	}).With(repos.Opt.RepoSources(githubService.URN()))
+
+	gitlabService := &repos.ExternalService{
+		ID:          2,
+		Kind:        "GITLAB",
+		DisplayName: "gitlab.com - test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://gitlab.com",
+			"token": "secret"
+		}`),
+	}
+
+	gitlabRepo := (&repos.Repo{
+		Name:    "gitlab.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "1",
+			ServiceType: "gitlab",
+			ServiceID:   "http://gitlab.com",
+		},
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(gitlab.Project),
+	}).With(repos.Opt.RepoSources(gitlabService.URN()))
+
+	bitbucketServerService := &repos.ExternalService{
+		ID:          3,
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "Bitbucket Server - Test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://bitbucketserver.mycorp.com",
+			"token": "secret"
+		}`),
+	}
+
+	bitbucketServerRepo := (&repos.Repo{
+		Name:    "bitbucketserver.mycorp.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "1",
+			ServiceType: "bitbucketServer",
+			ServiceID:   "http://bitbucketserver.mycorp.com",
+		},
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(bitbucketserver.Repo),
+	}).With(repos.Opt.RepoSources(bitbucketServerService.URN()))
+
+	type testCase struct {
+		name string
+		// which kinds of external services the new syncer manages
+		kinds []string
+		svcs  repos.ExternalServices     // stored services
+		repos repos.Repos                // stored repos
+		ids   func(repos.Repos) []uint32 // ids of stored repos to exclude
+		res   *protocol.ExcludeReposResponse
+		err   string
+	}
+
+	var testCases []testCase
+
+	testCases = append(testCases, testCase{
+		name:  "only new syncer enabled repos are updated",
+		kinds: []string{"GITLAB", "BITBUCKETSERVER"},
+		svcs: repos.ExternalServices{
+			githubService,
+			gitlabService,
+			bitbucketServerService,
+		},
+		repos: repos.Repos{githubRepo, gitlabRepo, bitbucketServerRepo},
+		ids:   func(stored repos.Repos) []uint32 { return stored.IDs() },
+		res: &protocol.ExcludeReposResponse{
+			ExternalServices: apiExternalServices(
+				gitlabService.With(func(e *repos.ExternalService) {
+					if err := e.Exclude(gitlabRepo); err != nil {
+						panic(err)
+					}
+				}),
+				bitbucketServerService.With(func(e *repos.ExternalService) {
+					if err := e.Exclude(bitbucketServerRepo); err != nil {
+						panic(err)
+					}
+				}),
+			),
+		},
+	})
+
+	testCases = append(testCases, testCase{
+		name:  "ignores requests when new syncer is disabled for all kinds",
+		kinds: []string{},
+		svcs: repos.ExternalServices{
+			githubService,
+			gitlabService,
+			bitbucketServerService,
+		},
+		repos: repos.Repos{githubRepo, gitlabRepo, bitbucketServerRepo},
+		ids:   func(stored repos.Repos) []uint32 { return stored.IDs() },
+		err:   "exclude-repos: store not available. is the new syncer enabled?\n",
+	})
+
+	{
+		svcs := repos.ExternalServices{
+			githubService,
+			githubService.With(func(e *repos.ExternalService) {
+				e.ID++
+				e.DisplayName += " - Duplicate"
+			}),
+		}
+
+		testCases = append(testCases, testCase{
+			name:  "repos that have no source info yet are excluded in every external service of the same kind",
+			kinds: []string{"GITHUB"},
+			svcs:  svcs,
+			repos: repos.Repos{githubRepo}.With(repos.Opt.RepoSources()),
+			ids:   func(stored repos.Repos) []uint32 { return stored.IDs() },
+			res: &protocol.ExcludeReposResponse{
+				ExternalServices: apiExternalServices(svcs.With(func(e *repos.ExternalService) {
+					if err := e.Exclude(githubRepo); err != nil {
+						panic(err)
+					}
+				})...),
+			},
+		})
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			store := new(repos.FakeStore)
+			err := store.UpsertExternalServices(ctx, tc.svcs.Clone()...)
+			if err != nil {
+				t.Fatalf("failed to prepare store: %v", err)
+			}
+
+			storedRepos := tc.repos.Clone()
+			err = store.UpsertRepos(ctx, storedRepos...)
+			if err != nil {
+				t.Fatalf("failed to prepare store: %v", err)
+			}
+
+			srv := httptest.NewServer((&Server{Kinds: tc.kinds, Store: store}).Handler())
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.ExcludeRepos(ctx, tc.ids(storedRepos)...)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
+				t.Errorf("response:\n%s", cmp.Diff(have, want))
+			}
+
+			if res == nil {
+				return
+			}
+
+			ids := make([]int64, 0, len(res.ExternalServices))
+			for _, s := range res.ExternalServices {
+				ids = append(ids, s.ID)
+			}
+
+			svcs, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+				IDs: ids,
+			})
+
+			if err != nil {
+				t.Fatalf("failed to read from store: %v", err)
+			}
+
+			have, want := apiExternalServices(svcs...), res.ExternalServices
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("stored external services:\n%s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+	if len(es) == 0 {
+		return nil
+	}
+
+	svcs := make([]api.ExternalService, 0, len(es))
+	for _, e := range es {
+		svc := api.ExternalService{
+			ID:          e.ID,
+			Kind:        e.Kind,
+			DisplayName: e.DisplayName,
+			Config:      e.Config,
+			CreatedAt:   e.CreatedAt,
+			UpdatedAt:   e.UpdatedAt,
+		}
+
+		if e.IsDeleted() {
+			svc.DeletedAt = &e.DeletedAt
+		}
+
+		svcs = append(svcs, svc)
+	}
+
+	return svcs
+}
+
 func TestRepoLookup_syncer(t *testing.T) {
 	now := time.Now().UTC()
 	ctx := context.Background()
@@ -376,6 +614,14 @@ func (a *internalAPIFake) ReposUpdateMetadata(ctx context.Context, repo api.Repo
 		}
 	}
 	return nil
+}
+
+func formatJSON(s string) string {
+	formatted, err := jsonc.Format(s, true, 2)
+	if err != nil {
+		panic(err)
+	}
+	return formatted
 }
 
 func init() {

@@ -159,6 +159,7 @@ func main() {
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{
+		Kinds:            kinds,
 		Store:            store,
 		Syncer:           syncer,
 		OtherReposSyncer: otherSyncer,

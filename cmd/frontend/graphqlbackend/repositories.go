@@ -2,13 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -252,8 +252,27 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Repos.SetEnabled(ctx, repo.repo.ID, args.Enabled); err != nil {
-		return nil, err
+
+	// We only want to set the enabled state of a repo that isn't yet managed
+	// by the new syncer. Repo-updater returns the set of external services that
+	// were updated to exclude the given repo. If that set is empty, it means that
+	// the given repo isn't yet managed by the new syncer, so we proceed to update
+	// the enabled state regardless.
+	var done bool
+	if !args.Enabled {
+		resp, err := repoupdater.DefaultClient.ExcludeRepos(ctx, uint32(repo.repo.ID))
+		if err != nil {
+			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
+		}
+
+		// Have any external services been updated to exclude the given repo?
+		done = len(resp.ExternalServices) > 0
+	}
+
+	if !done {
+		if err = db.Repos.SetEnabled(ctx, repo.repo.ID, args.Enabled); err != nil {
+			return nil, err
+		}
 	}
 
 	// Trigger update when enabling.

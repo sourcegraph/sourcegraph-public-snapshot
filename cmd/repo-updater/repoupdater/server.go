@@ -24,6 +24,8 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
+	// Kinds of external services synced with the new syncer
+	Kinds []string
 	repos.Store
 	*repos.Syncer
 	*repos.OtherReposSyncer
@@ -38,8 +40,90 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
+	mux.HandleFunc("/exclude-repos", s.handleExcludeRepos)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	return mux
+}
+
+func (s *Server) handleExcludeRepos(w http.ResponseWriter, r *http.Request) {
+	if s.Store == nil || len(s.Kinds) == 0 {
+		err := errors.New("exclude-repos: store not available. is the new syncer enabled?")
+		fail(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	var req protocol.ExcludeReposRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fail(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+		IDs:   req.IDs,
+		Kinds: s.Kinds,
+	})
+
+	if err != nil {
+		fail(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	args := repos.StoreListExternalServicesArgs{
+		Kinds: repos.Repos(rs).Kinds(),
+	}
+
+	es, err := s.Store.ListExternalServices(r.Context(), args)
+	if err != nil {
+		fail(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	for _, e := range es {
+		if err := e.Exclude(rs...); err != nil {
+			break
+		}
+	}
+
+	if err != nil {
+		fail(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	if err != nil {
+		fail(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	resp := protocol.ExcludeReposResponse{
+		ExternalServices: make([]api.ExternalService, 0, len(es)),
+	}
+
+	for _, e := range es {
+		svc := api.ExternalService{
+			ID:          e.ID,
+			Kind:        e.Kind,
+			DisplayName: e.DisplayName,
+			Config:      e.Config,
+			CreatedAt:   e.CreatedAt,
+			UpdatedAt:   e.UpdatedAt,
+		}
+
+		if e.IsDeleted() {
+			svc.DeletedAt = &e.DeletedAt
+		}
+
+		resp.ExternalServices = append(resp.ExternalServices, svc)
+	}
+
+	if err = json.NewEncoder(w).Encode(resp); err != nil {
+		fail(w, err, http.StatusInternalServerError)
+	}
+}
+
+func fail(w http.ResponseWriter, err error, code int) {
+	log15.Error(err.Error())
+	http.Error(w, err.Error(), code)
 }
 
 func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
@@ -112,9 +196,12 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	switch req.ExternalService.Kind {
-	case "GITHUB", "GITLAB":
-		_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
+	for _, kind := range s.Kinds {
+		if req.ExternalService.Kind != kind {
+			continue
+		}
+
+		_, err := s.Syncer.Sync(r.Context(), kind)
 		switch {
 		case err == nil:
 			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
@@ -126,8 +213,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	default:
-		// TODO(tsenart): Handle other external service kinds.
 	}
 }
 

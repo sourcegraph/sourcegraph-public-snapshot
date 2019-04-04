@@ -189,6 +189,35 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 	return &result, nil
 }
 
+// ExcludeRepos adds the repositories with the given ids to all of their respective
+// external services exclude lists.
+func (c *Client) ExcludeRepos(ctx context.Context, ids ...uint32) (*protocol.ExcludeReposResponse, error) {
+	if len(ids) == 0 {
+		return &protocol.ExcludeReposResponse{}, nil
+	}
+
+	req := protocol.ExcludeReposRequest{IDs: ids}
+	resp, err := c.httpPost(ctx, "exclude-repos", &req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.ExcludeReposResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {

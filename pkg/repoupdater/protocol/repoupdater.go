@@ -31,6 +31,18 @@ type RepoQueueState struct {
 	Updating bool
 }
 
+// ExcludeReposRequest is a request to exclude a list of repos from
+// being mirrored from any of their external services.
+type ExcludeReposRequest struct {
+	// IDs of the repositories to be excluded.
+	IDs []uint32
+}
+
+// ExcludeReposResponse is returned in response to an ExcludeReposRequest.
+type ExcludeReposResponse struct {
+	ExternalServices []api.ExternalService
+}
+
 // RepoLookupArgs is a request for information about a repository on repoupdater.
 //
 // Exactly one of Repo and ExternalRepo should be set.
