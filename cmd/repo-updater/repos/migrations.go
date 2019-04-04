@@ -287,6 +287,52 @@ func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 	})
 }
 
+// BitbucketServerSetDefaultRepositoryQueryMigration returns a Migration that changes all
+// configurations of BitbucketServer external services to explicitly have the new
+// `repositoryQuery` setting set to a value that results in the semantically equivalent
+// behaviour of mirroring all repos accessible to the configured token.
+func BitbucketServerSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration {
+	return migrate(func(ctx context.Context, s Store) error {
+		const prefix = "migrate.bitbucketserver-set-default-repository-query"
+
+		svcs, err := s.ListExternalServices(ctx, "bitbucketserver")
+		if err != nil {
+			return errors.Wrapf(err, "%s.list-external-services", prefix)
+		}
+
+		now := clock()
+		for _, svc := range svcs {
+			var c schema.BitbucketServerConnection
+			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+				return fmt.Errorf("%s: external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+			}
+
+			if len(c.RepositoryQuery) != 0 {
+				continue
+			}
+
+			c.RepositoryQuery = append(c.RepositoryQuery,
+				"?visibility=private",
+				"?visibility=public",
+			)
+
+			edited, err := jsonc.Edit(svc.Config, c.RepositoryQuery, "repositoryQuery")
+			if err != nil {
+				return errors.Wrapf(err, "%s.edit-json", prefix)
+			}
+
+			svc.Config = edited
+			svc.UpdatedAt = now
+		}
+
+		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
+			return errors.Wrapf(err, "%s.upsert-external-services", prefix)
+		}
+
+		return nil
+	})
+}
+
 // ErrNoTransactor is returned by a Migration returned by
 // NewTxMigration when it takes in a Store that can't be
 // interface upgraded to a Transactor.
