@@ -170,12 +170,15 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	if s.Store != nil && s.Syncer != nil {
 		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			repo, err := s.Store.GetRepoByName(ctx, string(args.Repo))
-			if err != nil {
+			repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+				Names: []string{string(args.Repo)},
+			})
+
+			if err != nil || len(repos) != 1 || repos[0].IsDeleted() {
 				return nil, false, err
 			}
 
-			info, err := newRepoInfo(repo)
+			info, err := newRepoInfo(repos[0])
 			if err != nil {
 				return nil, false, err
 			}

@@ -20,9 +20,19 @@ type Store interface {
 	ListExternalServices(ctx context.Context, kinds ...string) ([]*ExternalService, error)
 	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
 
-	GetRepoByName(ctx context.Context, name string) (*Repo, error)
-	ListRepos(ctx context.Context, kinds ...string) ([]*Repo, error)
+	ListRepos(ctx context.Context, args StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
+}
+
+// StoreListReposArgs is a query arguments type used by the ListRepos method of Store
+// implementations.
+type StoreListReposArgs struct {
+	// Names of repos to list.
+	Names []string
+	// IDs of repos to list.
+	IDs []uint32
+	// Kinds of repos to list.
+	Kinds []string
 }
 
 // ErrNoResults is returned by Store method invocations that yield no result set.
@@ -219,55 +229,9 @@ SET
 RETURNING *
 `
 
-// GetRepoByName looks up the repo with the given name.
-func (s DBStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) {
-	var r Repo
-	id, err := s.list(ctx, getRepoByNameQuery(name), func(s scanner) (int64, error) {
-		err := scanRepo(&r, s)
-		return int64(r.ID), err
-	})
-
-	switch {
-	case err != nil:
-		return nil, err
-	case id == -1:
-		return nil, ErrNoResults
-	default:
-		return &r, nil
-	}
-}
-
-const getRepoByNameQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.GetRepoByName
-SELECT
-  id,
-  name,
-  description,
-  language,
-  created_at,
-  updated_at,
-  deleted_at,
-  external_service_type,
-  external_service_id,
-  external_id,
-  enabled,
-  archived,
-  fork,
-  sources,
-  metadata
-FROM repo
-WHERE name = %s
-AND deleted_at IS NULL
-`
-
-func getRepoByNameQuery(name string) *sqlf.Query {
-	return sqlf.Sprintf(getRepoByNameQueryFmtstr, name)
-}
-
-// ListRepos lists all stored repos that are not deleted, have one of the
-// specified external service kind.
-func (s DBStore) ListRepos(ctx context.Context, kinds ...string) (repos []*Repo, _ error) {
-	return repos, s.paginate(ctx, listReposQuery(kinds), func(sc scanner) (int64, error) {
+// ListRepos lists all stored repos that match the given arguments.
+func (s DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*Repo, _ error) {
+	return repos, s.paginate(ctx, listReposQuery(args), func(sc scanner) (int64, error) {
 		var r Repo
 		if err := scanRepo(&r, sc); err != nil {
 			return 0, err
@@ -301,21 +265,43 @@ AND %s
 ORDER BY id ASC LIMIT %s
 `
 
-func listReposQuery(kinds []string) paginatedQuery {
-	kq := sqlf.Sprintf("TRUE")
-	if len(kinds) > 0 {
-		ks := make([]*sqlf.Query, 0, len(kinds))
-		for _, kind := range kinds {
+func listReposQuery(args StoreListReposArgs) paginatedQuery {
+	var preds []*sqlf.Query
+
+	if len(args.Names) > 0 {
+		ns := make([]*sqlf.Query, 0, len(args.Names))
+		for _, name := range args.Names {
+			ns = append(ns, sqlf.Sprintf("%s", name))
+		}
+		preds = append(preds, sqlf.Sprintf("name IN (%s)", sqlf.Join(ns, ",")))
+	}
+
+	if len(args.IDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(args.IDs))
+		for _, id := range args.IDs {
+			ids = append(ids, sqlf.Sprintf("%d", id))
+		}
+		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
+	if len(args.Kinds) > 0 {
+		ks := make([]*sqlf.Query, 0, len(args.Kinds))
+		for _, kind := range args.Kinds {
 			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(kind)))
 		}
-		kq = sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ","))
+		preds = append(preds,
+			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listReposQueryFmtstr,
 			cursor,
-			kq,
+			sqlf.Join(preds, "\n AND "),
 			limit,
 		)
 	}

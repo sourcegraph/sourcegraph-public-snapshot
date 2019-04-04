@@ -320,7 +320,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				}
 
 				if tc.repos != nil {
-					rs, err := tx.ListRepos(ctx)
+					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
 					if err != nil {
 						t.Error(err)
 						return

@@ -58,7 +58,10 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			return errors.Wrapf(err, "%s.sources.list-repos", prefix)
 		}
 
-		stored, err := s.ListRepos(ctx, kinds...)
+		stored, err := s.ListRepos(ctx, StoreListReposArgs{
+			Kinds: kinds,
+		})
+
 		if err != nil {
 			return errors.Wrapf(err, "%s.store.list-repos", prefix)
 		}
