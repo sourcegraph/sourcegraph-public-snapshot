@@ -2,6 +2,10 @@
 package redispool
 
 import (
+	"github.com/pkg/errors"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -49,6 +53,44 @@ func init() {
 	}
 }
 
+func connectRedis(redisUrl string) (redis.Conn, error) {
+	parsedUrl, err := url.Parse(redisUrl); if err != nil {
+		return nil, err
+	}
+
+	if parsedUrl.Scheme != "redis" {
+		return nil, errors.New(redisUrl + ", is not a valid redis protocol, redis://:password@host:port/db")
+	}
+
+	conn, err := redis.Dial("tcp", parsedUrl.Host); if err != nil {
+		return nil, err
+	}
+
+	password, passwordIsSet := parsedUrl.User.Password()
+	if passwordIsSet {
+		_, err := conn.Do("AUTH", password); if err != nil {
+			conn.Close()
+			return nil, err
+		}
+	}
+
+	var db = 0
+	dbString := strings.Trim(parsedUrl.Path, "/")
+	if len(dbString) > 0 {
+		db, err = strconv.Atoi(dbString); if err != nil {
+			conn.Close()
+			return nil, err
+		}
+
+		_, err := conn.Do("SELECT", db); if err != nil {
+			conn.Close()
+			return nil, err
+		}
+	}
+
+	return conn, nil
+}
+
 // Cache is a redis configured for caching. You usually want to use this. Only
 // store data that can be recomputed here.
 //
@@ -57,7 +99,7 @@ var Cache = &redis.Pool{
 	MaxIdle:     3,
 	IdleTimeout: 240 * time.Second,
 	Dial: func() (redis.Conn, error) {
-		return redis.Dial("tcp", addrCache)
+		return connectRedis(addrCache)
 	},
 	TestOnBorrow: func(c redis.Conn, t time.Time) error {
 		_, err := c.Do("PING")
@@ -77,6 +119,6 @@ var Store = &redis.Pool{
 		return err
 	},
 	Dial: func() (redis.Conn, error) {
-		return redis.Dial("tcp", addrStore)
+		return connectRedis(addrStore)
 	},
 }
