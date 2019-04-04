@@ -11,6 +11,7 @@ import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
 import { createSettingsService } from './services/settings'
+import { TextDocumentTokenTypeProviderRegistry } from './services/tokenType'
 import { ViewProviderRegistry } from './services/view'
 
 /**
@@ -39,6 +40,7 @@ export class Services {
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
+    public readonly textDocumentTokenTypes = new TextDocumentTokenTypeProviderRegistry()
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly queryTransformer = new QueryTransformerRegistry()

@@ -958,6 +958,25 @@ declare module 'sourcegraph' {
         provideLocations(document: TextDocument, position: Position): ProviderResult<Location[]>
     }
 
+    /**
+     * The type of a token. TODO
+     */
+    export type TokenType = 'whitespace' | 'comment' | 'punctuation' | 'identifier' | 'string'
+
+    /**
+     * A toke type provider.
+     */
+    export interface TokenTypeProvider {
+        /**
+         * Provide the token type of the symbol at the given position and document. TODO
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @return The type of the token.
+         */
+        provideTokenType(document: TextDocument, position: Position): Promise<TokenType>
+    }
+
     export namespace languages {
         /**
          * Registers a hover provider, which returns a formatted hover message (intended for display in a tooltip)
@@ -1023,6 +1042,18 @@ declare module 'sourcegraph' {
             id: string,
             selector: DocumentSelector,
             provider: LocationProvider
+        ): Unsubscribable
+
+        /**
+         * Registers a toke type provider. TODO
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A toke type provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerTokenTypeProvider(
+            selector: DocumentSelector,
+            provider: TokenTypeProvider
         ): Unsubscribable
     }
 

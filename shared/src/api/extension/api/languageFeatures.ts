@@ -8,6 +8,7 @@ import {
     Location,
     LocationProvider,
     ReferenceProvider,
+    TokenTypeProvider,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
@@ -74,6 +75,17 @@ export class ExtLanguageFeatures {
             )
         )
         return syncSubscription(this.proxy.$registerLocationProvider(idStr, selector, proxyValue(providerFunction)))
+    }
+
+    public registerTokenTypeProvider(selector: DocumentSelector, provider: TokenTypeProvider): Unsubscribable {
+        return syncSubscription(
+            this.proxy.$registerTokenTypeProvider(
+                selector,
+                proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
+                    provider.provideTokenType(await this.documents.getSync(textDocument.uri), toPosition(position))
+                )
+            )
+        )
     }
 }
 

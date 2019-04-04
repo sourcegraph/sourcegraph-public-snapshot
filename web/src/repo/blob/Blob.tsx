@@ -4,7 +4,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
-import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, EMPTY, forkJoin, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
@@ -21,6 +21,7 @@ import {
     FileSpec,
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
+    makeRepoURI,
     ModeSpec,
     parseHash,
     PositionSpec,
@@ -149,6 +150,28 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
+        const whenTokenIsIdentifier: <T>(params: HoveredToken & HoverContext, inner: Observable<T>) => Observable<T> = (
+            context,
+            inner
+        ) => {
+            const params = {
+                textDocument: { uri: makeRepoURI(context) },
+                position: { line: context.line - 1, character: context.character - 1 },
+            }
+            return this.props.extensionsController.services.textDocumentTokenTypes
+                .providersForDocument(params.textDocument)
+                .pipe(
+                    switchMap(providers =>
+                        providers.length === 0
+                            ? of(true)
+                            : forkJoin(providers.map(provider => provider(params))).pipe(
+                                  map(ts => ts.length === 0 || ts.includes('identifier'))
+                              )
+                    ),
+                    switchMap(isIdentifier => (isIdentifier ? inner : EMPTY))
+                )
+        }
+
         const hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
@@ -163,8 +186,9 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
-            getActions: context => getHoverActions(this.props, context),
+            getHover: position =>
+                whenTokenIsIdentifier(position, getHover(this.getLSPTextDocumentPositionParams(position), this.props)),
+            getActions: context => whenTokenIsIdentifier(context, getHoverActions(this.props, context)),
         })
         this.subscriptions.add(hoverifier)
 

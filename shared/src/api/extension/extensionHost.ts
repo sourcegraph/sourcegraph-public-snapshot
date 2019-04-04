@@ -240,6 +240,11 @@ function createExtensionAPI(
                 selector: sourcegraph.DocumentSelector,
                 provider: sourcegraph.LocationProvider
             ) => languageFeatures.registerLocationProvider(id, selector, provider),
+
+            registerTokenTypeProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.TokenTypeProvider
+            ) => languageFeatures.registerTokenTypeProvider(selector, provider),
         },
 
         search: {

@@ -1,11 +1,12 @@
 import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
-import { DocumentSelector, Unsubscribable } from 'sourcegraph'
+import { DocumentSelector, TokenType, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
+import { TextDocumentTokenTypeProviderRegistry } from '../services/tokenType'
 import { wrapRemoteObservable } from './common'
 
 /** @internal */
@@ -38,6 +39,11 @@ export interface ClientLanguageFeaturesAPI extends ProxyValue {
             ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue
+
+    $registerTokenTypeProvider(
+        selector: DocumentSelector,
+        providerFunction: ProxyResult<((params: TextDocumentPositionParams) => TokenType) & ProxyValue>
+    ): Unsubscribable & ProxyValue
 }
 
 /** @internal */
@@ -51,7 +57,8 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
         >,
         private definitionRegistry: TextDocumentLocationProviderRegistry,
         private referencesRegistry: TextDocumentLocationProviderRegistry<ReferenceParams>,
-        private locationRegistry: TextDocumentLocationProviderIDRegistry
+        private locationRegistry: TextDocumentLocationProviderIDRegistry,
+        private tokenTypeRegistry: TextDocumentTokenTypeProviderRegistry
     ) {}
 
     public $registerHoverProvider(
@@ -104,6 +111,15 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
             this.locationRegistry.registerProvider({ id, documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
             )
+        )
+    }
+
+    public $registerTokenTypeProvider(
+        documentSelector: DocumentSelector,
+        providerFunction: ProxyResult<((params: TextDocumentPositionParams) => TokenType) & ProxyValue>
+    ): Unsubscribable & ProxyValue {
+        return proxyValue(
+            this.tokenTypeRegistry.registerProvider({ documentSelector }, params => providerFunction(params))
         )
     }
 }
