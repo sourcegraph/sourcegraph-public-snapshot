@@ -1,3 +1,7 @@
+// Command bigrepo creates a repository with a given number of files
+// (given by --nf), each of a particular size (given by --size), in order to
+// stress test search.
+
 package main
 
 import (
