@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -94,6 +95,30 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		Metadata: new(gitlab.Project),
 	}
 
+	bitbucketServerService := repos.ExternalService{
+		ID:          2,
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "Bitbucket Server - Test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://bitbucketserver.mycorp.com",
+			"token": "secret"
+		}`),
+	}
+
+	bitbucketServerRepo := repos.Repo{
+		Name:    "bitbucketserver.mycorp.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "1",
+			ServiceType: "bitbucketServer",
+			ServiceID:   "http://bitbucketserver.mycorp.com",
+		},
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(bitbucketserver.Repo),
+	}
+
 	var testCases []testCase
 	for _, k := range []struct {
 		svc  repos.ExternalService
@@ -101,6 +126,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 	}{
 		{svc: githubService, repo: githubRepo},
 		{svc: gitlabService, repo: gitlabRepo},
+		{svc: bitbucketServerService, repo: bitbucketServerRepo},
 	} {
 		repo, svc := k.repo, k.svc
 		testCases = append(testCases,
@@ -549,6 +575,121 @@ func testGitLabSetDefaultProjectQueryMigration(store repos.Store) func(*testing.
 				}
 
 				err := repos.GitLabSetDefaultProjectQueryMigration(clock.Now).Run(ctx, tx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				es, err := tx.ListExternalServices(ctx)
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, es)
+				}
+			}))
+		}
+
+	}
+}
+
+func TestBitbucketServerSetDefaultRepositoryQueryMigration(t *testing.T) {
+	t.Parallel()
+	testBitbucketServerSetDefaultRepositoryQueryMigration(new(repos.FakeStore))(t)
+}
+
+func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) func(*testing.T) {
+	bitbucketsrv := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://bitbucketserver.mycorp.com"
+			}
+		`),
+	}
+
+	bitbucketsrvNone := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://bitbucketserver.mycorp.com",
+				"repositoryQuery": ["none"]
+			}
+		`),
+	}
+
+	gitlab := repos.ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "Gitlab - Test",
+		Config:      formatJSON(`{"url": "https://gitlab.com"}`),
+	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name   string
+			stored repos.ExternalServices
+			assert repos.ExternalServicesAssertion
+			err    string
+		}{
+			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
+			{
+				name:   "non-bitbucketserver services are left unchanged",
+				stored: repos.ExternalServices{&gitlab},
+				assert: repos.Assert.ExternalServicesEqual(&gitlab),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services with repositoryQuery set are left unchanged",
+				stored: repos.ExternalServices{&bitbucketsrvNone},
+				assert: repos.Assert.ExternalServicesEqual(&bitbucketsrvNone),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services are migrated",
+				stored: repos.ExternalServices{&bitbucketsrv},
+				assert: repos.Assert.ExternalServicesEqual(
+					bitbucketsrv.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+							e.Config, err = jsonc.Edit(e.Config,
+								[]string{"?visibility=private", "?visibility=public"},
+								"repositoryQuery",
+							)
+
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+					t.Errorf("failed to prepare store: %v", err)
+					return
+				}
+
+				err := repos.BitbucketServerSetDefaultRepositoryQueryMigration(clock.Now).Run(ctx, tx)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}

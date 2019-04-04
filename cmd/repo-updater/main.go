@@ -63,6 +63,7 @@ func main() {
 		kinds = append(kinds,
 			"GITHUB",
 			"GITLAB",
+			"BITBUCKETSERVER",
 		)
 		migrations = append(migrations,
 			repos.EnabledStateDeprecationMigration(src, clock, kinds...),
