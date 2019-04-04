@@ -94,7 +94,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
                             return true
                         }
 
-                        // Don't swollow other errors.
+                        // Don't swallow other errors.
                         throw err
                     }),
                     delay(1000)

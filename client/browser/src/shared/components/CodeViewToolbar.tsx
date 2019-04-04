@@ -10,7 +10,7 @@ import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { toURIWithPath } from '../../../../../shared/src/util/url'
-import { FileInfo } from '../../libs/code_intelligence'
+import { FileInfoWithContents } from '../../libs/code_intelligence/code_views'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
@@ -31,7 +31,7 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
 export interface CodeViewToolbarProps
     extends PlatformContextProps<'forceUpdateTooltip'>,
         ExtensionsControllerProps,
-        FileInfo,
+        FileInfoWithContents,
         TelemetryProps,
         CodeViewToolbarClassProps {
     onEnabledChange?: (enabled: boolean) => void
@@ -102,7 +102,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         />
                     </li>
                 )}{' '}
-                {!this.props.baseCommitID && (
+                {!this.props.baseCommitID && this.props.content !== undefined && (
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
                         <OpenOnSourcegraph
                             label="View file"

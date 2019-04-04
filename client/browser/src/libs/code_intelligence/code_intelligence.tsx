@@ -255,6 +255,11 @@ export interface FileInfo {
      */
     commitID: string
     /**
+     * `true` if this file is from a private repository,
+     * but the extension points to the public sourcegraph.com.
+     */
+    privateRepoPublicSourcegraph?: boolean
+    /**
      * The revision the code view is at. If a `baseRev` is provided, this value is treated as the head rev.
      */
     rev?: string
@@ -275,12 +280,6 @@ export interface FileInfo {
      * Revision for the BASE side of the diff.
      */
     baseRev?: string
-
-    headHasFileContents?: boolean
-    baseHasFileContents?: boolean
-
-    content?: string
-    baseContent?: string
 }
 
 interface CodeIntelligenceProps
@@ -446,7 +445,6 @@ export function handleCodeHost({
                 if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
                     return [false]
                 }
-
                 return [true]
             })
         )
