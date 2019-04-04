@@ -58,14 +58,13 @@ func connectRedis(redisUrl string) (redis.Conn, error) {
 		return nil, err
 	}
 
-	if len(parsedUrl.Scheme) > 0 && parsedUrl.Scheme != "redis" {
-		return nil, errors.New(redisUrl + ", is not a valid redis protocol, redis://:password@host:port/db")
-	}
-
 	var host string
 	if len(parsedUrl.Opaque) > 0 {
 		host = parsedUrl.Scheme + ":" + parsedUrl.Opaque
 	} else {
+		if parsedUrl.Scheme != "redis" {
+			return nil, errors.New(redisUrl + ", is not a valid redis protocol, redis://:password@host:port/db")
+		}
 		host = parsedUrl.Host
 	}
 
