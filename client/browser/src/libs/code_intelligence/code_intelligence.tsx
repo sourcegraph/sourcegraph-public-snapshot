@@ -167,7 +167,7 @@ export interface CodeHost {
      * Checks to see if the current context the code is running in is within
      * the given code host.
      */
-    check: () => Promise<boolean> | boolean
+    check: () => boolean
 
     /**
      * Mount getter for the hover overlay.
@@ -433,8 +433,6 @@ export function handleCodeHost({
     platformContext,
     showGlobalDebug,
 }: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
-    console.log('Handling code host', codeHost.name)
-
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
 
@@ -727,44 +725,25 @@ export function handleCodeHost({
 
 const SHOW_DEBUG = () => localStorage.getItem('debug') !== null
 
-export async function injectCodeIntelligenceToCodeHosts(
+const CODE_HOSTS = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
+export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
+
+export async function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
-    codeHosts: CodeHost[],
+    codeHost: CodeHost,
     showGlobalDebug = SHOW_DEBUG()
 ): Promise<Subscription> {
     const subscriptions = new Subscription()
-
-    // Find the right code host
-    for (const codeHost of codeHosts) {
-        const isCodeHost = await Promise.resolve(codeHost.check())
-        if (isCodeHost) {
-            const { platformContext, extensionsController } = initializeExtensions(codeHost)
-            subscriptions.add(extensionsController)
-            subscriptions.add(
-                handleCodeHost({
-                    mutations,
-                    codeHost,
-                    extensionsController,
-                    platformContext,
-                    showGlobalDebug,
-                })
-            )
-            break
-        }
-    }
-
+    const { platformContext, extensionsController } = initializeExtensions(codeHost)
+    subscriptions.add(extensionsController)
+    subscriptions.add(
+        handleCodeHost({
+            mutations,
+            codeHost,
+            extensionsController,
+            platformContext,
+            showGlobalDebug,
+        })
+    )
     return subscriptions
-}
-
-/**
- * Injects all code hosts into the page.
- *
- * @returns A promise with a subscription containing all subscriptions for code
- * intelligence. Unsubscribing will clean up subscriptions for hoverify and any
- * incomplete setup requests.
- */
-export async function injectCodeIntelligence(mutations: Observable<MutationRecordLike[]>): Promise<Subscription> {
-    const codeHosts: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
-
-    return await injectCodeIntelligenceToCodeHosts(mutations, codeHosts)
 }

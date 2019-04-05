@@ -4,7 +4,6 @@ import { of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
-import storage from '../../browser/storage'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
@@ -163,15 +162,7 @@ const phabCodeViews: CodeViewSpec[] = [
     },
 ]
 
-export function checkIsPhabricator(): Promise<boolean> {
-    if (document.querySelector('.phabricator-wordmark')) {
-        return Promise.resolve(true)
-    }
-
-    return new Promise<boolean>(resolve =>
-        storage.getSync(items => resolve(!!items.enterpriseUrls.find(url => url === window.location.origin)))
-    )
-}
+export const checkIsPhabricator = () => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
     codeViewSpecs: phabCodeViews,

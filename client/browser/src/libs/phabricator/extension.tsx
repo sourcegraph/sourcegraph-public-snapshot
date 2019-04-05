@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setSourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
-import { injectCodeIntelligence } from '../code_intelligence'
+import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
 import { metaClickOverride } from './util'
 
@@ -27,7 +27,10 @@ async function injectModules(): Promise<void> {
     }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
 
     // TODO handle subscription
-    await injectCodeIntelligence(mutations)
+    const codeHost = await determineCodeHost()
+    if (codeHost) {
+        await injectCodeIntelligenceToCodeHost(mutations, codeHost)
+    }
 }
 
 function init(): void {
