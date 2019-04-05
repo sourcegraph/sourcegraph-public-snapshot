@@ -33,7 +33,7 @@ import { CommandListClassProps } from '../../../../../shared/src/commandPalette/
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay, HoverOverlayProps } from '../../../../../shared/src/hover/HoverOverlay'
+import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
@@ -179,7 +179,7 @@ export interface CodeHost {
     /**
      * CSS classes for ActionItem buttons in the hover overlay to customize styling
      */
-    hoverOverlayClassProps?: Pick<HoverOverlayProps, 'actionItemClassName' | 'actionItemPressedClassName'>
+    hoverOverlayClassProps?: HoverOverlayClassProps
 
     /**
      * The list of types of code views to try to annotate.
@@ -693,12 +693,7 @@ export function handleCodeHost({
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
-                            buttonProps={
-                                toolbarButtonProps || {
-                                    className: '',
-                                    style: {},
-                                }
-                            }
+                            buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
                         />,
                         mount

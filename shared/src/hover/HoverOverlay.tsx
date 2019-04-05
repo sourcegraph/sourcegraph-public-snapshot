@@ -24,18 +24,22 @@ export type HoverContext = RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
 
 export type HoverData = HoverMerged
 
-export interface HoverOverlayProps
-    extends GenericHoverOverlayProps<HoverContext, HoverData, ActionItemAction>,
-        ActionItemComponentProps,
-        TelemetryProps {
-    /** A ref callback to get the root overlay element. Use this to calculate the position. */
-    hoverRef?: React.Ref<HTMLDivElement>
-
+export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
+    closeButtonClassName?: string
 
     actionItemClassName?: string
     actionItemPressedClassName?: string
+}
+
+export interface HoverOverlayProps
+    extends GenericHoverOverlayProps<HoverContext, HoverData, ActionItemAction>,
+        ActionItemComponentProps,
+        HoverOverlayClassProps,
+        TelemetryProps {
+    /** A ref callback to get the root overlay element. Use this to calculate the position. */
+    hoverRef?: React.Ref<HTMLDivElement>
 
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
@@ -103,7 +107,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
             >
                 {showCloseButton && (
                     <button
-                        className="hover-overlay__close-button btn btn-icon"
+                        className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
                         onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
                     >
                         <CloseIcon className="icon-inline" />

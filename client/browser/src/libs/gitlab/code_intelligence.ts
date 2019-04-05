@@ -106,5 +106,6 @@ export const gitlabCodeHost: CodeHost = {
     hoverOverlayClassProps: {
         actionItemClassName: 'btn btn-secondary action-item--gitlab',
         actionItemPressedClassName: 'active',
+        closeButtonClassName: 'btn',
     },
 }
