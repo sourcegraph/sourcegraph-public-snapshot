@@ -95,8 +95,8 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                     },
                                 },
                                 commit: {
-                                    baseRev: this.props.baseRev!,
-                                    headRev: this.props.rev!,
+                                    baseRev: this.props.baseRev || this.props.baseCommitID,
+                                    headRev: this.props.rev || this.props.commitID,
                                 },
                             }}
                         />
