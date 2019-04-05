@@ -13,6 +13,7 @@ assignees: felixfbecker,lguychard
 
 - [ ] GitHub
 - [ ] GitHub Enterprise
+- [ ] Refined GitHub
 - [ ] Phabricator
 - [ ] Phabricator integration
 - [ ] Bitbucket
