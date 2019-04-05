@@ -105,14 +105,13 @@ func (r savedQueryResolver) Query() string { return r.query }
 
 func toSavedQueryResolver(index int, subject *settingsSubject, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
-		subject:        subject,
-		key:            entry.Key,
-		index:          index,
-		description:    entry.Description,
-		query:          entry.Query,
-		showOnHomepage: false,
-		notify:         entry.Notify,
-		notifySlack:    entry.NotifySlack,
+		subject:     subject,
+		key:         entry.Key,
+		index:       index,
+		description: entry.Description,
+		query:       entry.Query,
+		notify:      entry.Notify,
+		notifySlack: entry.NotifySlack,
 	}
 }
 
@@ -179,14 +178,13 @@ func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
 	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config, args.DisableSubscriptionNotifications)
 
 	return &savedQueryResolver{
-		subject:        r.subject,
-		key:            key,
-		index:          index,
-		description:    args.Description,
-		query:          args.Query,
-		showOnHomepage: false,
-		notify:         args.Notify,
-		notifySlack:    args.NotifySlack,
+		subject:     r.subject,
+		key:         key,
+		index:       index,
+		description: args.Description,
+		query:       args.Query,
+		notify:      args.Notify,
+		notifySlack: args.NotifySlack,
 	}, nil
 }
 
