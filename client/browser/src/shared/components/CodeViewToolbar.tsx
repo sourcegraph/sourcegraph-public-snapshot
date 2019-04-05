@@ -102,7 +102,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         />
                     </li>
                 )}{' '}
-                {!this.props.baseCommitID && this.props.content !== undefined && (
+                {// Only show the "View file" button if we were able to fetch the file contents
+                // from the Sourcegraph instance
+                !this.props.baseCommitID && this.props.content !== undefined && (
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
                         <OpenOnSourcegraph
                             label="View file"
