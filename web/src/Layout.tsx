@@ -31,7 +31,7 @@ import { parseSearchURLQuery } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreferenceProps, ThemeProps } from './theme'
-import { EventLogger } from './tracking/eventLogger'
+import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -45,6 +45,7 @@ export interface LayoutProps
         ExtensionsControllerProps,
         KeybindingsProps,
         ThemeProps,
+        EventLoggerProps,
         ThemePreferenceProps,
         ActivationProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
@@ -71,7 +72,7 @@ export interface LayoutProps
      */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
-    eventLogger: EventLogger
+    telemetryService: EventLogger
 
     // Search
     navbarSearchQuery: string

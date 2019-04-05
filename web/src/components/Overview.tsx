@@ -98,17 +98,16 @@ export class OverviewItem extends React.Component<Props, State> {
                     )}
                 </Link>
             )
-        } else {
-            return (
-                <div className={`overview-item ${this.props.list && 'list'}`}>
-                    <div className="overview-item__header">{e}</div>
-                    {actions}
-                    {this.props.children && this.state.expanded && (
-                        <div className="overview-item__children">{this.props.children}</div>
-                    )}
-                </div>
-            )
         }
+        return (
+            <div className={`overview-item ${this.props.list && 'list'}`}>
+                <div className="overview-item__header">{e}</div>
+                {actions}
+                {this.props.children && this.state.expanded && (
+                    <div className="overview-item__children">{this.props.children}</div>
+                )}
+            </div>
+        )
     }
 
     private toggleExpand = () => this.setState(prevState => ({ expanded: !prevState.expanded }))

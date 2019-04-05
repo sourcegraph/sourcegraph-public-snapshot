@@ -35,7 +35,7 @@ interface AggregateError extends Error {
  */
 export const createAggregateError = (errors: ErrorLike[] = []): AggregateError =>
     Object.assign(new Error(errors.map(e => e.message).join('\n')), {
-        name: 'AggregateError' as 'AggregateError',
+        name: 'AggregateError' as const,
         errors: errors.map(asError),
     })
 

@@ -68,7 +68,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) 
 	}
 
 	var stored Repos
-	if stored, err = store.ListRepos(ctx, kinds...); err != nil {
+	if stored, err = store.ListRepos(ctx, StoreListReposArgs{Kinds: kinds}); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
@@ -111,19 +111,19 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	for _, repo := range diff.Deleted {
 		repo.UpdatedAt, repo.DeletedAt = now, now
 		repo.Sources = map[string]*SourceInfo{}
-		repo.Enabled = false // Set for backwards compatibility
+		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
 	for _, repo := range diff.Modified {
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}
-		repo.Enabled = true // Set for backwards compatibility
+		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
 	for _, repo := range diff.Added {
 		repo.CreatedAt, repo.UpdatedAt, repo.DeletedAt = now, now, time.Time{}
-		repo.Enabled = true // Set for backwards compatibility
+		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
@@ -212,7 +212,10 @@ func merge(o, n *Repo) {
 }
 
 func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) {
-	svcs, err := s.store.ListExternalServices(ctx, kinds...)
+	svcs, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{
+		Kinds: kinds,
+	})
+
 	if err != nil {
 		return nil, err
 	}

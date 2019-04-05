@@ -69,7 +69,7 @@ describe('FileMatchChildren', () => {
                     settings: { 'search.contextLines': '3' },
                     extensions: null,
                     subject: {
-                        __typename: 'User' as 'User',
+                        __typename: 'User' as const,
                         username: 'f',
                         id: 'abc',
                         settingsURL: '/users/f/settings',

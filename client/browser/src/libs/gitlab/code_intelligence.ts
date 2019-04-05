@@ -1,4 +1,4 @@
-import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
@@ -6,11 +6,10 @@ import { getPageInfo, GitLabPageKind } from './scrape'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',
-    style: { marginRight: '5px', textDecoration: 'none', color: 'inherit' },
 }
 
 export function checkIsGitlab(): boolean {
-    return !!document.head!.querySelector('meta[content="GitLab"]')
+    return !!document.head.querySelector('meta[content="GitLab"]')
 }
 
 const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left }) => {
@@ -43,7 +42,7 @@ const createToolbarMount = (codeView: HTMLElement) => {
     return mount
 }
 
-const singleFileCodeView: CodeViewWithOutSelector = {
+const singleFileCodeView: CodeViewSpecWithOutSelector = {
     dom: singleFileDOMFunctions,
     isDiff: false,
     getToolbarMount: createToolbarMount,
@@ -51,7 +50,7 @@ const singleFileCodeView: CodeViewWithOutSelector = {
     toolbarButtonProps,
 }
 
-const mergeRequestCodeView: CodeViewWithOutSelector = {
+const mergeRequestCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDOMFunctions,
     isDiff: true,
     getToolbarMount: createToolbarMount,
@@ -59,7 +58,7 @@ const mergeRequestCodeView: CodeViewWithOutSelector = {
     toolbarButtonProps,
 }
 
-const commitCodeView: CodeViewWithOutSelector = {
+const commitCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDOMFunctions,
     isDiff: true,
     getToolbarMount: createToolbarMount,
@@ -67,7 +66,7 @@ const commitCodeView: CodeViewWithOutSelector = {
     toolbarButtonProps,
 }
 
-const resolveCodeView = (codeView: HTMLElement): CodeViewWithOutSelector => {
+const resolveCodeViewSpec = (codeView: HTMLElement): CodeViewSpecWithOutSelector => {
     const { pageKind } = getPageInfo()
 
     if (pageKind === GitLabPageKind.File) {
@@ -81,19 +80,31 @@ const resolveCodeView = (codeView: HTMLElement): CodeViewWithOutSelector => {
     return commitCodeView
 }
 
-const codeViewResolver: CodeViewResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file-holder',
-    resolveCodeView,
+    resolveCodeViewSpec,
 }
 
 export const gitlabCodeHost: CodeHost = {
     name: 'gitlab',
     check: checkIsGitlab,
-    codeViewResolver,
+    codeViewSpecResolver,
     adjustOverlayPosition,
     getCommandPaletteMount,
-    actionNavItemClassProps: {
-        actionItemClass: 'btn btn-secondary action-item--gitlab',
+    commandPaletteClassProps: {
+        popoverClassName: 'dropdown-menu command-list-popover--gitlab',
+        formClassName: 'dropdown-input',
+        inputClassName: 'dropdown-input-field',
+        resultsContainerClassName: 'dropdown-content',
+        selectedActionItemClassName: 'is-focused',
+    },
+    codeViewToolbarClassProps: {
+        className: 'code-view-toolbar--gitlab',
+        actionItemClass: 'btn btn-sm btn-secondary action-item--gitlab',
         actionItemPressedClass: 'active',
+    },
+    hoverOverlayClassProps: {
+        actionItemClassName: 'btn btn-secondary action-item--gitlab',
+        actionItemPressedClassName: 'active',
     },
 }

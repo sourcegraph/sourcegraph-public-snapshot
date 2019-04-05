@@ -8,6 +8,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreference } from '../theme'
+import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
@@ -19,16 +20,18 @@ const renderShallow = (element: React.ReactElement<NavLinks['props']>): any => {
     const getDisplayName = (element: React.ReactChild): string | string[] => {
         if (element === null) {
             return []
-        } else if (typeof element === 'string' || typeof element === 'number') {
+        }
+        if (typeof element === 'string' || typeof element === 'number') {
             return element.toString()
-        } else if (element.type === 'li' && (element.props.children.props.href || element.props.children.props.to)) {
+        }
+        if (element.type === 'li' && (element.props.children.props.href || element.props.children.props.to)) {
             return `${element.props.children.props.children} ${element.props.children.props.href ||
                 element.props.children.props.to}`
-        } else if (typeof element.type === 'symbol' || typeof element.type === 'string') {
-            return flatten(React.Children.map(element.props.children, element => getDisplayName(element)))
-        } else {
-            return (element.type as any).displayName || element.type.name || 'Unknown'
         }
+        if (typeof element.type === 'symbol' || typeof element.type === 'string') {
+            return flatten(React.Children.map(element.props.children, element => getDisplayName(element)))
+        }
+        return (element.type as any).displayName || element.type.name || 'Unknown'
     }
 
     return flatten(
@@ -51,6 +54,7 @@ describe('NavLinks', () => {
     const commonProps = {
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
+        telemetryService: eventLogger,
         isLightTheme: true,
         themePreference: ThemePreference.Light,
         onThemePreferenceChange: noop,

@@ -103,7 +103,7 @@ const fetchReferencesLink = (): Observable<string | null> =>
             }
             const repositoryURLs = data.repositories.nodes
                 .filter(r => r.gitRefs && r.gitRefs.totalCount > 0)
-                .sort((r1, r2) => r2.gitRefs!.totalCount! - r1.gitRefs!.totalCount)
+                .sort((r1, r2) => r2.gitRefs.totalCount - r1.gitRefs.totalCount)
                 .map(r => r.url)
             if (repositoryURLs.length === 0) {
                 return null

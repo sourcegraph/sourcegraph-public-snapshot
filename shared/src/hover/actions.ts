@@ -14,7 +14,7 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { ActionItemProps } from '../actions/ActionItem'
+import { ActionItemAction } from '../actions/ActionItem'
 import { Context } from '../api/client/context/context'
 import { Model } from '../api/client/model'
 import { Services } from '../api/client/services'
@@ -37,7 +37,7 @@ const LOADING: 'loading' = 'loading'
 export function getHoverActions(
     { extensionsController, platformContext }: ExtensionsControllerProps & PlatformContextProps<'urlToFile'>,
     hoverContext: HoveredToken & HoverContext
-): Observable<ActionItemProps[]> {
+): Observable<ActionItemAction[]> {
     return getHoverActionsContext({ extensionsController, platformContext }, hoverContext).pipe(
         switchMap(context =>
             extensionsController.services.contribution
@@ -139,8 +139,7 @@ export function getHoverActionsContext(
                     definitionURLOrError !== LOADING &&
                     !isErrorLike(definitionURLOrError) &&
                     definitionURLOrError === null,
-                'goToDefinition.error':
-                    isErrorLike(definitionURLOrError) && ((definitionURLOrError as any).stack as any),
+                'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
                 'findReferences.url':
                     hasReferenceProvider && showFindReferences

@@ -31,8 +31,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
         const instance = Tooltip.INSTANCE
         if (instance) {
             instance.setState(prevState => {
-                const subject =
-                    prevState.lastEventTarget && instance.getSubject(prevState.lastEventTarget as HTMLElement)
+                const subject = prevState.lastEventTarget && instance.getSubject(prevState.lastEventTarget)
                 return {
                     subject,
                     content: subject ? instance.getContent(subject) : undefined,

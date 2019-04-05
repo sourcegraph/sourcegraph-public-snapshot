@@ -394,7 +394,7 @@ export function updateSiteConfiguration(lastID: number, input: string): Observab
         { lastID, input }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.updateSiteConfiguration as boolean)
+        map(data => data.updateSiteConfiguration)
     )
 }
 

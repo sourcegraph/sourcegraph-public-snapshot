@@ -23,7 +23,7 @@ export const resolveRevisionFileInfo = (codeView: HTMLElement): Observable<FileI
         switchMap(info => {
             const fetchingBaseFile = fetchBlobContentLines({
                 repoName: info.repoName,
-                filePath: info.filePath || info.filePath,
+                filePath: info.filePath,
                 commitID: info.baseCommitID,
             })
 
@@ -151,7 +151,7 @@ export const resolveDiffusionFileInfo = (codeView: HTMLElement): Observable<File
         switchMap(info => {
             const fetchingBaseFile = fetchBlobContentLines({
                 repoName: info.repoName,
-                filePath: info.filePath || info.filePath,
+                filePath: info.filePath,
                 commitID: info.commitID,
             })
 

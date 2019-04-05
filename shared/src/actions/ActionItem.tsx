@@ -10,10 +10,10 @@ import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
-import { TelemetryContext } from '../telemetry/telemetryContext'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
-export interface ActionItemProps {
+export interface ActionItemAction {
     /**
      * The action specified in the menu item's {@link module:sourcegraph.module/protocol.MenuItemContribution#action}
      * property.
@@ -25,10 +25,25 @@ export interface ActionItemProps {
      * {@link module:sourcegraph.module/protocol.MenuItemContribution#alt} property.
      */
     altAction?: EvaluatedActionContribution
+}
 
+export interface ActionItemComponentProps
+    extends ExtensionsControllerProps<'executeCommand'>,
+        PlatformContextProps<'forceUpdateTooltip'> {
+    location: H.Location
+}
+
+export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
     variant?: 'actionItem'
+
     className?: string
+
+    /**
+     * Added _in addition_ to `className` if the action item is a toggle in the "pressed" state.
+     */
     pressedClassName?: string
+
+    iconClassName?: string
 
     /** Called after executing the action (for both success and failure). */
     onDidExecute?: (actionID: string) => void
@@ -61,14 +76,6 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-export interface ActionItemComponentProps
-    extends ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
-    location: H.Location
-}
-
-interface Props extends ActionItemProps, ActionItemComponentProps {}
-
 const LOADING: 'loading' = 'loading'
 
 interface State {
@@ -76,11 +83,8 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ActionItem extends React.PureComponent<Props, State> {
+export class ActionItem extends React.PureComponent<ActionItemProps, State> {
     public state: State = { actionOrError: null }
-
-    public static contextType = TelemetryContext
-    public context!: React.ContextType<typeof TelemetryContext>
 
     private commandExecutions = new Subject<ExecuteCommandParams>()
     private subscriptions = new Subscription()
@@ -107,7 +111,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
         )
     }
 
-    public componentDidUpdate(prevProps: Props, prevState: State): void {
+    public componentDidUpdate(prevProps: ActionItemProps, prevState: State): void {
         // If the tooltip changes while it's visible, we need to force-update it to show the new value.
         const prevTooltip = prevProps.action.actionItem && prevProps.action.actionItem.description
         const tooltip = this.props.action.actionItem && this.props.action.actionItem.description
@@ -142,7 +146,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
                         <img
                             src={this.props.action.actionItem.iconURL}
                             alt={this.props.action.actionItem.iconDescription}
-                            className="icon-inline"
+                            className={this.props.iconClassName}
                         />
                     )}
                     {this.props.action.actionItem.iconURL && this.props.action.actionItem.label && <>&nbsp;</>}
@@ -180,7 +184,9 @@ export class ActionItem extends React.PureComponent<Props, State> {
 
         const showLoadingSpinner = this.props.showLoadingSpinnerDuringExecution && this.state.actionOrError === LOADING
         const pressed =
-            this.props.variant === 'actionItem' && this.props.action.actionItem && this.props.action.actionItem.pressed
+            this.props.variant === 'actionItem' && this.props.action.actionItem
+                ? this.props.action.actionItem.pressed
+                : undefined
 
         return (
             <LinkOrButton
@@ -200,6 +206,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
                     variantClassName,
                     pressed && [`action-item--pressed`, this.props.pressedClassName]
                 )}
+                pressed={pressed}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
                 to={
@@ -208,12 +215,10 @@ export class ActionItem extends React.PureComponent<Props, State> {
                 }
                 onSelect={this.runAction}
             >
-                {/* Use custom CSS classes instead of Bootstrap CSS classes because this component is also
-                 used in the browser extension, which doesn't necessarily have Bootstrap CSS classes defined. */}
-                <div className="action-item__content">{content}</div>
+                {content}
                 {showLoadingSpinner && (
                     <div className="action-item__loader">
-                        <LoadingSpinner className="icon-inline" />
+                        <LoadingSpinner className={this.props.iconClassName} />
                     </div>
                 )}
             </LinkOrButton>
@@ -230,7 +235,7 @@ export class ActionItem extends React.PureComponent<Props, State> {
         }
 
         // Record action ID (but not args, which might leak sensitive data).
-        this.context.log(action.id)
+        this.props.telemetryService.log(action.id)
 
         if (urlForClientCommandOpen(action, this.props.location)) {
             if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {

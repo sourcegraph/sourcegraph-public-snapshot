@@ -119,6 +119,7 @@ To indicate the steps of navigation through the UI:
 - Compress gifs with <https://ezgif.com/optimize> or similar tool.
 - Images should be used (only when necessary) to _illustrate_ the description of a process, not to _replace_ it.
 - Max image size: 100KB (GIFs included).
+  - For larger assets, upload them to the `sourcegraph-assets` Google Cloud Storage bucket instead with `gsutil cp -a public-read local/path/to/myasset.png gs://sourcegraph-assets/` (and refer to it as `https://storage.googleapis.com/sourcegraph-assets/myasset.png`).
 
 Inside the document:
 

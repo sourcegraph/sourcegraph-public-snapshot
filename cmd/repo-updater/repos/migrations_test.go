@@ -8,6 +8,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
@@ -39,7 +42,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		name    string
 		sourcer repos.Sourcer
 		stored  repos.Repos
-		assert  repos.ExternalServicesAssertion
+		svcs    repos.ExternalServicesAssertion
+		repos   repos.ReposAssertion
 		err     string
 	}
 
@@ -63,7 +67,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceType: "github",
 			ServiceID:   "http://github.com",
 		},
-		Sources: map[string]*repos.SourceInfo{},
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(github.Repository),
 	}
 
 	gitlabService := repos.ExternalService{
@@ -86,7 +91,32 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceType: "gitlab",
 			ServiceID:   "http://gitlab.com",
 		},
-		Sources: map[string]*repos.SourceInfo{},
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(gitlab.Project),
+	}
+
+	bitbucketServerService := repos.ExternalService{
+		ID:          2,
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "Bitbucket Server - Test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://bitbucketserver.mycorp.com",
+			"token": "secret"
+		}`),
+	}
+
+	bitbucketServerRepo := repos.Repo{
+		Name:    "bitbucketserver.mycorp.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "1",
+			ServiceType: "bitbucketServer",
+			ServiceID:   "http://bitbucketserver.mycorp.com",
+		},
+		Sources:  map[string]*repos.SourceInfo{},
+		Metadata: new(bitbucketserver.Repo),
 	}
 
 	var testCases []testCase
@@ -96,6 +126,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 	}{
 		{svc: githubService, repo: githubRepo},
 		{svc: gitlabService, repo: gitlabRepo},
+		{svc: bitbucketServerService, repo: bitbucketServerRepo},
 	} {
 		repo, svc := k.repo, k.svc
 		testCases = append(testCases,
@@ -105,7 +136,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
 				),
-				assert: repos.Assert.ExternalServicesEqual(svc.With(
+				svcs: repos.Assert.ExternalServicesEqual(svc.With(
 					repos.Opt.ExternalServiceModifiedAt(now),
 					excluded(&repo),
 				)),
@@ -117,7 +148,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
 				),
-				assert: repos.Assert.ExternalServicesEqual(svc.With(
+				svcs: repos.Assert.ExternalServicesEqual(svc.With(
 					repos.Opt.ExternalServiceModifiedAt(now),
 					excluded(&repo),
 				)),
@@ -131,7 +162,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 						r.Description = "some updated description"
 					})),
 				),
-				assert: repos.Assert.ExternalServicesEqual(svc.With(
+				svcs: repos.Assert.ExternalServicesEqual(svc.With(
 					repos.Opt.ExternalServiceModifiedAt(now),
 					excluded(&repo),
 				)),
@@ -141,7 +172,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				name:    "disabled: was deleted and is still deleted, got excluded",
 				stored:  repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				assert: repos.Assert.ExternalServicesEqual(svc.With(
+				svcs: repos.Assert.ExternalServicesEqual(svc.With(
 					repos.Opt.ExternalServiceModifiedAt(now),
 					excluded(&repo),
 				)),
@@ -157,8 +188,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 						r.Enabled = true
 					})),
 				),
-				assert: repos.Assert.ExternalServicesEqual(svc.Clone()),
-				err:    "<nil>",
+				svcs: repos.Assert.ExternalServicesEqual(svc.Clone()),
+				err:  "<nil>",
 			},
 			testCase{
 				name: "enabled: was not deleted and got deleted, then included",
@@ -166,7 +197,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 					r.Enabled = true
 				})},
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				assert: repos.Assert.ExternalServicesEqual(svc.With(
+				svcs: repos.Assert.ExternalServicesEqual(svc.With(
 					repos.Opt.ExternalServiceModifiedAt(now),
 					included(&repo),
 				)),
@@ -180,8 +211,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 						r.Enabled = true
 					})),
 				),
-				assert: repos.Assert.ExternalServicesEqual(svc.Clone()),
-				err:    "<nil>",
+				svcs: repos.Assert.ExternalServicesEqual(svc.Clone()),
+				err:  "<nil>",
 			},
 			testCase{
 				name: "initialRepositoryEnablement gets deleted",
@@ -194,7 +225,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 						}
 					}), nil,
 				)),
-				assert: repos.Assert.ExternalServicesEqual(svc.With(
+				svcs: repos.Assert.ExternalServicesEqual(svc.With(
 					repos.Opt.ExternalServiceModifiedAt(now),
 				)),
 				err: "<nil>",
@@ -206,7 +237,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
 					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil, repo.Clone()),
 				),
-				assert: repos.Assert.ExternalServicesEqual(
+				svcs: repos.Assert.ExternalServicesEqual(
 					svc.With(
 						repos.Opt.ExternalServiceModifiedAt(now),
 						excluded(&repo),
@@ -232,7 +263,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 					repos.NewFakeSource(svc.Clone(), nil),
 					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil),
 				),
-				assert: repos.Assert.ExternalServicesEqual(
+				svcs: repos.Assert.ExternalServicesEqual(
 					svc.With(
 						repos.Opt.ExternalServiceModifiedAt(now),
 						included(&repo),
@@ -243,6 +274,18 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 						included(&repo),
 					),
 				),
+				err: "<nil>",
+			},
+			testCase{
+				name:    "disabled: repos are deleted",
+				stored:  repos.Repos{&repo},
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
+				repos: repos.Assert.ReposEqual(repo.With(
+					func(r *repos.Repo) {
+						r.DeletedAt = now
+						r.Enabled = true
+					},
+				)),
 				err: "<nil>",
 			},
 		)
@@ -267,14 +310,22 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 					return
 				}
 
-				svcs, err := tx.ListExternalServices(ctx)
-				if err != nil {
-					t.Error(err)
-					return
+				if tc.svcs != nil {
+					svcs, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
+					if err != nil {
+						t.Error(err)
+						return
+					}
+					tc.svcs(t, svcs)
 				}
 
-				if tc.assert != nil {
-					tc.assert(t, svcs)
+				if tc.repos != nil {
+					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+					if err != nil {
+						t.Error(err)
+						return
+					}
+					tc.repos(t, rs)
 				}
 			}))
 		}
@@ -410,7 +461,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				es, err := tx.ListExternalServices(ctx)
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 				if err != nil {
 					t.Error(err)
 					return
@@ -528,7 +579,122 @@ func testGitLabSetDefaultProjectQueryMigration(store repos.Store) func(*testing.
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
-				es, err := tx.ListExternalServices(ctx)
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
+				if err != nil {
+					t.Error(err)
+					return
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, es)
+				}
+			}))
+		}
+
+	}
+}
+
+func TestBitbucketServerSetDefaultRepositoryQueryMigration(t *testing.T) {
+	t.Parallel()
+	testBitbucketServerSetDefaultRepositoryQueryMigration(new(repos.FakeStore))(t)
+}
+
+func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) func(*testing.T) {
+	bitbucketsrv := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://bitbucketserver.mycorp.com"
+			}
+		`),
+	}
+
+	bitbucketsrvNone := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://bitbucketserver.mycorp.com",
+				"repositoryQuery": ["none"]
+			}
+		`),
+	}
+
+	gitlab := repos.ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "Gitlab - Test",
+		Config:      formatJSON(`{"url": "https://gitlab.com"}`),
+	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name   string
+			stored repos.ExternalServices
+			assert repos.ExternalServicesAssertion
+			err    string
+		}{
+			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
+			{
+				name:   "non-bitbucketserver services are left unchanged",
+				stored: repos.ExternalServices{&gitlab},
+				assert: repos.Assert.ExternalServicesEqual(&gitlab),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services with repositoryQuery set are left unchanged",
+				stored: repos.ExternalServices{&bitbucketsrvNone},
+				assert: repos.Assert.ExternalServicesEqual(&bitbucketsrvNone),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services are migrated",
+				stored: repos.ExternalServices{&bitbucketsrv},
+				assert: repos.Assert.ExternalServicesEqual(
+					bitbucketsrv.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+							e.Config, err = jsonc.Edit(e.Config,
+								[]string{"?visibility=private", "?visibility=public"},
+								"repositoryQuery",
+							)
+
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+					t.Errorf("failed to prepare store: %v", err)
+					return
+				}
+
+				err := repos.BitbucketServerSetDefaultRepositoryQueryMigration(clock.Now).Run(ctx, tx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 				if err != nil {
 					t.Error(err)
 					return

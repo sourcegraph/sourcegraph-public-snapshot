@@ -1,8 +1,8 @@
 import { RepoSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { CodeHostContext } from '../code_intelligence/code_intelligence'
 
-// example pathname: /projects/TEST/repos/testing/browse/src/extension.ts
-const PATH_REGEX = /^\/projects\/(\w+)\/repos\/(\w+)\//
+// example pathname: /projects/TEST/repos/some-repo/browse/src/extension.ts
+const PATH_REGEX = /^\/projects\/([^\/]+)\/repos\/([^\/]+)\//
 
 function getRepoSpecFromLocation(location: Pick<Location, 'hostname' | 'pathname'>): RepoSpec {
     const { hostname, pathname } = location
@@ -10,8 +10,9 @@ function getRepoSpecFromLocation(location: Pick<Location, 'hostname' | 'pathname
     if (!match) {
         throw new Error(`location pathname does not match path regex: ${pathname}`)
     }
+    const [, projectName, repoName] = match
     return {
-        repoName: `${hostname}/${match[1]}/${match[2]}`,
+        repoName: `${hostname}/${projectName}/${repoName}`,
     }
 }
 
@@ -35,9 +36,8 @@ function getRevSpecFromRevisionSelector(): RevSpec {
         return {
             rev: revisionRefInfo.latestCommit,
         }
-    } else {
-        throw new Error(`revisionRefInfo is empty or has no latestCommit (revisionRefStr: ${revisionRefStr})`)
     }
+    throw new Error(`revisionRefInfo is empty or has no latestCommit (revisionRefStr: ${revisionRefStr})`)
 }
 
 export function getContext(): CodeHostContext {

@@ -165,7 +165,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                             <button
                                 className="btn btn-outline-danger"
                                 onClick={this.archiveProductSubscription}
-                                disabled={this.state.archivalOrError === undefined}
+                                disabled={this.state.archivalOrError === null}
                             >
                                 Archive
                             </button>

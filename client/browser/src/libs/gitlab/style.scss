@@ -1,3 +1,8 @@
+.command-list-popover--gitlab {
+    // The navbar has z-index 1000
+    z-index: 1001 !important;
+}
+
 .hover-overlay-mount__gitlab {
     .hover-overlay {
         code {
@@ -101,10 +106,15 @@
     }
 }
 
-.action-item--gitlab {
-    height: 30px;
-    .action-item__content {
-        height: 28px;
-        line-height: 28px;
+.code-view-toolbar--gitlab {
+    // Same style as for Gitlab's svg icons
+    img {
+        vertical-align: baseline;
+    }
+    .btn img {
+        height: 15px;
+        width: 15px;
+        position: relative;
+        top: 2px;
     }
 }

@@ -1,36 +1,13 @@
-import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
-import storage from '../../browser/storage'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { CodeHost, CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
-
-function createMount(
-    findMountLocation: (file: HTMLElement, part?: DiffPart) => HTMLElement
-): (file: HTMLElement, part?: DiffPart) => HTMLElement {
-    return (file, part) => {
-        const className = 'sourcegraph-app-annotator' + (part === 'base' ? '-base' : '')
-        const existingMount = file.querySelector('.' + className)
-        if (existingMount) {
-            // Make this function idempotent; no need to create a mount twice.
-            return existingMount as HTMLElement
-        }
-
-        const mount = document.createElement('div')
-        mount.style.display = 'inline-block'
-        mount.classList.add(className)
-
-        const mountLocation = findMountLocation(file, part)
-        mountLocation.appendChild(mount)
-
-        return mount
-    }
-}
 
 /**
  * Gets the actual text content we care about and returns the number of characters we have stripped
@@ -103,7 +80,7 @@ const toolbarButtonProps = {
     iconStyle: { marginTop: '-1px', paddingRight: '4px', fontSize: '18px', height: '.8em', width: '.8em' },
     style: {},
 }
-const commitCodeView: CodeViewWithOutSelector = {
+const commitCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveRevisionFileInfo,
     adjustPosition,
@@ -124,23 +101,31 @@ const commitCodeView: CodeViewWithOutSelector = {
     toolbarButtonProps,
     isDiff: true,
 }
-const diffCodeView: CodeViewWithOutSelector = {
+const diffCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveDiffFileInfo,
     adjustPosition,
-    getToolbarMount: createMount(file => {
-        const actionLinks = file.querySelector('.differential-changeset-buttons')
-        if (!actionLinks) {
+    getToolbarMount: codeView => {
+        const className = 'sourcegraph-app-annotator'
+        const existingMount = codeView.querySelector<HTMLElement>('.' + className)
+        if (existingMount) {
+            return existingMount
+        }
+        const mountLocation = codeView.querySelector('.differential-changeset-buttons')
+        if (!mountLocation) {
             throw new Error('Unable to find action links for changeset')
         }
-
-        return actionLinks as HTMLElement
-    }),
+        const mount = document.createElement('div')
+        mount.style.display = 'inline-block'
+        mount.classList.add(className)
+        mountLocation.prepend(mount, ' ')
+        return mount
+    },
     toolbarButtonProps,
     isDiff: true,
 }
 
-const resolveCodeView: CodeViewResolver['resolveCodeView'] = (codeView: HTMLElement) => {
+const resolveCodeViewSpec: CodeViewSpecResolver['resolveCodeViewSpec'] = (codeView: HTMLElement) => {
     if (window.location.pathname.match(/^\/r/)) {
         return commitCodeView
     }
@@ -148,12 +133,12 @@ const resolveCodeView: CodeViewResolver['resolveCodeView'] = (codeView: HTMLElem
     return diffCodeView
 }
 
-const codeViewResolver: CodeViewResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.differential-changeset',
-    resolveCodeView,
+    resolveCodeViewSpec,
 }
 
-const phabCodeViews: CodeView[] = [
+const phabCodeViews: CodeViewSpec[] = [
     {
         selector: '.diffusion-source',
         dom: diffusionDOMFns,
@@ -177,26 +162,22 @@ const phabCodeViews: CodeView[] = [
     },
 ]
 
-function checkIsPhabricator(): Promise<boolean> {
-    if (document.querySelector('.phabricator-wordmark')) {
-        return Promise.resolve(true)
-    }
-
-    return new Promise<boolean>(resolve =>
-        storage.getSync(items => resolve(!!items.enterpriseUrls.find(url => url === window.location.origin)))
-    )
-}
+export const checkIsPhabricator = () => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
-    codeViews: phabCodeViews,
-    codeViewResolver,
+    codeViewSpecs: phabCodeViews,
+    codeViewSpecResolver,
     name: 'phabricator',
     check: checkIsPhabricator,
 
     // TODO: handle parsing selected line number from Phabricator href,
     // and find a way to listen to changes (Phabricator does not emit popstate events).
     selectionsChanges: () => of([]),
-    actionNavItemClassProps: {
+    codeViewToolbarClassProps: {
         actionItemClass: 'button grey action-item--phabricator',
+        actionItemIconClass: 'action-item__icon--phabricator',
+    },
+    hoverOverlayClassProps: {
+        actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
     },
 }
