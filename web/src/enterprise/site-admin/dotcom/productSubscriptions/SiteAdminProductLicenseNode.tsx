@@ -91,7 +91,9 @@ export class SiteAdminProductLicenseNode extends React.PureComponent<SiteAdminPr
                     <div>
                         Tags:{' '}
                         {this.props.node.info.tags.map(tag => (
-                            <div className="mr-1 badge badge-secondary">{tag}</div>
+                            <div className="mr-1 badge badge-secondary" key={tag}>
+                                {tag}
+                            </div>
                         ))}
                     </div>
                 )}

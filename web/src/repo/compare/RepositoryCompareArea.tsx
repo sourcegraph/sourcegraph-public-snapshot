@@ -6,12 +6,12 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
-import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
+import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
@@ -26,6 +26,7 @@ import {
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
+import { WebHoverOverlay } from '../../components/shared'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
@@ -50,7 +51,7 @@ interface RepositoryCompareAreaProps
     repo: GQL.IRepository
 }
 
-interface State extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
+interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     error?: string
 }
 
@@ -91,14 +92,14 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
+    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 
     constructor(props: RepositoryCompareAreaProps) {
         super(props)
         this.hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
-            ActionItemProps
+            ActionItemAction
         >({
             closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -205,7 +206,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     </div>
                 </div>
                 {this.state.hoverOverlayProps && (
-                    <HoverOverlay
+                    <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
                         telemetryService={this.props.telemetryService}

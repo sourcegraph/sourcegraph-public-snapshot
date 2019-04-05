@@ -51,10 +51,24 @@ describe('ActionItem', () => {
         expect(component.toJSON()).toMatchSnapshot()
     })
 
-    test('pressed actionItem', () => {
+    test('pressed toggle actionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'a', command: 'c', actionItem: { pressed: true, label: 'b' } }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                variant="actionItem"
+                location={history.location}
+                extensionsController={NOOP_EXTENSIONS_CONTROLLER}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )
+        expect(component.toJSON()).toMatchSnapshot()
+    })
+
+    test('non-pressed actionItem', () => {
+        const component = renderer.create(
+            <ActionItem
+                action={{ id: 'a', command: 'c', actionItem: { pressed: false, label: 'b' } }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 variant="actionItem"
                 location={history.location}

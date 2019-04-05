@@ -1,9 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { CommandListPopoverButton } from '../../../shared/src/commandPalette/CommandList'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ActivationDropdown } from '../../../shared/src/components/activation/ActivationDropdown'
 import { Link } from '../../../shared/src/components/Link'
@@ -11,6 +9,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
@@ -64,7 +63,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         </a>
                     </li>
                 )}
-                <ActionsNavItems {...this.props} menu={ContributableMenu.GlobalNav} actionItemClass="nav-link" />
+                <WebActionsNavItems {...this.props} menu={ContributableMenu.GlobalNav} />
                 {this.props.activation && (
                     <li className="nav-item">
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
@@ -112,7 +111,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     </>
                 )}
                 {this.props.location.pathname !== '/welcome' && (
-                    <CommandListPopoverButton
+                    <WebCommandListPopoverButton
                         {...this.props}
                         menu={ContributableMenu.CommandPalette}
                         toggleVisibilityKeybinding={this.props.keybindings.commandPalette}

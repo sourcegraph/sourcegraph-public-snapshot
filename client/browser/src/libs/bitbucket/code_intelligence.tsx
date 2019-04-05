@@ -69,7 +69,6 @@ const createPositionAdjuster = (
 
 const toolbarButtonProps = {
     className: 'aui-button',
-    style: { marginLeft: 10 },
 }
 
 /**
@@ -152,7 +151,7 @@ const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElemen
     if (!headerElement) {
         return null
     }
-    const classes = ['command-palette-button', 'command-palette-button__bitbucket-server']
+    const classes = ['command-palette-button', 'command-palette-button--bitbucket-server']
     const create = (): HTMLElement => {
         const mount = document.createElement('li')
         mount.className = classes.join(' ')
@@ -179,20 +178,38 @@ function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement |
     return mount
 }
 
+export const checkIsBitbucket = (): boolean =>
+    !!document.querySelector('.bitbucket-header-logo') ||
+    !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
+
 export const bitbucketServerCodeHost: CodeHost = {
     name: 'bitbucket-server',
-    check: () =>
-        !!document.querySelector('.bitbucket-header-logo') ||
-        !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket'),
+    check: checkIsBitbucket,
     codeViewSpecResolver,
     getCommandPaletteMount,
-    commandPalettePopoverClassName: 'command-palette-popover--bitbucket-server',
-    actionNavItemClassProps: {
-        actionItemClass: 'aui-button action-item__bitbucket-server',
-        listItemClass: 'aui-buttons',
+    commandPaletteClassProps: {
+        popoverClassName: 'searchable-selector command-palette-popover--bitbucket-server',
+        resultsContainerClassName: 'results',
+        listClassName: 'results-list',
+        listItemClassName: 'result',
+        selectedListItemClassName: 'focused',
+        noResultsClassName: 'no-results',
     },
-    codeViewToolbarClassName: 'code-view-toolbar--bitbucket-server',
+    codeViewToolbarClassProps: {
+        className: 'aui-buttons',
+        actionItemClass: 'aui-button action-item--bitbucket-server',
+        // actionItemPressedClass is not needed because Bitbucket applies styling to aria-pressed="true"
+        actionItemIconClass: 'aui-icon',
+        listItemClass: 'action-nav-item--bitbucket',
+    },
+    hoverOverlayClassProps: {
+        actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
+        actionItemPressedClassName: 'aui-button-primary',
+    },
     getViewContextOnSourcegraphMount,
     getContext,
-    contextButtonClassName: 'aui-button',
+    viewOnSourcegraphButtonClassProps: {
+        className: 'aui-button',
+        iconClassName: 'aui-icon',
+    },
 }

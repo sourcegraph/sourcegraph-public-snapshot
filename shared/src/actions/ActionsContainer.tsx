@@ -8,7 +8,7 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { ActionItem, ActionItemProps } from './ActionItem'
+import { ActionItem, ActionItemAction } from './ActionItem'
 import { ActionsState } from './actions'
 
 export interface ActionsProps
@@ -16,7 +16,6 @@ export interface ActionsProps
         PlatformContextProps<'forceUpdateTooltip'> {
     menu: ContributableMenu
     scope?: ContributionScope
-    actionItemClass?: string
     listClass?: string
     location: H.Location
 }
@@ -25,7 +24,7 @@ interface Props extends ActionsProps, TelemetryProps {
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
      */
-    render?: (items: ActionItemProps[]) => React.ReactElement<any>
+    render?: (items: ActionItemAction[]) => React.ReactElement<any>
 
     /**
      * If set, it is rendered when there are no contributed items for this menu. Use null to render nothing when
@@ -74,7 +73,7 @@ export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
         return render(items)
     }
 
-    private defaultRenderItems = (items: ActionItemProps[]): JSX.Element | null => (
+    private defaultRenderItems = (items: ActionItemAction[]): JSX.Element | null => (
         <>
             {items.map((item, i) => (
                 <ActionItem {...this.props} key={i} {...item} />

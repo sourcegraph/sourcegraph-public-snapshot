@@ -8,9 +8,12 @@ import { setLinkComponent } from '../../../../../shared/src/components/Link'
 import { getURL } from '../../browser/extension'
 import storage from '../../browser/storage'
 import { StorageItems } from '../../browser/types'
+import { checkIsBitbucket } from '../../libs/bitbucket/code_intelligence'
 import { injectCodeIntelligence } from '../../libs/code_intelligence'
+import { checkIsGitHub, checkIsGitHubEnterprise } from '../../libs/github/code_intelligence'
 import { injectGitHubApplication } from '../../libs/github/inject'
 import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
+import { checkIsPhabricator } from '../../libs/phabricator/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
 import { setInlineSymbolSearchEnabled, setSourcegraphUrl } from '../../shared/util/context'
@@ -56,16 +59,11 @@ function observe(): void {
         const srcgEl = document.getElementById('sourcegraph-chrome-webstore-item')
         const sourcegraphServerUrl = items.sourcegraphURL || 'https://sourcegraph.com'
         const isSourcegraphServer = window.location.origin === sourcegraphServerUrl || !!srcgEl
-        const isPhabricator =
-            Boolean(document.querySelector('.phabricator-wordmark')) &&
-            Boolean(items.enterpriseUrls.find(url => url === window.location.origin))
 
-        const isGitHub = /^https?:\/\/(www.)?github.com/.test(href)
-        const ogSiteName = document.head.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
-        const isGitHubEnterprise = ogSiteName ? ogSiteName.content === 'GitHub Enterprise' : false
-        const isBitbucket =
-            document.querySelector('.bitbucket-header-logo') ||
-            document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
+        const isPhabricator = await checkIsPhabricator()
+        const isGitHub = checkIsGitHub()
+        const isGitHubEnterprise = checkIsGitHubEnterprise()
+        const isBitbucket = checkIsBitbucket()
         const isGitlab = checkIsGitlab()
 
         if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
@@ -93,10 +91,7 @@ function observe(): void {
         } else if (isPhabricator) {
             window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
             setSourcegraphUrl(sourcegraphServerUrl)
-        } else if (
-            document.querySelector('.bitbucket-header-logo') ||
-            document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
-        ) {
+        } else if (isBitbucket) {
             setSourcegraphUrl(sourcegraphServerUrl)
         }
 

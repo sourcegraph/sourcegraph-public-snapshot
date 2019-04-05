@@ -42,21 +42,6 @@ $theme-colors-light: (
     --border-color: rgba(0, 0, 0, 0.125);
 }
 
-// Formats an icon so that it appears inline in the text
-// with height matching the text
-.icon-inline {
-    // Center SVG inside the container
-    display: inline-flex;
-    align-items: center;
-    svg {
-        // 14px font size -> 24px icon size
-        width: 20;
-        height: 20;
-        // Match color of the text
-        fill: currentColor;
-    }
-}
-
 .sg-icon .icon {
     @extend .icon-inline;
     display: flex;
@@ -75,6 +60,7 @@ $theme-colors-light: (
 @import 'bootstrap/scss/alert';
 @import 'bootstrap/scss/card';
 @import 'bootstrap/scss/utilities/text';
+@import 'bootstrap/scss/utilities/screenreaders';
 @import './global-styles/card';
 @import './global-styles/icons';
 @import './highlight';
@@ -88,6 +74,7 @@ $theme-colors-light: (
 @import './libs/github/style.scss';
 @import './libs/phabricator/style.scss';
 @import './libs/code_intelligence/HoverOverlay.scss';
+@import './libs/code_intelligence/external_links';
 @import './shared';
 
 #sourcegraph-options-menu {
