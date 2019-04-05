@@ -11,7 +11,7 @@ export const ensureRevisionsAreCloned = ({
     baseCommitID,
     ...rest
 }: FileInfo): Observable<FileInfo> => {
-    // Although we get the commit SHA's from elesewhere, we still need to
+    // Although we get the commit SHA's from elsewhere, we still need to
     // use `resolveRev` otherwise we can't guarantee Sourcegraph has the
     // revision cloned.
 
