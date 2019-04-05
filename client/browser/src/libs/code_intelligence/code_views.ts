@@ -1,8 +1,8 @@
 import { from, merge, Observable, of, zip } from 'rxjs'
 import { catchError, concatAll, filter, map, mergeMap, switchMap } from 'rxjs/operators'
 import { isDefined, isInstanceOf } from '../../../../../shared/src/util/types'
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, isErrorLike } from '../../shared/backend/errors'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
 import { CodeHost, CodeViewSpec, CodeViewSpecResolver, FileInfo, ResolvedCodeView } from './code_intelligence'
 import { ensureRevisionsAreCloned } from './util/file_info'
@@ -97,12 +97,7 @@ export interface FileInfoWithContents extends FileInfo {
 
 export const fetchFileContents = (info: FileInfo): Observable<FileInfoWithContents> =>
     ensureRevisionsAreCloned(info).pipe(
-        switchMap(({ privateRepo, ...rest }) => {
-            if (privateRepo && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL) {
-                // This is a private repository, but the browser extension is pointing to
-                // the public Sourcegraph instance: we won't be able to fetch the file contents.
-                return [{ privateRepo, ...rest }]
-            }
+        switchMap(info => {
             const fetchingBaseFile = info.baseCommitID
                 ? fetchBlobContentLines({
                       repoName: info.repoName,
@@ -128,5 +123,11 @@ export const fetchFileContents = (info: FileInfo): Observable<FileInfoWithConten
                 ),
                 catchError(error => [info])
             )
+        }),
+        catchError((err: any) => {
+            if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                return [info]
+            }
+            throw err
         })
     )

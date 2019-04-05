@@ -1,7 +1,6 @@
 import { Observable, zip } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../shared/backend/errors'
 import { resolveRev, retryWhenCloneInProgressError } from '../../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 
@@ -27,13 +26,5 @@ export const ensureRevisionsAreCloned = ({
         requests.push(resolvingBaseRev)
     }
 
-    return zip(...requests).pipe(
-        map(() => ({ repoName, commitID, baseCommitID, ...rest })),
-        catchError(err => {
-            if (err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
-                return [{ privateRepoPublicSourcegraph: true, repoName, commitID, baseCommitID, ...rest }]
-            }
-            throw err
-        })
-    )
+    return zip(...requests).pipe(map(() => ({ repoName, commitID, baseCommitID, ...rest })))
 }
