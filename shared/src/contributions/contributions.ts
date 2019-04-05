@@ -1,5 +1,5 @@
 import { sortBy } from 'lodash'
-import { ActionItemProps } from '../actions/ActionItem'
+import { ActionItemAction } from '../actions/ActionItem'
 import { ContributableMenu, EvaluatedContributions } from '../api/protocol'
 
 const MENU_ITEMS_PROP_SORT_ORDER = ['group', 'id']
@@ -12,12 +12,12 @@ const MENU_ITEMS_PROP_SORT_ORDER = ['group', 'id']
 export function getContributedActionItems(
     contributions: EvaluatedContributions,
     menu: ContributableMenu
-): ActionItemProps[] {
+): ActionItemAction[] {
     if (!contributions.actions) {
         return []
     }
 
-    const allItems: ActionItemProps[] = []
+    const allItems: ActionItemAction[] = []
     const menuItems = contributions.menus && contributions.menus[menu]
     if (menuItems) {
         for (const { action: actionID, alt: altActionID } of sortBy(menuItems, MENU_ITEMS_PROP_SORT_ORDER)) {

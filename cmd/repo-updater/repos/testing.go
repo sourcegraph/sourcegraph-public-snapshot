@@ -95,9 +95,8 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 // changes made during the transaction.
 func (s *FakeStore) Done(...*error) {}
 
-// ListExternalServices lists all stored external services that are not deleted and have one of the
-// specified kinds.
-func (s FakeStore) ListExternalServices(ctx context.Context, kinds ...string) ([]*ExternalService, error) {
+// ListExternalServices lists all stored external services that match the given args.
+func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
 	if s.ListExternalServicesError != nil {
 		return nil, s.ListExternalServicesError
 	}
@@ -106,15 +105,25 @@ func (s FakeStore) ListExternalServices(ctx context.Context, kinds ...string) ([
 		s.svcByID = make(map[int64]*ExternalService)
 	}
 
-	kindset := make(map[string]bool, len(kinds))
-	for _, kind := range kinds {
-		kindset[strings.ToLower(kind)] = true
+	kinds := make(map[string]bool, len(args.Kinds))
+	for _, kind := range args.Kinds {
+		kinds[strings.ToLower(kind)] = true
 	}
 
+	ids := make(map[int64]bool, len(args.IDs))
+	for _, id := range args.IDs {
+		ids[id] = true
+	}
+
+	set := make(map[*ExternalService]bool, len(s.svcByID))
 	svcs := make(ExternalServices, 0, len(s.svcByID))
 	for _, svc := range s.svcByID {
-		if len(kinds) == 0 || kindset[strings.ToLower(svc.Kind)] {
+		if !set[svc] &&
+			(len(kinds) == 0 || kinds[strings.ToLower(svc.Kind)]) &&
+			(len(ids) == 0 || ids[svc.ID]) {
+
 			svcs = append(svcs, svc)
+			set[svc] = true
 		}
 	}
 
@@ -165,8 +174,8 @@ func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error
 	return r, nil
 }
 
-// ListRepos lists all repos in the store that have one of the specified external service kinds.
-func (s FakeStore) ListRepos(ctx context.Context, kinds ...string) ([]*Repo, error) {
+// ListRepos lists all repos in the store that match the given arguments.
+func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*Repo, error) {
 	if s.ListReposError != nil {
 		return nil, s.ListReposError
 	}
@@ -175,15 +184,29 @@ func (s FakeStore) ListRepos(ctx context.Context, kinds ...string) ([]*Repo, err
 		s.repoByName = make(map[string]*Repo)
 	}
 
-	kindset := make(map[string]bool, len(kinds))
-	for _, kind := range kinds {
-		kindset[strings.ToLower(kind)] = true
+	kinds := make(map[string]bool, len(args.Kinds))
+	for _, kind := range args.Kinds {
+		kinds[strings.ToLower(kind)] = true
+	}
+
+	names := make(map[string]bool, len(args.Names))
+	for _, name := range args.Names {
+		names[name] = true
+	}
+
+	ids := make(map[uint32]bool, len(args.IDs))
+	for _, id := range args.IDs {
+		ids[id] = true
 	}
 
 	set := make(map[*Repo]bool, len(s.repoByName))
 	repos := make(Repos, 0, len(s.repoByName))
 	for _, r := range s.repoByName {
-		if !set[r] && len(kinds) == 0 || kindset[strings.ToLower(r.ExternalRepo.ServiceType)] {
+		if !set[r] &&
+			(len(kinds) == 0 || kinds[strings.ToLower(r.ExternalRepo.ServiceType)]) &&
+			(len(names) == 0 || names[r.Name]) &&
+			(len(ids) == 0 || ids[r.ID]) {
+
 			repos = append(repos, r)
 			set[r] = true
 		}
@@ -245,9 +268,9 @@ var Assert = struct {
 	ExternalServicesOrderedBy func(func(a, b *ExternalService) bool) ExternalServicesAssertion
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
-		want := Repos(rs)
-		want.Apply(Opt.RepoID(0))
+		want := Repos(rs).With(Opt.RepoID(0))
 		return func(t testing.TB, have Repos) {
+			t.Helper()
 			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("repos: %s", cmp.Diff(have, want))
@@ -256,6 +279,7 @@ var Assert = struct {
 	},
 	ReposOrderedBy: func(ord func(a, b *Repo) bool) ReposAssertion {
 		return func(t testing.TB, have Repos) {
+			t.Helper()
 			want := have.Clone()
 			sort.Slice(want, func(i, j int) bool {
 				return ord(want[i], want[j])
@@ -266,9 +290,9 @@ var Assert = struct {
 		}
 	},
 	ExternalServicesEqual: func(es ...*ExternalService) ExternalServicesAssertion {
-		want := append(ExternalServices{}, es...)
-		want.Apply(Opt.ExternalServiceID(0))
+		want := append(ExternalServices{}, es...).With(Opt.ExternalServiceID(0))
 		return func(t testing.TB, have ExternalServices) {
+			t.Helper()
 			have = append(ExternalServices{}, have...)
 			have.Apply(Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
@@ -278,6 +302,7 @@ var Assert = struct {
 	},
 	ExternalServicesOrderedBy: func(ord func(a, b *ExternalService) bool) ExternalServicesAssertion {
 		return func(t testing.TB, have ExternalServices) {
+			t.Helper()
 			want := have.Clone()
 			sort.Slice(want, func(i, j int) bool {
 				return ord(want[i], want[j])

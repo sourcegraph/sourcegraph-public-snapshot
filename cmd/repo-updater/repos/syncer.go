@@ -68,7 +68,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) 
 	}
 
 	var stored Repos
-	if stored, err = store.ListRepos(ctx, kinds...); err != nil {
+	if stored, err = store.ListRepos(ctx, StoreListReposArgs{Kinds: kinds}); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
@@ -212,7 +212,10 @@ func merge(o, n *Repo) {
 }
 
 func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) {
-	svcs, err := s.store.ListExternalServices(ctx, kinds...)
+	svcs, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{
+		Kinds: kinds,
+	})
+
 	if err != nil {
 		return nil, err
 	}

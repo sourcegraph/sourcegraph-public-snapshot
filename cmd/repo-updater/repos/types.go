@@ -97,6 +97,8 @@ func (e *ExternalService) Exclude(rs ...*Repo) error {
 		return e.excludeGithubRepos(rs...)
 	case "gitlab":
 		return e.excludeGitLabRepos(rs...)
+	case "bitbucketserver":
+		return e.excludeBitbucketServerRepos(rs...)
 	default:
 		return errors.Errorf("external service kind %q doesn't have an exclude list", e.Kind)
 	}
@@ -110,6 +112,8 @@ func (e *ExternalService) Include(rs ...*Repo) error {
 		return e.includeGithubRepos(rs...)
 	case "gitlab":
 		return e.includeGitLabRepos(rs...)
+	case "bitbucketserver":
+		return e.includeBitbucketServerRepos(rs...)
 	default:
 		return errors.Errorf("external service kind %q doesn't have an include list", e.Kind)
 	}
@@ -146,6 +150,55 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 			if !set[name] && !set[id] {
 				n, _ := strconv.Atoi(id)
 				c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{
+					Name: name,
+					Id:   n,
+				})
+
+				if id != "" {
+					set[id] = true
+				}
+
+				if name != "" {
+					set[name] = true
+				}
+			}
+		}
+
+		return "exclude", c.Exclude
+	})
+}
+
+// excludeBitbucketServerRepos changes the configuration of a BitbucketServer external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("bitbucketserver", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.BitbucketServerConnection)
+		set := make(map[string]bool, len(c.Exclude)*2)
+		for _, ex := range c.Exclude {
+			if ex.Id != 0 {
+				set[strconv.Itoa(ex.Id)] = true
+			}
+
+			if ex.Name != "" {
+				set[strings.ToLower(ex.Name)] = true
+			}
+		}
+
+		for _, r := range rs {
+			if strings.ToLower(r.ExternalRepo.ServiceType) != "bitbucketserver" {
+				continue
+			}
+
+			id := r.ExternalRepo.ID
+			name := nameWithOwner(r.Name)
+
+			if !set[name] && !set[id] {
+				n, _ := strconv.Atoi(id)
+				c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{
 					Name: name,
 					Id:   n,
 				})
@@ -283,6 +336,36 @@ func (e *ExternalService) includeGitLabRepos(rs ...*Repo) error {
 		}
 
 		return "projects", c.Projects
+	})
+}
+
+// includeBitbucketServerRepos changes the configuration of a BitbucketServer external service to explicitly enlist the
+// given repos to be synced.
+func (e *ExternalService) includeBitbucketServerRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("bitbucketserver", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.BitbucketServerConnection)
+
+		set := make(map[string]bool, len(c.Repos))
+		for _, name := range c.Repos {
+			set[strings.ToLower(name)] = true
+		}
+
+		for _, r := range rs {
+			if strings.ToLower(r.ExternalRepo.ServiceType) != "bitbucketserver" {
+				continue
+			}
+
+			if name := nameWithOwner(r.Name); !set[name] {
+				c.Repos = append(c.Repos, name)
+				set[name] = true
+			}
+		}
+
+		return "repos", c.Repos
 	})
 }
 

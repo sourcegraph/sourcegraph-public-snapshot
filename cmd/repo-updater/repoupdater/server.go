@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -169,12 +170,15 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	if s.Store != nil && s.Syncer != nil {
 		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			repo, err := s.Store.GetRepoByName(ctx, string(args.Repo))
-			if err != nil {
+			repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+				Names: []string{string(args.Repo)},
+			})
+
+			if err != nil || len(repos) != 1 || repos[0].IsDeleted() {
 				return nil, false, err
 			}
 
-			info, err := newRepoInfo(repo)
+			info, err := newRepoInfo(repos[0])
 			if err != nil {
 				return nil, false, err
 			}
@@ -185,11 +189,11 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		fns = append(fns,
 			getfn{"GITHUB", repos.GetGitHubRepository},
 			getfn{"GITLAB", repos.GetGitLabRepository},
+			getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
 		)
 	}
 
 	fns = append(fns,
-		getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
 		getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
 		getfn{"GITOLITE", repos.GetGitoliteRepository},
 	)
@@ -266,6 +270,28 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
 			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
+		}
+	case "gitlab":
+		proj := r.Metadata.(*gitlab.Project)
+		info.Links = &protocol.RepoLinks{
+			Root:   proj.WebURL,
+			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
+		}
+	case "bitbucketserver":
+		repo := r.Metadata.(*bitbucketserver.Repo)
+		if len(repo.Links.Self) == 0 {
+			break
+		}
+
+		href := repo.Links.Self[0].Href
+		root := strings.TrimSuffix(href, "/browse")
+		info.Links = &protocol.RepoLinks{
+			Root:   href,
+			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Commit: pathAppend(root, "/commits/{commit}"),
 		}
 	}
 

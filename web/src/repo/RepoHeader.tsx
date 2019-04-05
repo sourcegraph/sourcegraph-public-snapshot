@@ -2,7 +2,6 @@ import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
-import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
 import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
@@ -11,11 +10,11 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { PopoverButton } from '../components/PopoverButton'
+import { WebActionsNavItems } from '../components/shared'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
-
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -238,7 +237,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 </ul>
                 <div className="repo-header__spacer" />
                 <ul className="navbar-nav navbar-nav__action-items">
-                    <ActionsNavItems {...this.props} menu={ContributableMenu.EditorTitle} actionItemClass="nav-link" />
+                    <WebActionsNavItems {...this.props} menu={ContributableMenu.EditorTitle} />
                 </ul>
                 <ul className="navbar-nav">
                     {this.props.actionButtons.map(

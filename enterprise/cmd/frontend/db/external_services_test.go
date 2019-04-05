@@ -205,6 +205,87 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "empty repositoryQuery",
+			config: `{"repositoryQuery": []}`,
+			assert: includes(`repositoryQuery: Array must have at least 1 items`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "empty repositoryQuery item",
+			config: `{"repositoryQuery": [""]}`,
+			assert: includes(`repositoryQuery.0: String length must be greater than or equal to 1`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid empty exclude",
+			config: `{"exclude": []}`,
+			assert: includes(`exclude: Array must have at least 1 items`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": "bar"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid additional exclude item properties",
+			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
+			assert: includes(`bar: Additional property bar is not allowed`),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "both name and id can be specified in exclude",
+			config: `
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"token": "very-secret-token",
+				"exclude": [
+					{"name": "foo/bar", "id": 1234}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid empty repos",
+			config: `{"repos": []}`,
+			assert: includes(`repos: Array must have at least 1 items`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid empty repos item",
+			config: `{"repos": [""]}`,
+			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "valid repos",
+			config: `
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"token": "very-secret-token",
+				"repos": [
+					"foo/bar",
+					"bar/baz"
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
 			kind:   "GITHUB",
 			desc:   "without url nor token",
 			config: `{}`,

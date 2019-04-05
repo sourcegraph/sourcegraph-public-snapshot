@@ -1,63 +1,19 @@
-.hover-overlay-mount__bitbucket-server {
-    .hover-overlay {
-        &__action {
-            padding: 4px 10px;
-            color: #42526e;
-            background-color: rgba(9, 30, 66, 0.04);
-            transition: background-color 0.1s ease-out;
-
-            &:hover {
-                text-decoration: none;
-                background-color: rgba(9, 30, 66, 0.08);
-            }
-        }
-    }
+// Command palette
+.command-palette-button--bitbucket-server {
+    position: relative;
+    top: 5px;
 }
 
-.command-palette-button__bitbucket-server {
-    .popover-button2__container {
-        display: block;
-    }
-}
-
-.command-palette-popover--bitbucket-server {
-    border-radius: 3px;
-
-    .command-list {
-        &__input {
-            height: 30px;
-            border-radius: 3px;
-            box-sizing: border-box;
-            border: 1px solid #dfe1e6;
-            font-size: 14px;
-            margin-top: 0.5rem;
-        }
-    }
-
-    .action-item {
-        box-sizing: border-box;
-    }
-}
-
-.code-view-toolbar--bitbucket-server {
-    ul {
-        list-style-type: none;
-        display: inline-flex;
-    }
-
-    .open-on-sourcegraph {
-        margin-bottom: 10px;
-    }
-}
-
-.action-item__bitbucket-server {
-    margin-bottom: 10px !important;
-    &.action-item--pressed {
-        background-color: #344563;
-        color: #ffffff;
-    }
-}
-
+// Open on Sourcegraph button
 .open-on-sourcegraph--bitbucket-server {
-    margin-left: 2px;
+    margin-left: 2px; // same as other buttons in the row
+}
+
+.action-nav-item--bitbucket {
+    margin-left: 5px;
+}
+
+// Hover overlay buttons
+.hover-action-item--bitbucket-server {
+    margin: 0 !important;
 }

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
@@ -20,17 +21,23 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps
+export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
+    /**
+     * Class name for the `<ul>` element wrapping all toolbar items
+     */
+    className?: string
+}
+
+export interface CodeViewToolbarProps
     extends PlatformContextProps<'forceUpdateTooltip'>,
         ExtensionsControllerProps,
         FileInfo,
         TelemetryProps,
-        ActionNavItemsClassProps {
+        CodeViewToolbarClassProps {
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps?: ButtonProps
     location: H.Location
-    className?: string
 }
 
 interface CodeViewToolbarState {
@@ -54,77 +61,70 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
 
     public render(): JSX.Element | null {
         return (
-            <div
-                className={`code-view-toolbar ${this.props.className || ''}`}
-                style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}
-            >
-                <ul className={`nav ${this.props.platformContext ? 'pr-1' : ''}`}>
-                    <ActionsNavItems
-                        {...this.props}
-                        menu={ContributableMenu.EditorTitle}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
-                        scope={{
-                            type: 'textEditor',
-                            item: {
-                                uri: toURIWithPath(this.props),
-                                languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
-                            },
-                            selections: [],
-                        }}
-                    />
-                </ul>
+            <ul className={classNames('code-view-toolbar', this.props.className)}>
+                <ActionsNavItems
+                    {...this.props}
+                    listItemClass={classNames('code-view-toolbar__item', this.props.listItemClass)}
+                    menu={ContributableMenu.EditorTitle}
+                    extensionsController={this.props.extensionsController}
+                    platformContext={this.props.platformContext}
+                    location={this.props.location}
+                    scope={{
+                        type: 'textEditor',
+                        item: {
+                            uri: toURIWithPath(this.props),
+                            languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
+                        },
+                        selections: [],
+                    }}
+                />{' '}
                 {this.props.baseCommitID && this.props.baseHasFileContents && (
-                    <OpenDiffOnSourcegraph
-                        label={'View file diff'}
-                        ariaLabel="View file diff on Sourcegraph"
-                        openProps={{
-                            repoName: this.props.baseRepoName || this.props.repoName,
-                            filePath: this.props.baseFilePath || this.props.filePath,
-                            rev: this.props.baseRev || this.props.baseCommitID,
-                            query: {
-                                diff: {
-                                    rev: this.props.baseCommitID,
+                    <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
+                        <OpenDiffOnSourcegraph
+                            label="View file diff"
+                            ariaLabel="View file diff on Sourcegraph"
+                            className={this.props.actionItemClass}
+                            iconClassName={this.props.actionItemIconClass}
+                            openProps={{
+                                repoName: this.props.baseRepoName || this.props.repoName,
+                                filePath: this.props.baseFilePath || this.props.filePath,
+                                rev: this.props.baseRev || this.props.baseCommitID,
+                                query: {
+                                    diff: {
+                                        rev: this.props.baseCommitID,
+                                    },
                                 },
-                            },
-                            commit: {
-                                baseRev: this.props.baseRev!,
-                                headRev: this.props.rev!,
-                            },
-                        }}
-                        className={this.props.buttonProps && this.props.buttonProps.className}
-                        style={this.props.buttonProps && this.props.buttonProps.style}
-                        iconStyle={this.props.buttonProps && this.props.buttonProps.iconStyle}
-                    />
-                )}
-
-                {/*
-                  Use a ternary here because prettier insists on changing parens resulting in this button only being rendered
-                  if the condition after the || is satisfied.
-                 */}
+                                commit: {
+                                    baseRev: this.props.baseRev || this.props.baseCommitID,
+                                    headRev: this.props.rev || this.props.commitID,
+                                },
+                            }}
+                        />
+                    </li>
+                )}{' '}
                 {!this.props.baseCommitID && (
-                    <OpenOnSourcegraph
-                        label={`View file`}
-                        ariaLabel="View file on Sourcegraph"
-                        openProps={{
-                            repoName: this.props.repoName,
-                            filePath: this.props.filePath,
-                            rev: this.props.rev || this.props.commitID,
-                            query: this.props.commitID
-                                ? {
-                                      diff: {
-                                          rev: this.props.commitID,
-                                      },
-                                  }
-                                : undefined,
-                        }}
-                        className={this.props.buttonProps && this.props.buttonProps.className}
-                        style={this.props.buttonProps && this.props.buttonProps.style}
-                        iconStyle={this.props.buttonProps && this.props.buttonProps.iconStyle}
-                    />
+                    <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
+                        <OpenOnSourcegraph
+                            label="View file"
+                            ariaLabel="View file on Sourcegraph"
+                            className={this.props.actionItemClass}
+                            iconClassName={this.props.actionItemIconClass}
+                            openProps={{
+                                repoName: this.props.repoName,
+                                filePath: this.props.filePath,
+                                rev: this.props.rev || this.props.commitID,
+                                query: this.props.commitID
+                                    ? {
+                                          diff: {
+                                              rev: this.props.commitID,
+                                          },
+                                      }
+                                    : undefined,
+                            }}
+                        />
+                    </li>
                 )}
-            </div>
+            </ul>
         )
     }
 }

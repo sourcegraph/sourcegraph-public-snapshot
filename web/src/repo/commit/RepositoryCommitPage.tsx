@@ -5,13 +5,13 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
+import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -21,6 +21,7 @@ import { FileSpec, ModeSpec, PositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } 
 import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
+import { WebHoverOverlay } from '../../components/shared'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
@@ -70,7 +71,7 @@ interface Props
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
 }
 
-interface State extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
+interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The commit, undefined while loading, or an error. */
     commitOrError?: GQL.IGitCommit | ErrorLike
 }
@@ -93,14 +94,14 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
+    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 
     constructor(props: Props) {
         super(props)
         this.hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
-            ActionItemProps
+            ActionItemAction
         >({
             closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -251,7 +252,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     )}
                 </div>
                 {this.state.hoverOverlayProps && (
-                    <HoverOverlay
+                    <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
                         telemetryService={this.props.telemetryService}

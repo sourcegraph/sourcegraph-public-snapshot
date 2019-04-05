@@ -5,7 +5,7 @@ import { from, Observable, of } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 // tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
-import { ActionItemProps } from '../actions/ActionItem'
+import { ActionItemAction } from '../actions/ActionItem'
 import { EMPTY_MODEL, Model } from '../api/client/model'
 import { Services } from '../api/client/services'
 import { CommandRegistry } from '../api/client/services/command'
@@ -309,7 +309,7 @@ describe('registerHoverContributions', () => {
             .toPromise()
 
     describe('getHoverActions', () => {
-        const GO_TO_DEFINITION_ACTION: ActionItemProps = {
+        const GO_TO_DEFINITION_ACTION: ActionItemAction = {
             action: {
                 command: 'goToDefinition',
                 commandArguments: ['{"textDocument":{"uri":"git://r?c#f"},"position":{"line":1,"character":1}}'],
@@ -318,7 +318,7 @@ describe('registerHoverContributions', () => {
             },
             altAction: undefined,
         }
-        const GO_TO_DEFINITION_PRELOADED_ACTION: ActionItemProps = {
+        const GO_TO_DEFINITION_PRELOADED_ACTION: ActionItemAction = {
             action: {
                 command: 'open',
                 commandArguments: ['/r2@c2/-/blob/f2#L3:3'],
@@ -327,7 +327,7 @@ describe('registerHoverContributions', () => {
             },
             altAction: undefined,
         }
-        const FIND_REFERENCES_ACTION: ActionItemProps = {
+        const FIND_REFERENCES_ACTION: ActionItemAction = {
             action: {
                 command: 'open',
                 commandArguments: ['/r@v/-/blob/f#L2:2&tab=references'],

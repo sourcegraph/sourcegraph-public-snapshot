@@ -22,12 +22,10 @@ import {
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
-import { createOpenOnSourcegraphIfNotExists } from './inject'
 import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
 
 const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
-    style: { marginRight: '5px', textDecoration: 'none', color: 'inherit' },
 }
 
 const diffCodeView: CodeViewSpecWithOutSelector = {
@@ -166,15 +164,28 @@ const codeViewSpecResolver: CodeViewSpecResolver = {
     },
 }
 
-function checkIsGithub(): boolean {
-    const href = window.location.href
-
-    const isGithub = /^https?:\/\/(www.)?github.com/.test(href)
-    const ogSiteName = document.head.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
-    const isGitHubEnterprise = ogSiteName ? ogSiteName.content === 'GitHub Enterprise' : false
-
-    return isGithub || isGitHubEnterprise
+/**
+ * Returns true if the current page is GitHub Enterprise.
+ */
+export function checkIsGitHubEnterprise(): boolean {
+    const ogSiteName = document.head.querySelector<HTMLMetaElement>('meta[property="og:site_name"]')
+    return (
+        !!ogSiteName &&
+        // GitHub Enterprise v2.14.11 has "GitHub" as og:site_name
+        (ogSiteName.content === 'GitHub Enterprise' || ogSiteName.content === 'GitHub') &&
+        document.body.classList.contains('enterprise')
+    )
 }
+
+/**
+ * Returns true if the current page is github.com.
+ */
+export const checkIsGitHubDotCom = (): boolean => /^https?:\/\/(www.)?github.com/.test(window.location.href)
+
+/**
+ * Returns true if the current page is either github.com or GitHub Enterprise.
+ */
+export const checkIsGitHub = (): boolean => checkIsGitHubDotCom() || checkIsGitHubEnterprise()
 
 const getOverlayMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
     const jsRepoPjaxContainer = querySelectorOrSelf(container, '#js-repo-pjax-container')
@@ -191,21 +202,62 @@ const getOverlayMount: MountGetter = (container: HTMLElement): HTMLElement | nul
     return mount
 }
 
+const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
+
+export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const pageheadActions = querySelectorOrSelf(container, '.pagehead-actions')
+    // If ran on page that isn't under a repository namespace.
+    if (!pageheadActions || pageheadActions.children.length === 0) {
+        return null
+    }
+    // Check for existing
+    let mount = pageheadActions.querySelector<HTMLElement>('#' + OPEN_ON_SOURCEGRAPH_ID)
+    if (mount) {
+        return mount
+    }
+    // Create new
+    mount = document.createElement('li')
+    mount.id = OPEN_ON_SOURCEGRAPH_ID
+    pageheadActions.insertAdjacentElement('afterbegin', mount)
+    return mount
+}
+
 export const githubCodeHost: CodeHost = {
     name: 'github',
     codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
     codeViewSpecResolver,
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
-    contextButtonClassName: 'btn btn-sm tooltipped tooltipped-s',
-    check: checkIsGithub,
+    viewOnSourcegraphButtonClassProps: {
+        className: 'btn btn-sm tooltipped tooltipped-s',
+        iconClassName: 'action-item__icon--github v-align-text-bottom',
+    },
+    check: checkIsGitHub,
     getOverlayMount,
     getCommandPaletteMount,
     getGlobalDebugMount,
-    actionNavItemClassProps: {
-        listItemClass: 'BtnGroup',
+    commandPaletteClassProps: {
+        popoverClassName: 'Box',
+        formClassName: 'p-1',
+        inputClassName: 'form-control input-sm header-search-input jump-to-field',
+        listClassName: 'p-0 m-0 js-navigation-container jump-to-suggestions-results-container',
+        selectedListItemClassName: 'navigation-focus',
+        listItemClassName:
+            'd-flex flex-justify-start flex-items-center p-0 f5 navigation-item js-navigation-item js-jump-to-scoped-search',
+        actionItemClassName:
+            'command-palette-action-item--github no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+        noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+    },
+    codeViewToolbarClassProps: {
+        className: 'code-view-toolbar--github',
+        listItemClass: 'code-view-toolbar__item--github BtnGroup',
         actionItemClass: 'btn btn-sm tooltipped tooltipped-s BtnGroup-item action-item--github',
         actionItemPressedClass: 'selected',
+        actionItemIconClass: 'action-item__icon--github v-align-text-bottom',
+    },
+    hoverOverlayClassProps: {
+        actionItemClassName: 'btn btn-secondary',
+        actionItemPressedClassName: 'active',
     },
     urlToFile: (
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }

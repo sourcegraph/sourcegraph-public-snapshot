@@ -408,8 +408,9 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 		close(ch)
 	}()
 
-	var projects []*gitlab.Project
+	seen := make(map[int]bool)
 	errs := new(multierror.Error)
+	var projects []*gitlab.Project
 
 	for b := range ch {
 		if b.err != nil {
@@ -418,8 +419,9 @@ func (c *gitlabConnection) listAllProjects(ctx context.Context) ([]*gitlab.Proje
 		}
 
 		for _, proj := range b.projs {
-			if !c.excludes(proj) {
+			if !seen[proj.ID] && !c.excludes(proj) {
 				projects = append(projects, proj)
+				seen[proj.ID] = true
 			}
 		}
 	}

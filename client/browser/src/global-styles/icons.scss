@@ -9,8 +9,9 @@
 }
 
 svg.icon-inline,
+img.icon-inline,
 .icon-inline svg,
-.icon-inline .avatar-icon {
+.icon-inline img {
     // TODO find a better way to scale icons that is not proportional to the font size
     // 14px font size -> 20px icon size
     // stylelint-disable-next-line declaration-property-unit-whitelist

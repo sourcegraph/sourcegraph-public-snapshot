@@ -6,7 +6,6 @@ import { getPageInfo, GitLabPageKind } from './scrape'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',
-    style: { marginRight: '5px', textDecoration: 'none', color: 'inherit' },
 }
 
 export function checkIsGitlab(): boolean {
@@ -92,8 +91,20 @@ export const gitlabCodeHost: CodeHost = {
     codeViewSpecResolver,
     adjustOverlayPosition,
     getCommandPaletteMount,
-    actionNavItemClassProps: {
-        actionItemClass: 'btn btn-secondary action-item--gitlab',
+    commandPaletteClassProps: {
+        popoverClassName: 'dropdown-menu command-list-popover--gitlab',
+        formClassName: 'dropdown-input',
+        inputClassName: 'dropdown-input-field',
+        resultsContainerClassName: 'dropdown-content',
+        selectedActionItemClassName: 'is-focused',
+    },
+    codeViewToolbarClassProps: {
+        className: 'code-view-toolbar--gitlab',
+        actionItemClass: 'btn btn-sm btn-secondary action-item--gitlab',
         actionItemPressedClass: 'active',
+    },
+    hoverOverlayClassProps: {
+        actionItemClassName: 'btn btn-secondary action-item--gitlab',
+        actionItemPressedClassName: 'active',
     },
 }
