@@ -39,7 +39,7 @@ The goal of triage is to either quickly resolve the incident using basic procedu
     - The person who owns the affected product/code/system.
     - The on-call engineer.
         - You can find out who is on-call by typing `/genie whoisoncall` in Slack.
-        - If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing `/genie <description of incident and link to Slack thread> with ops_team`.
+        - If you are not able to immediately get in contact with the on-call engineer, then manually create a new OpsGenie alert by typing `/genie alert "description of incident and link to Slack thread" for ops_team`.
 
 ## Go-to-market (license and subscription) issues
 
