@@ -719,157 +719,219 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	// Determine which types of results to return.
-	var rawResultTypes []string
+	var resultTypes []string
 	if forceOnlyResultType != "" {
-		rawResultTypes = []string{forceOnlyResultType}
+		resultTypes = []string{forceOnlyResultType}
 	} else {
-		rawResultTypes, _ = r.query.StringValues(query.FieldType)
-		if len(rawResultTypes) == 0 {
-			rawResultTypes = []string{"file", "path", "repo", "ref"}
+		resultTypes, _ = r.query.StringValues(query.FieldType)
+		if len(resultTypes) == 0 {
+			resultTypes = []string{"file", "path", "repo", "ref"}
 		}
 	}
-	resultTypes := make(map[string]struct{}, len(rawResultTypes)) // deduplicated
-	for _, resultType := range rawResultTypes {
-		resultTypes[resultType] = struct{}{}
+	seenResultTypes := make(map[string]struct{}, len(resultTypes))
+	for _, resultType := range resultTypes {
 		if resultType == "file" {
 			args.Pattern.PatternMatchesContent = true
 		} else if resultType == "path" {
 			args.Pattern.PatternMatchesPath = true
 		}
 	}
-	tr.LazyPrintf("resultTypes: %v", rawResultTypes)
+	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
-	// A mapping of result types to functions that search for those result types.
-	searchers := map[string]struct {
-		search func(ctx context.Context, args *search.Args, limit int32) ([]*searchResultResolver, *searchResultsCommon, error)
-
-		// When true, these results can optionally be left out of the response
-		// if they are not retrieved fast enough AND the user did not
-		// explicitly ask for this type of result.
-		optional bool
-	}{
-		"repo":   {searchRepositories, false},
-		"symbol": {searchSymbols, true},
-		"file":   {searchFilesInRepos, false},
-		"path":   {searchFilesInRepos, false},
-		"diff":   {searchCommitDiffsInRepos, true},
-		"commit": {searchCommitLogInRepos, true},
-	}
-
-	// Start searchers in parallel, only for the types of results the user wants.
-	type searcherResult struct {
-		resultType string
-		results    []*searchResultResolver
-		common     *searchResultsCommon
-		err        error
-	}
 	var (
-		expectRequired, expectOptional int // How many required and optional results we can expect from the channel.
-		required                       = make(chan searcherResult, len(resultTypes))
-		optional                       = make(chan searcherResult, len(resultTypes))
+		requiredWg sync.WaitGroup
+		optionalWg sync.WaitGroup
+		results    []*searchResultResolver
+		resultsMu  sync.Mutex
+		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
+		commonMu   sync.Mutex
+		multiErr   *multierror.Error
+		multiErrMu sync.Mutex
+		// fileMatches is a map from git:// URI of the file to FileMatch resolver
+		// to merge multiple results of different types for the same file
+		fileMatches   = make(map[string]*fileMatchResolver)
+		fileMatchesMu sync.Mutex
 	)
-	for resultType := range resultTypes {
-		resultType := resultType // shadow variable for goroutine below
-		if resultType == "file" {
-			if _, ok := resultTypes["path"]; ok {
-				// We are searching for both file and path results. They are provided by the
-				// same searchFilesInRepos, so we would just end up with duplicate results if
-				// we called them 2x.
-				continue
-			}
+
+	waitGroup := func(required bool) *sync.WaitGroup {
+		if args.UseFullDeadline {
+			// When a custom timeout is specified, all searches are required and get the full timeout.
+			return &requiredWg
 		}
-		searcher, ok := searchers[resultType]
-		if !ok {
-			// We don't have anything to handle this type of query.
+		if required {
+			return &requiredWg
+		}
+		return &optionalWg
+	}
+
+	searchedFileContentsOrPaths := false
+	for _, resultType := range resultTypes {
+		resultType := resultType // shadow so it doesn't change in the goroutine
+		if _, seen := seenResultTypes[resultType]; seen {
 			continue
 		}
-		isOptional := searcher.optional
-		if args.UseFullDeadline {
-			// When a custom timeout is specified, all searches are required.
-			isOptional = false
-		}
-		if isOptional {
-			expectOptional++
-		} else {
-			expectRequired++
-		}
-		goroutine.Go(func() {
-			results, common, err := searcher.search(ctx, &args, r.maxResults())
-			if isOptional {
-				optional <- searcherResult{resultType, results, common, err}
-			} else {
-				required <- searcherResult{resultType, results, common, err}
+		seenResultTypes[resultType] = struct{}{}
+		switch resultType {
+		case "repo":
+			// Search for repos
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.maxResults())
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "repository search failed"))
+					multiErrMu.Unlock()
+				}
+				if repoResults != nil {
+					resultsMu.Lock()
+					results = append(results, repoResults...)
+					resultsMu.Unlock()
+				}
+				if repoCommon != nil {
+					commonMu.Lock()
+					common.update(*repoCommon)
+					commonMu.Unlock()
+				}
+			})
+		case "symbol":
+			wg := waitGroup(len(resultTypes) == 1)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, int(r.maxResults()))
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "symbol search failed"))
+					multiErrMu.Unlock()
+				}
+				for _, symbolFileMatch := range symbolFileMatches {
+					key := symbolFileMatch.uri
+					fileMatchesMu.Lock()
+					if m, ok := fileMatches[key]; ok {
+						m.symbols = symbolFileMatch.symbols
+					} else {
+						fileMatches[key] = symbolFileMatch
+						resultsMu.Lock()
+						results = append(results, &searchResultResolver{fileMatch: symbolFileMatch})
+						resultsMu.Unlock()
+					}
+					fileMatchesMu.Unlock()
+				}
+				if symbolsCommon != nil {
+					commonMu.Lock()
+					common.update(*symbolsCommon)
+					commonMu.Unlock()
+				}
+			})
+		case "file", "path":
+			if searchedFileContentsOrPaths {
+				// type:file and type:path use same searchFilesInRepos, so don't call 2x.
+				continue
 			}
-		})
+			searchedFileContentsOrPaths = true
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
+					multiErrMu.Unlock()
+				}
+				for _, r := range fileResults {
+					key := r.uri
+					fileMatchesMu.Lock()
+					m, ok := fileMatches[key]
+					if ok {
+						// merge line match results with an existing symbol result
+						m.JLimitHit = m.JLimitHit || r.JLimitHit
+						m.JLineMatches = r.JLineMatches
+					} else {
+						fileMatches[key] = r
+						resultsMu.Lock()
+						results = append(results, &searchResultResolver{fileMatch: r})
+						resultsMu.Unlock()
+					}
+					fileMatchesMu.Unlock()
+				}
+				if fileCommon != nil {
+					commonMu.Lock()
+					common.update(*fileCommon)
+					commonMu.Unlock()
+				}
+			})
+		case "diff":
+			wg := waitGroup(len(resultTypes) == 1)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "diff search failed"))
+					multiErrMu.Unlock()
+				}
+				if diffResults != nil {
+					resultsMu.Lock()
+					results = append(results, diffResults...)
+					resultsMu.Unlock()
+				}
+				if diffCommon != nil {
+					commonMu.Lock()
+					common.update(*diffCommon)
+					commonMu.Unlock()
+				}
+			})
+		case "commit":
+			wg := waitGroup(len(resultTypes) == 1)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "commit search failed"))
+					multiErrMu.Unlock()
+				}
+				if commitResults != nil {
+					resultsMu.Lock()
+					results = append(results, commitResults...)
+					resultsMu.Unlock()
+				}
+				if commitCommon != nil {
+					commonMu.Lock()
+					common.update(*commitCommon)
+					commonMu.Unlock()
+				}
+			})
+		}
 	}
 
-	// Gather results from the workers. We do so in no particular order, as
-	// we will sort them later.
-	var searcherResults []searcherResult
-	for i := 0; i < expectRequired; i++ {
-		searcherResults = append(searcherResults, <-required)
-	}
-	// Optional search results only have 100ms (since the start of the search
-	// query) to return if we already got required search results. This is to
-	// prevent optional search results (which are often slower) from slowing
-	// down the overall search.
+	// Wait for required searches.
+	requiredWg.Wait()
+
+	// Give optional searches some minimum budget in case required searches return quickly.
+	// Cancel all remaining searches after this minimum budget.
 	budget := 100 * time.Millisecond
 	elapsed := time.Since(start)
 	timer := time.AfterFunc(budget-elapsed, cancel)
-optionalSearches:
-	for i := 0; i < expectOptional; i++ {
-		select {
-		case r := <-optional:
-			searcherResults = append(searcherResults, r)
-		case <-timer.C:
-			break optionalSearches
-		}
-	}
+
+	// Wait for remaining optional searches to finish or get cancelled.
+	optionalWg.Wait()
+
 	timer.Stop()
-
-	// Handle the results from the workers, again in no particular order as we
-	// will sort later.
-	var (
-		results  []*searchResultResolver
-		common   = searchResultsCommon{maxResultsCount: r.maxResults()}
-		multiErr *multierror.Error
-
-		// fileMatches is a map from git:// URI of the file to FileMatch resolver
-		// to merge multiple results of different types for the same file
-		fileMatches = make(map[string]*fileMatchResolver)
-	)
-	for _, sr := range searcherResults {
-		// Timeouts are reported through searchResultsCommon so don't report an
-		// error for them (context errors).
-		if sr.err != nil && !isContextError(ctx, sr.err) {
-			multiErr = multierror.Append(multiErr, errors.Wrap(sr.err, sr.resultType+" search failed"))
-		}
-		if sr.common != nil {
-			common.update(*sr.common)
-		}
-		for _, result := range sr.results {
-			if result.fileMatch != nil {
-				// When we encounter file match results, we deduplicate them as the
-				// "symbol", "file", and "path" searchers registered above can produce
-				// duplicates as they aren't aware of eachother.
-				key := result.fileMatch.uri
-				if m, ok := fileMatches[key]; ok {
-					// Result for this file already exists, so merge it, so that we get
-					// the best result possible (i.e. because one searcher may produce
-					// nil line matches).
-					m.JLimitHit = m.JLimitHit || result.fileMatch.JLimitHit
-					if m.JLineMatches == nil {
-						m.JLineMatches = result.fileMatch.JLineMatches
-					}
-				} else {
-					fileMatches[key] = result.fileMatch
-					results = append(results, result)
-				}
-				continue
-			}
-			results = append(results, result)
-		}
-	}
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 
@@ -888,12 +950,15 @@ optionalSearches:
 	}
 
 	sortResults(results)
-	return &searchResultsResolver{
+
+	resultsResolver := searchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
 		results:             results,
 		alert:               alert,
-	}, multiErr.ErrorOrNil()
+	}
+
+	return &resultsResolver, multiErr.ErrorOrNil()
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
