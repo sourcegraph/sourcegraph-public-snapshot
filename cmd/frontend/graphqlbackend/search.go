@@ -41,11 +41,8 @@ import (
 // should start here.
 
 func maxReposToSearch() int {
-	switch max := conf.Get().MaxReposToSearch; max {
-	case 0:
-		// Not specified OR specified as literal zero. Use our default value.
-		return 500
-	case -1:
+	switch max := conf.Get().MaxReposToSearch; {
+	case max <= 0:
 		// Default to a very large number that will not overflow if incremented.
 		return math.MaxInt32 >> 1
 	default:

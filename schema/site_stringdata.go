@@ -106,9 +106,9 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "maxReposToSearch": {
-      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
+      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value 0 means unlimited.",
       "type": "integer",
-      "default": 500,
+      "default": -1,
       "group": "Search"
     },
     "parentSourcegraph": {
