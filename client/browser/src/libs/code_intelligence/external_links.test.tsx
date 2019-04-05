@@ -15,7 +15,9 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderViewContextOnSourcegraph({
             sourcegraphUrl: 'https://test.com',
             getContext: () => ({ repoName: 'test' }),
-            contextButtonClassName: 'test',
+            viewOnSourcegraphButtonClassProps: {
+                className: 'test',
+            },
             ensureRepoExists: () => of(true),
         })(mount)
 
@@ -31,7 +33,9 @@ describe('<ViewOnSourcegraphButton />', () => {
                 repoName: 'test',
                 rev: 'test',
             }),
-            contextButtonClassName: 'test',
+            viewOnSourcegraphButtonClassProps: {
+                className: 'test',
+            },
             ensureRepoExists: () => of(true),
         })(mount)
 
@@ -49,14 +53,16 @@ describe('<ViewOnSourcegraphButton />', () => {
                 repoName: 'test',
                 rev: 'test',
             }),
-            contextButtonClassName: 'test',
+            viewOnSourcegraphButtonClassProps: {
+                className: 'test',
+            },
             ensureRepoExists: () => of(false),
             onConfigureSourcegraphClick: configureClickSpy,
         })(mount)
 
         const link = document.querySelector<HTMLAnchorElement>('.test')
         expect(link).toBeInstanceOf(HTMLAnchorElement)
-        expect(link!.textContent).toBe('Configure Sourcegraph')
+        expect(link!.textContent).toBe(' Configure Sourcegraph')
 
         fireEvent.click(link!)
         expect(configureClickSpy.calledOnce).toBe(true)
@@ -71,13 +77,15 @@ describe('<ViewOnSourcegraphButton />', () => {
                 repoName: 'test',
                 rev: 'test',
             }),
-            contextButtonClassName: 'test',
+            viewOnSourcegraphButtonClassProps: {
+                className: 'test',
+            },
             ensureRepoExists: () => of(false),
             onConfigureSourcegraphClick: configureClickSpy,
         })(mount)
 
         const link = document.querySelector<HTMLAnchorElement>('.test')
         expect(link).toBeInstanceOf(HTMLAnchorElement)
-        expect(link!.textContent).toBe('View Repository')
+        expect(link!.textContent).toBe(' View Repository')
     })
 })

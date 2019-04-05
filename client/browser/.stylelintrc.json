@@ -2,20 +2,6 @@
   "$schema": "http://json.schemastore.org/stylelintrc",
   "extends": ["@sourcegraph/stylelint-config"],
   "rules": {
-    "declaration-property-unit-whitelist": [
-      {
-        "/^border(?!.*-radius$)/": ["px", "%"],
-        "/^border-radius/": ["px", "rem", "%"],
-        "/^box-shadow": ["px"],
-        "/^margin/": ["rem"],
-        "/^padding/": ["rem"],
-        "font-size": ["px", "em"],
-        "height": ["rem", "%", "vh"],
-        "width": ["rem", "%", "vw"]
-      },
-      {
-        "severity": "warning"
-      }
-    ]
+    "declaration-property-unit-whitelist": null
   }
 }

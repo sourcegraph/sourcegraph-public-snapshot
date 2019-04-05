@@ -26,14 +26,14 @@ import {
     startWith,
     withLatestFrom,
 } from 'rxjs/operators'
-import { ActionItemProps } from '../../../../../shared/src/actions/ActionItem'
-import { ActionNavItemsClassProps } from '../../../../../shared/src/actions/ActionsNavItems'
+import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
 import { ViewComponentData, WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/model'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay } from '../../../../../shared/src/hover/HoverOverlay'
+import { HoverContext, HoverOverlay, HoverOverlayProps } from '../../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
@@ -54,7 +54,7 @@ import { sendMessage } from '../../browser/runtime'
 import { isInPage } from '../../context'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
-import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
+import { ButtonProps, CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { sourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../shared/util/dom'
@@ -65,7 +65,7 @@ import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { fetchFileContents, trackCodeViews } from './code_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { renderViewContextOnSourcegraph } from './external_links'
+import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
 
 registerHighlightContributions()
 
@@ -161,7 +161,7 @@ export interface CodeHost {
     /**
      * Optional class name for the contextual link to Sourcegraph.
      */
-    contextButtonClassName?: string
+    viewOnSourcegraphButtonClassProps?: ViewOnSourcegraphButtonClassProps
 
     /**
      * Checks to see if the current context the code is running in is within
@@ -175,6 +175,11 @@ export interface CodeHost {
      * Defaults to a `<div class="hover-overlay-mount">` that is appended to `document.body`.
      */
     getOverlayMount?: MountGetter
+
+    /**
+     * CSS classes for ActionItem buttons in the hover overlay to customize styling
+     */
+    hoverOverlayClassProps?: Pick<HoverOverlayProps, 'actionItemClassName' | 'actionItemPressedClassName'>
 
     /**
      * The list of types of code views to try to annotate.
@@ -222,14 +227,15 @@ export interface CodeHost {
     /** Returns a stream representing the selections in the current code view */
     selectionsChanges?: () => Observable<Selection[]>
 
-    /** Optional classes for ActionNavItems, useful to customize the style of buttons contributed to the code view toolbar */
-    actionNavItemClassProps?: ActionNavItemsClassProps
+    /**
+     * CSS classes for the command palette to customize styling
+     */
+    commandPaletteClassProps?: CommandListClassProps
 
-    /** Optional class to set on the command palette popover element */
-    commandPalettePopoverClassName?: string
-
-    /** Optional class to set on the code view toolbar element */
-    codeViewToolbarClassName?: string
+    /**
+     * CSS classes for the code view toolbar to customize styling
+     */
+    codeViewToolbarClassProps?: CodeViewToolbarClassProps
 }
 
 export interface FileInfo {
@@ -296,7 +302,7 @@ export function initCodeIntelligence({
     platformContext,
     extensionsController,
 }: CodeIntelligenceProps & { addedElements: Observable<HTMLElement> }): {
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
     const subscription = new Subscription()
@@ -320,19 +326,21 @@ export function initCodeIntelligence({
     )
 
     // Code views come and go, but there is always a single hoverifier on the page
-    const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>({
-        closeButtonClicks,
-        hoverOverlayElements,
-        hoverOverlayRerenders: containerComponentUpdates.pipe(
-            withLatestFrom(hoverOverlayElements),
-            map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
-            filter(propertyIsDefined('hoverOverlayElement'))
-        ),
-        getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
-        getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-    })
+    const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>(
+        {
+            closeButtonClicks,
+            hoverOverlayElements,
+            hoverOverlayRerenders: containerComponentUpdates.pipe(
+                withLatestFrom(hoverOverlayElements),
+                map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
+                filter(propertyIsDefined('hoverOverlayElement'))
+            ),
+            getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
+            getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+        }
+    )
 
-    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemProps>> {
+    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemAction>> {
         private subscription = new Subscription()
         constructor(props: {}) {
             super(props)
@@ -357,6 +365,7 @@ export function initCodeIntelligence({
             return hoverOverlayProps ? (
                 <HoverOverlay
                     {...hoverOverlayProps}
+                    {...codeHost.hoverOverlayClassProps}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     hoverRef={nextOverlayElement}
                     extensionsController={extensionsController}
@@ -366,7 +375,7 @@ export function initCodeIntelligence({
                 />
             ) : null
         }
-        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemProps>['hoverOverlayProps'] {
+        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined
             }
@@ -476,7 +485,7 @@ export function handleCodeHost({
                         extensionsController,
                         history,
                         platformContext,
-                        popoverClassName: codeHost.commandPalettePopoverClassName,
+                        ...codeHost.commandPaletteClassProps,
                     })
                 )
         )
@@ -494,7 +503,7 @@ export function handleCodeHost({
     }
     // Render view on Sourcegraph button
     if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
-        const { getContext, contextButtonClassName } = codeHost
+        const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
         subscriptions.add(
             addedElements
                 .pipe(
@@ -505,7 +514,7 @@ export function handleCodeHost({
                     renderViewContextOnSourcegraph({
                         sourcegraphUrl,
                         getContext,
-                        contextButtonClassName,
+                        viewOnSourcegraphButtonClassProps,
                         ensureRepoExists,
                         onConfigureSourcegraphClick: isInPage ? undefined : openOptionsMenu,
                     })
@@ -682,7 +691,7 @@ export function handleCodeHost({
                     render(
                         <CodeViewToolbar
                             {...fileInfo}
-                            {...codeHost.actionNavItemClassProps}
+                            {...codeHost.codeViewToolbarClassProps}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
@@ -693,7 +702,6 @@ export function handleCodeHost({
                                 }
                             }
                             location={H.createLocation(window.location)}
-                            className={codeHost.codeViewToolbarClassName}
                         />,
                         mount
                     )

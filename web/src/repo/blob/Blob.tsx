@@ -6,12 +6,12 @@ import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
+import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -31,6 +31,7 @@ import {
     toPositionOrRangeHash,
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
+import { WebHoverOverlay } from '../../components/shared'
 import { isDiscussionsEnabled } from '../../discussions'
 import { ThemeProps } from '../../theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
@@ -63,7 +64,7 @@ interface BlobProps
     renderMode: RenderMode
 }
 
-interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
+interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The desired position of the discussions gutter overlay */
     discussionsGutterOverlayPosition?: { left: number; top: number }
 
@@ -154,7 +155,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         const hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
-            ActionItemProps
+            ActionItemAction
         >({
             closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -465,7 +466,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                 />
                 {this.state.hoverOverlayProps && (
-                    <HoverOverlay
+                    <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
                         hoverRef={this.nextOverlayElement}

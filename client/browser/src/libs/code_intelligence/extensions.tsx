@@ -2,7 +2,10 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
+import {
+    CommandListPopoverButton,
+    CommandListPopoverButtonProps,
+} from '../../../../../shared/src/commandPalette/CommandList'
 import { Notifications } from '../../../../../shared/src/notifications/Notifications'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
@@ -42,19 +45,19 @@ interface InjectProps
 
 export const renderCommandPalette = ({
     extensionsController,
-    platformContext,
     history,
-    popoverClassName,
-}: InjectProps & { popoverClassName?: string }) => (mount: HTMLElement): void => {
+    ...props
+}: InjectProps & Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName'>) => (
+    mount: HTMLElement
+): void => {
     render(
         <ShortcutProvider>
             <CommandListPopoverButton
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                popoverClassName={popoverClassName}
-                extensionsController={extensionsController}
+                {...props}
                 menu={ContributableMenu.CommandPalette}
-                platformContext={platformContext}
+                extensionsController={extensionsController}
                 location={history.location}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
             <Notifications extensionsController={extensionsController} />
         </ShortcutProvider>,

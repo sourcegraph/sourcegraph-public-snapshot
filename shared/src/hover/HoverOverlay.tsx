@@ -1,11 +1,12 @@
 import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 import { castArray, isEqual } from 'lodash'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { MarkupContent } from 'sourcegraph'
-import { ActionItem, ActionItemComponentProps, ActionItemProps } from '../actions/ActionItem'
+import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { isErrorLike } from '../util/errors'
@@ -24,7 +25,7 @@ export type HoverContext = RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
 export type HoverData = HoverMerged
 
 export interface HoverOverlayProps
-    extends GenericHoverOverlayProps<HoverContext, HoverData, ActionItemProps>,
+    extends GenericHoverOverlayProps<HoverContext, HoverData, ActionItemAction>,
         ActionItemComponentProps,
         TelemetryProps {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
@@ -32,6 +33,9 @@ export interface HoverOverlayProps
 
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
+
+    actionItemClassName?: string
+    actionItemPressedClassName?: string
 
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
@@ -71,6 +75,8 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
             showCloseButton,
             actionsOrError,
             className = '',
+            actionItemClassName,
+            actionItemPressedClassName,
         } = this.props
 
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
@@ -169,10 +175,13 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                             {actionsOrError.map((action, i) => (
                                 <ActionItem
                                     key={i}
-                                    className={`btn btn-secondary hover-overlay__action e2e-tooltip-${sanitizeClass(
-                                        action.action.title || 'untitled'
-                                    )}`}
                                     {...action}
+                                    className={classNames(
+                                        'hover-overlay__action',
+                                        actionItemClassName,
+                                        `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                    )}
+                                    pressedClassName={actionItemPressedClassName}
                                     variant="actionItem"
                                     disabledDuringExecution={true}
                                     showLoadingSpinnerDuringExecution={true}
