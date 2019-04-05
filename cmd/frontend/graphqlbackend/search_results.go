@@ -873,7 +873,7 @@ optionalSearches:
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 
-	// alert is a potential alert shown to the user
+	// Alert is a potential alert shown to the user.
 	var alert *searchAlert
 
 	if len(missingRepoRevs) > 0 {
