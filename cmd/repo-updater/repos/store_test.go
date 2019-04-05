@@ -3,14 +3,12 @@ package repos_test
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -28,9 +26,8 @@ func TestFakeStore(t *testing.T) {
 	}{
 		{"ListExternalServices", testStoreListExternalServices(new(repos.FakeStore))},
 		{"UpsertExternalServices", testStoreUpsertExternalServices(new(repos.FakeStore))},
-		{"GetRepoByName", testStoreGetRepoByName(new(repos.FakeStore))},
-		{"UpsertRepos", testStoreUpsertRepos(new(repos.FakeStore))},
 		{"ListRepos", testStoreListRepos(new(repos.FakeStore))},
+		{"UpsertRepos", testStoreUpsertRepos(new(repos.FakeStore))},
 	} {
 		t.Run(tc.name, tc.test)
 	}
@@ -125,7 +122,10 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 					return
 				}
 
-				es, err := tx.ListExternalServices(ctx, tc.kinds...)
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+					Kinds: tc.kinds,
+				})
+
 				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
@@ -201,7 +201,10 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 
 			sort.Sort(want)
 
-			have, err := tx.ListExternalServices(ctx, svcs.Kinds()...)
+			have, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+				Kinds: svcs.Kinds(),
+			})
+
 			if err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
 				return
@@ -224,7 +227,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 
 			if err = tx.UpsertExternalServices(ctx, want...); err != nil {
 				t.Errorf("UpsertExternalServices error: %s", err)
-			} else if have, err = tx.ListExternalServices(ctx); err != nil {
+			} else if have, err = tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{}); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
@@ -234,7 +237,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 
 			if err = tx.UpsertExternalServices(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertExternalServices error: %s", err)
-			} else if have, err = tx.ListExternalServices(ctx); err != nil {
+			} else if have, err = tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{}); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
@@ -341,7 +344,10 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 			sort.Sort(want)
 
-			have, err := tx.ListRepos(ctx, kinds...)
+			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{
+				Kinds: kinds,
+			})
+
 			if err != nil {
 				t.Errorf("ListRepos error: %s", err)
 				return
@@ -366,7 +372,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
-			} else if have, err = tx.ListRepos(ctx); err != nil {
+			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
@@ -376,7 +382,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
-			} else if have, err = tx.ListRepos(ctx); err != nil {
+			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
@@ -463,7 +469,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 	type testCase struct {
 		name   string
-		kinds  []string
+		args   func(stored repos.Repos) repos.StoreListReposArgs
 		stored repos.Repos
 		repos  repos.ReposAssertion
 		err    error
@@ -477,16 +483,22 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		})
 
 		testCases = append(testCases, testCase{
-			name:   "case-insensitive kinds",
-			kinds:  []string{"GiThUb", "GitLab", "BitBucketServer"},
+			name: "case-insensitive kinds",
+			args: func(_ repos.Repos) repos.StoreListReposArgs {
+				return repos.StoreListReposArgs{
+					Kinds: []string{"GiThUb", "GitLab", "BitBucketServer"},
+				}
+			},
 			stored: stored,
 			repos:  repos.Assert.ReposEqual(stored...),
 		})
 	}
 
 	testCases = append(testCases, testCase{
-		name:   "ignores unmanaged",
-		kinds:  kinds,
+		name: "ignores unmanaged",
+		args: func(_ repos.Repos) repos.StoreListReposArgs {
+			return repos.StoreListReposArgs{Kinds: kinds}
+		},
 		stored: repos.Repos{&github, &gitlab, &unmanaged}.Clone(),
 		repos:  repos.Assert.ReposEqual(&github, &gitlab),
 	})
@@ -495,7 +507,6 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		stored := repositories.With(repos.Opt.RepoDeletedAt(now))
 		testCases = append(testCases, testCase{
 			name:   "returns soft deleted repos",
-			kinds:  kinds,
 			stored: stored,
 			repos:  repos.Assert.ReposEqual(stored...),
 		})
@@ -503,11 +514,43 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 	testCases = append(testCases, testCase{
 		name:   "returns repos in ascending order by id",
-		kinds:  []string{}, // All kinds
 		stored: mkRepos(512, repositories...),
 		repos: repos.Assert.ReposOrderedBy(func(a, b *repos.Repo) bool {
 			return a.ID < b.ID
 		}),
+	})
+
+	testCases = append(testCases, testCase{
+		name:   "returns repos by their names",
+		stored: repositories,
+		args: func(_ repos.Repos) repos.StoreListReposArgs {
+			return repos.StoreListReposArgs{
+				Names: []string{github.Name, gitlab.Name},
+			}
+		},
+		repos: repos.Assert.ReposEqual(&github, &gitlab),
+	})
+
+	testCases = append(testCases, testCase{
+		name:   "returns repos by their ids",
+		stored: repositories,
+		args: func(stored repos.Repos) repos.StoreListReposArgs {
+			return repos.StoreListReposArgs{
+				IDs: []uint32{stored[0].ID, stored[1].ID},
+			}
+		},
+		repos: repos.Assert.ReposEqual(repositories[:2].Clone()...),
+	})
+
+	testCases = append(testCases, testCase{
+		name:   "limits repos to the given kinds",
+		stored: repositories,
+		args: func(repos.Repos) repos.StoreListReposArgs {
+			return repos.StoreListReposArgs{
+				Kinds: []string{"github", "gitlab"},
+			}
+		},
+		repos: repos.Assert.ReposEqual(&github, &gitlab),
 	})
 
 	return func(t *testing.T) {
@@ -518,130 +561,24 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 			ctx := context.Background()
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
-				if err := tx.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
+				stored := tc.stored.Clone()
+				if err := tx.UpsertRepos(ctx, stored...); err != nil {
 					t.Errorf("failed to setup store: %v", err)
 					return
 				}
 
-				rs, err := tx.ListRepos(ctx, tc.kinds...)
+				var args repos.StoreListReposArgs
+				if tc.args != nil {
+					args = tc.args(stored)
+				}
+
+				rs, err := tx.ListRepos(ctx, args)
 				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
 				if tc.repos != nil {
 					tc.repos(t, rs)
-				}
-			}))
-		}
-	}
-}
-
-func testStoreGetRepoByName(store repos.Store) func(*testing.T) {
-	github := repos.Repo{
-		Name: "github.com/bar/foo",
-		Sources: map[string]*repos.SourceInfo{
-			"extsvc:123": {
-				ID:       "extsvc:123",
-				CloneURL: "git@github.com:bar/foo.git",
-			},
-		},
-		Metadata: new(github.Repository),
-		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: "github",
-			ServiceID:   "https://github.com/",
-			ID:          "foo",
-		},
-	}
-
-	gitlab := repos.Repo{
-		Name: "gitlab.com/bar/foo",
-		Sources: map[string]*repos.SourceInfo{
-			"extsvc:123": {
-				ID:       "extsvc:123",
-				CloneURL: "git@gitlab.com:bar/foo.git",
-			},
-		},
-		Metadata: new(gitlab.Project),
-		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: "gitlab",
-			ServiceID:   "https://gitlab.com/",
-			ID:          "123",
-		},
-	}
-
-	bitbucketServer := repos.Repo{
-		Name: "bitbucketserver.mycorp.com/foo/bar",
-		Sources: map[string]*repos.SourceInfo{
-			"extsvc:123": {
-				ID:       "extsvc:123",
-				CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
-			},
-		},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "1234",
-			ServiceType: "bitbucketServer",
-			ServiceID:   "http://bitbucketserver.mycorp.com",
-		},
-		Metadata: new(bitbucketserver.Repo),
-	}
-
-	repositories := repos.Repos{
-		&github,
-		&gitlab,
-		&bitbucketServer,
-	}
-
-	type testCase struct {
-		test   string
-		name   string
-		stored repos.Repos
-		repo   *repos.Repo
-		err    error
-	}
-
-	testCases := []testCase{
-		{
-			test: "no results error",
-			name: "intergalatical repo lost in spaaaaaace",
-			err:  repos.ErrNoResults,
-		},
-	}
-
-	for _, repo := range repositories {
-		testCases = append(testCases, testCase{
-			test:   repo.ExternalRepo.ServiceType + "/found",
-			stored: repositories,
-			name:   repo.Name,
-			repo:   repo.Clone(),
-		})
-	}
-
-	return func(t *testing.T) {
-		t.Helper()
-
-		for _, tc := range testCases {
-			// NOTE: We use t.Errorf instead of t.Fatalf in order to run defers.
-
-			tc := tc
-			ctx := context.Background()
-
-			t.Run(tc.test, transact(ctx, store, func(t testing.TB, tx repos.Store) {
-				if err := tx.UpsertRepos(ctx, tc.stored...); err != nil {
-					t.Errorf("failed to setup store: %v", err)
-					return
-				}
-
-				repo, err := tx.GetRepoByName(ctx, tc.name)
-				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
-					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
-				}
-
-				if repo != nil {
-					repo.ID = 0 // Exclude auto-generated IDs from equality tests
-				}
-
-				if have, want := repo, tc.repo; !reflect.DeepEqual(have, want) {
-					t.Errorf("repos: %s", cmp.Diff(have, want))
 				}
 			}))
 		}

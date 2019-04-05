@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -320,12 +321,13 @@ func TestRepoLookup_syncer(t *testing.T) {
 	}
 
 	t.Run("not found", func(t *testing.T) {
-		result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/a/b"})
+		have, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/a/b"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
-			t.Errorf("got result %+v, want nil", result)
+		want := &protocol.RepoLookupResult{ErrorNotFound: true}
+		if !reflect.DeepEqual(have, want) {
+			t.Error(cmp.Diff(have, want))
 		}
 	})
 
