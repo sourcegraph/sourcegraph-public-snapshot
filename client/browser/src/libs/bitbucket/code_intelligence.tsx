@@ -2,7 +2,7 @@ import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegrap
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../shared/util/dom'
-import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
+import { CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import {
@@ -182,7 +182,7 @@ export const checkIsBitbucket = (): boolean =>
     !!document.querySelector('.bitbucket-header-logo') ||
     !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
 
-export const bitbucketServerCodeHost: CodeHost = {
+export const bitbucketServerCodeHost = {
     name: 'bitbucket-server',
     check: checkIsBitbucket,
     codeViewSpecResolver,

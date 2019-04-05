@@ -12,13 +12,7 @@ import {
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import {
-    CodeHost,
-    CodeViewSpec,
-    CodeViewSpecResolver,
-    CodeViewSpecWithOutSelector,
-    MountGetter,
-} from '../code_intelligence'
+import { CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
@@ -222,7 +216,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
     return mount
 }
 
-export const githubCodeHost: CodeHost = {
+export const githubCodeHost = {
     name: 'github',
     codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
     codeViewSpecResolver,
