@@ -440,12 +440,7 @@ export function handleCodeHost({
         resolveRev(context).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
-            catchError((err: Error) => {
-                if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
-                    return [false]
-                }
-                return [true]
-            })
+            catchError(() => [false])
         )
 
     const openOptionsMenu = () => {
