@@ -256,9 +256,8 @@ export interface FileInfo {
     commitID: string
     /**
      * `true` if this file is from a private repository,
-     * but the extension points to the public sourcegraph.com.
      */
-    privateRepoPublicSourcegraph?: boolean
+    privateRepo?: boolean
     /**
      * The revision the code view is at. If a `baseRev` is provided, this value is treated as the head rev.
      */
