@@ -78,8 +78,6 @@ const adjustPosition: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedR
 
 const toolbarButtonProps = {
     className: 'button grey button-grey has-icon has-text phui-button-default msl',
-    iconStyle: { marginTop: '-1px', paddingRight: '4px', fontSize: '18px', height: '.8em', width: '.8em' },
-    style: {},
 }
 const commitCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDomFunctions,

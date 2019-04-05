@@ -258,6 +258,7 @@ export const githubCodeHost: CodeHost = {
     hoverOverlayClassProps: {
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
+        closeButtonClassName: 'btn',
     },
     urlToFile: (
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }

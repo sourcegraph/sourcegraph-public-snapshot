@@ -17,8 +17,6 @@ import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
     className?: string
-    style?: React.CSSProperties
-    iconStyle?: React.CSSProperties
 }
 
 export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
