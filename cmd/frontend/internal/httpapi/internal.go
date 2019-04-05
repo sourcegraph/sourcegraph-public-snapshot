@@ -2,11 +2,8 @@ package httpapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -447,55 +444,6 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, src)
 	return err
-}
-
-func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
-	service := r.URL.Query().Get("service")
-	if service != "git-upload-pack" {
-		return errors.New("only support service git-upload-pack")
-	}
-
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
-	}
-
-	if !repo.Enabled {
-		return errors.Errorf("repo is not enabled: %s", repo.Name)
-	}
-
-	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Repo = gitserver.Repo{Name: repo.Name}
-	refs, err := cmd.Output(r.Context())
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-upload-pack-advertisement"))
-	w.WriteHeader(http.StatusOK)
-	w.Write(packetWrite("# service=git-upload-pack\n"))
-	w.Write([]byte("0000"))
-	w.Write(refs)
-	return nil
-}
-
-func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
-	}
-
-	gitserver.DefaultClient.UploadPack(repo.Name, w, r)
-	return nil
-}
-
-func packetWrite(str string) []byte {
-	s := strconv.FormatInt(int64(len(str)+4), 16)
-	if len(s)%4 != 0 {
-		s = strings.Repeat("0", 4-len(s)%4) + s
-	}
-	return []byte(s + str)
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {

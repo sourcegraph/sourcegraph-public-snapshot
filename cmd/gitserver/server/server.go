@@ -226,7 +226,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo", s.handleRepoInfo)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
-	mux.HandleFunc("/upload-pack", s.handleUploadPack)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
