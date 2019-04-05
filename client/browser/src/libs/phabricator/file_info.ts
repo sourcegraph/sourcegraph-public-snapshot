@@ -94,8 +94,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
         }))
     )
 
-export const resolveDiffusionFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
+export const resolveDiffusionFileInfo = (): Observable<FileInfo> =>
     from(getPhabricatorState(window.location)).pipe(
-        filter(state => state !== null && state.mode === PhabricatorMode.Diffusion),
-        map(state => state as DiffusionState)
+        filter((state): state is DiffusionState => state !== null && state.mode === PhabricatorMode.Diffusion)
     )
