@@ -1,8 +1,7 @@
+/**
+ * Not idempotent.
+ */
 export function injectSourcegraphApp(marker: HTMLElement): void {
-    if (document.getElementById(marker.id)) {
-        return
-    }
-
     // Generate and insert DOM element, in case this code executes first.
     document.body.appendChild(marker)
 

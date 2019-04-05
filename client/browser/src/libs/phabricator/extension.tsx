@@ -8,6 +8,9 @@ import { injectCodeIntelligence } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
 import { metaClickOverride } from './util'
 
+// Just for informational purposes (see getPlatformContext())
+window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
+
 // NOT idempotent.
 async function injectModules(): Promise<void> {
     // This is added so that the browser extension doesn't
