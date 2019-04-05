@@ -15,7 +15,7 @@ export const setPopup = (details: chrome.browserAction.PopupDetails): Promise<vo
         resolve()
     })
 
-export function onClicked(listener: ((tab: chrome.tabs.Tab) => void)): void {
+export function onClicked(listener: (tab: chrome.tabs.Tab) => void): void {
     if (chrome && chrome.browserAction && chrome.browserAction.onClicked) {
         chrome.browserAction.onClicked.addListener(listener)
     }

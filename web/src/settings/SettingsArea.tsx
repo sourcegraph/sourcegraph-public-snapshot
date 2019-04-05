@@ -8,7 +8,6 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxj
 import { extensionIDsFromSettings } from '../../../shared/src/extensions/extension'
 import { queryConfiguredRegistryExtensions } from '../../../shared/src/extensions/helpers'
 import { gql } from '../../../shared/src/graphql/graphql'
-import { ISettingsCascade } from '../../../shared/src/graphql/schema'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { gqlToCascade, SettingsCascadeProps } from '../../../shared/src/settings/settings'
@@ -19,6 +18,7 @@ import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
+
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
@@ -180,7 +180,7 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<ISettingsCascade, 'subjects'>> {
+function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<GQL.ISettingsCascade, 'subjects'>> {
     return queryGraphQL(
         gql`
             query SettingsCascade($subject: ID!) {

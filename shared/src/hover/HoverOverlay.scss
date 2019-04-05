@@ -42,9 +42,31 @@
         &:not(:first-child) {
             border-top: 1px solid var(--border-color);
         }
+    }
+
+    &__contents {
+        flex: 1 1 auto;
+        overflow-y: auto;
+    }
+
+    // __content elements are a subset of the __row elements
+    // (the ones that contain markdown or code, but not errors or the actions)
+    &__content {
+        padding: 0.5rem;
+        overflow-x: auto;
+        word-wrap: normal;
+
+        // Descendant selectors are needed here to style rendered markdown
+        // stylelint-disable selector-max-compound-selectors
+
+        // <hr>s must looks the same as using the using multiple deprecated MarkedStrings
         hr {
             margin: 0.5rem -0.5rem;
             background: var(--border-color);
+            border: none;
+            // The <hr> acts like a border, which should always be exactly 1px
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            height: 1px;
         }
         p,
         pre {
@@ -54,20 +76,10 @@
                 margin-bottom: 0;
             }
         }
-    }
-
-    &__contents {
-        flex: 1 1 auto;
-        overflow-y: auto;
-    }
-
-    &__content {
-        padding: 0.5rem;
-        overflow-x: auto;
-        word-wrap: normal;
-        p:last-child {
-            margin-bottom: 0;
+        code {
+            white-space: pre;
         }
+        // stylelint-enable selector-max-compound-selectors
     }
 
     &__actions {
@@ -104,9 +116,5 @@
     &__alert-below {
         margin: 0;
         overflow-y: auto;
-    }
-
-    code {
-        white-space: pre;
     }
 }

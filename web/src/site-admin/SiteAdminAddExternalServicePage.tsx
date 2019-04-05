@@ -3,20 +3,19 @@ import React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { gql } from '../../../shared/src/graphql/graphql'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { ThemeProps } from '../theme'
-import { ExternalServiceCard } from './ExternalServiceCard'
+import { ExternalServiceCard } from './../components/ExternalServiceCard'
 import { ExternalServiceVariant, getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
 interface Props extends ThemeProps {
     history: H.History
-    kind: ExternalServiceKind
+    kind: GQL.ExternalServiceKind
     variant?: ExternalServiceVariant
     eventLogger: {
         logViewEvent: (event: 'AddExternalService') => void
@@ -67,7 +66,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                             map(() => {
                                 // Refresh site flags so that global site alerts
                                 // reflect the latest configuration.
-                                refreshSiteFlags().subscribe(undefined, err => console.error(err))
+                                refreshSiteFlags().subscribe({ error: err => console.error(err) })
 
                                 this.setState({ loading: false })
                                 this.props.history.push(`/site-admin/external-services`)

@@ -14,6 +14,7 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { isDiscussionsEnabled } from '../discussions'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { UserNavItem } from './UserNavItem'
 
 interface Props
@@ -23,6 +24,7 @@ interface Props
         PlatformContextProps<'forceUpdateTooltip'>,
         ThemeProps,
         ThemePreferenceProps,
+        EventLoggerProps,
         ActivationProps {
     location: H.Location
     history: H.History

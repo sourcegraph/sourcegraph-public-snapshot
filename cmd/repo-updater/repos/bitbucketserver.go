@@ -6,9 +6,12 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
@@ -146,7 +149,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	return &protocol.RepoInfo{
 		Name: repoName,
 		ExternalRepo: &api.ExternalRepoSpec{
-			ID:          project + "/" + repo.Slug,
+			ID:          strconv.Itoa(repo.ID),
 			ServiceType: bitbucketserver.ServiceType,
 			ServiceID:   host.String(),
 		},
@@ -255,18 +258,22 @@ func RunBitbucketServerRepositorySyncWorker(ctx context.Context) {
 
 // updateBitbucketServerRepos ensures that all provided repositories exist in the repository table.
 func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnection) {
+	repos, err := conn.listAllRepos(ctx)
+	if err != nil {
+		log15.Error("failed to list some bitbucketserver repos", "error", err.Error())
+	}
+
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
+
 	sourceID := conn.config.Token
 	if sourceID == "" {
 		sourceID = conn.config.Username
 	}
-	go createEnableUpdateRepos(ctx, fmt.Sprintf("bitbucket:%s", sourceID), repoChan)
-	for r := range conn.listAllRepos(ctx) {
-		if r.State != "AVAILABLE" {
-			continue
-		}
 
+	go createEnableUpdateRepos(ctx, fmt.Sprintf("bitbucket:%s", sourceID), repoChan)
+
+	for _, r := range repos {
 		ri := bitbucketServerRepoInfo(conn.config, r)
 		if ri.VCS.URL == "" {
 			continue
@@ -318,61 +325,136 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf h
 		return nil, err
 	}
 
+	exclude := make(map[string]bool, len(config.Exclude))
+	for _, r := range config.Exclude {
+		if r.Name != "" {
+			exclude[strings.ToLower(r.Name)] = true
+		}
+
+		if r.Id != 0 {
+			exclude[strconv.Itoa(r.Id)] = true
+		}
+	}
+
 	client := bitbucketserver.NewClient(baseURL, cli)
 	client.Token = config.Token
 	client.Username = config.Username
 	client.Password = config.Password
 
 	return &bitbucketServerConnection{
-		config: config,
-		client: client,
+		config:  config,
+		exclude: exclude,
+		client:  client,
 	}, nil
 }
 
 type bitbucketServerConnection struct {
-	config *schema.BitbucketServerConnection
-	client *bitbucketserver.Client
+	config  *schema.BitbucketServerConnection
+	exclude map[string]bool
+	client  *bitbucketserver.Client
 }
 
-func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) <-chan *bitbucketserver.Repo {
-	perPage := 100
-	ch := make(chan *bitbucketserver.Repo, perPage)
-	go func() {
-		defer close(ch)
+func (c *bitbucketServerConnection) excludes(r *bitbucketserver.Repo) bool {
+	name := r.Slug
+	if r.Project != nil {
+		name = r.Project.Key + "/" + name
+	}
+	return r.State == "AVAILABLE" &&
+		c.exclude[strings.ToLower(name)] ||
+		c.exclude[strconv.Itoa(r.ID)] ||
+		(c.config.ExcludePersonalRepositories && r.IsPersonalRepository())
+}
 
-		// First we list one page of recent repos, so that we clone them first
-		repos, _, err := c.client.RecentRepos(ctx, &bitbucketserver.PageToken{Limit: perPage})
-		if err != nil {
-			log15.Warn("failed to list recent repos for Bitbucket Server", "url", c.client.URL, "error", err)
-		}
-		recent := map[int]bool{}
-		for _, r := range repos {
-			if c.config.ExcludePersonalRepositories && r.IsPersonalRepository() {
+func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbucketserver.Repo, error) {
+	type batch struct {
+		repos []*bitbucketserver.Repo
+		err   error
+	}
+
+	ch := make(chan batch)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		repos := make([]*bitbucketserver.Repo, 0, len(c.config.Repos))
+		errs := new(multierror.Error)
+
+		for _, name := range c.config.Repos {
+			ps := strings.SplitN(name, "/", 2)
+			if len(ps) != 2 {
+				errs = multierror.Append(errs,
+					errors.Errorf("bitbucketserver.repos: name=%q", name))
 				continue
 			}
-			recent[r.ID] = true
-			ch <- r
-		}
 
-		// Then we list all repos, taking care not to repeat repos we have
-		// already sent via recent.
-		page := &bitbucketserver.PageToken{Limit: perPage}
-		for page.HasMore() {
-			repos, page, err = c.client.Repos(ctx, page)
+			projectKey, repoSlug := ps[0], ps[1]
+			repo, err := c.client.Repo(ctx, projectKey, repoSlug)
 			if err != nil {
-				log15.Error("failed when listing Bitbucket Server repos", "url", c.client.URL, "error", err)
-				return
-			}
-			for _, r := range repos {
-				if c.config.ExcludePersonalRepositories && r.IsPersonalRepository() {
+				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+				// 404 errors on external service config validation.
+				if bitbucketserver.IsNotFound(err) {
+					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", name, "err", err)
 					continue
 				}
-				if !recent[r.ID] {
-					ch <- r
-				}
+				errs = multierror.Append(errs,
+					errors.Wrapf(err, "bitbucketserver.repos: name: %q", name))
+			} else {
+				repos = append(repos, repo)
 			}
 		}
+
+		ch <- batch{repos: repos, err: errs.ErrorOrNil()}
 	}()
 
-	return ch
+	for _, q := range c.config.RepositoryQuery {
+		if q == "none" {
+			continue
+		}
+
+		wg.Add(1)
+		go func(q string) {
+			defer wg.Done()
+
+			page := &bitbucketserver.PageToken{Limit: 100}
+			for page.HasMore() {
+				var err error
+				var repos []*bitbucketserver.Repo
+
+				if repos, page, err = c.client.Repos(ctx, page, q); err != nil {
+					ch <- batch{err: errors.Wrapf(err, "bibucketserver.repositoryQuery: item=%q, page=%+v", q, page)}
+					break
+				}
+
+				ch <- batch{repos: repos}
+			}
+		}(q)
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	seen := make(map[int]bool)
+	errs := new(multierror.Error)
+	var repos []*bitbucketserver.Repo
+
+	for r := range ch {
+		if r.err != nil {
+			errs = multierror.Append(errs, r.err)
+		}
+
+		for _, repo := range r.repos {
+			if !seen[repo.ID] && !c.excludes(repo) {
+				repos = append(repos, repo)
+				seen[repo.ID] = true
+			}
+		}
+
+	}
+
+	return repos, errs.ErrorOrNil()
 }

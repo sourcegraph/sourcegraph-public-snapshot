@@ -1,4 +1,4 @@
-import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
@@ -10,7 +10,7 @@ const toolbarButtonProps = {
 }
 
 export function checkIsGitlab(): boolean {
-    return !!document.head!.querySelector('meta[content="GitLab"]')
+    return !!document.head.querySelector('meta[content="GitLab"]')
 }
 
 const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left }) => {
@@ -43,7 +43,7 @@ const createToolbarMount = (codeView: HTMLElement) => {
     return mount
 }
 
-const singleFileCodeView: CodeViewWithOutSelector = {
+const singleFileCodeView: CodeViewSpecWithOutSelector = {
     dom: singleFileDOMFunctions,
     isDiff: false,
     getToolbarMount: createToolbarMount,
@@ -51,7 +51,7 @@ const singleFileCodeView: CodeViewWithOutSelector = {
     toolbarButtonProps,
 }
 
-const mergeRequestCodeView: CodeViewWithOutSelector = {
+const mergeRequestCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDOMFunctions,
     isDiff: true,
     getToolbarMount: createToolbarMount,
@@ -59,7 +59,7 @@ const mergeRequestCodeView: CodeViewWithOutSelector = {
     toolbarButtonProps,
 }
 
-const commitCodeView: CodeViewWithOutSelector = {
+const commitCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDOMFunctions,
     isDiff: true,
     getToolbarMount: createToolbarMount,
@@ -67,7 +67,7 @@ const commitCodeView: CodeViewWithOutSelector = {
     toolbarButtonProps,
 }
 
-const resolveCodeView = (codeView: HTMLElement): CodeViewWithOutSelector => {
+const resolveCodeViewSpec = (codeView: HTMLElement): CodeViewSpecWithOutSelector => {
     const { pageKind } = getPageInfo()
 
     if (pageKind === GitLabPageKind.File) {
@@ -81,15 +81,15 @@ const resolveCodeView = (codeView: HTMLElement): CodeViewWithOutSelector => {
     return commitCodeView
 }
 
-const codeViewResolver: CodeViewResolver = {
+const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file-holder',
-    resolveCodeView,
+    resolveCodeViewSpec,
 }
 
 export const gitlabCodeHost: CodeHost = {
     name: 'gitlab',
     check: checkIsGitlab,
-    codeViewResolver,
+    codeViewSpecResolver,
     adjustOverlayPosition,
     getCommandPaletteMount,
     actionNavItemClassProps: {

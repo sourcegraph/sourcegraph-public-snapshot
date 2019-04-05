@@ -11,6 +11,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { PopoverButton } from '../components/PopoverButton'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
@@ -120,7 +121,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props extends PlatformContextProps, ExtensionsControllerProps {
+interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLoggerProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -237,13 +238,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 </ul>
                 <div className="repo-header__spacer" />
                 <ul className="navbar-nav navbar-nav__action-items">
-                    <ActionsNavItems
-                        menu={ContributableMenu.EditorTitle}
-                        actionItemClass="nav-link"
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
-                    />
+                    <ActionsNavItems {...this.props} menu={ContributableMenu.EditorTitle} actionItemClass="nav-link" />
                 </ul>
                 <ul className="navbar-nav">
                     {this.props.actionButtons.map(

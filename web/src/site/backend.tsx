@@ -48,6 +48,11 @@ export function refreshSiteFlags(): Observable<never> {
                             errorMessage
                             updateVersionAvailable
                         }
+                        productSubscription {
+                            license {
+                                expiresAt
+                            }
+                        }
                     }
                 }
             `)

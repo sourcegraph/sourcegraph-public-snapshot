@@ -21,7 +21,7 @@ import { FileSpec, ModeSpec, PositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } 
 import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
+import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffConnection } from '../compare/FileDiffConnection'
@@ -60,7 +60,11 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props extends RouteComponentProps<{ revspec: string }>, PlatformContextProps, ExtensionsControllerProps {
+interface Props
+    extends RouteComponentProps<{ revspec: string }>,
+        EventLoggerProps,
+        PlatformContextProps,
+        ExtensionsControllerProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
@@ -248,11 +252,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 </div>
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
+                        {...this.props}
                         {...this.state.hoverOverlayProps}
+                        telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
                         onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}

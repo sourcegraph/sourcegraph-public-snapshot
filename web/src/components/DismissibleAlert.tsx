@@ -22,7 +22,7 @@ export class DismissibleAlert extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.key = 'DismissibleAlert/' + props.partialStorageKey + '/dismissed'
+        this.key = `DismissibleAlert/${props.partialStorageKey}/dismissed`
 
         this.state = {
             dismissed: localStorage.getItem(this.key) === 'true',

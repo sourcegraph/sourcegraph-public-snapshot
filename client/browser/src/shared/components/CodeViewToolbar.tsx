@@ -7,6 +7,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { toURIWithPath } from '../../../../../shared/src/util/url'
 import { FileInfo } from '../../libs/code_intelligence'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
@@ -14,8 +15,8 @@ import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
-    className: string
-    style: React.CSSProperties
+    className?: string
+    style?: React.CSSProperties
     iconStyle?: React.CSSProperties
 }
 
@@ -23,10 +24,11 @@ interface CodeViewToolbarProps
     extends PlatformContextProps<'forceUpdateTooltip'>,
         ExtensionsControllerProps,
         FileInfo,
+        TelemetryProps,
         ActionNavItemsClassProps {
     onEnabledChange?: (enabled: boolean) => void
 
-    buttonProps: ButtonProps
+    buttonProps?: ButtonProps
     location: H.Location
     className?: string
 }
@@ -91,9 +93,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                 headRev: this.props.rev!,
                             },
                         }}
-                        className={this.props.buttonProps.className}
-                        style={this.props.buttonProps.style}
-                        iconStyle={this.props.buttonProps.iconStyle}
+                        className={this.props.buttonProps && this.props.buttonProps.className}
+                        style={this.props.buttonProps && this.props.buttonProps.style}
+                        iconStyle={this.props.buttonProps && this.props.buttonProps.iconStyle}
                     />
                 )}
 
@@ -117,9 +119,9 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                   }
                                 : undefined,
                         }}
-                        className={this.props.buttonProps.className}
-                        style={this.props.buttonProps.style}
-                        iconStyle={this.props.buttonProps.iconStyle}
+                        className={this.props.buttonProps && this.props.buttonProps.className}
+                        style={this.props.buttonProps && this.props.buttonProps.style}
+                        iconStyle={this.props.buttonProps && this.props.buttonProps.iconStyle}
                     />
                 )}
             </div>

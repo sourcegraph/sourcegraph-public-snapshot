@@ -82,15 +82,18 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 
 // BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
 type BitbucketServerConnection struct {
-	Certificate                 string `json:"certificate,omitempty"`
-	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
-	GitURLType                  string `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
-	Password                    string `json:"password,omitempty"`
-	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
-	Token                       string `json:"token,omitempty"`
-	Url                         string `json:"url"`
-	Username                    string `json:"username,omitempty"`
+	Certificate                 string                         `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
+	ExcludePersonalRepositories bool                           `json:"excludePersonalRepositories,omitempty"`
+	GitURLType                  string                         `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                           `json:"initialRepositoryEnablement,omitempty"`
+	Password                    string                         `json:"password,omitempty"`
+	Repos                       []string                       `json:"repos,omitempty"`
+	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string                       `json:"repositoryQuery,omitempty"`
+	Token                       string                         `json:"token,omitempty"`
+	Url                         string                         `json:"url"`
+	Username                    string                         `json:"username,omitempty"`
 }
 type BrandAssets struct {
 	Logo   string `json:"logo,omitempty"`
@@ -141,6 +144,10 @@ type CriticalConfiguration struct {
 type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
+}
+type ExcludedBitbucketServerRepo struct {
+	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 type ExcludedGitHubRepo struct {
 	Id   string `json:"id,omitempty"`

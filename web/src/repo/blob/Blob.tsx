@@ -33,6 +33,7 @@ import {
 import { getHover } from '../../backend/features'
 import { isDiscussionsEnabled } from '../../discussions'
 import { ThemeProps } from '../../theme'
+import { EventLoggerProps } from '../../tracking/eventLogger'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
@@ -46,6 +47,7 @@ interface BlobProps
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps {
     /** The raw content of the blob. */
@@ -207,13 +209,13 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     filter(isDefined),
                     switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
                     // Ignore click events caused by the user selecting text
-                    filter(() => window.getSelection().toString() === '')
+                    filter(() => window.getSelection()!.toString() === '')
                 )
                 .subscribe(event => {
                     // Prevent selecting text on shift click (click+drag to select will still work)
                     // Note that this is only called if the selection was empty initially (see above),
                     // so this only clears a selection caused by this click.
-                    window.getSelection().removeAllRanges()
+                    window.getSelection()!.removeAllRanges()
 
                     const position = locateTarget(event.target as HTMLElement, domFunctions)
                     let hash: string
@@ -293,7 +295,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     ...this.props.extensionsController.services.model.model.value,
                     visibleViewComponents: [
                         {
-                            type: 'textEditor' as 'textEditor',
+                            type: 'textEditor' as const,
                             item: {
                                 uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
                                 languageId: model.mode,
@@ -387,7 +389,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         }
 
                         if (decoration.after) {
-                            const codeCell = row.cells[1]!
+                            const codeCell = row.cells[1]
                             this.createLineDecorationAttachmentDOMNode(line, codeCell)
                         }
                     }
@@ -464,12 +466,11 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 />
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
+                        {...this.props}
                         {...this.state.hoverOverlayProps}
                         hoverRef={this.nextOverlayElement}
+                        telemetryService={this.props.telemetryService}
                         onCloseButtonClick={this.nextCloseButtonClick}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
                     />
                 )}
                 {this.state.decorationsOrError &&

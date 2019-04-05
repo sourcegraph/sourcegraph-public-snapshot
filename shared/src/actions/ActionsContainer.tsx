@@ -7,6 +7,7 @@ import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsState } from './actions'
 
@@ -19,7 +20,7 @@ export interface ActionsProps
     listClass?: string
     location: H.Location
 }
-interface Props extends ActionsProps {
+interface Props extends ActionsProps, TelemetryProps {
     /**
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
@@ -76,13 +77,7 @@ export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
     private defaultRenderItems = (items: ActionItemProps[]): JSX.Element | null => (
         <>
             {items.map((item, i) => (
-                <ActionItem
-                    key={i}
-                    {...item}
-                    extensionsController={this.props.extensionsController}
-                    platformContext={this.props.platformContext}
-                    location={this.props.location}
-                />
+                <ActionItem {...this.props} key={i} {...item} />
             ))}
         </>
     )

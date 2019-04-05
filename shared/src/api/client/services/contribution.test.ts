@@ -1,5 +1,4 @@
-import { Observable, of } from 'rxjs'
-import { Subscription } from 'rxjs'
+import { Observable, of, Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
 import { ContributableMenu, Contributions, EvaluatedContributions } from '../../protocol'

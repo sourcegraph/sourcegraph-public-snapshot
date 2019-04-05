@@ -171,7 +171,8 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
 		Query: q,
 	}
-	results, common, err := searchFilesInRepos(context.Background(), args)
+	limit := int32(5000)
+	results, common, err := searchFilesInRepos(context.Background(), args, limit)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +200,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Repos: makeRepositoryRevisions("foo/no-rev@dev"),
 		Query: q,
 	}
-	_, _, err = searchFilesInRepos(context.Background(), args)
+	_, _, err = searchFilesInRepos(context.Background(), args, limit)
 	if !git.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}

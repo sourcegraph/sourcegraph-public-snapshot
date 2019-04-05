@@ -24,11 +24,13 @@ export const logUserEvent = (event: string, uid: string): void => {
         }`,
         variables: { event, userCookieID: uid },
         retry: false,
-    }).subscribe(undefined, error => {
-        // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
-        // (e.g., if CODEINTELINTEGRATION user events aren't yet supported).
-        // However, end users shouldn't experience this failure, as their admin is
-        // responsible for updating the instance, and has been (or will be) notified
-        // that an upgrade is available via site-admin messaging.
+    }).subscribe({
+        error: error => {
+            // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
+            // (e.g., if CODEINTELINTEGRATION user events aren't yet supported).
+            // However, end users shouldn't experience this failure, as their admin is
+            // responsible for updating the instance, and has been (or will be) notified
+            // that an upgrade is available via site-admin messaging.
+        },
     })
 }

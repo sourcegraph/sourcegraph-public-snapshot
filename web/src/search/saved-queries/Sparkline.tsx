@@ -33,7 +33,7 @@ export class Sparkline extends React.PureComponent<Props, State> {
             .x((d, i) => x(i))
             .y((d, i) => y(Number(d)))
 
-        const svg = select(ref!)
+        const svg = select(ref)
         svg.selectAll('*').remove()
 
         const strokeColor = this.props.isLightTheme ? '#cad2e2' : '#566e9f'

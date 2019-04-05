@@ -24,7 +24,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
 import { ThemeProps } from '../../theme'
-import { eventLogger } from '../../tracking/eventLogger'
+import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleDiscussionsPanel } from './actions/ToggleDiscussions'
@@ -94,6 +94,7 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps {
     location: H.Location

@@ -415,13 +415,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 	ch := make(chan batch)
 
 	var wg sync.WaitGroup
-
-	repositoryQueries := c.config.RepositoryQuery
-	if len(repositoryQueries) == 0 {
-		repositoryQueries = append(repositoryQueries, "none")
-	}
-
-	for _, repositoryQuery := range repositoryQueries {
+	for _, repositoryQuery := range c.config.RepositoryQuery {
 		wg.Add(1)
 		go func(repositoryQuery string) {
 			defer wg.Done()

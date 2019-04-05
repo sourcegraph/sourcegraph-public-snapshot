@@ -262,7 +262,7 @@ runtime.onMessage((message, _, cb) => {
             runtime.openOptionsPage()
             return true
         case 'createBlobURL':
-            createBlobURLForBundle(message.payload! as string)
+            createBlobURLForBundle(message.payload)
                 .then(url => {
                     if (cb) {
                         cb(url)

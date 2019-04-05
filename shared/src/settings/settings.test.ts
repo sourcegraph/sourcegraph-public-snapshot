@@ -1,4 +1,4 @@
-import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
+import { createAggregateError, isErrorLike } from '../util/errors'
 import {
     CustomMergeFunctions,
     gqlToCascade,
@@ -39,18 +39,20 @@ const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContent
 const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([new Error('parse error (code: 0, offset: 0, length: 1)')])
 
 describe('gqlToCascade', () => {
-    test('converts a value', () =>
-        expect(
-            gqlToCascade({
-                subjects: [FIXTURE_ORG, FIXTURE_USER],
-            })
-        ).toEqual({
+    test('converts a value', () => {
+        const expected: SettingsCascade = {
             subjects: [
                 { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
                 { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
             ],
             final: { a: 1, b: 2 },
-        } as SettingsCascade))
+        }
+        expect(
+            gqlToCascade({
+                subjects: [FIXTURE_ORG, FIXTURE_USER],
+            })
+        ).toEqual(expected)
+    })
     test('preserves errors', () => {
         const value = gqlToCascade({
             subjects: [FIXTURE_ORG, FIXTURE_USER_WITH_SETTINGS_ERROR, FIXTURE_USER],
@@ -60,7 +62,7 @@ describe('gqlToCascade', () => {
             value.subjects &&
                 !isErrorLike(value.subjects) &&
                 isErrorLike(value.subjects[1].settings) &&
-                (value.subjects[1].settings as ErrorLike).message
+                value.subjects[1].settings.message
         ).toBe(SETTINGS_ERROR_FOR_FIXTURE_USER.message)
     })
 })

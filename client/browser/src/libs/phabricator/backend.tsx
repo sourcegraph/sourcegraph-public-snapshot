@@ -102,13 +102,13 @@ interface ConduitDiffDetailsResponse {
 }
 
 function createConduitRequestForm(): FormData {
-    const searchForm = document.querySelector('.phabricator-search-menu form') as any
+    const searchForm = document.querySelector('.phabricator-search-menu form')
     if (!searchForm) {
         throw new Error('cannot create conduit request form')
     }
     const form = new FormData()
-    form.set('__csrf__', searchForm.querySelector('input[name=__csrf__]')!.value)
-    form.set('__form__', searchForm.querySelector('input[name=__form__]')!.value)
+    form.set('__csrf__', searchForm.querySelector<HTMLInputElement>('input[name=__csrf__]')!.value)
+    form.set('__form__', searchForm.querySelector<HTMLInputElement>('input[name=__form__]')!.value)
     return form
 }
 
@@ -316,9 +316,8 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
                             repoName: details.repoName,
                             phabricatorURL: window.location.origin,
                         }).subscribe(() => resolve(details))
-                    } else {
-                        return reject(new Error('could not parse repo details'))
                     }
+                    return reject(new Error('could not parse repo details'))
                 })
             })
             .catch(reject)
@@ -394,9 +393,8 @@ function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetail
                             .subscribe(() => {
                                 resolve(details)
                             })
-                    } else {
-                        return reject(new Error('could not parse repo details'))
                     }
+                    return reject(new Error('could not parse repo details'))
                 })
             })
             .catch(reject)
@@ -423,29 +421,28 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
                 }
                 return resolve(convertToDetails(repo))
             })
-        } else {
-            // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
-            // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
-            // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
-            // in the browser extension options menu.
-            type Mappings = { callsign: string; path: string }[]
-            const mappingsString = window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS')
-            const callsignMappings = mappingsString
-                ? (JSON.parse(mappingsString) as Mappings)
-                : window.PHABRICATOR_CALLSIGN_MAPPINGS || []
-            const details = convertToDetails(repo)
-            if (callsignMappings) {
-                for (const mapping of callsignMappings) {
-                    if (mapping.callsign === repo.fields.callsign) {
-                        return resolve({
-                            callsign: repo.fields.callsign,
-                            repoName: mapping.path,
-                        })
-                    }
+        }
+        // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
+        // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
+        // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
+        // in the browser extension options menu.
+        type Mappings = { callsign: string; path: string }[]
+        const mappingsString = window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS')
+        const callsignMappings = mappingsString
+            ? (JSON.parse(mappingsString) as Mappings)
+            : window.PHABRICATOR_CALLSIGN_MAPPINGS || []
+        const details = convertToDetails(repo)
+        if (callsignMappings) {
+            for (const mapping of callsignMappings) {
+                if (mapping.callsign === repo.fields.callsign) {
+                    return resolve({
+                        callsign: repo.fields.callsign,
+                        repoName: mapping.path,
+                    })
                 }
             }
-            return resolve(details)
         }
+        return resolve(details)
     })
 }
 

@@ -17,7 +17,7 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
     public readonly [proxyValueSymbol] = true
 
     /** Extensions' deactivate functions. */
-    private extensionDeactivate = new Map<string, (() => void | Promise<void>)>()
+    private extensionDeactivate = new Map<string, () => void | Promise<void>>()
 
     /**
      * Proxy method invoked by the client to load an extension and invoke its `activate` function to start running it.

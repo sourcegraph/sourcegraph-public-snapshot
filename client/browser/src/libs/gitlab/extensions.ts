@@ -1,18 +1,17 @@
-export function getCommandPaletteMount(): HTMLElement {
-    const headerElem = document.querySelector('.navbar-collapse')
+import { querySelectorOrSelf } from '../../shared/util/dom'
+import { MountGetter } from '../code_intelligence'
+
+export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const headerElem = querySelectorOrSelf(container, '.navbar-collapse')
     if (!headerElem) {
-        throw new Error('Unable to find command palette mount')
+        return null
     }
-
     const commandListClass = 'command-palette-button'
-
     const createCommandList = (): HTMLElement => {
-        const commandListElem = document.createElement('div')
-        commandListElem.className = commandListClass
-        headerElem.insertAdjacentElement('afterbegin', commandListElem)
-
-        return commandListElem
+        const mount = document.createElement('div')
+        mount.className = commandListClass
+        headerElem.insertAdjacentElement('afterbegin', mount)
+        return mount
     }
-
     return document.querySelector<HTMLElement>('.' + commandListClass) || createCommandList()
 }

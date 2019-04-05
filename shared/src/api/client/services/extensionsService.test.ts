@@ -173,7 +173,7 @@ describe('activeExtensions', () => {
                         },
                         enabledExtensions => enabledExtensions,
                         cold('a-|', { a: 'bar' }),
-                        () => throwError('baz')
+                        () => throwError(new Error('baz'))
                     ).activeExtensions
                 )
             ).toBe('a-|', {

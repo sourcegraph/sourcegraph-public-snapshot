@@ -19,7 +19,7 @@ export const toTextDocumentIdentifier = (pos: RepoSpec & ResolvedRevSpec & FileS
 const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocumentPositionParams => ({
     textDocument: toTextDocumentIdentifier(pos),
     position: {
-        character: pos.position.character! - 1,
+        character: pos.position.character - 1,
         line: pos.position.line - 1,
     },
 })

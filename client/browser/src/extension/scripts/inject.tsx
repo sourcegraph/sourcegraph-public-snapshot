@@ -1,9 +1,9 @@
-// We want to polyfill first.
-// prettier-ignore
 import '../../config/polyfill'
 
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
+import { Observable } from 'rxjs'
+import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../../shared/src/components/Link'
 import { getURL } from '../../browser/extension'
 import storage from '../../browser/storage'
@@ -14,6 +14,7 @@ import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
 import { setInlineSymbolSearchEnabled, setSourcegraphUrl } from '../../shared/util/context'
+import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -30,7 +31,14 @@ setLinkComponent(({ to, children, ...props }) => (
 /**
  * Main entry point into browser extension.
  */
-function injectApplication(): void {
+function observe(): void {
+    console.log('Sourcegraph browser extension is running')
+
+    const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
+        childList: true,
+        subtree: true,
+    }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
+
     const extensionMarker = document.createElement('div')
     extensionMarker.id = 'sourcegraph-app-background'
     extensionMarker.style.display = 'none'
@@ -53,7 +61,7 @@ function injectApplication(): void {
             Boolean(items.enterpriseUrls.find(url => url === window.location.origin))
 
         const isGitHub = /^https?:\/\/(www.)?github.com/.test(href)
-        const ogSiteName = document.head!.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
+        const ogSiteName = document.head.querySelector(`meta[property='og:site_name']`) as HTMLMetaElement
         const isGitHubEnterprise = ogSiteName ? ogSiteName.content === 'GitHub Enterprise' : false
         const isBitbucket =
             document.querySelector('.bitbucket-header-logo') ||
@@ -62,12 +70,12 @@ function injectApplication(): void {
 
         if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
             if (isPhabricator || isGitHub || isGitHubEnterprise || isBitbucket || isGitlab) {
-                const styleSheet = document.createElement('link') as HTMLLinkElement
+                const styleSheet = document.createElement('link')
                 styleSheet.id = 'ext-style-sheet'
                 styleSheet.rel = 'stylesheet'
                 styleSheet.type = 'text/css'
                 styleSheet.href = getURL('css/style.bundle.css')
-                document.head!.appendChild(styleSheet)
+                document.head.appendChild(styleSheet)
             }
         }
 
@@ -93,16 +101,8 @@ function injectApplication(): void {
         }
 
         if (isGitHub || isGitHubEnterprise || isPhabricator || isGitlab || isBitbucket) {
-            if (
-                isGitHub ||
-                isGitHubEnterprise ||
-                isGitlab ||
-                isBitbucket ||
-                (await featureFlags.isEnabled('newInject'))
-            ) {
-                const subscriptions = await injectCodeIntelligence()
-                window.addEventListener('unload', () => subscriptions.unsubscribe())
-            }
+            const subscriptions = await injectCodeIntelligence(mutations)
+            window.addEventListener('unload', () => subscriptions.unsubscribe())
         }
     }
 
@@ -117,7 +117,7 @@ function injectApplication(): void {
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     // document is already ready to go
-    injectApplication()
+    observe()
 } else {
-    document.addEventListener('DOMContentLoaded', injectApplication)
+    document.addEventListener('DOMContentLoaded', observe)
 }

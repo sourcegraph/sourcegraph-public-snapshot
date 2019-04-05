@@ -185,10 +185,12 @@ function extensionsWithMatchedActivationEvent(
                     console.warn(`Extension ${x.id} was not found. Remove it from settings to suppress this warning.`)
                 }
                 return false
-            } else if (isErrorLike(x.manifest)) {
+            }
+            if (isErrorLike(x.manifest)) {
                 console.warn(x.manifest)
                 return false
-            } else if (!x.manifest.activationEvents) {
+            }
+            if (!x.manifest.activationEvents) {
                 console.warn(`Extension ${x.id} has no activation events, so it will never be activated.`)
                 return false
             }
