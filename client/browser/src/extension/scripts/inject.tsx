@@ -11,12 +11,11 @@ import { StorageItems } from '../../browser/types'
 import { checkIsBitbucket } from '../../libs/bitbucket/code_intelligence'
 import { injectCodeIntelligence } from '../../libs/code_intelligence'
 import { checkIsGitHub, checkIsGitHubEnterprise } from '../../libs/github/code_intelligence'
-import { injectGitHubApplication } from '../../libs/github/inject'
 import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
 import { checkIsPhabricator } from '../../libs/phabricator/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
-import { setInlineSymbolSearchEnabled, setSourcegraphUrl } from '../../shared/util/context'
+import { setSourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
@@ -49,8 +48,6 @@ function observe(): void {
         return
     }
 
-    const href = window.location.href
-
     const handleGetStorage = async (items: StorageItems) => {
         if (items.disableExtension) {
             return
@@ -77,23 +74,8 @@ function observe(): void {
             }
         }
 
-        if (isGitHub || isGitHubEnterprise) {
-            setSourcegraphUrl(sourcegraphServerUrl)
-            setInlineSymbolSearchEnabled(
-                items.featureFlags.inlineSymbolSearchEnabled === undefined
-                    ? false
-                    : items.featureFlags.inlineSymbolSearchEnabled
-            )
-            await injectGitHubApplication(extensionMarker)
-        } else if (isSourcegraphServer || /^https?:\/\/(www.)?sourcegraph.com/.test(href)) {
-            setSourcegraphUrl(sourcegraphServerUrl)
-            injectSourcegraphApp(extensionMarker)
-        } else if (isPhabricator) {
-            window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
-            setSourcegraphUrl(sourcegraphServerUrl)
-        } else if (isBitbucket) {
-            setSourcegraphUrl(sourcegraphServerUrl)
-        }
+        injectSourcegraphApp(extensionMarker)
+        setSourcegraphUrl(sourcegraphServerUrl)
 
         if (isGitHub || isGitHubEnterprise || isPhabricator || isGitlab || isBitbucket) {
             const subscriptions = await injectCodeIntelligence(mutations)

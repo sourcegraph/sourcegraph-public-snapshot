@@ -22,7 +22,6 @@ import {
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
-import { createOpenOnSourcegraphIfNotExists } from './inject'
 import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
 
 const toolbarButtonProps = {
@@ -200,6 +199,26 @@ const getOverlayMount: MountGetter = (container: HTMLElement): HTMLElement | nul
     mount = document.createElement('div')
     mount.className = 'hover-overlay-mount'
     jsRepoPjaxContainer.appendChild(mount)
+    return mount
+}
+
+const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
+
+export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const pageheadActions = querySelectorOrSelf(container, '.pagehead-actions')
+    // If ran on page that isn't under a repository namespace.
+    if (!pageheadActions || pageheadActions.children.length === 0) {
+        return null
+    }
+    // Check for existing
+    let mount = pageheadActions.querySelector<HTMLElement>('#' + OPEN_ON_SOURCEGRAPH_ID)
+    if (mount) {
+        return mount
+    }
+    // Create new
+    mount = document.createElement('li')
+    mount.id = OPEN_ON_SOURCEGRAPH_ID
+    pageheadActions.insertAdjacentElement('afterbegin', mount)
     return mount
 }
 

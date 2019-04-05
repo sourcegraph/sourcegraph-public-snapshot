@@ -65,8 +65,6 @@ $theme-colors-light: (
 @import './global-styles/icons';
 @import './highlight';
 @import './options';
-@import './shared/components/alerts';
-@import './shared/components/symbols';
 @import './shared/components/CodeViewToolbar.scss';
 @import './libs/options/styles.scss';
 @import './libs/bitbucket/style.scss';
