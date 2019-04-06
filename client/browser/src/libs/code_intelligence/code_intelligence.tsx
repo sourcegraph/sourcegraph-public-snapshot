@@ -113,7 +113,7 @@ export interface CodeViewSpecResolver {
     /**
      * Function that is called for each element that was found with `selector` to determine which code view the element is.
      */
-    resolveCodeViewSpec: (elem: HTMLElement) => CodeViewSpecWithOutSelector | null
+    resolveViewSpec: (elem: HTMLElement) => CodeViewSpecWithOutSelector | null
 }
 
 interface OverlayPosition {

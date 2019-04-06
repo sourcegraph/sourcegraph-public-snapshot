@@ -136,7 +136,7 @@ const fileLineContainerCodeView: CodeViewSpec = {
 
 const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file',
-    resolveCodeViewSpec: (elem: HTMLElement): CodeViewSpecWithOutSelector | null => {
+    resolveViewSpec: (elem: HTMLElement): CodeViewSpecWithOutSelector | null => {
         if (elem.querySelector('article.markdown-body')) {
             // This code view is rendered markdown, we shouldn't add code intelligence
             return null

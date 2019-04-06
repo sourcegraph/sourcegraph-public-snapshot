@@ -43,7 +43,7 @@ describe('code_views', () => {
             codeViewElement.className = 'test-code-view'
             document.body.append(codeViewElement)
             const selector = '.test-code-view'
-            const codeViewSpecResolver = { selector, resolveCodeViewSpec: sinon.spy(() => codeViewSpec) }
+            const codeViewSpecResolver = { selector, resolveViewSpec: sinon.spy(() => codeViewSpec) }
             const detected = await of([{ addedNodes: [document.body], removedNodes: [] }])
                 .pipe(
                     trackCodeViews({ codeViewSpecResolver }),
@@ -51,8 +51,8 @@ describe('code_views', () => {
                 )
                 .toPromise()
             expect(detected).toEqual([{ ...codeViewSpec, codeViewElement, type: 'added' }])
-            sinon.assert.calledOnce(codeViewSpecResolver.resolveCodeViewSpec)
-            sinon.assert.calledWith(codeViewSpecResolver.resolveCodeViewSpec, codeViewElement)
+            sinon.assert.calledOnce(codeViewSpecResolver.resolveViewSpec)
+            sinon.assert.calledWith(codeViewSpecResolver.resolveViewSpec, codeViewElement)
         })
         it('should detect an added code view if it is the added element itself', async () => {
             const codeViewElement = document.createElement('div')

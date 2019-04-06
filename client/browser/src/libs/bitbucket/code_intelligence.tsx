@@ -123,7 +123,7 @@ const commitDiffCodeView: CodeViewSpecWithOutSelector = {
 
 const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file-content',
-    resolveCodeViewSpec: codeView => {
+    resolveViewSpec: codeView => {
         const contentView = codeView.querySelector('.content-view')
         if (!contentView) {
             return null

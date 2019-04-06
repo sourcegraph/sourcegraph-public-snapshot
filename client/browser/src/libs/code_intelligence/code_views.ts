@@ -18,7 +18,7 @@ export type CodeViewEvent = AddedCodeView | RemovedCodeView
 /** Converts a static CodeViewSpec to a dynamic CodeViewSpecResolver */
 const toCodeViewResolver = ({ selector, ...spec }: CodeViewSpec): CodeViewSpecResolver => ({
     selector,
-    resolveCodeViewSpec: () => spec,
+    resolveViewSpec: () => spec,
 })
 
 /**
@@ -51,7 +51,7 @@ export const trackCodeViews = ({
                             mergeMap(spec =>
                                 [...(querySelectorAllOrSelf(addedElement, spec.selector) as Iterable<HTMLElement>)]
                                     .map(codeViewElement => {
-                                        const codeViewSpec = spec.resolveCodeViewSpec(codeViewElement)
+                                        const codeViewSpec = spec.resolveViewSpec(codeViewElement)
                                         return (
                                             codeViewSpec && {
                                                 ...codeViewSpec,

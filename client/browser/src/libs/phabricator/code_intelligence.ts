@@ -123,7 +123,7 @@ const diffCodeView: CodeViewSpecWithOutSelector = {
     isDiff: true,
 }
 
-const resolveCodeViewSpec: CodeViewSpecResolver['resolveCodeViewSpec'] = (codeView: HTMLElement) => {
+const resolveViewSpec: CodeViewSpecResolver['resolveViewSpec'] = (codeView: HTMLElement) => {
     if (window.location.pathname.match(/^\/r/)) {
         return commitCodeView
     }
@@ -133,7 +133,7 @@ const resolveCodeViewSpec: CodeViewSpecResolver['resolveCodeViewSpec'] = (codeVi
 
 const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.differential-changeset',
-    resolveCodeViewSpec,
+    resolveViewSpec,
 }
 
 const phabCodeViews: CodeViewSpec[] = [

@@ -66,7 +66,7 @@ const commitCodeView: CodeViewSpecWithOutSelector = {
     toolbarButtonProps,
 }
 
-const resolveCodeViewSpec = (codeView: HTMLElement): CodeViewSpecWithOutSelector => {
+const resolveViewSpec = (codeView: HTMLElement): CodeViewSpecWithOutSelector => {
     const { pageKind } = getPageInfo()
 
     if (pageKind === GitLabPageKind.File) {
@@ -82,7 +82,7 @@ const resolveCodeViewSpec = (codeView: HTMLElement): CodeViewSpecWithOutSelector
 
 const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.file-holder',
-    resolveCodeViewSpec,
+    resolveViewSpec,
 }
 
 export const gitlabCodeHost: CodeHost = {
