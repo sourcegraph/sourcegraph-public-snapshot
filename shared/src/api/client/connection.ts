@@ -75,7 +75,7 @@ export async function createExtensionHostClientConnection(
     // Sync visible views and text documents to the extension host
     let visibleTextDocuments: TextDocument[] = []
     subscription.add(
-        from(services.model.model)
+        from(services.editor.model)
             .pipe(
                 map(({ visibleViewComponents }) => visibleViewComponents),
                 distinctUntilChanged(),
@@ -122,7 +122,7 @@ export async function createExtensionHostClientConnection(
         }
     )
 
-    const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.model)
+    const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.editor)
 
     const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
     subscription.add(clientCodeEditor)

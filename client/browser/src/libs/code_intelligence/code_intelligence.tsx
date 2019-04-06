@@ -556,7 +556,7 @@ export function handleCodeHost({
     // Update model as selections change
     subscriptions.add(
         selectionsChanges.subscribe(selections => {
-            extensionsController.services.model.model.next({
+            extensionsController.services.editor.model.next({
                 visibleViewComponents: [...codeViewStates.values()]
                     .flatMap(state => state.visibleViewComponents)
                     .map(visibleViewComponent => ({ ...visibleViewComponent, selections })),
@@ -697,7 +697,7 @@ export function handleCodeHost({
             }
 
             // Apply added/removed roots/visibleViewComponents
-            extensionsController.services.model.model.next({
+            extensionsController.services.editor.model.next({
                 visibleViewComponents: [...codeViewStates.values()].flatMap(state => state.visibleViewComponents),
             })
             extensionsController.services.workspace.roots.next(

@@ -2,16 +2,16 @@ import { BehaviorSubject, NextObserver, Subscribable } from 'rxjs'
 import { EMPTY_MODEL, Model } from '../model'
 
 /**
- * The model service manages the model of documents and roots.
+ * The editor service manages the model of documents and roots.
  */
-export interface ModelService {
+export interface EditorService {
     readonly model: Subscribable<Model> & { readonly value: Model } & NextObserver<Model>
 }
 
 /**
- * Creates a {@link ModelService} instance.
+ * Creates a {@link EditorService} instance.
  */
-export function createModelService(): ModelService {
+export function createEditorService(): EditorService {
     const model = new BehaviorSubject<Model>(EMPTY_MODEL)
     return {
         model,

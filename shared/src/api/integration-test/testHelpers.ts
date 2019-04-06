@@ -94,7 +94,7 @@ export async function integrationTestContext(
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     const extensionAPI = await extensionHost.extensionAPI
-    services.model.model.next(initModel)
+    services.editor.model.next(initModel)
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
@@ -111,7 +111,7 @@ export async function integrationTestContext(
         client,
         extensionAPI,
         services,
-        model: services.model.model,
+        model: services.editor.model,
     }
 }
 
