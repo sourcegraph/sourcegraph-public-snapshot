@@ -69,7 +69,7 @@ describe('activeExtensions', () => {
                             a: {
                                 visibleViewComponents: [
                                     {
-                                        type: 'textEditor',
+                                        type: 'CodeEditor',
                                         item: { languageId: 'x', text: '', uri: '' },
                                         selections: [],
                                         isActive: true,
@@ -79,7 +79,7 @@ describe('activeExtensions', () => {
                             b: {
                                 visibleViewComponents: [
                                     {
-                                        type: 'textEditor',
+                                        type: 'CodeEditor',
                                         item: { languageId: 'y', text: '', uri: '' },
                                         selections: [],
                                         isActive: true,

@@ -29,7 +29,7 @@ describe('Windows (integration)', () => {
                 ...model.value,
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: { uri: 'foo', languageId: 'l1', text: 't1' },
                         selections: [],
                         isActive: true,
@@ -44,7 +44,7 @@ describe('Windows (integration)', () => {
                 ...model.value,
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: { uri: 'bar', languageId: 'l2', text: 't2' },
                         selections: [],
                         isActive: true,
@@ -88,7 +88,7 @@ describe('Windows (integration)', () => {
                 ...model.value,
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
                         selections: [],
                         isActive: true,
@@ -120,7 +120,7 @@ describe('Windows (integration)', () => {
                 ...model.value,
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: {
                             uri: 'file:///inactive',
                             languageId: 'inactive',
@@ -155,7 +155,7 @@ describe('Windows (integration)', () => {
                 ...model.value,
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: {
                             uri: 'file:///inactive',
                             languageId: 'inactive',

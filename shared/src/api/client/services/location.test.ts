@@ -57,7 +57,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                         visibleViewComponents: [
                             {
                                 isActive: true,
-                                type: 'textEditor',
+                                type: 'CodeEditor',
                                 selections: [],
                                 item: { uri: 'u', languageId: 'l', text: 't' },
                             },
@@ -81,7 +81,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                         visibleViewComponents: [
                             {
                                 isActive: true,
-                                type: 'textEditor',
+                                type: 'CodeEditor',
                                 selections: [],
                                 item: { uri: 'u', languageId: 'l', text: 't' },
                             },

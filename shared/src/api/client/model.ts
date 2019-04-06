@@ -5,12 +5,12 @@ import { TextDocumentPositionParams } from '../protocol'
 /**
  * Describes a view component.
  *
- * @todo Currently the only view component is CodeEditor ("textEditor" as exposed in the API), so this type just
+ * @todo Currently the only view component is CodeEditor ("CodeEditor" as exposed in the API), so this type just
  * describes a CodeEditor. When more view components exist, this type will need to become a union type or add in
  * some other similar abstraction to support describing all types of view components.
  */
 export interface ViewComponentData {
-    type: 'textEditor'
+    type: 'CodeEditor'
     item: TextDocument
     selections: Selection[]
     isActive: boolean

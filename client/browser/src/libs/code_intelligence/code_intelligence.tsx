@@ -587,7 +587,7 @@ export function handleCodeHost({
                     subscriptions: new Subscription(),
                     visibleViewComponents: [
                         {
-                            type: 'textEditor' as const,
+                            type: 'CodeEditor' as const,
                             item: {
                                 uri: toURIWithPath(fileInfo),
                                 languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
@@ -604,7 +604,7 @@ export function handleCodeHost({
                 // When codeView is a diff (and not an added file), add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
                     codeViewState.visibleViewComponents.push({
-                        type: 'textEditor' as const,
+                        type: 'CodeEditor' as const,
                         item: {
                             uri: toURIWithPath({
                                 repoName: fileInfo.baseRepoName,

@@ -46,7 +46,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
             for (const fileDiff of fileDiffsOrError.nodes) {
                 if (fileDiff.oldPath) {
                     visibleViewComponents.push({
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: {
                             uri: `git://${nodeProps.base.repoName}?${nodeProps.base.commitID}#${fileDiff.oldPath}`,
                             languageId: getModeFromPath(fileDiff.oldPath),
@@ -58,7 +58,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                 }
                 if (fileDiff.newPath) {
                     visibleViewComponents.push({
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: {
                             uri: `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`,
                             languageId: getModeFromPath(fileDiff.newPath),

@@ -6,7 +6,7 @@ import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 const withSelections = (...selections: { start: number; end: number }[]): ViewComponentData => ({
-    type: 'textEditor',
+    type: 'CodeEditor',
     item: { uri: 'foo', languageId: 'l1', text: 't1' },
     selections: selections.map(({ start, end }) => ({
         start: {
