@@ -92,13 +92,13 @@ describe('ContributionRegistry', () => {
 
     describe('contributions observable', () => {
         test('emits stream of results of registrations', () => {
-            const registry = new class extends ContributionRegistry {
+            const registry = new (class extends ContributionRegistry {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
                 ): Observable<EvaluatedContributions> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
-            }(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+            })(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributionsFromEntries(
@@ -116,13 +116,13 @@ describe('ContributionRegistry', () => {
         })
 
         test('supports registration of an observable', () => {
-            const registry = new class extends ContributionRegistry {
+            const registry = new (class extends ContributionRegistry {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
                 ): Observable<EvaluatedContributions> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
-            }(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+            })(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributionsFromEntries(
@@ -146,7 +146,7 @@ describe('ContributionRegistry', () => {
 
         test('emits when context changes and filters on context', () => {
             scheduler().run(({ cold, expectObservable }) => {
-                const registry = new class extends ContributionRegistry {
+                const registry = new (class extends ContributionRegistry {
                     public constructor() {
                         super(
                             cold<Model>('-a-b-|', {
@@ -168,7 +168,7 @@ describe('ContributionRegistry', () => {
                     ): Observable<EvaluatedContributions> {
                         return super.getContributionsFromEntries(entries, undefined)
                     }
-                }()
+                })()
                 expectObservable(
                     registry.getContributionsFromEntries(
                         of([
@@ -186,7 +186,7 @@ describe('ContributionRegistry', () => {
 
         test('continues after error thrown during evaluation', () => {
             scheduler().run(({ cold, expectObservable }) => {
-                const registry = new class extends ContributionRegistry {
+                const registry = new (class extends ContributionRegistry {
                     public constructor() {
                         super(
                             cold<Model>('a', { a: EMPTY_MODEL }),
@@ -201,7 +201,7 @@ describe('ContributionRegistry', () => {
                     ): Observable<EvaluatedContributions> {
                         return super.getContributionsFromEntries(entries, scope, undefined, () => void 0 /* noop log */)
                     }
-                }()
+                })()
                 expectObservable(
                     registry.getContributionsFromEntries(
                         of([
