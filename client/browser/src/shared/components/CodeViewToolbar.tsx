@@ -68,7 +68,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     platformContext={this.props.platformContext}
                     location={this.props.location}
                     scope={{
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: {
                             uri: toURIWithPath(this.props),
                             languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',

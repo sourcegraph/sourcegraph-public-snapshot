@@ -18,7 +18,7 @@ describe('Documents (integration)', () => {
                 ...model.value,
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
                         selections: [],
                         isActive: true,
@@ -46,7 +46,7 @@ describe('Documents (integration)', () => {
                 ...model.value,
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
                         selections: [],
                         isActive: true,

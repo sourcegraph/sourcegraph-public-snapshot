@@ -34,7 +34,7 @@ describe('getComputedContextProperty', () => {
             ...EMPTY_MODEL,
             visibleViewComponents: [
                 {
-                    type: 'textEditor',
+                    type: 'CodeEditor',
                     item: {
                         uri: 'file:///inactive',
                         languageId: 'inactive',
@@ -52,7 +52,7 @@ describe('getComputedContextProperty', () => {
                     isActive: false,
                 },
                 {
-                    type: 'textEditor',
+                    type: 'CodeEditor',
                     item: {
                         uri: 'file:///a/b.c',
                         languageId: 'l',
@@ -99,7 +99,7 @@ describe('getComputedContextProperty', () => {
         describe('component', () => {
             test('provides component.type', () =>
                 expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(
-                    'textEditor'
+                    'CodeEditor'
                 ))
 
             test('returns null when the model has no component', () =>
@@ -176,7 +176,7 @@ describe('getComputedContextProperty', () => {
                     ...EMPTY_MODEL,
                     visibleViewComponents: [
                         {
-                            type: 'textEditor',
+                            type: 'CodeEditor',
                             item: {
                                 uri: 'file:///a/b.c',
                                 languageId: 'l',

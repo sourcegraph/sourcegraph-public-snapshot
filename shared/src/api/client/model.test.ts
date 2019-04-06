@@ -11,7 +11,7 @@ describe('modelToTextDocumentPositionParams', () => {
             modelToTextDocumentPositionParams({
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         isActive: false,
                         selections: [],
                         item: { uri: 'u', text: 't', languageId: 'l' },
@@ -26,7 +26,7 @@ describe('modelToTextDocumentPositionParams', () => {
             modelToTextDocumentPositionParams({
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         isActive: true,
                         selections: [],
                         item: { uri: 'u', text: 't', languageId: 'l' },
@@ -41,7 +41,7 @@ describe('modelToTextDocumentPositionParams', () => {
             modelToTextDocumentPositionParams({
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         isActive: true,
                         selections: [
                             {
@@ -64,7 +64,7 @@ describe('modelToTextDocumentPositionParams', () => {
             modelToTextDocumentPositionParams({
                 visibleViewComponents: [
                     {
-                        type: 'textEditor',
+                        type: 'CodeEditor',
                         isActive: true,
                         selections: [
                             {

@@ -212,7 +212,7 @@ describe('handleCodeHost()', () => {
                     uri: 'git://foo?1#/bar.ts',
                 },
                 selections: [],
-                type: 'textEditor',
+                type: 'CodeEditor',
             },
         ])
         expect(codeView.classList.contains('sg-mounted')).toBe(true)
