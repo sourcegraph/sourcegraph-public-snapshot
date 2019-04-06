@@ -150,4 +150,8 @@ export class Range implements sourcegraph.Range {
             end: { line: this._end.line, character: this._end.character },
         }
     }
+
+    public static fromPlain(data: clientType.Range): Range {
+        return new Range(data.start.line, data.start.character, data.end.line, data.end.character)
+    }
 }
