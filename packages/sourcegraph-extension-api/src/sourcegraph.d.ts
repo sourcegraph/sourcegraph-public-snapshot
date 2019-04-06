@@ -569,7 +569,7 @@ declare module 'sourcegraph' {
      */
     export interface CodeEditor {
         /** The type tag for this kind of {@link ViewComponent}. */
-        type: 'CodeEditor'
+        readonly type: 'CodeEditor'
 
         /**
          * The text document that is open in this editor. The document remains the same for the entire lifetime of
