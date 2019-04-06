@@ -3,15 +3,19 @@ import { TextDocument } from 'sourcegraph'
 import { TextDocumentPositionParams } from '../protocol'
 
 /**
- * Describes a view component.
+ * Describes all possible view components.
  *
- * @todo Currently the only view component is CodeEditor ("CodeEditor" as exposed in the API), so this type just
- * describes a CodeEditor. When more view components exist, this type will need to become a union type or add in
- * some other similar abstraction to support describing all types of view components.
+ * @template D The type of text documents referred to by this data. If the document text is managed
+ * out-of-band, this can just be an object containing the document URI.
  */
-export interface ViewComponentData {
+export type ViewComponentData<D extends Pick<TextDocument, 'uri'> = TextDocument> = CodeEditorViewComponentData<D>
+
+/**
+ * Describes a code editor view component.
+ */
+export interface CodeEditorViewComponentData<D extends Pick<TextDocument, 'uri'> = TextDocument> {
     type: 'CodeEditor'
-    item: TextDocument
+    item: D
     selections: Selection[]
     isActive: boolean
 }

@@ -1,11 +1,48 @@
 import * as clientType from '@sourcegraph/extension-api-types'
 import { from } from 'rxjs'
-import { first, take } from 'rxjs/operators'
+import { first, switchMap, take, toArray } from 'rxjs/operators'
 import { isDefined } from '../../util/types'
 import { Range } from '../extension/types/range'
+import { Selection } from '../extension/types/selection'
+import { assertToJSON } from '../extension/types/testHelpers'
 import { integrationTestContext } from './testHelpers'
 
 describe('CodeEditor (integration)', () => {
+    describe('selection', () => {
+        test('observe changes', async () => {
+            const { model, extensionAPI } = await integrationTestContext()
+
+            const setSelections = (selections: Selection[]) => {
+                model.next({
+                    ...model.value,
+                    visibleViewComponents: [
+                        {
+                            type: 'CodeEditor',
+                            item: { uri: 'foo', languageId: 'l1', text: 't1' },
+                            selections,
+                            isActive: true,
+                        },
+                    ],
+                })
+            }
+            setSelections([new Selection(1, 2, 3, 4)])
+            setSelections([])
+
+            const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
+                .pipe(
+                    switchMap(c => (c ? c.selectionsChanges : [])),
+                    take(3),
+                    toArray()
+                )
+                .toPromise()
+            assertToJSON(values.map(v => v.map(v => Selection.fromPlain(v).toPlain())), [
+                [],
+                [new Selection(1, 2, 3, 4).toPlain()],
+                [],
+            ])
+        })
+    })
+
     describe('setDecorations', () => {
         test('adds decorations', async () => {
             const { services, extensionAPI } = await integrationTestContext()

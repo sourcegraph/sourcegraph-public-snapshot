@@ -1,46 +1,65 @@
 import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { BehaviorSubject, of } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
 import { ViewComponentData } from '../../client/model'
-import { TextDocumentIdentifier } from '../../client/types/textDocument'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
 
 export interface WindowData {
-    visibleViewComponents: (Pick<ViewComponentData, 'selections' | 'isActive'> & { item: TextDocumentIdentifier })[]
+    visibleViewComponents: ViewComponentData<Pick<sourcegraph.TextDocument, 'uri'>>[]
+}
+
+interface WindowsProxyData {
+    windows: ClientWindowsAPI
+    codeEditor: ClientCodeEditorAPI
 }
 
 /**
  * @todo Send the show{Notification,Message,InputBox} requests to the same window (right now they are global).
  * @internal
  */
-class ExtWindow implements sourcegraph.Window {
-    constructor(private windowsProxy: ProxyResult<ClientWindowsAPI>, private readonly textEditors: ExtCodeEditor[]) {}
+export class ExtWindow implements sourcegraph.Window {
+    private viewComponents = new Map<string, ExtCodeEditor>()
 
-    public readonly activeViewComponentChanges = of(this.activeViewComponent)
+    constructor(private proxy: ProxyResult<WindowsProxyData>, private documents: ExtDocuments, data: WindowData) {
+        this._update(data)
+    }
+
+    public readonly activeViewComponentChanges = new BehaviorSubject<sourcegraph.ViewComponent | undefined>(undefined)
 
     public get visibleViewComponents(): sourcegraph.ViewComponent[] {
-        return this.textEditors
+        const entries = Array.from(this.viewComponents.entries())
+        return entries
+            .sort(([a], [b]) => {
+                if (a < b) {
+                    return -1
+                }
+                if (a > b) {
+                    return 1
+                }
+                return 0
+            })
+            .map(([, viewComponent]) => viewComponent)
     }
 
     public get activeViewComponent(): sourcegraph.ViewComponent | undefined {
-        return this.textEditors.find(({ isActive }) => isActive)
+        return this.activeViewComponentChanges.value
     }
 
     public showNotification(message: string, type: sourcegraph.NotificationType): void {
         // tslint:disable-next-line: no-floating-promises
-        this.windowsProxy.$showNotification(message, type)
+        this.proxy.windows.$showNotification(message, type)
     }
 
     public showMessage(message: string): Promise<void> {
-        return this.windowsProxy.$showMessage(message)
+        return this.proxy.windows.$showMessage(message)
     }
 
     public showInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined> {
-        return this.windowsProxy.$showInputBox(options)
+        return this.proxy.windows.$showInputBox(options)
     }
 
     public async withProgress<R>(
@@ -59,7 +78,7 @@ class ExtWindow implements sourcegraph.Window {
     }
 
     public async showProgress(options: sourcegraph.ProgressOptions): Promise<sourcegraph.ProgressReporter> {
-        const reporterProxy = await this.windowsProxy.$showProgress(options)
+        const reporterProxy = await this.proxy.windows.$showProgress(options)
         return {
             next: (progress: sourcegraph.Progress) => {
                 // tslint:disable-next-line: no-floating-promises
@@ -81,6 +100,34 @@ class ExtWindow implements sourcegraph.Window {
         }
     }
 
+    /**
+     * Perform a delta update (update/add/delete) of this window's view components.
+     */
+    public _update(data: WindowData): void {
+        const key = (c: ViewComponentData<Pick<sourcegraph.TextDocument, 'uri'>>): string => `${c.type}:${c.item.uri}`
+
+        const seenKeys = new Set<string>()
+        for (const c of data.visibleViewComponents) {
+            const k = key(c)
+            seenKeys.add(k)
+            const existing = this.viewComponents.get(k)
+            if (existing) {
+                existing._update(c)
+            } else {
+                this.viewComponents.set(k, new ExtCodeEditor(c, this.proxy.codeEditor, this.documents))
+            }
+        }
+        for (const key of this.viewComponents.keys()) {
+            if (!seenKeys.has(key)) {
+                this.viewComponents.delete(key)
+            }
+        }
+
+        // Update active view component.
+        const active = data.visibleViewComponents.find(c => c.isActive)
+        this.activeViewComponentChanges.next(active ? this.viewComponents.get(key(active)) : undefined)
+    }
+
     public toJSON(): any {
         return { visibleViewComponents: this.visibleViewComponents, activeViewComponent: this.activeViewComponent }
     }
@@ -88,14 +135,17 @@ class ExtWindow implements sourcegraph.Window {
 
 /** @internal */
 export interface ExtWindowsAPI extends ProxyValue {
-    $acceptWindowData(allWindows: WindowData[]): void
+    $acceptWindowData(win: WindowData | null): void
 }
 
-/** @internal */
+/**
+ * @internal
+ * @todo Support more than 1 window.
+ */
 export class ExtWindows implements ExtWindowsAPI, ProxyValue {
     public readonly [proxyValueSymbol] = true
 
-    private data: WindowData[] = []
+    public activeWindow: ExtWindow | undefined
 
     /** @internal */
     constructor(
@@ -103,12 +153,7 @@ export class ExtWindows implements ExtWindowsAPI, ProxyValue {
         private documents: ExtDocuments
     ) {}
 
-    public readonly activeWindowChanges = new BehaviorSubject<sourcegraph.Window | undefined>(this.getActive())
-
-    /** @internal */
-    public getActive(): sourcegraph.Window | undefined {
-        return this.getAll()[0]
-    }
+    public readonly activeWindowChanges = new BehaviorSubject<sourcegraph.Window | undefined>(undefined)
 
     /**
      * Returns all known windows.
@@ -116,27 +161,18 @@ export class ExtWindows implements ExtWindowsAPI, ProxyValue {
      * @internal
      */
     public getAll(): sourcegraph.Window[] {
-        return this.data.map(
-            window =>
-                new ExtWindow(
-                    this.proxy.windows,
-                    window.visibleViewComponents.map(
-                        c =>
-                            new ExtCodeEditor(
-                                c.item.uri,
-                                c.selections,
-                                c.isActive,
-                                this.proxy.codeEditor,
-                                this.documents
-                            )
-                    )
-                )
-        )
+        return this.activeWindow ? [this.activeWindow] : []
     }
 
     /** @internal */
-    public $acceptWindowData(allWindows: WindowData[]): void {
-        this.data = allWindows
-        this.activeWindowChanges.next(this.getActive())
+    public $acceptWindowData(win: WindowData | null): void {
+        if (win && this.activeWindow) {
+            // Update in-place, reusing same object so that object references from extensions to it
+            // (and subscriptions to it) remain valid.
+            this.activeWindow._update(win)
+        } else {
+            this.activeWindow = win ? new ExtWindow(this.proxy, this.documents, win) : undefined
+            this.activeWindowChanges.next(this.activeWindow)
+        }
     }
 }
