@@ -16,7 +16,47 @@ import { CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountG
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
-import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
+import { getFileContainers, parseURL } from './util'
+
+/**
+ * Creates the mount element for the CodeViewToolbar.
+ */
+export function createCodeViewToolbarMount(codeView: HTMLElement): HTMLElement {
+    const className = 'sourcegraph-app-annotator'
+    const existingMount = codeView.querySelector('.' + className) as HTMLElement
+    if (existingMount) {
+        return existingMount
+    }
+
+    const mountEl = document.createElement('div')
+    mountEl.style.display = 'inline-flex'
+    mountEl.style.verticalAlign = 'middle'
+    mountEl.style.alignItems = 'center'
+    mountEl.className = className
+
+    const fileActions = codeView.querySelector('.file-actions')
+    if (!fileActions) {
+        throw new Error(
+            "File actions not found. Make sure you aren't trying to create " +
+                "a toolbar mount for a code snippet that shouldn't have one"
+        )
+    }
+
+    const buttonGroup = fileActions.querySelector('.BtnGroup')
+    if (buttonGroup && buttonGroup.parentNode && !codeView.querySelector('.show-file-notes')) {
+        // blob view
+        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
+    } else {
+        // commit & pull request view
+        const note = codeView.querySelector('.show-file-notes')
+        if (!note || !note.parentNode) {
+            throw new Error('cannot find toolbar mount location')
+        }
+        note.parentNode.insertBefore(mountEl, note.nextSibling)
+    }
+
+    return mountEl
+}
 
 const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
@@ -97,10 +137,13 @@ const commentSnippetCodeView: CodeViewSpec = {
     isDiff: false,
 }
 
-const fileLineContainerCodeView: CodeViewSpec = {
+/**
+ * The modern single file blob view.
+ */
+export const fileLineContainerCodeView = {
     selector: '.js-file-line-container',
     dom: singleFileDOMFunctions,
-    getToolbarMount: fileLineContainer => {
+    getToolbarMount: (fileLineContainer: HTMLElement): HTMLElement => {
         const codeViewParent = fileLineContainer.closest('.repository-content')
         if (!codeViewParent) {
             throw new Error('Repository content element not found')

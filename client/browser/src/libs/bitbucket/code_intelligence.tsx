@@ -14,7 +14,10 @@ import {
 } from './file_info'
 import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
 
-const createToolbarMount = (codeView: HTMLElement) => {
+/**
+ * Gets or creates the toolbar mount for allcode views.
+ */
+export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
     if (existingMount) {
         return existingMount
@@ -75,7 +78,7 @@ const toolbarButtonProps = {
  * A code view spec for single file code view in the "source" view (not diff).
  */
 const singleFileSourceCodeView: CodeViewSpecWithOutSelector = {
-    getToolbarMount: createToolbarMount,
+    getToolbarMount,
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveFileInfoForSingleFileSourceView,
     adjustPosition: createPositionAdjuster(singleFileDOMFunctions),
@@ -83,7 +86,7 @@ const singleFileSourceCodeView: CodeViewSpecWithOutSelector = {
 }
 
 const baseDiffCodeView = {
-    getToolbarMount: createToolbarMount,
+    getToolbarMount,
     dom: diffDOMFunctions,
     adjustPosition: createPositionAdjuster(diffDOMFunctions),
     toolbarButtonProps,

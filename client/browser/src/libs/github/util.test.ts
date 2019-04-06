@@ -36,14 +36,14 @@ describe('util', () => {
                             describe(startCase(extension), () => {
                                 it('should return true for split view', async () => {
                                     document.body.innerHTML = await readFile(
-                                        `${__dirname}/__fixtures__/${version}/${view}/${extension}/split.html`,
+                                        `${__dirname}/__fixtures__/${version}/${view}/${extension}/split/page.html`,
                                         'utf-8'
                                     )
                                     expect(isDomSplitDiff()).toBe(true)
                                 })
                                 it('should return false for unified view', async () => {
                                     document.body.innerHTML = await readFile(
-                                        `${__dirname}/__fixtures__/${version}/${view}/${extension}/unified.html`,
+                                        `${__dirname}/__fixtures__/${version}/${view}/${extension}/unified/page.html`,
                                         'utf-8'
                                     )
                                     expect(isDomSplitDiff()).toBe(false)

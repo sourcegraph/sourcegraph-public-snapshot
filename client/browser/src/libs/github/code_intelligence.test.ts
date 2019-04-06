@@ -1,8 +1,9 @@
+import { existsSync } from 'fs'
 import { startCase } from 'lodash'
-import { testMountGetterInvariants } from '../code_intelligence/code_intelligence_test_utils'
-import { githubCodeHost } from './code_intelligence'
+import { testCodeHostMountGetters, testToolbarMountGetter } from '../code_intelligence/code_intelligence_test_utils'
+import { createCodeViewToolbarMount, githubCodeHost } from './code_intelligence'
 
-describe('githubCodeHost', () => {
+describe('github/code_intelligence', () => {
     for (const version of ['github.com', 'ghe-2.14.11']) {
         describe(version, () => {
             for (const page of ['commit', 'pull-request']) {
@@ -11,8 +12,17 @@ describe('githubCodeHost', () => {
                         describe(startCase(extension), () => {
                             for (const view of ['split', 'unified']) {
                                 describe(`${view} view`, () => {
-                                    const fixturePath = `${__dirname}/__fixtures__/${version}/${page}/${extension}/${view}.html`
-                                    testMountGetterInvariants(githubCodeHost, fixturePath)
+                                    const directory = `${__dirname}/__fixtures__/${version}/${page}/${extension}/${view}`
+                                    describe('githubCodeHost', () => {
+                                        const fixturePath = `${directory}/page.html`
+                                        testCodeHostMountGetters(githubCodeHost, fixturePath)
+                                    })
+                                    const codeViewFixturePath = `${directory}/code-view.html`
+                                    if (existsSync(codeViewFixturePath)) {
+                                        describe('createCodeViewToolbarMount()', () => {
+                                            testToolbarMountGetter(codeViewFixturePath, createCodeViewToolbarMount)
+                                        })
+                                    }
                                 })
                             }
                         })
