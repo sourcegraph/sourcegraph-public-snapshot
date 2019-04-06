@@ -1,5 +1,6 @@
-import { BehaviorSubject, NextObserver, Subscribable } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { PlatformContext } from '../../../platform/context'
+import { BehaviorSubjectLike } from '../services/util'
 import { Context } from './context'
 
 /**
@@ -10,7 +11,7 @@ export interface ContextService {
     /**
      * The context data.
      */
-    readonly data: Subscribable<Context> & { value: Context } & NextObserver<Context>
+    readonly data: BehaviorSubjectLike<Context>
 }
 
 /** Create a {@link ContextService} instance. */

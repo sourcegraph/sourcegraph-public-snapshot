@@ -1,11 +1,12 @@
-import { BehaviorSubject, NextObserver, Subscribable } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { EMPTY_MODEL, Model } from '../model'
+import { BehaviorSubjectLike } from './util'
 
 /**
  * The model service manages the model of documents and roots.
  */
 export interface ModelService {
-    readonly model: Subscribable<Model> & { readonly value: Model } & NextObserver<Model>
+    readonly model: BehaviorSubjectLike<Model>
 }
 
 /**

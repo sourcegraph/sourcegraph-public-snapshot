@@ -1,6 +1,6 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, from, NEVER, NextObserver, Subscribable, throwError } from 'rxjs'
+import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
 import { first, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
@@ -9,6 +9,7 @@ import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Model } from '../client/model'
 import { Services } from '../client/services'
+import { BehaviorSubjectLike } from '../client/services/util'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 
 const FIXTURE_MODEL: Model = {
@@ -62,7 +63,7 @@ export async function integrationTestContext(
     initModel: Model = FIXTURE_MODEL
 ): Promise<
     TestContext & {
-        model: Subscribable<Model> & { value: Model } & NextObserver<Model>
+        model: BehaviorSubjectLike<Model>
         services: Services
     }
 > {

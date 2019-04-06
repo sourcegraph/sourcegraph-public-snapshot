@@ -1,4 +1,9 @@
 import { compact, flatten } from 'lodash'
+import { NextObserver, Subscribable } from 'rxjs'
+
+export interface BehaviorSubjectLike<T> extends Subscribable<T>, NextObserver<T> {
+    readonly value: T
+}
 
 /** Flattens and compacts the argument. If it is null or if the result is empty, it returns null. */
 export function flattenAndCompact<T>(value: (T | T[] | null)[] | null): T[] | null {
