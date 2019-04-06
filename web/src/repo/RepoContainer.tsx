@@ -5,7 +5,6 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
-import { WorkspaceRootWithMetadata } from '../../../shared/src/api/client/model'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -153,33 +152,25 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             this.revResolves
                 .pipe(
                     map(resolvedRevOrError => {
-                        let roots: WorkspaceRootWithMetadata[] | null = null
-                        if (resolvedRevOrError && !isErrorLike(resolvedRevOrError)) {
-                            roots = [
-                                {
-                                    uri: makeRepoURI({
-                                        repoName: this.state.repoName,
-                                        rev: resolvedRevOrError.commitID,
-                                    }),
-                                    inputRevision: this.state.rev || '',
-                                },
-                            ]
-                        }
-                        this.props.extensionsController.services.model.model.next({
-                            ...this.props.extensionsController.services.model.model.value,
-                            roots,
-                        })
+                        this.props.extensionsController.services.workspace.roots.next(
+                            resolvedRevOrError && !isErrorLike(resolvedRevOrError)
+                                ? [
+                                      {
+                                          uri: makeRepoURI({
+                                              repoName: this.state.repoName,
+                                              rev: resolvedRevOrError.commitID,
+                                          }),
+                                          inputRevision: this.state.rev || '',
+                                      },
+                                  ]
+                                : []
+                        )
                     })
                 )
                 .subscribe()
         )
         // Clear the Sourcegraph extensions model's roots when navigating away.
-        this.subscriptions.add(() =>
-            this.props.extensionsController.services.model.model.next({
-                ...this.props.extensionsController.services.model.model.value,
-                roots: null,
-            })
-        )
+        this.subscriptions.add(() => this.props.extensionsController.services.workspace.roots.next([]))
     }
 
     public componentWillReceiveProps(props: RepoContainerProps): void {

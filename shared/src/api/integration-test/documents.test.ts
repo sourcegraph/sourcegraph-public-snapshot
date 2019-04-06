@@ -15,7 +15,6 @@ describe('Documents (integration)', () => {
         test('adds new text documents', async () => {
             const { model, extensionAPI } = await integrationTestContext()
             model.next({
-                ...model.value,
                 visibleViewComponents: [
                     {
                         type: 'CodeEditor',
@@ -43,7 +42,6 @@ describe('Documents (integration)', () => {
             expect(values).toEqual([] as TextDocument[])
 
             model.next({
-                ...model.value,
                 visibleViewComponents: [
                     {
                         type: 'CodeEditor',

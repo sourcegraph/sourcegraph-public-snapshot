@@ -14,7 +14,6 @@ describe('CodeEditor (integration)', () => {
 
             const setSelections = (selections: Selection[]) => {
                 model.next({
-                    ...model.value,
                     visibleViewComponents: [
                         {
                             type: 'CodeEditor',

@@ -1,16 +1,17 @@
 import { HoveredToken, LOADER_DELAY } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { createMemoryHistory } from 'history'
-import { from, Observable, of } from 'rxjs'
+import { BehaviorSubject, from, Observable, of } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 // tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
 import { ActionItemAction } from '../actions/ActionItem'
-import { EMPTY_MODEL, Model } from '../api/client/model'
+import { EMPTY_MODEL } from '../api/client/model'
 import { Services } from '../api/client/services'
 import { CommandRegistry } from '../api/client/services/command'
 import { ContributionRegistry } from '../api/client/services/contribution'
 import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
+import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
 import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
@@ -40,10 +41,10 @@ const FIXTURE_HOVER_CONTEXT: HoveredToken & HoverContext = {
     character: 2,
 }
 
-function testModelService(
-    roots: Model['roots'] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }]
-): { model: { value: Pick<Model, 'roots'> } } {
-    return { model: { value: { roots } } }
+function testWorkspaceService(
+    roots: readonly WorkspaceRootWithMetadata[] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }]
+): WorkspaceService {
+    return { roots: new BehaviorSubject(roots) }
 }
 
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar
@@ -61,7 +62,7 @@ describe('getHoverActionsContext', () => {
                         {
                             extensionsController: {
                                 services: {
-                                    model: testModelService(),
+                                    workspace: testWorkspaceService(),
                                     textDocumentDefinition: {
                                         getLocations: () =>
                                             cold<Observable<Location[]>>(`- ${LOADER_DELAY}ms --- d`, {
@@ -127,7 +128,7 @@ describe('getHoverActionsContext', () => {
                         {
                             extensionsController: {
                                 services: {
-                                    model: testModelService(),
+                                    workspace: testWorkspaceService(),
                                     textDocumentDefinition: {
                                         getLocations: () =>
                                             cold<Observable<Location[]>>(`-b`, { b: of([FIXTURE_LOCATION]) }),
@@ -182,7 +183,7 @@ describe('getDefinitionURL', () => {
             getDefinitionURL(
                 { urlToFile },
                 {
-                    model: testModelService(),
+                    workspace: testWorkspaceService(),
                     textDocumentDefinition: { getLocations: () => of(of(null)) },
                 },
                 FIXTURE_PARAMS
@@ -196,7 +197,7 @@ describe('getDefinitionURL', () => {
             getDefinitionURL(
                 { urlToFile },
                 {
-                    model: testModelService(),
+                    workspace: testWorkspaceService(),
                     textDocumentDefinition: { getLocations: () => of(of([])) },
                 },
                 FIXTURE_PARAMS
@@ -212,7 +213,7 @@ describe('getDefinitionURL', () => {
                     getDefinitionURL(
                         { urlToFile },
                         {
-                            model: testModelService(),
+                            workspace: testWorkspaceService(),
                             textDocumentDefinition: {
                                 getLocations: () => of<Observable<Location[]>>(of([{ uri: 'git://r3?c3#f' }])),
                             },
@@ -230,7 +231,7 @@ describe('getDefinitionURL', () => {
                     getDefinitionURL(
                         { urlToFile },
                         {
-                            model: testModelService(),
+                            workspace: testWorkspaceService(),
                             textDocumentDefinition: {
                                 getLocations: () => of<Observable<Location[]>>(of([FIXTURE_LOCATION])),
                             },
@@ -246,7 +247,7 @@ describe('getDefinitionURL', () => {
                     getDefinitionURL(
                         { urlToFile },
                         {
-                            model: testModelService(),
+                            workspace: testWorkspaceService(),
                             textDocumentDefinition: {
                                 getLocations: () =>
                                     of<Observable<Location[]>>(of([{ ...FIXTURE_LOCATION, range: undefined }])),
@@ -265,7 +266,7 @@ describe('getDefinitionURL', () => {
             getDefinitionURL(
                 { urlToFile },
                 {
-                    model: testModelService([{ uri: 'git://r?c', inputRevision: 'v' }]),
+                    workspace: testWorkspaceService([{ uri: 'git://r?c', inputRevision: 'v' }]),
                     textDocumentDefinition: {
                         getLocations: () =>
                             of<Observable<Location[]>>(of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }])),
@@ -290,7 +291,7 @@ describe('registerHoverContributions', () => {
             services: {
                 contribution,
                 commands,
-                model: testModelService(),
+                workspace: testWorkspaceService(),
                 textDocumentDefinition,
             },
         },

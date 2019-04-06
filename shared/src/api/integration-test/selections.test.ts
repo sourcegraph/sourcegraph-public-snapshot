@@ -52,7 +52,6 @@ describe('Selections (integration)', () => {
             ]
             for (const selections of testValues) {
                 model.next({
-                    ...model.value,
                     visibleViewComponents: [withSelections(...selections)],
                 })
                 await extensionAPI.internal.sync()
