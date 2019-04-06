@@ -9,7 +9,7 @@ export interface AddedCodeView extends ResolvedCodeView {
     type: 'added'
 }
 
-export interface RemovedCodeView extends Pick<ResolvedCodeView, 'codeViewElement'> {
+export interface RemovedCodeView extends Pick<ResolvedCodeView, 'element'> {
     type: 'removed'
 }
 
@@ -50,12 +50,12 @@ export const trackCodeViews = ({
                         from(codeViewSpecResolvers).pipe(
                             mergeMap(spec =>
                                 [...(querySelectorAllOrSelf(addedElement, spec.selector) as Iterable<HTMLElement>)]
-                                    .map(codeViewElement => {
-                                        const codeViewSpec = spec.resolveViewSpec(codeViewElement)
+                                    .map(element => {
+                                        const codeViewSpec = spec.resolveViewSpec(element)
                                         return (
                                             codeViewSpec && {
                                                 ...codeViewSpec,
-                                                codeViewElement,
+                                                element,
                                                 type: 'added' as const,
                                             }
                                         )
@@ -74,8 +74,8 @@ export const trackCodeViews = ({
                                 ({ selector }) =>
                                     querySelectorAllOrSelf(removedElement, selector) as Iterable<HTMLElement>
                             ),
-                            map(codeViewElement => ({
-                                codeViewElement,
+                            map(element => ({
+                                element,
                                 type: 'removed' as const,
                             }))
                         )
