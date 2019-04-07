@@ -29,7 +29,7 @@ describe('Windows (integration)', () => {
                 roots: [],
                 editors: [],
             })
-            editorService.editors.next([
+            editorService.nextEditors([
                 {
                     type: 'CodeEditor',
                     item: { uri: 'foo', languageId: 'l1', text: 't1' },
@@ -37,8 +37,8 @@ describe('Windows (integration)', () => {
                     isActive: true,
                 },
             ])
-            editorService.editors.next([])
-            editorService.editors.next([
+            editorService.nextEditors([])
+            editorService.nextEditors([
                 {
                     type: 'CodeEditor',
                     item: { uri: 'bar', languageId: 'l2', text: 't2' },
@@ -78,7 +78,7 @@ describe('Windows (integration)', () => {
                 extensionAPI,
             } = await integrationTestContext()
 
-            editorService.editors.next([
+            editorService.nextEditors([
                 {
                     type: 'CodeEditor',
                     item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
@@ -113,7 +113,7 @@ describe('Windows (integration)', () => {
                 extensionAPI,
             } = await integrationTestContext()
 
-            editorService.editors.next([
+            editorService.nextEditors([
                 {
                     type: 'CodeEditor',
                     item: {
@@ -124,7 +124,7 @@ describe('Windows (integration)', () => {
                     selections: [],
                     isActive: false,
                 },
-                ...editorService.editors.value,
+                ...editorService.editorsValue,
             ])
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
@@ -152,7 +152,7 @@ describe('Windows (integration)', () => {
                     extensionAPI,
                 } = await integrationTestContext()
 
-                editorService.editors.next([
+                editorService.nextEditors([
                     {
                         type: 'CodeEditor',
                         item: {
@@ -163,7 +163,7 @@ describe('Windows (integration)', () => {
                         selections: [],
                         isActive: false,
                     },
-                    ...editorService.editors.value,
+                    ...editorService.editorsValue,
                 ])
                 await extensionAPI.internal.sync()
 
@@ -183,7 +183,7 @@ describe('Windows (integration)', () => {
                     roots: [],
                     editors: [],
                 })
-                editorService.editors.next([
+                editorService.nextEditors([
                     {
                         type: 'CodeEditor',
                         item: { uri: 'foo', languageId: 'l1', text: 't1' },
@@ -191,8 +191,8 @@ describe('Windows (integration)', () => {
                         isActive: true,
                     },
                 ])
-                editorService.editors.next([])
-                editorService.editors.next([
+                editorService.nextEditors([])
+                editorService.nextEditors([
                     {
                         type: 'CodeEditor',
                         item: { uri: 'bar', languageId: 'l2', text: 't2' },

@@ -17,7 +17,7 @@ describe('Documents (integration)', () => {
                 services: { editor: editorService },
                 extensionAPI,
             } = await integrationTestContext()
-            editorService.editors.next([
+            editorService.nextEditors([
                 {
                     type: 'CodeEditor',
                     item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
@@ -45,7 +45,7 @@ describe('Documents (integration)', () => {
             const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
             expect(values).toEqual([] as TextDocument[])
 
-            editorService.editors.next([
+            editorService.nextEditors([
                 {
                     type: 'CodeEditor',
                     item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },

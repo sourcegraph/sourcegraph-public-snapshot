@@ -70,6 +70,6 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                 }
             }
         }
-        this.props.extensionsController.services.editor.editors.next(editors)
+        this.props.extensionsController.services.editor.nextEditors(editors)
     }
 }
