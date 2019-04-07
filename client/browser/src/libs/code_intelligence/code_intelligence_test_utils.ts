@@ -70,11 +70,16 @@ function testMountGetter(
         }
         return template.content.firstElementChild
     }
-    it('returns a mount in the container', async () => {
+    it('creates and returns a new mount in the container', async () => {
         const container = await getFixtureBody()
+        const outerHtmlBefore = container.outerHTML
         const mount = getMount(container)
         expect(mount).toBeInstanceOf(HTMLElement)
         expect(container.contains(mount)).toBe(true)
+        if (container.outerHTML === outerHtmlBefore) {
+            // Don't use expect().not.toBe() because the output is gigantic
+            assert.fail('Expected container outerHTML to have changed')
+        }
     })
     it('is idempotent', async () => {
         const container = await getFixtureBody()

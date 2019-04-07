@@ -139,6 +139,12 @@ const commentSnippetCodeView: CodeViewSpec = {
 
 /**
  * The modern single file blob view.
+ *
+ * @todo This code view does not follow the code view contract because
+ * the selector returns just the code table, not including the toolbar.
+ * This requires `getToolbarMount()` to look at the parent elements, which makes it not possible
+ * unit test like other toolbar mount getters.
+ * Change this after https://github.com/sourcegraph/sourcegraph/issues/3271 is fixed.
  */
 export const fileLineContainerCodeView = {
     selector: '.js-file-line-container',

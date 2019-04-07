@@ -23,6 +23,7 @@ describe('github/code_intelligence', () => {
                                             testToolbarMountGetter(codeViewFixturePath, createCodeViewToolbarMount)
                                         })
                                     }
+                                    // TODO test fileLineContainerCodeView.getToolbarMount()
                                 })
                             }
                         })
