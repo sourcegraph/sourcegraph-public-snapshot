@@ -1,5 +1,3 @@
-//go:generate env GOBIN=$PWD/.bin GO111MODULE=on go install github.com/golang/mock/mockgen
-//go:generate $PWD/.bin/mockgen -destination mock_server/mocks.go github.com/sourcegraph/sourcegraph/cmd/gitserver/server IConfig,IGitoliteClient
 package server
 
 import (
@@ -13,40 +11,27 @@ import (
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
-	defaultGitolite.listGitolite(r.Context(), r.URL.Query().Get("gitolite"), w)
+	defaultGitolite.listRepos(r.Context(), r.URL.Query().Get("gitolite"), w)
 }
 
-type IConfig interface {
+var defaultGitolite = gitoliteFetcher{client: gitoliteClient{}, config: config{}}
+
+type gitoliteFetcher struct {
+	client iGitoliteClient
+	config iConfig
+}
+
+type iConfig interface {
 	Gitolite(ctx context.Context) ([]*schema.GitoliteConnection, error)
 }
 
-type Config struct{}
-
-func (c Config) Gitolite(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	return conf.GitoliteConfigs(ctx)
-}
-
-type IGitoliteClient interface {
+type iGitoliteClient interface {
 	ListRepos(ctx context.Context, host string) ([]*gitolite.Repo, error)
 }
 
-type GitoliteClient struct{}
-
-func (c GitoliteClient) ListRepos(ctx context.Context, host string) ([]*gitolite.Repo, error) {
-	return gitolite.NewClient(host).ListRepos(ctx)
-}
-
-type Gitolite struct {
-	client IGitoliteClient
-	config IConfig
-}
-
-var defaultGitolite = Gitolite{client: GitoliteClient{}, config: Config{}}
-
-// listGitolite is effectively a wrapper around gitolite.Client.ListRepos.  This must currently be
-// invoked from gitserver, because only gitserver has the SSH key needed to authenticate to the
-// Gitolite API.
-func (g Gitolite) listGitolite(ctx context.Context, gitoliteHost string, w http.ResponseWriter) {
+// listRepos iterates through all Gitolite configs and, for each, lists the repos for the Gitolite
+// host.
+func (g gitoliteFetcher) listRepos(ctx context.Context, gitoliteHost string, w http.ResponseWriter) {
 	repos := make([]*gitolite.Repo, 0)
 
 	config, err := g.config.Gitolite(ctx)
@@ -71,4 +56,16 @@ func (g Gitolite) listGitolite(ctx context.Context, gitoliteHost string, w http.
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+type config struct{}
+
+func (c config) Gitolite(ctx context.Context) ([]*schema.GitoliteConnection, error) {
+	return conf.GitoliteConfigs(ctx)
+}
+
+type gitoliteClient struct{}
+
+func (c gitoliteClient) ListRepos(ctx context.Context, host string) ([]*gitolite.Repo, error) {
+	return gitolite.NewClient(host).ListRepos(ctx)
 }

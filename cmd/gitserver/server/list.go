@@ -19,7 +19,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	case r.URL.RawQuery == "":
 		fallthrough // treat same as if the URL query was "gitolite" for backcompat
 	case query("gitolite"):
-		defaultGitolite.listGitolite(ctx, q.Get("gitolite"), w)
+		defaultGitolite.listRepos(ctx, q.Get("gitolite"), w)
 		return
 
 	case query("cloned"):
