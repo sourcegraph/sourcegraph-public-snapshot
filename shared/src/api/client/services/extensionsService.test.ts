@@ -2,7 +2,7 @@ import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorData, ReadonlyEditorService } from './editorService'
+import { CodeEditorData, EditorService } from './editorService'
 import { createTestEditorService } from './editorService.test'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
@@ -12,7 +12,7 @@ const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
-        editorService: ReadonlyEditorService,
+        editorService: Pick<EditorService, 'editors'>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],

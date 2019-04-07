@@ -1,5 +1,5 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { BehaviorSubject, NextObserver, Subscribable } from 'rxjs'
+import { BehaviorSubject, Subscribable } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextDocumentPositionParams } from '../../protocol'
 
@@ -18,27 +18,33 @@ export interface CodeEditorData<
     isActive: boolean
 }
 
-/** For callers that only need to subscribe to this value. */
-export interface ReadonlyEditorService {
-    readonly editors: Subscribable<readonly CodeEditorData[]>
-}
-
 /**
  * The editor service manages editors and documents.
  */
-export interface EditorService extends ReadonlyEditorService {
+export interface EditorService {
     /** All code editors. */
-    readonly editors: Subscribable<readonly CodeEditorData[]> & { value: readonly CodeEditorData[] } & NextObserver<
-            readonly CodeEditorData[]
-        >
+    readonly editors: Subscribable<readonly CodeEditorData[]>
+
+    /** Transitional API for synchronously getting the list of code editors. */
+    readonly editorsValue: readonly CodeEditorData[]
+
+    /** Transitional API for setting the list of code editors. */
+    nextEditors(value: readonly CodeEditorData[]): void
 }
 
 /**
  * Creates a {@link EditorService} instance.
  */
 export function createEditorService(): EditorService {
+    const editors = new BehaviorSubject<readonly CodeEditorData[]>([])
     return {
-        editors: new BehaviorSubject<readonly CodeEditorData[]>([]),
+        editors,
+        get editorsValue(): readonly CodeEditorData[] {
+            return editors.value
+        },
+        nextEditors(value: readonly CodeEditorData[]): void {
+            editors.next(value)
+        },
     }
 }
 

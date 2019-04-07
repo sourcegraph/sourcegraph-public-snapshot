@@ -16,7 +16,7 @@ describe('CodeEditor (integration)', () => {
             } = await integrationTestContext()
 
             const setSelections = (selections: Selection[]) => {
-                editorService.editors.next([
+                editorService.nextEditors([
                     {
                         type: 'CodeEditor',
                         item: { uri: 'foo', languageId: 'l1', text: 't1' },

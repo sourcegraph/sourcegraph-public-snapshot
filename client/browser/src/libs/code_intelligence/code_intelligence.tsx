@@ -525,7 +525,7 @@ export function handleCodeHost({
     // Update code editors as selections change
     subscriptions.add(
         selectionsChanges.subscribe(selections => {
-            extensionsController.services.editor.editors.next(
+            extensionsController.services.editor.nextEditors(
                 [...codeViewStates.values()].flatMap(state => state.editors).map(editor => ({ ...editor, selections }))
             )
         })
@@ -664,7 +664,7 @@ export function handleCodeHost({
             }
 
             // Apply added/removed roots/editors
-            extensionsController.services.editor.editors.next(
+            extensionsController.services.editor.nextEditors(
                 [...codeViewStates.values()].flatMap(state => state.editors)
             )
             extensionsController.services.workspace.roots.next(

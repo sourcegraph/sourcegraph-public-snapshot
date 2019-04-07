@@ -12,7 +12,7 @@ import { PlatformContext } from '../../../platform/context'
 import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { CodeEditorData, ReadonlyEditorService } from './editorService'
+import { CodeEditorData, EditorService } from './editorService'
 import { SettingsService } from './settings'
 
 /**
@@ -55,7 +55,7 @@ interface PartialContext extends Pick<PlatformContext, 'queryGraphQL' | 'getScri
 export class ExtensionsService {
     public constructor(
         private platformContext: PartialContext,
-        private editorService: ReadonlyEditorService,
+        private editorService: Pick<EditorService, 'editors'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
         private fetchSideloadedExtension: (

@@ -1,9 +1,9 @@
 import { of, Subscribable } from 'rxjs'
-import { CodeEditorData, getActiveCodeEditorPosition, ReadonlyEditorService } from './editorService'
+import { CodeEditorData, EditorService, getActiveCodeEditorPosition } from './editorService'
 
 export function createTestEditorService(
     editors: Subscribable<readonly CodeEditorData[]> = of([])
-): ReadonlyEditorService {
+): Pick<EditorService, 'editors'> {
     return { editors }
 }
 

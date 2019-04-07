@@ -98,9 +98,7 @@ export class BlobPanel extends React.PureComponent<Props> {
             provider: from(this.props.extensionsController.services.editor.editors).pipe(
                 switchMap(editors =>
                     registry
-                        .hasProvidersForActiveTextDocument(
-                            this.props.extensionsController.services.editor.editors.value
-                        )
+                        .hasProvidersForActiveTextDocument(this.props.extensionsController.services.editor.editorsValue)
                         .pipe(
                             map(hasProviders => {
                                 if (!hasProviders) {

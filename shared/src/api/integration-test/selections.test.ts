@@ -54,7 +54,7 @@ describe('Selections (integration)', () => {
                 [],
             ]
             for (const selections of testValues) {
-                editorService.editors.next([withSelections(...selections)])
+                editorService.nextEditors([withSelections(...selections)])
                 await extensionAPI.internal.sync()
             }
             await extensionAPI.internal.sync()

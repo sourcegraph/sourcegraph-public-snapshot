@@ -89,7 +89,7 @@ export async function integrationTestContext(
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     const extensionAPI = await extensionHost.extensionAPI
-    services.editor.editors.next(initModel.editors)
+    services.editor.nextEditors(initModel.editors)
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
