@@ -210,6 +210,44 @@ describe('CodeEditor (integration)', () => {
             ] as clientType.TextDocumentDecoration[])
         })
     })
+
+    test('collapsed', async () => {
+        const { services, extensionAPI } = await integrationTestContext()
+
+        const getClientEditors = () =>
+            from(services.editor.editors)
+                .pipe(first())
+                .toPromise()
+        expect((await getClientEditors())[0].collapsed).toBeFalsy()
+
+        const editor = await getFirstCodeEditor(extensionAPI)
+        expect(editor.collapsed).toBeFalsy()
+        editor.collapsed = true
+        expect(editor.collapsed).toBeTruthy()
+
+        await extensionAPI.internal.sync()
+        expect((await getClientEditors())[0].collapsed).toBeTruthy()
+
+        editor.collapsed = false
+        expect(editor.collapsed).toBeFalsy()
+        await extensionAPI.internal.sync()
+        expect((await getClientEditors())[0].collapsed).toBeFalsy()
+
+        services.editor.setCollapsed((await getClientEditors())[0], true)
+        await extensionAPI.internal.sync()
+        expect(editor.collapsed).toBeTruthy()
+
+        editor.collapsed = false
+        services.editor.setCollapsed((await getClientEditors())[0], true)
+        const values = await from(editor.collapsedChanges)
+            .pipe(
+                distinctUntilChanged(),
+                take(2),
+                toArray()
+            )
+            .toPromise()
+        assertToJSON(values, [false, true])
+    })
 })
 
 async function getFirstCodeEditor(extensionAPI: typeof sourcegraph): Promise<sourcegraph.CodeEditor> {

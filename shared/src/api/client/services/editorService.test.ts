@@ -101,6 +101,20 @@ describe('EditorService', () => {
                 .toPromise()
         ).toEqual([])
     })
+
+    test('setCollapsed', async () => {
+        const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+        const editor = editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
+        editorService.setCollapsed(editor, true)
+        expect(
+            await from(editorService.editors)
+                .pipe(
+                    first(),
+                    map(editors => editors.map(e => e.collapsed))
+                )
+                .toPromise()
+        ).toEqual([true])
+    })
 })
 
 describe('getActiveCodeEditorPosition', () => {

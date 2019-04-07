@@ -1,9 +1,9 @@
 import { ProxyResult } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Subscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import { CodeEditorData, EditorId } from '../../client/services/editorService'
+import { CodeEditor, CodeEditorData, EditorId } from '../../client/services/editorService'
 import { Range } from '../types/range'
 import { Selection } from '../types/selection'
 import { createDecorationType } from './decorations'
@@ -13,6 +13,9 @@ const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
 export class ExtCodeEditor implements sourcegraph.CodeEditor {
+    /** The unique ID of this editor. */
+    private editorId: CodeEditor['editorId']
+
     /** The URI of this editor's document. */
     private resource: string
 
@@ -22,6 +25,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         private documents: ExtDocuments
     ) {
         this.resource = data.resource
+        this.editorId = data.editorId
         this.update(data)
     }
 
@@ -52,8 +56,25 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
     }
 
-    public update(data: Pick<CodeEditorData, 'selections'>): void {
+    private _collapsedChanges = new BehaviorSubject<boolean>(false)
+
+    public get collapsed(): boolean {
+        return this._collapsedChanges.value
+    }
+
+    public set collapsed(value: boolean) {
+        this._collapsedChanges.next(Boolean(value))
+        // tslint:disable-next-line: no-floating-promises
+        this.proxy.$setCollapsed(this.editorId, value)
+    }
+
+    public get collapsedChanges(): Subscribable<boolean> {
+        return this._collapsedChanges
+    }
+
+    public update(data: Pick<CodeEditorData, 'selections' | 'collapsed'>): void {
         this.selectionsChanges.next(data.selections.map(s => Selection.fromPlain(s)))
+        this._collapsedChanges.next(Boolean(data.collapsed))
     }
 
     public toJSON(): any {

@@ -21,6 +21,7 @@ export interface CodeEditorData {
     readonly resource: string
 
     readonly selections: Selection[]
+    readonly collapsed?: boolean
     readonly isActive: boolean
 }
 
@@ -69,6 +70,14 @@ export interface EditorService {
      * Remove all editors.
      */
     removeAllEditors(): void
+
+    /**
+     * Collapse or expand an editor.
+     *
+     * @param editor The editor to collapse or expand.
+     * @param collapsed The desired state.
+     */
+    setCollapsed(editor: EditorId, collapsed: boolean): void
 }
 
 /**
@@ -110,6 +119,12 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
         },
         removeAllEditors(): void {
             editors.next([])
+        },
+        setCollapsed({ editorId }: EditorId, collapsed: boolean): void {
+            editors.next([
+                ...editors.value.filter(e => e.resource !== editorId),
+                ...editors.value.filter(e => e.resource === editorId).map(e => ({ ...e, collapsed })),
+            ])
         },
     }
 }

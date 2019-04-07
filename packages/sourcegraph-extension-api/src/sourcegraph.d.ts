@@ -600,6 +600,16 @@ declare module 'sourcegraph' {
         readonly selectionsChanges: Subscribable<Selection[]>
 
         /**
+         * Whether this editor is collapsed (meaning that only the editor title bar is shown). Not
+         * all editors support collapsing. If an editor doesn't support collapsing, setting this
+         * property value is a no-op.
+         */
+        collapsed: boolean
+
+        /** An observable that emits when the collapsed state of the editor changes. */
+        readonly collapsedChanges: Subscribable<boolean>
+
+        /**
          * Add a set of decorations to this editor. If a set of decorations already exists with the given
          * {@link TextDocumentDecorationType}, they will be replaced.
          *
