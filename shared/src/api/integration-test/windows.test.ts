@@ -37,23 +37,12 @@ describe('Windows (integration)', () => {
                 languageId: 'l',
                 text: 't',
             })
-            editorService.nextEditors([
-                {
-                    type: 'CodeEditor',
-                    resource: 'u',
-                    selections: [],
-                    isActive: true,
-                },
-            ])
-            editorService.nextEditors([])
-            editorService.nextEditors([
-                {
-                    type: 'CodeEditor',
-                    resource: 'u2',
-                    selections: [],
-                    isActive: true,
-                },
-            ])
+            editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
             const values = await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     take(1),
@@ -85,23 +74,21 @@ describe('Windows (integration)', () => {
             const {
                 services: { editor: editorService, model: modelService },
                 extensionAPI,
-            } = await integrationTestContext()
+            } = await integrationTestContext(undefined, { editors: [], roots: [] })
 
             modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
-            editorService.nextEditors([
-                {
-                    type: 'CodeEditor',
-                    resource: 'file:///f2',
-                    selections: [],
-                    isActive: true,
-                },
-            ])
+            editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'file:///f2',
+                selections: [],
+                isActive: true,
+            })
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     filter(isDefined),
                     switchMap(w => w.activeViewComponentChanges),
                     filter(isDefined),
-                    take(3)
+                    take(1)
                 )
                 .toPromise()
 
@@ -132,15 +119,12 @@ describe('Windows (integration)', () => {
                 languageId: 'inactive',
                 text: 'inactive',
             })
-            editorService.nextEditors([
-                {
-                    type: 'CodeEditor',
-                    resource: 'file:///inactive',
-                    selections: [],
-                    isActive: false,
-                },
-                ...editorService.editorsValue,
-            ])
+            editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'file:///inactive',
+                selections: [],
+                isActive: false,
+            })
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     filter(isDefined),
@@ -174,15 +158,12 @@ describe('Windows (integration)', () => {
                     languageId: 'inactive',
                     text: 'inactive',
                 })
-                editorService.nextEditors([
-                    {
-                        type: 'CodeEditor',
-                        resource: 'file:///inactive',
-                        selections: [],
-                        isActive: false,
-                    },
-                    ...editorService.editorsValue,
-                ])
+                editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'file:///inactive',
+                    selections: [],
+                    isActive: false,
+                })
 
                 assertToJSON(extensionAPI.app.windows[0].activeViewComponent, {
                     type: 'CodeEditor' as const,
@@ -202,23 +183,19 @@ describe('Windows (integration)', () => {
                 })
                 modelService.addModel({ uri: 'foo', languageId: 'l1', text: 't1' })
                 modelService.addModel({ uri: 'bar', languageId: 'l2', text: 't2' })
-                editorService.nextEditors([
-                    {
-                        type: 'CodeEditor',
-                        resource: 'foo',
-                        selections: [],
-                        isActive: true,
-                    },
-                ])
-                editorService.nextEditors([])
-                editorService.nextEditors([
-                    {
-                        type: 'CodeEditor',
-                        resource: 'bar',
-                        selections: [],
-                        isActive: true,
-                    },
-                ])
+                editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'foo',
+                    selections: [],
+                    isActive: true,
+                })
+                editorService.removeAllEditors()
+                editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'bar',
+                    selections: [],
+                    isActive: true,
+                })
                 const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                     .pipe(
                         distinctUntilChanged(),

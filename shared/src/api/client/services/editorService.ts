@@ -3,65 +3,113 @@ import { BehaviorSubject, combineLatest, Subscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel } from './modelService'
-
 /**
- * Describes a code editor view component.
+ * EditorId exposes the unique ID of an editor.
  */
-export interface CodeEditorData {
-    type: 'CodeEditor'
-
-    /** The URI of the model that this editor is displaying. */
-    resource: string
-
-    selections: Selection[]
-    isActive: boolean
+export interface EditorId {
+    /** The unique ID of the editor. */
+    readonly editorId: string
 }
 
-/** Describes a code editor and includes its model content. */
-export interface CodeEditorDataWithModel extends CodeEditorData {
-    model: TextModel
+/**
+ * Describes a code editor to be created.
+ */
+export interface CodeEditorData {
+    readonly type: 'CodeEditor'
+
+    /** The URI of the model that this editor is displaying. */
+    readonly resource: string
+
+    readonly selections: Selection[]
+    readonly isActive: boolean
+}
+
+/**
+ * Describes a code editor that has been added to the {@link EditorService}.
+ */
+export interface CodeEditor extends EditorId, CodeEditorData {
+    /**
+     * The model that represents the editor's document (and includes its contents).
+     */
+    readonly model: TextModel
 }
 
 /**
  * The editor service manages editors and documents.
  */
 export interface EditorService {
-    /** All code editors. */
-    readonly editors: Subscribable<readonly CodeEditorData[]>
-
     /** All code editors, with each editor's model. */
-    readonly editorsWithModel: Subscribable<readonly CodeEditorDataWithModel[]>
+    readonly editors: Subscribable<readonly CodeEditor[]>
 
-    /** Transitional API for synchronously getting the list of code editors. */
-    readonly editorsValue: readonly CodeEditorData[]
+    /**
+     * Add an editor.
+     *
+     * @param editor The description of the editor to add.
+     * @returns The added code editor (which must be passed as the first argument to other
+     * {@link EditorService} methods to operate on this editor).
+     */
+    addEditor(editor: CodeEditorData): EditorId
 
-    /** Transitional API for setting the list of code editors. */
-    nextEditors(value: readonly CodeEditorData[]): void
+    /**
+     * Sets the selections for an editor.
+     *
+     * @param editor The editor for which to set the selections.
+     * @param selections The new selections to apply.
+     */
+    setSelections(editor: EditorId, selections: Selection[]): void
+
+    /**
+     * Remove an editor.
+     *
+     * @param editor The editor to remove.
+     */
+    removeEditor(editor: EditorId): void
+
+    /**
+     * Remove all editors.
+     */
+    removeAllEditors(): void
 }
 
 /**
  * Creates a {@link EditorService} instance.
  */
 export function createEditorService(modelService: Pick<ModelService, 'models'>): EditorService {
-    const editors = new BehaviorSubject<readonly CodeEditorData[]>([])
+    let id = 0
+    const nextId = () => `editor#${id++}`
+
+    const findModelForEditor = (models: readonly TextModel[], { resource }: Pick<CodeEditorData, 'resource'>) => {
+        const model = models.find(m => m.uri === resource)
+        if (!model) {
+            throw new Error(`editor model not found: ${resource}`)
+        }
+        return model
+    }
+
+    type AddedCodeEditor = Pick<CodeEditor, Exclude<keyof CodeEditor, 'model'>>
+    const editors = new BehaviorSubject<readonly AddedCodeEditor[]>([])
     return {
-        editors,
-        editorsWithModel: combineLatest(editors, modelService.models).pipe(
+        editors: combineLatest(editors, modelService.models).pipe(
             map(([editors, models]) =>
-                editors.map(editor => {
-                    const model = models.find(m => m.uri === editor.resource)
-                    if (!model) {
-                        throw new Error(`editor model not found: ${editor.resource}`)
-                    }
-                    return { ...editor, model }
-                })
+                editors.map(editor => ({ ...editor, model: findModelForEditor(models, editor) }))
             )
         ),
-        get editorsValue(): readonly CodeEditorData[] {
-            return editors.value
+        addEditor: data => {
+            const editor: AddedCodeEditor = { ...data, editorId: nextId() }
+            editors.next([...editors.value, editor])
+            return editor
         },
-        nextEditors(value: readonly CodeEditorData[]): void {
-            editors.next(value)
+        setSelections({ editorId }: EditorId, selections: Selection[]): void {
+            editors.next([
+                ...editors.value.filter(e => e.editorId !== editorId),
+                ...editors.value.filter(e => e.editorId === editorId).map(e => ({ ...e, selections })),
+            ])
+        },
+        removeEditor({ editorId }: EditorId): void {
+            editors.next(editors.value.filter(e => e.editorId !== editorId))
+        },
+        removeAllEditors(): void {
+            editors.next([])
         },
     }
 }

@@ -12,7 +12,7 @@ import {
     filterContributions,
     mergeContributions,
 } from './contribution'
-import { CodeEditorDataWithModel } from './editorService'
+import { CodeEditor } from './editorService'
 import { createTestEditorService } from './editorService.test'
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
@@ -160,7 +160,7 @@ describe('ContributionRegistry', () => {
                     public constructor() {
                         super(
                             {
-                                editorsWithModel: cold<readonly CodeEditorDataWithModel[]>('-a-b-|', {
+                                editors: cold<readonly CodeEditor[]>('-a-b-|', {
                                     a: [],
                                     b: [],
                                 }),
@@ -202,7 +202,7 @@ describe('ContributionRegistry', () => {
                     public constructor() {
                         super(
                             {
-                                editorsWithModel: cold<readonly CodeEditorDataWithModel[]>('a', {
+                                editors: cold<readonly CodeEditor[]>('a', {
                                     a: [],
                                 }),
                             },

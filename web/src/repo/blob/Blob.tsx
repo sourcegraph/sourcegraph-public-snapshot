@@ -300,14 +300,13 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         text: model.content,
                     })
                 }
-                this.props.extensionsController.services.editor.nextEditors([
-                    {
-                        type: 'CodeEditor' as const,
-                        resource: uri,
-                        selections: lprToSelectionsZeroIndexed(pos),
-                        isActive: true,
-                    },
-                ])
+                this.props.extensionsController.services.editor.removeAllEditors()
+                this.props.extensionsController.services.editor.addEditor({
+                    type: 'CodeEditor' as const,
+                    resource: uri,
+                    selections: lprToSelectionsZeroIndexed(pos),
+                    isActive: true,
+                })
             })
         )
 

@@ -57,6 +57,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     registry.hasProvidersForActiveTextDocument([
                         {
                             isActive: true,
+                            editorId: 'editor#0',
                             type: 'CodeEditor' as const,
                             selections: [new Selection(1, 2, 3, 4).toPlain()],
                             resource: 'u',
@@ -80,6 +81,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     registry.hasProvidersForActiveTextDocument([
                         {
                             isActive: true,
+                            editorId: 'editor#0',
                             type: 'CodeEditor' as const,
                             selections: [new Selection(1, 2, 3, 4).toPlain()],
                             resource: 'u',

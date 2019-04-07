@@ -41,7 +41,7 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     public constructor(
-        private editorService: Pick<EditorService, 'editorsWithModel'>,
+        private editorService: Pick<EditorService, 'editors'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
     ) {}
@@ -114,7 +114,7 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            this.editorService.editorsWithModel,
+            this.editorService.editors,
             this.settingsService.data,
             this.context
         ).pipe(
