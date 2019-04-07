@@ -1,5 +1,3 @@
-//go:generate env GOBIN=$PWD/.bin GO111MODULE=on go install github.com/golang/mock/mockgen
-//go:generate $PWD/.bin/mockgen -destination mock_gitolite/mocks.go github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite Command
 package gitolite
 
 import (
@@ -23,28 +21,29 @@ type Repo struct {
 //
 // IMPORTANT: in order to authenticate to the Gitolite API, the client must be invoked from a
 // service in an environment that contains a Gitolite-authorized SSH key. As of writing, only
-// gitserver meets this criterion. (I.e., only invoke this from gitserver.)
+// gitserver meets this criterion (i.e., only invoke this client from gitserver).
+//
+// Impl note: To change the above, remove the invocation of the `ssh` binary and replace it
+// with use of the `ssh` package, reading arguments from config.
 type Client struct {
 	Host string
-
-	command Command
 }
 
 func NewClient(host string) *Client {
-	return &Client{
-		Host:    host,
-		command: command{},
-	}
+	return &Client{Host: host}
 }
 
 func (c *Client) ListRepos(ctx context.Context) ([]*Repo, error) {
-	out, err := c.command.Output(ctx, "ssh", c.Host, "info")
+	out, err := exec.CommandContext(ctx, "ssh", c.Host, "info").Output()
 	if err != nil {
 		log15.Error("listing gitolite failed", "error", err, "out", string(out))
 		return nil, err
 	}
+	return decodeRepos(c.Host, string(out)), nil
+}
 
-	lines := strings.Split(string(out), "\n")
+func decodeRepos(host, gitoliteInfo string) []*Repo {
+	lines := strings.Split(gitoliteInfo, "\n")
 	var repos []*Repo
 	for _, line := range lines {
 		fields := strings.Fields(line)
@@ -55,22 +54,10 @@ func (c *Client) ListRepos(ctx context.Context) ([]*Repo, error) {
 		if len(fields) >= 2 && fields[0] == "R" {
 			repos = append(repos, &Repo{
 				Name: name,
-				URL:  c.Host + ":" + name,
+				URL:  host + ":" + name,
 			})
 		}
 	}
 
-	return repos, nil
-}
-
-// Command is an interface for invoking a shell command.
-type Command interface {
-	Output(ctx context.Context, name string, arg ...string) ([]byte, error)
-}
-
-// command is the default implementation of Command, which uses `exec.CommandContext`.
-type command struct{}
-
-func (c command) Output(ctx context.Context, name string, arg ...string) ([]byte, error) {
-	return exec.CommandContext(ctx, name, arg...).Output()
+	return repos
 }

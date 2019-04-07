@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/pkg/tst"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -58,8 +58,12 @@ func Test_Gitolite_listRepos(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			tst.CheckStrEqual(t, test.expResponseBody, string(respBody), "response body did not match")
-			tst.CheckDeepEqual(t, test.expResponseCode, resp.StatusCode, "response status codes did not match")
+			if diff := cmp.Diff(test.expResponseBody, string(respBody)); diff != "" {
+				t.Errorf("unexpected response body diff:\n%s", diff)
+			}
+			if diff := cmp.Diff(test.expResponseCode, resp.StatusCode); diff != "" {
+				t.Errorf("unexpected repsonse code diff:\n%s", diff)
+			}
 		})
 	}
 }
