@@ -3,13 +3,12 @@ import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActionNavItemsClassProps, ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
+import { ContributionScope } from '../../../../../shared/src/api/client/context/context'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
-import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { toURIWithPath } from '../../../../../shared/src/util/url'
 import { FileInfoWithContents } from '../../libs/code_intelligence/code_views'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
@@ -24,6 +23,11 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
      * Class name for the `<ul>` element wrapping all toolbar items
      */
     className?: string
+
+    /**
+     * The scope of this toolbar (e.g., the view component that it is associated with).
+     */
+    scope?: ContributionScope
 }
 
 export interface CodeViewToolbarProps
@@ -67,14 +71,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     extensionsController={this.props.extensionsController}
                     platformContext={this.props.platformContext}
                     location={this.props.location}
-                    scope={{
-                        type: 'CodeEditor',
-                        item: {
-                            uri: toURIWithPath(this.props),
-                            languageId: getModeFromPath(this.props.filePath),
-                        },
-                        selections: [],
-                    }}
+                    scope={this.props.scope}
                 />{' '}
                 {this.props.baseCommitID && this.props.baseHasFileContents && (
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
