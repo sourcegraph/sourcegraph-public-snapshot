@@ -21,7 +21,7 @@ func Test_Gitolite_listRepos(t *testing.T) {
 	}{
 		{
 			listRepos: map[string][]*gitolite.Repo{
-				"git@gitolite.example.com": []*gitolite.Repo{
+				"git@gitolite.example.com": {
 					{Name: "myrepo", URL: "git@gitolite.example.com:myrepo"},
 				},
 			},
