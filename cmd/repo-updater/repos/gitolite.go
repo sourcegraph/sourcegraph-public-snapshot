@@ -3,12 +3,15 @@ package repos
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -72,7 +75,7 @@ func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (r
 
 // tryUpdateGitolitePhabricatorMetadata attempts to update Phabricator metadata for a Gitolite-sourced repository, if it
 // is appropriate to do so.
-func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.GitoliteConnection, repos []string) {
+func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.GitoliteConnection, repoNames []api.RepoName) {
 	if gconf.Phabricator == nil {
 		return
 	}
@@ -84,7 +87,7 @@ func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.Git
 	}
 	phabTaskRunning = true
 	phabTaskMu.Unlock()
-	for _, repoName := range repos {
+	for _, repoName := range repoNames {
 		metadata, err := gitserver.DefaultClient.GetGitolitePhabricatorMetadata(ctx, gconf.Host, repoName)
 		if err != nil {
 			log15.Warn("could not fetch valid Phabricator metadata for Gitolite repository", "repo", repoName, "error", err)
@@ -93,21 +96,25 @@ func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.Git
 		if metadata.Callsign == "" {
 			continue
 		}
-		if err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(repoName), metadata.Callsign, gconf.Phabricator.Url); err != nil {
+		if err := api.InternalClient.PhabricatorRepoCreate(ctx, repoName, metadata.Callsign, gconf.Phabricator.Url); err != nil {
 			log15.Warn("could not ensure Gitolite Phabricator mapping", "repo", repoName, "error", err)
 		}
 	}
 	phabTaskMu.Lock()
 	phabTaskRunning = false
 	phabTaskMu.Unlock()
-	log15.Info("updated gitolite/phabricator metadata for repos", "repos", len(repos))
+	log15.Info("updated gitolite/phabricator metadata for repos", "repos", len(repoNames))
 }
 
 // gitoliteUpdateRepos updates the repos associated with a specific
 // Gitolite connection.
 func gitoliteUpdateRepos(ctx context.Context, gconf *schema.GitoliteConnection, doPhabricator bool) error {
 	// Get list of Gitolite repositories for this connection.
-	rlist, err := gitserver.DefaultClient.ListGitolite(ctx, gconf.Host)
+	allRepos, err := gitserver.DefaultClient.ListGitolite(ctx, gconf.Host)
+	if err != nil {
+		return err
+	}
+	repos, err := filterBlacklist(gconf, allRepos)
 	if err != nil {
 		return err
 	}
@@ -116,18 +123,56 @@ func gitoliteUpdateRepos(ctx context.Context, gconf *schema.GitoliteConnection, 
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("gitolite:%s", gconf.Prefix), repoChan)
 	if doPhabricator && gconf.Phabricator != nil {
-		go tryUpdateGitolitePhabricatorMetadata(ctx, gconf, rlist)
+		go tryUpdateGitolitePhabricatorMetadata(ctx, gconf, repoNames(gconf.Prefix, repos))
 	}
-	for _, entry := range rlist {
-		// We don't have descriptions available for these. The old code didn't do that either.
-		url := strings.Replace(entry, gconf.Prefix, gconf.Host+":", 1)
+	for _, gitoliteRepo := range repos {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoName: api.RepoName(entry),
-				Enabled:  true,
+				RepoName:     reposource.GitoliteRepoName(gconf.Prefix, gitoliteRepo.Name),
+				ExternalRepo: gitolite.ExternalRepoSpec(gitoliteRepo, gitolite.ServiceID(gconf.Host)),
+				Enabled:      true,
 			},
-			URL: url,
+			URL: gitoliteRepo.URL,
 		}
 	}
 	return nil
+}
+
+func filterBlacklist(gconf *schema.GitoliteConnection, allRepos []*gitolite.Repo) ([]*gitolite.Repo, error) {
+	// filter out blacklist
+	blacklist, err := blacklistRegexp(gconf.Blacklist)
+	if err != nil {
+		log15.Error("Invalid regexp for Gitolite blacklist", "expr", gconf.Blacklist, "err", err)
+		return nil, err
+	}
+	blacklistCount := 0
+	var repos []*gitolite.Repo
+	for _, r := range allRepos {
+		repoName := string(reposource.GitoliteRepoName(gconf.Prefix, r.Name))
+
+		if strings.ContainsAny(repoName, "\\^$|()[]*?{},") || (blacklist != nil && blacklist.MatchString(repoName)) {
+			blacklistCount++
+			continue
+		}
+		repos = append(repos, r)
+	}
+	if blacklistCount > 0 {
+		log15.Info("Excluded blacklisted Gitolite repositories", "num", blacklistCount)
+	}
+	return repos, nil
+}
+
+func blacklistRegexp(blacklistStr string) (*regexp.Regexp, error) {
+	if blacklistStr == "" {
+		return nil, nil
+	}
+	return regexp.Compile(blacklistStr)
+}
+
+func repoNames(prefix string, repos []*gitolite.Repo) []api.RepoName {
+	names := make([]api.RepoName, 0, len(repos))
+	for _, repo := range repos {
+		names = append(names, reposource.GitoliteRepoName(prefix, repo.Name))
+	}
+	return names
 }
