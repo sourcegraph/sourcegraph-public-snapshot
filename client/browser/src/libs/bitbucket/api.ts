@@ -71,5 +71,6 @@ export const getBaseCommit: (info: GetBaseCommitInput) => Observable<string> = m
             map(({ parents }) => first(parents)),
             filter(isDefined),
             map(({ id }) => id)
-        )
+        ),
+    ({ project, repoSlug, commitID }) => `${project}:${repoSlug}:${commitID}`
 )
