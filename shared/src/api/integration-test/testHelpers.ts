@@ -8,13 +8,13 @@ import { isDefined } from '../../util/types'
 import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
-import { CodeEditorDataWithModel } from '../client/services/editorService'
+import { CodeEditor } from '../client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
-    editors: readonly CodeEditorDataWithModel[]
+    editors: readonly Pick<CodeEditor, Exclude<keyof CodeEditor, 'editorId'>>[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
@@ -90,10 +90,10 @@ export async function integrationTestContext(
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     const extensionAPI = await extensionHost.extensionAPI
-    for (const { model } of initModel.editors) {
+    for (const { model, ...editor } of initModel.editors) {
         services.model.addModel(model)
+        services.editor.addEditor(editor)
     }
-    services.editor.nextEditors(initModel.editors)
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized

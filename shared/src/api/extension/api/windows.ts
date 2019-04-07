@@ -5,12 +5,12 @@ import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
-import { CodeEditorData } from '../../client/services/editorService'
+import { CodeEditorData, EditorId } from '../../client/services/editorService'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
 
 export interface WindowData {
-    editors: readonly CodeEditorData[]
+    editors: readonly (CodeEditorData & EditorId)[]
 }
 
 interface WindowsProxyData {
@@ -96,29 +96,25 @@ export class ExtWindow implements sourcegraph.Window {
      * Perform a delta update (update/add/delete) of this window's view components.
      */
     public update(data: WindowData): void {
-        const getKey = (c: CodeEditorData): string => `${c.type}:${c.resource}`
-
-        const seenKeys = new Set<string>()
+        const seenEditorIds = new Set<string>()
         for (const c of data.editors) {
-            const key = getKey(c)
-            seenKeys.add(key)
-            const existing = this.viewComponents.get(key)
+            seenEditorIds.add(c.editorId)
+            const existing = this.viewComponents.get(c.editorId)
             if (existing) {
                 existing.update(c)
             } else {
-                this.viewComponents.set(key, new ExtCodeEditor(c, this.proxy.codeEditor, this.documents))
+                this.viewComponents.set(c.editorId, new ExtCodeEditor(c, this.proxy.codeEditor, this.documents))
             }
         }
-        for (const key of this.viewComponents.keys()) {
-            // Handle deleted.
-            if (!seenKeys.has(key)) {
-                this.viewComponents.delete(key)
+        for (const editorId of this.viewComponents.keys()) {
+            if (!seenEditorIds.has(editorId)) {
+                this.viewComponents.delete(editorId)
             }
         }
 
         // Update active view component.
         const active = data.editors.find(c => c.isActive)
-        this.activeViewComponentChanges.next(active ? this.viewComponents.get(getKey(active)) : undefined)
+        this.activeViewComponentChanges.next(active ? this.viewComponents.get(active.editorId) : undefined)
     }
 
     public toJSON(): any {

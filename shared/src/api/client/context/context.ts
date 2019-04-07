@@ -1,6 +1,6 @@
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorDataWithModel } from '../services/editorService'
+import { CodeEditor } from '../services/editorService'
 
 /**
  * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
@@ -31,10 +31,12 @@ export interface Context<T = never>
         string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
     > {}
 
+export type PartialCodeEditor = Pick<CodeEditor, 'type' | 'resource' | 'selections' | 'isActive'> & {
+    model: Pick<CodeEditor['model'], 'uri' | 'languageId'>
+}
+
 export type ContributionScope =
-    | (Pick<CodeEditorDataWithModel, 'type' | 'resource' | 'selections'> & {
-          model: Pick<CodeEditorDataWithModel['model'], 'uri' | 'languageId'>
-      })
+    | PartialCodeEditor
     | {
           type: 'panelView'
           id: string
@@ -49,7 +51,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    editors: readonly CodeEditorDataWithModel[],
+    editors: readonly PartialCodeEditor[],
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,

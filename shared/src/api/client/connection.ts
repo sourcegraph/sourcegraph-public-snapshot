@@ -78,7 +78,7 @@ export async function createExtensionHostClientConnection(
             .subscribe()
     )
     subscription.add(
-        from(services.editor.editorsWithModel)
+        from(services.editor.editors)
             .pipe(concatMap(editors => proxy.windows.$acceptWindowData({ editors })))
             .subscribe()
     )

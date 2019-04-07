@@ -293,21 +293,19 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
                 const uri = `git://${model.repoName}?${model.commitID}#${model.filePath}`
-                this.props.extensionsController.services.editor.nextEditors([])
+                this.props.extensionsController.services.editor.removeAllEditors()
                 this.props.extensionsController.services.model.removeAllModels()
                 this.props.extensionsController.services.model.addModel({
                     uri,
                     languageId: model.mode,
                     text: model.content,
                 })
-                this.props.extensionsController.services.editor.nextEditors([
-                    {
-                        type: 'CodeEditor' as const,
-                        resource: uri,
-                        selections: lprToSelectionsZeroIndexed(pos),
-                        isActive: true,
-                    },
-                ])
+                this.props.extensionsController.services.editor.addEditor({
+                    type: 'CodeEditor' as const,
+                    resource: uri,
+                    selections: lprToSelectionsZeroIndexed(pos),
+                    isActive: true,
+                })
             })
         )
 

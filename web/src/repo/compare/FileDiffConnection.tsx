@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
@@ -42,40 +41,39 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         const dummyText = ''
 
         this.props.extensionsController.services.model.removeAllModels()
+        this.props.extensionsController.services.editor.removeAllEditors()
 
-        const editors: CodeEditorData[] = []
         if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
             for (const fileDiff of fileDiffsOrError.nodes) {
                 if (fileDiff.oldPath) {
                     const uri = `git://${nodeProps.base.repoName}?${nodeProps.base.commitID}#${fileDiff.oldPath}`
-                    editors.push({
-                        type: 'CodeEditor',
-                        resource: uri,
-                        selections: [],
-                        isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
-                    })
                     this.props.extensionsController.services.model.addModel({
                         uri,
                         languageId: getModeFromPath(fileDiff.oldPath),
                         text: dummyText,
                     })
-                }
-                if (fileDiff.newPath) {
-                    const uri = `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`
-                    editors.push({
+                    this.props.extensionsController.services.editor.addEditor({
                         type: 'CodeEditor',
                         resource: uri,
                         selections: [],
-                        isActive: true,
+                        isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
                     })
+                }
+                if (fileDiff.newPath) {
+                    const uri = `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`
                     this.props.extensionsController.services.model.addModel({
                         uri,
                         languageId: getModeFromPath(fileDiff.newPath),
                         text: dummyText,
                     })
+                    this.props.extensionsController.services.editor.addEditor({
+                        type: 'CodeEditor',
+                        resource: uri,
+                        selections: [],
+                        isActive: true,
+                    })
                 }
             }
         }
-        this.props.extensionsController.services.editor.nextEditors(editors)
     }
 }

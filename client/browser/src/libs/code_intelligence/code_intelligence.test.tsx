@@ -8,7 +8,7 @@ jest.mock('react-dom', () => ({
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
 import { from, NEVER, of, Subject, Subscription } from 'rxjs'
-import { filter, skip, switchMap, take } from 'rxjs/operators'
+import { filter, map, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../../shared/src/api/client/services'
 import { Range } from '../../../../../shared/src/api/extension/types/range'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
@@ -144,7 +144,7 @@ describe('handleCodeHost()', () => {
     })
 
     test('detects code views based on selectors', async () => {
-        const { services } = await integrationTestContext()
+        const { services } = await integrationTestContext(undefined, { editors: [], roots: [] })
         const codeView = createTestElement()
         codeView.id = 'code'
         const toolbarMount = document.createElement('div')
@@ -181,16 +181,19 @@ describe('handleCodeHost()', () => {
         )
         const editors = await from(services.editor.editors)
             .pipe(
-                skip(1),
-                take(1)
+                skip(2),
+                take(1),
+                map(editors => editors.map(e => ({ resource: e.resource, model: e.model })))
             )
             .toPromise()
         expect(editors).toEqual([
             {
-                isActive: true,
                 resource: 'git://foo?1#/bar.ts',
-                selections: [],
-                type: 'CodeEditor',
+                model: {
+                    uri: 'git://foo?1#/bar.ts',
+                    text: undefined,
+                    languageId: 'typescript',
+                },
             },
         ])
         expect(codeView.classList.contains('sg-mounted')).toBe(true)

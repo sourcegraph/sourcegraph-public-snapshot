@@ -4,7 +4,7 @@ import { catchError, map } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
-import { CodeEditorDataWithModel } from './editorService'
+import { CodeEditor } from './editorService'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
@@ -45,7 +45,7 @@ export class TextDocumentLocationProviderRegistry<
      *
      * @param editors The code editors in {@link EditorService}.
      */
-    public hasProvidersForActiveTextDocument(editors: readonly CodeEditorDataWithModel[]): Observable<boolean> {
+    public hasProvidersForActiveTextDocument(editors: readonly CodeEditor[]): Observable<boolean> {
         return this.entries.pipe(
             map(entries => {
                 const activeEditor = editors.find(({ isActive }) => isActive)

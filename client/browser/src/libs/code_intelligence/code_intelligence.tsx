@@ -27,7 +27,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { CodeEditorData } from '../../../../../shared/src/api/client/services/editorService'
+import { CodeEditorData, EditorId } from '../../../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
@@ -548,7 +548,7 @@ export function handleCodeHost({
 
     interface CodeViewState {
         subscriptions: Subscription
-        editors: CodeEditorData[]
+        editors: EditorId[]
         roots: WorkspaceRootWithMetadata[]
     }
     /** Map from code view element to the state associated with it (to be updated or removed) */
@@ -557,9 +557,12 @@ export function handleCodeHost({
     // Update code editors as selections change
     subscriptions.add(
         selectionsChanges.subscribe(selections => {
-            extensionsController.services.editor.nextEditors(
-                [...codeViewStates.values()].flatMap(state => state.editors).map(editor => ({ ...editor, selections }))
-            )
+            for (const { editors } of codeViewStates.values()) {
+                for (const editor of editors) {
+                    // TODO(sqs): only set for the single relevant editor
+                    extensionsController.services.editor.setSelections(editor, selections)
+                }
+            }
         })
     )
 
@@ -577,16 +580,15 @@ export function handleCodeHost({
                     text: fileInfo.content,
                 }
                 extensionsController.services.model.addModel(model)
+                const editorData: CodeEditorData = {
+                    type: 'CodeEditor' as const,
+                    resource: uri,
+                    selections,
+                    isActive: true,
+                }
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
-                    editors: [
-                        {
-                            type: 'CodeEditor' as const,
-                            resource: uri,
-                            selections,
-                            isActive: true,
-                        },
-                    ],
+                    editors: [extensionsController.services.editor.addEditor(editorData)],
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
                 }
                 codeViewStates.set(element, codeViewState)
@@ -598,18 +600,20 @@ export function handleCodeHost({
                         commitID: fileInfo.baseCommitID,
                         filePath: fileInfo.baseFilePath,
                     })
-                    codeViewState.editors.push({
-                        type: 'CodeEditor' as const,
-                        resource: uri,
-                        // There is no notion of a selection on diff views yet, so this is empty.
-                        selections: [],
-                        isActive: true,
-                    })
                     extensionsController.services.model.addModel({
                         uri,
                         languageId: getModeFromPath(fileInfo.filePath),
                         text: fileInfo.baseContent,
                     })
+                    codeViewState.editors.push(
+                        extensionsController.services.editor.addEditor({
+                            type: 'CodeEditor' as const,
+                            resource: uri,
+                            // There is no notion of a selection on diff views yet, so this is empty.
+                            selections: [],
+                            isActive: true,
+                        })
+                    )
                     codeViewState.roots.push({
                         uri: toRootURI({
                             repoName: fileInfo.baseRepoName,
@@ -687,7 +691,7 @@ export function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
-                            scope={{ ...codeViewState.editors[0], model }}
+                            scope={{ ...editorData, model }}
                         />,
                         mount
                     )
@@ -697,15 +701,17 @@ export function handleCodeHost({
                 if (codeViewState) {
                     codeViewState.subscriptions.unsubscribe()
                     codeViewStates.delete(codeViewEvent.element)
+
+                    // Remove editors.
+                    for (const editor of codeViewState.editors) {
+                        extensionsController.services.editor.removeEditor(editor)
+                    }
                 }
             }
 
-            // Apply added/removed roots/editors
+            // Apply added/removed roots
             extensionsController.services.workspace.roots.next(
                 uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
-            )
-            extensionsController.services.editor.nextEditors(
-                [...codeViewStates.values()].flatMap(state => state.editors)
             )
         })
     )
