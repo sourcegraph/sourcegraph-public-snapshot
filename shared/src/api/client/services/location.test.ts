@@ -1,6 +1,7 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
+import { Selection } from '../../extension/types/selection'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 import {
     getLocationsFromProviders,
@@ -58,13 +59,13 @@ describe('TextDocumentLocationProviderRegistry', () => {
                             {
                                 isActive: true,
                                 type: 'CodeEditor',
-                                selections: [],
+                                selections: [new Selection(1, 2, 3, 4).toPlain()],
                                 item: { uri: 'u', languageId: 'l', text: 't' },
                             },
                         ],
                     })
                 ).toBe('a', {
-                    a: false,
+                    a: true,
                 })
             })
         })
@@ -82,7 +83,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                             {
                                 isActive: true,
                                 type: 'CodeEditor',
-                                selections: [],
+                                selections: [new Selection(1, 2, 3, 4).toPlain()],
                                 item: { uri: 'u', languageId: 'l', text: 't' },
                             },
                         ],
