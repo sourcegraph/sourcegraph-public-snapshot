@@ -1,6 +1,7 @@
 import * as clientType from '@sourcegraph/extension-api-types'
 import { from } from 'rxjs'
-import { first, switchMap, take, toArray } from 'rxjs/operators'
+import { distinctUntilChanged, first, switchMap, take, toArray } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { Range } from '../extension/types/range'
 import { Selection } from '../extension/types/selection'
@@ -19,7 +20,7 @@ describe('CodeEditor (integration)', () => {
                 editorService.nextEditors([
                     {
                         type: 'CodeEditor',
-                        item: { uri: 'foo', languageId: 'l1', text: 't1' },
+                        resource: 'file:///f',
                         selections,
                         isActive: true,
                     },
@@ -31,6 +32,7 @@ describe('CodeEditor (integration)', () => {
             const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                 .pipe(
                     switchMap(c => (c ? c.selectionsChanges : [])),
+                    distinctUntilChanged(),
                     take(3),
                     toArray()
                 )
@@ -49,10 +51,7 @@ describe('CodeEditor (integration)', () => {
             const dt = extensionAPI.app.createDecorationType()
 
             // Set some decorations and check they are present on the client.
-            const activeWindow = await from(extensionAPI.app.activeWindowChanges)
-                .pipe(first(isDefined))
-                .toPromise()
-            const editor = activeWindow.visibleViewComponents[0]
+            const editor = await getFirstCodeEditor(extensionAPI)
             editor.setDecorations(dt, [
                 {
                     range: new Range(1, 2, 3, 4),
@@ -87,10 +86,7 @@ describe('CodeEditor (integration)', () => {
             const { services, extensionAPI } = await integrationTestContext()
             const [dt1, dt2] = [extensionAPI.app.createDecorationType(), extensionAPI.app.createDecorationType()]
 
-            const activeWindow = await from(extensionAPI.app.activeWindowChanges)
-                .pipe(first(isDefined))
-                .toPromise()
-            const editor = activeWindow.visibleViewComponents[0]
+            const editor = await getFirstCodeEditor(extensionAPI)
             editor.setDecorations(dt1, [
                 {
                     range: new Range(1, 2, 3, 4),
@@ -181,10 +177,7 @@ describe('CodeEditor (integration)', () => {
             const dt = extensionAPI.app.createDecorationType()
 
             // Set some decorations and check they are present on the client.
-            const activeWindow = await from(extensionAPI.app.activeWindowChanges)
-                .pipe(first(isDefined))
-                .toPromise()
-            const editor = activeWindow.visibleViewComponents[0]
+            const editor = await getFirstCodeEditor(extensionAPI)
             editor.setDecorations(dt, [
                 {
                     range: new Range(1, 2, 3, 4),
@@ -225,3 +218,13 @@ describe('CodeEditor (integration)', () => {
         })
     })
 })
+
+async function getFirstCodeEditor(extensionAPI: typeof sourcegraph): Promise<sourcegraph.CodeEditor> {
+    return from(extensionAPI.app.activeWindowChanges)
+        .pipe(
+            first(isDefined),
+            switchMap(win => win.activeViewComponentChanges),
+            first(isDefined)
+        )
+        .toPromise()
+}

@@ -28,6 +28,7 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
 import { CodeEditorData } from '../../../../../shared/src/api/client/services/editorService'
+import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
@@ -538,16 +539,19 @@ export function handleCodeHost({
             // Handle added or removed view component, workspace root and subscriptions
             if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
                 const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
+                const uri = toURIWithPath(fileInfo)
+                const model: TextModel = {
+                    uri,
+                    languageId: getModeFromPath(fileInfo.filePath),
+                    text: fileInfo.content,
+                }
+                extensionsController.services.model.addModel(model)
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
                     editors: [
                         {
                             type: 'CodeEditor' as const,
-                            item: {
-                                uri: toURIWithPath(fileInfo),
-                                languageId: getModeFromPath(fileInfo.filePath),
-                                text: fileInfo.content,
-                            },
+                            resource: uri,
                             selections,
                             isActive: true,
                         },
@@ -558,20 +562,22 @@ export function handleCodeHost({
 
                 // When codeView is a diff (and not an added file), add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
+                    const uri = toURIWithPath({
+                        repoName: fileInfo.baseRepoName,
+                        commitID: fileInfo.baseCommitID,
+                        filePath: fileInfo.baseFilePath,
+                    })
                     codeViewState.editors.push({
                         type: 'CodeEditor' as const,
-                        item: {
-                            uri: toURIWithPath({
-                                repoName: fileInfo.baseRepoName,
-                                commitID: fileInfo.baseCommitID,
-                                filePath: fileInfo.baseFilePath,
-                            }),
-                            languageId: getModeFromPath(fileInfo.filePath),
-                            text: fileInfo.baseContent,
-                        },
+                        resource: uri,
                         // There is no notion of a selection on diff views yet, so this is empty.
                         selections: [],
                         isActive: true,
+                    })
+                    extensionsController.services.model.addModel({
+                        uri,
+                        languageId: getModeFromPath(fileInfo.filePath),
+                        text: fileInfo.baseContent,
                     })
                     codeViewState.roots.push({
                         uri: toRootURI({
@@ -650,7 +656,7 @@ export function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
-                            scope={codeViewState.editors[0]}
+                            scope={{ ...codeViewState.editors[0], model }}
                         />,
                         mount
                     )
@@ -664,11 +670,11 @@ export function handleCodeHost({
             }
 
             // Apply added/removed roots/editors
-            extensionsController.services.editor.nextEditors(
-                [...codeViewStates.values()].flatMap(state => state.editors)
-            )
             extensionsController.services.workspace.roots.next(
                 uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
+            )
+            extensionsController.services.editor.nextEditors(
+                [...codeViewStates.values()].flatMap(state => state.editors)
             )
         })
     )

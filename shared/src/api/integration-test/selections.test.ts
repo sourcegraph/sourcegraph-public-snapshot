@@ -7,7 +7,7 @@ import { collectSubscribableValues, integrationTestContext } from './testHelpers
 
 const withSelections = (...selections: { start: number; end: number }[]): CodeEditorData => ({
     type: 'CodeEditor',
-    item: { uri: 'foo', languageId: 'l1', text: 't1' },
+    resource: 'file:///f',
     selections: selections.map(({ start, end }) => ({
         start: {
             line: start,
@@ -36,10 +36,7 @@ describe('Selections (integration)', () => {
             const {
                 services: { editor: editorService },
                 extensionAPI,
-            } = await integrationTestContext(undefined, {
-                roots: [],
-                editors: [],
-            })
+            } = await integrationTestContext()
             const selectionChanges = from(extensionAPI.app.activeWindowChanges).pipe(
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
@@ -56,11 +53,11 @@ describe('Selections (integration)', () => {
             for (const selections of testValues) {
                 editorService.nextEditors([withSelections(...selections)])
                 await extensionAPI.internal.sync()
+                await extensionAPI.internal.sync()
             }
-            await extensionAPI.internal.sync()
             assertToJSON(
                 selectionValues.map(selections => selections.map(s => ({ start: s.start.line, end: s.end.line }))),
-                testValues
+                [[], ...testValues]
             )
         })
     })

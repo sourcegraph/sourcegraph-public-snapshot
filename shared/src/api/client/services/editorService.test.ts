@@ -1,11 +1,44 @@
-import { of, Subscribable } from 'rxjs'
-import { CodeEditorData, EditorService, getActiveCodeEditorPosition } from './editorService'
+import { from, of, Subscribable } from 'rxjs'
+import { TestScheduler } from 'rxjs/testing'
+import {
+    CodeEditorDataWithModel,
+    createEditorService,
+    EditorService,
+    getActiveCodeEditorPosition,
+} from './editorService'
+import { TextModel } from './modelService'
 
 export function createTestEditorService(
-    editors: Subscribable<readonly CodeEditorData[]> = of([])
-): Pick<EditorService, 'editors'> {
-    return { editors }
+    editorsWithModel: Subscribable<readonly CodeEditorDataWithModel[]> = of([])
+): Pick<EditorService, 'editors' | 'editorsWithModel'> {
+    return { editors: editorsWithModel, editorsWithModel }
 }
+
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+
+describe('EditorService', () => {
+    describe('editorsWithModel', () => {
+        test('merges in model data', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                const editorService = createEditorService({
+                    models: cold<TextModel[]>('a', { a: [{ uri: 'u', text: 't', languageId: 'l' }] }),
+                })
+                editorService.nextEditors([{ type: 'CodeEditor', resource: 'u', selections: [], isActive: true }])
+                expectObservable(from(editorService.editorsWithModel)).toBe('a', {
+                    a: [
+                        {
+                            type: 'CodeEditor',
+                            resource: 'u',
+                            model: { uri: 'u', text: 't', languageId: 'l' },
+                            selections: [],
+                            isActive: true,
+                        },
+                    ],
+                })
+            })
+        })
+    })
+})
 
 describe('getActiveCodeEditorPosition', () => {
     test('null if code editor is empty', () => {
@@ -19,7 +52,7 @@ describe('getActiveCodeEditorPosition', () => {
                     type: 'CodeEditor',
                     isActive: false,
                     selections: [],
-                    item: { uri: 'u', text: 't', languageId: 'l' },
+                    resource: 'u',
                 },
             ])
         ).toBeNull()
@@ -32,7 +65,7 @@ describe('getActiveCodeEditorPosition', () => {
                     type: 'CodeEditor',
                     isActive: true,
                     selections: [],
-                    item: { uri: 'u', text: 't', languageId: 'l' },
+                    resource: 'u',
                 },
             ])
         ).toBeNull()
@@ -53,7 +86,7 @@ describe('getActiveCodeEditorPosition', () => {
                             isReversed: false,
                         },
                     ],
-                    item: { uri: 'u', text: 't', languageId: 'l' },
+                    resource: 'u',
                 },
             ])
         ).toBeNull()
@@ -74,9 +107,9 @@ describe('getActiveCodeEditorPosition', () => {
                             isReversed: false,
                         },
                     ],
-                    item: { uri: 'u', text: 't', languageId: 'l' },
+                    resource: 'u',
                 },
             ])
-        ).toEqual({ textDocument: { uri: 'u', text: 't', languageId: 'l' }, position: { line: 3, character: 2 } })
+        ).toEqual({ textDocument: { uri: 'u' }, position: { line: 3, character: 2 } })
     })
 })
