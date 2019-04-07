@@ -3,8 +3,8 @@ import { from, Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
-import { Model, modelToTextDocumentPositionParams } from '../model'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
+import { CodeEditorData, getActiveCodeEditorPosition } from './editorService'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
@@ -43,12 +43,12 @@ export class TextDocumentLocationProviderRegistry<
      * This can be used, for example, to selectively show a "Find references" button if there are
      * any reference providers registered.
      *
-     * @param model The current model.
+     * @param editors The code editors in {@link EditorService}.
      */
-    public hasProvidersForActiveTextDocument(model: Pick<Model, 'visibleViewComponents'>): Observable<boolean> {
+    public hasProvidersForActiveTextDocument(editors: readonly CodeEditorData[]): Observable<boolean> {
         return this.entries.pipe(
             map(entries => {
-                const params = modelToTextDocumentPositionParams(model)
+                const params = getActiveCodeEditorPosition(editors)
                 if (!params) {
                     return false
                 }

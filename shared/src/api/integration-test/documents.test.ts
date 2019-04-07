@@ -13,17 +13,18 @@ describe('Documents (integration)', () => {
         })
 
         test('adds new text documents', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
-            model.next({
-                visibleViewComponents: [
-                    {
-                        type: 'CodeEditor',
-                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                        selections: [],
-                        isActive: true,
-                    },
-                ],
-            })
+            const {
+                services: { editor: editorService },
+                extensionAPI,
+            } = await integrationTestContext()
+            editorService.editors.next([
+                {
+                    type: 'CodeEditor',
+                    item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                    selections: [],
+                    isActive: true,
+                },
+            ])
             await from(extensionAPI.workspace.openedTextDocuments)
                 .pipe(take(1))
                 .toPromise()
@@ -36,21 +37,22 @@ describe('Documents (integration)', () => {
 
     describe('workspace.openedTextDocuments', () => {
         test('fires when a text document is opened', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+            const {
+                services: { editor: editorService },
+                extensionAPI,
+            } = await integrationTestContext()
 
             const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
             expect(values).toEqual([] as TextDocument[])
 
-            model.next({
-                visibleViewComponents: [
-                    {
-                        type: 'CodeEditor',
-                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                        selections: [],
-                        isActive: true,
-                    },
-                ],
-            })
+            editorService.editors.next([
+                {
+                    type: 'CodeEditor',
+                    item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                    selections: [],
+                    isActive: true,
+                },
+            ])
             await from(extensionAPI.workspace.openedTextDocuments)
                 .pipe(take(1))
                 .toPromise()

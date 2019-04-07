@@ -10,19 +10,20 @@ import { integrationTestContext } from './testHelpers'
 describe('CodeEditor (integration)', () => {
     describe('selection', () => {
         test('observe changes', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+            const {
+                services: { editor: editorService },
+                extensionAPI,
+            } = await integrationTestContext()
 
             const setSelections = (selections: Selection[]) => {
-                model.next({
-                    visibleViewComponents: [
-                        {
-                            type: 'CodeEditor',
-                            item: { uri: 'foo', languageId: 'l1', text: 't1' },
-                            selections,
-                            isActive: true,
-                        },
-                    ],
-                })
+                editorService.editors.next([
+                    {
+                        type: 'CodeEditor',
+                        item: { uri: 'foo', languageId: 'l1', text: 't1' },
+                        selections,
+                        isActive: true,
+                    },
+                ])
             }
             setSelections([new Selection(1, 2, 3, 4)])
             setSelections([])
@@ -51,8 +52,8 @@ describe('CodeEditor (integration)', () => {
             const activeWindow = await from(extensionAPI.app.activeWindowChanges)
                 .pipe(first(isDefined))
                 .toPromise()
-            const codeEditor = activeWindow.visibleViewComponents[0]
-            codeEditor.setDecorations(dt, [
+            const editor = activeWindow.visibleViewComponents[0]
+            editor.setDecorations(dt, [
                 {
                     range: new Range(1, 2, 3, 4),
                     backgroundColor: 'red',
@@ -72,7 +73,7 @@ describe('CodeEditor (integration)', () => {
             ] as clientType.TextDocumentDecoration[])
 
             // Clear the decorations and ensure they are removed.
-            codeEditor.setDecorations(dt, [])
+            editor.setDecorations(dt, [])
             await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration
@@ -89,8 +90,8 @@ describe('CodeEditor (integration)', () => {
             const activeWindow = await from(extensionAPI.app.activeWindowChanges)
                 .pipe(first(isDefined))
                 .toPromise()
-            const codeEditor = activeWindow.visibleViewComponents[0]
-            codeEditor.setDecorations(dt1, [
+            const editor = activeWindow.visibleViewComponents[0]
+            editor.setDecorations(dt1, [
                 {
                     range: new Range(1, 2, 3, 4),
                     after: {
@@ -98,7 +99,7 @@ describe('CodeEditor (integration)', () => {
                     },
                 },
             ])
-            codeEditor.setDecorations(dt2, [
+            editor.setDecorations(dt2, [
                 {
                     range: new Range(1, 2, 3, 4),
                     after: {
@@ -128,7 +129,7 @@ describe('CodeEditor (integration)', () => {
             ] as clientType.TextDocumentDecoration[])
 
             // Change decorations only for dt1, and check that merged decorations are coherent
-            codeEditor.setDecorations(dt1, [
+            editor.setDecorations(dt1, [
                 {
                     range: new Range(1, 2, 3, 4),
                     after: {
@@ -158,7 +159,7 @@ describe('CodeEditor (integration)', () => {
             ] as clientType.TextDocumentDecoration[])
 
             // remove decorations for dt2, and verify that decorations for dt1 are still present
-            codeEditor.setDecorations(dt2, [])
+            editor.setDecorations(dt2, [])
             await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration
@@ -183,8 +184,8 @@ describe('CodeEditor (integration)', () => {
             const activeWindow = await from(extensionAPI.app.activeWindowChanges)
                 .pipe(first(isDefined))
                 .toPromise()
-            const codeEditor = activeWindow.visibleViewComponents[0]
-            codeEditor.setDecorations(dt, [
+            const editor = activeWindow.visibleViewComponents[0]
+            editor.setDecorations(dt, [
                 {
                     range: new Range(1, 2, 3, 4),
                     backgroundColor: 'red',
@@ -193,7 +194,7 @@ describe('CodeEditor (integration)', () => {
 
             // This call to setDecorations does not supply a type, mimicking extensions
             // that may have been developed against an older version of the API
-            codeEditor.setDecorations(null as any, [
+            editor.setDecorations(null as any, [
                 {
                     range: new Range(1, 2, 3, 4),
                     after: {

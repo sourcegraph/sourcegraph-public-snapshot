@@ -8,7 +8,7 @@ jest.mock('react-dom', () => ({
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
 import { from, NEVER, of, Subject, Subscription } from 'rxjs'
-import { filter, map, skip, switchMap, take } from 'rxjs/operators'
+import { filter, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../../shared/src/api/client/services'
 import { Range } from '../../../../../shared/src/api/extension/types/range'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
@@ -179,14 +179,13 @@ describe('handleCodeHost()', () => {
                 ...createMockPlatformContext(),
             })
         )
-        const viewComponents = await from(services.editor.model)
+        const editors = await from(services.editor.editors)
             .pipe(
                 skip(1),
-                take(1),
-                map(({ visibleViewComponents }) => visibleViewComponents)
+                take(1)
             )
             .toPromise()
-        expect(viewComponents).toEqual([
+        expect(editors).toEqual([
             {
                 isActive: true,
                 item: {
@@ -206,7 +205,7 @@ describe('handleCodeHost()', () => {
     test('decorates a code view', async () => {
         const { extensionAPI, services } = await integrationTestContext(undefined, {
             roots: [],
-            visibleViewComponents: [],
+            editors: [],
         })
         const codeView = createTestElement()
         codeView.id = 'code'
