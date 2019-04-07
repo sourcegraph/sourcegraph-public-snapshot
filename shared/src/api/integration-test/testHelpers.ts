@@ -8,13 +8,13 @@ import { isDefined } from '../../util/types'
 import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
-import { CodeEditorData } from '../client/services/editorService'
+import { CodeEditorDataWithModel } from '../client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
-    editors: readonly CodeEditorData[]
+    editors: readonly CodeEditorDataWithModel[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
@@ -22,7 +22,8 @@ const FIXTURE_INIT_DATA: TestInitData = {
     editors: [
         {
             type: 'CodeEditor',
-            item: {
+            resource: 'file:///f',
+            model: {
                 uri: 'file:///f',
                 languageId: 'l',
                 text: 't',
@@ -89,6 +90,9 @@ export async function integrationTestContext(
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     const extensionAPI = await extensionHost.extensionAPI
+    for (const { model } of initModel.editors) {
+        services.model.addModel(model)
+    }
     services.editor.nextEditors(initModel.editors)
     services.workspace.roots.next(initModel.roots)
 

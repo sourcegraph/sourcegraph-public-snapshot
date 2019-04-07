@@ -1,17 +1,17 @@
 import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
-import { TextDocument } from 'sourcegraph'
+import { TextModel } from '../../client/services/modelService'
 
 /** @internal */
 export interface ExtDocumentsAPI extends ProxyValue {
-    $acceptDocumentData(doc: TextDocument[]): void
+    $acceptDocumentData(doc: readonly TextModel[]): void
 }
 
 /** @internal */
 export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
     public readonly [proxyValueSymbol] = true
 
-    private documents = new Map<string, TextDocument>()
+    private documents = new Map<string, TextModel>()
 
     constructor(private sync: () => Promise<void>) {}
 
@@ -20,7 +20,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      *
      * @internal
      */
-    public get(resource: string): TextDocument {
+    public get(resource: string): TextModel {
         const doc = this.documents.get(resource)
         if (!doc) {
             throw new Error(`document not found: ${resource}`)
@@ -35,11 +35,21 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      * @todo This is necessary because hovers can be sent before the document is loaded, and it will cause a
      * "document not found" error.
      */
-    public async getSync(resource: string): Promise<TextDocument> {
+    public async getSync(resource: string): Promise<TextModel> {
         const doc = this.documents.get(resource)
         if (doc) {
             return doc
         }
+        await this.sync()
+        // This 2nd sync is necessary after the monolithic model was split into ModelService and
+        // EditorService, which means that changes to the model/editor state are not atomic. Without
+        // the 2nd sync, the `document not found: ...` error above is thrown when the user navigates
+        // between files (e.g., using go-to-definition) because the hover is requested on the
+        // destination file before it has been added (because there are now more "steps" to adding
+        // the file: first clearing the current model and editor and then adding the new model and
+        // editor).
+        //
+        // TODO: add an atomic way to update the state to remove this hack
         await this.sync()
         return this.get(resource)
     }
@@ -49,17 +59,13 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      *
      * @internal
      */
-    public getAll(): TextDocument[] {
+    public getAll(): TextModel[] {
         return Array.from(this.documents.values())
     }
 
-    public openedTextDocuments = new Subject<TextDocument>()
+    public openedTextDocuments = new Subject<TextModel>()
 
-    public $acceptDocumentData(docs: TextDocument[] | null): void {
-        if (!docs) {
-            // We don't ever (yet) communicate to the extension when docs are closed.
-            return
-        }
+    public $acceptDocumentData(docs: readonly TextModel[]): void {
         for (const doc of docs) {
             const isNew = !this.documents.has(doc.uri)
             this.documents.set(doc.uri, doc)

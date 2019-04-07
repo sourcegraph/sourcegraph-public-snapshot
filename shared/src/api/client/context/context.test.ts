@@ -1,6 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorData } from '../services/editorService'
+import { CodeEditorDataWithModel } from '../services/editorService'
 import { applyContextUpdate, Context, getComputedContextProperty } from './context'
 
 describe('applyContextUpdate', () => {
@@ -30,10 +30,11 @@ describe('getComputedContextProperty', () => {
     })
 
     describe('with code editors', () => {
-        const editors: CodeEditorData[] = [
+        const editors: CodeEditorDataWithModel[] = [
             {
                 type: 'CodeEditor',
-                item: {
+                resource: 'file:///inactive',
+                model: {
                     uri: 'file:///inactive',
                     languageId: 'inactive',
                     text: 'inactive',
@@ -51,7 +52,8 @@ describe('getComputedContextProperty', () => {
             },
             {
                 type: 'CodeEditor',
-                item: {
+                resource: 'file:///a/b.c',
+                model: {
                     uri: 'file:///a/b.c',
                     languageId: 'l',
                     text: 't',
@@ -104,7 +106,7 @@ describe('getComputedContextProperty', () => {
             test('returns null when there are no code editors', () =>
                 expect(getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(null))
 
-            function assertSelection(editors: CodeEditorData[], expr: string, expected: Selection): void {
+            function assertSelection(editors: CodeEditorDataWithModel[], expr: string, expected: Selection): void {
                 expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, expr)).toEqual(expected)
                 expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start`)).toEqual(
                     expected.start
@@ -148,7 +150,7 @@ describe('getComputedContextProperty', () => {
                     ]
                 ))
 
-            function assertNoSelection(editors: CodeEditorData[]): void {
+            function assertNoSelection(editors: CodeEditorDataWithModel[]): void {
                 expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selection')).toBe(
                     null
                 )
@@ -181,7 +183,8 @@ describe('getComputedContextProperty', () => {
                 assertNoSelection([
                     {
                         type: 'CodeEditor',
-                        item: {
+                        resource: 'file:///a/b.c',
+                        model: {
                             uri: 'file:///a/b.c',
                             languageId: 'l',
                             text: 't',

@@ -1,19 +1,25 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { BehaviorSubject, Subscribable } from 'rxjs'
-import { TextDocument } from 'sourcegraph'
+import { BehaviorSubject, combineLatest, Subscribable } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
+import { ModelService, TextModel } from './modelService'
 
 /**
  * Describes a code editor view component.
- *
- * @template D The type of text documents referred to by this data. If the document text is managed
- * out-of-band, this can just be an object containing the document URI.
  */
-export interface CodeEditorData<D extends Pick<TextDocument, 'uri'> = TextDocument> {
+export interface CodeEditorData {
     type: 'CodeEditor'
-    item: D
+
+    /** The URI of the model that this editor is displaying. */
+    resource: string
+
     selections: Selection[]
     isActive: boolean
+}
+
+/** Describes a code editor and includes its model content. */
+export interface CodeEditorDataWithModel extends CodeEditorData {
+    model: TextModel
 }
 
 /**
@@ -22,6 +28,9 @@ export interface CodeEditorData<D extends Pick<TextDocument, 'uri'> = TextDocume
 export interface EditorService {
     /** All code editors. */
     readonly editors: Subscribable<readonly CodeEditorData[]>
+
+    /** All code editors, with each editor's model. */
+    readonly editorsWithModel: Subscribable<readonly CodeEditorDataWithModel[]>
 
     /** Transitional API for synchronously getting the list of code editors. */
     readonly editorsValue: readonly CodeEditorData[]
@@ -33,10 +42,21 @@ export interface EditorService {
 /**
  * Creates a {@link EditorService} instance.
  */
-export function createEditorService(): EditorService {
+export function createEditorService(modelService: Pick<ModelService, 'models'>): EditorService {
     const editors = new BehaviorSubject<readonly CodeEditorData[]>([])
     return {
         editors,
+        editorsWithModel: combineLatest(editors, modelService.models).pipe(
+            map(([editors, models]) =>
+                editors.map(editor => {
+                    const model = models.find(m => m.uri === editor.resource)
+                    if (!model) {
+                        throw new Error(`editor model not found: ${editor.resource}`)
+                    }
+                    return { ...editor, model }
+                })
+            )
+        ),
         get editorsValue(): readonly CodeEditorData[] {
             return editors.value
         },
@@ -51,9 +71,7 @@ export function createEditorService(): EditorService {
  * {@link EditorService#editors}. If there is no active editor or it has no position, it returns
  * null.
  */
-export function getActiveCodeEditorPosition<D extends Pick<TextDocument, 'uri'> = TextDocument>(
-    editors: readonly CodeEditorData<D>[]
-): (TextDocumentPositionParams & { textDocument: D }) | null {
+export function getActiveCodeEditorPosition(editors: readonly CodeEditorData[]): TextDocumentPositionParams | null {
     const activeEditor = editors.find(({ isActive }) => isActive)
     if (!activeEditor) {
         return null
@@ -72,7 +90,7 @@ export function getActiveCodeEditorPosition<D extends Pick<TextDocument, 'uri'> 
         return null
     }
     return {
-        textDocument: activeEditor.item,
+        textDocument: { uri: activeEditor.resource },
         position: sel.start,
     }
 }

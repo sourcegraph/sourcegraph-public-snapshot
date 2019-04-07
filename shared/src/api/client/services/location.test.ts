@@ -57,9 +57,10 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     registry.hasProvidersForActiveTextDocument([
                         {
                             isActive: true,
-                            type: 'CodeEditor',
+                            type: 'CodeEditor' as const,
                             selections: [new Selection(1, 2, 3, 4).toPlain()],
-                            item: { uri: 'u', languageId: 'l', text: 't' },
+                            resource: 'u',
+                            model: { uri: 'u', languageId: 'l', text: 't' },
                         },
                     ])
                 ).toBe('a', {
@@ -79,9 +80,10 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     registry.hasProvidersForActiveTextDocument([
                         {
                             isActive: true,
-                            type: 'CodeEditor',
+                            type: 'CodeEditor' as const,
                             selections: [new Selection(1, 2, 3, 4).toPlain()],
-                            item: { uri: 'u', languageId: 'l', text: 't' },
+                            resource: 'u',
+                            model: { uri: 'u', languageId: 'l', text: 't' },
                         },
                     ])
                 ).toBe('a', {

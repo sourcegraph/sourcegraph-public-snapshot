@@ -10,7 +10,7 @@ import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
 
 export interface WindowData {
-    editors: CodeEditorData<Pick<sourcegraph.TextDocument, 'uri'>>[]
+    editors: readonly CodeEditorData[]
 }
 
 interface WindowsProxyData {
@@ -96,7 +96,7 @@ export class ExtWindow implements sourcegraph.Window {
      * Perform a delta update (update/add/delete) of this window's view components.
      */
     public update(data: WindowData): void {
-        const getKey = (c: CodeEditorData<Pick<sourcegraph.TextDocument, 'uri'>>): string => `${c.type}:${c.item.uri}`
+        const getKey = (c: CodeEditorData): string => `${c.type}:${c.resource}`
 
         const seenKeys = new Set<string>()
         for (const c of data.editors) {
