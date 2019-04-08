@@ -40,7 +40,10 @@ func main() {
 	clock := func() time.Time { return time.Now().UTC() }
 
 	// Syncing relies on access to frontend and git-server, so wait until they started up.
-	api.WaitForFrontend(ctx)
+	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
+		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
+	}
+
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
 	db, err := repos.NewDB(repos.NewDSN().String())
