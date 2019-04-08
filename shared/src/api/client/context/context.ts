@@ -1,6 +1,6 @@
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditor } from '../services/editorService'
+import { CodeEditor, DiffEditorData, EditorId } from '../services/editorService'
 
 /**
  * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
@@ -31,12 +31,14 @@ export interface Context<T = never>
         string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
     > {}
 
-export type PartialCodeEditor = Pick<CodeEditor, 'type' | 'resource' | 'selections' | 'isActive'> & {
-    model: Pick<CodeEditor['model'], 'uri' | 'languageId'>
-}
+export type PartialCodeEditor = EditorId &
+    Pick<CodeEditor, 'type' | 'resource' | 'selections' | 'isActive'> & {
+        model: Pick<CodeEditor['model'], 'uri' | 'languageId'>
+    }
 
 export type ContributionScope =
-    | PartialCodeEditor
+    | (EditorId & PartialCodeEditor)
+    | (EditorId & Pick<DiffEditorData, 'type'>)
     | {
           type: 'panelView'
           id: string
@@ -51,7 +53,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    editors: readonly PartialCodeEditor[],
+    editors: readonly (EditorId & (PartialCodeEditor | Pick<DiffEditorData, 'type' | 'isActive'>))[],
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,
@@ -93,29 +95,42 @@ export function getComputedContextProperty(
         }
     }
     if (key.startsWith('component.')) {
-        if (!component || component.type !== 'CodeEditor') {
+        if (!component) {
             return null
         }
         const prop = key.slice('component.'.length)
-        switch (prop) {
-            case 'type':
-                return 'CodeEditor'
-            case 'selections':
-                return component.selections
-            case 'selection':
-                return component.selections[0] || null
-            case 'selection.start':
-                return component.selections[0] ? component.selections[0].start : null
-            case 'selection.end':
-                return component.selections[0] ? component.selections[0].end : null
-            case 'selection.start.line':
-                return component.selections[0] ? component.selections[0].start.line : null
-            case 'selection.start.character':
-                return component.selections[0] ? component.selections[0].start.character : null
-            case 'selection.end.line':
-                return component.selections[0] ? component.selections[0].end.line : null
-            case 'selection.end.character':
-                return component.selections[0] ? component.selections[0].end.character : null
+        if (prop === 'type') {
+            return component.type
+        }
+        switch (component.type) {
+            case 'CodeEditor':
+                switch (prop) {
+                    case 'editorId':
+                        return component.editorId
+                    case 'selections':
+                        return component.selections
+                    case 'selection':
+                        return component.selections[0] || null
+                    case 'selection.start':
+                        return component.selections[0] ? component.selections[0].start : null
+                    case 'selection.end':
+                        return component.selections[0] ? component.selections[0].end : null
+                    case 'selection.start.line':
+                        return component.selections[0] ? component.selections[0].start.line : null
+                    case 'selection.start.character':
+                        return component.selections[0] ? component.selections[0].start.character : null
+                    case 'selection.end.line':
+                        return component.selections[0] ? component.selections[0].end.line : null
+                    case 'selection.end.character':
+                        return component.selections[0] ? component.selections[0].end.character : null
+                }
+                break
+            case 'DiffEditor':
+                switch (prop) {
+                    case 'editorId':
+                        return component.editorId
+                }
+                break
         }
     }
     if (key.startsWith('panel.activeView.')) {

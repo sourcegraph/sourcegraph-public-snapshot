@@ -14,6 +14,7 @@ import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientRoots } from './api/roots'
 import { ClientSearch } from './api/search'
+import { ClientEditor } from './api/viewComponents/editor'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
 import { applyContextUpdate } from './context/context'
@@ -78,6 +79,7 @@ export async function createExtensionHostClientConnection(
             .subscribe()
     )
     subscription.add(
+        // TODO!(sqs): also sync diff editor models
         from(services.editor.editors)
             .pipe(concatMap(editors => proxy.windows.$acceptWindowData({ editors })))
             .subscribe()
@@ -102,7 +104,9 @@ export async function createExtensionHostClientConnection(
 
     const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.editor)
 
-    const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration, services.editor)
+    const clientEditor = new ClientEditor(services.editor)
+
+    const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
     subscription.add(clientCodeEditor)
 
     const clientLanguageFeatures = new ClientLanguageFeatures(
@@ -124,6 +128,7 @@ export async function createExtensionHostClientConnection(
         languageFeatures: clientLanguageFeatures,
         commands: clientCommands,
         windows: clientWindows,
+        editor: clientEditor,
         codeEditor: clientCodeEditor,
         views: clientViews,
     }

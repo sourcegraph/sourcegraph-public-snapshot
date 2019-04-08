@@ -1,5 +1,6 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
+import { NEVER } from 'rxjs'
 import { map } from 'rxjs/operators'
 import {
     FileSpec,
@@ -12,7 +13,8 @@ import {
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import { CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
+import { CodeViewSpec, DiffViewSpec, DiffViewSpecResolver, MountGetter } from '../code_intelligence'
+import { observeDiffViewVisibleRanges as observeDiffViewCollapsed, setDiffViewCollapsed } from './diff_views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
@@ -60,27 +62,6 @@ export function createCodeViewToolbarMount(codeView: HTMLElement): HTMLElement {
 
 const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
-}
-
-const diffCodeView: CodeViewSpecWithOutSelector = {
-    dom: diffDomFunctions,
-    getToolbarMount: createCodeViewToolbarMount,
-    resolveFileInfo: resolveDiffFileInfo,
-    toolbarButtonProps,
-    isDiff: true,
-}
-
-const diffConversationCodeView: CodeViewSpecWithOutSelector = {
-    ...diffCodeView,
-    getToolbarMount: undefined,
-}
-
-const singleFileCodeView: CodeViewSpecWithOutSelector = {
-    dom: singleFileDOMFunctions,
-    getToolbarMount: createCodeViewToolbarMount,
-    resolveFileInfo,
-    toolbarButtonProps,
-    isDiff: false,
 }
 
 /**
@@ -149,61 +130,26 @@ const commentSnippetCodeView: CodeViewSpec = {
 export const fileLineContainerCodeView = {
     selector: '.js-file-line-container',
     dom: singleFileDOMFunctions,
-    getToolbarMount: (fileLineContainer: HTMLElement): HTMLElement => {
-        const codeViewParent = fileLineContainer.closest('.repository-content')
-        if (!codeViewParent) {
-            throw new Error('Repository content element not found')
-        }
-        const className = 'sourcegraph-app-annotator'
-        const existingMount = codeViewParent.querySelector(`.${className}`) as HTMLElement
-        if (existingMount) {
-            return existingMount
-        }
-        const mountEl = document.createElement('div')
-        mountEl.style.display = 'inline-flex'
-        mountEl.style.verticalAlign = 'middle'
-        mountEl.style.alignItems = 'center'
-        mountEl.className = className
-        const rawURLLink = codeViewParent.querySelector('#raw-url')
-        const buttonGroup = rawURLLink && rawURLLink.closest('.BtnGroup')
-        if (!buttonGroup || !buttonGroup.parentNode) {
-            throw new Error('File actions not found')
-        }
-        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
-        return mountEl
-    },
+    getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
     isDiff: false,
 }
 
-const codeViewSpecResolver: CodeViewSpecResolver = {
-    selector: '.file',
-    resolveCodeViewSpec: (elem: HTMLElement): CodeViewSpecWithOutSelector | null => {
-        if (elem.querySelector('article.markdown-body')) {
-            // This code view is rendered markdown, we shouldn't add code intelligence
-            return null
+const diffViewSpecResolver: DiffViewSpecResolver = {
+    // TODO!(sqs): ensure this doesnt match issues with snippets
+    selector: '.file.has-inline-notes, .file[data-file-deleted]',
+    resolveDiffViewSpec: (elem: HTMLElement): DiffViewSpec | null => {
+        const isPRTimelineComment = !!elem.closest('.discussion-item-body')
+        const hasDiffHeader = !isPRTimelineComment
+        return {
+            dom: diffDomFunctions,
+            getToolbarMount: hasDiffHeader ? createCodeViewToolbarMount : undefined,
+            resolveDiffInfo: resolveDiffFileInfo,
+            toolbarButtonProps,
+            collapsedChanges: hasDiffHeader ? observeDiffViewCollapsed(elem) : NEVER,
+            setCollapsed: ranges => setDiffViewCollapsed(elem, ranges),
         }
-
-        // This is a suggested change on a GitHub PR
-        if (elem.closest('.js-suggested-changes-blob')) {
-            return null
-        }
-
-        const files = document.getElementsByClassName('file')
-        const { filePath } = parseURL()
-        const isSingleCodeFile =
-            files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
-
-        if (isSingleCodeFile) {
-            return singleFileCodeView
-        }
-
-        if (elem.closest('.discussion-item-body')) {
-            return diffConversationCodeView
-        }
-
-        return diffCodeView
     },
 }
 
@@ -268,7 +214,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
 export const githubCodeHost = {
     name: 'github',
     codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
-    codeViewSpecResolver,
+    diffViewSpecResolver: [diffViewSpecResolver],
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {

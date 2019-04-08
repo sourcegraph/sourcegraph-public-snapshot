@@ -12,16 +12,27 @@ export interface EditorId {
 }
 
 /**
+ * EditorId exposes the unique ID of an editor.
+ */
+export interface EditorId {
+    /** The unique ID of the editor. */
+    readonly editorId: string
+}
+
+export interface EditorDataCommon {
+    readonly collapsed?: boolean
+}
+
+/**
  * Describes a code editor to be created.
  */
-export interface CodeEditorData {
+export interface CodeEditorData extends EditorDataCommon {
     readonly type: 'CodeEditor'
 
     /** The URI of the model that this editor is displaying. */
     readonly resource: string
 
     readonly selections: Selection[]
-    readonly collapsed?: boolean
     readonly isActive: boolean
 }
 
@@ -36,20 +47,58 @@ export interface CodeEditor extends EditorId, CodeEditorData {
 }
 
 /**
+ * Describes a diff editor to be created.
+ */
+export interface DiffEditorData extends EditorDataCommon {
+    readonly type: 'DiffEditor'
+
+    /** The URI of the left-hand side resource. */
+    readonly originalResource: string
+
+    /** The URI of the right-hand side resource. */
+    readonly modifiedResource: string
+
+    /** The raw unified diff. */
+    readonly rawDiff: string | undefined
+
+    readonly isActive: boolean
+}
+
+/**
+ * Describes a code editor that has been added to the {@link EditorService}.
+ */
+export interface DiffEditor extends EditorId, DiffEditorData {
+    /**
+     * The model that represents the original document (on the left-hand side).
+     */
+    readonly originalModel: TextModel
+
+    /**
+     * The model that represents the modified document (on the right-hand side).
+     */
+    readonly modifiedModel: TextModel
+}
+
+type EditorData = CodeEditorData | DiffEditorData
+
+/** All editor types. */
+export type Editor = CodeEditor | DiffEditor
+
+/**
  * The editor service manages editors and documents.
  */
 export interface EditorService {
-    /** All code editors, with each editor's model. */
-    readonly editors: Subscribable<readonly CodeEditor[]>
+    /** All editors, with each editor's model. */
+    readonly editors: Subscribable<readonly (CodeEditor | DiffEditor)[]>
 
     /**
      * Add an editor.
      *
      * @param editor The description of the editor to add.
-     * @returns The added code editor (which must be passed as the first argument to other
+     * @returns The added editor ID (which must be passed as the first argument to other
      * {@link EditorService} methods to operate on this editor).
      */
-    addEditor(editor: CodeEditorData): EditorId
+    addEditor(editor: EditorData): EditorId
 
     /**
      * Sets the selections for an editor.
@@ -87,24 +136,37 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
     let id = 0
     const nextId = () => `editor#${id++}`
 
-    const findModelForEditor = (models: readonly TextModel[], { resource }: Pick<CodeEditorData, 'resource'>) => {
-        const model = models.find(m => m.uri === resource)
+    const findModelForEditor = (models: readonly TextModel[], uri: string) => {
+        const model = models.find(m => m.uri === uri)
         if (!model) {
-            throw new Error(`editor model not found: ${resource}`)
+            throw new Error(`editor model not found: ${uri}`)
         }
         return model
     }
 
-    type AddedCodeEditor = Pick<CodeEditor, Exclude<keyof CodeEditor, 'model'>>
-    const editors = new BehaviorSubject<readonly AddedCodeEditor[]>([])
+    type AddedEditor =
+        | Pick<CodeEditor, Exclude<keyof CodeEditor, 'model'>>
+        | Pick<DiffEditor, Exclude<keyof DiffEditor, 'originalModel' | 'modifiedModel'>>
+    const editors = new BehaviorSubject<readonly AddedEditor[]>([])
     return {
         editors: combineLatest(editors, modelService.models).pipe(
             map(([editors, models]) =>
-                editors.map(editor => ({ ...editor, model: findModelForEditor(models, editor) }))
+                editors.map(editor => {
+                    switch (editor.type) {
+                        case 'CodeEditor':
+                            return { ...editor, model: findModelForEditor(models, editor.resource) }
+                        case 'DiffEditor':
+                            return {
+                                ...editor,
+                                originalModel: findModelForEditor(models, editor.originalResource),
+                                modifiedModel: findModelForEditor(models, editor.modifiedResource),
+                            }
+                    }
+                })
             )
         ),
         addEditor: data => {
-            const editor: AddedCodeEditor = { ...data, editorId: nextId() }
+            const editor: AddedEditor = { ...data, editorId: nextId() }
             editors.next([...editors.value, editor])
             return editor
         },
@@ -122,8 +184,8 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
         },
         setCollapsed({ editorId }: EditorId, collapsed: boolean): void {
             editors.next([
-                ...editors.value.filter(e => e.resource !== editorId),
-                ...editors.value.filter(e => e.resource === editorId).map(e => ({ ...e, collapsed })),
+                ...editors.value.filter(e => e.editorId !== editorId),
+                ...editors.value.filter(e => e.editorId === editorId).map(e => ({ ...e, collapsed })),
             ])
         },
     }
@@ -134,9 +196,12 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
  * {@link EditorService#editors}. If there is no active editor or it has no position, it returns
  * null.
  */
-export function getActiveCodeEditorPosition(editors: readonly CodeEditorData[]): TextDocumentPositionParams | null {
+export function getActiveCodeEditorPosition(editors: readonly EditorData[]): TextDocumentPositionParams | null {
     const activeEditor = editors.find(({ isActive }) => isActive)
     if (!activeEditor) {
+        return null
+    }
+    if (activeEditor.type !== 'CodeEditor') {
         return null
     }
     const sel = activeEditor.selections[0]
@@ -155,5 +220,18 @@ export function getActiveCodeEditorPosition(editors: readonly CodeEditorData[]):
     return {
         textDocument: { uri: activeEditor.resource },
         position: sel.start,
+    }
+}
+
+/**
+ * Returns an array of all models referenced by the editor. A code editor has 1 model; a diff editor
+ * has 2 models (original/modified, also known as the left-hand and right-hand sides).
+ */
+export function getEditorModels(editor: Editor): TextModel[] {
+    switch (editor.type) {
+        case 'CodeEditor':
+            return [editor.model]
+        case 'DiffEditor':
+            return [editor.originalModel, editor.modifiedModel]
     }
 }

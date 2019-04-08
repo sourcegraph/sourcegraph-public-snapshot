@@ -10,7 +10,7 @@ signale.config({ displayTimestamp: true })
 const triggerReload = process.env.AUTO_RELOAD === 'false' ? noop : autoReloading.initializeServer()
 
 const buildChrome = tasks.buildChrome('dev')
-const buildFirefox = tasks.buildFirefox('dev')
+///////////// const buildFirefox = tasks.buildFirefox('dev')
 
 tasks.copyAssets('dev')
 
@@ -34,8 +34,8 @@ compiler.watch(
         signale.success('Webpack compilation done')
 
         buildChrome()
-        buildFirefox()
-        tasks.copyPhabricator()
+        ///////// buildFirefox()
+        /////////// tasks.copyPhabricator()
         triggerReload()
     }
 )

@@ -1,5 +1,6 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, first, switchMap } from 'rxjs/operators'
+import { CodeEditor } from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
@@ -17,6 +18,7 @@ describe('Selections (integration)', () => {
             const selectionChanges = from(extensionAPI.app.activeWindowChanges).pipe(
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
+                filter((c): c is CodeEditor => Boolean(c && c.type === 'CodeEditor')),
                 filter(isDefined),
                 distinctUntilChanged(),
                 switchMap(editor => editor.selectionsChanges)

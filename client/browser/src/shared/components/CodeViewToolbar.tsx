@@ -123,3 +123,6 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
         )
     }
 }
+
+/* Same as {@link CodeViewToolbar} for now. */
+export const DiffViewToolbar = CodeViewToolbar

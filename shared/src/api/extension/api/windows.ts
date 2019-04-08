@@ -4,17 +4,20 @@ import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
+import { ClientEditorAPI } from '../../client/api/viewComponents/editor'
 import { ClientWindowsAPI } from '../../client/api/windows'
-import { CodeEditorData, EditorId } from '../../client/services/editorService'
+import { CodeEditorData, DiffEditorData, EditorId } from '../../client/services/editorService'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
+import { ExtDiffEditorViewComponent } from './viewComponents/diffEditor'
 
 export interface WindowData {
-    editors: readonly (CodeEditorData & EditorId)[]
+    editors: readonly (EditorId & (CodeEditorData | DiffEditorData))[]
 }
 
 interface WindowsProxyData {
     windows: ClientWindowsAPI
+    editor: ClientEditorAPI
     codeEditor: ClientCodeEditorAPI
 }
 
@@ -24,7 +27,7 @@ interface WindowsProxyData {
  */
 export class ExtWindow implements sourcegraph.Window {
     /** Map of editor key to editor. */
-    private viewComponents = new Map<string, ExtCodeEditor>()
+    private viewComponents = new Map<string, ExtCodeEditor | ExtDiffEditorViewComponent>()
 
     constructor(private proxy: ProxyResult<WindowsProxyData>, private documents: ExtDocuments, data: WindowData) {
         this.update(data)
@@ -101,9 +104,9 @@ export class ExtWindow implements sourcegraph.Window {
             seenEditorIds.add(c.editorId)
             const existing = this.viewComponents.get(c.editorId)
             if (existing) {
-                existing.update(c)
+                existing.update(c as any /* TODO!(sqs) */)
             } else {
-                this.viewComponents.set(c.editorId, new ExtCodeEditor(c, this.proxy.codeEditor, this.documents))
+                this.viewComponents.set(c.editorId, this.createViewComponentFromData(c))
             }
         }
         for (const editorId of this.viewComponents.keys()) {
@@ -115,6 +118,15 @@ export class ExtWindow implements sourcegraph.Window {
         // Update active view component.
         const active = data.editors.find(c => c.isActive)
         this.activeViewComponentChanges.next(active ? this.viewComponents.get(active.editorId) : undefined)
+    }
+
+    private createViewComponentFromData(c: WindowData['editors'][0]): ExtCodeEditor | ExtDiffEditorViewComponent {
+        switch (c.type) {
+            case 'CodeEditor':
+                return new ExtCodeEditor(c, this.proxy.editor, this.proxy.codeEditor, this.documents)
+            case 'DiffEditor':
+                return new ExtDiffEditorViewComponent(c, this.proxy.editor, this.documents)
+        }
     }
 
     public toJSON(): any {
@@ -137,10 +149,7 @@ export class ExtWindows implements ExtWindowsAPI, ProxyValue {
     public activeWindow: ExtWindow | undefined
 
     /** @internal */
-    constructor(
-        private proxy: ProxyResult<{ windows: ClientWindowsAPI; codeEditor: ClientCodeEditorAPI }>,
-        private documents: ExtDocuments
-    ) {}
+    constructor(private proxy: ProxyResult<WindowsProxyData>, private documents: ExtDocuments) {}
 
     public readonly activeWindowChanges = new BehaviorSubject<sourcegraph.Window | undefined>(undefined)
 

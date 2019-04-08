@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash'
+import { flatten, isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
@@ -12,7 +12,7 @@ import { PlatformContext } from '../../../platform/context'
 import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { CodeEditor, EditorService } from './editorService'
+import { Editor, EditorService, getEditorModels } from './editorService'
 import { SettingsService } from './settings'
 
 /**
@@ -169,7 +169,7 @@ function asObservable(input: string | ObservableInput<string>): Observable<strin
 
 function extensionsWithMatchedActivationEvent(
     enabledExtensions: ConfiguredExtension[],
-    editors: readonly CodeEditor[]
+    editors: readonly Editor[]
 ): ConfiguredExtension[] {
     return enabledExtensions.filter(x => {
         try {
@@ -194,7 +194,9 @@ function extensionsWithMatchedActivationEvent(
                 console.warn(`Extension ${x.id} has no activation events, so it will never be activated.`)
                 return false
             }
-            const visibleTextDocumentLanguages = editors.map(({ model: { languageId } }) => languageId)
+            const visibleTextDocumentLanguages = flatten(
+                editors.map(e => getEditorModels(e).map(({ languageId }) => languageId))
+            )
             return x.manifest.activationEvents.some(
                 e => e === '*' || visibleTextDocumentLanguages.some(l => e === `onLanguage:${l}`)
             )

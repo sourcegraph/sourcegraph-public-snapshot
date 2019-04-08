@@ -1,31 +1,31 @@
 import { ProxyResult } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { BehaviorSubject, Subscribable } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import { CodeEditor, CodeEditorData, EditorId } from '../../client/services/editorService'
+import { ClientEditorAPI } from '../../client/api/viewComponents/editor'
+import { CodeEditorData, EditorDataCommon, EditorId } from '../../client/services/editorService'
 import { Range } from '../types/range'
 import { Selection } from '../types/selection'
 import { createDecorationType } from './decorations'
 import { ExtDocuments } from './documents'
+import { ExtEditorCommon } from './viewComponents/editor'
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
-export class ExtCodeEditor implements sourcegraph.CodeEditor {
-    /** The unique ID of this editor. */
-    private editorId: CodeEditor['editorId']
-
+export class ExtCodeEditor extends ExtEditorCommon implements sourcegraph.CodeEditor {
     /** The URI of this editor's document. */
     private resource: string
 
     constructor(
         data: CodeEditorData & EditorId,
+        editorProxy: ProxyResult<ClientEditorAPI>,
         private proxy: ProxyResult<ClientCodeEditorAPI>,
         private documents: ExtDocuments
     ) {
+        super(data.editorId, editorProxy)
         this.resource = data.resource
-        this.editorId = data.editorId
         this.update(data)
     }
 
@@ -56,25 +56,9 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
     }
 
-    private _collapsedChanges = new BehaviorSubject<boolean>(false)
-
-    public get collapsed(): boolean {
-        return this._collapsedChanges.value
-    }
-
-    public set collapsed(value: boolean) {
-        this._collapsedChanges.next(Boolean(value))
-        // tslint:disable-next-line: no-floating-promises
-        this.proxy.$setCollapsed(this.editorId, value)
-    }
-
-    public get collapsedChanges(): Subscribable<boolean> {
-        return this._collapsedChanges
-    }
-
-    public update(data: Pick<CodeEditorData, 'selections' | 'collapsed'>): void {
+    public update(data: Pick<CodeEditorData, 'selections'> & EditorDataCommon): void {
         this.selectionsChanges.next(data.selections.map(s => Selection.fromPlain(s)))
-        this._collapsedChanges.next(Boolean(data.collapsed))
+        super.update(data)
     }
 
     public toJSON(): any {

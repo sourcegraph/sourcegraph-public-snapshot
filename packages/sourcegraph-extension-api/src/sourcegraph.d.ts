@@ -476,7 +476,7 @@ declare module 'sourcegraph' {
      * Each {@link ViewComponent} has a distinct {@link ViewComponent#type} value that indicates what kind of
      * component it is ({@link CodeEditor}, etc.).
      */
-    export type ViewComponent = CodeEditor
+    export type ViewComponent = CodeEditor | DiffEditor
 
     /**
      * A style for a {@link TextDocumentDecoration}.
@@ -564,10 +564,26 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * An interface implemented by editors that can be collapsed (meaning that only the editor title
+     * bar is shown).
+     */
+    export interface CollapsibleEditor {
+        /**
+         * Whether this editor is collapsed (meaning that only the editor title bar is shown). Not
+         * all editors support collapsing. If an editor doesn't support collapsing, setting this
+         * property value is a no-op.
+         */
+        collapsed: boolean
+
+        /** An observable that emits when the collapsed state of the editor changes. */
+        readonly collapsedChanges: Subscribable<boolean>
+    }
+
+    /**
      * A text editor for code files (as opposed to a rich text editor for documents or other kinds of file format
      * editors).
      */
-    export interface CodeEditor {
+    export interface CodeEditor extends CollapsibleEditor {
         /** The type tag for this kind of {@link ViewComponent}. */
         readonly type: 'CodeEditor'
 
@@ -600,16 +616,6 @@ declare module 'sourcegraph' {
         readonly selectionsChanges: Subscribable<Selection[]>
 
         /**
-         * Whether this editor is collapsed (meaning that only the editor title bar is shown). Not
-         * all editors support collapsing. If an editor doesn't support collapsing, setting this
-         * property value is a no-op.
-         */
-        collapsed: boolean
-
-        /** An observable that emits when the collapsed state of the editor changes. */
-        readonly collapsedChanges: Subscribable<boolean>
-
-        /**
          * Add a set of decorations to this editor. If a set of decorations already exists with the given
          * {@link TextDocumentDecorationType}, they will be replaced.
          *
@@ -618,6 +624,40 @@ declare module 'sourcegraph' {
          *
          */
         setDecorations(decorationType: TextDocumentDecorationType, decorations: TextDocumentDecoration[]): void
+    }
+
+    /**
+     * A diff editor for code diffs.
+     */
+    export interface DiffEditor extends CollapsibleEditor {
+        /** The type tag for this kind of {@link ViewComponent}. */
+        readonly type: 'DiffEditor'
+
+        /**
+         * The text document that is the left-hand (original) side of the diff. The document remains
+         * the same for the entire lifetime of this editor.
+         */
+        readonly originalDocument: TextDocument
+
+        /**
+         * The text document that is the right-hand (modified) side of the diff. The document
+         * remains the same for the entire lifetime of this editor.
+         */
+        readonly modifiedDocument: TextDocument
+
+        /**
+         * The raw content of the diff (in unified diff format).
+         *
+         * The value is undefined if it is not available (e.g., it is too large to retrieve).
+         */
+        readonly rawDiff: string | undefined
+
+        /**
+         * An event that is fired when the raw diff in this diff editor changes. This can occur when
+         * the diff is updated by the author or when the user expands/collapses it in the view
+         * (e.g., to show more or less context around hunks).
+         */
+        readonly rawDiffChanges: Subscribable<string | undefined>
     }
 
     /**

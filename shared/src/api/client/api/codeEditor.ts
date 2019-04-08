@@ -3,14 +3,12 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { flatten, values } from 'lodash'
 import { BehaviorSubject, Observable, Subscription } from 'rxjs'
 import { ProvideTextDocumentDecorationSignature } from '../services/decoration'
-import { EditorService } from '../services/editorService'
 import { FeatureProviderRegistry } from '../services/registry'
 import { TextDocumentIdentifier } from '../types/textDocument'
 
 /** @internal */
 export interface ClientCodeEditorAPI extends ProxyValue {
     $setDecorations(resource: string, decorationType: string, decorations: TextDocumentDecoration[]): void
-    $setCollapsed(editorId: string, collapsed: boolean): void
 }
 
 interface PreviousDecorations {
@@ -30,10 +28,7 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
 
     private previousDecorations: PreviousDecorations = {}
 
-    constructor(
-        private registry: FeatureProviderRegistry<undefined, ProvideTextDocumentDecorationSignature>,
-        private editorService: EditorService
-    ) {
+    constructor(private registry: FeatureProviderRegistry<undefined, ProvideTextDocumentDecorationSignature>) {
         this.subscriptions.add(
             this.registry.registerProvider(
                 undefined,
@@ -68,10 +63,6 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
             subject.next(nextDecorations)
         }
         return subject
-    }
-
-    public $setCollapsed(editorId: string, collapsed: boolean): void {
-        this.editorService.setCollapsed({ editorId }, collapsed)
     }
 
     public unsubscribe(): void {

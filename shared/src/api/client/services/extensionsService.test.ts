@@ -2,7 +2,7 @@ import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditor, EditorService } from './editorService'
+import { CodeEditor, Editor, EditorService } from './editorService'
 import { createTestEditorService } from './editorService.test'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
@@ -16,7 +16,7 @@ class TestExtensionsService extends ExtensionsService {
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
-            editors: readonly CodeEditor[]
+            editors: readonly Editor[]
         ) => ConfiguredExtension[],
         sideloadedExtensionURL: Subscribable<string | null>,
         fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
@@ -100,7 +100,9 @@ describe('activeExtensions', () => {
                         },
                         (enabledExtensions, editors) =>
                             enabledExtensions.filter(x =>
-                                editors.some(({ model: { languageId } }) => x.id === languageId)
+                                editors
+                                    .filter((e): e is CodeEditor => e.type === 'CodeEditor')
+                                    .some(({ model: { languageId } }) => x.id === languageId)
                             ),
                         cold('-a--|', { a: '' }),
                         () => of(null)

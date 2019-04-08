@@ -1,6 +1,6 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take, toArray } from 'rxjs/operators'
-import { NotificationType, ViewComponent, Window } from 'sourcegraph'
+import { CodeEditor, NotificationType, ViewComponent, Window } from 'sourcegraph'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
@@ -10,7 +10,7 @@ describe('Windows (integration)', () => {
             const { extensionAPI } = await integrationTestContext()
             await extensionAPI.internal.sync()
             await extensionAPI.internal.sync()
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+            const viewComponent: Pick<CodeEditor, 'type' | 'document'> = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
@@ -56,7 +56,7 @@ describe('Windows (integration)', () => {
             const { extensionAPI } = await integrationTestContext()
             await extensionAPI.internal.sync()
             await extensionAPI.internal.sync()
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+            const viewComponent: Pick<CodeEditor, 'type' | 'document'> = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
@@ -88,7 +88,7 @@ describe('Windows (integration)', () => {
                 )
                 .toPromise()
 
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+            const viewComponent: Pick<CodeEditor, 'type' | 'document'> = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             }
@@ -197,7 +197,12 @@ describe('Windows (integration)', () => {
                         toArray()
                     )
                     .toPromise()
-                assertToJSON(values.map(c => (c ? c.document.uri : null)), [null, 'foo', null, 'bar'])
+                assertToJSON(values.map(c => (c && c.type === 'CodeEditor' ? c.document.uri : null)), [
+                    null,
+                    'foo',
+                    null,
+                    'bar',
+                ])
             })
         })
 

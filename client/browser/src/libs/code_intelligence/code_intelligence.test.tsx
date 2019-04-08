@@ -9,7 +9,9 @@ import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
 import { from, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, map, skip, switchMap, take } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
 import { Services } from '../../../../../shared/src/api/client/services'
+import { CodeEditor } from '../../../../../shared/src/api/client/services/editorService'
 import { Range } from '../../../../../shared/src/api/extension/types/range'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../../shared/src/extensions/controller'
@@ -183,7 +185,11 @@ describe('handleCodeHost()', () => {
             .pipe(
                 skip(2),
                 take(1),
-                map(editors => editors.map(e => ({ resource: e.resource, model: e.model })))
+                map(editors =>
+                    editors
+                        .filter((e): e is CodeEditor => e.type === 'CodeEditor')
+                        .map(e => ({ resource: e.resource, model: e.model }))
+                )
             )
             .toPromise()
         expect(editors).toEqual([
@@ -243,7 +249,7 @@ describe('handleCodeHost()', () => {
             .pipe(
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
-                filter(isDefined),
+                filter((e): e is sourcegraph.CodeEditor => Boolean(e && e.type === 'CodeEditor')),
                 take(1)
             )
             .toPromise()
