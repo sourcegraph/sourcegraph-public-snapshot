@@ -13,7 +13,7 @@ import { queryGraphQL } from '../backend/graphql'
 export const resolveRepo = memoizeObservable(
     (ctx: { repoName: string }): Observable<string> =>
         queryGraphQL({
-            ctx: getContext({ repoKey: ctx.repoName }),
+            ctx: getContext(),
             request: `query ResolveRepo($repoName: String!) {
                 repository(name: $repoName) {
                     url
@@ -21,12 +21,12 @@ export const resolveRepo = memoizeObservable(
             }`,
             variables: { ...ctx },
         }).pipe(
-            map(result => {
-                if (!result.data || !result.data.repository) {
+            map(({ repository }) => {
+                if (!repository) {
                     throw new RepoNotFoundError(ctx.repoName)
                 }
 
-                return result.data.repository.url
+                return repository.url
             }, catchError((err, caught) => caught))
         ),
     makeRepoURI
@@ -39,7 +39,7 @@ export const resolveRepo = memoizeObservable(
 export const resolveRev = memoizeObservable(
     (ctx: { repoName: string; rev?: string }): Observable<string> =>
         queryGraphQL({
-            ctx: getContext({ repoKey: ctx.repoName }),
+            ctx: getContext(),
             request: `query ResolveRev($repoName: String!, $rev: String!) {
                 repository(name: $repoName) {
                     mirrorInfo {
@@ -52,33 +52,17 @@ export const resolveRev = memoizeObservable(
             }`,
             variables: { ...ctx, rev: ctx.rev || '' },
         }).pipe(
-            map(result => {
-                if (!result.data) {
-                    throw new Error('invalid response received from graphql endpoint')
-                }
-                if (!result.data.repository) {
+            map(({ repository }) => {
+                if (!repository) {
                     throw new RepoNotFoundError(ctx.repoName)
                 }
-                if (result.data.repository.mirrorInfo.cloneInProgress) {
+                if (repository.mirrorInfo.cloneInProgress) {
                     throw new CloneInProgressError(ctx.repoName)
                 }
-                if (!result.data.repository.commit) {
+                if (!repository.commit) {
                     throw new RevNotFoundError(ctx.rev)
                 }
-                return result.data.repository.commit.oid
-            }),
-            catchError(error => {
-                if (
-                    error &&
-                    error.data &&
-                    error.data.repository &&
-                    error.data.repository.mirrorInfo &&
-                    error.data.repository.mirrorInfo.cloneInProgress
-                ) {
-                    throw new CloneInProgressError(ctx.repoName)
-                }
-
-                throw error
+                return repository.commit.oid
             })
         ),
     makeRepoURI
@@ -118,7 +102,7 @@ const trimRepoName = <T extends { repoName: string }>({ repoName, ...rest }: T):
 export const fetchBlobContentLines = memoizeObservable(
     (ctx: RepoSpec & ResolvedRevSpec & FileSpec): Observable<string[]> =>
         queryGraphQL({
-            ctx: getContext({ repoKey: ctx.repoName }),
+            ctx: getContext(),
             request: `query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
                 repository(name: $repoName) {
                     commit(rev: $commitID) {
@@ -129,19 +113,12 @@ export const fetchBlobContentLines = memoizeObservable(
                 }
             }`,
             variables: trimRepoName(ctx),
-            retry: false,
         }).pipe(
-            map(({ data }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.file ||
-                    !data.repository.commit.file.content
-                ) {
+            map(({ repository }) => {
+                if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {
                     return []
                 }
-                return data.repository.commit.file.content.split('\n')
+                return repository.commit.file.content.split('\n')
             }),
             catchError(({ errors, ...rest }) => {
                 if (errors && errors.length === 1) {

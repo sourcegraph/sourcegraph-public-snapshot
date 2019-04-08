@@ -11,7 +11,7 @@ import {
     SettingsCascadeOrError,
     SettingsSubject,
 } from '../../../../shared/src/settings/settings'
-import { createAggregateError, isErrorLike } from '../../../../shared/src/util/errors'
+import { isErrorLike } from '../../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import { observeStorageKey, storage } from '../browser/storage'
 import { isInPage } from '../context'
@@ -116,7 +116,7 @@ const configurationCascadeFragment = gql`
  */
 export function fetchViewerSettings(): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
     return queryGraphQL({
-        ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+        ctx: getContext(),
         request: gql`
             query ViewerConfiguration {
                 viewerConfiguration {
@@ -127,26 +127,25 @@ export function fetchViewerSettings(): Observable<Pick<GQL.ISettingsCascade, 'su
         `[graphQLContent],
         url: sourcegraphUrl,
         requestMightContainPrivateInfo: false,
-        retry: false,
     }).pipe(
-        map(({ data, errors }) => {
-            // Suppress deprecation warnings because our use of these deprecated fields is intentional (see
-            // tsdoc comment).
-            //
-            // tslint:disable deprecation
-            if (!data || !data.viewerConfiguration) {
-                throw createAggregateError(errors)
+        // Suppress deprecation warnings because our use of these deprecated fields is intentional (see
+        // tsdoc comment).
+        //
+        // tslint:disable deprecation
+        map(({ viewerConfiguration }) => {
+            if (!viewerConfiguration) {
+                throw new Error('fetchViewerSettings: empty viewerConfiguration')
             }
 
-            for (const subject of data.viewerConfiguration.subjects) {
+            for (const subject of viewerConfiguration.subjects) {
                 // User/org/global settings cannot be edited from the
                 // browser extension (only client settings can).
                 subject.viewerCanAdminister = false
             }
 
             return {
-                subjects: data.viewerConfiguration.subjects,
-                final: data.viewerConfiguration.merged.contents,
+                subjects: viewerConfiguration.subjects,
+                final: viewerConfiguration.merged.contents,
             }
             // tslint:enable deprecation
         })

@@ -4,7 +4,7 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { IFileDiffConnection } from '../../../../../shared/src/graphql/schema'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
-import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { getPlatformName, sourcegraphUrl } from '../util/context'
 import { SourcegraphIconButton } from './Button'
 
 interface Props {
@@ -78,7 +78,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
     }
 
     private getOpenInSourcegraphUrl(props: OpenDiffInSourcegraphProps): string {
-        const baseUrl = repoUrlCache[props.repoName] || sourcegraphUrl
+        const baseUrl = sourcegraphUrl
         const url = `${baseUrl}/${props.repoName}`
         const urlToCommit = `${url}/-/compare/${props.commit.baseRev}...${
             props.commit.headRev

@@ -2,7 +2,8 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
-import { createAggregateError } from './errors'
+import { getContext } from './context'
+import { RepoNotFoundError } from './errors'
 import { queryGraphQL } from './graphql'
 
 export const queryRepositoryComparisonFileDiffs = memoizeObservable(
@@ -13,7 +14,7 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
         first?: number
     }): Observable<GQL.IFileDiffConnection> =>
         queryGraphQL({
-            ctx: { repoKey: '', isRepoSpecific: false },
+            ctx: getContext(),
             request: `
             query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
                 repository(name: $repo) {
@@ -36,15 +37,14 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
         `,
             variables: { repo: args.repo, base: args.base, head: args.head, first: args.first },
         }).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.repository) {
-                    throw createAggregateError(errors)
+            map(({ repository }) => {
+                if (!repository) {
+                    throw new RepoNotFoundError(args.repo)
                 }
-                const repo = data.repository
-                if (!repo.comparison || !repo.comparison.fileDiffs || errors) {
-                    throw createAggregateError(errors)
+                if (!repository.comparison || !repository.comparison.fileDiffs) {
+                    throw new Error('empty fileDiffs')
                 }
-                return repo.comparison.fileDiffs
+                return repository.comparison.fileDiffs
             })
         ),
     ({ repo, base, head, first }) => `${repo}:${base}:${head}:${first}`

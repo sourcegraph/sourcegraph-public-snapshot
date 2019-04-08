@@ -80,7 +80,7 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
         queryGraphQL: (request, variables, requestMightContainPrivateInfo) => {
             if (isInPage) {
                 return requestGraphQL({
-                    ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+                    ctx: getContext(),
                     request,
                     variables,
                     url: window.SOURCEGRAPH_URL,
@@ -93,7 +93,7 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
                 mergeMap(
                     (url: string = defaultStorageItems.sourcegraphURL): Observable<GraphQLResult<any>> =>
                         requestGraphQL({
-                            ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+                            ctx: getContext(),
                             request,
                             variables,
                             url,
