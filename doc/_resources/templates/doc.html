@@ -89,6 +89,7 @@
                     <input type="button" class="content-nav-mobile-state large-hidden medium-hidden" />
                     <span class="content-nav-mobile-button"></span>
                     <span class="breadcrumb-links">
+                            {{if eq (len .Breadcrumbs ) 0}}<a href="#">Home</a>{{end}}
                         {{range .Breadcrumbs}}
                         <a href="{{.URL}}"{{if .IsActive}} class="active"{{end}}>{{.Label}}</a>
                         {{if not .IsActive}}/{{end}}
@@ -604,14 +605,14 @@
         </script>
         {{ end }}
 
-        <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>
         <script>
             window.dataLayer = window.dataLayer || [];
             function gtag() { dataLayer.push(arguments); }
             gtag('js', new Date());
 
             gtag('config', 'UA-40540747-20');
-        </script> -->
+        </script>
     </body>
 
 </html>

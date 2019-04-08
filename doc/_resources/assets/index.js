@@ -1,4 +1,4 @@
-window.sgdocs = (global => {
+window.sgdocs = (() => {
   let VERSION_SELECT_BUTTON,
     SEARCH_FORMS,
     CONTENT_NAV,
@@ -78,7 +78,7 @@ window.sgdocs = (global => {
   function navInit() {
     if (BREADCRUMBS_DATA[1]) {
       document
-        .querySelector(`ul.content-nav-section[data-nav-section="${window.SGDOCS_BREADCRUMBS[1].Label}"]`)
+        .querySelector(`ul.content-nav-section[data-nav-section="${BREADCRUMBS_DATA[1].Label}"]`)
         .classList.toggle('expanded')
         document
         .querySelector(`ul.content-nav-section a[href="${BREADCRUMBS_DATA[BREADCRUMBS_DATA.length - 1].URL}"]`)
@@ -89,4 +89,4 @@ window.sgdocs = (global => {
       el.addEventListener('click', e => e.srcElement.closest('.content-nav-section').classList.toggle('expanded'))
     })
   }
-})(window)
+})()
