@@ -78,11 +78,10 @@ window.sgdocs = (global => {
       document
         .querySelector(`ul.content-nav-section[data-nav-section="${window.SGDOCS_BREADCRUMBS[1].Label}"]`)
         .classList.toggle('expanded')
+        document
+        .querySelector(`ul.content-nav-section a[href="${BREADCRUMBS_DATA[BREADCRUMBS_DATA.length - 1].URL}"]`)
+        .parentNode.classList.add('selected')
     }
-
-    document
-      .querySelector(`ul.content-nav-section a[href="${BREADCRUMBS_DATA[BREADCRUMBS_DATA.length - 1].URL}"]`)
-      .parentNode.classList.add('selected')
 
     document.querySelectorAll('button.content-nav-button').forEach(el => {
       el.addEventListener('click', e => e.srcElement.closest('.content-nav-section').classList.toggle('expanded'))
