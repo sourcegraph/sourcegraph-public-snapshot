@@ -590,7 +590,7 @@ export function handleCodeHost({
                             type: 'CodeEditor' as const,
                             item: {
                                 uri: toURIWithPath(fileInfo),
-                                languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                                languageId: getModeFromPath(fileInfo.filePath),
                                 text: fileInfo.content,
                             },
                             selections,
@@ -611,7 +611,7 @@ export function handleCodeHost({
                                 commitID: fileInfo.baseCommitID,
                                 filePath: fileInfo.baseFilePath,
                             }),
-                            languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                            languageId: getModeFromPath(fileInfo.filePath),
                             text: fileInfo.baseContent,
                         },
                         // There is no notion of a selection on diff views yet, so this is empty.

@@ -71,7 +71,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         type: 'CodeEditor',
                         item: {
                             uri: toURIWithPath(this.props),
-                            languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
+                            languageId: getModeFromPath(this.props.filePath),
                         },
                         selections: [],
                     }}
