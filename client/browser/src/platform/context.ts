@@ -22,10 +22,6 @@ import { createBlobURLForBundle } from './worker'
  * Creates the {@link PlatformContext} for the browser extension.
  */
 export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>): PlatformContext {
-    // TODO: support listening for changes to sourcegraphUrl
-    const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
-    sourcegraphLanguageServerURL.pathname = '.api/xlang'
-
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
 
     const context: PlatformContext = {

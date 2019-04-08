@@ -1,9 +1,11 @@
 import { from, merge, Observable, of, zip } from 'rxjs'
-import { catchError, concatAll, filter, map, mergeMap } from 'rxjs/operators'
+import { catchError, concatAll, filter, map, mergeMap, switchMap } from 'rxjs/operators'
 import { isDefined, isInstanceOf } from '../../../../../shared/src/util/types'
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, isErrorLike } from '../../shared/backend/errors'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
 import { CodeHost, CodeViewSpec, CodeViewSpecResolver, FileInfo, ResolvedCodeView } from './code_intelligence'
+import { ensureRevisionsAreCloned } from './util/file_info'
 
 export interface AddedCodeView extends ResolvedCodeView {
     type: 'added'
@@ -93,31 +95,39 @@ export interface FileInfoWithContents extends FileInfo {
     baseHasFileContents?: boolean
 }
 
-export const fetchFileContents = (info: FileInfo): Observable<FileInfoWithContents> => {
-    const fetchingBaseFile = info.baseCommitID
-        ? fetchBlobContentLines({
-              repoName: info.repoName,
-              filePath: info.baseFilePath || info.filePath,
-              commitID: info.baseCommitID,
-          })
-        : of(null)
+export const fetchFileContents = (info: FileInfo): Observable<FileInfoWithContents> =>
+    ensureRevisionsAreCloned(info).pipe(
+        switchMap(info => {
+            const fetchingBaseFile = info.baseCommitID
+                ? fetchBlobContentLines({
+                      repoName: info.repoName,
+                      filePath: info.baseFilePath || info.filePath,
+                      commitID: info.baseCommitID,
+                  })
+                : of(null)
 
-    const fetchingHeadFile = fetchBlobContentLines({
-        repoName: info.repoName,
-        filePath: info.filePath,
-        commitID: info.commitID,
-    })
-
-    return zip(fetchingBaseFile, fetchingHeadFile).pipe(
-        map(
-            ([baseFileContent, headFileContent]): FileInfoWithContents => ({
-                ...info,
-                baseContent: baseFileContent ? baseFileContent.join('\n') : undefined,
-                content: headFileContent.join('\n'),
-                headHasFileContents: headFileContent.length > 0,
-                baseHasFileContents: baseFileContent ? baseFileContent.length > 0 : undefined,
+            const fetchingHeadFile = fetchBlobContentLines({
+                repoName: info.repoName,
+                filePath: info.filePath,
+                commitID: info.commitID,
             })
-        ),
-        catchError(error => [info])
+            return zip(fetchingBaseFile, fetchingHeadFile).pipe(
+                map(
+                    ([baseFileContent, headFileContent]): FileInfoWithContents => ({
+                        ...info,
+                        baseContent: baseFileContent ? baseFileContent.join('\n') : undefined,
+                        content: headFileContent.join('\n'),
+                        headHasFileContents: headFileContent.length > 0,
+                        baseHasFileContents: baseFileContent ? baseFileContent.length > 0 : undefined,
+                    })
+                ),
+                catchError(error => [info])
+            )
+        }),
+        catchError((err: any) => {
+            if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                return [info]
+            }
+            throw err
+        })
     )
-}

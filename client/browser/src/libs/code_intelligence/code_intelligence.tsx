@@ -275,12 +275,6 @@ export interface FileInfo {
      * Revision for the BASE side of the diff.
      */
     baseRev?: string
-
-    headHasFileContents?: boolean
-    baseHasFileContents?: boolean
-
-    content?: string
-    baseContent?: string
 }
 
 interface CodeIntelligenceProps
@@ -440,13 +434,7 @@ export function handleCodeHost({
         resolveRev(context).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
-            catchError((err: Error) => {
-                if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
-                    return [false]
-                }
-
-                return [true]
-            })
+            catchError(() => [false])
         )
 
     const openOptionsMenu = () => {
