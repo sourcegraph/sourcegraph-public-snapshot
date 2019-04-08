@@ -2,8 +2,9 @@
 
 /** @type {jest.InitialOptions} */
 const config = {
-  // exposes jsdom as a global, for example to change the URL in window.location
-  testEnvironment: 'jest-environment-jsdom-global',
+  // uses latest jsdom and exposes jsdom as a global,
+  // for example to change the URL in window.location
+  testEnvironment: __dirname + '/shared/dev/jest-environment.js',
 
   collectCoverage: true,
   coverageDirectory: '<rootDir>/coverage',

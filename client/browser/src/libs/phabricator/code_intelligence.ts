@@ -99,11 +99,12 @@ const commitCodeView: CodeViewSpecWithOutSelector = {
     toolbarButtonProps,
     isDiff: true,
 }
-const diffCodeView: CodeViewSpecWithOutSelector = {
+
+export const diffCodeView = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveDiffFileInfo,
     adjustPosition,
-    getToolbarMount: codeView => {
+    getToolbarMount: (codeView: HTMLElement): HTMLElement => {
         const className = 'sourcegraph-app-annotator'
         const existingMount = codeView.querySelector<HTMLElement>('.' + className)
         if (existingMount) {
@@ -123,21 +124,21 @@ const diffCodeView: CodeViewSpecWithOutSelector = {
     isDiff: true,
 }
 
-const resolveCodeViewSpec: CodeViewSpecResolver['resolveCodeViewSpec'] = (codeView: HTMLElement) => {
-    if (window.location.pathname.match(/^\/r/)) {
-        return commitCodeView
-    }
-
-    return diffCodeView
-}
-
 const codeViewSpecResolver: CodeViewSpecResolver = {
     selector: '.differential-changeset',
-    resolveCodeViewSpec,
+    resolveCodeViewSpec: (codeView: HTMLElement): CodeViewSpecWithOutSelector => {
+        if (window.location.pathname.match(/^\/r/)) {
+            return commitCodeView
+        }
+        return diffCodeView
+    },
 }
 
 const phabCodeViews: CodeViewSpec[] = [
     {
+        // TODO this code view does not include the toolbar,
+        // which makes it not possible to test getToolbarMount()
+        // Fix after https://github.com/sourcegraph/sourcegraph/issues/3271
         selector: '.diffusion-source',
         dom: diffusionDOMFns,
         resolveFileInfo: resolveDiffusionFileInfo,

@@ -83,7 +83,7 @@ export interface CodeViewSpec {
      * `CodeViewToolbar`. This function is responsible for ensuring duplicate
      * mounts aren't created.
      */
-    getToolbarMount?: (codeView: HTMLElement, part?: DiffPart) => HTMLElement
+    getToolbarMount?: (codeView: HTMLElement) => HTMLElement
     /**
      * Resolves the file info for a given code view. It returns an observable
      * because some code hosts need to resolve this asynchronously. The

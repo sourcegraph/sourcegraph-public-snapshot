@@ -21,7 +21,7 @@ const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left })
     }
 }
 
-const createToolbarMount = (codeView: HTMLElement) => {
+export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     const existingMount: HTMLElement | null = codeView.querySelector('.sg-toolbar-mount-gitlab')
     if (existingMount) {
         return existingMount
@@ -45,7 +45,7 @@ const createToolbarMount = (codeView: HTMLElement) => {
 const singleFileCodeView: CodeViewSpecWithOutSelector = {
     dom: singleFileDOMFunctions,
     isDiff: false,
-    getToolbarMount: createToolbarMount,
+    getToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
 }
@@ -53,7 +53,7 @@ const singleFileCodeView: CodeViewSpecWithOutSelector = {
 const mergeRequestCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDOMFunctions,
     isDiff: true,
-    getToolbarMount: createToolbarMount,
+    getToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
 }
@@ -61,7 +61,7 @@ const mergeRequestCodeView: CodeViewSpecWithOutSelector = {
 const commitCodeView: CodeViewSpecWithOutSelector = {
     dom: diffDOMFunctions,
     isDiff: true,
-    getToolbarMount: createToolbarMount,
+    getToolbarMount,
     resolveFileInfo: resolveCommitFileInfo,
     toolbarButtonProps,
 }

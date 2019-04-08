@@ -13,5 +13,5 @@ export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTM
         headerElem.insertAdjacentElement('afterbegin', mount)
         return mount
     }
-    return document.querySelector<HTMLElement>('.' + commandListClass) || createCommandList()
+    return headerElem.querySelector<HTMLElement>('.' + commandListClass) || createCommandList()
 }

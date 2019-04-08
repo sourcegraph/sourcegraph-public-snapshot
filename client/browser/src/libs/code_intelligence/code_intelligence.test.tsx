@@ -6,7 +6,6 @@ jest.mock('react-dom', () => ({
 }))
 
 import { uniqueId } from 'lodash'
-import MutationObserver from 'mutation-observer'
 import renderer from 'react-test-renderer'
 import { from, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, map, skip, switchMap, take } from 'rxjs/operators'
@@ -46,22 +45,6 @@ const createMockPlatformContext = (
 })
 
 describe('handleCodeHost()', () => {
-    beforeAll(() => {
-        // jsdom doesn't support MutationObserver or IntersectionObserver, so we need to mock them
-        ;(window as any).MutationObserver = MutationObserver
-        ;(window as any).IntersectionObserver = class {
-            constructor(
-                private callback: (entries: Pick<IntersectionObserverEntry, 'target' | 'isIntersecting'>[]) => void
-            ) {}
-            public observe = (el: Element) => setTimeout(() => this.callback([{ isIntersecting: true, target: el }]), 0)
-        }
-    })
-
-    afterAll(() => {
-        delete (window as any).MutationObserver
-        delete (window as any).IntersectionObserver
-    })
-
     let subscriptions = new Subscription()
 
     afterEach(() => {
