@@ -6,12 +6,6 @@ export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
 export let sourcegraphUrl =
     window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || DEFAULT_SOURCEGRAPH_URL
 
-interface UrlCache {
-    [key: string]: string
-}
-
-export const repoUrlCache: UrlCache = {}
-
 if (window.SG_ENV === 'EXTENSION' && globalThis.browser) {
     // tslint:disable-next-line: no-floating-promises TODO just get rid of the global sourcegraphUrl
     storage.sync.get().then(items => {

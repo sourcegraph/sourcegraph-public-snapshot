@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { OpenInSourcegraphProps } from '../repo'
-import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { getPlatformName, sourcegraphUrl } from '../util/context'
 import { SourcegraphIconButton } from './Button'
 
 interface Props {
@@ -25,7 +25,7 @@ export class OpenOnSourcegraph extends React.Component<Props, {}> {
     }
 
     private getOpenInSourcegraphUrl(props: OpenInSourcegraphProps): string {
-        const baseUrl = repoUrlCache[props.repoName] || sourcegraphUrl
+        const baseUrl = sourcegraphUrl
         // Build URL for Web
         let url = `${baseUrl}/${props.repoName}`
         if (props.commit) {

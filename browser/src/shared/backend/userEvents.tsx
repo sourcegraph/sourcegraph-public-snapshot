@@ -1,4 +1,4 @@
-import { DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 import { getContext } from './context'
 import { mutateGraphQL } from './graphql'
 
@@ -8,23 +8,20 @@ import { mutateGraphQL } from './graphql'
  *
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  */
-export const logUserEvent = (event: string, uid: string): void => {
-    const ctx = getContext({ isRepoSpecific: true })
-    const url = repoUrlCache[ctx.repoKey] || sourcegraphUrl
+export const logUserEvent = (event: string, uid: string, url: string): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
-    if (!url || url === DEFAULT_SOURCEGRAPH_URL) {
+    if (url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
     mutateGraphQL({
-        ctx,
+        ctx: getContext(),
         request: `mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
             logUserEvent(event: $event, userCookieID: $userCookieID) {
                 alwaysNil
             }
         }`,
         variables: { event, userCookieID: uid },
-        retry: false,
-        // tslint:disable-next-line: rxjs-no-ignored-subscription
+        url,
     }).subscribe({
         error: error => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail

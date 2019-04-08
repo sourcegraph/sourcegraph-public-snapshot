@@ -6,7 +6,7 @@ import { isExtension } from '../../context'
 import { getContext } from '../../shared/backend/context'
 import { mutateGraphQL } from '../../shared/backend/graphql'
 import { resolveRepo } from '../../shared/repo/backend'
-import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../../shared/util/context'
+import { sourcegraphUrl } from '../../shared/util/context'
 import { normalizeRepoName } from './util'
 
 interface PhabEntity {
@@ -258,7 +258,7 @@ interface CreatePhabricatorRepoOptions {
 const createPhabricatorRepo = memoizeObservable(
     (options: CreatePhabricatorRepoOptions): Observable<void> =>
         mutateGraphQL({
-            ctx: getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
+            ctx: getContext(),
             request: `mutation addPhabricatorRepo(
             $callsign: String!,
             $repoName: String!
@@ -267,14 +267,7 @@ const createPhabricatorRepo = memoizeObservable(
             addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) { alwaysNil }
         }`,
             variables: options,
-            retry: false,
-        }).pipe(
-            map(({ data, errors }) => {
-                if (!data || (errors && errors.length > 0)) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-                }
-            })
-        ),
+        }).pipe(map(() => undefined)),
     ({ callsign }) => callsign
 )
 
@@ -474,7 +467,7 @@ interface ResolveStagingOptions {
 const resolveStagingRev = memoizeObservable(
     (options: ResolveStagingOptions): Observable<string | null> =>
         mutateGraphQL({
-            ctx: getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
+            ctx: getContext(),
             request: `mutation ResolveStagingRev(
                 $repoName: String!,
                 $diffID: ID!,
@@ -500,12 +493,11 @@ const resolveStagingRev = memoizeObservable(
             }`,
             variables: options,
         }).pipe(
-            map(({ data, errors }) => {
-                if (!(data && data.resolvePhabricatorDiff) || (errors && errors.length > 0)) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            map(result => {
+                if (!result.resolvePhabricatorDiff) {
+                    throw new Error('Empty resolvePhabricatorDiff')
                 }
-
-                return data.resolvePhabricatorDiff.oid
+                return result.resolvePhabricatorDiff.oid
             })
         ),
     ({ diffID }: ResolveStagingOptions) => diffID.toString()

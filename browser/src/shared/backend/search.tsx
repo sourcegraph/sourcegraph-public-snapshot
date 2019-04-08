@@ -146,7 +146,7 @@ const symbolsFragment = `
 
 const fetchSuggestions = (query: string, first: number) =>
     queryGraphQL({
-        ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+        ctx: getContext(),
         request: `
             query SearchSuggestions($query: String!, $first: Int!) {
                 search(query: $query) {
@@ -179,13 +179,12 @@ const fetchSuggestions = (query: string, first: number) =>
             // The browser extension API only takes 5 suggestions
             first,
         },
-        retry: false,
     }).pipe(
-        mergeMap(({ data, errors }) => {
-            if (!data || !data.search || !data.search.suggestions) {
-                throw createAggregateError(errors)
+        mergeMap(({ search }) => {
+            if (!search || !search.suggestions) {
+                throw new Error('No search suggestions')
             }
-            return data.search.suggestions
+            return search.suggestions
         })
     )
 
@@ -226,7 +225,7 @@ export const createSuggestionFetcher = (first = 5) => {
 
 export const fetchSymbols = (query: string): Observable<GQL.ISymbol[]> =>
     queryGraphQL({
-        ctx: getContext({ isRepoSpecific: true }),
+        ctx: getContext(),
         request: `
             query SearchResults($query: String!) {
                 search(query: $query) {
@@ -246,16 +245,16 @@ export const fetchSymbols = (query: string): Observable<GQL.ISymbol[]> =>
         variables: {
             query,
         },
-        retry: false,
     }).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.results || !data.search.results.results) {
-                throw createAggregateError(errors)
+        map(({ search }) => {
+            if (!search) {
+                throw new Error('fetchSymbols: empty search')
+            }
+            if (!search.results) {
+                throw new Error('fetchSymbols: empty search.results')
             }
 
-            const symbolsResults = flatten(
-                (data.search.results.results as GQL.IFileMatch[]).map(match => match.symbols)
-            )
+            const symbolsResults = flatten((search.results.results as GQL.IFileMatch[]).map(match => match.symbols))
 
             return symbolsResults
         }),
