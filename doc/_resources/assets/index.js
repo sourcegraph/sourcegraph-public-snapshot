@@ -1,114 +1,98 @@
-//Index.js
-// Docs site JS code
+window.sgdocs = (global => {
+  let VERSION_SELECT_BUTTON,
+    SEARCH_FORMS,
+    CONTENT_NAV,
+    BODY,
+    BREADCRUMBS,
+    BREADCRUMBS_DATA = [],
+    MOBILE_NAV_BUTTON
 
+  return {
+    init: () => {
+      SEARCH_FORMS = document.querySelectorAll('.search-form')
+      VERSION_SELECTOR = document.querySelector('#version-selector')
+      VERSION_SELECT_BUTTON = VERSION_SELECTOR.querySelector('#version-selector button')
+      VERSION_OPTIONS = VERSION_SELECTOR.querySelector('#version-selector details-menu')
+      CONTENT_NAV = document.querySelector('#content-nav')
+      BODY = document.querySelector('body')
+      BREADCRUMBS = document.querySelector('#breadcrumbs')
+      MOBILE_NAV_BUTTON = BREADCRUMBS.querySelector('input[type="button"]')
+      BREADCRUMBS_DATA = global.SGDOCS_BREADCRUMBS ? global.SGDOCS_BREADCRUMBS : []
 
-/**
- * Toggle search dropdown on button click
- * Accepts the ID for the dropdown to toggle
- * @param {string} dropdownName
- */
-const toggleDropdown = dropdownName => {
-  const dropdown = document.getElementById(dropdownName)
-  dropdown.classList.toggle('show')
-}
+      searchInit()
+      versionSelectorInit()
+      breadcrumbsInit()
+      mobileNavInit()
+      navInit()
+    },
+  }
 
-// Listen for click outside search form to close dropdowns
-document.addEventListener('click', e => {
-  // Consts for dropdown areas (dropdown and button)
-  const versionDropdownArea = document.getElementById('version-form')
+  function searchInit() {
+    SEARCH_FORMS.forEach(form => {
+      form.addEventListener('submit', e => {
+        const search = e.srcElement.querySelector('input[name="search"]').value
+        e.preventDefault()
+        window.location.href =
+          'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+' + encodeURIComponent(search)
+      })
+    })
+  }
 
-  // Const for navbar
-  const navArea = document.getElementById('globalNav')
+  function versionSelectorInit() {
+    function outsideVersionSelectorListener(event) {
+      if (!event.target.closest('#version-selector')) {
+        VERSION_OPTIONS.classList.toggle('show')
+        hideMenu
+      }
+    }
 
-  // Consts for the actual dropdown element
-  const versionDropdown = document.getElementById('versionDropdown')
+    function escaped(e) {
+      if (e.which === 27) {
+        e.preventDefault()
+        hideMenu()
+      }
+    }
 
-  // Const for navbar checkbox
-  const navState = document.getElementById('nav-state')
+    function hideMenu() {
+      VERSION_OPTIONS.classList.toggle('show')
+      document.removeEventListener('click', outsideVersionSelectorListener)
+      document.removeEventListener('keydown', escaped)
+    }
 
-  let targetElement = e.target
+    VERSION_SELECT_BUTTON.addEventListener('click', e => {
+      VERSION_OPTIONS.classList.toggle('show')
+      document.addEventListener('click', outsideVersionSelectorListener)
+      document.addEventListener('keydown', escaped)
+    })
+  }
 
-  do {
-    if (targetElement == versionDropdownArea) {
-      // If clicked area is in version dropdown remove all other dropdowns
-      searchDropdown.classList.remove('show')
-      return
-    } else if (targetElement == navArea) {
-      // Because this is ran after the other two check it is okay to close all dropdowns
-      // even through they are contained in nav.
-      versionDropdown.classList.remove('show')
+  function breadcrumbsInit() {
+    if (BREADCRUMBS_DATA.length === 0) {
       return
     }
-    targetElement = targetElement.parentNode
-  } while (targetElement)
-
-  // If clicked area is outside all dropdowns remove all other dropdowns
-  versionDropdown.classList.remove('show')
-
-  // Close dropdown on mobile
-  navState.checked = false
-})
-
-// Open and close nav section
-const toggleNavSection = navSection => {
-  const section = document.getElementById(navSection)
-  section.classList.toggle('expanded')
-}
-
-// Only open nav section
-const openNavSection = navSection => {
-  const section = document.getElementById(navSection)
-  if (section.classList.contains('expanded')) {
-    // Section is already expanded
-    return
-  } else {
-    section.classList.add('expanded')
-    return
-  }
-}
-
-// Open nav section based off current page
-const breadcrumbNavToggle = () => {
-  // Check if breadcrumb is defined
-  if (breadcrumbs.length === 0) {
-    // If breadcrumb isn't defined (docs home) do nothing
-    return
   }
 
-  var currentCatagory = breadcrumbs[1].Label
-
-  // Open nav pannel based off current catagory
-  switch (currentCatagory) {
-    case 'user':
-      openNavSection('contentNavUser')
-      break
-    case 'admin':
-      openNavSection('contentNavAdmin')
-      break
-    case 'extensions':
-      openNavSection('contentNavExtension')
-      break
-    case 'dev':
-      openNavSection('contentNavDev')
-      break
-    case 'api':
-      openNavSection('contentNavAPI')
-      break
-    case 'integration':
-      openNavSection('contentNavIntegration')
-      break
-    default:
-      openNavSection('contentNavUser')
-      break
+  function mobileNavInit() {
+    MOBILE_NAV_BUTTON.addEventListener('click', e => {
+      CONTENT_NAV.classList.toggle('mobile-show')
+      BODY.classList.toggle('fix-body')
+      BREADCRUMBS.classList.toggle('fixed')
+    })
   }
-}
 
-// Toggle content nav on mobile
-const toggleContentNav = () => {
-  const contentNav = document.getElementById('contentNav')
-  const body = document.getElementById('body')
-  const breadcrumbs = document.getElementById('breadcrumbs')
-  contentNav.classList.toggle('mobile-show')
-  body.classList.toggle('fix-body')
-  breadcrumbs.classList.toggle('fixed')
-}
+  function navInit() {
+    if (BREADCRUMBS_DATA[1]) {
+      document
+        .querySelector(`ul.content-nav-section[data-nav-section="${window.SGDOCS_BREADCRUMBS[1].Label}"]`)
+        .classList.toggle('expanded')
+    }
+
+    document
+      .querySelector(`ul.content-nav-section a[href="${BREADCRUMBS_DATA[BREADCRUMBS_DATA.length - 1].URL}"]`)
+      .parentNode.classList.add('selected')
+
+    document.querySelectorAll('button.content-nav-button').forEach(el => {
+      el.addEventListener('click', e => e.srcElement.closest('.content-nav-section').classList.toggle('expanded'))
+    })
+  }
+})(window)

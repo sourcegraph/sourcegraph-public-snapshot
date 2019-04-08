@@ -193,14 +193,14 @@ body {
     left: 0;
     right: 0;
     background-color: rgba(255, 255, 255, 0.85);
-    -webkit-backdrop-filter: saturate(240%) blur(14px);
+    backdrop-filter: saturate(240%) blur(14px);
     backdrop-filter: saturate(240%) blur(14px);
 }
 @media screen and (max-width: 768px) {
-	.global-navbar {
-		position: absolute;
-		top: 0;
-	}
+    .global-navbar {
+        position: absolute;
+        top: 0;
+    }
 }
 .nav-content {
     height: 100%;
@@ -366,8 +366,8 @@ a:active .current-branch {
         left: 0.5rem;
         padding: 1rem 1.5rem 1rem;
         border-radius: 6px;
-		width: auto;
-		margin: 0;
+        width: auto;
+        margin: 0;
     }
     /* devices with notch support */
     @supports (left: max(0.5rem)) {
@@ -441,7 +441,7 @@ a:active .current-branch {
 /* Content (Left Hand) Nav */
 .content-nav {
     position: sticky;
-    position: -webkit-sticky;
+    position: sticky;
     overflow-y: scroll;
     overflow-x: hidden;
     width: 100%;
@@ -451,7 +451,7 @@ a:active .current-branch {
     max-height: calc(100vh - 70px);
     top: 70px;
     padding-top: 4px;
-	-webkit-overflow-scrolling: touch;
+    /* overflow-scrolling: touch; */
 }
 
 .content-nav-section {
@@ -505,16 +505,22 @@ a.content-nav-section-header {
 .content-nav-section-group > li {
     margin-top: 0.25rem;
     margin-bottom: 0.25rem;
-	padding-top: .25rem;
-	padding-bottom: .25rem;
-	border-radius: 2px;
-	transition: all 250ms ease;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    border-radius: 2px;
+    transition: all 250ms ease;
 }
 .content-nav-section-group li:hover {
-	background-color: rgba(27, 31, 35, 0.05);
+    background-color: rgba(27, 31, 35, 0.05);
 }
 li.content-nav-no-hover:hover {
-	background-color: inherit;
+    background-color: inherit;
+}
+.content-nav-section-group li.selected {
+    background-color: var(--primary);
+}
+.content-nav-section-group li.selected a {
+    color: white;
 }
 .content-nav-section-group > li:first-of-type {
     margin-top: 0.25rem;
@@ -525,18 +531,18 @@ li.content-nav-no-hover:hover {
     font-weight: 500;
 }
 .content-nav-section-group li a {
-	display: block;
-	width: 100%;
+    display: block;
+    width: 100%;
 }
 .content-nav-section-subsection {
-	padding-top: 0;
+    padding-top: 0;
     border-left: 1px solid #0d97ff;
     margin-bottom: 1rem;
-	background-color: none;
+    background-color: none;
 }
 .content-nav-section-subsection li {
-	padding-top: .25rem;
-	padding-bottom: .25rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
 }
 .content-nav-section-subsection a {
     font-size: 14px;
@@ -599,7 +605,7 @@ li.content-nav-no-hover:hover {
 
 .page-nav {
     position: sticky;
-    position: -webkit-sticky;
+    position: sticky;
     top: 49px;
     padding-left: 14px;
     padding-right: 8px;
@@ -657,13 +663,13 @@ li.content-nav-no-hover:hover {
     position: relative;
 }
 @media screen and (max-width: 1020px) {
-	.docs-content {
-		/*
+    .docs-content {
+        /*
 			Set min height of content to viewport height on mobile
 			This prevents small pages from having footer above bottom of page.
 		 */
-	    min-height: 100vh;
-	}
+        min-height: 100vh;
+    }
 }
 .docs-content-section {
     padding: 0 1rem;
@@ -687,27 +693,27 @@ li.content-nav-no-hover:hover {
 }
 
 @media screen and (max-width: 768px) {
-	.page-nav-wrapper {
-		border: none;
-	}
+    .page-nav-wrapper {
+        border: none;
+    }
     /* Give space at bottom of div for breadcrumbs */
     .docs-content-section .markdown-body {
         padding-bottom: 1rem;
-		padding-top: 9rem;
+        padding-top: 9rem;
     }
-	.mobile-search {
-		margin: 1rem 0 0;
-	}
+    .mobile-search {
+        margin: 1rem 0 0;
+    }
     .breadcrumbs {
         z-index: 9999;
         margin-top: 0;
         vertical-align: middle;
-        position: -webkit-sticky;
+        position: sticky;
         top: 12px;
         margin-top: 70px;
         margin-bottom: 16px;
         background-color: rgba(255, 255, 255, 0.85);
-        -webkit-backdrop-filter: saturate(240%) blur(12px);
+        backdrop-filter: saturate(240%) blur(12px);
         backdrop-filter: saturate(240%) blur(12px);
         padding: 1rem 1rem;
         border-radius: 6px;
@@ -733,10 +739,10 @@ li.content-nav-no-hover:hover {
         background-size: 100%;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' style='width:24px;height:24px' viewBox='0 0 24 24'%3E%3Cpath d='M0,9.61 L1.31775701,11 L6,6 L1.31775701,1 L0,2.39 L3.3271028,6 L0,9.61 L0,9.61 Z M18,0 L5,0 L5,2 L18,2 L18,0 L18,0 Z M18,7 L18,5 L8,5 L8,7 L18,7 L18,7 Z M18,12 L18,10 L5,10 L5,12 L18,12 Z' id='Shape'%3E%3C/path%3E%3C/svg%3E");
     }
-	.content-nav {
-		top: 20px;
-		height: calc(100% - 12px);
-	}
+    .content-nav {
+        top: 20px;
+        height: calc(100% - 12px);
+    }
     .content-nav-mobile-state {
         opacity: 0;
         display: pointer;
@@ -751,31 +757,31 @@ li.content-nav-no-hover:hover {
     .page-nav-wrapper {
         display: none;
     }
-	.content-nav {
-		display: none;
-	}
-	.content-nav.mobile-show {
-		display: block;
-		position: -webkit-sticky;
-		background-color: #ffffff;
-		top: 78px;
-		border-radius: 6px;
-		border: 1px solid #eaeaea;
-		box-shadow: 0 0 12px 4px rgba(0, 0, 0, 0.1);
-		height: calc(100vh - 140px);
-	}
-	.content-nav.mobile-show > ul:last-of-type {
-		margin-bottom: 5rem;
-	}
+    .content-nav {
+        display: none;
+    }
+    .content-nav.mobile-show {
+        display: block;
+        position: sticky;
+        background-color: #ffffff;
+        top: 78px;
+        border-radius: 6px;
+        border: 1px solid #eaeaea;
+        box-shadow: 0 0 12px 4px rgba(0, 0, 0, 0.1);
+        height: calc(100vh - 140px);
+    }
+    .content-nav.mobile-show > ul:last-of-type {
+        margin-bottom: 5rem;
+    }
     .page-nav-wrapper {
         z-index: 99;
         display: block;
         height: 100%;
         width: auto;
-		position: absolute;
-		/* top: 132px; */
-		left: 1rem;
-		right: 1rem;
+        position: absolute;
+        /* top: 132px; */
+        left: 1rem;
+        right: 1rem;
     }
     .page-nav-wrapper.mobile-show .content-nav {
         padding-left: 20px;
@@ -783,7 +789,7 @@ li.content-nav-no-hover:hover {
     }
     body.fix-body {
         overflow: hidden;
-		position: relative;
+        position: relative;
     }
     .content-nav-section:nth-of-type(2) {
         border-top: 1px solid #eaeaea !important;
@@ -895,7 +901,7 @@ li.content-nav-no-hover:hover {
         top: calc(1rem - 8px);
         right: 1rem;
         transition: all 0.3s ease-in-out;
-        -webkit-transform: rotate(-45deg);
+        transform: rotate(-45deg);
         transform: rotate(-45deg);
     }
 
@@ -964,7 +970,7 @@ li.content-nav-no-hover:hover {
     .footer__block .footer__extend.company input:checked ~ .close--icon,
     .footer__block .footer__extend.features input:checked ~ .close--icon,
     .footer__block .footer__extend.resources input:checked ~ .close--icon {
-        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
         transform: rotate(0deg);
     }
 }
