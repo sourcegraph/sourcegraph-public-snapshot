@@ -1,7 +1,7 @@
 /* Root Layout */
 body {
     /* Flexbox is not used for docs site */
-    /* Ignore root flex layour from Sourcegraph theme */
+    /* Ignore root flex layout from Sourcegraph theme */
     display: block !important;
     flex: none !important;
     margin: 0;
@@ -482,7 +482,7 @@ a:active .current-branch {
     border-top: none;
 }
 .content-nav > ul:nth-of-type(2) {
-    border-top: none;
+    /* border-top: none; */
 }
 .content-nav > ul ul {
     padding-left: 0;

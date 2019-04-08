@@ -2,22 +2,24 @@ window.sgdocs = (global => {
   let VERSION_SELECT_BUTTON,
     SEARCH_FORMS,
     CONTENT_NAV,
-    BODY,
     BREADCRUMBS,
     BREADCRUMBS_DATA = [],
     MOBILE_NAV_BUTTON
 
   return {
-    init: () => {
+    init: (breadcrumbs) => {
+      BREADCRUMBS_DATA = breadcrumbs ? breadcrumbs : [];
+      BREADCRUMBS = document.querySelector('#breadcrumbs')
+
       SEARCH_FORMS = document.querySelectorAll('.search-form')
+
       VERSION_SELECTOR = document.querySelector('#version-selector')
       VERSION_SELECT_BUTTON = VERSION_SELECTOR.querySelector('#version-selector button')
       VERSION_OPTIONS = VERSION_SELECTOR.querySelector('#version-selector details-menu')
+
       CONTENT_NAV = document.querySelector('#content-nav')
-      BODY = document.querySelector('body')
-      BREADCRUMBS = document.querySelector('#breadcrumbs')
+
       MOBILE_NAV_BUTTON = BREADCRUMBS.querySelector('input[type="button"]')
-      BREADCRUMBS_DATA = global.SGDOCS_BREADCRUMBS ? global.SGDOCS_BREADCRUMBS : []
 
       searchInit()
       versionSelectorInit()
@@ -68,7 +70,7 @@ window.sgdocs = (global => {
   function mobileNavInit() {
     MOBILE_NAV_BUTTON.addEventListener('click', e => {
       CONTENT_NAV.classList.toggle('mobile-show')
-      BODY.classList.toggle('fix-body')
+      document.body.classList.toggle('fix-document.body')
       BREADCRUMBS.classList.toggle('fixed')
     })
   }

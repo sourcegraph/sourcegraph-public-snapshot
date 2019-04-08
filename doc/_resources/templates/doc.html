@@ -13,13 +13,13 @@
         <script src="{{asset "index.js"}}"></script>
     </head>
 
-    <body id="body" {{with .Content}}data-path="{{.Path}}" {{end}} class="theme theme-light">
-        <div id="globalNav" class="global-navbar">
+    <body{{with .Content}}{{if eq (len .Breadcrumbs ) 0}} id="home"{{end}}{{if gt (len .Breadcrumbs ) 1}} data-path="{{.Path}}"{{end}}{{end}} class="theme theme-light">
+        <div class="global-navbar">
             <input type="checkbox" id="nav-state" class="nav-state" />
             <div class="nav-content">
                 <div class="nav-container flex-container">
                     <div class="nav-header">
-                        <a href="/" class="nav-logo" id="logo">
+                        <a href="/" class="nav-logo">
                             <img class="nav-logo-image small-hidden" src="/assets/sourcegraph-logo-docs.svg"
                                 alt="Sourcegraph Documentation">
                             <img class="nav-logo-image-small large-hidden medium-hidden"
@@ -80,7 +80,7 @@
                 </div>
             </div>
         </div>
-        <div id="page" class="docs-content">
+        <div class="docs-content">
             <div class="nav-sticky-wrapper page-nav-wrapper column large-2 medium-3 mobile-show">
                 <!-- Mobile breadcrumb nav -->
                 {{with .Content}}
@@ -89,11 +89,8 @@
                     <input type="button" class="content-nav-mobile-state large-hidden medium-hidden" />
                     <span class="content-nav-mobile-button"></span>
                     <span class="breadcrumb-links">
-                        {{if eq (len .Breadcrumbs ) 0}}
-                        <a href="/" class=" large-hidden medium-hidden active">Documentation</a> &nbsp;
-                        {{end}}
                         {{range .Breadcrumbs}}
-                        <a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">{{.Label}}</a>
+                        <a href="{{.URL}}"{{if .IsActive}} class="active"{{end}}>{{.Label}}</a>
                         {{if not .IsActive}}/{{end}}
                         {{end}} &nbsp;
                     </span>
@@ -103,10 +100,9 @@
                     <form class="search-form form-inline mobile-search large-hidden medium-hidden">
                         <input name="search" class="nav-search form-control" type="search" placeholder="Search docs..."
                             spellcheck="false">
-                        <button class="btn btn-primary nav-search-button" id="search-button"
-                            type="submit">Search</button>
+                        <button class="btn btn-primary nav-search-button" type="submit">Search</button>
                     </form>
-                    <ul class="content-nav-section content-nav-home">
+                    <ul class="content-nav-section expandable">
                         <li>
                             <a class="content-nav-section-header" href="/">Home</a>
                         </li>
@@ -363,7 +359,7 @@
                             </ul>
                         </li>
                     </ul>
-                    <ul id="integration-menu" class="content-nav-section expandable" data-nav-section="integration">
+                    <ul class="content-nav-section expandable" data-nav-section="integration">
                         <button class="content-nav-button"></button>
                         <div class="close--icon">
                             <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
@@ -390,8 +386,7 @@
                     </ul>
                 </div>
             </div>
-            <section class="column large-8 large-push-2 medium-9 medium-push-3 small-12 docs-content-section"
-                id="content">
+            <section class="column large-8 large-push-2 medium-9 medium-push-3 small-12 docs-content-section">
                 {{/* Create breadcrumb nav*/}}
                 {{with .Content}}
 
@@ -428,7 +423,7 @@
             </section>
             {{with .Content}}
             <div class="nav-sticky-wrapper column large-2 medium-hidden small-hidden">
-                <div class="page-nav" id="index">
+                <div class="page-nav">
                     {{template "index" .}}
                 </div>
             </div>
@@ -604,8 +599,7 @@
         {{with .Content}}
         <script>
             window.addEventListener('DOMContentLoaded', (e) => {
-                window.SGDOCS_BREADCRUMBS = {{ .Breadcrumbs }}
-                window.sgdocs.init();
+                window.sgdocs.init(breadcrumbs={{ .Breadcrumbs }});
             });
         </script>
         {{ end }}
@@ -658,3 +652,4 @@
     {{end}}
     {{end}}
     {{end}}
+
