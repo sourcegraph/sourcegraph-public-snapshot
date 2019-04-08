@@ -3,8 +3,7 @@ package redispool
 
 import (
 	"github.com/pkg/errors"
-	"net/url"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -53,42 +52,82 @@ func init() {
 	}
 }
 
-func connectRedis(redisUrl string) (redis.Conn, error) {
-	parsedUrl, err := url.Parse(redisUrl); if err != nil {
-		return nil, err
-	}
 
-	var host string
-	if len(parsedUrl.Opaque) > 0 {
-		host = parsedUrl.Scheme + ":" + parsedUrl.Opaque
+type RedisConnectionConfiguration struct {
+	Host string
+	Port string
+	Password string
+	Db string
+}
+
+
+func ParseRedisConnectionUrl(redisUrl string) (*RedisConnectionConfiguration, error) {
+	if strings.HasPrefix(redisUrl,"redis") {
+		return parseRedisConnectionUrlWithScheme(redisUrl)
 	} else {
-		if parsedUrl.Scheme != "redis" {
-			return nil, errors.New(redisUrl + ", is not a valid redis protocol, redis://:password@host:port/db")
-		}
-		host = parsedUrl.Host
+		return parseRedisConnectionUrlWithoutScheme(redisUrl)
+	}
+}
+
+func parseRedisConnectionUrlWithScheme(redisUrl string) (*RedisConnectionConfiguration, error) {
+	redisUrlRegexp := regexp.MustCompile(`redis://((\w+)?:(\w+)@)?([^:]+)(:(\d+))?(/(\d+))?`)
+	matchedGroups := redisUrlRegexp.FindStringSubmatch(redisUrl)
+	matchedLength := len(matchedGroups)
+	if matchedLength <= 0 {
+		return nil, errors.New("invalid redis url, correct is redis://:pasword@host:port/db")
+	}
+	var redisConnectionConfiguration RedisConnectionConfiguration
+	redisConnectionConfiguration.Password = matchedGroups[3]
+	redisConnectionConfiguration.Host = matchedGroups[4]
+	if len(matchedGroups[6]) <= 0 {
+		redisConnectionConfiguration.Port = "6379"
+	} else {
+		redisConnectionConfiguration.Port = matchedGroups[6]
+	}
+	redisConnectionConfiguration.Db = matchedGroups[8]
+
+	return &redisConnectionConfiguration, nil
+}
+
+func parseRedisConnectionUrlWithoutScheme(redisUrl string) (*RedisConnectionConfiguration, error) {
+	redisUrlRegexp := regexp.MustCompile(`([^:]+)(:(\d+))?(/(\d+))?`)
+	matchedGroups := redisUrlRegexp.FindStringSubmatch(redisUrl)
+	matchedLength := len(matchedGroups)
+	if matchedLength <= 0 {
+		return nil, errors.New("error when parsing redis url, it should be host:port")
 	}
 
-	conn, err := redis.Dial("tcp", host); if err != nil {
+	var redisConnectionConfiguration RedisConnectionConfiguration
+	redisConnectionConfiguration.Host = matchedGroups[1]
+	if len(matchedGroups[3]) == 0 {
+		redisConnectionConfiguration.Port = "6379"
+	} else {
+		redisConnectionConfiguration.Port = matchedGroups[3]
+	}
+	redisConnectionConfiguration.Db = matchedGroups[5]
+
+	return &redisConnectionConfiguration, nil
+}
+
+func connectRedis(redisUrl string) (redis.Conn, error) {
+	redisConnectionConfiguration, err := ParseRedisConnectionUrl(redisUrl); if err != nil {
 		return nil, err
 	}
 
-	password, passwordIsSet := parsedUrl.User.Password()
-	if passwordIsSet {
-		_, err := conn.Do("AUTH", password); if err != nil {
+	hostAndPort := redisConnectionConfiguration.Host + ":" + redisConnectionConfiguration.Port
+	conn, err := redis.Dial("tcp", hostAndPort); if err != nil {
+		return nil, err
+	}
+
+	if len(redisConnectionConfiguration.Password) > 0 {
+		_, err := conn.Do("AUTH", redisConnectionConfiguration.Password); if err != nil {
 			conn.Close()
 			return nil, err
 		}
 	}
 
-	var db = 0
-	dbString := strings.Trim(parsedUrl.Path, "/")
-	if len(dbString) > 0 {
-		db, err = strconv.Atoi(dbString); if err != nil {
-			conn.Close()
-			return nil, err
-		}
-
-		_, err := conn.Do("SELECT", db); if err != nil {
+	if len(redisConnectionConfiguration.Db) > 0 {
+		_, err := conn.Do("SELECT", redisConnectionConfiguration.Db); if err != nil {
 			conn.Close()
 			return nil, err
 		}

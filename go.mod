@@ -127,6 +127,7 @@ require (
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
+	github.com/stretchr/testify v1.3.0
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea
