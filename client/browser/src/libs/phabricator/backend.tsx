@@ -223,7 +223,7 @@ interface ConduitDifferentialQueryResponse {
     error_info?: string
     result: {
         [index: string]: {
-            repositoryPHID: string
+            repositoryPHID: string | null
         }
     }
 }
@@ -241,7 +241,11 @@ async function getRepoPHIDForDifferentialID(differentialID: number): Promise<str
     if (responseJSON.error_code) {
         throw new Error(`error ${responseJSON.error_code}: ${responseJSON.error_info}`)
     }
-    return responseJSON.result['0'].repositoryPHID
+    const phid = responseJSON.result['0'].repositoryPHID
+    if (!phid) {
+        throw new Error(`no repositoryPHID for diff ${differentialID}`)
+    }
+    return phid
 }
 
 interface CreatePhabricatorRepoOptions {
