@@ -260,6 +260,9 @@ func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool,
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
+
 	// Limit number of outstanding searcher requests
 	if err := textSearchLimiter.Acquire(ctx); err != nil {
 		return nil, false, err

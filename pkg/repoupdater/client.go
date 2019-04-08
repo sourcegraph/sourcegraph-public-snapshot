@@ -211,7 +211,7 @@ func (c *Client) httpPost(ctx context.Context, method string, payload interface{
 
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("RepoUpdater Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
