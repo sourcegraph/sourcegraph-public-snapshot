@@ -93,7 +93,7 @@ type BitbucketServerConnection struct {
 	RepositoryQuery             []string                       `json:"repositoryQuery,omitempty"`
 	Token                       string                         `json:"token,omitempty"`
 	Url                         string                         `json:"url"`
-	Username                    string                         `json:"username,omitempty"`
+	Username                    string                         `json:"username"`
 }
 type BrandAssets struct {
 	Logo   string `json:"logo,omitempty"`

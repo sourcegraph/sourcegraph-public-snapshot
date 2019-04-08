@@ -146,6 +146,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "BITBUCKETSERVER",
+			desc:   "without username",
+			config: `{}`,
+			assert: includes("username: username is required"),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
 			desc:   "example url",
 			config: `{"url": "https://bitbucket.example.com"}`,
 			assert: includes("url: Must not validate the schema (not)"),
@@ -155,21 +161,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "bad url scheme",
 			config: `{"url": "badscheme://bitbucket.com"}`,
 			assert: includes("url: Does not match pattern '^https?://'"),
-		},
-		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "with token AND username / password",
-			config: `{"token": "foo", "username": "bar", "password": "baz"}`,
-			assert: includes("(root): Must validate one and only one schema (oneOf)"),
-		},
-		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "with token AND username",
-			config: `{"token": "foo", "username": "bar"}`,
-			assert: includes(
-				"(root): Must validate one and only one schema (oneOf)",
-				"username: Invalid type. Expected: null, given: string",
-			),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -201,7 +192,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		{
 			kind:   "BITBUCKETSERVER",
 			desc:   "valid",
-			config: `{"url": "https://bitbucket.com/", "token": "secret-token"}`,
+			config: `{"url": "https://bitbucket.com/", "username": "admin", "token": "secret-token"}`,
 			assert: equals("<nil>"),
 		},
 		{
@@ -252,6 +243,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			config: `
 			{
 				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
 				"token": "very-secret-token",
 				"exclude": [
 					{"name": "foo/bar", "id": 1234}
@@ -277,6 +269,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			config: `
 			{
 				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
 				"token": "very-secret-token",
 				"repos": [
 					"foo/bar",
