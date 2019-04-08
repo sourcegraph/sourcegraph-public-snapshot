@@ -21,7 +21,6 @@ window.sgdocs = (global => {
 
       searchInit()
       versionSelectorInit()
-      breadcrumbsInit()
       mobileNavInit()
       navInit()
     },
@@ -64,12 +63,6 @@ window.sgdocs = (global => {
       document.addEventListener('click', outsideVersionSelectorListener)
       document.addEventListener('keydown', escaped)
     })
-  }
-
-  function breadcrumbsInit() {
-    if (BREADCRUMBS_DATA.length === 0) {
-      return
-    }
   }
 
   function mobileNavInit() {
