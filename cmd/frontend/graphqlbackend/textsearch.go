@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/inconshreveable/log15.v2"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -18,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/google/zoekt"
@@ -692,6 +693,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	if err != nil {
 		// Don't hard fail if index is not available yet.
 		tr.LogFields(otlog.String("indexErr", err.Error()))
+		log15.Warn("zoektIndexedRepos failed", "error", err)
 		common.indexUnavailable = true
 		err = nil
 	}
@@ -797,6 +799,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				log15.Warn("searchFilesInRepo failed", "error", searchErr, "repo", repoRev.Repo.Name)
 			}
 			mu.Lock()
 			defer mu.Unlock()
