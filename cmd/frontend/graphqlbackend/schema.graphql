@@ -957,6 +957,8 @@ type SavedQuery {
     description: String!
     # The query.
     query: String!
+    # DEPRECATED: Sourcegraph no longer shows saved searches on the homepage. This resolver will be removed in a future release.
+    #
     # Whether or not to show on the homepage.
     showOnHomepage: Boolean!
     # Whether or not to notify.

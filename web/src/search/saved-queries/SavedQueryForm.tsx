@@ -13,7 +13,6 @@ export interface SavedQueryFields {
     description: string
     query: string
     subject: GQL.ID
-    showOnHomepage: boolean
     notify: boolean
     notifySlack: boolean
 }
@@ -42,7 +41,6 @@ interface State {
 export class SavedQueryForm extends React.Component<Props, State> {
     private handleDescriptionChange = this.createInputChangeHandler('description')
     private handleSubjectChange = this.createInputChangeHandler('subject')
-    private handleShowOnHomeChange = this.createInputChangeHandler('showOnHomepage')
     private handleNotifyChange = this.createInputChangeHandler('notify')
     private handleNotifySlackChange = this.createInputChangeHandler('notifySlack')
 
@@ -59,7 +57,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 query: (defaultValues && defaultValues.query) || '',
                 description: (defaultValues && defaultValues.description) || '',
                 subject: (defaultValues && defaultValues.subject) || '',
-                showOnHomepage: !!(defaultValues && defaultValues.showOnHomepage),
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
             },
@@ -128,7 +125,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
-            values: { query, description, subject, showOnHomepage, notify, notifySlack },
+            values: { query, description, subject, notify, notifySlack },
             subjectOptions,
             isSubmitting,
             error,
@@ -195,17 +192,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             ))}
                     </div>
                     <div className="saved-query-form__save-location">
-                        <span className="saved-query-form__save-location-options">
-                            <label>
-                                <input
-                                    className="saved-query-form__save-location-input"
-                                    type="checkbox"
-                                    defaultChecked={showOnHomepage}
-                                    onChange={this.handleShowOnHomeChange}
-                                />{' '}
-                                Show on homepage
-                            </label>
-                        </span>
                         <span className="saved-query-form__save-location-options">
                             <label data-tooltip={`Send email notifications to config owner (${this.saveTargetName()})`}>
                                 <input

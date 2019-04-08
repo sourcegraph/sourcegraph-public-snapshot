@@ -33,6 +33,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- Removed the option to show saved searches on the Sourcegraph homepage.
+
 ## 3.2.0
 
 ### Added
