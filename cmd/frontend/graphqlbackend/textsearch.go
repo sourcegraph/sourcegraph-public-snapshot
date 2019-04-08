@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/inconshreveable/log15.v2"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -32,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
