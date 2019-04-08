@@ -118,9 +118,19 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	externalService, err := db.ExternalServices.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := db.ExternalServices.Delete(ctx, id); err != nil {
 		return nil, err
 	}
+
+	if err = syncExternalService(ctx, externalService); err != nil {
+		return nil, errors.Wrap(err, "warning: external service deleted, but sync request failed")
+	}
+
 	return &EmptyResponse{}, nil
 }
 
