@@ -60,21 +60,25 @@ export class SavedQueries extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        const isHomepage = this.props.location.pathname === '/search'
+
         this.subscriptions.add(
             this.refreshRequests
                 .pipe(
                     startWith(void 0),
                     switchMap(fetchSavedQueries),
                     map(savedQueries => ({
-                        savedQueries: savedQueries.sort((a, b) => {
-                            if (a.description < b.description) {
-                                return -1
-                            }
-                            if (a.description === b.description && a.index < b.index) {
-                                return -1
-                            }
-                            return 1
-                        }),
+                        savedQueries: savedQueries
+                            .filter(query => !isHomepage || query.showOnHomepage)
+                            .sort((a, b) => {
+                                if (a.description < b.description) {
+                                    return -1
+                                }
+                                if (a.description === b.description && a.index < b.index) {
+                                    return -1
+                                }
+                                return 1
+                            }),
                         loading: false,
                     }))
                 )

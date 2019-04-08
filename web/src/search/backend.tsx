@@ -260,6 +260,7 @@ const savedQueryFragment = gql`
         }
         index
         description
+        showOnHomepage
         notify
         notifySlack
         query
@@ -289,6 +290,7 @@ export function createSavedQuery(
     settingsLastID: number | null,
     description: string,
     query: string,
+    showOnHomepage: boolean,
     notify: boolean,
     notifySlack: boolean,
     disableSubscriptionNotifications?: boolean
@@ -300,6 +302,7 @@ export function createSavedQuery(
                 $lastID: Int
                 $description: String!
                 $query: String!
+                $showOnHomepage: Boolean
                 $notify: Boolean
                 $notifySlack: Boolean
                 $disableSubscriptionNotifications: Boolean
@@ -308,6 +311,7 @@ export function createSavedQuery(
                     createSavedQuery(
                         description: $description
                         query: $query
+                        showOnHomepage: $showOnHomepage
                         notify: $notify
                         notifySlack: $notifySlack
                         disableSubscriptionNotifications: $disableSubscriptionNotifications
@@ -321,6 +325,7 @@ export function createSavedQuery(
         {
             description,
             query,
+            showOnHomepage,
             notify,
             notifySlack,
             disableSubscriptionNotifications: disableSubscriptionNotifications || false,
@@ -343,6 +348,7 @@ export function updateSavedQuery(
     id: GQL.ID,
     description: string,
     query: string,
+    showOnHomepage: boolean,
     notify: boolean,
     notifySlack: boolean
 ): Observable<GQL.ISavedQuery> {
@@ -354,6 +360,7 @@ export function updateSavedQuery(
                 $id: ID!
                 $description: String
                 $query: String
+                $showOnHomepage: Boolean
                 $notify: Boolean
                 $notifySlack: Boolean
             ) {
@@ -362,6 +369,7 @@ export function updateSavedQuery(
                         id: $id
                         description: $description
                         query: $query
+                        showOnHomepage: $showOnHomepage
                         notify: $notify
                         notifySlack: $notifySlack
                     ) {
@@ -371,7 +379,7 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
+        { id, description, query, showOnHomepage, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.settingsMutation || !data.settingsMutation.updateSavedQuery) {

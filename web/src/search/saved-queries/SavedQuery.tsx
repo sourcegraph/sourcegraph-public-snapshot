@@ -53,6 +53,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             getLastIDForSubject(props.settingsCascade, props.savedQuery.subject.id),
                             duplicate(props.savedQuery.description),
                             props.savedQuery.query,
+                            props.savedQuery.showOnHomepage,
                             props.savedQuery.notify,
                             props.savedQuery.notifySlack
                         )

@@ -21,6 +21,7 @@ export const SavedQueryUpdateForm: React.FunctionComponent<Props> = props => (
             description: props.savedQuery.description,
             query: props.savedQuery.query,
             subject: props.savedQuery.subject.id,
+            showOnHomepage: props.savedQuery.showOnHomepage,
             notify: props.savedQuery.notify,
             notifySlack: props.savedQuery.notifySlack,
         }}
@@ -42,6 +43,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
             getLastIDForSubject(props.settingsCascade, fields.subject),
             fields.description,
             fields.query,
+            fields.showOnHomepage,
             fields.notify,
             fields.notifySlack,
             true
@@ -65,6 +67,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
         props.savedQuery.id,
         fields.description,
         fields.query,
+        fields.showOnHomepage,
         fields.notify,
         fields.notifySlack
     ).pipe(mapTo(void 0))
