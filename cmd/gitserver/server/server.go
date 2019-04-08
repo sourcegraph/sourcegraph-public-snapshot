@@ -442,9 +442,6 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Server.handleExec")
-	defer span.Finish()
-
 	var req protocol.ExecRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -458,7 +455,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		defer fw.Close()
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
+	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout(req.Args))
 	defer cancel()
 
 	start := time.Now()

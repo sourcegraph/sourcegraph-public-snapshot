@@ -611,16 +611,18 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string,
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
-		span.LogKV("event", "Waiting on HTTP limiter")
 		c.HTTPLimiter.Acquire()
 		defer c.HTTPLimiter.Release()
 		span.LogKV("event", "Acquired HTTP limiter")
 	}
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("Gitserver Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
+
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
 
 	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }
