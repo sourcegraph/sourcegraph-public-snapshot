@@ -9,9 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -29,7 +27,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -627,26 +624,6 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string,
 
 	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }
-
-func (c *Client) UploadPack(repoName api.RepoName, w http.ResponseWriter, r *http.Request) {
-	repoName = protocol.NormalizeRepo(repoName)
-	addr := c.addrForRepo(r.Context(), repoName)
-
-	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(string(repoName)))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	(&httputil.ReverseProxy{
-		Director: func(r *http.Request) {
-			r.URL = u
-		},
-		ErrorLog: uploadPackErrorLog,
-	}).ServeHTTP(w, r)
-}
-
-var uploadPackErrorLog = log.New(env.DebugOut, "git upload-pack proxy: ", log.LstdFlags)
 
 func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
