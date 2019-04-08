@@ -5,6 +5,7 @@ import {
     findPositionsFromEvents,
     Hoverifier,
     HoverState,
+    PositionAdjuster,
 } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { uniqBy } from 'lodash'
@@ -25,7 +26,12 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
-import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
+import {
+    CodeEditorData,
+    DiffEditor,
+    DiffEditorData,
+    EditorId,
+} from '../../../../shared/src/api/client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../shared/src/commandPalette/CommandList'
@@ -37,7 +43,7 @@ import { getHoverActions, registerHoverContributions } from '../../../../shared/
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
@@ -52,7 +58,12 @@ import {
 import { isInPage } from '../../context'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
-import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
+import {
+    ButtonProps,
+    CodeViewToolbar,
+    CodeViewToolbarClassProps,
+    DiffViewToolbar,
+} from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { EventLogger } from '../../shared/tracking/eventLogger'
 import { observeSourcegraphURL } from '../../shared/util/context'
@@ -62,8 +73,9 @@ import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
-import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
+import { CodeView, DOMFunctions, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
+import { trackDiffViews } from './diff_views'
 import {
     applyDecorations,
     DecorationMapByLine,
@@ -76,6 +88,102 @@ import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
 
 registerHighlightContributions()
+
+interface CodeOrDiffViewSpec {
+    /** The DOMFunctions for the code or diff view. */
+    dom: DOMFunctions
+    /**
+     * Finds or creates a DOM element where we should inject the `CodeViewToolbar` or
+     * `DiffViewToolbar`. This function is responsible for ensuring duplicate mounts aren't created.
+     */
+    getToolbarMount?: (codeView: HTMLElement) => HTMLElement
+    /**
+     * In some situations, we need to be able to adjust the position going into
+     * and coming out of codeintellify. For example, Phabricator converts tabs
+     * to spaces in it's DOM.
+     */
+    adjustPosition?: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
+    /** Props for styling the buttons in the `CodeViewToolbar`. */
+    toolbarButtonProps?: ButtonProps
+}
+
+/**
+ * Defines a type of code view a given code host can have. It tells us how to
+ * look for the code view and how to do certain things when we find it.
+ */
+export interface CodeViewSpec extends CodeOrDiffViewSpec {
+    /** A selector used by `document.querySelectorAll` to find the code view. */
+    selector: string
+    /**
+     * Resolves the file info for a given code view. It returns an observable
+     * because some code hosts need to resolve this asynchronously. The
+     * observable should only emit once.
+     */
+    resolveFileInfo: (codeView: HTMLElement) => Observable<FileInfo>
+
+    isDiff?: boolean // TODO!(sqs): remove now that we have separate diff view spec
+}
+
+export type CodeViewSpecWithOutSelector = Pick<CodeViewSpec, Exclude<keyof CodeViewSpec, 'selector'>>
+
+/**
+ * Resolves all elements matching the selector to a code or diff view spec.
+ */
+interface ViewSpecResolver {
+    /**
+     * Selector that is used to find code or diff views on the page with `querySelectorAll()`.
+     */
+    selector: string
+}
+
+export interface CodeViewSpecResolver extends ViewSpecResolver {
+    /**
+     * Function that is called for each element that was found with `selector` to determine which
+     * code view the element is.
+     */
+    resolveCodeViewSpec: (elem: HTMLElement) => CodeViewSpecWithOutSelector | null
+}
+
+export interface DiffViewSpecResolver extends ViewSpecResolver {
+    /**
+     * Function that is called for each element that was found with `selector` to determine which
+     * diff view the element is.
+     */
+    resolveDiffViewSpec: (elem: HTMLElement) => DiffViewSpec | null
+}
+
+/**
+ * Defines a type of diff view a given code host can have. It tells us how to
+ * look for the diff view and how to do certain things when we find it.
+ */
+export interface DiffViewSpec extends CodeOrDiffViewSpec {
+    /**
+     * Resolves the diff info for a given diff view. It returns an observable
+     * because some code hosts need to resolve this asynchronously. The
+     * observable should only emit once.
+     */
+    resolveDiffInfo: (diffView: HTMLElement) => Observable<FileInfo>
+
+    /**
+     * An observable that emits when the diff view's collapsed state
+     * ({@link sourcegraph.DiffEditor#collapsed}) changes.
+     */
+    collapsedChanges: Observable<boolean>
+
+    /**
+     * Expand or collapse the diff view.
+     */
+    setCollapsed: (collapsed: boolean) => void
+}
+
+/**
+ * ResolvedDiffView attaches an actual diff view DOM element that was found on
+ * the page to the DiffView type being passed around by this file.
+ */
+export interface ResolvedDiffView extends DiffViewSpec {
+    /** The diff view DOM element. */
+    diffViewElement: HTMLElement
+}
 
 interface OverlayPosition {
     top: number
@@ -149,6 +257,14 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link TextField}s from the DOM.
      */
     textFieldResolvers?: ViewResolver<TextField>[]
+
+    /**
+     * Resolve `DiffView`s from the DOM. This is useful when each diff view type
+     * doesn't have a distinct selector.
+     *
+     * The set of diff views tracked on a page is the union of all diff views found using `diffViewSpecs` and `diffViewResolver`.
+     */
+    diffViewSpecResolver?: DiffViewSpecResolver[]
 
     /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
@@ -480,7 +596,7 @@ export function handleCodeHost({
         observeOn(animationFrameScheduler)
     )
 
-    interface CodeViewState {
+    interface CodeViewState extends EditorId {
         subscriptions: Subscription
         roots: WorkspaceRootWithMetadata[]
     }
@@ -516,6 +632,7 @@ export function handleCodeHost({
                 }
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
+                    ...editorId,
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
                 }
                 codeViewState.subscriptions.add(() => {
@@ -633,13 +750,10 @@ export function handleCodeHost({
                 const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
                     part,
                 }) => ({
-                    repoName: part === 'base' ? fileInfo.baseRepoName || fileInfo.repoName : fileInfo.repoName,
-                    commitID: part === 'base' ? fileInfo.baseCommitID! : fileInfo.commitID,
-                    filePath: part === 'base' ? fileInfo.baseFilePath || fileInfo.filePath : fileInfo.filePath,
-                    rev:
-                        part === 'base'
-                            ? fileInfo.baseRev || fileInfo.baseCommitID!
-                            : fileInfo.rev || fileInfo.commitID,
+                    repoName: fileInfo.repoName,
+                    commitID: fileInfo.commitID,
+                    filePath: fileInfo.filePath,
+                    rev: fileInfo.rev || fileInfo.commitID,
                 })
                 const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
                 codeViewState.subscriptions.add(
@@ -706,6 +820,197 @@ export function handleCodeHost({
             { extensionsController },
             codeHost
         )
+    )
+
+    /** A stream of added or removed diff views */
+    const diffViews = mutations.pipe(
+        trackDiffViews(codeHost.diffViewSpecResolver || []),
+        mergeMap(diffViewEvent =>
+            diffViewEvent.type === 'added'
+                ? diffViewEvent.resolveDiffInfo(diffViewEvent.diffViewElement).pipe(
+                      mergeMap(fileInfo =>
+                          fetchFileContents(fileInfo).pipe(
+                              map(fileInfoWithContents => ({
+                                  fileInfo: fileInfoWithContents,
+                                  ...diffViewEvent,
+                              }))
+                          )
+                      )
+                  )
+                : [diffViewEvent]
+        ),
+        catchError(err => {
+            if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                return EMPTY
+            }
+            throw err
+        }),
+        observeOn(animationFrameScheduler)
+    )
+
+    interface DiffViewState {
+        subscriptions: Subscription
+        editor: EditorId
+        roots: WorkspaceRootWithMetadata[]
+    }
+    /** Map from diff view element to the state associated with it (to be updated or removed) */
+    const diffViewStates = new Map<Element, DiffViewState>()
+
+    subscriptions.add(
+        diffViews.subscribe(diffViewEvent => {
+            console.log(`Diff view ${diffViewEvent.type}`, diffViewEvent)
+
+            // Handle added or removed view component, workspace root and subscriptions
+            if (diffViewEvent.type === 'added' && !diffViewStates.has(diffViewEvent.diffViewElement)) {
+                const { diffViewElement, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = diffViewEvent
+                if (!fileInfo.baseRepoName || !fileInfo.baseCommitID || !fileInfo.baseFilePath) {
+                    throw new Error('TODO!(sqs) diffs should always have these set')
+                }
+
+                // Add original (base) model.
+                const baseUri = toURIWithPath({
+                    repoName: fileInfo.baseRepoName,
+                    commitID: fileInfo.baseCommitID,
+                    filePath: fileInfo.baseFilePath,
+                })
+                extensionsController.services.model.addModel({
+                    uri: baseUri,
+                    languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                    text: fileInfo.baseContent,
+                })
+
+                // Add modified (head) model.
+                const headUri = toURIWithPath(fileInfo)
+                extensionsController.services.model.addModel({
+                    uri: headUri,
+                    languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                    text: fileInfo.content,
+                })
+
+                const editorData: DiffEditorData = {
+                    type: 'DiffEditor' as const,
+                    originalResource: baseUri,
+                    modifiedResource: headUri,
+                    rawDiff: 'TODO!(sqs)',
+                    isActive: true,
+                }
+                const diffViewState: DiffViewState = {
+                    subscriptions: new Subscription(),
+                    editor: extensionsController.services.editor.addEditor(editorData),
+                    roots: [
+                        {
+                            uri: toRootURI({
+                                repoName: fileInfo.baseRepoName,
+                                commitID: fileInfo.baseCommitID,
+                            }),
+                            inputRevision: fileInfo.baseRev || '',
+                        },
+                        { uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' },
+                    ],
+                }
+                diffViewStates.set(diffViewElement, diffViewState)
+
+                const domFunctions = {
+                    ...diffViewEvent.dom,
+                    // If any parent element has the sourcegraph-extension-element
+                    // class then that element does not have any code. We
+                    // must check for "any parent element" because extensions
+                    // create their DOM changes before the blob is tokenized
+                    // into multiple elements.
+                    getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
+                        target.closest('.sourcegraph-extension-element') !== null
+                            ? null
+                            : diffViewEvent.dom.getCodeElementFromTarget(target),
+                }
+
+                // 2-way sync visibleRanges with the DOM state. HACK TODO!(sqs) clean this up
+                diffViewState.subscriptions.add(
+                    diffViewEvent.collapsedChanges.subscribe(collapsed => {
+                        extensionsController.services.editor.setCollapsed(diffViewState.editor, collapsed)
+                    })
+                )
+                diffViewState.subscriptions.add(
+                    from(extensionsController.services.editor.editors)
+                        .pipe(map(editors => editors.filter((c): c is DiffEditor => c.type === 'DiffEditor')))
+                        .subscribe(diffEditors => {
+                            for (const diffEditor of diffEditors) {
+                                if (diffEditor.editorId === diffViewState.editor.editorId) {
+                                    console.log('setCollapsed', diffEditor.editorId, diffEditor.collapsed)
+                                    diffViewEvent.setCollapsed(!!diffEditor.collapsed)
+                                }
+                            }
+                        })
+                )
+
+                // Apply decorations coming from extensions TODO!(sqs) make this work on diffs
+                let decoratedLines: number[] = []
+                diffViewState.subscriptions.add(
+                    extensionsController.services.textDocumentDecoration
+                        .getDecorations(toTextDocumentIdentifier(fileInfo))
+                        // The nested subscribe cannot be replaced with a switchMap()
+                        // We manage the subscription correctly.
+                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        .subscribe(decorations => {
+                            decoratedLines = applyDecorations(
+                                domFunctions,
+                                diffViewElement,
+                                decorations || [],
+                                decoratedLines
+                            )
+                        })
+                )
+
+                // Add hover code intelligence
+                const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
+                    part,
+                }) => ({
+                    repoName: part === 'base' ? fileInfo.baseRepoName || fileInfo.repoName : fileInfo.repoName,
+                    commitID: part === 'base' ? fileInfo.baseCommitID : fileInfo.commitID,
+                    filePath: part === 'base' ? fileInfo.baseFilePath || fileInfo.filePath : fileInfo.filePath,
+                    rev:
+                        part === 'base' ? fileInfo.baseRev || fileInfo.baseCommitID : fileInfo.rev || fileInfo.commitID,
+                })
+                diffViewState.subscriptions.add(
+                    hoverifier.hoverify({
+                        dom: domFunctions,
+                        positionEvents: of(diffViewElement).pipe(findPositionsFromEvents(domFunctions)),
+                        resolveContext,
+                        adjustPosition,
+                    })
+                )
+
+                diffViewElement.classList.add('sg-mounted')
+
+                // Render toolbar
+                if (getToolbarMount) {
+                    const mount = getToolbarMount(diffViewElement)
+                    render(
+                        <DiffViewToolbar
+                            {...fileInfo}
+                            {...codeHost.codeViewToolbarClassProps}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                            platformContext={platformContext}
+                            extensionsController={extensionsController}
+                            buttonProps={toolbarButtonProps}
+                            location={H.createLocation(window.location)}
+                            scope={{ ...editorData, ...diffViewState.editor }}
+                        />,
+                        mount
+                    )
+                }
+            } else if (diffViewEvent.type === 'removed') {
+                const diffViewState = diffViewStates.get(diffViewEvent.diffViewElement)
+                if (diffViewState) {
+                    diffViewState.subscriptions.unsubscribe()
+                    diffViewStates.delete(diffViewEvent.diffViewElement)
+                }
+            }
+
+            // Apply added/removed roots TODO!(sqs): copied code
+            extensionsController.services.workspace.roots.next(
+                uniqBy([...diffViewStates.values()].flatMap(state => state.roots), root => root.uri)
+            )
+        })
     )
 
     return subscriptions

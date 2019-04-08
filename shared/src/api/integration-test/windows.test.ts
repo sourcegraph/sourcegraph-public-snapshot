@@ -1,6 +1,6 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, map, switchMap, take, toArray } from 'rxjs/operators'
-import { ViewComponent, Window } from 'sourcegraph'
+import { CodeEditor, ViewComponent, Window } from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { TextModel } from '../client/services/modelService'
 import { NotificationType } from '../client/services/notifications'
@@ -10,9 +10,7 @@ describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {
         test('returns the active window', async () => {
             const { extensionAPI } = await integrationTestContext()
-            const viewComponent: Pick<ViewComponent, 'type'> & {
-                document: TextModel
-            } = {
+            const viewComponent: Pick<CodeEditor, 'type' | 'document'> = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
@@ -56,9 +54,7 @@ describe('Windows (integration)', () => {
     describe('app.windows', () => {
         test('lists windows', async () => {
             const { extensionAPI } = await integrationTestContext()
-            const viewComponent: Pick<ViewComponent, 'type'> & {
-                document: TextModel
-            } = {
+            const viewComponent: Pick<CodeEditor, 'type' | 'document'> = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
@@ -92,9 +88,7 @@ describe('Windows (integration)', () => {
                 )
                 .toPromise()
 
-            const viewComponent: Pick<ViewComponent, 'type'> & {
-                document: TextModel
-            } = {
+            const viewComponent: Pick<CodeEditor, 'type' | 'document'> = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             }
@@ -203,7 +197,12 @@ describe('Windows (integration)', () => {
                         toArray()
                     )
                     .toPromise()
-                assertToJSON(values.map(c => (c ? c.document.uri : null)), [null, 'foo', null, 'bar'])
+                assertToJSON(values.map(c => (c && c.type === 'CodeEditor' ? c.document.uri : null)), [
+                    null,
+                    'foo',
+                    null,
+                    'bar',
+                ])
             })
         })
 

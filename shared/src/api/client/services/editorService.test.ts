@@ -4,7 +4,13 @@ import { from, of, Subscribable } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
-import { CodeEditor, createEditorService, EditorService, getActiveCodeEditorPosition } from './editorService'
+import {
+    CodeEditor,
+    createEditorService,
+    EditorService,
+    getActiveCodeEditorPosition,
+    getEditorModels,
+} from './editorService'
 import { ModelService, TextModel } from './modelService'
 
 export function createTestEditorService(
@@ -20,19 +26,48 @@ describe('EditorService', () => {
         test('merges in model data', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const editorService = createEditorService({
-                    models: cold<TextModel[]>('a', { a: [{ uri: 'u', text: 't', languageId: 'l' }] }),
-                    removeModel: jest.fn(),
+                    models: cold<TextModel[]>('a', {
+                        a: [{ uri: 'u', text: 't', languageId: 'l' }, { uri: 'u2', text: 't2', languageId: 'l2' }],
+                    }),
+                    removeModel: noop,
                 })
                 editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
+                editorService.addEditor({
+                    type: 'DiffEditor',
+                    originalResource: 'u',
+                    modifiedResource: 'u2',
+                    rawDiff: 'x',
+                    isActive: true,
+                })
                 expectObservable(
                     from(editorService.editors).pipe(
-                        map(editors => editors.map(e => ({ resource: e.resource, model: e.model })))
+                        map(editors =>
+                            editors.map(e => {
+                                switch (e.type) {
+                                    case 'CodeEditor':
+                                        return { resource: e.resource, model: e.model }
+                                    case 'DiffEditor':
+                                        return {
+                                            originalResource: e.originalResource,
+                                            originalModel: e.originalModel,
+                                            modifiedResource: e.modifiedResource,
+                                            modifiedModel: e.modifiedModel,
+                                        }
+                                }
+                            })
+                        )
                     )
                 ).toBe('a', {
                     a: [
                         {
                             resource: 'u',
                             model: { uri: 'u', text: 't', languageId: 'l' },
+                        },
+                        {
+                            originalResource: 'u',
+                            originalModel: { uri: 'u', text: 't', languageId: 'l' },
+                            modifiedResource: 'u2',
+                            modifiedModel: { uri: 'u2', text: 't2', languageId: 'l2' },
                         },
                     ],
                 })
@@ -85,14 +120,11 @@ describe('EditorService', () => {
                 },
             ]
             editorService.setSelections(editor, SELECTIONS)
-            expect(
-                await from(editorService.editors)
-                    .pipe(
-                        first(),
-                        map(editors => editors.map(e => e.selections))
-                    )
-                    .toPromise()
-            ).toEqual([SELECTIONS])
+            const editors = await from(editorService.editors)
+                .pipe(first())
+                .toPromise()
+            const selections = editors.filter((e): e is CodeEditor => e.type === 'CodeEditor').map(e => e.selections)
+            expect(selections).toEqual([SELECTIONS])
         })
         test('not found', () => {
             const editorService = createEditorService({ models: of([]), removeModel: jest.fn() })
@@ -188,6 +220,20 @@ describe('getActiveCodeEditorPosition', () => {
         ).toBeNull()
     })
 
+    test('null for diff editor', () => {
+        expect(
+            getActiveCodeEditorPosition([
+                {
+                    type: 'DiffEditor',
+                    isActive: true,
+                    originalResource: 'u',
+                    modifiedResource: 'u',
+                    rawDiff: 'x',
+                },
+            ])
+        ).toBeNull()
+    })
+
     test('null if active code editor has no selection', () => {
         expect(
             getActiveCodeEditorPosition([
@@ -242,4 +288,32 @@ describe('getActiveCodeEditorPosition', () => {
             ])
         ).toEqual({ textDocument: { uri: 'u' }, position: { line: 3, character: 2 } })
     })
+})
+
+describe('getEditorModels', () => {
+    test('CodeEditor', () =>
+        expect(
+            getEditorModels({
+                type: 'CodeEditor',
+                editorId: 'editor#0',
+                isActive: true,
+                selections: [],
+                resource: 'u',
+                model: { uri: 'u', text: 't', languageId: 'l' },
+            })
+        ).toEqual([{ uri: 'u', text: 't', languageId: 'l' }]))
+
+    test('DiffEditor', () =>
+        expect(
+            getEditorModels({
+                type: 'DiffEditor',
+                editorId: 'editor#0',
+                isActive: true,
+                rawDiff: 'x',
+                originalResource: 'u',
+                originalModel: { uri: 'u', text: 't', languageId: 'l' },
+                modifiedResource: 'u2',
+                modifiedModel: { uri: 'u2', text: 't2', languageId: 'l2' },
+            })
+        ).toEqual([{ uri: 'u', text: 't', languageId: 'l' }, { uri: 'u2', text: 't2', languageId: 'l2' }]))
 })

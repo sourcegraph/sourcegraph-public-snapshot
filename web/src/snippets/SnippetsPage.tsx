@@ -3,7 +3,7 @@ import { uniqueId } from 'lodash'
 import React, { createRef, useEffect, useLayoutEffect, useState } from 'react'
 import { from } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
-import { EditorId } from '../../../shared/src/api/client/services/editorService'
+import { CodeEditor, EditorId } from '../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../shared/src/api/client/services/modelService'
 import { PanelViewWithComponent } from '../../../shared/src/api/client/services/view'
 import { SNIPPET_URI_SCHEME } from '../../../shared/src/api/client/types/textDocument'
@@ -83,7 +83,7 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
             .pipe(
                 map(editors => editors.find(e => e.editorId === editorId.editorId)),
                 filter(isDefined),
-                map(editor => editor.model.text)
+                map(editor => (editor as CodeEditor).model.text)
             )
             .subscribe(text => setModelText(text || null))
         return () => subscription.unsubscribe()

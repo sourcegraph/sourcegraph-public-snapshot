@@ -5,9 +5,9 @@ import { ClientContentAPI } from './content'
 import { ClientContextAPI } from './context'
 import { ClientLanguageFeaturesAPI } from './languageFeatures'
 import { ClientSearchAPI } from './search'
+import { ClientEditorAPI } from './viewComponents/editor'
 import { ClientViewsAPI } from './views'
 import { ClientWindowsAPI } from './windows'
-
 /**
  * The API that is exposed from the client (main thread) to the extension host (worker)
  */
@@ -20,6 +20,7 @@ export interface ClientAPI {
     languageFeatures: ClientLanguageFeaturesAPI
     commands: ClientCommandsAPI
     windows: ClientWindowsAPI
+    editor: ClientEditorAPI
     codeEditor: ClientCodeEditorAPI
     views: ClientViewsAPI
     content: ClientContentAPI

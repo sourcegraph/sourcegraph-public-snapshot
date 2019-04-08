@@ -4,9 +4,11 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import { CodeEditorData, EditorId } from '../../client/services/editorService'
+import { ClientEditorAPI } from '../../client/api/viewComponents/editor'
+import { CodeEditorData, EditorDataCommon, EditorId } from '../../client/services/editorService'
 import { createDecorationType } from './decorations'
 import { ExtDocuments } from './documents'
+import { ExtEditorCommon } from './viewComponents/editor'
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
@@ -24,15 +26,17 @@ const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextD
     isEmptyObjectDeep(contents)
 
 /** @internal */
-export class ExtCodeEditor implements sourcegraph.CodeEditor {
+export class ExtCodeEditor extends ExtEditorCommon implements sourcegraph.CodeEditor {
     /** The URI of this editor's document. */
     private resource: string
 
     constructor(
         data: CodeEditorData & EditorId,
+        editorProxy: ProxyResult<ClientEditorAPI>,
         private proxy: ProxyResult<ClientCodeEditorAPI>,
         private documents: ExtDocuments
     ) {
+        super(data.editorId, editorProxy)
         this.resource = data.resource
         this.update(data)
     }
@@ -68,8 +72,9 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         )
     }
 
-    public update(data: Pick<CodeEditorData, 'selections'>): void {
+    public update(data: Pick<CodeEditorData, 'selections'> & EditorDataCommon): void {
         this.selectionsChanges.next(data.selections.map(s => Selection.fromPlain(s)))
+        super.update(data)
     }
 
     public toJSON(): any {

@@ -23,6 +23,7 @@ describe('getComputedContextProperty', () => {
             {
                 editorId: 'editor1',
                 type: 'CodeEditor',
+                editorId: 'editor#0',
                 resource: 'file:///inactive',
                 model: {
                     uri: 'file:///inactive',
@@ -42,6 +43,7 @@ describe('getComputedContextProperty', () => {
             {
                 editorId: 'editor2',
                 type: 'CodeEditor',
+                editorId: 'editor#1',
                 resource: 'file:///a/b.c',
                 model: {
                     uri: 'file:///a/b.c',
@@ -90,6 +92,11 @@ describe('getComputedContextProperty', () => {
             test('provides component.type', () =>
                 expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(
                     'CodeEditor'
+                ))
+
+            test('provides component.editorId', () =>
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.editorId')).toBe(
+                    'editor#0'
                 ))
 
             test('returns null when there are no code editors', () =>
@@ -173,6 +180,7 @@ describe('getComputedContextProperty', () => {
                     {
                         editorId: 'editor1',
                         type: 'CodeEditor' as const,
+                        editorId: 'editor#0',
                         resource: 'file:///a/b.c',
                         model: {
                             uri: 'file:///a/b.c',

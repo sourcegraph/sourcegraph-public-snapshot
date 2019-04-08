@@ -1,5 +1,6 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
+import { NEVER } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -14,7 +15,7 @@ import {
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import { CodeHost, MountGetter } from '../code_intelligence'
+import { CodeHost, DiffViewSpec, DiffViewSpecResolver, MountGetter } from '../code_intelligence'
 import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
@@ -207,6 +208,23 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
     },
 }
 
+const diffViewSpecResolver: DiffViewSpecResolver = {
+    // TODO!(sqs): ensure this doesnt match issues with snippets
+    selector: '.file.has-inline-notes, .file[data-file-deleted]',
+    resolveDiffViewSpec: (elem: HTMLElement): DiffViewSpec | null => {
+        const isPRTimelineComment = !!elem.closest('.discussion-item-body')
+        const hasDiffHeader = !isPRTimelineComment
+        return {
+            dom: diffDomFunctions,
+            getToolbarMount: hasDiffHeader ? createCodeViewToolbarMount : undefined,
+            resolveDiffInfo: resolveDiffFileInfo,
+            toolbarButtonProps,
+            collapsedChanges: hasDiffHeader ? observeDiffViewCollapsed(elem) : NEVER,
+            setCollapsed: ranges => setDiffViewCollapsed(elem, ranges),
+        }
+    },
+}
+
 /**
  * Returns true if the current page is GitHub Enterprise.
  */
@@ -258,6 +276,7 @@ export const githubCodeHost: CodeHost = {
         searchResultCodeViewResolver,
         commentSnippetCodeViewResolver,
     ],
+    diffViewSpecResolver: [diffViewSpecResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
     getContext: () => {

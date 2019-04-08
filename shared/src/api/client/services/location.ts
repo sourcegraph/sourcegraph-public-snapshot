@@ -4,7 +4,7 @@ import { catchError, map } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
-import { CodeEditor } from './editorService'
+import { Editor, getEditorModels } from './editorService'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
@@ -43,9 +43,11 @@ export class TextDocumentLocationProviderRegistry<
      * This can be used, for example, to selectively show a "Find references" button if there are
      * any reference providers registered.
      *
-     * @param editors The code editors in {@link EditorService}.
+     * @param editors The editors in {@link EditorService}.
+     * @todo Make this accept a single editor so that its result is scoped appropriately (eg what
+     * should the caller do if one side of a diff editor has providers?).
      */
-    public hasProvidersForActiveTextDocument(editors: readonly CodeEditor[]): Observable<boolean> {
+    public hasProvidersForActiveTextDocument(editors: readonly Editor[]): Observable<boolean> {
         return this.entries.pipe(
             map(entries => {
                 const activeEditor = editors.find(({ isActive }) => isActive)
@@ -54,7 +56,7 @@ export class TextDocumentLocationProviderRegistry<
                 }
                 return (
                     entries.filter(({ registrationOptions }) =>
-                        match(registrationOptions.documentSelector, activeEditor.model)
+                        getEditorModels(activeEditor).some(model => match(registrationOptions.documentSelector, model))
                     ).length > 0
                 )
             })
