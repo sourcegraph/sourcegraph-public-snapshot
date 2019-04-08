@@ -79,7 +79,6 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 {this.props.baseCommitID && this.props.baseHasFileContents && (
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
                         <OpenDiffOnSourcegraph
-                            label="View file diff"
                             ariaLabel="View file diff on Sourcegraph"
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}
@@ -105,7 +104,6 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 !this.props.baseCommitID && (this.props.content !== undefined || this.props.baseContent !== undefined) && (
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
                         <OpenOnSourcegraph
-                            label="View file"
                             ariaLabel="View file on Sourcegraph"
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}

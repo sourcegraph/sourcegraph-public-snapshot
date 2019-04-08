@@ -90,7 +90,6 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         return (
             <SourcegraphIconButton
                 url={this.getURL()}
-                label="View Repository"
                 ariaLabel="View repository on Sourcegraph"
                 className={classNames('open-on-sourcegraph', this.props.className)}
                 iconClassName={this.props.iconClassName}
