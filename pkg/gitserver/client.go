@@ -81,7 +81,9 @@ func updateGitServerAddrList() {
 		// ask the frontend for this information. This is generally the code
 		// path that all non-frontend services take.
 		ctx := context.Background()
-		api.WaitForFrontend(ctx)
+		if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
+			log15.Error("failed to wait for frontend", "error", err)
+		}
 
 		fetchAddrsOnce := func() {
 			for {
