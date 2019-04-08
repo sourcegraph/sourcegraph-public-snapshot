@@ -103,6 +103,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		{
 			// Some comment
 			"url": "https://bitbucketserver.mycorp.com",
+			"username": "admin",
 			"token": "secret"
 		}`),
 	}
@@ -606,7 +607,9 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 		Config: formatJSON(`
 			{
 				// Some comment
-				"url": "https://bitbucketserver.mycorp.com"
+				"url": "https://bitbucketserver.mycorp.com",
+				"username": "admin",
+				"token": "secret"
 			}
 		`),
 	}
@@ -618,6 +621,8 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 			{
 				// Some comment
 				"url": "https://bitbucketserver.mycorp.com",
+				"username": "admin",
+				"token": "secret",
 				"repositoryQuery": ["none"]
 			}
 		`),
