@@ -40,31 +40,38 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
-	mux.HandleFunc("/exclude-repos", s.handleExcludeRepos)
+	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	return mux
 }
 
-func (s *Server) handleExcludeRepos(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
+	var resp protocol.ExcludeRepoResponse
+
 	if s.Store == nil || len(s.Kinds) == 0 {
-		err := errors.New("exclude-repos: store not available. is the new syncer enabled?")
-		fail(w, err, http.StatusInternalServerError)
+		respond(w, http.StatusOK, &resp)
 		return
 	}
 
-	var req protocol.ExcludeReposRequest
+	var req protocol.ExcludeRepoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fail(w, err, http.StatusInternalServerError)
+		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs:   req.IDs,
+		IDs:   []uint32{req.ID},
 		Kinds: s.Kinds,
 	})
 
 	if err != nil {
-		fail(w, err, http.StatusInternalServerError)
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if len(rs) == 0 {
+		log15.Warn("exclude-repo: repo not found. skipping", "repo.id", req.ID)
+		respond(w, http.StatusOK, resp)
 		return
 	}
 
@@ -74,7 +81,7 @@ func (s *Server) handleExcludeRepos(w http.ResponseWriter, r *http.Request) {
 
 	es, err := s.Store.ListExternalServices(r.Context(), args)
 	if err != nil {
-		fail(w, err, http.StatusInternalServerError)
+		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -85,20 +92,17 @@ func (s *Server) handleExcludeRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		fail(w, err, http.StatusInternalServerError)
+		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	err = s.Store.UpsertExternalServices(r.Context(), es...)
 	if err != nil {
-		fail(w, err, http.StatusInternalServerError)
+		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp := protocol.ExcludeReposResponse{
-		ExternalServices: make([]api.ExternalService, 0, len(es)),
-	}
-
+	resp.ExternalServices = make([]api.ExternalService, 0, len(es))
 	for _, e := range es {
 		svc := api.ExternalService{
 			ID:          e.ID,
@@ -116,14 +120,27 @@ func (s *Server) handleExcludeRepos(w http.ResponseWriter, r *http.Request) {
 		resp.ExternalServices = append(resp.ExternalServices, svc)
 	}
 
-	if err = json.NewEncoder(w).Encode(resp); err != nil {
-		fail(w, err, http.StatusInternalServerError)
-	}
+	respond(w, http.StatusOK, resp)
 }
 
-func fail(w http.ResponseWriter, err error, code int) {
-	log15.Error(err.Error())
-	http.Error(w, err.Error(), code)
+// TODO(tsenart): Reuse this function in all handlers.
+func respond(w http.ResponseWriter, code int, v interface{}) {
+	switch val := v.(type) {
+	case error:
+		if val != nil {
+			log15.Error(val.Error())
+			http.Error(w, val.Error(), code)
+		}
+	default:
+		w.Header().Set("Content-Type", "application/json")
+		bs, err := json.Marshal(v)
+		if err != nil {
+			respond(w, http.StatusInternalServerError, err)
+			return
+		}
+		w.WriteHeader(code)
+		w.Write(bs)
+	}
 }
 
 func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {

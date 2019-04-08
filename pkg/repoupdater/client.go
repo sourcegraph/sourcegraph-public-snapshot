@@ -189,15 +189,15 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 	return &result, nil
 }
 
-// ExcludeRepos adds the repositories with the given ids to all of their respective
-// external services exclude lists.
-func (c *Client) ExcludeRepos(ctx context.Context, ids ...uint32) (*protocol.ExcludeReposResponse, error) {
-	if len(ids) == 0 {
-		return &protocol.ExcludeReposResponse{}, nil
+// ExcludeRepo adds the repository with the given id to all of the
+// external services exclude lists that match its kind.
+func (c *Client) ExcludeRepo(ctx context.Context, id uint32) (*protocol.ExcludeRepoResponse, error) {
+	if id == 0 {
+		return &protocol.ExcludeRepoResponse{}, nil
 	}
 
-	req := protocol.ExcludeReposRequest{IDs: ids}
-	resp, err := c.httpPost(ctx, "exclude-repos", &req)
+	req := protocol.ExcludeRepoRequest{ID: id}
+	resp, err := c.httpPost(ctx, "exclude-repo", &req)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func (c *Client) ExcludeRepos(ctx context.Context, ids ...uint32) (*protocol.Exc
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
-	var res protocol.ExcludeReposResponse
+	var res protocol.ExcludeRepoResponse
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, errors.New(string(bs))
 	} else if err = json.Unmarshal(bs, &res); err != nil {

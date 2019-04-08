@@ -26,6 +26,9 @@ type Store interface {
 
 // StoreListReposArgs is a query arguments type used by
 // the ListRepos method of Store implementations.
+//
+// Each defined argument must map to a disjunct (i.e. AND) filter predicate.
+// When zero-valued, an argument is ommited from the predicate set.
 type StoreListReposArgs struct {
 	// Names of repos to list.
 	Names []string

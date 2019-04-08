@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -309,7 +310,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}).With(repos.Opt.RepoSources(githubService.URN()))
 
 	gitlabService := &repos.ExternalService{
-		ID:          2,
+		ID:          1,
 		Kind:        "GITLAB",
 		DisplayName: "gitlab.com - test",
 		Config: formatJSON(`
@@ -333,7 +334,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}).With(repos.Opt.RepoSources(gitlabService.URN()))
 
 	bitbucketServerService := &repos.ExternalService{
-		ID:          3,
+		ID:          1,
 		Kind:        "BITBUCKETSERVER",
 		DisplayName: "Bitbucket Server - Test",
 		Config: formatJSON(`
@@ -360,10 +361,10 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		name string
 		// which kinds of external services the new syncer manages
 		kinds []string
-		svcs  repos.ExternalServices     // stored services
-		repos repos.Repos                // stored repos
-		ids   func(repos.Repos) []uint32 // ids of stored repos to exclude
-		res   *protocol.ExcludeReposResponse
+		svcs  repos.ExternalServices // stored services
+		repos repos.Repos            // stored repos
+		kind  string
+		res   *protocol.ExcludeRepoResponse
 		err   string
 	}
 
@@ -378,21 +379,8 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			bitbucketServerService,
 		},
 		repos: repos.Repos{githubRepo, gitlabRepo, bitbucketServerRepo},
-		ids:   func(stored repos.Repos) []uint32 { return stored.IDs() },
-		res: &protocol.ExcludeReposResponse{
-			ExternalServices: apiExternalServices(
-				gitlabService.With(func(e *repos.ExternalService) {
-					if err := e.Exclude(gitlabRepo); err != nil {
-						panic(err)
-					}
-				}),
-				bitbucketServerService.With(func(e *repos.ExternalService) {
-					if err := e.Exclude(bitbucketServerRepo); err != nil {
-						panic(err)
-					}
-				}),
-			),
-		},
+		kind:  "GITHUB",
+		res:   &protocol.ExcludeRepoResponse{},
 	})
 
 	testCases = append(testCases, testCase{
@@ -404,28 +392,35 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			bitbucketServerService,
 		},
 		repos: repos.Repos{githubRepo, gitlabRepo, bitbucketServerRepo},
-		ids:   func(stored repos.Repos) []uint32 { return stored.IDs() },
-		err:   "exclude-repos: store not available. is the new syncer enabled?\n",
+		kind:  "BITBUCKETSERVER",
+		res:   &protocol.ExcludeRepoResponse{},
 	})
 
-	{
+	for _, k := range []struct {
+		svc  *repos.ExternalService
+		repo *repos.Repo
+	}{
+		{githubService, githubRepo},
+		{bitbucketServerService, bitbucketServerRepo},
+		{gitlabService, gitlabRepo},
+	} {
 		svcs := repos.ExternalServices{
-			githubService,
-			githubService.With(func(e *repos.ExternalService) {
+			k.svc,
+			k.svc.With(func(e *repos.ExternalService) {
 				e.ID++
 				e.DisplayName += " - Duplicate"
 			}),
 		}
 
 		testCases = append(testCases, testCase{
-			name:  "repos that have no source info yet are excluded in every external service of the same kind",
-			kinds: []string{"GITHUB"},
+			name:  "excluded from every external service of the same kind/" + k.svc.Kind,
+			kinds: svcs.Kinds(),
 			svcs:  svcs,
-			repos: repos.Repos{githubRepo}.With(repos.Opt.RepoSources()),
-			ids:   func(stored repos.Repos) []uint32 { return stored.IDs() },
-			res: &protocol.ExcludeReposResponse{
+			repos: repos.Repos{k.repo}.With(repos.Opt.RepoSources()),
+			kind:  k.svc.Kind,
+			res: &protocol.ExcludeRepoResponse{
 				ExternalServices: apiExternalServices(svcs.With(func(e *repos.ExternalService) {
-					if err := e.Exclude(githubRepo); err != nil {
+					if err := e.Exclude(k.repo); err != nil {
 						panic(err)
 					}
 				})...),
@@ -439,7 +434,8 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			ctx := context.Background()
 
 			store := new(repos.FakeStore)
-			err := store.UpsertExternalServices(ctx, tc.svcs.Clone()...)
+			storedSvcs := tc.svcs.Clone()
+			err := store.UpsertExternalServices(ctx, storedSvcs...)
 			if err != nil {
 				t.Fatalf("failed to prepare store: %v", err)
 			}
@@ -457,7 +453,15 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			res, err := cli.ExcludeRepos(ctx, tc.ids(storedRepos)...)
+			exclude := storedRepos.Filter(func(r *repos.Repo) bool {
+				return strings.EqualFold(r.ExternalRepo.ServiceType, tc.kind)
+			})
+
+			if len(exclude) != 1 {
+				t.Fatalf("no stored repo of kind %q", tc.kind)
+			}
+
+			res, err := cli.ExcludeRepo(ctx, exclude[0].ID)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have err: %q, want: %q", have, want)
 			}
@@ -467,7 +471,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 				t.Errorf("response:\n%s", cmp.Diff(have, want))
 			}
 
-			if res == nil {
+			if res == nil || len(res.ExternalServices) == 0 {
 				return
 			}
 

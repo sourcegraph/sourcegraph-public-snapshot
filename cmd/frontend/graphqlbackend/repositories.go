@@ -260,7 +260,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 	// the enabled state regardless.
 	var done bool
 	if !args.Enabled {
-		resp, err := repoupdater.DefaultClient.ExcludeRepos(ctx, uint32(repo.repo.ID))
+		resp, err := repoupdater.DefaultClient.ExcludeRepo(ctx, uint32(repo.repo.ID))
 		if err != nil {
 			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
 		}
