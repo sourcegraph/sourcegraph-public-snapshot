@@ -27,6 +27,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"golang.org/x/net/context/ctxhttp"
@@ -367,10 +368,18 @@ func (c *Client) ping(ctx context.Context, addr string) error {
 }
 
 // ListGitolite lists Gitolite repositories.
-func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) ([]string, error) {
+func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
-	return doListOne(ctx, "?gitolite="+url.QueryEscape(gitoliteHost), c.addrForKey(ctx, gitoliteHost))
+
+	resp, err := ctxhttp.Get(ctx, nil, "http://"+c.addrForKey(ctx, gitoliteHost)+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&list)
+	return list, err
 }
 
 // ListCloned lists all cloned repositories
@@ -398,10 +407,10 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 	return repos, err
 }
 
-// GetGitolitePhabricatorMetadata returns Phabricator metadata for a
-// Gitolite repository fetched via a user-provided command.
-func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repo string) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	u := "http://" + c.addrForKey(ctx, gitoliteHost) + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(repo)
+// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
+// a user-provided command.
+func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
+	u := "http://" + c.addrForKey(ctx, gitoliteHost) + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(string(repoName))
 	resp, err := ctxhttp.Get(ctx, nil, u)
 	if err != nil {
 		return nil, err
@@ -413,7 +422,7 @@ func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHos
 	return &metadata, err
 }
 
-func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, error) {
+func doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
 	resp, err := ctxhttp.Get(ctx, nil, "http://"+addr+"/list"+urlSuffix)
 	if err != nil {
 		return nil, err

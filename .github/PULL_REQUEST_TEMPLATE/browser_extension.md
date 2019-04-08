@@ -4,6 +4,7 @@ about: A change to the Sourcegraph browser extension
 title: ''
 labels: browser-extension
 assignees: felixfbecker,lguychard
+
 ---
 
 

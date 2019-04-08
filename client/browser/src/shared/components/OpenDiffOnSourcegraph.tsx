@@ -9,8 +9,6 @@ import { SourcegraphIconButton } from './Button'
 
 interface Props {
     openProps: OpenDiffInSourcegraphProps
-    style?: React.CSSProperties
-    iconStyle?: React.CSSProperties
     className?: string
     iconClassName?: string
     ariaLabel?: string

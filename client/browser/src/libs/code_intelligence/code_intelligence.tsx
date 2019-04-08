@@ -33,7 +33,7 @@ import { CommandListClassProps } from '../../../../../shared/src/commandPalette/
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay, HoverOverlayProps } from '../../../../../shared/src/hover/HoverOverlay'
+import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
@@ -179,7 +179,7 @@ export interface CodeHost {
     /**
      * CSS classes for ActionItem buttons in the hover overlay to customize styling
      */
-    hoverOverlayClassProps?: Pick<HoverOverlayProps, 'actionItemClassName' | 'actionItemPressedClassName'>
+    hoverOverlayClassProps?: HoverOverlayClassProps
 
     /**
      * The list of types of code views to try to annotate.
@@ -423,7 +423,7 @@ export function initCodeIntelligence({
  */
 export interface ResolvedCodeView extends CodeViewSpecWithOutSelector {
     /** The code view DOM element. */
-    codeViewElement: HTMLElement
+    element: HTMLElement
 }
 
 export function handleCodeHost({
@@ -535,7 +535,7 @@ export function handleCodeHost({
         trackCodeViews(codeHost),
         mergeMap(codeViewEvent =>
             codeViewEvent.type === 'added'
-                ? codeViewEvent.resolveFileInfo(codeViewEvent.codeViewElement).pipe(
+                ? codeViewEvent.resolveFileInfo(codeViewEvent.element).pipe(
                       mergeMap(fileInfo =>
                           fetchFileContents(fileInfo).pipe(
                               map(fileInfoWithContents => ({
@@ -581,16 +581,16 @@ export function handleCodeHost({
             console.log(`Code view ${codeViewEvent.type}`)
 
             // Handle added or removed view component, workspace root and subscriptions
-            if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.codeViewElement)) {
-                const { codeViewElement, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
+            if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
+                const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
                     visibleViewComponents: [
                         {
-                            type: 'textEditor' as const,
+                            type: 'CodeEditor' as const,
                             item: {
                                 uri: toURIWithPath(fileInfo),
-                                languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                                languageId: getModeFromPath(fileInfo.filePath),
                                 text: fileInfo.content,
                             },
                             selections,
@@ -599,19 +599,19 @@ export function handleCodeHost({
                     ],
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
                 }
-                codeViewStates.set(codeViewElement, codeViewState)
+                codeViewStates.set(element, codeViewState)
 
                 // When codeView is a diff (and not an added file), add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
                     codeViewState.visibleViewComponents.push({
-                        type: 'textEditor' as const,
+                        type: 'CodeEditor' as const,
                         item: {
                             uri: toURIWithPath({
                                 repoName: fileInfo.baseRepoName,
                                 commitID: fileInfo.baseCommitID,
                                 filePath: fileInfo.baseFilePath,
                             }),
-                            languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                            languageId: getModeFromPath(fileInfo.filePath),
                             text: fileInfo.baseContent,
                         },
                         // There is no notion of a selection on diff views yet, so this is empty.
@@ -652,7 +652,7 @@ export function handleCodeHost({
                             .subscribe(decorations => {
                                 decoratedLines = applyDecorations(
                                     domFunctions,
-                                    codeViewElement,
+                                    element,
                                     decorations || [],
                                     decoratedLines
                                 )
@@ -675,17 +675,17 @@ export function handleCodeHost({
                 codeViewState.subscriptions.add(
                     hoverifier.hoverify({
                         dom: domFunctions,
-                        positionEvents: of(codeViewElement).pipe(findPositionsFromEvents(domFunctions)),
+                        positionEvents: of(element).pipe(findPositionsFromEvents(domFunctions)),
                         resolveContext,
                         adjustPosition,
                     })
                 )
 
-                codeViewElement.classList.add('sg-mounted')
+                element.classList.add('sg-mounted')
 
                 // Render toolbar
                 if (getToolbarMount) {
-                    const mount = getToolbarMount(codeViewElement)
+                    const mount = getToolbarMount(element)
                     render(
                         <CodeViewToolbar
                             {...fileInfo}
@@ -693,22 +693,17 @@ export function handleCodeHost({
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
-                            buttonProps={
-                                toolbarButtonProps || {
-                                    className: '',
-                                    style: {},
-                                }
-                            }
+                            buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
                         />,
                         mount
                     )
                 }
             } else if (codeViewEvent.type === 'removed') {
-                const codeViewState = codeViewStates.get(codeViewEvent.codeViewElement)
+                const codeViewState = codeViewStates.get(codeViewEvent.element)
                 if (codeViewState) {
                     codeViewState.subscriptions.unsubscribe()
-                    codeViewStates.delete(codeViewEvent.codeViewElement)
+                    codeViewStates.delete(codeViewEvent.element)
                 }
             }
 

@@ -16,4 +16,11 @@
 // Hover overlay buttons
 .hover-action-item--bitbucket-server {
     margin: 0 !important;
+    border-radius: 0 !important;
+    border-bottom: none !important;
+    border-top: none !important;
+    border-right: none !important;
+    &:first-child {
+        border-left: none !important;
+    }
 }

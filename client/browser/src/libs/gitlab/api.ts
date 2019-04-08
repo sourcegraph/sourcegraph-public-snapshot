@@ -71,8 +71,10 @@ export const getBaseCommitIDForCommit: ({
     commitID,
 }: Pick<GetBaseCommitIDInput, 'owner' | 'projectName'> & { commitID: string }) => Observable<
     string
-> = memoizeObservable(({ owner, projectName, commitID }) =>
-    get<CommitResponse>(buildURL(owner, projectName, `/repository/commits/${commitID}`)).pipe(
-        map(({ parent_ids }) => first(parent_ids)!) // ! because it'll always have a parent if we are looking at the commit page.
-    )
+> = memoizeObservable(
+    ({ owner, projectName, commitID }) =>
+        get<CommitResponse>(buildURL(owner, projectName, `/repository/commits/${commitID}`)).pipe(
+            map(({ parent_ids }) => first(parent_ids)!) // ! because it'll always have a parent if we are looking at the commit page.
+        ),
+    ({ owner, projectName, commitID }) => `${owner}:${projectName}:${commitID}`
 )

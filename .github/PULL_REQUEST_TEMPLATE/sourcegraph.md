@@ -4,6 +4,7 @@ about: A change to the Sourcegraph web app or the backend
 title: ''
 labels: ''
 assignees: ''
+
 ---
 
 <!-- Reminder: Have you updated the changelog? -->

@@ -46,5 +46,6 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
                 }
                 return repo.comparison.fileDiffs
             })
-        )
+        ),
+    ({ repo, base, head, first }) => `${repo}:${base}:${head}:${first}`
 )

@@ -18,12 +18,12 @@ export function resetAllMemoizationCaches(): void {
  * Creates a function that memoizes the observable result of func.
  * If the Observable errors, the value will not be cached.
  *
- * @param resolver If resolver provided, it determines the cache key for storing the result based on
+ * @param resolver Determines the cache key for storing the result based on
  * the first argument provided to the memoized function.
  */
 export function memoizeObservable<P, T>(
     func: (params: P) => Observable<T>,
-    resolver?: (params: P) => string
+    resolver: (params: P) => string
 ): (params: P, force?: boolean) => Observable<T> {
     const cache = new Map<string, Observable<T>>()
     let cacheResetSeq = allCachesResetSeq
@@ -34,7 +34,7 @@ export function memoizeObservable<P, T>(
             cacheResetSeq = allCachesResetSeq
         }
 
-        const key = resolver ? resolver(params) : params.toString()
+        const key = resolver(params)
         const hit = cache.get(key)
         if (!force && hit) {
             return hit

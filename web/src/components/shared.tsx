@@ -7,7 +7,7 @@ import { HoverOverlay, HoverOverlayProps } from '../../../shared/src/hover/Hover
 // Components from shared with web-styling class names applied
 
 export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => (
-    <HoverOverlay actionItemClassName="btn btn-secondary" {...props} />
+    <HoverOverlay closeButtonClassName="btn btn-icon" actionItemClassName="btn btn-secondary" {...props} />
 )
 WebHoverOverlay.displayName = 'WebHoverOverlay'
 

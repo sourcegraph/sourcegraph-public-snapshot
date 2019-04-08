@@ -40,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	nettrace "golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -221,6 +220,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/list", s.handleList)
+	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
 	mux.HandleFunc("/repo", s.handleRepoInfo)
@@ -466,7 +466,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	exitStatus := -10810   // sentinel value to indicate not set
 	var stdoutN, stderrN int64
 	var status string
-	var errStr string
+	var execErr error
 	var ensureRevisionStatus string
 
 	req.Repo = protocol.NormalizeRepo(req.Repo)
@@ -480,15 +480,17 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		}
 		args := strings.Join(req.Args, " ")
 
-		tr := nettrace.New("exec."+cmd, string(req.Repo))
+		var tr *trace.Trace
+		tr, ctx = trace.New(ctx, "exec."+cmd, string(req.Repo))
 		tr.LazyPrintf("args: %s", args)
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
-			tr.LazyPrintf("status=%s stdout=%d stderr=%d", status, stdoutN, stderrN)
-			if errStr != "" {
-				tr.LazyPrintf("error: %s", errStr)
-				tr.SetError()
-			}
+			tr.LogFields(
+				otlog.String("status", status),
+				otlog.Int64("stdout", stdoutN),
+				otlog.Int64("stderr", stderrN),
+			)
+			tr.SetError(execErr)
 			tr.Finish()
 
 			duration := time.Since(start)
@@ -516,8 +518,8 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
 				ev.AddField("status", status)
-				if errStr != "" {
-					ev.AddField("error", errStr)
+				if execErr != nil {
+					ev.AddField("error", execErr.Error())
 				}
 				if !cmdStart.IsZero() {
 					ev.AddField("cmd_duration_ms", cmdDuration.Seconds()*1000)
@@ -615,11 +617,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
-	var err error
-	exitStatus, err = runCommand(ctx, cmd)
-	if err != nil {
-		errStr = err.Error()
-	}
+	exitStatus, execErr = runCommand(ctx, cmd)
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -631,7 +629,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// write trailer
-	w.Header().Set("X-Exec-Error", errStr)
+	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
 	w.Header().Set("X-Exec-Stderr", string(stderr))
 }
@@ -1330,4 +1328,13 @@ func quickRevParseHead(dir string) (string, error) {
 
 	// Didn't find the refs/heads/$HEAD_BRANCH in packed_refs
 	return "", errors.New("could not compute `git rev-parse HEAD` in-process, try running `git` process")
+}
+
+// errorString returns the error string. If err is nil it returns the empty
+// string.
+func errorString(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

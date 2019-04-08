@@ -109,14 +109,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatchResults, _, err := searchSymbols(ctx, &search.Args{Pattern: p, Repos: repoRevs, Query: r.query}, 7)
+		fileMatches, _, err := searchSymbols(ctx, &search.Args{Pattern: p, Repos: repoRevs, Query: r.query}, 7)
 		if err != nil {
 			return nil, err
 		}
 
 		results = make([]*searchSuggestionResolver, 0)
-		for _, fileMatchResult := range fileMatchResults {
-			for _, sr := range fileMatchResult.fileMatch.symbols {
+		for _, fileMatch := range fileMatches {
+			for _, sr := range fileMatch.symbols {
 				score := 20
 				if sr.symbol.Parent == "" {
 					score++

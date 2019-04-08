@@ -204,7 +204,7 @@ export const bitbucketServerCodeHost: CodeHost = {
     },
     hoverOverlayClassProps: {
         actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
-        actionItemPressedClassName: 'aui-button-primary',
+        closeButtonClassName: 'aui-button',
     },
     getViewContextOnSourcegraphMount,
     getContext,

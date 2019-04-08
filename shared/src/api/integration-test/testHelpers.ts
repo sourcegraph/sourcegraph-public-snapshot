@@ -15,7 +15,7 @@ const FIXTURE_MODEL: Model = {
     roots: [{ uri: 'file:///' }],
     visibleViewComponents: [
         {
-            type: 'textEditor',
+            type: 'CodeEditor',
             item: {
                 uri: 'file:///f',
                 languageId: 'l',
