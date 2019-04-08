@@ -243,6 +243,7 @@ async function getRepoPHIDForDifferentialID(differentialID: number): Promise<str
     }
     const phid = responseJSON.result['0'].repositoryPHID
     if (!phid) {
+        // This happens for diffs that were created without an associated repository
         throw new Error(`no repositoryPHID for diff ${differentialID}`)
     }
     return phid
