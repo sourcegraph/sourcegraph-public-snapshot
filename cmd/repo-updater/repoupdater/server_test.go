@@ -341,7 +341,8 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		{
 			// Some comment
 			"url": "https://bitbucketserver.mycorp.com",
-			"token": "secret"
+			"token": "secret",
+			"username": "alice"
 		}`),
 	}
 
