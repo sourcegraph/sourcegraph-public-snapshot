@@ -138,8 +138,11 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 			respond(w, http.StatusInternalServerError, err)
 			return
 		}
+
 		w.WriteHeader(code)
-		w.Write(bs)
+		if _, err = w.Write(bs); err != nil {
+			log15.Error("failed to write response", "error", err)
+		}
 	}
 }
 
