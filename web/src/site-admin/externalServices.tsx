@@ -142,7 +142,7 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
             id: 'excludeRepo',
             label: 'Exclude a repository',
             run: config => {
-                const value = { name: "<GitHub owner>/<GitHub repository name>" }
+                const value = { name: '<GitHub owner>/<GitHub repository name>' }
                 const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '{"name": "<GitHub owner>/<GitHub repository name>"}' }
             },
@@ -334,11 +334,11 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                 id: 'excludeRepo',
                 label: 'Exclude a repository',
                 run: config => {
-                    const value = { name: "<projectKey>/<repoSlug>" }
+                    const value = { name: '<projectKey>/<repoSlug>' }
                     const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
                     return { edits, selectText: '{"name": "<projectKey>/<repoSlug>"}' }
                 },
-            }
+            },
         ],
     },
     [GQL.ExternalServiceKind.GITLAB]: {
@@ -489,7 +489,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                 id: 'addProject',
                 label: 'Add a project',
                 run: config => {
-                    const value = { name: "<GitLab Group>/<Project Name>" }
+                    const value = { name: '<GitLab Group>/<Project Name>' }
                     const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
                     return { edits, selectText: '{"name": "<GitLab Group>/<Project Name>"}' }
                 },
@@ -498,11 +498,11 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                 id: 'excludeProject',
                 label: 'Exclude a project',
                 run: config => {
-                    const value = { name: "<GitLab Group>/<Project Name>" }
+                    const value = { name: '<GitLab Group>/<Project Name>' }
                     const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
                     return { edits, selectText: '{"name": "<GitLab Group>/<Project Name>"}' }
                 },
-            }
+            },
         ],
     },
     [GQL.ExternalServiceKind.GITOLITE]: {
@@ -658,7 +658,7 @@ const externalServiceAddVariants: Partial<
         dotcom: {
             title: 'GitHub.com repositories',
             shortDescription: 'Add GitHub.com repositories.',
-            editorActions: (GITHUB_EXTERNAL_SERVICE.editorActions || []),
+            editorActions: GITHUB_EXTERNAL_SERVICE.editorActions || [],
         },
         enterprise: {
             title: 'GitHub Enterprise repositories',
