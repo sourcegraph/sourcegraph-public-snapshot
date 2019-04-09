@@ -1,6 +1,6 @@
 import { combineLatest, merge, Observable, ReplaySubject } from 'rxjs'
 import { map, mergeMap, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
-import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
+import { gql, GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../../shared/src/settings/edit'
@@ -13,7 +13,6 @@ import { observeStorageKey } from '../browser/storage'
 import { defaultStorageItems } from '../browser/types'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
-import { getContext } from '../shared/backend/context'
 import { requestGraphQL } from '../shared/backend/graphql'
 import { sourcegraphUrl } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
@@ -79,26 +78,24 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
         },
         queryGraphQL: (request, variables, requestMightContainPrivateInfo) => {
             if (isInPage) {
-                return requestGraphQL({
-                    ctx: getContext(),
-                    request,
-                    variables,
-                    url: window.SOURCEGRAPH_URL,
-                    requestMightContainPrivateInfo,
-                })
+                return requestGraphQL(
+                    gql`
+                        ${request}
+                    `,
+                    variables
+                )
             }
 
             return observeStorageKey('sync', 'sourcegraphURL').pipe(
                 take(1),
                 mergeMap(
-                    (url: string = defaultStorageItems.sourcegraphURL): Observable<GraphQLResult<any>> =>
-                        requestGraphQL({
-                            ctx: getContext(),
-                            request,
-                            variables,
-                            url,
-                            requestMightContainPrivateInfo,
-                        })
+                    (url: string): Observable<GraphQLResult<any>> =>
+                        requestGraphQL(
+                            gql`
+                                ${request}
+                            `,
+                            variables
+                        )
                 )
             )
         },

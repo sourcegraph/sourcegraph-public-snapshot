@@ -1,9 +1,9 @@
 import { from, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, mapTo } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
-import { getContext } from '../../shared/backend/context'
 import { mutateGraphQL } from '../../shared/backend/graphql'
 import { resolveRepo } from '../../shared/repo/backend'
 import { sourcegraphUrl } from '../../shared/util/context'
@@ -257,17 +257,16 @@ interface CreatePhabricatorRepoOptions {
 
 const createPhabricatorRepo = memoizeObservable(
     (options: CreatePhabricatorRepoOptions): Observable<void> =>
-        mutateGraphQL({
-            ctx: getContext(),
-            request: `mutation addPhabricatorRepo(
-            $callsign: String!,
-            $repoName: String!
-            $phabricatorURL: String!
-        ) {
-            addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) { alwaysNil }
-        }`,
-            variables: options,
-        }).pipe(map(() => undefined)),
+        mutateGraphQL(
+            gql`
+                mutation addPhabricatorRepo($callsign: String!, $repoName: String!, $phabricatorURL: String!) {
+                    addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) {
+                        alwaysNil
+                    }
+                }
+            `,
+            options
+        ).pipe(mapTo(undefined)),
     ({ callsign }) => callsign
 )
 
@@ -466,33 +465,35 @@ interface ResolveStagingOptions {
 
 const resolveStagingRev = memoizeObservable(
     (options: ResolveStagingOptions): Observable<string | null> =>
-        mutateGraphQL({
-            ctx: getContext(),
-            request: `mutation ResolveStagingRev(
-                $repoName: String!,
-                $diffID: ID!,
-                $baseRev: String!,
-                $patch: String,
-                $date: String,
-                $authorName: String,
-                $authorEmail: String,
-                $description: String
-             ) {
-               resolvePhabricatorDiff(
-                   repoName: $repoName,
-                   diffID: $diffID,
-                   baseRev: $baseRev,
-                   patch: $patch,
-                   date: $date,
-                   authorName: $authorName,
-                   authorEmail: $authorEmail,
-                   description: $description,
-               ) {
-                   oid
-               }
-            }`,
-            variables: options,
-        }).pipe(
+        mutateGraphQL(
+            gql`
+                mutation ResolveStagingRev(
+                    $repoName: String!
+                    $diffID: ID!
+                    $baseRev: String!
+                    $patch: String
+                    $date: String
+                    $authorName: String
+                    $authorEmail: String
+                    $description: String
+                ) {
+                    resolvePhabricatorDiff(
+                        repoName: $repoName
+                        diffID: $diffID
+                        baseRev: $baseRev
+                        patch: $patch
+                        date: $date
+                        authorName: $authorName
+                        authorEmail: $authorEmail
+                        description: $description
+                    ) {
+                        oid
+                    }
+                }
+            `,
+            options
+        ).pipe(
+            map(dataOrThrowErrors),
             map(result => {
                 if (!result.resolvePhabricatorDiff) {
                     throw new Error('Empty resolvePhabricatorDiff')

@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
-import { getContext } from './context'
 import { RepoNotFoundError } from './errors'
 import { queryGraphQL } from './graphql'
 
@@ -13,30 +13,30 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
         head: string | null
         first?: number
     }): Observable<GQL.IFileDiffConnection> =>
-        queryGraphQL({
-            ctx: getContext(),
-            request: `
-            query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
-                repository(name: $repo) {
-                    comparison(base: $base, head: $head) {
-                        fileDiffs(first: $first) {
-                            nodes {
-                                ...FileDiffFields
+        queryGraphQL(
+            gql`
+                query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
+                    repository(name: $repo) {
+                        comparison(base: $base, head: $head) {
+                            fileDiffs(first: $first) {
+                                nodes {
+                                    ...FileDiffFields
+                                }
+                                totalCount
                             }
-                            totalCount
                         }
                     }
                 }
-            }
 
-            fragment FileDiffFields on FileDiff {
-                oldPath
-                newPath
-                internalID
-            }
-        `,
-            variables: { repo: args.repo, base: args.base, head: args.head, first: args.first },
-        }).pipe(
+                fragment FileDiffFields on FileDiff {
+                    oldPath
+                    newPath
+                    internalID
+                }
+            `,
+            { repo: args.repo, base: args.base, head: args.head, first: args.first }
+        ).pipe(
+            map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {
                     throw new RepoNotFoundError(args.repo)

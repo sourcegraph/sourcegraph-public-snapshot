@@ -14,8 +14,8 @@ import {
     take,
     toArray,
 } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { getContext } from './context'
 import { createAggregateError } from './errors'
 import { queryGraphQL } from './graphql'
 
@@ -125,7 +125,7 @@ function createSuggestion(item: GQL.SearchSuggestion): Suggestion | null {
     }
 }
 
-const symbolsFragment = `
+const symbolsFragment = gql`
     fragment SymbolFields on Symbol {
         __typename
         name
@@ -145,9 +145,8 @@ const symbolsFragment = `
 `
 
 const fetchSuggestions = (query: string, first: number) =>
-    queryGraphQL({
-        ctx: getContext(),
-        request: `
+    queryGraphQL(
+        gql`
             query SearchSuggestions($query: String!, $first: Int!) {
                 search(query: $query) {
                     suggestions(first: $first) {
@@ -174,12 +173,13 @@ const fetchSuggestions = (query: string, first: number) =>
             }
             ${symbolsFragment}
         `,
-        variables: {
+        {
             query,
             // The browser extension API only takes 5 suggestions
             first,
-        },
-    }).pipe(
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
         mergeMap(({ search }) => {
             if (!search || !search.suggestions) {
                 throw new Error('No search suggestions')
@@ -224,9 +224,8 @@ export const createSuggestionFetcher = (first = 5) => {
 }
 
 export const fetchSymbols = (query: string): Observable<GQL.ISymbol[]> =>
-    queryGraphQL({
-        ctx: getContext(),
-        request: `
+    queryGraphQL(
+        gql`
             query SearchResults($query: String!) {
                 search(query: $query) {
                     results {
@@ -242,10 +241,11 @@ export const fetchSymbols = (query: string): Observable<GQL.ISymbol[]> =>
             }
             ${symbolsFragment}
         `,
-        variables: {
+        {
             query,
-        },
-    }).pipe(
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
         map(({ search }) => {
             if (!search) {
                 throw new Error('fetchSymbols: empty search')
