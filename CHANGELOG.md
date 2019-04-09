@@ -29,6 +29,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- Removed the option to show saved searches on the Sourcegraph homepage.
+
 ### Fixed
 
 ## 3.2.1
@@ -37,10 +39,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Jaeger tracing, once enabled, can now be configured via standard [environment variables](https://github.com/jaegertracing/jaeger-client-go/blob/v2.14.0/README.md#environment-variables).
 - Fixed an issue where some search and zoekt errors would not be logged.
-
-### Removed
-
-- Removed the option to show saved searches on the Sourcegraph homepage.
 
 ## 3.2.0
 
