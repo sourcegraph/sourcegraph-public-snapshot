@@ -70,6 +70,6 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                 }
             }
         }
-        this.props.extensionsController.services.model.model.next({ visibleViewComponents })
+        this.props.extensionsController.services.editor.model.next({ visibleViewComponents })
     }
 }

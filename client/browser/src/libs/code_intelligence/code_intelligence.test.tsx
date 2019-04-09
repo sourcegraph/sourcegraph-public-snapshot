@@ -179,7 +179,7 @@ describe('handleCodeHost()', () => {
                 ...createMockPlatformContext(),
             })
         )
-        const viewComponents = await from(services.model.model)
+        const viewComponents = await from(services.editor.model)
             .pipe(
                 skip(1),
                 take(1),

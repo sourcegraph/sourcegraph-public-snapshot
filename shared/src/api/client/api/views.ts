@@ -6,8 +6,8 @@ import { PanelView } from 'sourcegraph'
 import { isDefined } from '../../../util/types'
 import { ContributableViewContainer } from '../../protocol'
 import { modelToTextDocumentPositionParams } from '../model'
+import { EditorService } from '../services/editorService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
-import { ModelService } from '../services/modelService'
 import { PanelViewWithComponent, ViewProviderRegistry } from '../services/view'
 
 /** @internal */
@@ -29,7 +29,7 @@ export class ClientViews implements ClientViewsAPI {
     constructor(
         private viewRegistry: ViewProviderRegistry,
         private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
-        private modelService: ModelService
+        private editorService: EditorService
     ) {}
 
     public $registerPanelViewProvider(provider: { id: string }): PanelUpdater {
@@ -49,7 +49,7 @@ export class ClientViews implements ClientViewsAPI {
                     map(({ locationProvider }) => locationProvider),
                     distinctUntilChanged(),
                     map(locationProvider =>
-                        from(this.modelService.model).pipe(
+                        from(this.editorService.model).pipe(
                             switchMap(model => {
                                 const params = modelToTextDocumentPositionParams(model)
                                 if (!params) {

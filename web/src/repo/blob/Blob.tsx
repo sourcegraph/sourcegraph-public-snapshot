@@ -292,7 +292,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
-                this.props.extensionsController.services.model.model.next({
+                this.props.extensionsController.services.editor.model.next({
                     visibleViewComponents: [
                         {
                             type: 'CodeEditor' as const,

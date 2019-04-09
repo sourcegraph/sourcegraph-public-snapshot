@@ -95,7 +95,7 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.model.model).pipe(
+            provider: from(this.props.extensionsController.services.editor.model).pipe(
                 map(model => {
                     if (!registry.hasProvidersForActiveTextDocument(model)) {
                         return null
