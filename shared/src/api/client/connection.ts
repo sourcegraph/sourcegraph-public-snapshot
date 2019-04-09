@@ -88,18 +88,17 @@ export async function createExtensionHostClientConnection(
                     }
                     await proxy.windows.$acceptWindowData(
                         viewComponents
-                            ? [
-                                  {
-                                      visibleViewComponents: viewComponents.map(viewComponent => ({
-                                          item: {
-                                              uri: viewComponent.item.uri,
-                                          },
-                                          selections: viewComponent.selections,
-                                          isActive: viewComponent.isActive,
-                                      })),
-                                  },
-                              ]
-                            : []
+                            ? {
+                                  visibleViewComponents: viewComponents.map(viewComponent => ({
+                                      type: 'CodeEditor',
+                                      item: {
+                                          uri: viewComponent.item.uri,
+                                      },
+                                      selections: viewComponent.selections,
+                                      isActive: viewComponent.isActive,
+                                  })),
+                              }
+                            : null
                     )
                 })
             )

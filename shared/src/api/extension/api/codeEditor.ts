@@ -1,8 +1,9 @@
 import { ProxyResult } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { of } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
+import { CodeEditorViewComponentData } from '../../client/model'
 import { Range } from '../types/range'
 import { Selection } from '../types/selection'
 import { createDecorationType } from './decorations'
@@ -12,15 +13,19 @@ const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
 export class ExtCodeEditor implements sourcegraph.CodeEditor {
+    /** The URI of the text document shown in this code editor */
+    private resource: string
+
     constructor(
-        private resource: string,
-        public _selections: clientType.Selection[],
-        public readonly isActive: boolean,
+        data: CodeEditorViewComponentData<Pick<sourcegraph.TextDocument, 'uri'>>,
         private proxy: ProxyResult<ClientCodeEditorAPI>,
         private documents: ExtDocuments
-    ) {}
+    ) {
+        this.resource = data.item.uri
+        this.update(data)
+    }
 
-    public readonly selectionsChanges = of(this.selections)
+    public readonly selectionsChanges = new BehaviorSubject<sourcegraph.Selection[]>([])
 
     public readonly type = 'CodeEditor'
 
@@ -29,11 +34,11 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
     }
 
     public get selection(): sourcegraph.Selection | null {
-        return this._selections.length > 0 ? Selection.fromPlain(this._selections[0]) : null
+        return this.selectionsChanges.value.length > 0 ? this.selectionsChanges.value[0] : null
     }
 
     public get selections(): sourcegraph.Selection[] {
-        return this._selections.map(data => Selection.fromPlain(data))
+        return this.selectionsChanges.value
     }
 
     public setDecorations(
@@ -45,6 +50,10 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
         // tslint:disable-next-line: no-floating-promises
         this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
+    }
+
+    public update(data: Pick<CodeEditorViewComponentData, 'selections'>): void {
+        this.selectionsChanges.next(data.selections.map(s => Selection.fromPlain(s)))
     }
 
     public toJSON(): any {

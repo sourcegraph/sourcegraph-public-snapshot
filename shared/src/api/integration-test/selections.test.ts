@@ -1,5 +1,5 @@
 import { from } from 'rxjs'
-import { filter, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import { isDefined } from '../../util/types'
 import { ViewComponentData } from '../client/model'
 import { assertToJSON } from '../extension/types/testHelpers'
@@ -41,6 +41,7 @@ describe('Selections (integration)', () => {
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
                 filter(isDefined),
+                distinctUntilChanged(),
                 switchMap(editor => editor.selectionsChanges)
             )
             const selectionValues = collectSubscribableValues(selectionChanges)
