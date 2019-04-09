@@ -683,6 +683,7 @@ export function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
+                            scope={codeViewState.visibleViewComponents[0]}
                         />,
                         mount
                     )
