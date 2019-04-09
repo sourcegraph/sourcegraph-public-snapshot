@@ -19,6 +19,7 @@ services:
         image: 'sourcegraph/zoekt-indexserver:18-10-30_faca01d@sha256:36c1309d935b7faf5ec69277444a6c0eefa510a6eb20deb651cdb7ce3de3913f'
         mem_limit: 3g
         cpus: 2
+        cpu_shares: 512
         environment:
             - 'SRC_FRONTEND_INTERNAL=http://sourcegraph:3090'
         volumes:
@@ -32,6 +33,7 @@ services:
         image: 'sourcegraph/zoekt-webserver:18-10-30_faca01d@sha256:afadb33c9c254256fc41a6cbd372d2eca93140eebc1fee05367fd81059ea7205'
         mem_limit: 3g
         cpus: 2
+        cpu_shares: 512
         volumes:
             - '~/zoekt:/data/index'
         restart: always
