@@ -448,7 +448,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			}
 
 			srv := httptest.NewServer((&Server{Kinds: tc.kinds, Store: store}).Handler())
-			defer src.Close()
+			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
 
 			if tc.err == "" {
@@ -527,20 +527,10 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		Name: "gitolite.example.com/oldschool",
 	}
 
-	repoOneSource := (&repos.Repo{
-		Name: "github.com/foo/onesource",
+	repoSources := (&repos.Repo{
+		Name: "github.com/foo/sources",
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "onesource",
-			ServiceType: "github",
-			ServiceID:   "http://github.com",
-		},
-		Metadata: new(github.Repository),
-	}).With(repos.Opt.RepoSources(service1.URN()))
-
-	repoTwoSources := (&repos.Repo{
-		Name: "github.com/foo/twosources",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "twosources",
+			ID:          "sources",
 			ServiceType: "github",
 			ServiceID:   "http://github.com",
 		},
@@ -559,39 +549,39 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	ctx := context.Background()
 	store := new(repos.FakeStore)
 	must(store.UpsertExternalServices(ctx, service1, service2))
-	must(store.UpsertRepos(ctx, repoNoSources, repoOneSource, repoTwoSources))
+	must(store.UpsertRepos(ctx, repoNoSources, repoSources))
 
 	testCases := []struct {
 		name   string
 		repoID uint32
 		svcs   []api.ExternalService
+		err    string
 	}{{
 		name:   "repo no sources",
 		repoID: repoNoSources.ID,
 		svcs:   nil,
+		err:    "<nil>",
 	}, {
-		name:   "repo one source",
-		repoID: repoOneSource.ID,
-		svcs:   apiExternalServices(service1),
-	}, {
-		name:   "repo two sources",
-		repoID: repoTwoSources.ID,
+		name:   "repo sources",
+		repoID: repoSources.ID,
 		svcs:   apiExternalServices(service1, service2),
+		err:    "<nil>",
 	}, {
 		name:   "repo not in store",
 		repoID: 42,
 		svcs:   nil,
+		err:    "repository with ID 42 does not exist",
 	}}
 
 	srv := httptest.NewServer((&Server{Store: store}).Handler())
-	defer src.Close()
+	defer srv.Close()
 	cli := repoupdater.Client{URL: srv.URL}
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			res, err := cli.RepoExternalServices(ctx, tc.repoID)
-			if err != nil {
-				t.Fatal(err)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
 			}
 
 			if have, want := res, tc.svcs; !reflect.DeepEqual(have, want) {

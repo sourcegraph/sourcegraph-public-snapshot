@@ -4,11 +4,12 @@ package repoupdater
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -163,7 +164,9 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 	case error:
 		if val != nil {
 			log15.Error(val.Error())
-			http.Error(w, val.Error(), code)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(code)
+			fmt.Fprintf(w, "%v", val)
 		}
 	default:
 		w.Header().Set("Content-Type", "application/json")
