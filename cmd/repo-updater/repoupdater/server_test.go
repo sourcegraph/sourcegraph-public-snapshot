@@ -448,6 +448,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			}
 
 			srv := httptest.NewServer((&Server{Kinds: tc.kinds, Store: store}).Handler())
+			defer src.Close()
 			cli := repoupdater.Client{URL: srv.URL}
 
 			if tc.err == "" {
@@ -583,6 +584,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	}}
 
 	srv := httptest.NewServer((&Server{Store: store}).Handler())
+	defer src.Close()
 	cli := repoupdater.Client{URL: srv.URL}
 	for _, tc := range testCases {
 		tc := tc
