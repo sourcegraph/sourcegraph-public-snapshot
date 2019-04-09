@@ -243,15 +243,17 @@ func (s *updateScheduler) Update(rs ...*Repo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	known := 0
 	for _, r := range rs {
 		if r.IsDeleted() {
 			s.remove(r)
 		} else {
+			known++
 			s.upsert(r)
 		}
 	}
 
-	schedKnownRepos.Set(float64(len(rs)))
+	schedKnownRepos.Set(float64(known))
 }
 
 func (s *updateScheduler) upsert(r *Repo) {
