@@ -30,12 +30,18 @@ export interface FeatureFlags {
      * @duration permanent
      */
     allowErrorReporting: boolean
+
+    /**
+     * Support link previews from extensions in content views (such as GitHub issues).
+     */
+    experimentalLinkPreviews: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
     newInject: false,
     inlineSymbolSearchEnabled: true,
     allowErrorReporting: false,
+    experimentalLinkPreviews: false,
 }
 
 // TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by

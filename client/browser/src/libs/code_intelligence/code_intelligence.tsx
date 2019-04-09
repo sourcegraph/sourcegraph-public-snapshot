@@ -11,7 +11,17 @@ import * as H from 'history'
 import { isEqual, uniqBy } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { animationFrameScheduler, EMPTY, fromEvent, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import {
+    animationFrameScheduler,
+    EMPTY,
+    from,
+    fromEvent,
+    Observable,
+    of,
+    Subject,
+    Subscription,
+    Unsubscribable,
+} from 'rxjs'
 import {
     catchError,
     concatAll,
@@ -22,6 +32,7 @@ import {
     mergeMap,
     observeOn,
     startWith,
+    switchMap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
@@ -58,11 +69,13 @@ import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/compone
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { sourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
+import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeViewSpec, CodeViewSpecResolver, fetchFileContents, trackCodeViews } from './code_views'
+import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
 import { ViewResolver } from './views'
@@ -143,6 +156,11 @@ export interface CodeHost {
     codeViewSpecResolver?: ViewResolver<CodeViewSpecResolver>
 
     /**
+     * Resolve {@link ContentView}s from the DOM.
+     */
+    contentViewResolvers?: ViewResolver<ContentView>[]
+
+    /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
      * elements that throw off the position of the tooltip within the relative
      * element.
@@ -175,6 +193,21 @@ export interface CodeHost {
      * CSS classes for the code view toolbar to customize styling
      */
     codeViewToolbarClassProps?: CodeViewToolbarClassProps
+
+    /**
+     * CSS classes for the link preview content element to customize styling.
+     */
+    linkPreviewContentClass?: string[]
+
+    /**
+     * Sets or removes a plain-text tooltip on the HTML element using the native style for the code
+     * host.
+     *
+     * @param element The HTML element whose tooltip to set or remove.
+     * @param tooltip The tooltip plain-text content (to add the tooltip) or `null` (to remove the
+     * tooltip).
+     */
+    setElementTooltip?: (element: HTMLElement, tooltip: string | null) => void
 }
 
 export interface FileInfo {
@@ -626,6 +659,17 @@ export function handleCodeHost({
                 uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
             )
         })
+    )
+
+    // Show link previews on content views (feature-flagged).
+    subscriptions.add(
+        handleContentViews(
+            from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
+                switchMap(enabled => (enabled ? mutations : []))
+            ),
+            { extensionsController },
+            codeHost
+        )
     )
 
     return subscriptions

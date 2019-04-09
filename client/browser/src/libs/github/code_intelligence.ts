@@ -12,12 +12,14 @@ import {
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import { MountGetter } from '../code_intelligence'
+import { CodeHost, MountGetter } from '../code_intelligence'
 import { CodeViewSpec, CodeViewSpecResolver } from '../code_intelligence/code_views'
 import { ViewResolver } from '../code_intelligence/views'
+import { markdownBodyViewResolver } from './content_views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
+import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 
 /**
@@ -252,10 +254,11 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
     return mount
 }
 
-export const githubCodeHost = {
+export const githubCodeHost: CodeHost = {
     name: 'github',
     codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
     codeViewSpecResolver,
+    contentViewResolvers: [markdownBodyViewResolver],
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
@@ -288,6 +291,17 @@ export const githubCodeHost = {
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
     },
+    setElementTooltip,
+    linkPreviewContentClass: [
+        'text-small',
+        'text-gray',
+        'p-1',
+        'mx-1',
+        'border',
+        'rounded-1',
+        'bg-gray',
+        'text-gray-dark',
+    ],
     urlToFile: (
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => {
