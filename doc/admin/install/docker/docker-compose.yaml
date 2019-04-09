@@ -9,6 +9,10 @@ services:
             - '2633:2633'
         networks:
             - sourcegraph
+
+        # When the system is under-load, this container has 2x the CPU priorty of the Zoekt containers
+        cpu_shares: 1024
+
         environment:
             # Tell sourcegraph/server to use the external Zoekt containers
             - 'ZOEKT_HOST=zoekt-webserver:6070'
@@ -28,8 +32,7 @@ services:
         mem_limit: 3g
         # Restrict the container to use at most 2 full CPU cores
         cpus: 2
-        # When the system is under-load, this container has 50% CPU priority when compared to
-        # the 'server' container
+        # When the system is under-load, this container has 1/2 the CPU priority of the 'server' container
         cpu_shares: 512
 
         environment:
@@ -51,8 +54,7 @@ services:
         mem_limit: 3g
         # Restrict the container to use at most 2 full CPU cores
         cpus: 2
-        # When the system is under-load, this container has 50% CPU priority when compared to
-        # the 'server' container
+        # When the system is under-load, this container has 1/2 the CPU priority of the 'server' container
         cpu_shares: 512
 
         volumes:
