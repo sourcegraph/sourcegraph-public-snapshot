@@ -5,7 +5,7 @@ import * as sourcegraph from 'sourcegraph'
 
 /** @internal */
 export interface ExtRootsAPI extends ProxyValue {
-    $acceptRoots(roots: clientType.WorkspaceRoot[]): void
+    $acceptRoots(roots: readonly clientType.WorkspaceRoot[]): void
 }
 
 /** @internal */

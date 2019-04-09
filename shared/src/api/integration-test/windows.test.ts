@@ -26,7 +26,6 @@ describe('Windows (integration)', () => {
                 visibleViewComponents: [],
             })
             model.next({
-                ...model.value,
                 visibleViewComponents: [
                     {
                         type: 'CodeEditor',
@@ -36,12 +35,8 @@ describe('Windows (integration)', () => {
                     },
                 ],
             })
+            model.next({ visibleViewComponents: [] })
             model.next({
-                ...model.value,
-                visibleViewComponents: [],
-            })
-            model.next({
-                ...model.value,
                 visibleViewComponents: [
                     {
                         type: 'CodeEditor',
@@ -80,7 +75,6 @@ describe('Windows (integration)', () => {
             const { model, extensionAPI } = await integrationTestContext()
 
             model.next({
-                ...model.value,
                 visibleViewComponents: [
                     {
                         type: 'CodeEditor',
@@ -115,7 +109,6 @@ describe('Windows (integration)', () => {
             const { model, extensionAPI } = await integrationTestContext()
 
             model.next({
-                ...model.value,
                 visibleViewComponents: [
                     {
                         type: 'CodeEditor',
@@ -154,7 +147,6 @@ describe('Windows (integration)', () => {
                 const { model, extensionAPI } = await integrationTestContext()
 
                 model.next({
-                    ...model.value,
                     visibleViewComponents: [
                         {
                             type: 'CodeEditor',
@@ -185,7 +177,6 @@ describe('Windows (integration)', () => {
                     visibleViewComponents: [],
                 })
                 model.next({
-                    ...model.value,
                     visibleViewComponents: [
                         {
                             type: 'CodeEditor',
@@ -195,12 +186,8 @@ describe('Windows (integration)', () => {
                         },
                     ],
                 })
+                model.next({ visibleViewComponents: [] })
                 model.next({
-                    ...model.value,
-                    visibleViewComponents: [],
-                })
-                model.next({
-                    ...model.value,
                     visibleViewComponents: [
                         {
                             type: 'CodeEditor',

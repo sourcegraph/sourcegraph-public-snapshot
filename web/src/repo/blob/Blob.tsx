@@ -293,7 +293,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
                 this.props.extensionsController.services.model.model.next({
-                    ...this.props.extensionsController.services.model.model.value,
                     visibleViewComponents: [
                         {
                             type: 'CodeEditor' as const,

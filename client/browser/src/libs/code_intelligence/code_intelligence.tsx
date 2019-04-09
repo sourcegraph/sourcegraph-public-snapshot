@@ -27,7 +27,8 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { ViewComponentData, WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/model'
+import { ViewComponentData } from '../../../../../shared/src/api/client/model'
+import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
 import { Controller } from '../../../../../shared/src/extensions/controller'
@@ -556,7 +557,6 @@ export function handleCodeHost({
     subscriptions.add(
         selectionsChanges.subscribe(selections => {
             extensionsController.services.model.model.next({
-                ...extensionsController.services.model.model.value,
                 visibleViewComponents: [...codeViewStates.values()]
                     .flatMap(state => state.visibleViewComponents)
                     .map(visibleViewComponent => ({ ...visibleViewComponent, selections })),
@@ -698,9 +698,11 @@ export function handleCodeHost({
 
             // Apply added/removed roots/visibleViewComponents
             extensionsController.services.model.model.next({
-                roots: uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri),
                 visibleViewComponents: [...codeViewStates.values()].flatMap(state => state.visibleViewComponents),
             })
+            extensionsController.services.workspace.roots.next(
+                uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
+            )
         })
     )
 

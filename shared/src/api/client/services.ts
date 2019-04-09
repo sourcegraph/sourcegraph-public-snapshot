@@ -12,6 +12,7 @@ import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
 import { createSettingsService } from './services/settings'
 import { ViewProviderRegistry } from './services/view'
+import { createWorkspaceService } from './services/workspaceService'
 
 /**
  * Services is a container for all services used by the client application.
@@ -32,6 +33,7 @@ export class Services {
     public readonly commands = new CommandRegistry()
     public readonly context = createContextService(this.platformContext)
     public readonly model = createModelService()
+    public readonly workspace = createWorkspaceService()
     public readonly notifications = new NotificationsService()
     public readonly settings = createSettingsService(this.platformContext)
     public readonly contribution = new ContributionRegistry(this.model.model, this.settings, this.context.data)

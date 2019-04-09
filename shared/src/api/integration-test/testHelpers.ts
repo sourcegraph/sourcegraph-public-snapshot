@@ -9,9 +9,14 @@ import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Model } from '../client/model'
 import { Services } from '../client/services'
+import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 
-const FIXTURE_MODEL: Model = {
+interface TestInitData extends Model {
+    roots: readonly WorkspaceRootWithMetadata[]
+}
+
+const FIXTURE_INIT_DATA: TestInitData = {
     roots: [{ uri: 'file:///' }],
     visibleViewComponents: [
         {
@@ -59,7 +64,7 @@ const NOOP_MOCKS: Mocks = {
  */
 export async function integrationTestContext(
     partialMocks: Partial<Mocks> = NOOP_MOCKS,
-    initModel: Model = FIXTURE_MODEL
+    initModel: TestInitData = FIXTURE_INIT_DATA
 ): Promise<
     TestContext & {
         model: Subscribable<Model> & { value: Model } & NextObserver<Model>
@@ -90,6 +95,7 @@ export async function integrationTestContext(
 
     const extensionAPI = await extensionHost.extensionAPI
     services.model.model.next(initModel)
+    services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
     await Promise.all([

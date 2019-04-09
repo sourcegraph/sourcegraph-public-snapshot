@@ -9,12 +9,12 @@ describe('Workspace roots (integration)', () => {
         })
 
         test('adds new text documents', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+            const {
+                services: { workspace },
+                extensionAPI,
+            } = await integrationTestContext()
 
-            model.next({
-                ...model.value,
-                roots: [{ uri: 'file:///a' }, { uri: 'file:///b' }],
-            })
+            workspace.roots.next([{ uri: 'file:///a' }, { uri: 'file:///b' }])
             await extensionAPI.internal.sync()
 
             expect(extensionAPI.workspace.roots).toEqual([
@@ -26,15 +26,15 @@ describe('Workspace roots (integration)', () => {
 
     describe('workspace.rootChanges', () => {
         test('fires when a root is added or removed', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+            const {
+                services: { workspace },
+                extensionAPI,
+            } = await integrationTestContext()
 
             const values = collectSubscribableValues(extensionAPI.workspace.rootChanges)
             expect(values).toEqual([] as void[])
 
-            model.next({
-                ...model.value,
-                roots: [{ uri: 'file:///a' }],
-            })
+            workspace.roots.next([{ uri: 'file:///a' }])
             await extensionAPI.internal.sync()
 
             expect(values).toEqual([void 0])
