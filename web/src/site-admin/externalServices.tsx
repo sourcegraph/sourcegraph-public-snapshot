@@ -261,6 +261,9 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
 
   "url": "https://bitbucket.example.com",
 
+  // The username of the user that owns the token defined below.
+  "username": "",
+
   // Create a personal access token with read scope at
   // https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add
   "token": ""
