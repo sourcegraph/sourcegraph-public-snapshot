@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Jaeger tracing, once enabled, can now be configured via standard [environment variables](https://github.com/jaegertracing/jaeger-client-go/blob/v2.14.0/README.md#environment-variables).
+- Fixed an issue where some search and zoekt errors would not be logged.
 
 ### Removed
 
