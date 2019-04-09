@@ -1,5 +1,5 @@
+import { gql } from '../../../../../shared/src/graphql/graphql'
 import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
-import { getContext } from './context'
 import { mutateGraphQL } from './graphql'
 
 /**
@@ -13,16 +13,16 @@ export const logUserEvent = (event: string, uid: string, url: string): void => {
     if (url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
-    mutateGraphQL({
-        ctx: getContext(),
-        request: `mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
-            logUserEvent(event: $event, userCookieID: $userCookieID) {
-                alwaysNil
+    mutateGraphQL(
+        gql`
+            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
+                logUserEvent(event: $event, userCookieID: $userCookieID) {
+                    alwaysNil
+                }
             }
-        }`,
-        variables: { event, userCookieID: uid },
-        url,
-    }).subscribe({
+        `,
+        { event, userCookieID: uid }
+    ).subscribe({
         error: error => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
             // (e.g., if CODEINTELINTEGRATION user events aren't yet supported).

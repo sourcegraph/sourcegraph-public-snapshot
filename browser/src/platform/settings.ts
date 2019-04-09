@@ -3,7 +3,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { SettingsEdit } from '../../../shared/src/api/client/services/settings'
-import { gql, graphQLContent } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import {
     mergeSettings,
@@ -15,9 +15,7 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import { observeStorageKey, storage } from '../browser/storage'
 import { isInPage } from '../context'
-import { getContext } from '../shared/backend/context'
 import { queryGraphQL } from '../shared/backend/graphql'
-import { sourcegraphUrl } from '../shared/util/context'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
 
@@ -115,23 +113,19 @@ const configurationCascadeFragment = gql`
  * TODO(sqs): This uses the DEPRECATED GraphQL Query.viewerConfiguration and ConfigurationCascade for backcompat.
  */
 export function fetchViewerSettings(): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
-    return queryGraphQL({
-        ctx: getContext(),
-        request: gql`
-            query ViewerConfiguration {
-                viewerConfiguration {
-                    ...ConfigurationCascadeFields
-                }
+    return queryGraphQL(gql`
+        query ViewerConfiguration {
+            viewerConfiguration {
+                ...ConfigurationCascadeFields
             }
-            ${configurationCascadeFragment}
-        `[graphQLContent],
-        url: sourcegraphUrl,
-        requestMightContainPrivateInfo: false,
-    }).pipe(
+        }
+        ${configurationCascadeFragment}
+    `).pipe(
         // Suppress deprecation warnings because our use of these deprecated fields is intentional (see
         // tsdoc comment).
         //
         // tslint:disable deprecation
+        map(dataOrThrowErrors),
         map(({ viewerConfiguration }) => {
             if (!viewerConfiguration) {
                 throw new Error('fetchViewerSettings: empty viewerConfiguration')

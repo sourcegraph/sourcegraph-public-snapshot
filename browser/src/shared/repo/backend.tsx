@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
-import { getContext } from '../backend/context'
 import { CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError } from '../backend/errors'
 import { queryGraphQL } from '../backend/graphql'
 
@@ -12,15 +12,17 @@ import { queryGraphQL } from '../backend/graphql'
  */
 export const resolveRepo = memoizeObservable(
     (ctx: { repoName: string }): Observable<string> =>
-        queryGraphQL({
-            ctx: getContext(),
-            request: `query ResolveRepo($repoName: String!) {
-                repository(name: $repoName) {
-                    url
+        queryGraphQL(
+            gql`
+                query ResolveRepo($repoName: String!) {
+                    repository(name: $repoName) {
+                        url
+                    }
                 }
-            }`,
-            variables: { ...ctx },
-        }).pipe(
+            `,
+            { ...ctx }
+        ).pipe(
+            map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {
                     throw new RepoNotFoundError(ctx.repoName)
@@ -38,20 +40,22 @@ export const resolveRepo = memoizeObservable(
  */
 export const resolveRev = memoizeObservable(
     (ctx: { repoName: string; rev?: string }): Observable<string> =>
-        queryGraphQL({
-            ctx: getContext(),
-            request: `query ResolveRev($repoName: String!, $rev: String!) {
-                repository(name: $repoName) {
-                    mirrorInfo {
-                        cloneInProgress
-                    }
-                    commit(rev: $rev) {
-                        oid
+        queryGraphQL(
+            gql`
+                query ResolveRev($repoName: String!, $rev: String!) {
+                    repository(name: $repoName) {
+                        mirrorInfo {
+                            cloneInProgress
+                        }
+                        commit(rev: $rev) {
+                            oid
+                        }
                     }
                 }
-            }`,
-            variables: { ...ctx, rev: ctx.rev || '' },
-        }).pipe(
+            `,
+            { ...ctx, rev: ctx.rev || '' }
+        ).pipe(
+            map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {
                     throw new RepoNotFoundError(ctx.repoName)
@@ -87,12 +91,6 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
         )
 }
 
-const trimRepoName = <T extends { repoName: string }>({ repoName, ...rest }: T): T =>
-    ({
-        repoName: repoName.replace(/.git$/, ''),
-        ...rest,
-    } as T)
-
 /**
  * Fetches the lines of a given file at a given commit from the Sourcegraph API.
  * Will return an empty array if the repo, commit or file does not exist or an error happened (TODO change this!).
@@ -101,9 +99,8 @@ const trimRepoName = <T extends { repoName: string }>({ repoName, ...rest }: T):
  */
 export const fetchBlobContentLines = memoizeObservable(
     (ctx: RepoSpec & ResolvedRevSpec & FileSpec): Observable<string[]> =>
-        queryGraphQL({
-            ctx: getContext(),
-            request: `query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
+        queryGraphQL(gql`
+            query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
                 repository(name: $repoName) {
                     commit(rev: $commitID) {
                         file(path: $filePath) {
@@ -111,9 +108,9 @@ export const fetchBlobContentLines = memoizeObservable(
                         }
                     }
                 }
-            }`,
-            variables: trimRepoName(ctx),
-        }).pipe(
+            }
+        `).pipe(
+            map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {
                     return []
