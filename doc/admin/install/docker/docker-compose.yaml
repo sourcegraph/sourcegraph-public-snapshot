@@ -23,6 +23,7 @@ services:
         image: 'sourcegraph/zoekt-indexserver:18-10-30_faca01d@sha256:36c1309d935b7faf5ec69277444a6c0eefa510a6eb20deb651cdb7ce3de3913f'
         networks:
             - sourcegraph
+
         # Restrict the container to use at most 3 gigs of RAM
         mem_limit: 3g
         # Restrict the container to use at most 2 full CPU cores
@@ -45,6 +46,7 @@ services:
         image: 'sourcegraph/zoekt-webserver:18-10-30_faca01d@sha256:afadb33c9c254256fc41a6cbd372d2eca93140eebc1fee05367fd81059ea7205'
         networks:
             - sourcegraph
+
         # Restrict the container to use at most 3 gigs of RAM
         mem_limit: 3g
         # Restrict the container to use at most 2 full CPU cores
