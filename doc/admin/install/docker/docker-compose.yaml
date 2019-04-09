@@ -23,7 +23,7 @@ services:
         environment:
             - 'SRC_FRONTEND_INTERNAL=http://sourcegraph:3090'
         volumes:
-            - '~/zoekt:/data/index'
+            - '~/.zoekt:/data/index'
         restart: always
         depends_on:
             - server
@@ -35,7 +35,7 @@ services:
         cpus: 2
         cpu_shares: 512
         volumes:
-            - '~/zoekt:/data/index'
+            - '~/.zoekt:/data/index'
         restart: always
         depends_on:
             - zoekt-indexserver
