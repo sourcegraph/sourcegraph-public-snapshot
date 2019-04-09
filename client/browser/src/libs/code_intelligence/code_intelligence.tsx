@@ -27,7 +27,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { ViewComponentData } from '../../../../../shared/src/api/client/model'
+import { CodeEditorData } from '../../../../../shared/src/api/client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
@@ -547,20 +547,18 @@ export function handleCodeHost({
 
     interface CodeViewState {
         subscriptions: Subscription
-        visibleViewComponents: ViewComponentData[]
+        editors: CodeEditorData[]
         roots: WorkspaceRootWithMetadata[]
     }
     /** Map from code view element to the state associated with it (to be updated or removed) */
     const codeViewStates = new Map<Element, CodeViewState>()
 
-    // Update model as selections change
+    // Update code editors as selections change
     subscriptions.add(
         selectionsChanges.subscribe(selections => {
-            extensionsController.services.editor.model.next({
-                visibleViewComponents: [...codeViewStates.values()]
-                    .flatMap(state => state.visibleViewComponents)
-                    .map(visibleViewComponent => ({ ...visibleViewComponent, selections })),
-            })
+            extensionsController.services.editor.editors.next(
+                [...codeViewStates.values()].flatMap(state => state.editors).map(editor => ({ ...editor, selections }))
+            )
         })
     )
 
@@ -573,7 +571,7 @@ export function handleCodeHost({
                 const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
-                    visibleViewComponents: [
+                    editors: [
                         {
                             type: 'CodeEditor' as const,
                             item: {
@@ -591,7 +589,7 @@ export function handleCodeHost({
 
                 // When codeView is a diff (and not an added file), add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
-                    codeViewState.visibleViewComponents.push({
+                    codeViewState.editors.push({
                         type: 'CodeEditor' as const,
                         item: {
                             uri: toURIWithPath({
@@ -683,7 +681,7 @@ export function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
-                            scope={codeViewState.visibleViewComponents[0]}
+                            scope={codeViewState.editors[0]}
                         />,
                         mount
                     )
@@ -696,10 +694,10 @@ export function handleCodeHost({
                 }
             }
 
-            // Apply added/removed roots/visibleViewComponents
-            extensionsController.services.editor.model.next({
-                visibleViewComponents: [...codeViewStates.values()].flatMap(state => state.visibleViewComponents),
-            })
+            // Apply added/removed roots/editors
+            extensionsController.services.editor.editors.next(
+                [...codeViewStates.values()].flatMap(state => state.editors)
+            )
             extensionsController.services.workspace.roots.next(
                 uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
             )

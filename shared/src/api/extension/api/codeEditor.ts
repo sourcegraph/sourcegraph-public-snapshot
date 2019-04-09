@@ -3,7 +3,7 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import { CodeEditorViewComponentData } from '../../client/model'
+import { CodeEditorData } from '../../client/services/editorService'
 import { Range } from '../types/range'
 import { Selection } from '../types/selection'
 import { createDecorationType } from './decorations'
@@ -17,7 +17,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
     private resource: string
 
     constructor(
-        data: CodeEditorViewComponentData<Pick<sourcegraph.TextDocument, 'uri'>>,
+        data: CodeEditorData<Pick<sourcegraph.TextDocument, 'uri'>>,
         private proxy: ProxyResult<ClientCodeEditorAPI>,
         private documents: ExtDocuments
     ) {
@@ -52,7 +52,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
     }
 
-    public update(data: Pick<CodeEditorViewComponentData, 'selections'>): void {
+    public update(data: Pick<CodeEditorData, 'selections'>): void {
         this.selectionsChanges.next(data.selections.map(s => Selection.fromPlain(s)))
     }
 

@@ -6,10 +6,10 @@ import { first, map } from 'rxjs/operators'
 // tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
 import { ActionItemAction } from '../actions/ActionItem'
-import { EMPTY_MODEL } from '../api/client/model'
 import { Services } from '../api/client/services'
 import { CommandRegistry } from '../api/client/services/command'
 import { ContributionRegistry } from '../api/client/services/contribution'
+import { createTestEditorService } from '../api/client/services/editorService.test'
 import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
 import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
 import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
@@ -280,7 +280,11 @@ describe('getDefinitionURL', () => {
 })
 
 describe('registerHoverContributions', () => {
-    const contribution = new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+    const contribution = new ContributionRegistry(
+        createTestEditorService(of([])),
+        { data: of(EMPTY_SETTINGS_CASCADE) },
+        of({})
+    )
     const commands = new CommandRegistry()
     const textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'> = {
         getLocations: () => of(of(null)),

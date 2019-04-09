@@ -8,6 +8,7 @@ describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {
         test('returns the active window', async () => {
             const { extensionAPI } = await integrationTestContext()
+            await extensionAPI.internal.sync()
             const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
@@ -21,31 +22,30 @@ describe('Windows (integration)', () => {
 
     describe('app.activeWindowChanges', () => {
         test('reflects changes to the active window', async () => {
-            const { extensionAPI, model } = await integrationTestContext(undefined, {
+            const {
+                services: { editor: editorService },
+                extensionAPI,
+            } = await integrationTestContext(undefined, {
                 roots: [],
-                visibleViewComponents: [],
+                editors: [],
             })
-            model.next({
-                visibleViewComponents: [
-                    {
-                        type: 'CodeEditor',
-                        item: { uri: 'foo', languageId: 'l1', text: 't1' },
-                        selections: [],
-                        isActive: true,
-                    },
-                ],
-            })
-            model.next({ visibleViewComponents: [] })
-            model.next({
-                visibleViewComponents: [
-                    {
-                        type: 'CodeEditor',
-                        item: { uri: 'bar', languageId: 'l2', text: 't2' },
-                        selections: [],
-                        isActive: true,
-                    },
-                ],
-            })
+            editorService.editors.next([
+                {
+                    type: 'CodeEditor',
+                    item: { uri: 'foo', languageId: 'l1', text: 't1' },
+                    selections: [],
+                    isActive: true,
+                },
+            ])
+            editorService.editors.next([])
+            editorService.editors.next([
+                {
+                    type: 'CodeEditor',
+                    item: { uri: 'bar', languageId: 'l2', text: 't2' },
+                    selections: [],
+                    isActive: true,
+                },
+            ])
             const values = await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     take(1),
@@ -59,6 +59,7 @@ describe('Windows (integration)', () => {
     describe('app.windows', () => {
         test('lists windows', async () => {
             const { extensionAPI } = await integrationTestContext()
+            await extensionAPI.internal.sync()
             const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
@@ -72,22 +73,23 @@ describe('Windows (integration)', () => {
         })
 
         test('adds new text documents', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+            const {
+                services: { editor: editorService },
+                extensionAPI,
+            } = await integrationTestContext()
 
-            model.next({
-                visibleViewComponents: [
-                    {
-                        type: 'CodeEditor',
-                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                        selections: [],
-                        isActive: true,
-                    },
-                ],
-            })
+            editorService.editors.next([
+                {
+                    type: 'CodeEditor',
+                    item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+                    selections: [],
+                    isActive: true,
+                },
+            ])
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     switchMap(w => (w ? w.activeViewComponentChanges : [])),
-                    take(2)
+                    take(3)
                 )
                 .toPromise()
 
@@ -106,27 +108,28 @@ describe('Windows (integration)', () => {
 
     describe('Window', () => {
         test('Window#visibleViewComponents', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+            const {
+                services: { editor: editorService },
+                extensionAPI,
+            } = await integrationTestContext()
 
-            model.next({
-                visibleViewComponents: [
-                    {
-                        type: 'CodeEditor',
-                        item: {
-                            uri: 'file:///inactive',
-                            languageId: 'inactive',
-                            text: 'inactive',
-                        },
-                        selections: [],
-                        isActive: false,
+            editorService.editors.next([
+                {
+                    type: 'CodeEditor',
+                    item: {
+                        uri: 'file:///inactive',
+                        languageId: 'inactive',
+                        text: 'inactive',
                     },
-                    ...(model.value.visibleViewComponents || []),
-                ],
-            })
+                    selections: [],
+                    isActive: false,
+                },
+                ...editorService.editors.value,
+            ])
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     switchMap(w => (w ? w.activeViewComponentChanges : [])),
-                    take(2)
+                    take(3)
                 )
                 .toPromise()
 
@@ -144,23 +147,24 @@ describe('Windows (integration)', () => {
 
         describe('Window#activeViewComponent', () => {
             test('ignores inactive components', async () => {
-                const { model, extensionAPI } = await integrationTestContext()
+                const {
+                    services: { editor: editorService },
+                    extensionAPI,
+                } = await integrationTestContext()
 
-                model.next({
-                    visibleViewComponents: [
-                        {
-                            type: 'CodeEditor',
-                            item: {
-                                uri: 'file:///inactive',
-                                languageId: 'inactive',
-                                text: 'inactive',
-                            },
-                            selections: [],
-                            isActive: false,
+                editorService.editors.next([
+                    {
+                        type: 'CodeEditor',
+                        item: {
+                            uri: 'file:///inactive',
+                            languageId: 'inactive',
+                            text: 'inactive',
                         },
-                        ...(model.value.visibleViewComponents || []),
-                    ],
-                })
+                        selections: [],
+                        isActive: false,
+                    },
+                    ...editorService.editors.value,
+                ])
                 await extensionAPI.internal.sync()
 
                 assertToJSON(extensionAPI.app.windows[0].activeViewComponent, {
@@ -172,31 +176,30 @@ describe('Windows (integration)', () => {
 
         describe('Window#activeViewComponentChanges', () => {
             test('reflects changes to the active window', async () => {
-                const { extensionAPI, model } = await integrationTestContext(undefined, {
+                const {
+                    services: { editor: editorService },
+                    extensionAPI,
+                } = await integrationTestContext(undefined, {
                     roots: [],
-                    visibleViewComponents: [],
+                    editors: [],
                 })
-                model.next({
-                    visibleViewComponents: [
-                        {
-                            type: 'CodeEditor',
-                            item: { uri: 'foo', languageId: 'l1', text: 't1' },
-                            selections: [],
-                            isActive: true,
-                        },
-                    ],
-                })
-                model.next({ visibleViewComponents: [] })
-                model.next({
-                    visibleViewComponents: [
-                        {
-                            type: 'CodeEditor',
-                            item: { uri: 'bar', languageId: 'l2', text: 't2' },
-                            selections: [],
-                            isActive: true,
-                        },
-                    ],
-                })
+                editorService.editors.next([
+                    {
+                        type: 'CodeEditor',
+                        item: { uri: 'foo', languageId: 'l1', text: 't1' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ])
+                editorService.editors.next([])
+                editorService.editors.next([
+                    {
+                        type: 'CodeEditor',
+                        item: { uri: 'bar', languageId: 'l2', text: 't2' },
+                        selections: [],
+                        isActive: true,
+                    },
+                ])
                 const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                     .pipe(
                         take(4),

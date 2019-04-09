@@ -5,12 +5,12 @@ import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
-import { ViewComponentData } from '../../client/model'
+import { CodeEditorData } from '../../client/services/editorService'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
 
 export interface WindowData {
-    visibleViewComponents: ViewComponentData<Pick<sourcegraph.TextDocument, 'uri'>>[]
+    editors: CodeEditorData<Pick<sourcegraph.TextDocument, 'uri'>>[]
 }
 
 interface WindowsProxyData {
@@ -96,12 +96,10 @@ export class ExtWindow implements sourcegraph.Window {
      * Perform a delta update (update/add/delete) of this window's view components.
      */
     public update(data: WindowData): void {
-        const getKey = (c: ViewComponentData<Pick<sourcegraph.TextDocument, 'uri'>>): string =>
-            `${c.type}:${c.item.uri}`
+        const getKey = (c: CodeEditorData<Pick<sourcegraph.TextDocument, 'uri'>>): string => `${c.type}:${c.item.uri}`
 
         const seenKeys = new Set<string>()
-        for (const c of data.visibleViewComponents) {
-            // Handle added and updated.
+        for (const c of data.editors) {
             const key = getKey(c)
             seenKeys.add(key)
             const existing = this.viewComponents.get(key)
@@ -119,7 +117,7 @@ export class ExtWindow implements sourcegraph.Window {
         }
 
         // Update active view component.
-        const active = data.visibleViewComponents.find(c => c.isActive)
+        const active = data.editors.find(c => c.isActive)
         this.activeViewComponentChanges.next(active ? this.viewComponents.get(getKey(active)) : undefined)
     }
 

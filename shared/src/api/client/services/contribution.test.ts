@@ -4,7 +4,6 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../setting
 import { ContributableMenu, Contributions, EvaluatedContributions } from '../../protocol'
 import { Context, ContributionScope } from '../context/context'
 import { EMPTY_COMPUTED_CONTEXT } from '../context/expr/evaluator'
-import { EMPTY_MODEL, Model } from '../model'
 import {
     contextFilter,
     ContributionRegistry,
@@ -13,6 +12,8 @@ import {
     filterContributions,
     mergeContributions,
 } from './contribution'
+import { CodeEditorData } from './editorService'
+import { createTestEditorService } from './editorService.test'
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -49,13 +50,18 @@ const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
 describe('ContributionRegistry', () => {
     test('is initially empty', () => {
         expect(
-            new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({})).entries.value
+            new ContributionRegistry(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+                .entries.value
         ).toEqual([])
     })
 
     test('registers and unregisters contributions', () => {
         const subscriptions = new Subscription()
-        const registry = new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+        const registry = new ContributionRegistry(
+            createTestEditorService(of([])),
+            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of({})
+        )
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
         const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
 
@@ -73,7 +79,11 @@ describe('ContributionRegistry', () => {
     })
 
     test('replaces contributions', () => {
-        const registry = new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+        const registry = new ContributionRegistry(
+            createTestEditorService(of([])),
+            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of({})
+        )
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
         const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
 
@@ -98,7 +108,7 @@ describe('ContributionRegistry', () => {
                 ): Observable<EvaluatedContributions> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
-            })(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributionsFromEntries(
@@ -122,7 +132,7 @@ describe('ContributionRegistry', () => {
                 ): Observable<EvaluatedContributions> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
-            })(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributionsFromEntries(
@@ -149,10 +159,12 @@ describe('ContributionRegistry', () => {
                 const registry = new (class extends ContributionRegistry {
                     public constructor() {
                         super(
-                            cold<Model>('-a-b-|', {
-                                a: EMPTY_MODEL,
-                                b: EMPTY_MODEL,
-                            }),
+                            {
+                                editors: cold<readonly CodeEditorData[]>('-a-b-|', {
+                                    a: [],
+                                    b: [],
+                                }),
+                            },
                             {
                                 data: cold<SettingsCascadeOrError>('-a-b-|', {
                                     a: EMPTY_SETTINGS_CASCADE,
@@ -189,7 +201,11 @@ describe('ContributionRegistry', () => {
                 const registry = new (class extends ContributionRegistry {
                     public constructor() {
                         super(
-                            cold<Model>('a', { a: EMPTY_MODEL }),
+                            {
+                                editors: cold<readonly CodeEditorData[]>('a', {
+                                    a: [],
+                                }),
+                            },
                             { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
                             cold<Context>('a', {})
                         )

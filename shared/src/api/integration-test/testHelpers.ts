@@ -1,24 +1,25 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, from, NEVER, NextObserver, Subscribable, throwError } from 'rxjs'
+import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
 import { first, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { isDefined } from '../../util/types'
 import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
-import { Model } from '../client/model'
 import { Services } from '../client/services'
+import { CodeEditorData } from '../client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 
-interface TestInitData extends Model {
+interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
+    editors: readonly CodeEditorData[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
     roots: [{ uri: 'file:///' }],
-    visibleViewComponents: [
+    editors: [
         {
             type: 'CodeEditor',
             item: {
@@ -30,11 +31,6 @@ const FIXTURE_INIT_DATA: TestInitData = {
             isActive: true,
         },
     ],
-}
-
-interface TestContext {
-    client: ExtensionHostClient
-    extensionAPI: typeof sourcegraph
 }
 
 interface Mocks
@@ -65,12 +61,11 @@ const NOOP_MOCKS: Mocks = {
 export async function integrationTestContext(
     partialMocks: Partial<Mocks> = NOOP_MOCKS,
     initModel: TestInitData = FIXTURE_INIT_DATA
-): Promise<
-    TestContext & {
-        model: Subscribable<Model> & { value: Model } & NextObserver<Model>
-        services: Services
-    }
-> {
+): Promise<{
+    client: ExtensionHostClient
+    extensionAPI: typeof sourcegraph
+    services: Services
+}> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
     const clientAPIChannel = new MessageChannel()
@@ -94,13 +89,13 @@ export async function integrationTestContext(
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     const extensionAPI = await extensionHost.extensionAPI
-    services.editor.model.next(initModel)
+    services.editor.editors.next(initModel.editors)
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
     await Promise.all([
         from(extensionAPI.workspace.openedTextDocuments)
-            .pipe(take((initModel.visibleViewComponents || []).length))
+            .pipe(take(initModel.editors.length))
             .toPromise(),
         from(extensionAPI.app.activeWindowChanges)
             .pipe(first(isDefined))
@@ -111,7 +106,6 @@ export async function integrationTestContext(
         client,
         extensionAPI,
         services,
-        model: services.editor.model,
     }
 }
 

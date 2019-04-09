@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { ViewComponentData } from '../../../../shared/src/api/client/model'
+import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
@@ -41,11 +41,11 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         // API's support for diffs.
         const dummyText = ''
 
-        const visibleViewComponents: ViewComponentData[] = []
+        const editors: CodeEditorData[] = []
         if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
             for (const fileDiff of fileDiffsOrError.nodes) {
                 if (fileDiff.oldPath) {
-                    visibleViewComponents.push({
+                    editors.push({
                         type: 'CodeEditor',
                         item: {
                             uri: `git://${nodeProps.base.repoName}?${nodeProps.base.commitID}#${fileDiff.oldPath}`,
@@ -57,7 +57,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                     })
                 }
                 if (fileDiff.newPath) {
-                    visibleViewComponents.push({
+                    editors.push({
                         type: 'CodeEditor',
                         item: {
                             uri: `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`,
@@ -70,6 +70,6 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                 }
             }
         }
-        this.props.extensionsController.services.editor.model.next({ visibleViewComponents })
+        this.props.extensionsController.services.editor.editors.next(editors)
     }
 }

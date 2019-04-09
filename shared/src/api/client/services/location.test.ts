@@ -40,7 +40,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                         a: [{ provider: () => of(null), registrationOptions: { documentSelector: ['*'] } }],
                     })
                 )
-                expectObservable(registry.hasProvidersForActiveTextDocument({ visibleViewComponents: [] })).toBe('a', {
+                expectObservable(registry.hasProvidersForActiveTextDocument([])).toBe('a', {
                     a: false,
                 })
             })
@@ -54,16 +54,14 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     })
                 )
                 expectObservable(
-                    registry.hasProvidersForActiveTextDocument({
-                        visibleViewComponents: [
-                            {
-                                isActive: true,
-                                type: 'CodeEditor',
-                                selections: [new Selection(1, 2, 3, 4).toPlain()],
-                                item: { uri: 'u', languageId: 'l', text: 't' },
-                            },
-                        ],
-                    })
+                    registry.hasProvidersForActiveTextDocument([
+                        {
+                            isActive: true,
+                            type: 'CodeEditor',
+                            selections: [new Selection(1, 2, 3, 4).toPlain()],
+                            item: { uri: 'u', languageId: 'l', text: 't' },
+                        },
+                    ])
                 ).toBe('a', {
                     a: true,
                 })
@@ -78,16 +76,14 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     })
                 )
                 expectObservable(
-                    registry.hasProvidersForActiveTextDocument({
-                        visibleViewComponents: [
-                            {
-                                isActive: true,
-                                type: 'CodeEditor',
-                                selections: [new Selection(1, 2, 3, 4).toPlain()],
-                                item: { uri: 'u', languageId: 'l', text: 't' },
-                            },
-                        ],
-                    })
+                    registry.hasProvidersForActiveTextDocument([
+                        {
+                            isActive: true,
+                            type: 'CodeEditor',
+                            selections: [new Selection(1, 2, 3, 4).toPlain()],
+                            item: { uri: 'u', languageId: 'l', text: 't' },
+                        },
+                    ])
                 ).toBe('a', {
                     a: false,
                 })
