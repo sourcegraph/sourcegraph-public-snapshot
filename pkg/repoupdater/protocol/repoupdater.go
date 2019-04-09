@@ -10,7 +10,10 @@ import (
 
 type RepoUpdateSchedulerInfoArgs struct {
 	// RepoName is the repository name to look up.
+	// XXX(tsenart): Depreacted. Remove after lookup by ID is rolled out.
 	RepoName api.RepoName
+	// The ID of the repo to lookup the schedule for.
+	ID uint32
 }
 
 type RepoUpdateSchedulerInfoResult struct {

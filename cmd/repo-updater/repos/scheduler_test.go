@@ -56,12 +56,12 @@ func startRecording() (*recording, func()) {
 }
 
 func TestUpdateQueue_enqueue(t *testing.T) {
-	a := configuredRepo2{Name: "a", URL: "a.com"}
-	a2 := configuredRepo2{Name: "a", URL: "a.com/v2"}
-	b := configuredRepo2{Name: "b", URL: "b.com"}
-	c := configuredRepo2{Name: "c", URL: "c.com"}
-	d := configuredRepo2{Name: "d", URL: "d.com"}
-	e := configuredRepo2{Name: "e", URL: "e.com"}
+	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	a2 := configuredRepo2{ID: 1, Name: "a2", URL: "a2.com"}
+	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	d := configuredRepo2{ID: 4, Name: "d", URL: "d.com"}
+	e := configuredRepo2{ID: 5, Name: "e", URL: "e.com"}
 
 	type enqueueCall struct {
 		repo     configuredRepo2
@@ -297,9 +297,9 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 }
 
 func TestUpdateQueue_remove(t *testing.T) {
-	a := &configuredRepo2{Name: "a", URL: "a.com"}
-	b := &configuredRepo2{Name: "b", URL: "b.com"}
-	c := &configuredRepo2{Name: "c", URL: "c.com"}
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := &configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
 
 	type removeCall struct {
 		repo     *configuredRepo2
@@ -457,8 +457,8 @@ func TestUpdateQueue_remove(t *testing.T) {
 }
 
 func TestUpdateQueue_acquireNext(t *testing.T) {
-	a := &configuredRepo2{Name: "a", URL: "a.com"}
-	b := &configuredRepo2{Name: "b", URL: "b.com"}
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
 
 	tests := []struct {
 		name           string
@@ -552,9 +552,9 @@ func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
 }
 
 func TestSchedule_upsert(t *testing.T) {
-	a := &configuredRepo2{Name: "a", URL: "a.com"}
-	a2 := &configuredRepo2{Name: "a", URL: "a.com/v2"}
-	b := &configuredRepo2{Name: "b", URL: "b.com"}
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	a2 := &configuredRepo2{ID: 1, Name: "a2", URL: "a2.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
 
 	type upsertCall struct {
 		time time.Time
@@ -700,11 +700,11 @@ func TestSchedule_upsert(t *testing.T) {
 }
 
 func TestSchedule_updateInterval(t *testing.T) {
-	a := &configuredRepo2{Name: "a", URL: "a.com"}
-	b := &configuredRepo2{Name: "b", URL: "b.com"}
-	c := &configuredRepo2{Name: "c", URL: "c.com"}
-	d := &configuredRepo2{Name: "d", URL: "d.com"}
-	e := &configuredRepo2{Name: "e", URL: "e.com"}
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := &configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	d := &configuredRepo2{ID: 4, Name: "d", URL: "d.com"}
+	e := &configuredRepo2{ID: 5, Name: "e", URL: "e.com"}
 
 	type updateCall struct {
 		time     time.Time
@@ -878,9 +878,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 }
 
 func TestSchedule_remove(t *testing.T) {
-	a := &configuredRepo2{Name: "a", URL: "a.com"}
-	b := &configuredRepo2{Name: "b", URL: "b.com"}
-	c := &configuredRepo2{Name: "c", URL: "c.com"}
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := &configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
 
 	type removeCall struct {
 		time time.Time
@@ -1015,11 +1015,11 @@ func verifyScheduleRecording(t *testing.T, s *updateScheduler, timeAfterFuncDela
 }
 
 func TestUpdateScheduler_runSchedule(t *testing.T) {
-	a := &configuredRepo2{Name: "a", URL: "a.com"}
-	b := &configuredRepo2{Name: "b", URL: "b.com"}
-	c := &configuredRepo2{Name: "c", URL: "c.com"}
-	d := &configuredRepo2{Name: "d", URL: "d.com"}
-	e := &configuredRepo2{Name: "e", URL: "e.com"}
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := &configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	d := &configuredRepo2{ID: 4, Name: "d", URL: "d.com"}
+	e := &configuredRepo2{ID: 5, Name: "e", URL: "e.com"}
 
 	tests := []struct {
 		name                  string
@@ -1137,9 +1137,9 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 }
 
 func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
-	a := &configuredRepo2{Name: "a", URL: "a.com"}
-	b := &configuredRepo2{Name: "b", URL: "b.com"}
-	c := &configuredRepo2{Name: "c", URL: "c.com"}
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := &configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
 
 	type mockRequestRepoUpdate struct {
 		repo *configuredRepo2
@@ -1340,7 +1340,8 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 				{
 					source: "a",
 					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{Name: "a", URL: "a.com", Enabled: false},
+						api.RepoName("a/a"): &configuredRepo2{
+							Name: "a", URL: "a.com", Enabled: false},
 					},
 				},
 			},

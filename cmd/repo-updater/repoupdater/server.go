@@ -212,7 +212,7 @@ func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	result := repos.Scheduler.ScheduleInfo(args.RepoName)
+	result := repos.Scheduler.ScheduleInfo(args.ID)
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

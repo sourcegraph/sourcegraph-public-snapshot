@@ -45,7 +45,10 @@ func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*
 
 func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
 	r.repoUpdateSchedulerInfoOnce.Do(func() {
-		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{RepoName: r.repository.repo.Name}
+		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{
+			RepoName: r.repository.repo.Name,
+			ID:       uint32(r.repository.repo.ID),
+		}
 		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
 	})
 	return r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr
