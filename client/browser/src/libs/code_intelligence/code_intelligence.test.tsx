@@ -15,8 +15,7 @@ import { integrationTestContext } from '../../../../../shared/src/api/integratio
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { FileInfo, getGlobalDebugMount, getOverlayMount, handleCodeHost } from './code_intelligence'
-import { testMountGetter } from './code_intelligence_test_utils'
+import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
@@ -45,33 +44,30 @@ const createMockPlatformContext = (
     },
 })
 
-describe('getOverlayMount()', () => {
-    testMountGetter(
-        // The overlay mount is appended to <body>, so it doesn't matter which fixture we use.
-        `${__dirname}/../github/__fixtures__/github.com/pull-request/vanilla/unified/page.html`,
-        getOverlayMount('github'),
-        true,
-        true
-    )
+describe('createOverlayMount()', () => {
+    it('should create the overlay mount', () => {
+        document.body.innerHTML = ''
+        createOverlayMount('some-code-host')
+        const mount = document.body.querySelector('.hover-overlay-mount')
+        expect(mount).toBeDefined()
+        expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host')
+    })
 })
 
-describe('getGlobalDebugMount()', () => {
-    testMountGetter(
-        // The overlay mount is appended to <body>, so it doesn't matter which fixture we use.
-        `${__dirname}/../github/__fixtures__/github.com/pull-request/vanilla/unified/page.html`,
-        getGlobalDebugMount,
-        true,
-        true
-    )
+describe('createGlobalDebugMount()', () => {
+    it('should create the debug menu mount', () => {
+        document.body.innerHTML = ''
+        createGlobalDebugMount()
+        const mount = document.body.querySelector('.global-debug')
+        expect(mount).toBeDefined()
+    })
 })
 
 describe('handleCodeHost()', () => {
     let subscriptions = new Subscription()
 
     afterEach(() => {
-        for (const el of document.querySelectorAll('.test')) {
-            el.remove()
-        }
+        document.body.innerHTML = ''
         RENDER.mockClear()
         subscriptions.unsubscribe()
         subscriptions = new Subscription()
@@ -98,9 +94,10 @@ describe('handleCodeHost()', () => {
                 ...createMockPlatformContext(),
             })
         )
-        const overlayMount = document.body.firstChild! as HTMLElement
-        expect(overlayMount.className).toBe('hover-overlay-mount hover-overlay-mount__test')
-        const renderedOverlay = elementRenderedAtMount(overlayMount)
+        const overlayMount = document.body.querySelector('.hover-overlay-mount')
+        expect(overlayMount).toBeDefined()
+        expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__test')
+        const renderedOverlay = elementRenderedAtMount(overlayMount!)
         expect(renderedOverlay).not.toBeUndefined()
     })
 
@@ -124,7 +121,7 @@ describe('handleCodeHost()', () => {
         expect(renderedCommandPalette).not.toBeUndefined()
     })
 
-    test('creates a .global-debug element and renders the debug palette if showGlobalDebug is true', async () => {
+    test('creates a .global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
         const { services } = await integrationTestContext()
         subscriptions.add(
             handleCodeHost({
@@ -138,10 +135,10 @@ describe('handleCodeHost()', () => {
                 ...createMockPlatformContext(),
             })
         )
-        const globalDebugMount = document.querySelector('.global-debug')
-        expect(globalDebugMount).not.toBeUndefined()
+        const globalDebugMount = document.body.querySelector('.global-debug')
+        expect(globalDebugMount).toBeDefined()
         const renderedDebugElement = elementRenderedAtMount(globalDebugMount!)
-        expect(renderedDebugElement).not.toBeUndefined()
+        expect(renderedDebugElement).toBeDefined()
     })
 
     test('detects code views based on selectors', async () => {
