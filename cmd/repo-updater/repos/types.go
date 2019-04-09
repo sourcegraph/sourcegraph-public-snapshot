@@ -529,6 +529,16 @@ func (r *Repo) CloneURLs() []string {
 	return urls
 }
 
+// ExternalServiceIDs returns the IDs of the external services this
+// repo belongs to.
+func (r *Repo) ExternalServiceIDs() []int64 {
+	ids := make([]int64, 0, len(r.Sources))
+	for _, src := range r.Sources {
+		ids = append(ids, src.ExternalServiceID())
+	}
+	return ids
+}
+
 // IsDeleted returns true if the repo is deleted.
 func (r *Repo) IsDeleted() bool { return !r.DeletedAt.IsZero() }
 
@@ -609,6 +619,28 @@ func (rs Repos) Names() []string {
 		names[i] = rs[i].Name
 	}
 	return names
+}
+
+// IDs returns the list of ids from all Repos.
+func (rs Repos) IDs() []uint32 {
+	ids := make([]uint32, len(rs))
+	for i := range rs {
+		ids[i] = rs[i].ID
+	}
+	return ids
+}
+
+// Kinds returns the unique set of kinds from all Repos.
+func (rs Repos) Kinds() (kinds []string) {
+	set := map[string]bool{}
+	for _, r := range rs {
+		kind := strings.ToUpper(r.ExternalRepo.ServiceType)
+		if !set[kind] {
+			kinds = append(kinds, kind)
+			set[kind] = true
+		}
+	}
+	return kinds
 }
 
 func (rs Repos) Len() int {
