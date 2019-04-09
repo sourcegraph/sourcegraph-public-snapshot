@@ -3,7 +3,7 @@ version: '2.2'
 services:
     server:
         container_name: sourcegraph
-        image: 'sourcegraph/server-signed:3.2.1'
+        image: 'sourcegraph/server-signed:3.2.1@sha256:832bc27c36416b2524b78f62eb60cfd93f54a07eb66dbc45687239d8d3fe66b0'
         ports:
             - '7080:7080'
             - '2633:2633'
