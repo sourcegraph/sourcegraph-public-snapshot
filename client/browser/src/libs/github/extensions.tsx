@@ -33,18 +33,3 @@ export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTM
     }
     return null
 }
-
-export const getGlobalDebugMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
-    const globalDebugClass = 'global-debug'
-    const parentElement = querySelectorOrSelf(container, 'body')
-    if (!parentElement) {
-        return null
-    }
-    const createGlobalDebugMount = (): HTMLElement => {
-        const mount = document.createElement('div')
-        mount.className = globalDebugClass
-        parentElement.appendChild(mount)
-        return mount
-    }
-    return container.querySelector<HTMLElement>('.' + globalDebugClass) || createGlobalDebugMount()
-}

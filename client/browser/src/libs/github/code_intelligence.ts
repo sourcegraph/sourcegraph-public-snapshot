@@ -14,7 +14,7 @@ import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
-import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
+import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
 import { getFileContainers, parseURL } from './util'
 
@@ -230,21 +230,6 @@ export const checkIsGitHubDotCom = (): boolean => /^https?:\/\/(www.)?github.com
  */
 export const checkIsGitHub = (): boolean => checkIsGitHubDotCom() || checkIsGitHubEnterprise()
 
-const getOverlayMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
-    const jsRepoPjaxContainer = querySelectorOrSelf(container, '#js-repo-pjax-container')
-    if (!jsRepoPjaxContainer) {
-        return null
-    }
-    let mount = jsRepoPjaxContainer.querySelector<HTMLElement>('.hover-overlay-mount')
-    if (mount) {
-        return mount
-    }
-    mount = document.createElement('div')
-    mount.className = 'hover-overlay-mount'
-    jsRepoPjaxContainer.appendChild(mount)
-    return mount
-}
-
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
 export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
@@ -276,9 +261,7 @@ export const githubCodeHost = {
         iconClassName: 'action-item__icon--github v-align-text-bottom',
     },
     check: checkIsGitHub,
-    getOverlayMount,
     getCommandPaletteMount,
-    getGlobalDebugMount,
     commandPaletteClassProps: {
         popoverClassName: 'Box',
         formClassName: 'p-1',

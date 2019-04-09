@@ -58,10 +58,9 @@ import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/
 import { ButtonProps, CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { sourcegraphUrl } from '../../shared/util/context'
-import { MutationRecordLike, querySelectorOrSelf } from '../../shared/util/dom'
+import { MutationRecordLike } from '../../shared/util/dom'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
-import { getGlobalDebugMount as defaultGlobalDebugMountGetter } from '../github/extensions'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { fetchFileContents, trackCodeViews } from './code_views'
@@ -171,13 +170,6 @@ export interface CodeHost {
     check: () => boolean
 
     /**
-     * Mount getter for the hover overlay.
-     *
-     * Defaults to a `<div class="hover-overlay-mount">` that is appended to `document.body`.
-     */
-    getOverlayMount?: MountGetter
-
-    /**
      * CSS classes for ActionItem buttons in the hover overlay to customize styling
      */
     hoverOverlayClassProps?: HoverOverlayClassProps
@@ -212,13 +204,6 @@ export interface CodeHost {
      * If undefined, the command palette button won't be rendered on the code host.
      */
     getCommandPaletteMount?: MountGetter
-
-    /**
-     * Mount getter for the small global debug menu for extensions in the bottom right.
-     *
-     * Defaults to a `<div class="global-debug">` that is appended to `document.body`.
-     */
-    getGlobalDebugMount?: MountGetter
 
     /** Construct the URL to the specified file. */
     urlToFile?: (
@@ -285,6 +270,20 @@ interface CodeIntelligenceProps
     showGlobalDebug?: boolean
 }
 
+export const createOverlayMount = (codeHostName: string): HTMLElement => {
+    const mount = document.createElement('div')
+    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+    document.body.appendChild(mount)
+    return mount
+}
+
+export const createGlobalDebugMount = (): HTMLElement => {
+    const mount = document.createElement('div')
+    mount.className = 'global-debug'
+    document.body.appendChild(mount)
+    return mount
+}
+
 /**
  * Prepares the page for code intelligence. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
@@ -292,11 +291,10 @@ interface CodeIntelligenceProps
  * @param codeHost
  */
 export function initCodeIntelligence({
-    addedElements,
     codeHost,
     platformContext,
     extensionsController,
-}: CodeIntelligenceProps & { addedElements: Observable<HTMLElement> }): {
+}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController'>): {
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
@@ -383,31 +381,10 @@ export function initCodeIntelligence({
         }
     }
 
-    const defaultOverlayMountGetter: MountGetter = (container: HTMLElement): HTMLElement | null => {
-        const body = querySelectorOrSelf(container, 'body')
-        if (!body) {
-            return null
-        }
-        const classNames = ['hover-overlay-mount', `hover-overlay-mount__${codeHost.name}`]
-        let mount = container.querySelector<HTMLElement>('.hover-overlay-mount')
-        if (!mount) {
-            mount = document.createElement('div')
-            container.appendChild(mount)
-        }
-        mount.classList.add(...classNames)
-        return mount
-    }
-
-    subscription.add(
-        addedElements
-            .pipe(
-                map(codeHost.getOverlayMount || defaultOverlayMountGetter),
-                filter(isDefined)
-            )
-            .subscribe(mount => {
-                render(<HoverOverlayContainer />, mount)
-            })
-    )
+    // This renders to document.body, which we can assume is never removed,
+    // so we don't need to subscribe to mutations.
+    const overlayMount = createOverlayMount(codeHost.name)
+    render(<HoverOverlayContainer />, overlayMount)
 
     return { hoverifier, subscription }
 }
@@ -448,13 +425,7 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
-    const { hoverifier, subscription } = initCodeIntelligence({
-        addedElements,
-        codeHost,
-        extensionsController,
-        platformContext,
-        showGlobalDebug,
-    })
+    const { hoverifier, subscription } = initCodeIntelligence({ codeHost, extensionsController, platformContext })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
 
@@ -477,17 +448,15 @@ export function handleCodeHost({
                 )
         )
     }
+
     // Render extension debug menu
+    // This renders to document.body, which we can assume is never removed,
+    // so we don't need to subscribe to mutations.
     if (showGlobalDebug) {
-        subscriptions.add(
-            addedElements
-                .pipe(
-                    map(codeHost.getGlobalDebugMount || defaultGlobalDebugMountGetter),
-                    filter(isDefined)
-                )
-                .subscribe(renderGlobalDebug({ extensionsController, platformContext, history }))
-        )
+        const mount = createGlobalDebugMount()
+        renderGlobalDebug({ extensionsController, platformContext, history })(mount)
     }
+
     // Render view on Sourcegraph button
     if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
