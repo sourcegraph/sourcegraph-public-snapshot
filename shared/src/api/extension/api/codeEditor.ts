@@ -13,6 +13,7 @@ const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
 export class ExtCodeEditor implements sourcegraph.CodeEditor {
+    /** The URI of the text document shown in this code editor */
     private resource: string
 
     constructor(
@@ -21,7 +22,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         private documents: ExtDocuments
     ) {
         this.resource = data.item.uri
-        this._update(data)
+        this.update(data)
     }
 
     public readonly selectionsChanges = new BehaviorSubject<sourcegraph.Selection[]>([])
@@ -51,7 +52,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
     }
 
-    public _update(data: Pick<CodeEditorViewComponentData, 'selections'>): void {
+    public update(data: Pick<CodeEditorViewComponentData, 'selections'>): void {
         this.selectionsChanges.next(data.selections.map(s => Selection.fromPlain(s)))
     }
 

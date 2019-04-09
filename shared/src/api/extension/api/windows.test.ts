@@ -15,7 +15,7 @@ describe('ExtWindow', () => {
         const origViewComponent = wins.activeViewComponent
         expect(origViewComponent).toBeTruthy()
 
-        wins._update({
+        wins.update({
             visibleViewComponents: [
                 { type: 'CodeEditor', item: { uri: 'u' }, isActive: true, selections: [new Selection(1, 2, 3, 4)] },
             ],
@@ -30,7 +30,7 @@ describe('ExtWindow', () => {
         const origViewComponent = wins.activeViewComponent
         expect(origViewComponent).toBeTruthy()
 
-        wins._update({
+        wins.update({
             visibleViewComponents: [{ type: 'CodeEditor', item: { uri: 'u2' }, isActive: true, selections: [] }],
         })
         expect(wins.activeViewComponent).not.toBe(origViewComponent)
@@ -40,11 +40,11 @@ describe('ExtWindow', () => {
 describe('ExtWindows', () => {
     const NOOP_PROXY = {} as any
 
-    const DOCUMENTS = new ExtDocuments(async () => void 0)
-    DOCUMENTS.$acceptDocumentData([{ uri: 'u', text: 't', languageId: 'l' }])
+    const documents = new ExtDocuments(async () => void 0)
+    documents.$acceptDocumentData([{ uri: 'u', text: 't', languageId: 'l' }])
 
     test('reuses ExtWindow object when updated', () => {
-        const wins = new ExtWindows(NOOP_PROXY, DOCUMENTS)
+        const wins = new ExtWindows(NOOP_PROXY, documents)
         wins.$acceptWindowData({
             visibleViewComponents: [{ type: 'CodeEditor', item: { uri: 'u' }, isActive: true, selections: [] }],
         })

@@ -1,4 +1,5 @@
 import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { sortBy } from 'lodash'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
@@ -22,27 +23,18 @@ interface WindowsProxyData {
  * @internal
  */
 export class ExtWindow implements sourcegraph.Window {
+    /** Map of editor key to editor. */
     private viewComponents = new Map<string, ExtCodeEditor>()
 
     constructor(private proxy: ProxyResult<WindowsProxyData>, private documents: ExtDocuments, data: WindowData) {
-        this._update(data)
+        this.update(data)
     }
 
     public readonly activeViewComponentChanges = new BehaviorSubject<sourcegraph.ViewComponent | undefined>(undefined)
 
     public get visibleViewComponents(): sourcegraph.ViewComponent[] {
         const entries = Array.from(this.viewComponents.entries())
-        return entries
-            .sort(([a], [b]) => {
-                if (a < b) {
-                    return -1
-                }
-                if (a > b) {
-                    return 1
-                }
-                return 0
-            })
-            .map(([, viewComponent]) => viewComponent)
+        return sortBy(entries, 0).map(([, viewComponent]) => viewComponent)
     }
 
     public get activeViewComponent(): sourcegraph.ViewComponent | undefined {
@@ -103,21 +95,24 @@ export class ExtWindow implements sourcegraph.Window {
     /**
      * Perform a delta update (update/add/delete) of this window's view components.
      */
-    public _update(data: WindowData): void {
-        const key = (c: ViewComponentData<Pick<sourcegraph.TextDocument, 'uri'>>): string => `${c.type}:${c.item.uri}`
+    public update(data: WindowData): void {
+        const getKey = (c: ViewComponentData<Pick<sourcegraph.TextDocument, 'uri'>>): string =>
+            `${c.type}:${c.item.uri}`
 
         const seenKeys = new Set<string>()
         for (const c of data.visibleViewComponents) {
-            const k = key(c)
-            seenKeys.add(k)
-            const existing = this.viewComponents.get(k)
+            // Handle added and updated.
+            const key = getKey(c)
+            seenKeys.add(key)
+            const existing = this.viewComponents.get(key)
             if (existing) {
-                existing._update(c)
+                existing.update(c)
             } else {
-                this.viewComponents.set(k, new ExtCodeEditor(c, this.proxy.codeEditor, this.documents))
+                this.viewComponents.set(key, new ExtCodeEditor(c, this.proxy.codeEditor, this.documents))
             }
         }
         for (const key of this.viewComponents.keys()) {
+            // Handle deleted.
             if (!seenKeys.has(key)) {
                 this.viewComponents.delete(key)
             }
@@ -125,7 +120,7 @@ export class ExtWindow implements sourcegraph.Window {
 
         // Update active view component.
         const active = data.visibleViewComponents.find(c => c.isActive)
-        this.activeViewComponentChanges.next(active ? this.viewComponents.get(key(active)) : undefined)
+        this.activeViewComponentChanges.next(active ? this.viewComponents.get(getKey(active)) : undefined)
     }
 
     public toJSON(): any {
@@ -135,7 +130,7 @@ export class ExtWindow implements sourcegraph.Window {
 
 /** @internal */
 export interface ExtWindowsAPI extends ProxyValue {
-    $acceptWindowData(win: WindowData | null): void
+    $acceptWindowData(windowData: WindowData | null): void
 }
 
 /**
@@ -165,13 +160,13 @@ export class ExtWindows implements ExtWindowsAPI, ProxyValue {
     }
 
     /** @internal */
-    public $acceptWindowData(win: WindowData | null): void {
-        if (win && this.activeWindow) {
+    public $acceptWindowData(windowData: WindowData | null): void {
+        if (windowData && this.activeWindow) {
             // Update in-place, reusing same object so that object references from extensions to it
             // (and subscriptions to it) remain valid.
-            this.activeWindow._update(win)
+            this.activeWindow.update(windowData)
         } else {
-            this.activeWindow = win ? new ExtWindow(this.proxy, this.documents, win) : undefined
+            this.activeWindow = windowData ? new ExtWindow(this.proxy, this.documents, windowData) : undefined
             this.activeWindowChanges.next(this.activeWindow)
         }
     }
