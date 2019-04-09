@@ -70,7 +70,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 	}
 
 	if len(rs) == 0 {
-		respond(w, http.StatusOK, resp)
+		respond(w, http.StatusNotFound, errors.Errorf("repository with ID %v does not exist", req.ID))
 		return
 	}
 
