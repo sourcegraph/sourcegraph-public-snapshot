@@ -426,7 +426,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
-        test('shows findReferences when the definition was not found', async () =>
+        test('does not show findReferences when the definition was not found', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -436,7 +436,7 @@ describe('registerHoverContributions', () => {
                     'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
                     hoverPosition: FIXTURE_PARAMS,
                 })
-            ).resolves.toEqual([FIND_REFERENCES_ACTION]))
+            ).resolves.toEqual([]))
     })
 
     describe('goToDefinition command', () => {

@@ -364,7 +364,7 @@ export function registerHoverContributions({
                         {
                             action: 'findReferences',
                             when:
-                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error || goToDefinition.notFound)',
+                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
                         },
                     ],
                 },
