@@ -7,6 +7,7 @@ import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { createEditorService } from './services/editorService'
 import { ExtensionsService } from './services/extensionsService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
+import { LinkPreviewProviderRegistry } from './services/linkPreview'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
 import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
@@ -40,6 +41,7 @@ export class Services {
     public readonly settings = createSettingsService(this.platformContext)
     public readonly contribution = new ContributionRegistry(this.editor, this.settings, this.context.data)
     public readonly extensions = new ExtensionsService(this.platformContext, this.editor, this.settings)
+    public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()

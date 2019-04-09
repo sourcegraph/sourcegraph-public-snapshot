@@ -1137,6 +1137,65 @@ declare module 'sourcegraph' {
         export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>
     }
 
+    /**
+     * A description of the information available at a URL.
+     */
+    export interface LinkPreview {
+        /**
+         * The content of this link preview, which is shown next to the link.
+         */
+        content?: MarkupContent
+
+        /**
+         * The hover content of this link preview, which is shown when the cursor hovers the link.
+         *
+         * @todo Add support for Markdown. Currently only plain text is supported.
+         */
+        hover?: Pick<MarkupContent, 'value'> & { kind: MarkupKind.PlainText }
+    }
+
+    /**
+     * Called to obtain a preview of the information available at a URL.
+     */
+    export interface LinkPreviewProvider {
+        /**
+         * Provides a preview of the information available at the URL of a link in a document.
+         *
+         * @todo Add a `context` parameter so that the provider knows what document contains the
+         * link (so that it can handle links in code files differently from rendered Markdown
+         * documents, for example).
+         *
+         * @param url The URL of the link to preview.
+         */
+        provideLinkPreview(url: URL): ProviderResult<LinkPreview>
+    }
+
+    /**
+     * Extensions can customize how content is rendered.
+     */
+    export namespace content {
+        /**
+         * EXPERIMENTAL. This API is subject to change without notice and has no compatibility
+         * guarantees.
+         *
+         * Registers a provider for link previews ({@link LinkPreviewProvider}) for all URLs in a
+         * document matching the {@link urlMatchPattern}. A link preview is a description of the
+         * information available at a URL.
+         *
+         * @todo Support a more powerful syntax for URL match patterns, such as Chrome's
+         * (https://developer.chrome.com/extensions/match_patterns).
+         *
+         * @param urlMatchPattern A pattern that matches URLs for which the provider is called to
+         * obtain a preview. Currently it matches all URLs that start with the match pattern (i.e.,
+         * string prefix matches). No wildcards are supported.
+         * @param provider The link preview provider.
+         */
+        export function registerLinkPreviewProvider(
+            urlMatchPattern: string,
+            provider: LinkPreviewProvider
+        ): Unsubscribable
+    }
+
     export interface ContextValues {
         [key: string]: string | number | boolean | null
     }

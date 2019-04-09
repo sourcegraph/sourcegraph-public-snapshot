@@ -18,7 +18,7 @@ assertEnv('OPTIONS')
 
 initSentry('options')
 
-type State = Pick<FeatureFlags, 'allowErrorReporting'> & { sourcegraphURL: string | null }
+type State = Pick<FeatureFlags, 'allowErrorReporting' | 'experimentalLinkPreviews'> & { sourcegraphURL: string | null }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(k => key === k)
@@ -48,15 +48,17 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
     return { host, protocol, hasPermissions }
 }
 class Options extends React.Component<{}, State> {
-    public state: State = { sourcegraphURL: null, allowErrorReporting: false }
+    public state: State = { sourcegraphURL: null, allowErrorReporting: false, experimentalLinkPreviews: false }
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            storage.observeSync('featureFlags').subscribe(({ allowErrorReporting }) => {
-                this.setState({ allowErrorReporting })
-            })
+            storage
+                .observeSync('featureFlags')
+                .subscribe(({ allowErrorReporting, experimentalLinkPreviews: experimentalLinkPreviews }) => {
+                    this.setState({ allowErrorReporting, experimentalLinkPreviews })
+                })
         )
 
         this.subscriptions.add(
@@ -94,7 +96,10 @@ class Options extends React.Component<{}, State> {
             },
 
             toggleFeatureFlag,
-            featureFlags: [{ key: 'allowErrorReporting', value: this.state.allowErrorReporting }],
+            featureFlags: [
+                { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
+                { key: 'experimentalLinkPreviews', value: this.state.experimentalLinkPreviews },
+            ],
         }
 
         return <OptionsContainer {...props} />

@@ -1,0 +1,41 @@
+import { MarkupKind } from 'sourcegraph'
+import { LinkPreviewMerged } from '../../api/client/services/linkPreview'
+import { applyLinkPreview, ApplyLinkPreviewOptions } from './linkPreviews'
+
+const OPTIONS: ApplyLinkPreviewOptions = {
+    setElementTooltip: (e, text) =>
+        text !== null ? e.setAttribute('data-tooltip', text) : e.removeAttribute('data-tooltip'),
+}
+
+describe('applyLinkPreview', () => {
+    test('annotates element and is idempotent', async () => {
+        const div = document.createElement('div')
+        const link = document.createElement('a')
+        link.href = 'u'
+        link.innerText = 'b'
+        div.append(link)
+
+        const LINK_PREVIEW_MERGED: LinkPreviewMerged = {
+            content: [
+                {
+                    kind: 'markdown' as MarkupKind.Markdown,
+                    value: '**x**',
+                },
+            ],
+            hover: [
+                {
+                    kind: 'plaintext' as MarkupKind.PlainText,
+                    value: 'y',
+                },
+            ],
+        }
+        applyLinkPreview(OPTIONS, link, LINK_PREVIEW_MERGED)
+        const WANT =
+            '<a href="u" data-tooltip="y"></a><span class="sg-link-preview-content" data-tooltip="y"><strong>x</strong></span>'
+        expect(div.innerHTML).toBe(WANT)
+
+        // Check for idempotence.
+        applyLinkPreview(OPTIONS, link, LINK_PREVIEW_MERGED)
+        expect(div.innerHTML).toBe(WANT)
+    })
+})
