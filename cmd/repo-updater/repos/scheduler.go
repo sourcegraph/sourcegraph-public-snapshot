@@ -238,24 +238,12 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 	return limiter
 }
 
-// UpdateFromDiff updates the list of configured repos from the given sync diff.
-func (s *updateScheduler) UpdateFromDiff(diff Diff) {
+// Update updates the schedule with the given repos.
+func (s *updateScheduler) Update(rs ...*Repo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, r := range diff.Deleted {
-		s.remove(r)
-	}
-
-	for _, r := range diff.Added {
-		s.upsert(r)
-	}
-
-	for _, r := range diff.Modified {
-		s.upsert(r)
-	}
-
-	for _, r := range diff.Unmodified {
+	for _, r := range rs {
 		if r.IsDeleted() {
 			s.remove(r)
 		} else {
@@ -263,7 +251,7 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 		}
 	}
 
-	schedKnownRepos.Set(float64(len(diff.Unmodified) + len(diff.Modified) + len(diff.Added)))
+	schedKnownRepos.Set(float64(len(rs)))
 }
 
 func (s *updateScheduler) upsert(r *Repo) {
