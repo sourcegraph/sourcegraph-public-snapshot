@@ -648,7 +648,7 @@ type Query {
     ): Repository
     # Lists all external services.
     externalServices(
-        # Returns the first n repositories from the list.
+        # Returns the first n external services from the list.
         first: Int
     ): ExternalServiceConnection!
     # List all repositories.
@@ -1132,6 +1132,11 @@ type Repository implements Node & GenericSearchResultInterface {
     # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
     # Phabricator, etc.).
     externalRepository: ExternalRepository
+    # Lists all external services which yield this repository.
+    externalServices(
+        # Returns the first n external services from the list.
+        first: Int
+    ): ExternalServiceConnection!
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
     # Information about the text search index for this repository, or null if text search indexing

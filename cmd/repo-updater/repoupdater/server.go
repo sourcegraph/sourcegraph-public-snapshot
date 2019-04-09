@@ -39,10 +39,60 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
+	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	return mux
+}
+
+func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Request) {
+	var resp protocol.RepoExternalServicesResponse
+
+	if s.Store == nil {
+		respond(w, http.StatusOK, &resp)
+		return
+	}
+
+	var req protocol.RepoExternalServicesRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+		IDs: []uint32{req.ID},
+	})
+
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if len(rs) == 0 {
+		respond(w, http.StatusOK, resp)
+		return
+	}
+
+	svcIDs := rs[0].ExternalServiceIDs()
+	if len(svcIDs) == 0 {
+		respond(w, http.StatusOK, resp)
+		return
+	}
+
+	args := repos.StoreListExternalServicesArgs{
+		IDs: svcIDs,
+	}
+
+	es, err := s.Store.ListExternalServices(r.Context(), args)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp.ExternalServices = newExternalServices(es...)
+
+	respond(w, http.StatusOK, resp)
 }
 
 func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
@@ -102,23 +152,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp.ExternalServices = make([]api.ExternalService, 0, len(es))
-	for _, e := range es {
-		svc := api.ExternalService{
-			ID:          e.ID,
-			Kind:        e.Kind,
-			DisplayName: e.DisplayName,
-			Config:      e.Config,
-			CreatedAt:   e.CreatedAt,
-			UpdatedAt:   e.UpdatedAt,
-		}
-
-		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
-		}
-
-		resp.ExternalServices = append(resp.ExternalServices, svc)
-	}
+	resp.ExternalServices = newExternalServices(es...)
 
 	respond(w, http.StatusOK, resp)
 }
@@ -144,6 +178,29 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 			log15.Error("failed to write response", "error", err)
 		}
 	}
+}
+
+func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+	svcs := make([]api.ExternalService, 0, len(es))
+
+	for _, e := range es {
+		svc := api.ExternalService{
+			ID:          e.ID,
+			Kind:        e.Kind,
+			DisplayName: e.DisplayName,
+			Config:      e.Config,
+			CreatedAt:   e.CreatedAt,
+			UpdatedAt:   e.UpdatedAt,
+		}
+
+		if e.IsDeleted() {
+			svc.DeletedAt = &e.DeletedAt
+		}
+
+		svcs = append(svcs, svc)
+	}
+
+	return svcs
 }
 
 func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {

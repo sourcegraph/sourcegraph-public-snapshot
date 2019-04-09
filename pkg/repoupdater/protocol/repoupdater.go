@@ -31,6 +31,19 @@ type RepoQueueState struct {
 	Updating bool
 }
 
+// RepoExternalServicesRequest is a request for the external services
+// associated with a repository.
+type RepoExternalServicesRequest struct {
+	// ID of the repository being queried.
+	ID uint32
+}
+
+// RepoExternalServicesResponse is returned in response to an
+// RepoExternalServicesRequest.
+type RepoExternalServicesResponse struct {
+	ExternalServices []api.ExternalService
+}
+
 // ExcludeRepoRequest is a request to exclude a single repo from
 // being mirrored from any external service of its kind.
 type ExcludeRepoRequest struct {
