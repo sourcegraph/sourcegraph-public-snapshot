@@ -148,7 +148,7 @@ func main() {
 		go func() {
 			for diff := range diffs {
 				if !conf.Get().DisableAutoGitUpdates {
-					repos.Scheduler.UpdateFromDiff(diff)
+					repos.Scheduler.Update(diff.Repos()...)
 				}
 			}
 		}()

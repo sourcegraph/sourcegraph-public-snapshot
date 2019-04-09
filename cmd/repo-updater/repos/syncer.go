@@ -150,6 +150,25 @@ func (d *Diff) Sort() {
 	}
 }
 
+// Repos returns all repos in the Diff.
+func (d Diff) Repos() Repos {
+	all := make(Repos, 0, len(d.Added)+
+		len(d.Deleted)+
+		len(d.Modified)+
+		len(d.Unmodified))
+
+	for _, rs := range []Repos{
+		d.Added,
+		d.Deleted,
+		d.Modified,
+		d.Unmodified,
+	} {
+		all = append(all, rs...)
+	}
+
+	return all
+}
+
 // NewDiff returns a diff from the given sourced and stored repos.
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
