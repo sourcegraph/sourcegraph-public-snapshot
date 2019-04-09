@@ -3,12 +3,7 @@ import { readFile } from 'mz/fs'
 import { SetIntersection } from 'utility-types'
 import { CodeHost, CodeViewSpec, MountGetter } from './code_intelligence'
 
-const mountGetterKeys = [
-    'getCommandPaletteMount',
-    'getGlobalDebugMount',
-    'getOverlayMount',
-    'getViewContextOnSourcegraphMount',
-] as const
+const mountGetterKeys = ['getCommandPaletteMount', 'getGlobalDebugMount', 'getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = (typeof mountGetterKeys)[number]
 
 export function testCodeHostMountGetters<C extends CodeHost>(
@@ -42,7 +37,7 @@ export function testToolbarMountGetter(
  * @param mayReturnNull Whether the mount getter might be called with containers where the mount does not belong.
  * It will be tested to return `null` in that case.
  */
-function testMountGetter(
+export function testMountGetter(
     containerHTMLPath: string,
     getMount: MountGetter,
     isFullDocument: boolean,

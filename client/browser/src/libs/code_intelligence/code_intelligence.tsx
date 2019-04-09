@@ -171,13 +171,6 @@ export interface CodeHost {
     check: () => boolean
 
     /**
-     * Mount getter for the hover overlay.
-     *
-     * Defaults to a `<div class="hover-overlay-mount">` that is appended to `document.body`.
-     */
-    getOverlayMount?: MountGetter
-
-    /**
      * CSS classes for ActionItem buttons in the hover overlay to customize styling
      */
     hoverOverlayClassProps?: HoverOverlayClassProps
@@ -285,6 +278,23 @@ interface CodeIntelligenceProps
     showGlobalDebug?: boolean
 }
 
+export const getOverlayMount = (codeHostName: string): MountGetter => (
+    addedElement: HTMLElement
+): HTMLElement | null => {
+    const body = querySelectorOrSelf(addedElement, 'body')
+    if (!body) {
+        return null
+    }
+    const existing = addedElement.querySelector<HTMLElement>('.hover-overlay-mount')
+    if (existing) {
+        return existing
+    }
+    const mount = document.createElement('div')
+    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+    body.appendChild(mount)
+    return mount
+}
+
 /**
  * Prepares the page for code intelligence. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
@@ -383,25 +393,10 @@ export function initCodeIntelligence({
         }
     }
 
-    const defaultOverlayMountGetter: MountGetter = (container: HTMLElement): HTMLElement | null => {
-        const body = querySelectorOrSelf(container, 'body')
-        if (!body) {
-            return null
-        }
-        const classNames = ['hover-overlay-mount', `hover-overlay-mount__${codeHost.name}`]
-        let mount = container.querySelector<HTMLElement>('.hover-overlay-mount')
-        if (!mount) {
-            mount = document.createElement('div')
-            container.appendChild(mount)
-        }
-        mount.classList.add(...classNames)
-        return mount
-    }
-
     subscription.add(
         addedElements
             .pipe(
-                map(codeHost.getOverlayMount || defaultOverlayMountGetter),
+                map(getOverlayMount(codeHost.name)),
                 filter(isDefined)
             )
             .subscribe(mount => {

@@ -15,7 +15,8 @@ import { integrationTestContext } from '../../../../../shared/src/api/integratio
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { FileInfo, handleCodeHost } from './code_intelligence'
+import { FileInfo, getOverlayMount, handleCodeHost } from './code_intelligence'
+import { testMountGetter } from './code_intelligence_test_utils'
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
@@ -42,6 +43,16 @@ const createMockPlatformContext = (
         sideloadedExtensionURL: new Subject<string | null>(),
         ...partialMocks,
     },
+})
+
+describe('getOverlayMount()', () => {
+    testMountGetter(
+        // The overlay mount is appended to <body>, so it doesn't matter which fixture we use.
+        `${__dirname}/../github/__fixtures__/github.com/pull-request/vanilla/unified/page.html`,
+        getOverlayMount('github'),
+        true,
+        true
+    )
 })
 
 describe('handleCodeHost()', () => {
