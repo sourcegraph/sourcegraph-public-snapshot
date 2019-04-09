@@ -14,7 +14,7 @@ import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
-import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
+import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
 import { getFileContainers, parseURL } from './util'
 
@@ -262,7 +262,6 @@ export const githubCodeHost = {
     },
     check: checkIsGitHub,
     getCommandPaletteMount,
-    getGlobalDebugMount,
     commandPaletteClassProps: {
         popoverClassName: 'Box',
         formClassName: 'p-1',

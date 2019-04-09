@@ -15,7 +15,7 @@ import { integrationTestContext } from '../../../../../shared/src/api/integratio
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { FileInfo, getOverlayMount, handleCodeHost } from './code_intelligence'
+import { FileInfo, getGlobalDebugMount, getOverlayMount, handleCodeHost } from './code_intelligence'
 import { testMountGetter } from './code_intelligence_test_utils'
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
@@ -50,6 +50,16 @@ describe('getOverlayMount()', () => {
         // The overlay mount is appended to <body>, so it doesn't matter which fixture we use.
         `${__dirname}/../github/__fixtures__/github.com/pull-request/vanilla/unified/page.html`,
         getOverlayMount('github'),
+        true,
+        true
+    )
+})
+
+describe('getGlobalDebugMount()', () => {
+    testMountGetter(
+        // The overlay mount is appended to <body>, so it doesn't matter which fixture we use.
+        `${__dirname}/../github/__fixtures__/github.com/pull-request/vanilla/unified/page.html`,
+        getGlobalDebugMount,
         true,
         true
     )
@@ -131,26 +141,6 @@ describe('handleCodeHost()', () => {
         const globalDebugMount = document.querySelector('.global-debug')
         expect(globalDebugMount).not.toBeUndefined()
         const renderedDebugElement = elementRenderedAtMount(globalDebugMount!)
-        expect(renderedDebugElement).not.toBeUndefined()
-    })
-
-    test('renders the debug palette to the provided mount if codeHost.globalDebugMount is defined', async () => {
-        const { services } = await integrationTestContext()
-        const globalDebugMount = createTestElement()
-        subscriptions.add(
-            handleCodeHost({
-                mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
-                codeHost: {
-                    name: 'test',
-                    check: () => true,
-                    getGlobalDebugMount: () => globalDebugMount,
-                },
-                extensionsController: createMockController(services),
-                showGlobalDebug: true,
-                ...createMockPlatformContext(),
-            })
-        )
-        const renderedDebugElement = elementRenderedAtMount(globalDebugMount)
         expect(renderedDebugElement).not.toBeUndefined()
     })
 

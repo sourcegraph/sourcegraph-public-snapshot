@@ -3,7 +3,7 @@ import { readFile } from 'mz/fs'
 import { SetIntersection } from 'utility-types'
 import { CodeHost, CodeViewSpec, MountGetter } from './code_intelligence'
 
-const mountGetterKeys = ['getCommandPaletteMount', 'getGlobalDebugMount', 'getViewContextOnSourcegraphMount'] as const
+const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = (typeof mountGetterKeys)[number]
 
 export function testCodeHostMountGetters<C extends CodeHost>(
