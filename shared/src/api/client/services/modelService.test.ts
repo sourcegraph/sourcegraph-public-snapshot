@@ -39,6 +39,13 @@ describe('ModelService', () => {
         })
     })
 
+    test('hasModel', () => {
+        const modelService = createModelService()
+        modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
+        expect(modelService.hasModel('u')).toBeTruthy()
+        expect(modelService.hasModel('u2')).toBeFalsy()
+    })
+
     describe('removeModel', () => {
         test('removes', async () => {
             const modelService = createModelService()
@@ -61,16 +68,5 @@ describe('ModelService', () => {
             const modelService = createModelService()
             modelService.removeModel('x')
         })
-    })
-
-    test('removeAllModels', async () => {
-        const modelService = createModelService()
-        modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
-        modelService.removeAllModels()
-        expect(
-            await from(modelService.models)
-                .pipe(first())
-                .toPromise()
-        ).toEqual([])
     })
 })

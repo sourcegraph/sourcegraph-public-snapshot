@@ -41,8 +41,6 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         // API's support for diffs.
         const dummyText = ''
 
-        this.props.extensionsController.services.model.removeAllModels()
-
         const editors: CodeEditorData[] = []
         if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
             for (const fileDiff of fileDiffsOrError.nodes) {
@@ -54,11 +52,13 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                         selections: [],
                         isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
                     })
-                    this.props.extensionsController.services.model.addModel({
-                        uri,
-                        languageId: getModeFromPath(fileDiff.oldPath),
-                        text: dummyText,
-                    })
+                    if (!this.props.extensionsController.services.model.hasModel(uri)) {
+                        this.props.extensionsController.services.model.addModel({
+                            uri,
+                            languageId: getModeFromPath(fileDiff.oldPath),
+                            text: dummyText,
+                        })
+                    }
                 }
                 if (fileDiff.newPath) {
                     const uri = `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`
@@ -68,11 +68,13 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                         selections: [],
                         isActive: true,
                     })
-                    this.props.extensionsController.services.model.addModel({
-                        uri,
-                        languageId: getModeFromPath(fileDiff.newPath),
-                        text: dummyText,
-                    })
+                    if (!this.props.extensionsController.services.model.hasModel(uri)) {
+                        this.props.extensionsController.services.model.addModel({
+                            uri,
+                            languageId: getModeFromPath(fileDiff.newPath),
+                            text: dummyText,
+                        })
+                    }
                 }
             }
         }

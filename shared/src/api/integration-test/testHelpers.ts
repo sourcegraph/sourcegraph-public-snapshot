@@ -1,7 +1,7 @@
 import 'message-port-polyfill'
 
 import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
-import { first, take } from 'rxjs/operators'
+import { first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { isDefined } from '../../util/types'
@@ -102,7 +102,11 @@ export async function integrationTestContext(
             .pipe(take(initModel.editors.length))
             .toPromise(),
         from(extensionAPI.app.activeWindowChanges)
-            .pipe(first(isDefined))
+            .pipe(
+                first(isDefined),
+                switchMap(activeWindow => activeWindow.activeViewComponentChanges),
+                first(isDefined)
+            )
             .toPromise(),
     ])
 

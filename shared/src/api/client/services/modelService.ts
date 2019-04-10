@@ -27,16 +27,18 @@ export interface ModelService {
     addModel(model: TextModel): void
 
     /**
+     * Reports whether a model with a given URI has already been added.
+     *
+     * @params uri The model URI to check.
+     */
+    hasModel(uri: string): boolean
+
+    /**
      * Removes a model.
      *
      * @params uri The URI of the model to remove.
      */
     removeModel(uri: string): void
-
-    /**
-     * Removes all models.
-     */
-    removeAllModels(): void
 }
 
 /**
@@ -44,17 +46,18 @@ export interface ModelService {
  */
 export function createModelService(): ModelService {
     const models = new BehaviorSubject<readonly TextModel[]>([])
+    const hasModel = (uri: string) => models.value.some(m => m.uri === uri)
     return {
         models,
         addModel: model => {
-            if (models.value.some(m => m.uri === model.uri)) {
+            if (hasModel(model.uri)) {
                 throw new Error(`model already exists with URI ${model.uri}`)
             }
             models.next([...models.value, model])
         },
+        hasModel,
         removeModel: uri => {
             models.next(models.value.filter(m => m.uri !== uri))
         },
-        removeAllModels: () => models.next([]),
     }
 }

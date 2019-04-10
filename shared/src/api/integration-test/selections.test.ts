@@ -53,7 +53,6 @@ describe('Selections (integration)', () => {
             for (const selections of testValues) {
                 editorService.nextEditors([withSelections(...selections)])
                 await extensionAPI.internal.sync()
-                await extensionAPI.internal.sync()
             }
             assertToJSON(
                 selectionValues.map(selections => selections.map(s => ({ start: s.start.line, end: s.end.line }))),

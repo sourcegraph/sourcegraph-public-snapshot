@@ -9,7 +9,6 @@ describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {
         test('returns the active window', async () => {
             const { extensionAPI } = await integrationTestContext()
-            await extensionAPI.internal.sync()
             const viewComponent: Pick<ViewComponent, 'type'> & {
                 document: TextModel
             } = {
@@ -67,7 +66,6 @@ describe('Windows (integration)', () => {
     describe('app.windows', () => {
         test('lists windows', async () => {
             const { extensionAPI } = await integrationTestContext()
-            await extensionAPI.internal.sync()
             const viewComponent: Pick<ViewComponent, 'type'> & {
                 document: TextModel
             } = {
@@ -180,8 +178,6 @@ describe('Windows (integration)', () => {
                     },
                     ...editorService.editorsValue,
                 ])
-                await extensionAPI.internal.sync()
-                await extensionAPI.internal.sync()
 
                 assertToJSON(extensionAPI.app.windows[0].activeViewComponent, {
                     type: 'CodeEditor' as const,
