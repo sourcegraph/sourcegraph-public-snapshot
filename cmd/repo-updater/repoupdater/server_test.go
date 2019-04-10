@@ -693,8 +693,7 @@ func TestRepoLookup_syncer(t *testing.T) {
 			t.Fatal(err)
 		}
 		if diff := pretty.Compare(result, want); diff != "" {
-			t.Errorf("ListRepos:\n%s", diff)
-			return
+			t.Fatalf("ListRepos:\n%s", diff)
 		}
 	})
 }

@@ -118,8 +118,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
-					t.Errorf("failed to setup store: %v", err)
-					return
+					t.Fatalf("failed to setup store: %v", err)
 				}
 
 				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
@@ -188,8 +187,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 			want := mkExternalServices(512, svcs...)
 
 			if err := tx.UpsertExternalServices(ctx, want...); err != nil {
-				t.Errorf("UpsertExternalServices error: %s", err)
-				return
+				t.Fatalf("UpsertExternalServices error: %s", err)
 			}
 
 			for _, e := range want {
@@ -206,13 +204,11 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 			})
 
 			if err != nil {
-				t.Errorf("ListExternalServices error: %s", err)
-				return
+				t.Fatalf("ListExternalServices error: %s", err)
 			}
 
 			if diff := pretty.Compare(have, want); diff != "" {
-				t.Errorf("ListExternalServices:\n%s", diff)
-				return
+				t.Fatalf("ListExternalServices:\n%s", diff)
 			}
 
 			now := clock.Now()
@@ -338,8 +334,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			want := mkRepos(512, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
-				t.Errorf("UpsertRepos error: %s", err)
-				return
+				t.Fatalf("UpsertRepos error: %s", err)
 			}
 
 			sort.Sort(want)
@@ -349,13 +344,11 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			})
 
 			if err != nil {
-				t.Errorf("ListRepos error: %s", err)
-				return
+				t.Fatalf("ListRepos error: %s", err)
 			}
 
 			if diff := pretty.Compare(have, want); diff != "" {
-				t.Errorf("ListRepos:\n%s", diff)
-				return
+				t.Fatalf("ListRepos:\n%s", diff)
 			}
 
 			suffix := "-updated"
@@ -563,8 +556,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				stored := tc.stored.Clone()
 				if err := tx.UpsertRepos(ctx, stored...); err != nil {
-					t.Errorf("failed to setup store: %v", err)
-					return
+					t.Fatalf("failed to setup store: %v", err)
 				}
 
 				var args repos.StoreListReposArgs
@@ -643,9 +635,7 @@ func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.St
 		if ok {
 			txstore, err := tr.Transact(ctx)
 			if err != nil {
-				// NOTE: We use t.Errorf instead of t.Fatalf in order to run defers.
-				t.Errorf("failed to start transaction: %v", err)
-				return
+				t.Fatalf("failed to start transaction: %v", err)
 			}
 			defer txstore.Done(&errRollback)
 			s = &noopTxStore{TB: t, Store: txstore}

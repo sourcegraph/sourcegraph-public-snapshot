@@ -369,8 +369,7 @@ func TestSources_ListRepos(t *testing.T) {
 
 			srcs, err := NewSourcer(cf)(tc.svcs...)
 			if err != nil {
-				t.Error(err)
-				return // Let defers run
+				t.Fatal(err)
 			}
 
 			ctx := tc.ctx
