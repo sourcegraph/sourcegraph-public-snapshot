@@ -170,6 +170,22 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+type searchOptions struct {
+	LargeFiles *[]string
+}
+
+func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
+	largeFiles := conf.Get().SearchLargeFiles
+	opts := searchOptions{
+		LargeFiles: largeFiles,
+	}
+	err := json.NewEncoder(w).Encode(opts)
+	if err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	var opt db.ReposListOptions
 	err := json.NewDecoder(r.Body).Decode(&opt)
