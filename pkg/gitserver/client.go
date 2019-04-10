@@ -486,6 +486,9 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 	if err != nil {
 		return err
 	}
+	if r.StatusCode != http.StatusOK {
+		return fmt.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
+	}
 
 	// Try unmarshaling new response format (?v=2) first.
 	var resp protocol.IsRepoCloneableResponse
