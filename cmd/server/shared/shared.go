@@ -156,9 +156,7 @@ func Main() {
 		procfile = append(procfile, line)
 	}
 
-	if lines := maybeZoektProcFile(); lines != nil {
-		procfile = append(procfile, lines...)
-	}
+	procfile = append(procfile, maybeZoektProcFile()...)
 
 	const goremanAddr = "127.0.0.1:5005"
 	if err := os.Setenv("GOREMAN_RPC_ADDR", goremanAddr); err != nil {
