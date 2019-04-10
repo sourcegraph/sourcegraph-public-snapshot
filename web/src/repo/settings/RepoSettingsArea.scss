@@ -14,4 +14,11 @@
             display: inline-flex;
         }
     }
+
+    &__debug-information {
+        border-radius: 2px;
+        border: solid 1px #cad2e2;
+        background-color: #ffffff;
+        padding: 1rem;
+    }
 }

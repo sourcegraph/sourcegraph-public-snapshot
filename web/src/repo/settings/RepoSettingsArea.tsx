@@ -104,8 +104,11 @@ export class RepoSettingsArea extends React.Component<Props> {
                 />
                 <div className="area__content">
                     <RepoSettingsOptionsPage {...this.props} {...transferProps} />
-                    <RepoSettingsIndexPage {...this.props} {...transferProps} />
-                    <RepoSettingsMirrorPage {...this.props} {...transferProps} />
+                    <label>Debug information:</label>
+                    <div className="repo-settings-area__debug-information">
+                        <RepoSettingsIndexPage {...this.props} {...transferProps} />
+                        <RepoSettingsMirrorPage {...this.props} {...transferProps} />
+                    </div>
                 </div>
             </div>
         )

@@ -83,25 +83,28 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                         />
                     </div>
                 </Form>
-                <ActionContainer
-                    title={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
-                    description={
-                        this.state.repo.enabled
-                            ? 'Disable access to the repository to prevent users from searching and browsing the repository.'
-                            : 'The repository is disabled. Enable it to allow users to search and view the repository.'
-                    }
-                    buttonClassName={this.state.repo.enabled ? 'btn-danger' : 'btn-success'}
-                    buttonLabel={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
-                    flashText="Updated"
-                    run={this.state.repo.enabled ? this.disableRepository : this.enableRepository}
-                />
-                <ActionContainer
-                    title="Delete repository"
-                    description="Permanently removes this repository and all associated data from Sourcegraph. The original repository on the code host is not affected. If this repository was added by a configured code host, then it will be re-added during the next sync."
-                    buttonClassName="btn-danger"
-                    buttonLabel="Delete this repository"
-                    run={this.deleteRepository}
-                />
+                <label>Sync options:</label>
+                <div className="repo-settings-options-page__sync-options">
+                    <ActionContainer
+                        title={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
+                        description={
+                            this.state.repo.enabled
+                                ? 'Disable access to the repository to prevent users from searching and browsing the repository.'
+                                : 'The repository is disabled. Enable it to allow users to search and view the repository.'
+                        }
+                        buttonClassName={this.state.repo.enabled ? 'btn-danger' : 'btn-success'}
+                        buttonLabel={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
+                        flashText="Updated"
+                        run={this.state.repo.enabled ? this.disableRepository : this.enableRepository}
+                    />
+                    <ActionContainer
+                        title="Delete repository"
+                        description="Permanently removes this repository and all associated data from Sourcegraph. The original repository on the code host is not affected. If this repository was added by a configured code host, then it will be re-added during the next sync."
+                        buttonClassName="btn-danger"
+                        buttonLabel="Delete this repository"
+                        run={this.deleteRepository}
+                    />
+                </div>
             </div>
         )
     }
