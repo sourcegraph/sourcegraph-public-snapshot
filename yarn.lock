@@ -15372,6 +15372,11 @@ wcwidth@^1.0.0:
   dependencies:
     defaults "^1.0.3"
 
+web-ext-types@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.npmjs.org/web-ext-types/-/web-ext-types-3.1.0.tgz#32aab56a3d0f4a3d499d43b4838b3356102d11eb"
+  integrity sha512-HKVibk040vuhpbOljcIYYYC8GP9w9REbHpquI3im/aoZqoDIRq9DnsHl4Zsg+4Fg3SBnWsnvlIr1rnspV4TdXQ==
+
 web-namespaces@^1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/web-namespaces/-/web-namespaces-1.1.2.tgz#c8dc267ab639505276bae19e129dbd6ae72b22b4"
@@ -15381,6 +15386,11 @@ webext-domain-permission-toggle@^0.1.0:
   version "0.1.0"
   resolved "https://registry.npmjs.org/webext-domain-permission-toggle/-/webext-domain-permission-toggle-0.1.0.tgz#82c0f611a075958e5b879fd77f69908236615607"
   integrity sha512-zPwVKYa5EiH0htXedmoAWUaMqU7pOr+4dlzFyGVM64Q0jLVo3V8AVcYOVDKtY+c9qOkhtoSUCGcXCnbs5u8eNg==
+
+webextension-polyfill@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.npmjs.org/webextension-polyfill/-/webextension-polyfill-0.4.0.tgz#9cc5a60f0f2bf907a6b349fdd7e61701f54956f9"
+  integrity sha512-oreMp+EoAo1pzRMigx4jB5jInIpx6NTCySPSjGyLLee/dCIPiRqowCEfbFP8o20wz9SOtNwSsfkaJ9D/tRgpag==
 
 webidl-conversions@^4.0.2:
   version "4.0.2"

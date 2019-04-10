@@ -175,6 +175,7 @@
     "typedoc": "^0.14.0",
     "typescript": "3.5.0-dev.20190406",
     "utc-version": "^1.1.0",
+    "web-ext-types": "^3.1.0",
     "webpack": "^4.28.2",
     "webpack-dev-server": "^3.1.13",
     "worker-loader": "^2.0.0",
@@ -229,6 +230,7 @@
     "utility-types": "^3.4.1",
     "uuid": "^3.2.1",
     "webext-domain-permission-toggle": "^0.1.0",
+    "webextension-polyfill": "^0.4.0",
     "whatwg-url": "^7.0.0"
   }
 }

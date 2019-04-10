@@ -5,7 +5,6 @@ import React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../../shared/src/components/Link'
-import { getURL } from '../../browser/extension'
 import storage from '../../browser/storage'
 import { StorageItems } from '../../browser/types'
 import { determineCodeHost as detectCodeHost, injectCodeIntelligenceToCodeHost } from '../../libs/code_intelligence'
@@ -78,7 +77,7 @@ async function main(): Promise<void> {
         styleSheet.id = 'ext-style-sheet'
         styleSheet.rel = 'stylesheet'
         styleSheet.type = 'text/css'
-        styleSheet.href = getURL('css/style.bundle.css')
+        styleSheet.href = browser.extension.getURL('css/style.bundle.css')
         document.head.appendChild(styleSheet)
     }
 

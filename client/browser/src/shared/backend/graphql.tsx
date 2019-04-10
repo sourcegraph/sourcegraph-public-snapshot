@@ -57,17 +57,7 @@ export const requestGraphQL: typeof performRequest = (args: GraphQLRequestArgs) 
         return performRequest(args)
     }
 
-    return from(
-        new Promise<any>((resolve, reject) => {
-            chrome.runtime.sendMessage(
-                {
-                    type: 'requestGraphQL',
-                    payload: args,
-                },
-                ({ err, result }) => (err ? reject(err) : resolve(result))
-            )
-        })
-    )
+    return from(browser.runtime.sendMessage({ type: 'requestGraphQL', payload: args }))
 }
 
 function performRequest<T extends GQL.IGraphQLResponseRoot>({
