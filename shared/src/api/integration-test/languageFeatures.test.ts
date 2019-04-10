@@ -153,7 +153,6 @@ function testLocationProvider<P>({
                     isActive: true,
                 },
             ])
-            // await extensionAPI.internal.sync()
 
             expect(
                 await getResult(services, 'file:///f2')
