@@ -85,6 +85,10 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 </Form>
                 <label>Sync options:</label>
                 <div className="repo-settings-options-page__sync-options">
+                    <div className="alert alert-info action-container__alert">
+                        This repository is mirrored by an external service using the legacy repository syncer. In the
+                        future, repository mirroring will be managed by external service configuration.
+                    </div>
                     <ActionContainer
                         title={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
                         description={
