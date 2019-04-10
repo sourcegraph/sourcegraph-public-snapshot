@@ -36,15 +36,22 @@ type StoreListReposArgs struct {
 	IDs []uint32
 	// Kinds of repos to list.
 	Kinds []string
+	// If true, includes deleted repos in the result set.
+	Deleted bool
 }
 
 // StoreListExternalServicesArgs is a query arguments type used by
 // the ListExternalServices method of Store implementations.
+//
+// Each defined argument must map to a disjunct (i.e. AND) filter predicate.
+// When zero-valued, an argument is ommited from the predicate set.
 type StoreListExternalServicesArgs struct {
 	// IDs of external services to list.
 	IDs []int64
 	// Kinds of external services to list.
 	Kinds []string
+	// If true, includes deleted services in the result set.
+	Deleted bool
 }
 
 // ErrNoResults is returned by Store method invocations that yield no result set.
@@ -170,6 +177,10 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 		}
 		preds = append(preds,
 			sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ",")))
+	}
+
+	if !args.Deleted {
+		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 	}
 
 	if len(preds) == 0 {
@@ -320,6 +331,10 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 		}
 		preds = append(preds,
 			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
+	}
+
+	if !args.Deleted {
+		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 	}
 
 	if len(preds) == 0 {

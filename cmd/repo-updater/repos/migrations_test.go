@@ -318,7 +318,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				}
 
 				if tc.repos != nil {
-					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
 					if err != nil {
 						t.Fatal(err)
 					}

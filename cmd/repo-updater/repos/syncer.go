@@ -68,7 +68,8 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) 
 	}
 
 	var stored Repos
-	if stored, err = store.ListRepos(ctx, StoreListReposArgs{Kinds: kinds}); err != nil {
+	args := StoreListReposArgs{Kinds: kinds, Deleted: true}
+	if stored, err = store.ListRepos(ctx, args); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 

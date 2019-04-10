@@ -67,64 +67,96 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 		&bitbucketServer,
 	}
 
+	type testCase struct {
+		name   string
+		args   func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs
+		stored repos.ExternalServices
+		assert repos.ExternalServicesAssertion
+		err    error
+	}
+
+	var testCases []testCase
+	testCases = append(testCases,
+		testCase{
+			name: "returned kind is uppercase",
+			args: func(repos.ExternalServices) repos.StoreListExternalServicesArgs {
+				return repos.StoreListExternalServicesArgs{
+					Kinds: svcs.Kinds(),
+				}
+			},
+			stored: svcs,
+			assert: repos.Assert.ExternalServicesEqual(svcs...),
+		},
+		testCase{
+			name: "case-insensitive kinds",
+			args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				for _, kind := range svcs.Kinds() {
+					args.Kinds = append(args.Kinds, strings.ToLower(kind))
+				}
+				return args
+			},
+			stored: svcs,
+			assert: repos.Assert.ExternalServicesEqual(svcs...),
+		},
+		testCase{
+			name:   "excludes soft deleted external services by default",
+			stored: svcs.With(repos.Opt.ExternalServiceDeletedAt(now)),
+			assert: repos.Assert.ExternalServicesEqual(),
+		},
+		testCase{
+			name:   "results are in ascending order by id",
+			stored: mkExternalServices(512, svcs...),
+			assert: repos.Assert.ExternalServicesOrderedBy(
+				func(a, b *repos.ExternalService) bool {
+					return a.ID < b.ID
+				},
+			),
+		},
+	)
+
+	{
+		stored := svcs.With(repos.Opt.ExternalServiceDeletedAt(now))
+		testCases = append(testCases, testCase{
+			name:   "includes soft deleted external services",
+			stored: stored,
+			args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args.Deleted = true
+				return
+			},
+			assert: repos.Assert.ExternalServicesEqual(stored...),
+		})
+	}
+
+	testCases = append(testCases, testCase{
+		name:   "returns svcs by their ids",
+		stored: svcs,
+		args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
+			return repos.StoreListExternalServicesArgs{
+				IDs: []int64{stored[0].ID, stored[1].ID},
+			}
+		},
+		assert: repos.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
+	})
+
 	return func(t *testing.T) {
 		t.Helper()
 
-		for _, tc := range []struct {
-			name   string
-			kinds  []string
-			stored repos.ExternalServices
-			assert repos.ExternalServicesAssertion
-			err    error
-		}{
-			{
-				name:   "returned kind is uppercase",
-				kinds:  svcs.Kinds(),
-				stored: svcs,
-				assert: repos.Assert.ExternalServicesEqual(svcs...),
-			},
-			{
-				name: "case-insensitive kinds",
-				kinds: func() (lowercase []string) {
-					for _, kind := range svcs.Kinds() {
-						lowercase = append(lowercase, strings.ToLower(kind))
-					}
-					return
-				}(),
-				stored: svcs,
-				assert: repos.Assert.ExternalServicesEqual(svcs...),
-			},
-			{
-				name:   "returns soft deleted external services",
-				kinds:  svcs.Kinds(),
-				stored: svcs.With(repos.Opt.ExternalServiceDeletedAt(now)),
-				assert: repos.Assert.ExternalServicesEqual(
-					svcs.With(repos.Opt.ExternalServiceDeletedAt(now))...,
-				),
-			},
-			{
-				name:   "results are in ascending order by id",
-				kinds:  []string{}, // All kinds
-				stored: mkExternalServices(512, svcs...),
-				assert: repos.Assert.ExternalServicesOrderedBy(
-					func(a, b *repos.ExternalService) bool {
-						return a.ID < b.ID
-					},
-				),
-			},
-		} {
+		for _, tc := range testCases {
 			tc := tc
 			ctx := context.Background()
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
-				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+				stored := tc.stored.Clone()
+				if err := tx.UpsertExternalServices(ctx, stored...); err != nil {
 					t.Fatalf("failed to setup store: %v", err)
 				}
 
-				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-					Kinds: tc.kinds,
-				})
+				var args repos.StoreListExternalServicesArgs
+				if tc.args != nil {
+					args = tc.args(stored)
+				}
 
+				es, err := tx.ListExternalServices(ctx, args)
 				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 				}
@@ -230,10 +262,11 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 			}
 
 			want.Apply(repos.Opt.ExternalServiceDeletedAt(now))
+			args := repos.StoreListExternalServicesArgs{Deleted: true}
 
 			if err = tx.UpsertExternalServices(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertExternalServices error: %s", err)
-			} else if have, err = tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{}); err != nil {
+			} else if have, err = tx.ListExternalServices(ctx, args); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
@@ -372,10 +405,11 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			}
 
 			want.Apply(repos.Opt.RepoDeletedAt(now))
+			args := repos.StoreListReposArgs{Deleted: true}
 
 			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
-			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
+			} else if have, err = tx.ListRepos(ctx, args); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := pretty.Compare(have, want); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
@@ -499,7 +533,19 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	{
 		stored := repositories.With(repos.Opt.RepoDeletedAt(now))
 		testCases = append(testCases, testCase{
-			name:   "returns soft deleted repos",
+			name:   "excludes soft deleted repos by default",
+			stored: stored,
+			repos:  repos.Assert.ReposEqual(),
+		})
+	}
+
+	{
+		stored := repositories.With(repos.Opt.RepoDeletedAt(now))
+		testCases = append(testCases, testCase{
+			name: "includes soft deleted repos",
+			args: func(repos.Repos) repos.StoreListReposArgs {
+				return repos.StoreListReposArgs{Deleted: true}
+			},
 			stored: stored,
 			repos:  repos.Assert.ReposEqual(stored...),
 		})
