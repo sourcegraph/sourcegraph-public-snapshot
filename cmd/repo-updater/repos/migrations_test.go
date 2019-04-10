@@ -55,7 +55,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		{
 			// Some comment
 			"url": "https://github.com",
-			"token": "secret"
+			"token": "secret",
+			"repositoryQuery": ["none"]
 		}`),
 	}
 
@@ -79,7 +80,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		{
 			// Some comment
 			"url": "https://gitlab.com",
-			"token": "secret"
+			"token": "secret",
+			"projectQuery": ["none"]
 		}`),
 	}
 
@@ -104,7 +106,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			// Some comment
 			"url": "https://bitbucketserver.mycorp.com",
 			"username": "admin",
-			"token": "secret"
+			"token": "secret",
+			"repositoryQuery": ["none"]
 		}`),
 	}
 

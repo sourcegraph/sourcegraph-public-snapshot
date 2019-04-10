@@ -293,6 +293,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		{
 			// Some comment
 			"url": "https://github.com",
+			"repositoryQuery": ["none"],
 			"token": "secret"
 		}`),
 	}
@@ -317,6 +318,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		{
 			// Some comment
 			"url": "https://gitlab.com",
+			"projectQuery": ["none"],
 			"token": "secret"
 		}`),
 	}
@@ -342,7 +344,8 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			// Some comment
 			"url": "https://bitbucketserver.mycorp.com",
 			"token": "secret",
-			"username": "alice"
+			"username": "alice",
+			"repositoryQuery": ["none"]
 		}`),
 	}
 
