@@ -70,8 +70,8 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 {services.length > 0 && (
                     <div className="mb-4">
-                        {services.map((service, i) => (
-                            <div className="mb-3" key={i}>
+                        {services.map(service => (
+                            <div className="mb-3" key={service.id}>
                                 <ExternalServiceCard
                                     {...getExternalService(service.kind)}
                                     title={service.displayName}
