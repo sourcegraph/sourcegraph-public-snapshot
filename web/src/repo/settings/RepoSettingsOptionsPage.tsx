@@ -69,9 +69,9 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 {services.length > 0 && (
-                    <div className="mb-3">
+                    <div className="mb-4">
                         {services.map((service, i) => (
-                            <div className="repo-settings-options-page__card" key={i}>
+                            <div className="mb-3" key={i}>
                                 <ExternalServiceCard
                                     {...getExternalService(service.kind)}
                                     title={service.displayName}
