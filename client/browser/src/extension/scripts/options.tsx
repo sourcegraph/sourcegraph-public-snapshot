@@ -4,12 +4,15 @@ import '../../config/polyfill'
 
 import * as React from 'react'
 import { render } from 'react-dom'
-import { noop, Subscription } from 'rxjs'
+import { from, noop, Subscription } from 'rxjs'
+import * as permissions from '../../browser/permissions'
 import storage from '../../browser/storage'
+import * as tabs from '../../browser/tabs'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
+import { OptionsMenuProps } from '../../libs/options/Menu'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { initSentry } from '../../libs/sentry'
-import { fetchCurrentUser, fetchSite } from '../../shared/backend/server'
+import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -31,6 +34,25 @@ const toggleFeatureFlag = (key: string) => {
     }
 }
 
+const fetchCurrentTabStatus = () =>
+    from(
+        new Promise<OptionsMenuProps['currentTabStatus']>((resolve, reject) => {
+            tabs.query({ active: true, currentWindow: true }, async tabs => {
+                if (tabs.length > 1) {
+                    console.error('Querying for the currently active tab returned more than one result')
+                    return resolve()
+                }
+                const { url } = tabs[0]
+                if (!url) {
+                    console.error('Currently active tab has no URL')
+                    return resolve()
+                }
+                const { host, protocol } = new URL(url)
+                const hasPermissions = await permissions.contains(`${protocol}//${host}`)
+                resolve({ host, protocol, hasPermissions })
+            })
+        })
+    )
 class Options extends React.Component<{}, State> {
     public state: State = { sourcegraphURL: null, allowErrorReporting: false }
 
@@ -63,7 +85,9 @@ class Options extends React.Component<{}, State> {
             sourcegraphURL: this.state.sourcegraphURL,
 
             ensureValidSite: fetchSite,
-            fetchCurrentUser,
+            fetchCurrentTabStatus,
+            hasPermissions: url => permissions.contains(url),
+            requestPermissions: url => permissions.request([url]),
 
             setSourcegraphURL: (url: string) => {
                 storage.setSync({ sourcegraphURL: url })

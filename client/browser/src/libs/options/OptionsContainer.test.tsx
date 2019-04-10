@@ -1,17 +1,23 @@
 import * as React from 'react'
 import { render, RenderResult } from 'react-testing-library'
-import { noop, Observable, of } from 'rxjs'
+import { NEVER, noop, Observable, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { OptionsContainer, OptionsContainerProps } from './OptionsContainer'
 
 describe('OptionsContainer', () => {
     const stubs: Pick<
         OptionsContainerProps,
-        'fetchCurrentUser' | 'ensureValidSite' | 'toggleFeatureFlag' | 'featureFlags'
+        | 'fetchCurrentTabStatus'
+        | 'ensureValidSite'
+        | 'toggleFeatureFlag'
+        | 'featureFlags'
+        | 'hasPermissions'
+        | 'requestPermissions'
     > = {
-        fetchCurrentUser: () => new Observable<GQL.IUser>(),
+        hasPermissions: () => Promise.resolve(true),
+        requestPermissions: noop,
+        fetchCurrentTabStatus: () => NEVER,
         ensureValidSite: (url: string) => new Observable<void>(),
         toggleFeatureFlag: noop,
         featureFlags: [],

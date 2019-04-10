@@ -1,8 +1,6 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import * as permissions from '../../browser/permissions'
 import { getExtensionVersionSync } from '../../browser/runtime'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
 import { OptionsMenu, OptionsMenuProps } from './Menu'
@@ -10,12 +8,11 @@ import { ConnectionErrors } from './ServerURLForm'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
-
     ensureValidSite: (url: string) => Observable<any>
-    fetchCurrentUser: (useToken: boolean) => Observable<GQL.IUser | undefined>
-
+    fetchCurrentTabStatus: () => Observable<OptionsMenuProps['currentTabStatus']>
+    hasPermissions: (url: string) => Promise<boolean>
+    requestPermissions: (url: string) => void
     setSourcegraphURL: (url: string) => void
-
     toggleFeatureFlag: (key: string) => void
     featureFlags: { key: string; value: boolean }[]
 }
@@ -23,7 +20,7 @@ export interface OptionsContainerProps {
 interface OptionsContainerState
     extends Pick<
         OptionsMenuProps,
-        'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen' | 'urlHasPermissions'
+        'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen' | 'urlHasPermissions' | 'currentTabStatus'
     > {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
@@ -84,11 +81,17 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                     url = res
                 }
 
-                const urlHasPermissions = await permissions.contains(url)
+                const urlHasPermissions = await props.hasPermissions(url)
                 this.setState({ urlHasPermissions })
 
                 props.setSourcegraphURL(url)
             })
+        )
+
+        this.subscriptions.add(
+            props
+                .fetchCurrentTabStatus()
+                .subscribe(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
         )
     }
 
@@ -113,13 +116,9 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 toggleFeatureFlag={this.props.toggleFeatureFlag}
                 featureFlags={this.props.featureFlags}
                 onSettingsClick={this.handleSettingsClick}
-                requestPermissions={this.requestPermissions}
+                requestPermissions={this.props.requestPermissions}
             />
         )
-    }
-
-    private requestPermissions = async () => {
-        await permissions.request([this.state.sourcegraphURL])
     }
 
     private handleURLChange = (value: string) => {
