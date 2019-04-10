@@ -122,7 +122,14 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 		Site:     site.Contents,
 
 		// TODO(slimsag): future: pass GitServers list via this.
-		ServiceConnections: conftypes.ServiceConnections{},
+		ServiceConnections: conftypes.ServiceConnections{
+			PGSSLMODE:  os.Getenv("PGSSLMODE"),
+			PGUSER:     os.Getenv("PGUSER"),
+			PGPASSWORD: os.Getenv("PGPASSWORD"),
+			PGHOST:     os.Getenv("PGHOST"),
+			PGPORT:     os.Getenv("PGPORT"),
+			PGDATABASE: os.Getenv("PGDATABASE"),
+		},
 	}, nil
 }
 

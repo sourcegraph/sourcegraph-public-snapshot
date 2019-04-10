@@ -43,7 +43,18 @@ func main() {
 	api.WaitForFrontend(ctx)
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	db, err := repos.NewDB(repos.NewDSN().String())
+	dsn := repos.NewDSN().String()
+	conf.Watch(func() {
+		newDSN := repos.NewDSN().String()
+		if dsn != repos.NewDSN().String() {
+			// The DSN was changed (e.g. by someone modifying the env vars on
+			// the frontend). We need to respect the new DSN. Easiest way to do
+			// that is to restart our service (kubernetes/docker/goreman will
+			// handle starting us back up).
+			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
+		}
+	})
+	db, err := repos.NewDB(dsn)
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}

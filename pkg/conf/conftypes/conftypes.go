@@ -10,6 +10,9 @@ type ServiceConnections struct {
 	// GitServers is the addresses of gitserver instances that should be talked
 	// to.
 	GitServers []string `json:"gitServers"`
+
+	// PostgreSQL environment variables configured on the frontend.
+	PGSSLMODE, PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE string
 }
 
 // RawUnified is the unparsed variant of conf.Unified.

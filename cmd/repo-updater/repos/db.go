@@ -15,6 +15,7 @@ import (
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/migrations"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -37,7 +38,7 @@ type TxBeginner interface {
 // NewDSN returns a default DSN overriden with PGXXX environment variables.
 func NewDSN() *url.URL {
 	u := DefaultDSN()
-	UpdateDSNFromEnv(u)
+	UpdateDSNFromConf(u)
 	return u
 }
 
@@ -59,31 +60,33 @@ func DefaultDSN() *url.URL {
 	}
 }
 
-// UpdateDSNFromEnv updates dsn based on PGXXX environment variables.
-func UpdateDSNFromEnv(dsn *url.URL) {
-	if host := os.Getenv("PGHOST"); host != "" {
-		dsn.Host = host
+// UpdateDSNFromConf updates dsn based on PGXXX environment variables set on the frontend.
+func UpdateDSNFromConf(dsn *url.URL) {
+	sc := conf.Get().ServiceConnections
+
+	if sc.PGHOST != "" {
+		dsn.Host = sc.PGHOST
 	}
 
-	if port := os.Getenv("PGPORT"); port != "" {
-		dsn.Host += ":" + port
+	if sc.PGPORT != "" {
+		dsn.Host += ":" + sc.PGPORT
 	}
 
-	if user := os.Getenv("PGUSER"); user != "" {
-		if password := os.Getenv("PGPASSWORD"); password != "" {
-			dsn.User = url.UserPassword(user, password)
+	if sc.PGUSER != "" {
+		if sc.PGPASSWORD != "" {
+			dsn.User = url.UserPassword(sc.PGUSER, sc.PGPASSWORD)
 		} else {
-			dsn.User = url.User(user)
+			dsn.User = url.User(sc.PGUSER)
 		}
 	}
 
-	if db := os.Getenv("PGDATABASE"); db != "" {
-		dsn.Path = db
+	if sc.PGDATABASE != "" {
+		dsn.Path = sc.PGDATABASE
 	}
 
-	if sslmode := os.Getenv("PGSSLMODE"); sslmode != "" {
+	if sc.PGSSLMODE != "" {
 		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
+		qry.Set("sslmode", sc.PGSSLMODE)
 		dsn.RawQuery = qry.Encode()
 	}
 }
