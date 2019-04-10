@@ -9,13 +9,17 @@ import (
 	"encoding/hex"
 	"io"
 	"log"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/diskcache"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -65,6 +69,10 @@ type Store struct {
 
 	// zipCache provides efficient access to repo zip files.
 	zipCache zipCache
+
+	// largeFilesPatterns is a list of large file glob patterns where files that
+	// match any pattern in the list should be searched regardless of their size.
+	largeFilePatterns []string
 }
 
 // SetMaxConcurrentFetchTar sets the maximum number of concurrent calls allowed
@@ -225,7 +233,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		defer r.Close()
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
-		err := copySearchable(tr, zw)
+		err := copySearchable(tr, zw, s.ignoreSizeMax)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
@@ -239,7 +247,8 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 // copySearchable copies searchable files from tr to zw. A searchable file is
 // any file that is a candidate for being searched (under size limit and
 // non-binary).
-func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
+func copySearchable(tr *tar.Reader, zw *zip.Writer, ignoreSizeMax func(string) bool) error {
+	log15.Info("copy searchable")
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -276,8 +285,11 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 			return err
 		}
 
-		// We do not search the content of large files
-		if hdr.Size > maxFileSize {
+		_ = ignoreSizeMax(hdr.Name)
+
+		// We do not search the content of large files unless they are
+		// whitelisted.
+		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name) {
 			continue
 		}
 
@@ -335,6 +347,63 @@ func (s *Store) watchAndEvict() {
 		cacheSizeBytes.Set(float64(stats.CacheSize))
 		evictions.Add(float64(stats.Evicted))
 	}
+}
+
+// ignoreSizeMax determines whether the max size should be ignored. It uses
+// the glob syntax found here: https://golang.org/pkg/path/filepath/#Match.
+func (s *Store) ignoreSizeMax(name string) bool {
+	log15.Info(">>>>>", "name", name)
+	for _, pattern := range s.largeFilePatterns {
+		pattern = strings.TrimSpace(pattern)
+		if m, _ := filepath.Match(pattern, name); m {
+			return true
+		}
+	}
+	return false
+}
+
+func getLargeFilePatterns() []string {
+	lfp := conf.Get().SearchLargeFiles
+	if lfp == nil {
+		return []string{}
+	}
+	return *lfp
+}
+
+// stringSlicesAreEqual checks to make sure that two string slices have the same
+// items.
+func stringSlicesAreEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	aMap := map[string]struct{}{}
+	for i := range a {
+		aMap[a[i]] = struct{}{}
+	}
+	for i := range b {
+		if _, ok := aMap[b[i]]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// watchLargeFilesSettingChange watches for changes to the search.largeFiles
+// setting and clears the disk cache when it is changed.
+func (s *Store) watchLargeFilesChange() {
+	if s.largeFilePatterns == nil {
+		s.largeFilePatterns = getLargeFilePatterns()
+	}
+
+	conf.Watch(func() {
+		// Ensure the slices are actually different so we don't blow away the
+		// cache needlessly.
+		log15.Info("config changed", "old", s.largeFilePatterns, "new", getLargeFilePatterns())
+		if lfp := getLargeFilePatterns(); !stringSlicesAreEqual(lfp, s.largeFilePatterns) {
+			s.largeFilePatterns = lfp
+			s.cache.Evict(0)
+		}
+	})
 }
 
 var (
