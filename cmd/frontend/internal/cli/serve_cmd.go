@@ -164,6 +164,7 @@ func Main() error {
 	}
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
+	goroutine.Go(func() { bg.MigrateAllSavedQueriesFromSettingsToDatabase(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	if hooks.AfterDBInit != nil {
