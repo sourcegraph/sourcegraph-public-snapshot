@@ -27,6 +27,15 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Search"
     },
+    "search.largeFiles": {
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "!go": { "pointer": true },
+      "group": "Search"
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",

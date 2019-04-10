@@ -432,6 +432,7 @@ type SiteConfiguration struct {
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
+	SearchLargeFiles                  *[]string                   `json:"search.largeFiles,omitempty"`
 }
 
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.
