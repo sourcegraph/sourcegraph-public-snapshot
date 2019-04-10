@@ -34,7 +34,7 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                             total
                         }
                     }
-                    externalServices() {
+                    externalServices {
                         nodes {
                             id
                             kind
