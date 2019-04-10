@@ -189,6 +189,31 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 	return &result, nil
 }
 
+// RepoExternalServices requests the external services associated with a
+// repository with the given id.
+func (c *Client) RepoExternalServices(ctx context.Context, id uint32) ([]api.ExternalService, error) {
+	req := protocol.RepoExternalServicesRequest{ID: id}
+	resp, err := c.httpPost(ctx, "repo-external-services", &req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.RepoExternalServicesResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return nil, err
+	}
+
+	return res.ExternalServices, nil
+}
+
 // ExcludeRepo adds the repository with the given id to all of the
 // external services exclude lists that match its kind.
 func (c *Client) ExcludeRepo(ctx context.Context, id uint32) (*protocol.ExcludeRepoResponse, error) {

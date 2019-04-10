@@ -448,6 +448,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			}
 
 			srv := httptest.NewServer((&Server{Kinds: tc.kinds, Store: store}).Handler())
+			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
 
 			if tc.err == "" {
@@ -492,6 +493,99 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			have, want := apiExternalServices(svcs...), res.ExternalServices
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("stored external services:\n%s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestServer_RepoExternalServices(t *testing.T) {
+	service1 := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://github.com",
+			"token": "secret"
+		}`),
+	}
+	service2 := &repos.ExternalService{
+		ID:          2,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test2",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://github.com",
+			"token": "secret"
+		}`),
+	}
+
+	// No sources are repos that are not managed by the syncer
+	repoNoSources := &repos.Repo{
+		Name: "gitolite.example.com/oldschool",
+	}
+
+	repoSources := (&repos.Repo{
+		Name: "github.com/foo/sources",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "sources",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Metadata: new(github.Repository),
+	}).With(repos.Opt.RepoSources(service1.URN(), service2.URN()))
+
+	must := func(err error) {
+		t.Helper()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// We share the store across test cases. Initialize now so we have IDs
+	// set for test cases.
+	ctx := context.Background()
+	store := new(repos.FakeStore)
+	must(store.UpsertExternalServices(ctx, service1, service2))
+	must(store.UpsertRepos(ctx, repoNoSources, repoSources))
+
+	testCases := []struct {
+		name   string
+		repoID uint32
+		svcs   []api.ExternalService
+		err    string
+	}{{
+		name:   "repo no sources",
+		repoID: repoNoSources.ID,
+		svcs:   nil,
+		err:    "<nil>",
+	}, {
+		name:   "repo sources",
+		repoID: repoSources.ID,
+		svcs:   apiExternalServices(service1, service2),
+		err:    "<nil>",
+	}, {
+		name:   "repo not in store",
+		repoID: 42,
+		svcs:   nil,
+		err:    "repository with ID 42 does not exist",
+	}}
+
+	srv := httptest.NewServer((&Server{Store: store}).Handler())
+	defer srv.Close()
+	cli := repoupdater.Client{URL: srv.URL}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := cli.RepoExternalServices(ctx, tc.repoID)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.svcs; !reflect.DeepEqual(have, want) {
+				t.Errorf("response:\n%s", cmp.Diff(have, want))
 			}
 		})
 	}
