@@ -5,7 +5,6 @@ package shared
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,9 +17,6 @@ import (
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
 const FrontendInternalHost = "127.0.0.1:3090"
-
-// zoektHost is the address zoekt webserver is listening on.
-const zoektHost = "127.0.0.1:3070"
 
 // defaultEnv is environment variables that will be set if not already set.
 var defaultEnv = map[string]string{
@@ -35,7 +31,6 @@ var defaultEnv = map[string]string{
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
-	"ZOEKT_HOST":            zoektHost,
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -137,12 +132,6 @@ func Main() {
 		log.Fatal("Failed to setup nginx:", err)
 	}
 
-	zoektIndexDir := filepath.Join(DataDir, "zoekt/index")
-	debugFlag := ""
-	if verbose {
-		debugFlag = "-debug"
-	}
-
 	procfile := []string{
 		nginx,
 		`frontend: env CONFIGURATION_MODE=server frontend`,
@@ -154,8 +143,6 @@ func Main() {
 		`github-proxy: github-proxy`,
 		`repo-updater: repo-updater`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
-		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 %s", FrontendInternalHost, zoektIndexDir, debugFlag),
-		fmt.Sprintf("zoekt-webserver: zoekt-webserver -rpc -pprof -listen %s -index %s", zoektHost, zoektIndexDir),
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 	if line, err := maybeRedisProcFile(); err != nil {
@@ -168,6 +155,8 @@ func Main() {
 	} else if line != "" {
 		procfile = append(procfile, line)
 	}
+
+	procfile = append(procfile, maybeZoektProcFile()...)
 
 	const goremanAddr = "127.0.0.1:5005"
 	if err := os.Setenv("GOREMAN_RPC_ADDR", goremanAddr); err != nil {
