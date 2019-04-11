@@ -10,7 +10,7 @@ nginx: nginx -p . -g 'daemon off;' -c $PWD/dev/nginx.conf | grep -v 'could not o
 web: ./node_modules/.bin/gulp --color watch
 syntect_server: ./dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
-zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc
+zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc -listen :3070
 management-console: PROJECT_ROOT=./cmd/management-console TLS_CERT=$HOME/.sourcegraph/management/cert.pem TLS_KEY=$HOME/.sourcegraph/management/key.pem management-console
 management-console-web: cd ./cmd/management-console/web && ./serve.sh
 # jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest
