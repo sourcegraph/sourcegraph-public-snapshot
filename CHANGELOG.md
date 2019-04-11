@@ -31,12 +31,14 @@ All notable changes to Sourcegraph are documented in this file.
 - The default `gitlab.projectQuery` of a [GitLab external service configuration](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) has been changed to `["none"]` and is now a required field. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["?membership=true"]`).
 - The `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) is now **required**. This field is necessary to authenticate with the Bitbucket Server API with either `password` or `token`.
 - The settings and account pages for users and organizations are now combined into a single tab.
+- All users on an instance now see a non-dismissable alert when when there's no license key in use and the limit of free user accounts is exceeded.
 
 ### Removed
 
 - Removed the option to show saved searches on the Sourcegraph homepage.
 
 ### Fixed
+
 
 ## 3.2.2
 
