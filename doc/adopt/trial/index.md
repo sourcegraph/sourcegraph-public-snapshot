@@ -50,7 +50,7 @@ As mentioned above, Sourcegraph trials are most successful when they start with 
   (1) investing in the product and exploring features, as they don't expect it to stick around, and;
   (2) sharing links, telling others about it, posting search results, and other socializing.
 
-If you want to run a trial with more than 100 users on your instance, just [reach out](https://about.sourcegraph.com/contact) and we'll provide an unlimited license key for up to a month, no questions asked.
+If you want to run a trial with more than 10 users on your instance, just [reach out](https://about.sourcegraph.com/contact) and we'll provide an unlimited license key for up to a month, no questions asked.
 
 A typical message to the team looks like:
 
