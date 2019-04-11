@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/diskcache"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -248,7 +247,6 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 // any file that is a candidate for being searched (under size limit and
 // non-binary).
 func copySearchable(tr *tar.Reader, zw *zip.Writer, ignoreSizeMax func(string) bool) error {
-	log15.Info("copy searchable")
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -352,7 +350,6 @@ func (s *Store) watchAndEvict() {
 // ignoreSizeMax determines whether the max size should be ignored. It uses
 // the glob syntax found here: https://golang.org/pkg/path/filepath/#Match.
 func (s *Store) ignoreSizeMax(name string) bool {
-	log15.Info(">>>>>", "name", name)
 	for _, pattern := range s.largeFilePatterns {
 		pattern = strings.TrimSpace(pattern)
 		if m, _ := filepath.Match(pattern, name); m {
@@ -392,13 +389,12 @@ func (s *Store) watchLargeFilesChange() {
 	conf.Watch(func() {
 		// Ensure the slices are actually different so we don't blow away the
 		// cache needlessly.
-		log15.Info("config changed", "old", s.largeFilePatterns, "new", get())
 		if lfp := get(); !stringSlicesAreEqual(lfp, s.largeFilePatterns) {
 			s.largeFilePatterns = lfp
 
 			_, err := s.cache.Evict(0)
 			if err != nil {
-				log15.Warn("error evicting cache", err)
+				log.Printf("failed to clearn searcher archives: %s", err)
 			}
 		}
 	})
