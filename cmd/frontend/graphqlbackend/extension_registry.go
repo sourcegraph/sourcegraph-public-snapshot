@@ -44,7 +44,8 @@ type ExtensionRegistryResolver interface {
 	DeleteExtension(context.Context, *ExtensionRegistryDeleteExtensionArgs) (*EmptyResponse, error)
 	LocalExtensionIDPrefix() *string
 
-	ImplementsLocalExtensionRegistry() bool // not exposed via GraphQL
+	ImplementsLocalExtensionRegistry() bool   // not exposed via GraphQL
+	FilterRemoteExtensions([]string) []string // not exposed via GraphQL
 }
 
 type RegistryExtensionConnectionArgs struct {
