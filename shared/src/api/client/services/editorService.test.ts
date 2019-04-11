@@ -57,38 +57,60 @@ describe('EditorService', () => {
         ])
     })
 
-    test('setSelections', async () => {
-        const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
-        const editor = editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
-        const SELECTIONS: Selection[] = [
-            {
-                start: { line: 3, character: -1 },
-                end: { line: 3, character: -1 },
-                anchor: { line: 3, character: -1 },
-                active: { line: 3, character: -1 },
-                isReversed: false,
-            },
-        ]
-        editorService.setSelections(editor, SELECTIONS)
-        expect(
-            await from(editorService.editors)
-                .pipe(
-                    first(),
-                    map(editors => editors.map(e => e.selections))
-                )
-                .toPromise()
-        ).toEqual([SELECTIONS])
+    describe('setSelections', () => {
+        test('ok', async () => {
+            const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+            const editor = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
+            const SELECTIONS: Selection[] = [
+                {
+                    start: { line: 3, character: -1 },
+                    end: { line: 3, character: -1 },
+                    anchor: { line: 3, character: -1 },
+                    active: { line: 3, character: -1 },
+                    isReversed: false,
+                },
+            ]
+            editorService.setSelections(editor, SELECTIONS)
+            expect(
+                await from(editorService.editors)
+                    .pipe(
+                        first(),
+                        map(editors => editors.map(e => e.selections))
+                    )
+                    .toPromise()
+            ).toEqual([SELECTIONS])
+        })
+        test('not found', () => {
+            const editorService = createEditorService({ models: of([]) })
+            expect(() => editorService.setSelections({ editorId: 'x' }, [])).toThrowError('editor not found: x')
+        })
     })
 
-    test('removeEditor', async () => {
-        const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
-        const editor = editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
-        editorService.removeEditor(editor)
-        expect(
-            await from(editorService.editors)
-                .pipe(first())
-                .toPromise()
-        ).toEqual([])
+    describe('removeEditor', () => {
+        test('ok', async () => {
+            const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+            const editor = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
+            editorService.removeEditor(editor)
+            expect(
+                await from(editorService.editors)
+                    .pipe(first())
+                    .toPromise()
+            ).toEqual([])
+        })
+        test('not found', () => {
+            const editorService = createEditorService({ models: of([]) })
+            expect(() => editorService.removeEditor({ editorId: 'x' })).toThrowError('editor not found: x')
+        })
     })
 
     test('removeAllEditors', async () => {

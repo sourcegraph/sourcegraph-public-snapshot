@@ -55,6 +55,7 @@ export interface EditorService {
      *
      * @param editor The editor for which to set the selections.
      * @param selections The new selections to apply.
+     * @throws if no editor exists with the given editor ID.
      */
     setSelections(editor: EditorId, selections: Selection[]): void
 
@@ -90,6 +91,7 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
 
     type AddedCodeEditor = Pick<CodeEditor, Exclude<keyof CodeEditor, 'model'>>
     const editors = new BehaviorSubject<readonly AddedCodeEditor[]>([])
+    const exists = (editorId: EditorId['editorId']) => editors.value.some(e => e.editorId === editorId)
     return {
         editors: combineLatest(editors, modelService.models).pipe(
             map(([editors, models]) =>
@@ -102,12 +104,18 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
             return editor
         },
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
+            if (!exists(editorId)) {
+                throw new Error(`editor not found: ${editorId}`)
+            }
             editors.next([
                 ...editors.value.filter(e => e.editorId !== editorId),
                 { ...editors.value.find(e => e.editorId === editorId)!, selections },
             ])
         },
         removeEditor({ editorId }: EditorId): void {
+            if (!exists(editorId)) {
+                throw new Error(`editor not found: ${editorId}`)
+            }
             editors.next(editors.value.filter(e => e.editorId !== editorId))
         },
         removeAllEditors(): void {
