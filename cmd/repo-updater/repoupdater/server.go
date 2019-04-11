@@ -29,7 +29,6 @@ type Server struct {
 	Kinds []string
 	repos.Store
 	*repos.Syncer
-	*repos.OtherReposSyncer
 	InternalAPI interface {
 		ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error
 	}
@@ -262,15 +261,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if req.ExternalService.Kind == "OTHER" {
-		res := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService)
-		if len(res.Errors) > 0 {
-			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", res.Errors)
-			http.Error(w, res.Errors.Error(), http.StatusInternalServerError)
-		}
-		return
-	}
-
 	if s.Syncer == nil {
 		log15.Debug("server.external-service-sync", "syncer", "disabled")
 		return
@@ -322,16 +312,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		fn   func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
 	}
 
-	fns := []getfn{
-		// We begin by searching the "OTHER" external service kind repos because lookups
-		// are fast in-memory only operations, as opposed to the other external service kinds which
-		// don't *always* have enough metadata cached to answer this request without performing network
-		// requests to their respective code host APIs
-		{"OTHER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			r := s.OtherReposSyncer.GetRepoInfoByName(ctx, string(args.Repo))
-			return r, r != nil, nil
-		}},
-	}
+	var fns []getfn
 
 	if s.Store != nil && s.Syncer != nil {
 		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
@@ -339,7 +320,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				Names: []string{string(args.Repo)},
 			})
 
-			if err != nil || len(repos) != 1 || repos[0].IsDeleted() {
+			if err != nil || len(repos) != 1 {
 				return nil, false, err
 			}
 
