@@ -88,6 +88,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                                             Date.now()
                                         )
                                     )}
+                                    className="global-alerts__alert"
                                 />
                             )}
                     </>
