@@ -39,7 +39,7 @@ services:
             - 'SRC_FRONTEND_INTERNAL=http://server:3090'
         volumes:
             # Replace ~/.sourcegraph with the host folder that you'd like the container to use
-            - '~/.sourcegraph/data/zoekt:/data/index'
+            - '~/.sourcegraph/data/zoekt:/data'
         restart: always
         depends_on:
             - server
@@ -59,7 +59,7 @@ services:
 
         volumes:
             # Replace ~/.sourcegraph with the host folder that you'd like the container to use
-            - '~/.sourcegraph/data/zoekt:/data/index'
+            - '~/.sourcegraph/data/zoekt:/data'
         restart: always
         depends_on:
             - zoekt-indexserver
