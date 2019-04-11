@@ -47,7 +47,7 @@ type StoreListReposArgs struct {
 type StoreListExternalServicesArgs struct {
 	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
 	IDs []int64
-	// Kinds of external services to list.
+	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 	// If true, includes deleted services in the result set.
 	Deleted bool
