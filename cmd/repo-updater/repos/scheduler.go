@@ -480,6 +480,10 @@ func (q *updateQueue) reset() {
 // If the given priority is higher than the one in the queue,
 // the repo's position in the queue is updated accordingly.
 func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) (updated bool) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
+	}
+
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -521,6 +525,10 @@ func (q *updateQueue) nextSeq() uint64 {
 
 // remove removes the repo from the queue if the repo.Updating matches the updating argument.
 func (q *updateQueue) remove(repo *configuredRepo2, updating bool) (removed bool) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
+	}
+
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -614,6 +622,10 @@ type scheduledRepoUpdate struct {
 
 // upsert inserts or updates a repo in the schedule.
 func (s *schedule) upsert(repo *configuredRepo2) (updated bool) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -636,6 +648,10 @@ func (s *schedule) upsert(repo *configuredRepo2) (updated bool) {
 // updateInterval updates the update interval of a repo in the schedule.
 // It does nothing if the repo is not in the schedule.
 func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
+	}
+
 	s.mu.Lock()
 	if update := s.index[repo.ID]; update != nil {
 		switch {
@@ -656,6 +672,10 @@ func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration)
 
 // remove removes a repo from the schedule.
 func (s *schedule) remove(repo *configuredRepo2) (removed bool) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
