@@ -171,7 +171,7 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 }
 
 type searchOptions struct {
-	LargeFiles *[]string
+	LargeFiles []string
 }
 
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {

@@ -362,14 +362,6 @@ func (s *Store) ignoreSizeMax(name string) bool {
 	return false
 }
 
-func getLargeFilePatterns() []string {
-	lfp := conf.Get().SearchLargeFiles
-	if lfp == nil {
-		return []string{}
-	}
-	return *lfp
-}
-
 // stringSlicesAreEqual checks to make sure that two string slices have the same
 // items.
 func stringSlicesAreEqual(a, b []string) bool {
@@ -391,17 +383,23 @@ func stringSlicesAreEqual(a, b []string) bool {
 // watchLargeFilesSettingChange watches for changes to the search.largeFiles
 // setting and clears the disk cache when it is changed.
 func (s *Store) watchLargeFilesChange() {
+	get := func() []string { return conf.Get().SearchLargeFiles }
+
 	if s.largeFilePatterns == nil {
-		s.largeFilePatterns = getLargeFilePatterns()
+		s.largeFilePatterns = get()
 	}
 
 	conf.Watch(func() {
 		// Ensure the slices are actually different so we don't blow away the
 		// cache needlessly.
-		log15.Info("config changed", "old", s.largeFilePatterns, "new", getLargeFilePatterns())
-		if lfp := getLargeFilePatterns(); !stringSlicesAreEqual(lfp, s.largeFilePatterns) {
+		log15.Info("config changed", "old", s.largeFilePatterns, "new", get())
+		if lfp := get(); !stringSlicesAreEqual(lfp, s.largeFilePatterns) {
 			s.largeFilePatterns = lfp
-			s.cache.Evict(0)
+
+			_, err := s.cache.Evict(0)
+			if err != nil {
+				log15.Warn("error evicting cache", err)
+			}
 		}
 	})
 }
