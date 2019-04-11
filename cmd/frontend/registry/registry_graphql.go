@@ -108,14 +108,14 @@ func (r *extensionRegistryResolver) ImplementsLocalExtensionRegistry() bool {
 }
 
 func (r *extensionRegistryResolver) FilterRemoteExtensions(ids []string) []string {
-	var extensions []*registry.Extension
-	for _, id := range ids {
-		extensions = append(extensions, &registry.Extension{ExtensionID: id})
+	extensions := make([]*registry.Extension, len(ids))
+	for i, id := range ids {
+		extensions[i] = &registry.Extension{ExtensionID: id}
 	}
 	keepExtensions := FilterRemoteExtensions(extensions)
-	keep := []string{}
-	for _, extension := range keepExtensions {
-		keep = append(keep, extension.ExtensionID)
+	keep := make([]string, len(keepExtensions))
+	for i, extension := range keepExtensions {
+		keep[i] = extension.ExtensionID
 	}
 	return keep
 }
