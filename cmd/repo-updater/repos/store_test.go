@@ -114,19 +114,6 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 		},
 	)
 
-	{
-		stored := svcs.With(repos.Opt.ExternalServiceDeletedAt(now))
-		testCases = append(testCases, testCase{
-			name:   "includes soft deleted external services",
-			stored: stored,
-			args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
-				args.Deleted = true
-				return
-			},
-			assert: repos.Assert.ExternalServicesEqual(stored...),
-		})
-	}
-
 	testCases = append(testCases, testCase{
 		name:   "returns svcs by their ids",
 		stored: svcs,
@@ -262,13 +249,13 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 			}
 
 			want.Apply(repos.Opt.ExternalServiceDeletedAt(now))
-			args := repos.StoreListExternalServicesArgs{Deleted: true}
+			args := repos.StoreListExternalServicesArgs{}
 
 			if err = tx.UpsertExternalServices(ctx, want.Clone()...); err != nil {
 				t.Errorf("UpsertExternalServices error: %s", err)
 			} else if have, err = tx.ListExternalServices(ctx, args); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
-			} else if diff := pretty.Compare(have, want); diff != "" {
+			} else if diff := pretty.Compare(have, repos.ExternalServices{}); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
 			}
 		}))

@@ -48,8 +48,6 @@ type StoreListExternalServicesArgs struct {
 	IDs []int64
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
-	// If true, includes deleted services in the result set.
-	Deleted bool
 }
 
 // ErrNoResults is returned by Store method invocations that yield no result set.
@@ -177,9 +175,7 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 			sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ",")))
 	}
 
-	if !args.Deleted {
-		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
-	}
+	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))

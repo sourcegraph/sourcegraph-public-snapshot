@@ -121,7 +121,7 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 		if !set[svc] &&
 			(len(kinds) == 0 || kinds[strings.ToLower(svc.Kind)]) &&
 			(len(ids) == 0 || ids[svc.ID]) &&
-			(args.Deleted || !svc.IsDeleted()) {
+			!svc.IsDeleted() {
 
 			svcs = append(svcs, svc)
 			set[svc] = true
