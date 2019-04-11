@@ -62,6 +62,9 @@ type Service struct {
 	// Host is the host:port for the services SRC_PROF_HTTP. example:
 	// "127.0.0.1:6060"
 	Host string
+
+	// DefaultPath is the path to the service we should link to.
+	DefaultPath string
 }
 
 // Start runs a debug server (pprof, prometheus, etc) if it is configured (via
