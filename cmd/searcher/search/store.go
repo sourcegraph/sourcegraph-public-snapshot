@@ -102,6 +102,7 @@ func (s *Store) Start() {
 			BeforeEvict:       s.zipCache.delete,
 		}
 		go s.watchAndEvict()
+		go s.watchLargeFilesChange()
 	})
 }
 
