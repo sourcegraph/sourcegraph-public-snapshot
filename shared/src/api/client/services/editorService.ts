@@ -75,6 +75,8 @@ export interface EditorService {
  * Creates a {@link EditorService} instance.
  */
 export function createEditorService(modelService: Pick<ModelService, 'models'>): EditorService {
+    // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
+    // test code (because the IDs change depending on test execution order).
     let id = 0
     const nextId = () => `editor#${id++}`
 
