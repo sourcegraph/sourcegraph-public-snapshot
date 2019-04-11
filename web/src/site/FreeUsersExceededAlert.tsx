@@ -8,8 +8,8 @@ export const FreeUsersExceededAlert: React.FunctionComponent<{
     noLicenseWarningUserCount: number | null
     className?: string
 }> = ({ noLicenseWarningUserCount, className = '' }) => (
-    <div className={`alert alert-danger alert-animated-bg align-items-center ${className}`}>
-        <WarningIcon className="icon-inline mr-2 flex-shrink-0" />
+    <div className={`alert alert-danger alert-animated-bg ${className}`}>
+        <WarningIcon className="icon-inline mr-2" />
         You have exceeded {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users,
         and need to{' '}
         <a className="site-alert__link" href="https://sourcegraph.com/user/subscriptions/new">
