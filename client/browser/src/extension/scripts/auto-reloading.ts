@@ -1,5 +1,6 @@
-import io from 'socket.io-client'
 import '../../config/polyfill'
+
+import io from 'socket.io-client'
 
 /**
  * Reloads the extension when notified from the development server. Only enabled
