@@ -141,7 +141,7 @@ exports[`ServerURLForm renders the current tab permissions alert 1`] = `
         onChange={[Function]}
         spellCheck={false}
         type="text"
-        value="http://sourcegraph.private.org"
+        value="https://sourcegraph.com"
       />
     </div>
   </form>

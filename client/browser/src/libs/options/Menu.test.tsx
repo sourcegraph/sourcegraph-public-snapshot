@@ -32,7 +32,6 @@ describe('ServerURLForm', () => {
                 <OptionsMenu
                     {...stubs}
                     currentTabStatus={{ host: 'gitlab.com', protocol: 'http', hasPermissions: false }}
-                    sourcegraphURL={'http://sourcegraph.private.org'}
                 />
             )
         ).toMatchSnapshot()
@@ -44,7 +43,6 @@ describe('ServerURLForm', () => {
             <OptionsMenu
                 {...stubs}
                 currentTabStatus={{ host: 'gitlab.com', protocol: 'http', hasPermissions: false }}
-                sourcegraphURL={'http://sourcegraph.private.org'}
                 requestPermissions={requestPermissions}
             />
         )

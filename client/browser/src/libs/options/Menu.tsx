@@ -1,7 +1,6 @@
 import { lowerCase, upperFirst } from 'lodash'
 import * as React from 'react'
 
-import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { OptionsHeader, OptionsHeaderProps } from './Header'
 import { ServerURLForm, ServerURLFormProps } from './ServerURLForm'
 
@@ -60,24 +59,21 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
             requestPermissions={requestPermissions}
             className="options-menu__section"
         />
-        {status === 'connected' &&
-            sourcegraphURL !== DEFAULT_SOURCEGRAPH_URL &&
-            currentTabStatus &&
-            !currentTabStatus.hasPermissions && (
-                <div className="options-menu__section">
-                    <div className="alert alert-danger">
-                        Sourcegraph is not enabled on <strong>{currentTabStatus.host}</strong>.{' '}
-                        <a
-                            href="#"
-                            onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
-                            className="request-permissions__test"
-                        >
-                            Grant permissions
-                        </a>{' '}
-                        to enable Sourcegraph.
-                    </div>
+        {status === 'connected' && currentTabStatus && !currentTabStatus.hasPermissions && (
+            <div className="options-menu__section">
+                <div className="alert alert-danger">
+                    Sourcegraph is not enabled on <strong>{currentTabStatus.host}</strong>.{' '}
+                    <a
+                        href="#"
+                        onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
+                        className="request-permissions__test"
+                    >
+                        Grant permissions
+                    </a>{' '}
+                    to enable Sourcegraph.
                 </div>
-            )}
+            </div>
+        )}
         {isSettingsOpen && featureFlags && (
             <div className="options-menu__section">
                 <label>Configuration</label>
