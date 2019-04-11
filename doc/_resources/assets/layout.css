@@ -493,7 +493,7 @@ a:active .current-branch {
 a.content-nav-section-header {
     display: block;
     width: 100%;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 500;
     color: #242e42 !important;
 }
@@ -606,13 +606,13 @@ li.content-nav-no-hover:hover {
 .page-nav {
     position: sticky;
     position: sticky;
-    top: 49px;
+    top: 45px;
     padding-left: 14px;
     padding-right: 8px;
     padding-bottom: 2rem;
 }
 #home .page-nav {
-    top: 20px;
+    top: 16px;
 }
 .page-nav-title {
     width: 100%;
