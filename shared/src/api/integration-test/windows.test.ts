@@ -1,6 +1,7 @@
 import { from } from 'rxjs'
-import { distinctUntilChanged, map, switchMap, take, toArray } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, switchMap, take, toArray } from 'rxjs/operators'
 import { NotificationType, ViewComponent, Window } from 'sourcegraph'
+import { isDefined } from '../../util/types'
 import { TextModel } from '../client/services/modelService'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
@@ -97,8 +98,10 @@ describe('Windows (integration)', () => {
             ])
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
-                    switchMap(w => (w ? w.activeViewComponentChanges : [])),
-                    take(4)
+                    filter(isDefined),
+                    switchMap(w => w.activeViewComponentChanges),
+                    filter(isDefined),
+                    take(3)
                 )
                 .toPromise()
 
@@ -140,8 +143,10 @@ describe('Windows (integration)', () => {
             ])
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
-                    switchMap(w => (w ? w.activeViewComponentChanges : [])),
-                    take(4)
+                    filter(isDefined),
+                    switchMap(w => w.activeViewComponentChanges),
+                    filter(isDefined),
+                    take(3)
                 )
                 .toPromise()
 
