@@ -17,3 +17,14 @@ func ExternalRepoSpec(repo *Repo, serviceID string) *api.ExternalRepoSpec {
 func ServiceID(gitoliteHost string) string {
 	return gitoliteHost
 }
+
+// CloneURL returns the clone URL of the external repository. The external repo spec must be of type
+// "gitolite"; otherwise, this will return an empty string.
+func CloneURL(externalRepoSpec *api.ExternalRepoSpec) string {
+	if externalRepoSpec == nil || externalRepoSpec.ServiceType != ServiceType {
+		return ""
+	}
+	host := externalRepoSpec.ServiceID
+	gitoliteName := externalRepoSpec.ID
+	return host + ":" + gitoliteName
+}
