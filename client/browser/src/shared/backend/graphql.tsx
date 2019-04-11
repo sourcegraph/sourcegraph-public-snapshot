@@ -57,7 +57,14 @@ export const requestGraphQL: typeof performRequest = (args: GraphQLRequestArgs) 
         return performRequest(args)
     }
 
-    return from(browser.runtime.sendMessage({ type: 'requestGraphQL', payload: args }))
+    return from(browser.runtime.sendMessage({ type: 'requestGraphQL', payload: args })).pipe(
+        map(({ result, err }) => {
+            if (err) {
+                throw err
+            }
+            return result
+        })
+    )
 }
 
 function performRequest<T extends GQL.IGraphQLResponseRoot>({
