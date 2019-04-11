@@ -302,7 +302,8 @@ describe('e2e test suite', function(this: any): void {
             // Type in a new external service configuration.
             await replaceText({
                 selector: '.view-line',
-                newText: '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
+                newText:
+                    '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
                 method: 'keyboard',
             })
             await page.click('.e2e-update-external-service-button')
