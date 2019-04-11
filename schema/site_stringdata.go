@@ -33,7 +33,6 @@ const SiteSchemaJSON = `{
       "items": {
         "type": "string"
       },
-      "!go": { "pointer": true },
       "group": "Search"
     },
     "experimentalFeatures": {
