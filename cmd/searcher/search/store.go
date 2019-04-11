@@ -72,6 +72,7 @@ type Store struct {
 	// largeFilesPatterns is a list of large file glob patterns where files that
 	// match any pattern in the list should be searched regardless of their size.
 	largeFilePatterns []string
+	lfMu              sync.Mutex
 }
 
 // SetMaxConcurrentFetchTar sets the maximum number of concurrent calls allowed
@@ -382,16 +383,21 @@ func stringSlicesAreEqual(a, b []string) bool {
 // setting and clears the disk cache when it is changed.
 func (s *Store) watchLargeFilesChange() {
 	get := func() []string { return conf.Get().SearchLargeFiles }
+	set := func(f []string) {
+		s.lfMu.Lock()
+		s.largeFilePatterns = f
+		s.lfMu.Unlock()
+	}
 
 	if s.largeFilePatterns == nil {
-		s.largeFilePatterns = get()
+		set(get())
 	}
 
 	conf.Watch(func() {
 		// Ensure the slices are actually different so we don't blow away the
 		// cache needlessly.
 		if lfp := get(); !stringSlicesAreEqual(lfp, s.largeFilePatterns) {
-			s.largeFilePatterns = lfp
+			set(lfp)
 
 			_, err := s.cache.Evict(0)
 			if err != nil {
