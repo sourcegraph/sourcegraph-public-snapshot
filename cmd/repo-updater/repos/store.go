@@ -28,13 +28,12 @@ type Store interface {
 // the ListRepos method of Store implementations.
 //
 // Each defined argument must map to a disjunct (i.e. AND) filter predicate.
-// When zero-valued, an argument is ommited from the predicate set.
 type StoreListReposArgs struct {
-	// Names of repos to list.
+	// Names of repos to list. When zero-valued, this is omitted from the predicate set.
 	Names []string
-	// IDs of repos to list.
+	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
 	IDs []uint32
-	// Kinds of repos to list.
+	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 	// If true, includes deleted repos in the result set.
 	Deleted bool
