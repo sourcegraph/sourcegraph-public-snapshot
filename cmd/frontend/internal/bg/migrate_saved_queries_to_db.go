@@ -2,11 +2,25 @@ package bg
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+type SavedQuery struct {
+	Key         string
+	Description string
+	Query       string
+	Notify      bool
+	NotifySlack bool
+}
+
+type SavedQueryField struct {
+	SavedQueries []SavedQuery `json:"search.savedQueries"`
+}
 
 func MigrateAllSavedQueriesFromSettingsToDatabase(ctx context.Context) {
 	settings, err := db.Settings.ListAll(ctx, "search.savedQueries")
@@ -14,7 +28,32 @@ func MigrateAllSavedQueriesFromSettingsToDatabase(ctx context.Context) {
 		log15.Error(`Warning: unable to migrate "saved queries" to database). Please report this issue`, err)
 	}
 	for _, s := range settings {
-		fmt.Println("All search.savedQueries settings ", *s)
+		var sq SavedQueryField
+		err := jsonc.Unmarshal(s.Contents, &sq)
+		if err != nil {
+			log15.Error(`Unable to migrate saved query into database, unable to unmarshal JSON value`, err)
+		}
+		InsertSavedQueryIntoDB(ctx, s, &sq)
+	}
+}
+
+func InsertSavedQueryIntoDB(ctx context.Context, s *api.Settings, sq *SavedQueryField) {
+	for _, query := range sq.SavedQueries {
+		if s.Subject.User != nil {
+			_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "user", s.AuthorUserID)
+			if err != nil {
+				log15.Error(`Warning: unable to migrate saved query into database.`, err.Error())
+			}
+		} else if s.Subject.Org != nil {
+			_, err := dbconn.Global.ExecContext(ctx, "SELECT org_id FROM settings WHERE id=$1", s.ID)
+			if err != nil {
+				log15.Error(`Warning: unable to migrate saved query into database.`, err.Error())
+			}
+			_, err = dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "org", s.AuthorUserID)
+			if err != nil {
+				log15.Error(`Warning: unable to migrate saved query into database.`, err.Error())
+			}
+		}
 	}
 
 }
