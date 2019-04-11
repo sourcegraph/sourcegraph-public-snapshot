@@ -3,8 +3,10 @@ package bg
 import (
 	"context"
 
+	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -34,7 +36,25 @@ func MigrateAllSavedQueriesFromSettingsToDatabase(ctx context.Context) {
 			log15.Error(`Unable to migrate saved query into database, unable to unmarshal JSON value`, err)
 		}
 		InsertSavedQueryIntoDB(ctx, s, &sq)
+		// Remove "search.savedQueries" entry from settings.
+		edits, _, err := jsonx.ComputePropertyRemoval(s.Contents, jsonx.MakePath("search.savedQueries"), conf.FormatOptions)
+		if err != nil {
+			log15.Error(`Unable to remove savedQuery from settings`, err)
+		}
+		text, err := jsonx.ApplyEdits(s.Contents, edits...)
+		if err != nil {
+			log15.Error(`Unable to remove savedQuery from settings`, err)
+		}
+
+		var lastID *int32
+		lastID = &s.ID
+		_, err = db.Settings.CreateIfUpToDate(ctx, s.Subject, lastID, s.AuthorUserID, text)
+		if err != nil {
+			log15.Error(`Unable to update settings`)
+		}
+
 	}
+
 }
 
 func InsertSavedQueryIntoDB(ctx context.Context, s *api.Settings, sq *SavedQueryField) {
