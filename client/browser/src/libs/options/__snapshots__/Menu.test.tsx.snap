@@ -159,7 +159,7 @@ exports[`ServerURLForm renders the current tab permissions alert 1`] = `
        
       <a
         className="request-permissions__test"
-        href="#"
+        href=""
         onClick={[Function]}
       >
         Grant permissions
