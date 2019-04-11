@@ -6,7 +6,6 @@
 package usagestats
 
 import (
-	"fmt"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -21,26 +20,12 @@ import (
 var (
 	gcOnce sync.Once // ensures we only have 1 redis gc goroutine
 
-	keyPrefix = "user_activity:"
-	pool      = redispool.Store
+	pool = redispool.Store
 
 	timeNow = time.Now
-
-	searchOccurred   = false
-	findRefsOccurred = false
 )
 
 const (
-	fPageViews                     = "pageviews"
-	fLastActive                    = "lastactive"
-	fSearchQueries                 = "searchqueries"
-	fCodeIntelActions              = "codeintelactions"
-	fFindRefsActions               = "codeintelactions:findrefs"
-	fLastActiveCodeHostIntegration = "lastactivecodehostintegration"
-
-	fSearchOccurred   = "searchoccurred"
-	fFindRefsOccurred = "findrefsoccurred"
-
 	defaultDays   = 14
 	defaultWeeks  = 10
 	defaultMonths = 3
@@ -115,17 +100,6 @@ type ActiveUsers struct {
 	Registered       []string
 	Anonymous        []string
 	UsedIntegrations []string
-}
-
-func minIntOrZero(a, b int) int {
-	min := b
-	if a < b {
-		min = a
-	}
-	if min < 0 {
-		return 0
-	}
-	return min
 }
 
 // GetSiteUsageStatistics returns the current site's SiteActivity.
@@ -349,186 +323,6 @@ func maus(monthPeriods int) ([]*types.SiteActivityPeriod, error) {
 func ListUsersThisMonth() (*ActiveUsers, error) {
 	monthStartDate := startOfMonth(0)
 	return uniques(monthStartDate, &UsageDuration{Months: 1})
-}
-
-// logPageView increments a user's pageview count.
-func logPageView(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
-
-	return c.Send("HINCRBY", key, fPageViews, 1)
-}
-
-// logSearchQuery increments a user's search query count.
-func logSearchQuery(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
-
-	return c.Send("HINCRBY", key, fSearchQueries, 1)
-}
-
-// logCodeIntel increments a user's code intelligence usage count.
-func logCodeIntelAction(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
-
-	return c.Send("HINCRBY", key, fCodeIntelActions, 1)
-}
-
-func logCodeIntelRefsAction(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
-
-	if err := c.Send("HINCRBY", key, fCodeIntelActions, 1); err != nil {
-		return err
-	}
-	return c.Send("HINCRBY", key, fFindRefsActions, 1)
-}
-
-// logCodeHostIntegrationUsage logs the last time a user was active on a code host integration
-func logCodeHostIntegrationUsage(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
-
-	now := timeNow().UTC()
-	return c.Send("HSET", key, fLastActiveCodeHostIntegration, now.Format(time.RFC3339))
-}
-
-func logSearchOccurred() error {
-	if searchOccurred {
-		return nil
-	}
-	key := keyPrefix + fSearchOccurred
-	c := pool.Get()
-	defer c.Close()
-	searchOccurred = true
-	return c.Send("SET", key, "true")
-}
-
-func logFindRefsOccurred() error {
-	if findRefsOccurred {
-		return nil
-	}
-	key := keyPrefix + fFindRefsOccurred
-	c := pool.Get()
-	defer c.Close()
-	findRefsOccurred = true
-	return c.Send("SET", key, "true")
-}
-
-// LogActivity logs any user activity (page view, integration usage, etc) to their "last active" time, and
-// adds their unique ID to the set of active users
-func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event string) error {
-	// Setup our GC of active key goroutine
-	gcOnce.Do(func() {
-		go gc()
-	})
-
-	c := pool.Get()
-	defer c.Close()
-
-	uniqueID := userCookieID
-
-	// If the user is authenticated, set uniqueID to their user ID, and store their "last active time" in the
-	// appropriate user ID-keyed cache.
-	if isAuthenticated {
-		userIDStr := strconv.Itoa(int(userID))
-		uniqueID = userIDStr
-		key := keyPrefix + uniqueID
-
-		// Set the user's last active time
-		now := timeNow().UTC()
-		if err := c.Send("HSET", key, fLastActive, now.Format(time.RFC3339)); err != nil {
-			return err
-		}
-	}
-
-	if uniqueID == "" {
-		log15.Warn("usagestats.LogActivity: no user ID provided")
-		return nil
-	}
-
-	// Regardless of authenicatation status, add the user's unique ID to the set of active users.
-	if err := c.Send("SADD", usersActiveKeyFromDaysAgo(0), uniqueID); err != nil {
-		return err
-	}
-
-	// Regardless of authentication status,
-	switch event {
-	case "SEARCHQUERY":
-		if err := logSearchOccurred(); err != nil {
-			return err
-		}
-	case "CODEINTELREFS", "CODEINTELINTEGRATIONREFS":
-		if err := logFindRefsOccurred(); err != nil {
-			return err
-		}
-	}
-
-	// If the user isn't authenticated, return at this point and don't record user-level properties.
-	if !isAuthenticated {
-		return nil
-	}
-
-	switch event {
-	case "SEARCHQUERY":
-		return logSearchQuery(userID)
-	case "PAGEVIEW":
-		return logPageView(userID)
-	case "CODEINTELREFS":
-		return logCodeIntelRefsAction(userID)
-	case "CODEINTEL":
-		return logCodeIntelAction(userID)
-	case "CODEINTELINTEGRATION", "CODEINTELINTEGRATIONREFS":
-		if err := logCodeHostIntegrationUsage(userID); err != nil {
-			return err
-		}
-		return logCodeIntelAction(userID)
-	}
-	return fmt.Errorf("unknown user event %s", event)
-}
-
-func usersActiveKeyFromDate(date time.Time) string {
-	return keyPrefix + ":usersactive:" + time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Format("2006-01-02")
-}
-
-func usersActiveKeyFromDaysAgo(daysAgo int) string {
-	now := timeNow().UTC()
-	return usersActiveKeyFromDate(now.AddDate(0, 0, -daysAgo))
-}
-
-func startOfWeek(weeksAgo int) time.Time {
-	if weeksAgo > 0 {
-		return startOfWeek(0).AddDate(0, 0, -7*weeksAgo)
-	}
-
-	// If weeksAgo == 0, start at timeNow(), and loop back by day until we hit a Sunday
-	now := timeNow().UTC()
-	date := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	for date.Weekday() != time.Sunday {
-		date = date.AddDate(0, 0, -1)
-	}
-	return date
-}
-
-func startOfMonth(monthsAgo int) time.Time {
-	now := timeNow().UTC()
-	return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -monthsAgo, 0)
-}
-
-func keys(m map[string]bool) []string {
-	keys := make([]string, len(m))
-	i := 0
-	for k := range m {
-		keys[i] = k
-		i++
-	}
-	return keys
 }
 
 // gc expires active user sets after the max of daysOfHistory, weeksOfHistory, and monthsOfHistory have passed.
