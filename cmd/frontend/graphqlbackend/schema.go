@@ -2712,6 +2712,9 @@ type Site implements SettingsSubject {
     updateCheck: UpdateCheck!
     # Whether the site needs to be configured to add repositories.
     needsRepositoryConfiguration: Boolean!
+    # Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
+    # Only applies if the site does not have a valid license.
+    freeUsersExceeded: Boolean!
     # Whether the site has zero access-enabled repositories.
     noRepositoriesEnabled: Boolean!
     # Alerts to display to the viewer.
@@ -2992,6 +2995,8 @@ type ProductSubscriptionStatus {
     # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
     # it is the user limit for instances without a license, or null if there is no limit.
     maximumAllowedUserCount: Int
+    # The number of free users allowed on a site without a license before a warning is shown to all users.
+    noLicenseWarningUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
 }
