@@ -104,7 +104,7 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
             editors.next([
                 ...editors.value.filter(e => e.editorId !== editorId),
-                ...editors.value.filter(e => e.editorId === editorId).map(e => ({ ...e, selections })),
+                { ...editors.value.find(e => e.editorId === editorId)!, selections },
             ])
         },
         removeEditor({ editorId }: EditorId): void {
