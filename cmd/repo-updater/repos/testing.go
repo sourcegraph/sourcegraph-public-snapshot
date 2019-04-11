@@ -120,7 +120,8 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 	for _, svc := range s.svcByID {
 		if !set[svc] &&
 			(len(kinds) == 0 || kinds[strings.ToLower(svc.Kind)]) &&
-			(len(ids) == 0 || ids[svc.ID]) {
+			(len(ids) == 0 || ids[svc.ID]) &&
+			!svc.IsDeleted() {
 
 			svcs = append(svcs, svc)
 			set[svc] = true
@@ -205,7 +206,8 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		if !set[r] &&
 			(len(kinds) == 0 || kinds[strings.ToLower(r.ExternalRepo.ServiceType)]) &&
 			(len(names) == 0 || names[r.Name]) &&
-			(len(ids) == 0 || ids[r.ID]) {
+			(len(ids) == 0 || ids[r.ID]) &&
+			(args.Deleted || !r.IsDeleted()) {
 
 			repos = append(repos, r)
 			set[r] = true
@@ -268,9 +270,10 @@ var Assert = struct {
 	ExternalServicesOrderedBy func(func(a, b *ExternalService) bool) ExternalServicesAssertion
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
-		want := Repos(rs).With(Opt.RepoID(0))
+		want := append(Repos{}, rs...).With(Opt.RepoID(0))
 		return func(t testing.TB, have Repos) {
 			t.Helper()
+			have = append(Repos{}, have...)
 			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("repos: %s", cmp.Diff(have, want))

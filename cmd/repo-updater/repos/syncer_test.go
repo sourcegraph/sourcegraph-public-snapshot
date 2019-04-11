@@ -371,7 +371,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil {
-					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
+					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
 					for _, d := range have {
 						d.ID = 0 // Exclude auto-generated ID from comparisons
 					}
