@@ -25,7 +25,8 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 		Config: `{
 			// Some comment
 			"url": "https://github.com",
-			"token": "secret"
+			"token": "secret",
+			"repositoryQuery": ["none"]
 		}`,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -37,7 +38,8 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 		Config: `{
 			// Some comment
 			"url": "https://gitlab.com",
-			"token": "secret"
+			"token": "secret",
+			"projectQuery": ["none"]
 		}`,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -50,7 +52,8 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 			// Some comment
 			"url": "https://bitbucketserver.mycorp.com",
 			"username: "admin",
-			"token": "secret"
+			"token": "secret",
+			"repositoryQuery": ["none"]
 		}`,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -113,6 +116,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					// Some comment
 					"url": "https://github.com",
 					"token": "secret",
+					"repositoryQuery": ["none"],
 					"exclude": [
 						{"id": "foo"},
 						{"name": "org/BAZ"}
@@ -125,6 +129,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					// Some comment
 					"url": "https://gitlab.com",
 					"token": "secret",
+					"projectQuery": ["none"],
 					"exclude": [
 						{"id": 1},
 						{"name": "org/baz"}
@@ -138,6 +143,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					"url": "https://bitbucketserver.mycorp.com",
 					"username": "admin",
 					"token": "secret",
+					"repositoryQuery": ["none"],
 					"exclude": [
 						{"id": 1},
 						{"name": "org/baz"}
@@ -162,6 +168,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					// Some comment
 					"url": "https://github.com",
 					"token": "secret",
+					"repositoryQuery": ["none"],
 					"exclude": [
 						{"name": "org/boo"},
 					]
@@ -173,6 +180,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					// Some comment
 					"url": "https://gitlab.com",
 					"token": "secret",
+					"projectQuery": ["none"],
 					"exclude": [
 						{"name": "org/boo"},
 					]
@@ -185,6 +193,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					"url": "https://gitlab.com",
 					"username": "admin",
 					"token": "secret",
+					"repositoryQuery": ["none"],
 					"exclude": [
 						{"name": "org/boo"},
 					]
@@ -204,6 +213,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 						// Some comment
 						"url": "https://github.com",
 						"token": "secret",
+						"repositoryQuery": ["none"],
 						"exclude": [
 							{"name": "org/boo"},
 							{"id": "foo", "name": "org/foo"},
@@ -217,6 +227,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 						// Some comment
 						"url": "https://gitlab.com",
 						"token": "secret",
+						"projectQuery": ["none"],
 						"exclude": [
 							{"name": "org/boo"},
 							{"id": 1, "name": "org/foo"},
@@ -231,6 +242,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 						"url": "https://gitlab.com",
 						"username": "admin",
 						"token": "secret",
+						"repositoryQuery": ["none"],
 						"exclude": [
 							{"name": "org/boo"},
 							{"id": 1, "name": "org/foo"},
@@ -249,6 +261,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 						// Some comment
 						"url": "https://github.com",
 						"token": "secret",
+						"repositoryQuery": ["none"],
 						"repos": [
 							"org/FOO",
 							"org/baz"
@@ -261,6 +274,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					// Some comment
 					"url": "https://gitlab.com",
 					"token": "secret",
+					"projectQuery": ["none"],
 					"projects": [
 						{"id": 1},
 						{"name": "org/baz"}
@@ -274,6 +288,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					"url": "https://bitbucketserver.mycorp.com",
 					"username": "admin",
 					"token": "secret",
+					"repositoryQuery": ["none"],
 					"repos": [
 						"org/FOO",
 						"org/baz"
@@ -299,6 +314,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					// Some comment
 					"url": "https://github.com",
 					"token": "secret",
+					"repositoryQuery": ["none"],
 					"repos": [
 						"org/boo"
 					]
@@ -310,6 +326,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					// Some comment
 					"url": "https://gitlab.com",
 					"token": "secret",
+					"projectQuery": ["none"],
 					"projects": [
 						{"name": "org/boo"},
 					]
@@ -322,6 +339,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 					"url": "https://bitbucketserver.mycorp.com",
 					"username": "admin",
 					"token": "secret",
+					"repositoryQuery": ["none"],
 					"repos": [
 						"org/boo"
 					]
@@ -341,6 +359,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 						// Some comment
 						"url": "https://github.com",
 						"token": "secret",
+						"repositoryQuery": ["none"],
 						"repos": [
 							"org/boo",
 							"org/foo",
@@ -354,6 +373,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 						// Some comment
 						"url": "https://gitlab.com",
 						"token": "secret",
+						"projectQuery": ["none"],
 						"projects": [
 							{"name": "org/boo"},
 							{"id": 1, "name": "org/foo"},
@@ -368,6 +388,7 @@ func TestExternalService_IncludeExclude(t *testing.T) {
 						"url": "https://bitbucketserver.mycorp.com",
 						"username": "admin",
 						"token": "secret",
+						"repositoryQuery": ["none"],
 						"repos": [
 							"org/boo",
 							"org/foo",

@@ -140,9 +140,13 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "BITBUCKETSERVER",
-			desc:   "without url",
+			desc:   "without url, username nor repositoryQuery",
 			config: `{}`,
-			assert: includes("url: url is required"),
+			assert: includes(
+				"url: url is required",
+				"username: username is required",
+				"repositoryQuery: repositoryQuery is required",
+			),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -190,9 +194,15 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "valid",
-			config: `{"url": "https://bitbucket.com/", "username": "admin", "token": "secret-token"}`,
+			kind: "BITBUCKETSERVER",
+			desc: "valid",
+			config: `
+			{
+				"url": "https://bitbucket.com/",
+				"username": "admin",
+				"token": "secret-token",
+				"repositoryQuery": ["none"]
+			}`,
 			assert: equals("<nil>"),
 		},
 		{
@@ -245,6 +255,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://bitbucketserver.corp.com",
 				"username": "admin",
 				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
 				"exclude": [
 					{"name": "foo/bar", "id": 1234}
 				]
@@ -271,6 +282,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://bitbucketserver.corp.com",
 				"username": "admin",
 				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
 				"repos": [
 					"foo/bar",
 					"bar/baz"
@@ -280,11 +292,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITHUB",
-			desc:   "without url nor token",
+			desc:   "without url, token nor repositoryQuery",
 			config: `{}`,
 			assert: includes(
 				"url: url is required",
 				"token: token is required",
+				"repositoryQuery: repositoryQuery is required",
 			),
 		},
 		{
@@ -387,6 +400,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			{
 				"url": "https://github.corp.com",
 				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
 				"exclude": [
 					{"name": "foo/bar", "id": "AAAAA="}
 				]
@@ -442,6 +456,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			{
 				"url": "https://gitlab.corp.com",
 				"token": "very-secret-token",
+				"projectQuery": ["none"],
 				"exclude": [
 					{"name": "foo/bar", "id": 1234}
 				]
@@ -485,6 +500,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			{
 				"url": "https://gitlab.corp.com",
 				"token": "very-secret-token",
+				"projectQuery": ["none"],
 				"projects": [
 					{"name": "foo/bar", "id": 1234}
 				]
@@ -493,11 +509,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
-			desc:   "without url nor token",
+			desc:   "without url, token nor projectQuery",
 			config: `{}`,
 			assert: includes(
 				"url: url is required",
 				"token: token is required",
+				"projectQuery: projectQuery is required",
 			),
 		},
 		{
@@ -641,6 +658,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			{
 				"url": "https://gitlab.foo.bar",
 				"token": "super-secret-token",
+				"projectQuery": ["none"],
 				"authorization": {
 					"identityProvider": {
 						"type": "username",

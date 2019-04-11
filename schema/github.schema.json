@@ -5,7 +5,7 @@
   "description": "Configuration for a connection to GitHub or GitHub Enterprise.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "token"],
+  "required": ["url", "token", "repositoryQuery"],
   "properties": {
     "url": {
       "description": "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",

@@ -90,7 +90,7 @@ type BitbucketServerConnection struct {
 	Password                    string                         `json:"password,omitempty"`
 	Repos                       []string                       `json:"repos,omitempty"`
 	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string                       `json:"repositoryQuery,omitempty"`
+	RepositoryQuery             []string                       `json:"repositoryQuery"`
 	Token                       string                         `json:"token,omitempty"`
 	Url                         string                         `json:"url"`
 	Username                    string                         `json:"username"`
@@ -200,7 +200,7 @@ type GitHubConnection struct {
 	InitialRepositoryEnablement bool                  `json:"initialRepositoryEnablement,omitempty"`
 	Repos                       []string              `json:"repos,omitempty"`
 	RepositoryPathPattern       string                `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string              `json:"repositoryQuery,omitempty"`
+	RepositoryQuery             []string              `json:"repositoryQuery"`
 	Token                       string                `json:"token"`
 	Url                         string                `json:"url"`
 }
@@ -227,7 +227,7 @@ type GitLabConnection struct {
 	Exclude                     []*ExcludedGitLabProject `json:"exclude,omitempty"`
 	GitURLType                  string                   `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool                     `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string                 `json:"projectQuery,omitempty"`
+	ProjectQuery                []string                 `json:"projectQuery"`
 	Projects                    []*GitLabProject         `json:"projects,omitempty"`
 	RepositoryPathPattern       string                   `json:"repositoryPathPattern,omitempty"`
 	Token                       string                   `json:"token"`
