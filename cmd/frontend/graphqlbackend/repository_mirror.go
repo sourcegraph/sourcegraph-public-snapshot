@@ -247,7 +247,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -273,7 +273,7 @@ func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*Empt
 		if err != nil {
 			return nil, err
 		}
-		if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 			return nil, err
 		}
 	}

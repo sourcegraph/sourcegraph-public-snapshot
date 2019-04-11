@@ -248,10 +248,43 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respond(w, http.StatusBadRequest, err)
 		return
 	}
-	repos.Scheduler.UpdateOnce(req.Repo, req.URL)
+
+	if s.Store == nil {
+		err := errors.Errorf("Can't lookup id of %q without a store. Set SRC_SYNCER_ENABLED=true", req.Repo)
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	args := repos.StoreListReposArgs{Names: []string{string(req.Repo)}}
+	rs, err := s.Store.ListRepos(r.Context(), args)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos"))
+		return
+	}
+
+	if len(rs) != 1 {
+		err := errors.Errorf("repo %q not found in store", req.Repo)
+		respond(w, http.StatusNotFound, err)
+		return
+	}
+
+	repo := rs[0]
+	if req.URL == "" {
+		if urls := repo.CloneURLs(); len(urls) > 0 {
+			req.URL = urls[0]
+		}
+	}
+
+	repos.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+
+	respond(w, http.StatusOK, &protocol.RepoUpdateResponse{
+		ID:   repo.ID,
+		Name: repo.Name,
+		URL:  req.URL,
+	})
 }
 
 func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {

@@ -329,8 +329,9 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
-func (s *updateScheduler) UpdateOnce(name api.RepoName, url string) {
+func (s *updateScheduler) UpdateOnce(id uint32, name api.RepoName, url string) {
 	repo := &configuredRepo2{
+		ID:   id,
 		Name: name,
 		URL:  url,
 	}

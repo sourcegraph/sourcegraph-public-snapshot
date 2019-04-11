@@ -23,8 +23,9 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return repoupdater.DefaultClient.EnqueueRepoUpdate(context.Background(), gitserver.Repo{
+	_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(context.Background(), gitserver.Repo{
 		Name: repo.Name,
 		URL:  repoMeta.Repo.VCS.URL,
 	})
+	return err
 }

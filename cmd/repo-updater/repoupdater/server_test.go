@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -457,6 +458,127 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}
 }
 
+func TestServer_EnqueueRepoUpdate(t *testing.T) {
+	repo := repos.Repo{
+		Name: "github.com/foo/bar",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Metadata: new(github.Repository),
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "https://secret-token@github.com/foo/bar",
+			},
+		},
+	}
+
+	ctx := context.Background()
+
+	type testCase struct {
+		name  string
+		store repos.Store
+		repo  gitserver.Repo
+		res   *protocol.RepoUpdateResponse
+		err   string
+	}
+
+	var testCases []testCase
+	testCases = append(testCases,
+		testCase{
+			name: "needs a store",
+			err:  `Can't lookup id of "" without a store. Set SRC_SYNCER_ENABLED=true`,
+		},
+		func() testCase {
+			err := errors.New("boom")
+			return testCase{
+				name:  "returns an error on store failure",
+				store: &repos.FakeStore{ListReposError: err},
+				err:   `store.list-repos: boom`,
+			}
+		}(),
+		testCase{
+			name:  "missing repo",
+			store: new(repos.FakeStore), // empty store
+			repo:  gitserver.Repo{Name: "foo"},
+			err:   `repo "foo" not found in store`,
+		},
+		func() testCase {
+			repo := repo.Clone()
+			repo.Sources = nil
+
+			store := new(repos.FakeStore)
+			must(store.UpsertRepos(ctx, repo))
+
+			return testCase{
+				name:  "missing clone URL",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
+				},
+			}
+		}(),
+		func() testCase {
+			store := new(repos.FakeStore)
+			repo := repo.Clone()
+			must(store.UpsertRepos(ctx, repo))
+			cloneURL := "https://user:password@github.com/foo/bar"
+			return testCase{
+				name:  "given clone URL is preferred",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name), URL: cloneURL},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
+					URL:  cloneURL,
+				},
+			}
+		}(),
+		func() testCase {
+			store := new(repos.FakeStore)
+			repo := repo.Clone()
+			must(store.UpsertRepos(ctx, repo))
+			return testCase{
+				name:  "if missing, clone URL is set when stored",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
+					URL:  repo.CloneURLs()[0],
+				},
+			}
+		}(),
+	)
+
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer((&Server{Store: tc.store}).Handler())
+			defer srv.Close()
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.EnqueueRepoUpdate(ctx, tc.repo)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
 func TestServer_RepoExternalServices(t *testing.T) {
 	service1 := &repos.ExternalService{
 		ID:          1,
@@ -495,13 +617,6 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		},
 		Metadata: new(github.Repository),
 	}).With(repos.Opt.RepoSources(service1.URN(), service2.URN()))
-
-	must := func(err error) {
-		t.Helper()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
 
 	// We share the store across test cases. Initialize now so we have IDs
 	// set for test cases.
@@ -678,6 +793,12 @@ func formatJSON(s string) string {
 		panic(err)
 	}
 	return formatted
+}
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func init() {

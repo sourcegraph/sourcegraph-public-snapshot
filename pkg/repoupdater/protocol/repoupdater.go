@@ -152,6 +152,16 @@ type RepoUpdateRequest struct {
 	URL string `json:"url"`
 }
 
+// RepoUpdateResponse is a response type to a RepoUpdateRequest.
+type RepoUpdateResponse struct {
+	// ID of the repo that got an update request.
+	ID uint32 `json:"id"`
+	// Name of the repo that got an update request.
+	Name string `json:"name"`
+	// URL of the repo that got an update request.
+	URL string `json:"url"`
+}
+
 // ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
 //
 // The FrontendAPI is one of the issuers of this request. It does so when creating or
