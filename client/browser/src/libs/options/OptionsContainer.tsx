@@ -9,7 +9,7 @@ import { ConnectionErrors } from './ServerURLForm'
 export interface OptionsContainerProps {
     sourcegraphURL: string
     ensureValidSite: (url: string) => Observable<any>
-    fetchCurrentTabStatus: () => Observable<OptionsMenuProps['currentTabStatus']>
+    fetchCurrentTabStatus: () => Promise<OptionsMenuProps['currentTabStatus']>
     hasPermissions: (url: string) => Promise<boolean>
     requestPermissions: (url: string) => void
     setSourcegraphURL: (url: string) => void
@@ -88,11 +88,12 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             })
         )
 
-        this.subscriptions.add(
-            props
-                .fetchCurrentTabStatus()
-                .subscribe(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
-        )
+        props
+            .fetchCurrentTabStatus()
+            .then(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
+            .catch(err => {
+                console.log('Error fetching current tab status', err)
+            })
     }
 
     public componentDidMount(): void {

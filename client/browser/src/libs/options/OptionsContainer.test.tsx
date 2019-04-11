@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { render, RenderResult } from 'react-testing-library'
-import { NEVER, noop, Observable, of } from 'rxjs'
+import { noop, Observable, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import { OptionsContainer, OptionsContainerProps } from './OptionsContainer'
@@ -17,7 +17,7 @@ describe('OptionsContainer', () => {
     > = {
         hasPermissions: () => Promise.resolve(true),
         requestPermissions: noop,
-        fetchCurrentTabStatus: () => NEVER,
+        fetchCurrentTabStatus: () => Promise.resolve(undefined),
         ensureValidSite: (url: string) => new Observable<void>(),
         toggleFeatureFlag: noop,
         featureFlags: [],

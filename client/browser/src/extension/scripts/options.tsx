@@ -4,10 +4,9 @@ import '../../config/polyfill'
 
 import * as React from 'react'
 import { render } from 'react-dom'
-import { from, noop, Subscription } from 'rxjs'
-import * as permissions from '../../browser/permissions'
+import { from, noop, Observable, Subscription } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
 import storage from '../../browser/storage'
-import * as tabs from '../../browser/tabs'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsMenuProps } from '../../libs/options/Menu'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
@@ -34,25 +33,21 @@ const toggleFeatureFlag = (key: string) => {
     }
 }
 
-const fetchCurrentTabStatus = () =>
-    from(
-        new Promise<OptionsMenuProps['currentTabStatus']>((resolve, reject) => {
-            tabs.query({ active: true, currentWindow: true }, async tabs => {
-                if (tabs.length > 1) {
-                    console.error('Querying for the currently active tab returned more than one result')
-                    return resolve()
-                }
-                const { url } = tabs[0]
-                if (!url) {
-                    console.error('Currently active tab has no URL')
-                    return resolve()
-                }
-                const { host, protocol } = new URL(url)
-                const hasPermissions = await permissions.contains(`${protocol}//${host}`)
-                resolve({ host, protocol, hasPermissions })
-            })
-        })
-    )
+const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStatus']> => {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+    if (tabs.length > 1) {
+        throw new Error('Querying for the currently active tab returned more than one result')
+    }
+    const { url } = tabs[0]
+    if (!url) {
+        throw new Error('Currently active tab has no URL')
+    }
+    const { host, protocol } = new URL(url)
+    const hasPermissions = await browser.permissions.contains({
+        origins: [`${protocol}//${host}/*`],
+    })
+    return { host, protocol, hasPermissions }
+}
 class Options extends React.Component<{}, State> {
     public state: State = { sourcegraphURL: null, allowErrorReporting: false }
 
@@ -86,8 +81,14 @@ class Options extends React.Component<{}, State> {
 
             ensureValidSite: fetchSite,
             fetchCurrentTabStatus,
-            hasPermissions: url => permissions.contains(url),
-            requestPermissions: url => permissions.request([url]),
+            hasPermissions: url =>
+                browser.permissions.contains({
+                    origins: [`${url}/*`],
+                }),
+            requestPermissions: url =>
+                browser.permissions.request({
+                    origins: [`${url}/*`],
+                }),
 
             setSourcegraphURL: (url: string) => {
                 storage.setSync({ sourcegraphURL: url })

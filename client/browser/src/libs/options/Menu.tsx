@@ -34,7 +34,10 @@ const isFullPage = (): boolean => !new URLSearchParams(window.location.search).g
 const buildRequestPermissionsHandler = (
     { protocol, host }: NonNullable<OptionsMenuProps['currentTabStatus']>,
     requestPermissions: OptionsMenuProps['requestPermissions']
-) => () => requestPermissions(`${protocol}//${host}`)
+) => (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    event.preventDefault()
+    requestPermissions(`${protocol}//${host}`)
+}
 
 export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
@@ -64,7 +67,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
                 <div className="alert alert-danger">
                     Sourcegraph is not enabled on <strong>{currentTabStatus.host}</strong>.{' '}
                     <a
-                        href="#"
+                        href=""
                         onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
                         className="request-permissions__test"
                     >
