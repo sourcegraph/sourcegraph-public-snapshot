@@ -3,7 +3,7 @@ version: '2.2'
 services:
     server:
         container_name: server
-        image: 'sourcegraph/server-signed:3.2.1@sha256:832bc27c36416b2524b78f62eb60cfd93f54a07eb66dbc45687239d8d3fe66b0'
+        image: 'sourcegraph/server-signed:3.2.2@sha256:30e27164231d602fba51053e85a7f1f0799297f4df44c565acd1922d96ef185d'
         ports:
             - '7080:7080'
             - '2633:2633'
@@ -38,8 +38,8 @@ services:
         environment:
             - 'SRC_FRONTEND_INTERNAL=http://server:3090'
         volumes:
-            # Replace ~/.zoekt with the host folder that you'd like the container to use
-            - '~/.zoekt:/data/index'
+            # Replace ~/.sourcegraph with the host folder that you'd like the container to use
+            - '~/.sourcegraph/data/zoekt:/data/index'
         restart: always
         depends_on:
             - server
@@ -58,8 +58,8 @@ services:
         cpu_shares: 512
 
         volumes:
-            # Replace ~/.zoekt with the host folder that you'd like the container to use
-            - '~/.zoekt:/data/index'
+            # Replace ~/.sourcegraph with the host folder that you'd like the container to use
+            - '~/.sourcegraph/data/zoekt:/data/index'
         restart: always
         depends_on:
             - zoekt-indexserver
