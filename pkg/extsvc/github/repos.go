@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
@@ -370,7 +370,7 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		return nil, false, 1, err
 	}
 	if response.IncompleteResults {
-		log15.Error("GitHub repository search returned incomplete results, some repositories may have been skipped", "searchString", searchString, "page", page, "total repository count", response.TotalCount)
+		return nil, false, 1, errors.Errorf("github repository search returned incomplete results: query=%q page=%d total=%d", searchString, page, response.TotalCount)
 	}
 	repos = make([]*Repository, 0, len(response.Items))
 	for _, restRepo := range response.Items {
