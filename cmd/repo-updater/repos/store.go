@@ -46,7 +46,7 @@ type StoreListReposArgs struct {
 // Each defined argument must map to a disjunct (i.e. AND) filter predicate.
 // When zero-valued, an argument is ommited from the predicate set.
 type StoreListExternalServicesArgs struct {
-	// IDs of external services to list.
+	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
 	IDs []int64
 	// Kinds of external services to list.
 	Kinds []string
