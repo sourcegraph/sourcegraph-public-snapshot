@@ -239,7 +239,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		useFullDeadline bool
 		searcher        zoekt.Searcher
 		opts            zoekt.SearchOptions
-		since			func(time.Time) time.Duration
+		since           func(time.Time) time.Duration
 	}
 	tests := []struct {
 		name              string
@@ -260,7 +260,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
-				since:			 func(time.Time) time.Duration { return time.Second - time.Millisecond },
+				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -278,7 +278,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
-				since:			 func(time.Time) time.Duration { return time.Second },
+				since:           func(time.Time) time.Duration { return time.Second },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
