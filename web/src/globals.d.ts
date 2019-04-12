@@ -21,6 +21,8 @@ interface ImmutableUser {
     readonly UID: number
 }
 
+type DeployType = 'cluster' | 'docker-container' | 'dev'
+
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
@@ -97,7 +99,7 @@ interface SourcegraphContext {
     /**
      * The kind of deployment.
      */
-    deployType: 'cluster' | 'docker-container' | 'dev'
+    deployType: DeployType
 
     /** Whether signup is allowed on the site. */
     allowSignup: boolean

@@ -457,8 +457,8 @@ export const highlightCode = memoizeObservable(
  * Returns true if search performance and accuracy are limited because this is a
  * single-node Docker deployment that is configured with more than 100 repositories.
  */
-export function displayPerformanceWarning(): Observable<boolean> {
-    if (window.context.deployType !== 'docker-container') {
+export function displayPerformanceWarning(deployType: DeployType): Observable<boolean> {
+    if (deployType !== 'docker-container') {
         return of(false)
     }
     const manyReposWarningLimit = 100

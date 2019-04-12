@@ -84,7 +84,11 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/search',
         render: (props: any) =>
-            parseSearchURLQuery(props.location.search) ? <SearchResults {...props} /> : <SearchPage {...props} />,
+            parseSearchURLQuery(props.location.search) ? (
+                <SearchResults {...props} deployType={window.context.deployType} />
+            ) : (
+                <SearchPage {...props} />
+            ),
         exact: true,
     },
     {
@@ -125,7 +129,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/search',
-        render: props => <SearchResults {...props} />,
+        render: props => <SearchResults {...props} deployType={window.context.deployType} />,
         exact: true,
     },
     {

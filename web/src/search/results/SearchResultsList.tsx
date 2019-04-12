@@ -30,11 +30,12 @@ import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
-interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps {
+export interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
     isSourcegraphDotCom: boolean
+    deployType: DeployType
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
@@ -270,7 +271,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         this.componentUpdates.next(this.props)
 
         this.subscriptions.add(
-            displayPerformanceWarning().subscribe(displayPerformanceWarning =>
+            displayPerformanceWarning(this.props.deployType).subscribe(displayPerformanceWarning =>
                 this.setState({ displayPerformanceWarning })
             )
         )
