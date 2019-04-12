@@ -67,6 +67,9 @@ func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (r
 			return &protocol.RepoInfo{
 				Name:         args.Repo,
 				ExternalRepo: args.ExternalRepo,
+				VCS: protocol.VCSInfo{
+					URL: gitolite.CloneURL(args.ExternalRepo),
+				},
 			}, true, nil
 		}
 	}
