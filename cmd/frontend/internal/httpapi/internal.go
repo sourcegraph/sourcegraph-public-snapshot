@@ -213,6 +213,12 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
+	// TODO: This needs to be updated to return the list of all search queries in your new
+	// saved_searches (rename saved_queries -> query_runner_state). Currently, this is
+	// listing ALL user/org settings from the DB, parsing them, and grabbing the `search.savedQueries`
+	// field out to return the final list. You should just make a `db.SavedSearches.ListAll` call
+	// or such here.
+
 	// List settings for all users, orgs, etc.
 	settings, err := db.Settings.ListAll(r.Context())
 	if err != nil {
@@ -228,7 +234,19 @@ func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 		for _, query := range config.SavedQueries {
 			spec := api.SavedQueryIDSpec{Subject: settings.Subject, Key: query.Key}
 			queries = append(queries, api.SavedQuerySpecAndConfig{
-				Spec:   spec,
+				// Contains the config subject (user ID or org ID) AND unique key (same `"key": "nRyyMK"` as below)
+				Spec: spec,
+
+				// This is like:
+				/*
+					{
+					"key": "nRyyMK",
+					"description": "test",
+					"query": "repo:^github\\.com/sourcegraph/sourcegraph$ wow",
+					"notify": true,
+					"notifySlack": "",
+					}
+				*/
 				Config: query,
 			})
 		}

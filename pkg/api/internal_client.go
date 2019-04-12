@@ -71,14 +71,19 @@ func (c *internalClient) WaitForFrontend(ctx context.Context) error {
 }
 
 type SavedQueryIDSpec struct {
+	// TODO: farhan: change this to be a user ID or org ID
 	Subject SettingsSubject
-	Key     string
+
+	// TODO: farhan: this should be DB primary key integer
+	Key string
 }
 
 // ConfigSavedQuery is the JSON shape of a saved query entry in the JSON configuration
 // (i.e., an entry in the {"search.savedQueries": [...]} array).
 type ConfigSavedQuery struct {
-	Key         string `json:"key,omitempty"`
+	// TODO: farhan: this should be DB primary key integer
+	Key string `json:"key,omitempty"`
+
 	Description string `json:"description"`
 	Query       string `json:"query"`
 	Notify      bool   `json:"notify,omitempty"`
@@ -105,6 +110,9 @@ type SavedQuerySpecAndConfig struct {
 
 // SavedQueriesListAll lists all saved queries, from every user, org, etc.
 func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[SavedQueryIDSpec]ConfigSavedQuery, error) {
+	// @farhan Client side here: the return type will need to be updated both here and
+	// on the server side (`serveSavedQueriesListAll` func).
+	//
 	var result []SavedQuerySpecAndConfig
 	err := c.postInternal(ctx, "saved-queries/list-all", nil, &result)
 	if err != nil {
