@@ -103,6 +103,10 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
         writeSchema(env, browser, buildDir)
 
         return () => {
+            if (process.env[`NO_${browser}`]) {
+                return
+            }
+
             signale.await(`Building the ${title} ${env} bundle`)
 
             copyDist(buildDir)
