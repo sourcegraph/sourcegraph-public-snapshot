@@ -1,6 +1,6 @@
 import { from } from 'rxjs'
 import { map, switchMap, take, toArray } from 'rxjs/operators'
-import { NotificationType, ViewComponent, Window } from 'sourcegraph'
+import { NotificationType, TextDocument, ViewComponent, Window } from 'sourcegraph'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
@@ -9,7 +9,9 @@ describe('Windows (integration)', () => {
         test('returns the active window', async () => {
             const { extensionAPI } = await integrationTestContext()
             await extensionAPI.internal.sync()
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+            const viewComponent: Pick<ViewComponent, 'type'> & {
+                document: Pick<TextDocument, 'uri' | 'languageId' | 'text'>
+            } = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
@@ -60,7 +62,9 @@ describe('Windows (integration)', () => {
         test('lists windows', async () => {
             const { extensionAPI } = await integrationTestContext()
             await extensionAPI.internal.sync()
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+            const viewComponent: Pick<ViewComponent, 'type'> & {
+                document: Pick<TextDocument, 'uri' | 'languageId' | 'text'>
+            } = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
@@ -93,7 +97,9 @@ describe('Windows (integration)', () => {
                 )
                 .toPromise()
 
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
+            const viewComponent: Pick<ViewComponent, 'type'> & {
+                document: Pick<TextDocument, 'uri' | 'languageId' | 'text'>
+            } = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             }

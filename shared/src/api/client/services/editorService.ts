@@ -9,7 +9,9 @@ import { TextDocumentPositionParams } from '../../protocol'
  * @template D The type of text documents referred to by this data. If the document text is managed
  * out-of-band, this can just be an object containing the document URI.
  */
-export interface CodeEditorData<D extends Pick<TextDocument, 'uri'> = TextDocument> {
+export interface CodeEditorData<
+    D extends Pick<TextDocument, 'uri'> = Pick<TextDocument, 'uri' | 'languageId' | 'text'>
+> {
     type: 'CodeEditor'
     item: D
     selections: Selection[]
@@ -45,9 +47,9 @@ export function createEditorService(): EditorService {
  * {@link EditorService#editors}. If there is no active editor or it has no position, it returns
  * null.
  */
-export function getActiveCodeEditorPosition<D extends Pick<TextDocument, 'uri'> = TextDocument>(
-    editors: readonly CodeEditorData<D>[]
-): (TextDocumentPositionParams & { textDocument: D }) | null {
+export function getActiveCodeEditorPosition<
+    D extends Pick<TextDocument, 'uri'> = Pick<TextDocument, 'uri' | 'languageId' | 'text'>
+>(editors: readonly CodeEditorData<D>[]): (TextDocumentPositionParams & { textDocument: D }) | null {
     const activeEditor = editors.find(({ isActive }) => isActive)
     if (!activeEditor) {
         return null

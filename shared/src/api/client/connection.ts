@@ -73,7 +73,7 @@ export async function createExtensionHostClientConnection(
     subscription.add(clientContext)
 
     // Sync visible views and text documents to the extension host
-    let visibleTextDocuments: TextDocument[] = []
+    let visibleTextDocuments: Pick<TextDocument, 'uri' | 'languageId' | 'text'>[] = []
     subscription.add(
         from(services.editor.editors)
             .pipe(

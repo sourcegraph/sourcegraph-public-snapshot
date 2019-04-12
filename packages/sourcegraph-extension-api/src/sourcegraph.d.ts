@@ -326,6 +326,55 @@ declare module 'sourcegraph' {
          * additional access to the code host API. In the future, this limitation may be removed.
          */
         readonly text: string | undefined
+
+        /**
+         * Convert the position to a zero-based offset.
+         *
+         * The position will be adjusted using {@link TextDocument#validatePosition}.
+         *
+         * @param position A position.
+         * @return A valid zero-based offset.
+         * @throws if {@link TextDocument#text} is undefined.
+         */
+        offsetAt(position: Position): number
+
+        /**
+         * Convert a zero-based offset to a position.
+         *
+         * @param offset A zero-based offset.
+         * @return A valid {@link Position}.
+         * @throws if {@link TextDocument#text} is undefined.
+         */
+        positionAt(offset: number): Position
+
+        /**
+         * Ensure a position is contained in the range of this document. If not, adjust it so that
+         * it is.
+         *
+         * @param position A position.
+         * @return The given position or a new, adjusted position.
+         * @throws if {@link TextDocument#text} is undefined.
+         */
+        validatePosition(position: Position): Position
+
+        /**
+         * Ensure a range is completely contained in this document.
+         *
+         * @param range A range.
+         * @return The given range or a new, adjusted range.
+         * @throws if {@link TextDocument#text} is undefined.
+         */
+        validateRange(range: Range): Range
+
+        /**
+         * Get the range of the word at the given position.
+         *
+         * The position will be adjusted using {@link TextDocument#validatePosition}.
+         *
+         * @param position A position.
+         * @return A range spanning a word, or `undefined`.
+         */
+        getWordRangeAtPosition(position: Position): Range | undefined
     }
 
     /**
