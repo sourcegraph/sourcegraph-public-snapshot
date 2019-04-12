@@ -71,7 +71,11 @@ func (c *internalClient) WaitForFrontend(ctx context.Context) error {
 }
 
 type SavedQueryIDSpec struct {
-	// TODO: farhan: change this to be a user ID or org ID
+	// TODO: farhan: create one of these using the user ID or org ID:
+	//
+	// userSubject := &SettingsSubject{Org: nil, User: userID}
+	// orgSubject := &SettingsSubject{Org: orgID, User: nil}
+	//
 	Subject SettingsSubject
 
 	// TODO: farhan: this should be DB primary key integer
