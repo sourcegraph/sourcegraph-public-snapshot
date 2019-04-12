@@ -2,7 +2,9 @@ package repos
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -99,6 +101,8 @@ func (e *ExternalService) Exclude(rs ...*Repo) error {
 		return e.excludeGitLabRepos(rs...)
 	case "bitbucketserver":
 		return e.excludeBitbucketServerRepos(rs...)
+	case "other":
+		return e.updateOtherRepos(false, rs...)
 	default:
 		return errors.Errorf("external service kind %q doesn't have an exclude list", e.Kind)
 	}
@@ -114,9 +118,78 @@ func (e *ExternalService) Include(rs ...*Repo) error {
 		return e.includeGitLabRepos(rs...)
 	case "bitbucketserver":
 		return e.includeBitbucketServerRepos(rs...)
+	case "other":
+		return e.updateOtherRepos(true, rs...)
 	default:
 		return errors.Errorf("external service kind %q doesn't have an include list", e.Kind)
 	}
+}
+
+// updateOtherRepos changes the configuration of an OTHER external service to exclude
+// or include the given repos.
+func (e *ExternalService) updateOtherRepos(include bool, rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("other", func(v interface{}) (string, interface{}, error) {
+		c := v.(*schema.OtherExternalServiceConnection)
+
+		var base *url.URL
+		if c.Url != "" {
+			var err error
+			if base, err = url.Parse(c.Url); err != nil {
+				return "", nil, err
+			}
+		}
+
+		set := make(map[string]bool, len(c.Repos))
+		for _, name := range c.Repos {
+			if name != "" {
+				u, err := otherRepoCloneURL(base, name)
+				if err != nil {
+					return "", nil, err
+				}
+
+				if name = u.String(); base != nil {
+					name = nameWithOwner(name)
+				}
+
+				set[name] = true
+			}
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "other" {
+				continue
+			}
+
+			u, err := url.Parse(r.ExternalRepo.ServiceID)
+			if err != nil {
+				return "", nil, err
+			}
+
+			name := u.Scheme + "://" + r.Name
+			if base != nil {
+				name = nameWithOwner(r.Name)
+			}
+
+			if include {
+				set[name] = true
+			} else {
+				delete(set, name)
+			}
+		}
+
+		repos := make([]string, 0, len(set))
+		for name := range set {
+			repos = append(repos, name)
+		}
+
+		sort.Strings(repos)
+
+		return "repos", repos, nil
+	})
 }
 
 // excludeGitLabRepos changes the configuration of a GitLab external service to exclude the
@@ -126,7 +199,7 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("gitlab", func(v interface{}) (string, interface{}) {
+	return e.config("gitlab", func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitLabConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -164,7 +237,7 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 			}
 		}
 
-		return "exclude", c.Exclude
+		return "exclude", c.Exclude, nil
 	})
 }
 
@@ -175,7 +248,7 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("bitbucketserver", func(v interface{}) (string, interface{}) {
+	return e.config("bitbucketserver", func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.BitbucketServerConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -213,7 +286,7 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 			}
 		}
 
-		return "exclude", c.Exclude
+		return "exclude", c.Exclude, nil
 	})
 }
 
@@ -224,7 +297,7 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("github", func(v interface{}) (string, interface{}) {
+	return e.config("github", func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitHubConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -261,7 +334,7 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 			}
 		}
 
-		return "exclude", c.Exclude
+		return "exclude", c.Exclude, nil
 	})
 }
 
@@ -280,7 +353,7 @@ func (e *ExternalService) includeGithubRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("github", func(v interface{}) (string, interface{}) {
+	return e.config("github", func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitHubConnection)
 
 		set := make(map[string]bool, len(c.Repos))
@@ -299,7 +372,7 @@ func (e *ExternalService) includeGithubRepos(rs ...*Repo) error {
 			}
 		}
 
-		return "repos", c.Repos
+		return "repos", c.Repos, nil
 	})
 }
 
@@ -310,7 +383,7 @@ func (e *ExternalService) includeGitLabRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("gitlab", func(v interface{}) (string, interface{}) {
+	return e.config("gitlab", func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitLabConnection)
 
 		set := make(map[string]bool, len(c.Projects))
@@ -335,7 +408,7 @@ func (e *ExternalService) includeGitLabRepos(rs ...*Repo) error {
 			}
 		}
 
-		return "projects", c.Projects
+		return "projects", c.Projects, nil
 	})
 }
 
@@ -346,7 +419,7 @@ func (e *ExternalService) includeBitbucketServerRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("bitbucketserver", func(v interface{}) (string, interface{}) {
+	return e.config("bitbucketserver", func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.BitbucketServerConnection)
 
 		set := make(map[string]bool, len(c.Repos))
@@ -365,11 +438,11 @@ func (e *ExternalService) includeBitbucketServerRepos(rs ...*Repo) error {
 			}
 		}
 
-		return "repos", c.Repos
+		return "repos", c.Repos, nil
 	})
 }
 
-func (e *ExternalService) config(kind string, opt func(c interface{}) (string, interface{})) error {
+func (e *ExternalService) config(kind string, opt func(c interface{}) (string, interface{}, error)) error {
 	if strings.ToLower(e.Kind) != kind {
 		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
 	}
@@ -379,7 +452,11 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 		return errors.Wrap(err, "config")
 	}
 
-	path, val := opt(c)
+	path, val, err := opt(c)
+	if err != nil {
+		return errors.Wrap(err, "config")
+	}
+
 	edited, err := jsonc.Edit(e.Config, val, strings.Split(path, ".")...)
 	if err != nil {
 		return errors.Wrap(err, "edit")

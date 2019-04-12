@@ -367,18 +367,17 @@ func (s OtherSource) cloneURLs() ([]*url.URL, error) {
 		return nil, nil
 	}
 
-	parseRepo := url.Parse
+	var base *url.URL
 	if s.conn.Url != "" {
-		baseURL, err := url.Parse(s.conn.Url)
-		if err != nil {
+		var err error
+		if base, err = url.Parse(s.conn.Url); err != nil {
 			return nil, err
 		}
-		parseRepo = baseURL.Parse
 	}
 
 	cloneURLs := make([]*url.URL, 0, len(s.conn.Repos))
 	for _, repo := range s.conn.Repos {
-		cloneURL, err := parseRepo(repo)
+		cloneURL, err := otherRepoCloneURL(base, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -386,6 +385,13 @@ func (s OtherSource) cloneURLs() ([]*url.URL, error) {
 	}
 
 	return cloneURLs, nil
+}
+
+func otherRepoCloneURL(base *url.URL, repo string) (*url.URL, error) {
+	if base == nil {
+		return url.Parse(repo)
+	}
+	return base.Parse(repo)
 }
 
 var otherRepoNameReplacer = strings.NewReplacer(":", "-", "@", "-", "//", "")
