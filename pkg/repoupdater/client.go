@@ -138,11 +138,11 @@ type Repo struct {
 }
 
 // MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
-var MockEnqueueRepoUpdate func(ctx context.Context, repo gitserver.Repo) error
+var MockEnqueueRepoUpdate func(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error)
 
 // EnqueueRepoUpdate requests that the named repository be updated in the near
 // future. It does not wait for the update.
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) error {
+func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error) {
 	if MockEnqueueRepoUpdate != nil {
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
@@ -151,12 +151,26 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) err
 		Repo: repo.Name,
 		URL:  repo.URL,
 	}
+
 	resp, err := c.httpPost(ctx, "enqueue-repo-update", req)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	resp.Body.Close()
-	return nil
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.RepoUpdateResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }
 
 // SyncExternalService requests the given external service to be synced.

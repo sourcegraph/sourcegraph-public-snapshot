@@ -16,12 +16,12 @@ func TestRepoRefresh(t *testing.T) {
 	c := newTest()
 
 	enqueueRepoUpdateCount := map[api.RepoName]int{}
-	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo gitserver.Repo) error {
+	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error) {
 		if exp := "git@github.com:dummy-url"; repo.URL != exp {
 			t.Errorf("missing or incorrect clone URL, expected %q, got %q", exp, repo.URL)
 		}
 		enqueueRepoUpdateCount[repo.Name]++
-		return nil
+		return nil, nil
 	}
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 		return &protocol.RepoLookupResult{

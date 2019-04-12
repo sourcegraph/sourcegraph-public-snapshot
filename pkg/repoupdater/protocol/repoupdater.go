@@ -10,7 +10,10 @@ import (
 
 type RepoUpdateSchedulerInfoArgs struct {
 	// RepoName is the repository name to look up.
+	// XXX(tsenart): Depreacted. Remove after lookup by ID is rolled out.
 	RepoName api.RepoName
+	// The ID of the repo to lookup the schedule for.
+	ID uint32
 }
 
 type RepoUpdateSchedulerInfoResult struct {
@@ -146,6 +149,16 @@ type RepoUpdateRequest struct {
 	Repo api.RepoName `json:"repo"`
 
 	// URL is the repository's Git remote URL (from which to clone or update).
+	URL string `json:"url"`
+}
+
+// RepoUpdateResponse is a response type to a RepoUpdateRequest.
+type RepoUpdateResponse struct {
+	// ID of the repo that got an update request.
+	ID uint32 `json:"id"`
+	// Name of the repo that got an update request.
+	Name string `json:"name"`
+	// URL of the repo that got an update request.
 	URL string `json:"url"`
 }
 
