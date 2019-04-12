@@ -72,7 +72,7 @@ type Store struct {
 	// largeFilesPatterns is a list of large file glob patterns where files that
 	// match any pattern in the list should be searched regardless of their size.
 	largeFilePatterns []string
-	lfMu              sync.Mutex
+	lfMu              sync.RWMutex
 }
 
 // SetMaxConcurrentFetchTar sets the maximum number of concurrent calls allowed
@@ -352,6 +352,8 @@ func (s *Store) watchAndEvict() {
 // ignoreSizeMax determines whether the max size should be ignored. It uses
 // the glob syntax found here: https://golang.org/pkg/path/filepath/#Match.
 func (s *Store) ignoreSizeMax(name string) bool {
+	s.lfMu.RLock()
+	defer s.lfMu.RUnlock()
 	for _, pattern := range s.largeFilePatterns {
 		pattern = strings.TrimSpace(pattern)
 		if m, _ := filepath.Match(pattern, name); m {
