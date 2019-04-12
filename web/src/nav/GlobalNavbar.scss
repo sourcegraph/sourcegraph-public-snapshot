@@ -7,6 +7,9 @@
     justify-content: space-between;
     width: 100%;
     z-index: 200;
+	position: fixed;
+	height: 45px;
+	top: 0;
     &--bg {
         background-color: $color-bg-2;
     }

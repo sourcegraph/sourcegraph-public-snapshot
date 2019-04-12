@@ -1,15 +1,18 @@
 .global-alerts {
-    flex: none;
-    width: 100%;
-
+	width: 35rem;
+	right: 1rem;
+	bottom: .5rem;
+	position: fixed;
+	z-index: 150;
     &__alert {
         width: 100%;
         padding: 0.5rem !important;
-        margin-bottom: 0 !important;
+        margin-bottom: .5rem !important;
 
-        border-radius: 0;
-        border-width: 0 0 1px 0;
+        border-radius: 6px !important;
+        border-width: 1px;
 
+		box-shadow: 0 0 12px 0 rgba(0,27,76,.4);
         // The trailing after-paragraph/list margin looks unbalanced in MOTDs.
         p:last-child,
         ul:last-child,
@@ -17,4 +20,8 @@
             margin-bottom: 0;
         }
     }
+}
+.theme-light .global-alerts__alert {
+	box-shadow: 0 0 12px 0 rgba(0,27,76,.085);
+	border-width: 1px;
 }

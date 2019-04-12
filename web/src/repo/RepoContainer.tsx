@@ -230,7 +230,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             location.pathname.startsWith(`${repoMatchURL}/-/settings/`)
 
         return (
-            <div className="repo-container w-100 d-flex flex-column">
+            <React.Fragment>
                 <RepoHeader
                     {...this.props}
                     actionButtons={this.props.repoHeaderActionButtons}
@@ -373,7 +373,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                         />
                     )}
                 </ErrorBoundary>
-            </div>
+            </React.Fragment>
         )
     }
 

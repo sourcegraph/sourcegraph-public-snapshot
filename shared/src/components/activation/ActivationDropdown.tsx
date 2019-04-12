@@ -3,7 +3,7 @@ import H from 'history'
 import React from 'react'
 import CircularProgressbar from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { DropdownMenu, DropdownToggle, UncontrolledDropdown} from 'reactstrap'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
@@ -81,7 +81,9 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
             colors: ['#a864fd', '#29cdff', '#78ff44', '#ff718d', '#fdff6a'],
         }
         return (
-            <ButtonDropdown
+            <UncontrolledDropdown
+				nav={true}
+				inNavbar={true}
                 isOpen={this.state.isOpen}
                 toggle={this.toggleIsOpen}
                 className={`${show ? '' : 'activation-dropdown-button--hidden'} nav-link p-0`}
@@ -147,7 +149,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         </div>
                     )}
                 </DropdownMenu>
-            </ButtonDropdown>
+            </UncontrolledDropdown>
         )
     }
 }

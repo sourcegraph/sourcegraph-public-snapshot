@@ -4,11 +4,18 @@
 @import './RepoHeaderBreadcrumbNavItem';
 
 .repo-header {
+	position: fixed;
+	top:45px;
+	left:0;
+	right:0;
+	height: 35px;
+	z-index: 200;
     flex: none;
     padding-top: 0;
     padding-bottom: 0;
     border-style: solid;
     border-width: 0 0 1px;
+	background-color: var(--extension-card-bg);
 
     .navbar-nav {
         white-space: nowrap;

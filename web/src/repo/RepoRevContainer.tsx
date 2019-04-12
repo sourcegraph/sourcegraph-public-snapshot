@@ -8,9 +8,11 @@ import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { Panel } from '../../../shared/src/panel/Panel'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { parseBrowserRepoURL, parseHash } from '../../../shared/src/util/url'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
@@ -21,7 +23,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
+import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, fetchHighlightedFileLines, ResolvedRev, resolveRev } from './backend'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
@@ -276,6 +278,13 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
+				{parseHash(this.props.location.hash).viewState && this.props.location.pathname !== '/sign-in' && (
+					<Panel
+						{...this.props}
+						repoName={`git://${parseBrowserRepoURL(this.props.location.pathname).repoName}`}
+						fetchHighlightedFileLines={fetchHighlightedFileLines}
+					/>
+				)}
             </div>
         )
     }

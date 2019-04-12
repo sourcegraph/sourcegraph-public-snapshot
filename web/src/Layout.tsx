@@ -6,11 +6,11 @@ import { ActivationProps } from '../../shared/src/components/activation/Activati
 import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
-import { ResizablePanel } from '../../shared/src/panel/Panel'
+
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { ErrorLike } from '../../shared/src/util/errors'
-import { parseHash } from '../../shared/src/util/url'
+
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GlobalContributions } from './contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
@@ -23,7 +23,6 @@ import { GlobalDebug } from './global/GlobalDebug'
 import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -36,7 +35,7 @@ import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import { parseBrowserRepoURL } from './util/url'
+
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
@@ -139,13 +138,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            {parseHash(props.location.hash).viewState && props.location.pathname !== '/sign-in' && (
-                <ResizablePanel
-                    {...props}
-                    repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                    fetchHighlightedFileLines={fetchHighlightedFileLines}
-                />
-            )}
+
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}

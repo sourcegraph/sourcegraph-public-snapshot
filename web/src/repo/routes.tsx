@@ -78,7 +78,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                         defaultBranch={defaultBranch || 'HEAD'}
                     />
                     {!hideRepoRevContent && (
-                        <div className="repo-rev-container__content">
+                        <div className={`repo-rev-container__content ${parseHash(location.hash).viewState && location.pathname !== '/sign-in' && 'repo-rev-container__content-panel-open'}`}>
                             {objectType === 'blob' ? (
                                 <BlobPage
                                     {...context}

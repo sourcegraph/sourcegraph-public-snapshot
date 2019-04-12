@@ -8,16 +8,23 @@
 @import './commits/RepositoryCommitsPage';
 
 .repo-rev-container {
-    flex: 1 1 auto;
+	display: block;
+	padding-top: 35px;
 
-    display: flex;
     min-height: 0;
-
     position: relative; // for sidebar toggle
 
     &__sidebar {
         background: #1c2736;
-
+		position: fixed;
+		top:80px;
+		overflow: scroll;
+		height: calc(100vh - 80px);
+		width: 285px;
+		@media screen and (max-width: 900px) {
+			width: 30vw;
+		}
+		// top: 80px;
         &-toggle {
             background: #1c2736;
 
@@ -26,17 +33,16 @@
             left: 0;
             z-index: 1; // overlay the content when sidebar is closed
         }
-
-        &-resizable {
-            max-width: 60%;
-            min-width: 8rem;
-            &--open .tree {
-                width: 16rem;
-            }
-        }
     }
 
     &__content {
+		left: 285px;
+		width: calc(100% - 285px);
+		@media screen and (max-width: 900px) {
+			left: 30vw;
+			width: calc(100% - 30vw)
+		}
+		position: absolute;
         flex: 1 1 auto;
 
         display: flex;
@@ -45,7 +51,30 @@
         min-width: 0;
 
         background-color: #0e121b;
+
+		.blob {
+			// Allow scrolling past end
+			padding-bottom: 3rem;
+		}
+		&-panel-open {
+			.blob {
+				// Allow scrolling past end
+				padding-bottom: calc(400px + 3rem);
+			}
+		}
     }
+	.panel {
+		position: fixed;
+		bottom: 0px;
+		height: 400px;
+		right:0;
+		overflow: scroll;
+		width: calc(100% - 285px);
+		@media screen and (max-width: 900px) {
+			left: 30vw;
+			width: calc(100% - 30vw)
+		}
+	}
 }
 
 .theme-light {

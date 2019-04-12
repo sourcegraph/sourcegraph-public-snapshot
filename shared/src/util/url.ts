@@ -165,6 +165,98 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
 }
 
 /**
+ * Parses the properties of a blob URL.
+ */
+export function parseBrowserRepoURL(href: string): ParsedRepoURI {
+    const loc = new URL(href, typeof window !== 'undefined' ? window.location.href : undefined)
+    let pathname = loc.pathname.slice(1) // trim leading '/'
+    if (pathname.endsWith('/')) {
+        pathname = pathname.substr(0, pathname.length - 1) // trim trailing '/'
+    }
+
+    const indexOfSep = pathname.indexOf('/-/')
+
+    // examples:
+    // - 'github.com/gorilla/mux'
+    // - 'github.com/gorilla/mux@revision'
+    // - 'foo/bar' (from 'sourcegraph.mycompany.com/foo/bar')
+    // - 'foo/bar@revision' (from 'sourcegraph.mycompany.com/foo/bar@revision')
+    // - 'foobar' (from 'sourcegraph.mycompany.com/foobar')
+    // - 'foobar@revision' (from 'sourcegraph.mycompany.com/foobar@revision')
+    let repoRev: string
+    if (indexOfSep === -1) {
+        repoRev = pathname // the whole string
+    } else {
+        repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
+    }
+    const { repoName, rev } = parseRepoRev(repoRev)
+    if (!repoName) {
+        throw new Error('unexpected repo url: ' + href)
+    }
+    const commitID = rev && /^[a-f0-9]{40}$/i.test(rev) ? rev : undefined
+
+    let filePath: string | undefined
+    let commitRange: string | undefined
+    const treeSep = pathname.indexOf('/-/tree/')
+    const blobSep = pathname.indexOf('/-/blob/')
+    const comparisonSep = pathname.indexOf('/-/compare/')
+    if (treeSep !== -1) {
+        filePath = pathname.substr(treeSep + '/-/tree/'.length)
+    }
+    if (blobSep !== -1) {
+        filePath = pathname.substr(blobSep + '/-/blob/'.length)
+    }
+    if (comparisonSep !== -1) {
+        commitRange = pathname.substr(comparisonSep + '/-/compare/'.length)
+    }
+    let position: Position | undefined
+    let range: Range | undefined
+    if (loc.hash) {
+        const parsedHash = parseHash(loc.hash.substr('#'.length))
+        if (parsedHash.line) {
+            position = {
+                line: parsedHash.line,
+                character: parsedHash.character || 0,
+            }
+            if (parsedHash.endLine) {
+                range = {
+                    start: position,
+                    end: {
+                        line: parsedHash.endLine,
+                        character: parsedHash.endCharacter || 0,
+                    },
+                }
+            }
+        }
+    }
+
+    return { repoName, rev, commitID, filePath, commitRange, position, range }
+}
+
+/** The results of parsing a repo-rev string like "my/repo@my/rev". */
+export interface ParsedRepoRev {
+    repoName: string
+
+    /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
+    rev?: string
+
+    /** The raw revision (e.g., "my%23branch" in "my/repo@my%23branch"). */
+    rawRev?: string
+}
+
+/**
+ * Parses a repo-rev string like "my/repo@my/rev" to the repo and rev components.
+ */
+export function parseRepoRev(repoRev: string): ParsedRepoRev {
+    const [repo, rev] = repoRev.split('@', 2)
+    return {
+        repoName: decodeURIComponent(repo),
+        rev: rev && decodeURIComponent(rev),
+        rawRev: rev,
+    }
+}
+
+/**
  * A repo
  */
 export interface Repo extends RepoSpec {}

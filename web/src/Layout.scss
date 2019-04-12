@@ -1,16 +1,13 @@
 .layout {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    flex-direction: column;
-    align-items: center;
+	display: block;
+	min-height: 100%;
 
     &__app-router-container {
-        flex: 1 1 auto;
-        min-height: 0;
-        display: flex;
-        overflow: auto;
+		position: absolute;
+		height: calc(100vh - 45px);
+        display: block;
         -webkit-overflow-scrolling: touch;
+		top:45px;
 
         &--restricted {
             padding: 0 2.5rem;

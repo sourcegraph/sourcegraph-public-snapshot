@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, UncontrolledDropdown } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
@@ -35,7 +35,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav-link py-0">
+            <UncontrolledDropdown nav={true} inNavbar={true} isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav py-0">
                 <DropdownToggle
                     caret={true}
                     className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle"
@@ -133,7 +133,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         </>
                     )}
                 </DropdownMenu>
-            </ButtonDropdown>
+            </UncontrolledDropdown>
         )
     }
 

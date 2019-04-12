@@ -36,7 +36,7 @@ export class DismissibleAlert extends React.PureComponent<Props, State> {
         return (
             <div className={`alert dismissible-alert ${this.props.className}`}>
                 <div className="dismissible-alert__content">{this.props.children}</div>
-                <button className="btn btn-icon" onClick={this.onDismiss}>
+                <button className="btn btn-icon dismissible-alert__close-icon" onClick={this.onDismiss}>
                     <CloseIcon className="icon-inline" />
                 </button>
             </div>

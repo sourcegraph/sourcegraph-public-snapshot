@@ -81,12 +81,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
         const STORAGE_KEY = 'repo-rev-sidebar'
 
         return (
-            <Resizable
-                className="repo-rev-container__sidebar-resizable"
-                handlePosition="right"
-                storageKey={STORAGE_KEY}
-                defaultSize={256 /* px */}
-                element={
+            <div className="repo-rev-container__sidebar">
                     <TabsWithLocalStorageViewStatePersistence
                         tabs={RepoRevSidebar.TABS}
                         storageKey={RepoRevSidebar.LAST_TAB_STORAGE_KEY}
@@ -131,7 +126,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         />
                     </TabsWithLocalStorageViewStatePersistence>
                 }
-            />
+            </div>
         )
     }
 
