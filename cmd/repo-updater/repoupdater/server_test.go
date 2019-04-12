@@ -487,10 +487,6 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 
 	var testCases []testCase
 	testCases = append(testCases,
-		testCase{
-			name: "needs a store",
-			err:  `Can't lookup id of "" without a store. Set SRC_SYNCER_ENABLED=true`,
-		},
 		func() testCase {
 			err := errors.New("boom")
 			return testCase{

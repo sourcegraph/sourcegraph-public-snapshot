@@ -47,14 +47,8 @@ func (s *Server) Handler() http.Handler {
 }
 
 func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Request) {
-	var resp protocol.RepoExternalServicesResponse
-
-	if s.Store == nil {
-		respond(w, http.StatusOK, &resp)
-		return
-	}
-
 	var req protocol.RepoExternalServicesRequest
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -73,6 +67,8 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		respond(w, http.StatusNotFound, errors.Errorf("repository with ID %v does not exist", req.ID))
 		return
 	}
+
+	var resp protocol.RepoExternalServicesResponse
 
 	svcIDs := rs[0].ExternalServiceIDs()
 	if len(svcIDs) == 0 {
@@ -98,7 +94,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	var resp protocol.ExcludeRepoResponse
 
-	if s.Store == nil || len(s.Kinds) == 0 {
+	if len(s.Kinds) == 0 {
 		respond(w, http.StatusOK, &resp)
 		return
 	}
@@ -252,12 +248,6 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if s.Store == nil {
-		err := errors.Errorf("Can't lookup id of %q without a store. Set SRC_SYNCER_ENABLED=true", req.Repo)
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
 	args := repos.StoreListReposArgs{Names: []string{string(req.Repo)}}
 	rs, err := s.Store.ListRepos(r.Context(), args)
 	if err != nil {
@@ -347,7 +337,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	var fns []getfn
 
-	if s.Store != nil && s.Syncer != nil {
+	if s.Syncer != nil {
 		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
 			repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
 				Names: []string{string(args.Repo)},
