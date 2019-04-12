@@ -320,16 +320,6 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
-type deadlineExceededError struct {}
-
-func (e deadlineExceededError) Error() string {
-	return "no results found by deadline in index search"
-}
-func (e deadlineExceededError) Timeout() bool   { return true }
-func (e deadlineExceededError) Temporary() bool { return true }
-
-var DeadlineExceededError = deadlineExceededError{}
-
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
 func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
@@ -482,7 +472,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
 	tr.LazyPrintf("resp.FileCount: %v, resp.MatchCount: %v, resp.Wait: %v, MaxWallTime: %v", resp.FileCount, resp.MatchCount, resp.Wait, searchOpts.MaxWallTime)
 	if resp.FileCount == 0 && resp.MatchCount == 0 && time.Now().Sub(t0) >= searchOpts.MaxWallTime {
-		return nil, false, nil, DeadlineExceededError
+		return nil, false, nil, errors.New("no results found by deadline in index search")
 	}
 	if err != nil {
 		return nil, false, nil, err

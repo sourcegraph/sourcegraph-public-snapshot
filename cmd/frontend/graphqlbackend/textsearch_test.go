@@ -232,7 +232,7 @@ func (ss *sleepySearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoek
 	return &zoekt.SearchResult{}, nil
 }
 
-var linuxMinimumNap = 10*time.Millisecond
+var linuxMinimumNap = 10 * time.Millisecond
 
 func Test_zoektSearchHEAD(t *testing.T) {
 	type args struct {
@@ -241,7 +241,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
 		searcher        zoekt.Searcher
-		opts			zoekt.SearchOptions
+		opts            zoekt.SearchOptions
 	}
 	tests := []struct {
 		name              string
@@ -249,31 +249,31 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		wantFm            []*fileMatchResolver
 		wantLimitHit      bool
 		wantReposLimitHit map[string]struct{}
-		wantErr           error
+		wantErr           bool
 	}{
 		{
-			name:"taking too long returns deadline exceeded error",
+			name: "taking too long returns deadline exceeded error",
 			args: args{
-				ctx: context.Background(),
+				ctx:   context.Background(),
 				query: &search.PatternInfo{PathPatternsAreRegExps: true},
 				repos: []*search.RepositoryRevisions{
 					{Repo: &types.Repo{}},
 				},
 				useFullDeadline: false,
-				searcher: &sleepySearcher{nap: linuxMinimumNap},
-				opts: zoekt.SearchOptions{MaxWallTime: linuxMinimumNap/2},
+				searcher:        &sleepySearcher{nap: linuxMinimumNap},
+				opts:            zoekt.SearchOptions{MaxWallTime: linuxMinimumNap / 2},
 			},
-			wantFm: nil,
-			wantLimitHit: false,
+			wantFm:            nil,
+			wantLimitHit:      false,
 			wantReposLimitHit: nil,
-			wantErr: DeadlineExceededError,
+			wantErr:           true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts)
-			if err != tt.wantErr {
-				t.Errorf("zoektSearchHEAD() error = %v, want %v", err, tt.wantErr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotFm, tt.wantFm) {
