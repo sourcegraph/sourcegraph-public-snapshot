@@ -22,21 +22,21 @@ export interface ModelService {
     /**
      * Adds a model.
      *
-     * @params model The model to add.
+     * @param model The model to add.
      */
     addModel(model: TextModel): void
 
     /**
      * Reports whether a model with a given URI has already been added.
      *
-     * @params uri The model URI to check.
+     * @param uri The model URI to check.
      */
     hasModel(uri: string): boolean
 
     /**
      * Removes a model.
      *
-     * @params uri The URI of the model to remove.
+     * @param uri The URI of the model to remove.
      */
     removeModel(uri: string): void
 }
