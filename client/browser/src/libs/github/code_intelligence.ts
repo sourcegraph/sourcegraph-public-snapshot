@@ -19,6 +19,7 @@ import { markdownBodyViewResolver } from './content_views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
+import { commentTextFieldResolver } from './text_fields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 
@@ -259,6 +260,7 @@ export const githubCodeHost: CodeHost = {
     codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
     codeViewSpecResolver,
     contentViewResolvers: [markdownBodyViewResolver],
+    textFieldResolvers: [commentTextFieldResolver],
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {

@@ -78,6 +78,7 @@ import { CodeViewSpec, CodeViewSpecResolver, fetchFileContents, trackCodeViews }
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
 
 registerHighlightContributions()
@@ -159,6 +160,11 @@ export interface CodeHost {
      * Resolve {@link ContentView}s from the DOM.
      */
     contentViewResolvers?: ViewResolver<ContentView>[]
+
+    /**
+     * Resolve {@link TextField}s from the DOM.
+     */
+    textFieldResolvers?: ViewResolver<TextField>[]
 
     /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
@@ -665,6 +671,17 @@ export function handleCodeHost({
     subscriptions.add(
         handleContentViews(
             from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
+                switchMap(enabled => (enabled ? mutations : []))
+            ),
+            { extensionsController },
+            codeHost
+        )
+    )
+
+    // Show completions in text fields (feature-flagged).
+    subscriptions.add(
+        handleTextFields(
+            from(featureFlags.isEnabled('experimentalTextFieldCompletion')).pipe(
                 switchMap(enabled => (enabled ? mutations : []))
             ),
             { extensionsController },
