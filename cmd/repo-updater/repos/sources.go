@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -14,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -380,8 +380,7 @@ func (s OtherSource) cloneURLs() ([]*url.URL, error) {
 	for _, repo := range s.conn.Repos {
 		cloneURL, err := parseRepo(repo)
 		if err != nil {
-			log15.Error("skipping invalid repo clone URL", "repo", repo, "url", s.conn.Url, "error", err)
-			continue
+			return nil, err
 		}
 		cloneURLs = append(cloneURLs, cloneURL)
 	}
