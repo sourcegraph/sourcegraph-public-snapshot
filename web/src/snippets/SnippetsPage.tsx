@@ -1,6 +1,6 @@
 import H from 'history'
 import { uniqueId } from 'lodash'
-import React, { useEffect, useState } from 'react'
+import React, { createRef, useEffect, useLayoutEffect, useState } from 'react'
 import { from } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
 import { EditorId } from '../../../shared/src/api/client/services/editorService'
@@ -8,6 +8,7 @@ import { TextModel } from '../../../shared/src/api/client/services/modelService'
 import { PanelViewWithComponent } from '../../../shared/src/api/client/services/view'
 import { SNIPPET_URI_SCHEME } from '../../../shared/src/api/client/types/textDocument'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol'
+import { EditorCompletionWidget } from '../../../shared/src/components/completion/EditorCompletionWidget'
 import { EditorTextField } from '../../../shared/src/components/editorTextField/EditorTextField'
 import { WithLinkPreviews } from '../../../shared/src/components/linkPreviews/WithLinkPreviews'
 import { Markdown } from '../../../shared/src/components/Markdown'
@@ -15,6 +16,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import { createLinkClickHandler } from '../../../shared/src/util/linkClickHandler'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { isDefined } from '../../../shared/src/util/types'
+import { COMPLETION_WIDGET_CLASS_PROPS } from '../components/completion/styles'
 import { setElementTooltip } from '../components/tooltip/Tooltip'
 
 interface Props extends ExtensionsControllerProps {
@@ -28,6 +30,10 @@ interface Props extends ExtensionsControllerProps {
  * Markdown-formatted text.
  */
 export const SnippetsPage: React.FunctionComponent<Props> = props => {
+    const [textArea, setTextArea] = useState<HTMLTextAreaElement | null>(null)
+    const textAreaRef = createRef<HTMLTextAreaElement>()
+    useLayoutEffect(() => setTextArea(textAreaRef.current))
+
     const [editorId, setEditorId] = useState<EditorId | null>(null)
     const [modelUri, setModelUri] = useState<string | null>(null)
 
@@ -93,16 +99,27 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
                 Snippet editor <span className="badge badge-warning">Experimental</span>
             </h1>
             {editorId && modelUri && (
-                <EditorTextField
-                    className={`form-control ${textAreaClassName || ''}`}
-                    placeholder="Type a snippet"
-                    editorId={editorId.editorId}
-                    modelUri={modelUri}
-                    autoFocus={true}
-                    spellCheck={false}
-                    rows={12}
-                    extensionsController={props.extensionsController}
-                />
+                <>
+                    {textArea && (
+                        <EditorCompletionWidget
+                            textArea={textArea}
+                            editorId={editorId.editorId}
+                            extensionsController={props.extensionsController}
+                            {...COMPLETION_WIDGET_CLASS_PROPS}
+                        />
+                    )}
+                    <EditorTextField
+                        className={`form-control ${textAreaClassName || ''}`}
+                        placeholder="Type a snippet"
+                        editorId={editorId.editorId}
+                        modelUri={modelUri}
+                        autoFocus={true}
+                        spellCheck={false}
+                        rows={12}
+                        textAreaRef={textAreaRef}
+                        extensionsController={props.extensionsController}
+                    />
+                </>
             )}
             {allPanelViews &&
                 allPanelViews.length > 0 &&

@@ -242,6 +242,11 @@ function createExtensionAPI(
                 selector: sourcegraph.DocumentSelector,
                 provider: sourcegraph.LocationProvider
             ) => languageFeatures.registerLocationProvider(id, selector, provider),
+
+            registerCompletionItemProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.CompletionItemProvider
+            ) => languageFeatures.registerCompletionItemProvider(selector, provider),
         },
 
         search: {

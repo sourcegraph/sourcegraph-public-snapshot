@@ -19,6 +19,7 @@ import { markdownBodyViewResolver } from './content_views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
+import { commentTextFieldResolver } from './text_fields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 
@@ -259,6 +260,7 @@ export const githubCodeHost: CodeHost = {
     codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
     codeViewSpecResolver,
     contentViewResolvers: [markdownBodyViewResolver],
+    textFieldResolvers: [commentTextFieldResolver],
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
@@ -285,6 +287,13 @@ export const githubCodeHost: CodeHost = {
         actionItemClass: 'btn btn-sm tooltipped tooltipped-s BtnGroup-item action-item--github',
         actionItemPressedClass: 'selected',
         actionItemIconClass: 'action-item__icon--github v-align-text-bottom',
+    },
+    completionWidgetClassProps: {
+        widgetContainerClassName: 'suggester-container',
+        widgetClassName: 'suggester',
+        listClassName: 'suggestions',
+        selectedListItemClassName: 'navigation-focus',
+        listItemClassName: 'text-normal',
     },
     hoverOverlayClassProps: {
         actionItemClassName: 'btn btn-secondary',

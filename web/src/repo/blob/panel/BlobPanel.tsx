@@ -202,6 +202,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                                   history={this.props.history}
                                                   location={this.props.location}
                                                   compact={true}
+                                                  extensionsController={this.props.extensionsController}
                                               />
                                           ),
                                       }
