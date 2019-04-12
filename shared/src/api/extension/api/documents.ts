@@ -1,17 +1,18 @@
 import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
+import { ExtDocument } from './textDocument'
 
 /** @internal */
 export interface ExtDocumentsAPI extends ProxyValue {
-    $acceptDocumentData(doc: TextDocument[]): void
+    $acceptDocumentData(doc: Pick<TextDocument, 'uri' | 'languageId' | 'text'>[]): void
 }
 
 /** @internal */
 export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
     public readonly [proxyValueSymbol] = true
 
-    private documents = new Map<string, TextDocument>()
+    private documents = new Map<string, ExtDocument>()
 
     constructor(private sync: () => Promise<void>) {}
 
@@ -20,7 +21,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      *
      * @internal
      */
-    public get(resource: string): TextDocument {
+    public get(resource: string): ExtDocument {
         const doc = this.documents.get(resource)
         if (!doc) {
             throw new Error(`document not found: ${resource}`)
@@ -35,7 +36,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      * @todo This is necessary because hovers can be sent before the document is loaded, and it will cause a
      * "document not found" error.
      */
-    public async getSync(resource: string): Promise<TextDocument> {
+    public async getSync(resource: string): Promise<ExtDocument> {
         const doc = this.documents.get(resource)
         if (doc) {
             return doc
@@ -49,20 +50,21 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      *
      * @internal
      */
-    public getAll(): TextDocument[] {
+    public getAll(): ExtDocument[] {
         return Array.from(this.documents.values())
     }
 
     public openedTextDocuments = new Subject<TextDocument>()
 
-    public $acceptDocumentData(docs: TextDocument[] | null): void {
-        if (!docs) {
+    public $acceptDocumentData(models: Pick<TextDocument, 'uri' | 'languageId' | 'text'>[] | null): void {
+        if (!models) {
             // We don't ever (yet) communicate to the extension when docs are closed.
             return
         }
-        for (const doc of docs) {
-            const isNew = !this.documents.has(doc.uri)
-            this.documents.set(doc.uri, doc)
+        for (const model of models) {
+            const isNew = !this.documents.has(model.uri)
+            const doc = new ExtDocument(model)
+            this.documents.set(model.uri, doc)
             if (isNew) {
                 this.openedTextDocuments.next(doc)
             }

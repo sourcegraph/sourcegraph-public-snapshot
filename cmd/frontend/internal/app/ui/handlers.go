@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 
@@ -185,8 +186,15 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		// Update gitserver contents for a repo whenever it is visited.
 		go func() {
 			ctx := context.Background()
-			if gitserverRepo, err := backend.GitRepo(ctx, common.Repo); err == nil {
-				repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo)
+			gitserverRepo, err := backend.GitRepo(ctx, common.Repo)
+			if err != nil {
+				log15.Error("backend.GitRepo", "error", err)
+				return
+			}
+
+			_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo)
+			if err != nil {
+				log15.Error("EnqueueRepoUpdate", "error", err)
 			}
 		}()
 	}

@@ -1,4 +1,4 @@
-# N# Sourcegraph Architecture diagram
+# Sourcegraph Architecture diagram
 
 ```mermaid
 graph LR

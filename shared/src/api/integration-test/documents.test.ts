@@ -1,13 +1,14 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { TextDocument } from 'sourcegraph'
+import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {
         test('lists text documents', async () => {
             const { extensionAPI } = await integrationTestContext()
-            expect(extensionAPI.workspace.textDocuments).toEqual([
+            assertToJSON(extensionAPI.workspace.textDocuments, [
                 { uri: 'file:///f', languageId: 'l', text: 't' },
             ] as TextDocument[])
         })
@@ -28,7 +29,7 @@ describe('Documents (integration)', () => {
             await from(extensionAPI.workspace.openedTextDocuments)
                 .pipe(take(1))
                 .toPromise()
-            expect(extensionAPI.workspace.textDocuments).toEqual([
+            assertToJSON(extensionAPI.workspace.textDocuments, [
                 { uri: 'file:///f', languageId: 'l', text: 't' },
                 { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             ] as TextDocument[])
@@ -57,7 +58,7 @@ describe('Documents (integration)', () => {
                 .pipe(take(1))
                 .toPromise()
 
-            expect(values).toEqual([{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
+            assertToJSON(values, [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
         })
     })
 })

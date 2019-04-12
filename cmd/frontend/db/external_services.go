@@ -420,7 +420,7 @@ func (c *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context
 var migrateOnce sync.Once
 
 // migrateJsonConfigToExternalServices performs a one time migration to populate
-// the new external_services database table with relavant entries in the site config.
+// the new external_services database table with relevant entries in the site config.
 // It is idempotent.
 //
 // This migration can be deleted as soon as (whichever happens first):

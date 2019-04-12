@@ -20,57 +20,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func TestServer_handleExternalServiceSync(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		svc  *api.ExternalService
-		err  string
-	}{
-		{
-			name: "bad kind",
-			svc:  &api.ExternalService{},
-			err:  "<nil>",
-		},
-		{
-			name: "bad service config",
-			svc: &api.ExternalService{
-				DisplayName: "Other",
-				Kind:        "OTHER",
-				Config:      "{",
-			},
-			err: "external-service=0: config error: failed to parse JSON: [CloseBraceExpected]; \n",
-		},
-	} {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			fa := repos.NewFakeInternalAPI([]*api.ExternalService{tc.svc}, nil)
-			s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(fa, nil)}
-			ts := httptest.NewServer(s.Handler())
-			defer ts.Close()
-
-			cli := repoupdater.Client{URL: ts.URL, HTTPClient: http.DefaultClient}
-			ctx := context.Background()
-
-			_, err := cli.SyncExternalService(ctx, *tc.svc)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("\nhave: %s\nwant: %s", have, want)
-			}
-		})
-	}
-}
-
 func TestServer_handleRepoLookup(t *testing.T) {
 	s := &Server{
-		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
-		InternalAPI:      &internalAPIFake{},
+		InternalAPI: &internalAPIFake{},
 	}
 	h := s.Handler()
 
@@ -167,9 +126,8 @@ func TestServer_handleRepoLookup(t *testing.T) {
 
 func TestRepoLookup(t *testing.T) {
 	s := Server{
-		Store:            new(repos.FakeStore),
-		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
-		InternalAPI:      &internalAPIFake{},
+		Store:       new(repos.FakeStore),
+		InternalAPI: &internalAPIFake{},
 	}
 
 	t.Run("no args", func(t *testing.T) {
@@ -236,9 +194,8 @@ func TestRepoLookup_found(t *testing.T) {
 		metadataUpdate: make(chan *api.ReposUpdateMetadataRequest, 1),
 	}
 	s := Server{
-		Store:            new(repos.FakeStore),
-		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
-		InternalAPI:      fa,
+		Store:       new(repos.FakeStore),
+		InternalAPI: fa,
 	}
 
 	want := &protocol.RepoLookupResult{
@@ -501,6 +458,123 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}
 }
 
+func TestServer_EnqueueRepoUpdate(t *testing.T) {
+	repo := repos.Repo{
+		Name: "github.com/foo/bar",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Metadata: new(github.Repository),
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "https://secret-token@github.com/foo/bar",
+			},
+		},
+	}
+
+	ctx := context.Background()
+
+	type testCase struct {
+		name  string
+		store repos.Store
+		repo  gitserver.Repo
+		res   *protocol.RepoUpdateResponse
+		err   string
+	}
+
+	var testCases []testCase
+	testCases = append(testCases,
+		func() testCase {
+			err := errors.New("boom")
+			return testCase{
+				name:  "returns an error on store failure",
+				store: &repos.FakeStore{ListReposError: err},
+				err:   `store.list-repos: boom`,
+			}
+		}(),
+		testCase{
+			name:  "missing repo",
+			store: new(repos.FakeStore), // empty store
+			repo:  gitserver.Repo{Name: "foo"},
+			err:   `repo "foo" not found in store`,
+		},
+		func() testCase {
+			repo := repo.Clone()
+			repo.Sources = nil
+
+			store := new(repos.FakeStore)
+			must(store.UpsertRepos(ctx, repo))
+
+			return testCase{
+				name:  "missing clone URL",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
+				},
+			}
+		}(),
+		func() testCase {
+			store := new(repos.FakeStore)
+			repo := repo.Clone()
+			must(store.UpsertRepos(ctx, repo))
+			cloneURL := "https://user:password@github.com/foo/bar"
+			return testCase{
+				name:  "given clone URL is preferred",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name), URL: cloneURL},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
+					URL:  cloneURL,
+				},
+			}
+		}(),
+		func() testCase {
+			store := new(repos.FakeStore)
+			repo := repo.Clone()
+			must(store.UpsertRepos(ctx, repo))
+			return testCase{
+				name:  "if missing, clone URL is set when stored",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
+					URL:  repo.CloneURLs()[0],
+				},
+			}
+		}(),
+	)
+
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer((&Server{Store: tc.store}).Handler())
+			defer srv.Close()
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.EnqueueRepoUpdate(ctx, tc.repo)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
 func TestServer_RepoExternalServices(t *testing.T) {
 	service1 := &repos.ExternalService{
 		ID:          1,
@@ -539,13 +613,6 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		},
 		Metadata: new(github.Repository),
 	}).With(repos.Opt.RepoSources(service1.URN(), service2.URN()))
-
-	must := func(err error) {
-		t.Helper()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
 
 	// We share the store across test cases. Initialize now so we have IDs
 	// set for test cases.
@@ -654,10 +721,9 @@ func TestRepoLookup_syncer(t *testing.T) {
 	})
 
 	s := Server{
-		OtherReposSyncer: repos.NewOtherReposSyncer(repos.NewFakeInternalAPI(nil, nil), nil),
-		Syncer:           &repos.Syncer{},
-		Store:            store,
-		InternalAPI:      &internalAPIFake{},
+		Syncer:      &repos.Syncer{},
+		Store:       store,
+		InternalAPI: &internalAPIFake{},
 	}
 
 	t.Run("not found", func(t *testing.T) {
@@ -723,6 +789,12 @@ func formatJSON(s string) string {
 		panic(err)
 	}
 	return formatted
+}
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func init() {
