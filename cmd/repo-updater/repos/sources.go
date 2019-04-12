@@ -340,7 +340,7 @@ type OtherSource struct {
 func NewOtherSource(svc *ExternalService) (*OtherSource, error) {
 	var c schema.OtherExternalServiceConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 	return &OtherSource{svc: svc, conn: &c}, nil
 }
