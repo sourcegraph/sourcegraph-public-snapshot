@@ -46,9 +46,9 @@ func main() {
 
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	dsn := conf.Get().ServiceConnections.DSN
+	dsn := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections.DSN
+		newDSN := conf.Get().ServiceConnections.PostgresDSN
 		if dsn != newDSN {
 			// The DSN was changed (e.g. by someone modifying the env vars on
 			// the frontend). We need to respect the new DSN. Easiest way to do

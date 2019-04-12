@@ -11,9 +11,9 @@ type ServiceConnections struct {
 	// to.
 	GitServers []string `json:"gitServers"`
 
-	// DSN is the DB data source name.
+	// PostgresDSN is the PostgreSQL DB data source name.
 	// eg: "postgres://sg@pgsql/sourcegraph?sslmode=false"
-	DSN string `json:"dsn"`
+	PostgresDSN string `json:"postgresDSN"`
 }
 
 // RawUnified is the unparsed variant of conf.Unified.

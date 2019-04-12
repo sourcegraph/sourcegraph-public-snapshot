@@ -125,7 +125,7 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 
 		// TODO(slimsag): future: pass GitServers list via this.
 		ServiceConnections: conftypes.ServiceConnections{
-			DSN: dsn(),
+			PostgresDSN: postgresDSN(),
 		},
 	}, nil
 }
@@ -152,15 +152,15 @@ func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnifi
 	return nil
 }
 
-func dsn() string {
+func postgresDSN() string {
 	username := ""
 	if user, err := user.Current(); err == nil {
 		username = user.Username
 	}
-	return doDSN(username, os.Getenv)
+	return doPostgresDSN(username, os.Getenv)
 }
 
-func doDSN(currentUser string, getenv func(string) string) string {
+func doPostgresDSN(currentUser string, getenv func(string) string) string {
 	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
 	if dsn := getenv("PGDATASOURCE"); dsn != "" {
 		return dsn

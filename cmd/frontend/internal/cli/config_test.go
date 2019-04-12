@@ -2,7 +2,7 @@ package cli
 
 import "testing"
 
-func TestDSN(t *testing.T) {
+func TestPostgresDSN(t *testing.T) {
 	cases := []struct {
 		name string
 		env  map[string]string
@@ -58,7 +58,7 @@ func TestDSN(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			have := doDSN("testuser", func(e string) string {
+			have := doPostgresDSN("testuser", func(e string) string {
 				return tc.env[e]
 			})
 			if have != tc.dsn {
