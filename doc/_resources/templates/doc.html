@@ -88,6 +88,264 @@
                                 <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
                             </svg>
                         </div>
+                        <ul class="content-nav-section expandable" data-nav-section="integration">
+                            <button class="content-nav-button"></button>
+                            <div class="close--icon">
+                                <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                </svg>
+                            </div>
+                            <li class="content-nav-no-hover">
+                                <a class="content-nav-section-header" href="/integration">Integrations</a>
+                                <ul class="content-nav-section-group">
+                                    <li><a href="/integration/aws_codecommit">AWS CodeCommit integration with Sourcegraph</a></li>
+                                    <li><a href="/integration/bitbucket_server">Bitbucket Server integration with Sourcegraph</a></li>
+                                    <li><a href="/integration/browser_search_engine">Browser search engine shortcuts</a></li>
+                                    <li><a href="/integration/editor">Editor integrations</a></li>
+                                    <li><a href="/integration/google_gsuite">G Suite and Chrome Enterprise integration</a></li>
+                                    <li><a href="/integration/github">GitHub integration with Sourcegraph</a></li>
+                                    <li><a href="/integration/gitlab">GitLab integration with Sourcegraph</a></li>
+                                    <li><a href="/integration/gitolite">Gitolite integration with Sourcegraph</a></li>
+                                    <li><a href="/integration/lightstep">LightStep integration with Sourcegraph</a></li>
+                                    <li><a href="/integration/phabricator">Phabricator integration with Sourcegraph</a></li>
+                                    <li><a href="/integration/browser_extension">Sourcegraph browser extension</a></li>
+                                    <li><a href="/integration/UBC Sourcegraph Agenda">UBC Sourcegraph Agenda</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <ul class="content-nav-section expandable" data-nav-section="admin">
+                            <button class="content-nav-button"></button>
+                            <div class="close--icon">
+                                <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                </svg>
+                            </div>
+                            <li class="content-nav-no-hover">
+                                <a class="content-nav-section-header" href="/admin">Site administration documentation</a>
+                                <ul class="content-nav-section-group">
+                                    <li><a href="/admin/ssl_https_self_signed_cert_nginx">Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate</a></li>
+                                    <li><a href="/admin/extensions">Administration of Sourcegraph extensions and the extension registry</a></li>
+                                    <li><a href="/admin/faq">Adminstration FAQ</a></li>
+                                    <li><a href="/admin/external_service">External services</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/external_service/aws_codecommit">AWS CodeCommit</a></li>
+                                            <li><a href="/admin/external_service/bitbucket_server">Bitbucket Server</a></li>
+                                            <li><a href="/admin/external_service/github">GitHub external service</a></li>
+                                            <li><a href="/admin/external_service/gitlab">GitLab</a></li>
+                                            <li><a href="/admin/external_service/gitolite">Gitolite</a></li>
+                                            <li><a href="/admin/external_service/other">Other Git repository hosts</a></li>
+                                            <li><a href="/admin/external_service/phabricator">Phabricator</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/admin/federation">Federation</a></li>
+                                    <li><a href="/admin/install">Installing Sourcegraph</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/install/docker">Install Sourcegraph with Docker</a></li>
+                                            <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker" )>
+                                                <ul>
+                                                    <li><a href="/admin/install/docker/aws">Install Sourcegraph with Docker on AWS</a></li>
+                                                    <li><a href="/admin/install/docker/digitalocean">Install Sourcegraph with Docker on DigitalOcean</a></li>
+                                                    <li><a href="/admin/install/docker/google_cloud">Install Sourcegraph with Docker on Google Cloud</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="/admin/install/kubernetes_cluster">Installing Sourcegraph on a Kubernetes cluster</a></li>
+                                            <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/admin/management_console">Management console</a></li>
+                                    <li><a href="/admin/migration">Migration guides</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/migration/opengrok">Migrating from Oracle OpenGrok to Sourcegraph for code search</a></li>
+                                            <li><a href="/admin/migration/3_0">Migrating to Sourcegraph 3.0.1+</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/admin/monitoring_and_tracing">Monitoring and tracing</a></li>
+                                    <li><a href="/admin/sourcegraph-nginx-mermaid">NGINX and Sourcegraph diagram</a></li>
+                                    <li><a href="/admin/subscriptions">Paid subscriptions for Sourcegraph Enterprise</a></li>
+                                    <li><a href="/admin/pings">Pings</a></li>
+                                    <li><a href="/admin/repo">Repositories</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/repo/add">Add repositories (from code hosts) to Sourcegraph</a></li>
+                                            <li><a href="/admin/repo/add_from_local_disk">Add repositories already cloned to disk</a></li>
+                                            <li><a href="/admin/repo/auth">Repositories that need HTTP(S) or SSH authentication</a></li>
+                                            <li><a href="/admin/repo/permissions">Repository permissions</a></li>
+                                            <li><a href="/admin/repo/webhooks">Repository webhooks</a></li>
+                                            <li><a href="/admin/repo/perforce">Using Perforce repositories with Sourcegraph</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/admin/search">Search configuration</a></li>
+                                    <li><a href="/admin/tls_ssl">Securing a Sourcegraph instance with TLS/SSL</a></li>
+                                    <li><a href="/admin/url">Setting the URL</a></li>
+                                    <li><a href="/admin/site_config">Site configuration</a></li>
+                                    <li><a href="/admin/config">Site configuration</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/config/critical_config">Critical configuration</a></li>
+                                            <li><a href="/admin/config/site_config">Site configuration</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/admin/nginx">Sourcegraph NGINX HTTP and HTTPS/SSL configuration</a></li>
+                                    <li><a href="/admin/postgres">Upgrading PostgreSQL</a></li>
+                                    <li><a href="/admin/updates">Upgrading Sourcegraph</a></li>
+                                    <li><a href="/admin/auth">User authentication (SSO)</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/auth/saml_with_microsoft_adfs">Configuring SAML with Microsoft Active Directory Federation Services (ADFS)</a></li>
+                                            <li><a href="/admin/auth/saml_with_onelogin">Configuring SAML with OneLogin</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/admin/user_data_deletion">User data deletion</a></li>
+                                    <li><a href="/admin/external_database">Using external databases with Sourcegraph</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <ul class="content-nav-section expandable" data-nav-section="api">
+                            <button class="content-nav-button"></button>
+                            <div class="close--icon">
+                                <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                </svg>
+                            </div>
+                            <li class="content-nav-no-hover">
+                                <a class="content-nav-section-header" href="/api">Sourcegraph APIs</a>
+                                <ul class="content-nav-section-group">
+                                    <li><a href="/api/graphql">Sourcegraph GraphQL API</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <ul class="content-nav-section expandable" data-nav-section="dev">
+                            <button class="content-nav-button"></button>
+                            <div class="close--icon">
+                                <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                </svg>
+                            </div>
+                            <li class="content-nav-no-hover">
+                                <a class="content-nav-section-header" href="/dev">Sourcegraph development documentation</a>
+                                <ul class="content-nav-section-group">
+                                    <li><a href="/dev/code_style_guide">Code style guide</a></li>
+                                    <li><a href="/dev/goals">Company goals</a></li>
+                                    <li><a href="/dev/graphql_api">Developing the Sourcegraph GraphQL API</a></li>
+                                    <li><a href="/dev/web_app">Developing the Sourcegraph web app</a></li>
+                                    <li><a href="/dev/local_development">Getting started with developing Sourcegraph</a></li>
+                                    <li><a href="/dev/incidents">Incidents</a></li>
+                                    <li><a href="/dev/issues">Issues</a></li>
+                                    <li><a href="/dev/release_issue_template">MAJOR.MINOR Release (YYYY-MM-20)</a></li>
+                                    <li><a href="/dev/patch_release_issue_template">MAJOR.MINOR.PATCH Release</a></li>
+                                    <li><a href="/dev/architecture-mermaid">N# Sourcegraph Architecture diagram</a></li>
+                                    <li><a href="/dev/postgresql">PostgreSQL storage tips</a></li>
+                                    <li><a href="/dev/phabricator_gitolite">Print info from gitolite</a></li>
+                                    <li><a href="/dev/product">Product</a></li>
+                                    <li><a href="/dev/releases">Releases</a></li>
+                                    <li><a href="/dev/retrospectives">Retrospectives</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/dev/retrospectives/3_0">3.0 Retrospective</a></li>
+                                            <li><a href="/dev/retrospectives/3_0_beta">3.0 beta retrospective</a></li>
+                                            <li><a href="/dev/retrospectives/3_2">3.2 retrospective</a></li>
+                                            <li><a href="/dev/retrospectives/3_3">3.3 retrospective</a></li>
+                                            <li><a href="/dev/retrospectives/customer_license_expiration">Customer license expiration P0 retrospective</a></li>
+                                            <li><a href="/dev/retrospectives/postgresql_upgrade">Tomás’ notes on the PostgreSQL upgrade</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/dev/architecture">Sourcegraph Architecture Overview</a></li>
+                                    <li><a href="/dev/conduct">Sourcegraph Community Code of Conduct</a></li>
+                                    <li><a href="/dev/documentation">Sourcegraph documentation guidelines</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/dev/documentation/site">Documentation site</a></li>
+                                            <li><a href="/dev/documentation/structure">Documentation structure</a></li>
+                                            <li><a href="/dev/documentation/style_guide">Documentation style guide</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/dev/faq">Sourcegraph open-source project FAQ</a></li>
+                                    <li><a href="/dev/roadmap">Sourcegraph roadmap</a></li>
+                                    <li><a href="/dev/style_guide">Sourcegraph style guide</a></li>
+                                    <li><a href="/dev/open_source_open_company">Sourcegraph: open product, open company, open source</a></li>
+                                    <li><a href="/dev/telemetry">Telemetry</a></li>
+                                    <li><a href="/dev/testing">Testing</a></li>
+                                    <li><a href="/dev/typescript">TypeScript development guide</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <ul class="content-nav-section expandable" data-nav-section="extensions">
+                            <button class="content-nav-button"></button>
+                            <div class="close--icon">
+                                <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                </svg>
+                            </div>
+                            <li class="content-nav-no-hover">
+                                <a class="content-nav-section-header" href="/extensions">Sourcegraph extensions</a>
+                                <ul class="content-nav-section-group">
+                                    <li><a href="/extensions/principles">Principles of extensibility for Sourcegraph</a></li>
+                                    <li><a href="/extensions/security">Security and privacy of Sourcegraph extensions</a></li>
+                                    <li><a href="/extensions/authoring">Sourcegraph extension authoring</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/extensions/authoring/builtin_commands">Builtin commands</a></li>
+                                            <li><a href="/extensions/authoring/cookbook">Cookbook for writing Sourcegraph extensions</a></li>
+                                            <li><a href="/extensions/authoring/creating">Creating a Sourcegraph extension</a></li>
+                                            <li><a href="/extensions/authoring/debugging">Debugging a Sourcegraph extension</a></li>
+                                            <li><a href="/extensions/authoring/ux_style_guide">Extension UX style guide</a></li>
+                                            <li><a href="/extensions/authoring/tutorials">Extension authoring tutorials</a></li>
+                                            <li class="content-nav-no-hover" data-sub-section-item="Extension authoring tutorials" )>
+                                                <ul>
+                                                    <li><a href="/extensions/authoring/tutorials/hello-world">Building a "Hello, world!" Sourcegraph extension</a></li>
+                                                    <li><a href="/extensions/authoring/tutorials/hello_world">Building a "Hello, world!" Sourcegraph extension</a></li>
+                                                    <li><a href="/extensions/authoring/tutorials/lang-specific-extension-tutorial">Building a language-specific extension tutorial</a></li>
+                                                    <li><a href="/extensions/authoring/tutorials/lang_specific_extension_tutorial">Building a language-specific extension tutorial</a></li>
+                                                    <li><a href="/extensions/authoring/tutorials/button_custom_commands">Sourcegraph extension buttons and custom commands</a></li>
+                                                    <li><a href="/extensions/authoring/tutorials/button-custom-commands">Sourcegraph extension buttons and custom commands</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="/extensions/authoring/local_development">Local development (sideloading)</a></li>
+                                            <li><a href="/extensions/authoring/publishing">Publishing a Sourcegraph extension</a></li>
+                                            <li><a href="/extensions/authoring/forking">Publishing a local copy of an extension</a></li>
+                                            <li><a href="/extensions/authoring/development_environment">Set up your development environment</a></li>
+                                            <li><a href="/extensions/authoring/activation">Sourcegraph extension activation</a></li>
+                                            <li><a href="/extensions/authoring/contributions">Sourcegraph extension contribution points</a></li>
+                                            <li><a href="/extensions/authoring/manifest">Sourcegraph extension manifest - package.json</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/extensions/usage">Using Sourcegraph extensions</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <ul class="content-nav-section expandable" data-nav-section="user">
+                            <button class="content-nav-button"></button>
+                            <div class="close--icon">
+                                <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                </svg>
+                            </div>
+                            <li class="content-nav-no-hover">
+                                <a class="content-nav-section-header" href="/user">User documentation</a>
+                                <ul class="content-nav-section-group">
+                                    <li><a href="/user/code_intelligence">Code intelligence overview</a></li>
+                                    <li><a href="/user/search">Code search overview</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/user/search/saved_searches">Saved searches</a></li>
+                                            <li><a href="/user/search/queries">Search query syntax</a></li>
+                                            <li><a href="/user/search/scopes">Search scopes</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/user/themes">Color themes</a></li>
+                                    <li><a href="/user/organizations">Organizations</a></li>
+                                    <li><a href="/user/repository">Repositories</a></li>
+                                    <li><a href="/user/dotgo-eu-2019">Sourcegraph @ dotGo EU 2019</a></li>
+                                    <li><a href="/user/tour">Sourcegraph tour</a></li>
+                                    <li><a href="/user/markdown">Sourcegraph-flavored Markdown</a></li>
+                                    <li><a href="/user/usage_statistics">Usage statistics</a></li>
+                                    <li><a href="/user/user_surveys">User surveys</a></li>
+                                </ul>
+                            </li>
+                        </ul>
                         <li class="content-nav-no-hover">
                             <a class="content-nav-section-header" href="/adopt">Adopting Sourcegraph</a>
                             <ul class="content-nav-section-group">
@@ -107,264 +365,6 @@
                             <a class="content-nav-section-header" href="/graphbook">Graphbook</a>
                             <ul class="content-nav-section-group">
                                 <li><a href="/graphbook/communication">Communication</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="content-nav-section expandable" data-nav-section="integration">
-                        <button class="content-nav-button"></button>
-                        <div class="close--icon">
-                            <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
-                            </svg>
-                        </div>
-                        <li class="content-nav-no-hover">
-                            <a class="content-nav-section-header" href="/integration">Integrations</a>
-                            <ul class="content-nav-section-group">
-                                <li><a href="/integration/aws_codecommit">AWS CodeCommit integration with Sourcegraph</a></li>
-                                <li><a href="/integration/bitbucket_server">Bitbucket Server integration with Sourcegraph</a></li>
-                                <li><a href="/integration/browser_search_engine">Browser search engine shortcuts</a></li>
-                                <li><a href="/integration/editor">Editor integrations</a></li>
-                                <li><a href="/integration/google_gsuite">G Suite and Chrome Enterprise integration</a></li>
-                                <li><a href="/integration/github">GitHub integration with Sourcegraph</a></li>
-                                <li><a href="/integration/gitlab">GitLab integration with Sourcegraph</a></li>
-                                <li><a href="/integration/gitolite">Gitolite integration with Sourcegraph</a></li>
-                                <li><a href="/integration/lightstep">LightStep integration with Sourcegraph</a></li>
-                                <li><a href="/integration/phabricator">Phabricator integration with Sourcegraph</a></li>
-                                <li><a href="/integration/browser_extension">Sourcegraph browser extension</a></li>
-                                <li><a href="/integration/UBC Sourcegraph Agenda">UBC Sourcegraph Agenda</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="content-nav-section expandable" data-nav-section="admin">
-                        <button class="content-nav-button"></button>
-                        <div class="close--icon">
-                            <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
-                            </svg>
-                        </div>
-                        <li class="content-nav-no-hover">
-                            <a class="content-nav-section-header" href="/admin">Site administration documentation</a>
-                            <ul class="content-nav-section-group">
-                                <li><a href="/admin/ssl_https_self_signed_cert_nginx">Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate</a></li>
-                                <li><a href="/admin/extensions">Administration of Sourcegraph extensions and the extension registry</a></li>
-                                <li><a href="/admin/faq">Adminstration FAQ</a></li>
-                                <li><a href="/admin/external_service">External services</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/admin/external_service/aws_codecommit">AWS CodeCommit</a></li>
-                                        <li><a href="/admin/external_service/bitbucket_server">Bitbucket Server</a></li>
-                                        <li><a href="/admin/external_service/github">GitHub external service</a></li>
-                                        <li><a href="/admin/external_service/gitlab">GitLab</a></li>
-                                        <li><a href="/admin/external_service/gitolite">Gitolite</a></li>
-                                        <li><a href="/admin/external_service/other">Other Git repository hosts</a></li>
-                                        <li><a href="/admin/external_service/phabricator">Phabricator</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/admin/federation">Federation</a></li>
-                                <li><a href="/admin/install">Installing Sourcegraph</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/admin/install/docker">Install Sourcegraph with Docker</a></li>
-                                        <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker" )>
-                                            <ul>
-                                                <li><a href="/admin/install/docker/aws">Install Sourcegraph with Docker on AWS</a></li>
-                                                <li><a href="/admin/install/docker/digitalocean">Install Sourcegraph with Docker on DigitalOcean</a></li>
-                                                <li><a href="/admin/install/docker/google_cloud">Install Sourcegraph with Docker on Google Cloud</a></li>
-                                            </ul>
-                                        </li>
-                                        <li><a href="/admin/install/kubernetes_cluster">Installing Sourcegraph on a Kubernetes cluster</a></li>
-                                        <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/admin/management_console">Management console</a></li>
-                                <li><a href="/admin/migration">Migration guides</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/admin/migration/opengrok">Migrating from Oracle OpenGrok to Sourcegraph for code search</a></li>
-                                        <li><a href="/admin/migration/3_0">Migrating to Sourcegraph 3.0.1+</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/admin/monitoring_and_tracing">Monitoring and tracing</a></li>
-                                <li><a href="/admin/sourcegraph-nginx-mermaid">NGINX and Sourcegraph diagram</a></li>
-                                <li><a href="/admin/subscriptions">Paid subscriptions for Sourcegraph Enterprise</a></li>
-                                <li><a href="/admin/pings">Pings</a></li>
-                                <li><a href="/admin/repo">Repositories</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/admin/repo/add">Add repositories (from code hosts) to Sourcegraph</a></li>
-                                        <li><a href="/admin/repo/add_from_local_disk">Add repositories already cloned to disk</a></li>
-                                        <li><a href="/admin/repo/auth">Repositories that need HTTP(S) or SSH authentication</a></li>
-                                        <li><a href="/admin/repo/permissions">Repository permissions</a></li>
-                                        <li><a href="/admin/repo/webhooks">Repository webhooks</a></li>
-                                        <li><a href="/admin/repo/perforce">Using Perforce repositories with Sourcegraph</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/admin/search">Search configuration</a></li>
-                                <li><a href="/admin/tls_ssl">Securing a Sourcegraph instance with TLS/SSL</a></li>
-                                <li><a href="/admin/url">Setting the URL</a></li>
-                                <li><a href="/admin/site_config">Site configuration</a></li>
-                                <li><a href="/admin/config">Site configuration</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/admin/config/critical_config">Critical configuration</a></li>
-                                        <li><a href="/admin/config/site_config">Site configuration</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/admin/nginx">Sourcegraph NGINX HTTP and HTTPS/SSL configuration</a></li>
-                                <li><a href="/admin/postgres">Upgrading PostgreSQL</a></li>
-                                <li><a href="/admin/updates">Upgrading Sourcegraph</a></li>
-                                <li><a href="/admin/auth">User authentication (SSO)</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/admin/auth/saml_with_microsoft_adfs">Configuring SAML with Microsoft Active Directory Federation Services (ADFS)</a></li>
-                                        <li><a href="/admin/auth/saml_with_onelogin">Configuring SAML with OneLogin</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/admin/user_data_deletion">User data deletion</a></li>
-                                <li><a href="/admin/external_database">Using external databases with Sourcegraph</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="content-nav-section expandable" data-nav-section="api">
-                        <button class="content-nav-button"></button>
-                        <div class="close--icon">
-                            <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
-                            </svg>
-                        </div>
-                        <li class="content-nav-no-hover">
-                            <a class="content-nav-section-header" href="/api">Sourcegraph APIs</a>
-                            <ul class="content-nav-section-group">
-                                <li><a href="/api/graphql">Sourcegraph GraphQL API</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="content-nav-section expandable" data-nav-section="dev">
-                        <button class="content-nav-button"></button>
-                        <div class="close--icon">
-                            <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
-                            </svg>
-                        </div>
-                        <li class="content-nav-no-hover">
-                            <a class="content-nav-section-header" href="/dev">Sourcegraph development documentation</a>
-                            <ul class="content-nav-section-group">
-                                <li><a href="/dev/code_style_guide">Code style guide</a></li>
-                                <li><a href="/dev/goals">Company goals</a></li>
-                                <li><a href="/dev/graphql_api">Developing the Sourcegraph GraphQL API</a></li>
-                                <li><a href="/dev/web_app">Developing the Sourcegraph web app</a></li>
-                                <li><a href="/dev/local_development">Getting started with developing Sourcegraph</a></li>
-                                <li><a href="/dev/incidents">Incidents</a></li>
-                                <li><a href="/dev/issues">Issues</a></li>
-                                <li><a href="/dev/release_issue_template">MAJOR.MINOR Release (YYYY-MM-20)</a></li>
-                                <li><a href="/dev/patch_release_issue_template">MAJOR.MINOR.PATCH Release</a></li>
-                                <li><a href="/dev/architecture-mermaid">N# Sourcegraph Architecture diagram</a></li>
-                                <li><a href="/dev/postgresql">PostgreSQL storage tips</a></li>
-                                <li><a href="/dev/phabricator_gitolite">Print info from gitolite</a></li>
-                                <li><a href="/dev/product">Product</a></li>
-                                <li><a href="/dev/releases">Releases</a></li>
-                                <li><a href="/dev/retrospectives">Retrospectives</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/dev/retrospectives/3_0">3.0 Retrospective</a></li>
-                                        <li><a href="/dev/retrospectives/3_0_beta">3.0 beta retrospective</a></li>
-                                        <li><a href="/dev/retrospectives/3_2">3.2 retrospective</a></li>
-                                        <li><a href="/dev/retrospectives/3_3">3.3 retrospective</a></li>
-                                        <li><a href="/dev/retrospectives/customer_license_expiration">Customer license expiration P0 retrospective</a></li>
-                                        <li><a href="/dev/retrospectives/postgresql_upgrade">Tomás’ notes on the PostgreSQL upgrade</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/dev/architecture">Sourcegraph Architecture Overview</a></li>
-                                <li><a href="/dev/conduct">Sourcegraph Community Code of Conduct</a></li>
-                                <li><a href="/dev/documentation">Sourcegraph documentation guidelines</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/dev/documentation/site">Documentation site</a></li>
-                                        <li><a href="/dev/documentation/structure">Documentation structure</a></li>
-                                        <li><a href="/dev/documentation/style_guide">Documentation style guide</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/dev/faq">Sourcegraph open-source project FAQ</a></li>
-                                <li><a href="/dev/roadmap">Sourcegraph roadmap</a></li>
-                                <li><a href="/dev/style_guide">Sourcegraph style guide</a></li>
-                                <li><a href="/dev/open_source_open_company">Sourcegraph: open product, open company, open source</a></li>
-                                <li><a href="/dev/telemetry">Telemetry</a></li>
-                                <li><a href="/dev/testing">Testing</a></li>
-                                <li><a href="/dev/typescript">TypeScript development guide</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="content-nav-section expandable" data-nav-section="extensions">
-                        <button class="content-nav-button"></button>
-                        <div class="close--icon">
-                            <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
-                            </svg>
-                        </div>
-                        <li class="content-nav-no-hover">
-                            <a class="content-nav-section-header" href="/extensions">Sourcegraph extensions</a>
-                            <ul class="content-nav-section-group">
-                                <li><a href="/extensions/principles">Principles of extensibility for Sourcegraph</a></li>
-                                <li><a href="/extensions/security">Security and privacy of Sourcegraph extensions</a></li>
-                                <li><a href="/extensions/authoring">Sourcegraph extension authoring</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/extensions/authoring/builtin_commands">Builtin commands</a></li>
-                                        <li><a href="/extensions/authoring/cookbook">Cookbook for writing Sourcegraph extensions</a></li>
-                                        <li><a href="/extensions/authoring/creating">Creating a Sourcegraph extension</a></li>
-                                        <li><a href="/extensions/authoring/debugging">Debugging a Sourcegraph extension</a></li>
-                                        <li><a href="/extensions/authoring/ux_style_guide">Extension UX style guide</a></li>
-                                        <li><a href="/extensions/authoring/tutorials">Extension authoring tutorials</a></li>
-                                        <li class="content-nav-no-hover" data-sub-section-item="Extension authoring tutorials" )>
-                                            <ul>
-                                                <li><a href="/extensions/authoring/tutorials/hello-world">Building a "Hello, world!" Sourcegraph extension</a></li>
-                                                <li><a href="/extensions/authoring/tutorials/hello_world">Building a "Hello, world!" Sourcegraph extension</a></li>
-                                                <li><a href="/extensions/authoring/tutorials/lang-specific-extension-tutorial">Building a language-specific extension tutorial</a></li>
-                                                <li><a href="/extensions/authoring/tutorials/lang_specific_extension_tutorial">Building a language-specific extension tutorial</a></li>
-                                                <li><a href="/extensions/authoring/tutorials/button_custom_commands">Sourcegraph extension buttons and custom commands</a></li>
-                                                <li><a href="/extensions/authoring/tutorials/button-custom-commands">Sourcegraph extension buttons and custom commands</a></li>
-                                            </ul>
-                                        </li>
-                                        <li><a href="/extensions/authoring/local_development">Local development (sideloading)</a></li>
-                                        <li><a href="/extensions/authoring/publishing">Publishing a Sourcegraph extension</a></li>
-                                        <li><a href="/extensions/authoring/forking">Publishing a local copy of an extension</a></li>
-                                        <li><a href="/extensions/authoring/development_environment">Set up your development environment</a></li>
-                                        <li><a href="/extensions/authoring/activation">Sourcegraph extension activation</a></li>
-                                        <li><a href="/extensions/authoring/contributions">Sourcegraph extension contribution points</a></li>
-                                        <li><a href="/extensions/authoring/manifest">Sourcegraph extension manifest - package.json</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/extensions/usage">Using Sourcegraph extensions</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="content-nav-section expandable" data-nav-section="user">
-                        <button class="content-nav-button"></button>
-                        <div class="close--icon">
-                            <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
-                            </svg>
-                        </div>
-                        <li class="content-nav-no-hover">
-                            <a class="content-nav-section-header" href="/user">User documentation</a>
-                            <ul class="content-nav-section-group">
-                                <li><a href="/user/code_intelligence">Code intelligence overview</a></li>
-                                <li><a href="/user/search">Code search overview</a></li>
-                                <li class="content-nav-no-hover">
-                                    <ul class="content-nav-section-subsection">
-                                        <li><a href="/user/search/saved_searches">Saved searches</a></li>
-                                        <li><a href="/user/search/queries">Search query syntax</a></li>
-                                        <li><a href="/user/search/scopes">Search scopes</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/user/themes">Color themes</a></li>
-                                <li><a href="/user/organizations">Organizations</a></li>
-                                <li><a href="/user/repository">Repositories</a></li>
-                                <li><a href="/user/dotgo-eu-2019">Sourcegraph @ dotGo EU 2019</a></li>
-                                <li><a href="/user/tour">Sourcegraph tour</a></li>
-                                <li><a href="/user/markdown">Sourcegraph-flavored Markdown</a></li>
-                                <li><a href="/user/usage_statistics">Usage statistics</a></li>
-                                <li><a href="/user/user_surveys">User surveys</a></li>
                             </ul>
                         </li>
                     </ul>
