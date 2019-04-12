@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
@@ -6,10 +7,12 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Subject } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
+import { catchError } from 'rxjs/operators'
 import { Activation, ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { asError } from '../../../shared/src/util/errors'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -156,7 +159,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
 interface Props extends RouteComponentProps<any>, ActivationProps {}
 
 interface State {
-    showEnabled: 'loading' | boolean
+    showEnabled: 'loading' | boolean | Error
 }
 
 class FilteredRepositoryConnection extends FilteredConnection<
@@ -216,6 +219,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
         },
     ]
 
+    private subscriptions = new Subscription()
     private repositoryUpdates = new Subject<void>()
 
     public state: State = {
@@ -225,9 +229,11 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminRepos')
 
-        fetchAllowEnableDisable()
-            .toPromise()
-            .then(allowEnableDisable => this.setState({ showEnabled: allowEnableDisable }), err => console.error(err))
+        this.subscriptions.add(
+            fetchAllowEnableDisable()
+                .pipe(catchError(err => [asError(err)]))
+                .subscribe(v => this.setState({ showEnabled: v }))
+        )
 
         // Refresh global alert about enabling repositories when the user visits here.
         refreshSiteFlags()
@@ -236,6 +242,8 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
     }
 
     public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+
         // Remove global alert about enabling repositories when the user navigates away from here.
         refreshSiteFlags()
             .toPromise()
@@ -245,6 +253,10 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
     public render(): JSX.Element | null {
         if (this.state.showEnabled === 'loading') {
             return <LoadingSpinner className="icon-inline" />
+        }
+
+        if (this.state.showEnabled instanceof Error) {
+            return <div className="alert alert-danger">{upperFirst(this.state.showEnabled.message)}</div>
         }
 
         const nodeProps: Pick<RepositoryNodeProps, 'onDidUpdate' | 'showEnabled' | 'activation'> = {
