@@ -157,9 +157,7 @@ func dsn() string {
 	if user, err := user.Current(); err == nil {
 		username = user.Username
 	}
-	return doDSN(username, func(e string) string {
-		return os.Getenv(e)
-	})
+	return doDSN(username, os.Getenv)
 }
 
 func doDSN(currentUser string, getenv func(string) string) string {
