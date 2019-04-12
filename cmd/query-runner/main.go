@@ -46,6 +46,11 @@ func main() {
 
 	go debugserver.Start()
 
+	// We rely on the frontend to provide us with the list of saved searches.
+	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
+		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
+	}
+
 	http.HandleFunc(queryrunnerapi.PathSavedQueryWasCreatedOrUpdated, serveSavedQueryWasCreatedOrUpdated)
 	http.HandleFunc(queryrunnerapi.PathSavedQueryWasDeleted, serveSavedQueryWasDeleted)
 	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
@@ -99,16 +104,24 @@ func (e *executorT) run(ctx context.Context) error {
 		e.forceRunInterval = &forceRunInterval
 	}
 
-	// Kick off fetching of the full list of saved queries from the frontend.
-	// Important to do this early on in case we get created/updated/deleted
-	// notifications for saved queries.
-	allSavedQueries.fetchInitialListFromFrontend()
+	/*
+		// Kick off fetching of the full list of saved queries from the frontend.
+		// Important to do this early on in case we get created/updated/deleted
+		// notifications for saved queries.
+		allSavedQueries.fetchInitialListFromFrontend()
+	*/
 
 	// TODO(slimsag): Make gitserver notify us about repositories being updated
 	// as we could avoid executing queries if repositories haven't updated
 	// (impossible for new results to exist).
 	for {
-		allSavedQueries := allSavedQueries.get()
+		allSavedQueries, err := api.InternalClient.SavedQueriesListAll(context.Background())
+		if err != nil {
+			log15.Error("executor: error fetching saved queries list (trying again in 5s)", "error", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
 		start := time.Now()
 		for _, query := range allSavedQueries {
 			err := e.runQuery(ctx, query.Spec, query.Config)

@@ -77,6 +77,7 @@ func (sq *allSavedQueriesCached) fetchInitialListFromFrontend() {
 	}
 }
 
+/*
 func serveSavedQueryWasCreatedOrUpdated(w http.ResponseWriter, r *http.Request) {
 	allSavedQueries.mu.Lock()
 	defer allSavedQueries.mu.Unlock()
@@ -153,7 +154,9 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	}
 	log15.Info("saved query deleted", "total_saved_queries", len(allSavedQueries.allSavedQueries))
 }
+*/
 
+// TODO: this needs to be called
 func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAndConfig) error {
 	ctx := context.Background()
 
