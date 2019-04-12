@@ -26,7 +26,6 @@ const OtherExternalServiceSchemaJSON = `{
     "repos": {
       "title": "List of repository clone URLs to be discovered.",
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "string",
         "minLength": 1,

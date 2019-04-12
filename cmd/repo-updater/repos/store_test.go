@@ -61,10 +61,19 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 		UpdatedAt:   now,
 	}
 
+	otherService := repos.ExternalService{
+		Kind:        "OTHER",
+		DisplayName: "Other code hosts",
+		Config:      `{"url": "https://git-host.mycorp.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
 	svcs := repos.ExternalServices{
 		&github,
 		&gitlab,
 		&bitbucketServer,
+		&otherService,
 	}
 
 	type testCase struct {
@@ -187,10 +196,19 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 			UpdatedAt:   now,
 		}
 
+		otherService := repos.ExternalService{
+			Kind:        "OTHER",
+			DisplayName: "Other code hosts",
+			Config:      `{"url": "https://git-host.mycorp.com"}`,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+
 		svcs := repos.ExternalServices{
 			&github,
 			&gitlab,
 			&bitbucketServer,
+			&otherService,
 		}
 
 		ctx := context.Background()
@@ -273,6 +291,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			"github",
 			"gitlab",
 			"bitbucketserver",
+			"other",
 		}
 
 		github := repos.Repo{
@@ -335,10 +354,26 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			Metadata: new(bitbucketserver.Repo),
 		}
 
+		otherRepo := repos.Repo{
+			Name: "git-host.com/org/foo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "git-host.com/org/foo",
+				ServiceID:   "https://git-host.com/",
+				ServiceType: "other",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:4": {
+					ID:       "extsvc:3",
+					CloneURL: "https://git-host.com/org/foo",
+				},
+			},
+		}
+
 		repositories := repos.Repos{
 			&github,
 			&gitlab,
 			&bitbucketServer,
+			&otherRepo,
 		}
 
 		ctx := context.Background()
@@ -469,16 +504,33 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		Metadata: new(bitbucketserver.Repo),
 	}
 
+	otherRepo := repos.Repo{
+		Name: "git-host.com/org/foo",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "git-host.com/org/foo",
+			ServiceID:   "https://git-host.com/",
+			ServiceType: "other",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:4": {
+				ID:       "extsvc:4",
+				CloneURL: "https://git-host.com/org/foo",
+			},
+		},
+	}
+
 	repositories := repos.Repos{
 		&github,
 		&gitlab,
 		&bitbucketServer,
+		&otherRepo,
 	}
 
 	kinds := []string{
 		"github",
 		"gitlab",
 		"bitbucketserver",
+		"other",
 	}
 
 	type testCase struct {
@@ -498,10 +550,11 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 		testCases = append(testCases, testCase{
 			name: "case-insensitive kinds",
-			args: func(_ repos.Repos) repos.StoreListReposArgs {
-				return repos.StoreListReposArgs{
-					Kinds: []string{"GiThUb", "GitLab", "BitBucketServer"},
+			args: func(_ repos.Repos) (args repos.StoreListReposArgs) {
+				for _, kind := range kinds {
+					args.Kinds = append(args.Kinds, strings.ToUpper(kind))
 				}
+				return args
 			},
 			stored: stored,
 			repos:  repos.Assert.ReposEqual(stored...),
