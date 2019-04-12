@@ -24,6 +24,7 @@ import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
+import { displayPerformanceWarning } from '../backend'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
@@ -59,6 +60,7 @@ interface State {
     didScrollToItem: boolean
     /** Map from repo name to display name */
     fileMatchRepoDisplayNames: ReadonlyMap<string, string>
+    displayPerformanceWarning: boolean
 }
 
 export class SearchResultsList extends React.PureComponent<SearchResultsListProps, State> {
@@ -93,6 +95,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             visibleItems: new Set<number>(),
             didScrollToItem: false,
             fileMatchRepoDisplayNames: new Map<string, string>(),
+            displayPerformanceWarning: false,
         }
 
         // Handle items that have become visible
@@ -265,6 +268,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
+
+        this.subscriptions.add(
+            displayPerformanceWarning().subscribe(displayPerformanceWarning =>
+                this.setState({ displayPerformanceWarning })
+            )
+        )
     }
 
     public componentDidUpdate(): void {
@@ -336,6 +345,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onSaveQueryClick={this.props.onSaveQueryClick}
                                         onShowMoreResultsClick={this.props.onShowMoreResultsClick}
                                         showDotComMarketing={this.props.isSourcegraphDotCom}
+                                        displayPerformanceWarning={this.state.displayPerformanceWarning}
                                     />
 
                                     {/* Results */}

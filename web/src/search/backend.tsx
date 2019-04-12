@@ -1,7 +1,7 @@
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
@@ -452,3 +452,31 @@ export const highlightCode = memoizeObservable(
         ),
     ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${ctx.disableTimeout}:${ctx.isLightTheme}`
 )
+
+/**
+ * Returns true if search performance and accuracy are limited because this is a
+ * single-node Docker deployment that is configured with more than 100 repositories.
+ */
+export function displayPerformanceWarning(): Observable<boolean> {
+    if (window.context.deployType !== 'docker-container') {
+        return of(false)
+    }
+    const manyReposWarningLimit = 100
+    return queryGraphQL(
+        gql`
+            query ManyReposWarning($first: Int) {
+                repositories(enabled: true, first: $first) {
+                    nodes {
+                        enabled
+                    }
+                }
+            }
+        `,
+        {
+            first: manyReposWarningLimit + 1,
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => (data.repositories.nodes || []).length > manyReposWarningLimit)
+    )
+}
