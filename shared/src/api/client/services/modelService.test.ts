@@ -46,6 +46,24 @@ describe('ModelService', () => {
         expect(modelService.hasModel('u2')).toBeFalsy()
     })
 
+    describe('updateModel', () => {
+        test('existing model', async () => {
+            const modelService = createModelService()
+            modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
+            modelService.updateModel('u', 't2')
+            expect(
+                await from(modelService.models)
+                    .pipe(first())
+                    .toPromise()
+            ).toEqual([{ uri: 'u', text: 't2', languageId: 'l' }])
+        })
+
+        test('nonexistent model', async () => {
+            const modelService = createModelService()
+            expect(() => modelService.updateModel('x', 't2')).toThrowError('model does not exist with URI x')
+        })
+    })
+
     describe('removeModel', () => {
         test('removes', async () => {
             const modelService = createModelService()
