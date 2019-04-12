@@ -29,18 +29,14 @@
                             <details-menu aria-label="Sourcegraph version" class="dropdown-menu" aria-labelledby="Version Dropdown">
 
                                 {{/* Update these after each release. */}}
-                                {{/* You do not have to use all of these. Simply remove the A tag to remove it from the dropdown. */}}
-
-                                {{$legacyRelease2136 := "v2.13.6"}}
-                                {{$previousRelease := "v3.0.0"}}
-                                {{$previousDotRelease := "v3.0.1"}}
-                                {{$currentReleaseVersion := "v3.1.1"}}
-
+                                {{$previousReleaseRevspec := "v3.1.2"}}
+                                {{$previousReleaseVersion := "3.1"}}
+                                {{$currentReleaseRevspec := "v3.2.2"}}
+                                {{$currentReleaseVersion := "3.2"}}
+                                {{$nextReleaseVersion := "master"}}
                                 <a rel="nofollow" class="dropdown-item monospace-text {{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
                                 <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $currentReleaseVersion .ContentVersion ""}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch">current</span></a>
-                                <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $previousDotRelease .ContentVersion ""}}active{{end}}" href="/@{{$previousDotRelease}}/{{.ContentPagePath}}">{{$previousDotRelease}}</a>
-                                <!-- <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $previousRelease .ContentVersion ""}}active{{end}}" href="/@{{$previousRelease}}/{{.ContentPagePath}}">{{$previousRelease}}</a> -->
-                                <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $legacyRelease2136 .ContentVersion ""}}active{{end}}" href="/@{{$legacyRelease2136}}/{{.ContentPagePath}}">{{$legacyRelease2136}}</a>
+                                <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $previousReleaseVersion .ContentVersion ""}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
                             </details-menu>
                         </div>
                     </div>
@@ -439,7 +435,7 @@
                                 <input type="checkbox">
                                 <ul>
                                     <li>
-                                        <a href="/blog">Blog
+                                        <a href="https://about.sourcegraph.com/blog">Blog
                                         </a>
                                     </li>
                                     <li>
@@ -468,19 +464,19 @@
                                 <input type="checkbox">
                                 <ul>
                                     <li>
-                                        <a href="/plan">Master plan
+                                        <a href="https://about.sourcegraph.com/plan">Master plan
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="/about">About
+                                        <a href="https://about.sourcegraph.com/about">About
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="/contact">Contact
+                                        <a href="https://about.sourcegraph.com/contact">Contact
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="/jobs">Careers
+                                        <a href="https://about.sourcegraph.com/jobs">Careers
                                         </a>
                                     </li>
                                 </ul>
@@ -497,20 +493,20 @@
                                 <input type="checkbox">
                                 <ul>
                                     <li>
-                                        <a href="https://docs.sourcegraph.com/user/search">Code search
+                                        <a href="https://about.sourcegraph.com/user/search">Code search
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="https://docs.sourcegraph.com/extensions">Code intelligence &amp;
+                                        <a href="https://about.sourcegraph.com/extensions">Code intelligence &amp;
                                             extensions
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="https://docs.sourcegraph.com/admin/install/cluster">Cluster
+                                        <a href="https://about.sourcegraph.com/admin/install/cluster">Cluster
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="https://docs.sourcegraph.com/integration">Integrations
+                                        <a href="https://about.sourcegraph.com/integration">Integrations
                                         </a>
                                     </li>
                                 </ul>
@@ -526,7 +522,7 @@
                                 <input type="checkbox">
                                 <ul>
                                     <li>
-                                        <a href="https://docs.sourcegraph.com">Documentation
+                                        <a href="/">Documentation
                                         </a>
                                     </li>
                                     <li>
@@ -534,11 +530,11 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="/pricing">Pricing
+                                        <a href="https://about.sourcegraph.com/pricing">Pricing
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="/security">Security
+                                        <a href="https://about.sourcegraph.com/security">Security
                                         </a>
                                     </li>
                                 </ul>
@@ -563,9 +559,8 @@
                                 <span>
                                     <p class="copyright">Copyright © 2019 Sourcegraph, Inc.</p>
                                 </span>
-                                <span class="terms">
-                                    <a href="/terms">Terms</a>
-                                    <a href="/privacy">Privacy</a>
+                                <span class="https://about.sourcegraph.com/terms">
+                                    <a href="https://about.sourcegraph.com/terms">Terms</a>
                                 </span>
                             </div>
                         </div>
