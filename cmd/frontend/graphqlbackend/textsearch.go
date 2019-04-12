@@ -470,7 +470,11 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
 	tr.LogFields(otlog.Int("resp.FileCount", resp.FileCount), otlog.Int("resp.MatchCount", resp.MatchCount), otlog.Object("searchOpts.MaxWallTime", searchOpts.MaxWallTime), otlog.Object("since(t0)", since(t0)))
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
-		err2 := errors.Errorf("no results found before timeout in index search (try timeout:%v)", 2*searchOpts.MaxWallTime)
+		timeoutToTry := 2*searchOpts.MaxWallTime
+		if timeoutToTry <= 0 {
+			timeoutToTry = 10*time.Second
+		}
+		err2 := errors.Errorf("no results found before timeout in index search (try timeout:%v)", timeoutToTry)
 		return nil, false, nil, err2
 	}
 	if err != nil {
