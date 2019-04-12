@@ -51,8 +51,8 @@ func main() {
 		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
 	}
 
-	http.HandleFunc(queryrunnerapi.PathSavedQueryWasCreatedOrUpdated, serveSavedQueryWasCreatedOrUpdated)
-	http.HandleFunc(queryrunnerapi.PathSavedQueryWasDeleted, serveSavedQueryWasDeleted)
+	//http.HandleFunc(queryrunnerapi.PathSavedQueryWasCreatedOrUpdated, serveSavedQueryWasCreatedOrUpdated)
+	//http.HandleFunc(queryrunnerapi.PathSavedQueryWasDeleted, serveSavedQueryWasDeleted)
 	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
 
 	ctx := context.Background()
@@ -114,6 +114,7 @@ func (e *executorT) run(ctx context.Context) error {
 	// TODO(slimsag): Make gitserver notify us about repositories being updated
 	// as we could avoid executing queries if repositories haven't updated
 	// (impossible for new results to exist).
+	var oldList map[string]api.SavedQuerySpecAndConfig
 	for {
 		allSavedQueries, err := api.InternalClient.SavedQueriesListAll(context.Background())
 		if err != nil {
@@ -121,6 +122,10 @@ func (e *executorT) run(ctx context.Context) error {
 			time.Sleep(5 * time.Second)
 			continue
 		}
+		if oldList != nil {
+			sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, allSavedQueries)
+		}
+		oldList = allSavedQueries
 
 		start := time.Now()
 		for _, query := range allSavedQueries {

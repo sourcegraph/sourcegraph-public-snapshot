@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
+/*
 var allSavedQueries = &allSavedQueriesCached{}
 
 // allSavedQueriesCached allows us to get a list of all the saved queries
@@ -76,6 +77,7 @@ func (sq *allSavedQueriesCached) fetchInitialListFromFrontend() {
 		return
 	}
 }
+*/
 
 /*
 func serveSavedQueryWasCreatedOrUpdated(w http.ResponseWriter, r *http.Request) {
@@ -155,6 +157,28 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	log15.Info("saved query deleted", "total_saved_queries", len(allSavedQueries.allSavedQueries))
 }
 */
+
+// TODO: this is pseudo-code, implement me
+func sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, newList map[string]api.SavedQuerySpecAndConfig) {
+	for diff(oldList, newList) {
+		if deleted {
+			// Notify users of saved query deletions.
+			go func() {
+				if err := notifySavedQueryWasCreatedOrUpdated(query, api.SavedQuerySpecAndConfig{}); err != nil {
+					log15.Error("Failed to handle created/updated saved search.", "query", query, "error", err)
+				}
+			}()
+		}
+		if created || updated {
+			// Notify users of saved query creation and updates.
+			go func() {
+				if err := notifySavedQueryWasCreatedOrUpdated(oldValue, newValue); err != nil {
+					log15.Error("Failed to handle created/updated saved search.", "query", query, "error", err)
+				}
+			}()
+		}
+	}
+}
 
 // TODO: this needs to be called
 func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAndConfig) error {
