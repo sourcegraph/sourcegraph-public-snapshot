@@ -36,15 +36,16 @@ type ErrorResponse struct {
 }
 
 const (
-	PathSavedQueryWasCreatedOrUpdated = "/saved-query-was-created-or-updated"
-	PathSavedQueryWasDeleted          = "/saved-query-was-deleted"
-	PathTestNotification              = "/test-notification"
+	//PathSavedQueryWasCreatedOrUpdated = "/saved-query-was-created-or-updated"
+	//PathSavedQueryWasDeleted          = "/saved-query-was-deleted"
+	PathTestNotification = "/test-notification"
 )
 
 type client struct {
 	client *http.Client
 }
 
+/*
 type SavedQueryWasCreatedOrUpdatedArgs struct {
 	SubjectAndConfig                 *SubjectAndConfig
 	DisableSubscriptionNotifications bool
@@ -75,6 +76,7 @@ func (c *client) SavedQueryWasDeleted(ctx context.Context, spec api.SavedQueryID
 		DisableSubscriptionNotifications: disableSubscriptionNotifications,
 	})
 }
+*/
 
 type TestNotificationArgs struct {
 	Spec api.SavedQueryIDSpec

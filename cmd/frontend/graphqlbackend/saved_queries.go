@@ -170,12 +170,14 @@ func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Read new configuration and inform the query-runner.
-	var config api.PartialConfigSavedQueries
-	if err := r.subject.readSettings(ctx, &config); err != nil {
-		return nil, err
-	}
-	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config, args.DisableSubscriptionNotifications)
+	/*
+		// Read new configuration and inform the query-runner.
+		var config api.PartialConfigSavedQueries
+		if err := r.subject.readSettings(ctx, &config); err != nil {
+			return nil, err
+		}
+		go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config, args.DisableSubscriptionNotifications)
+	*/
 
 	return &savedQueryResolver{
 		subject:     r.subject,
@@ -256,7 +258,7 @@ func (r *settingsMutation) UpdateSavedQuery(ctx context.Context, args *struct {
 	if err := r.subject.readSettings(ctx, &config); err != nil {
 		return nil, err
 	}
-	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), spec.Subject, config, false)
+	//go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), spec.Subject, config, false)
 	return toSavedQueryResolver(index, r.subject, config.SavedQueries[index]), nil
 }
 
@@ -287,7 +289,7 @@ func (r *settingsMutation) DeleteSavedQuery(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec, args.DisableSubscriptionNotifications)
+	//go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec, args.DisableSubscriptionNotifications)
 	return &EmptyResponse{}, nil
 }
 

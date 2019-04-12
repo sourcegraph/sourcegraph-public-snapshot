@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -64,38 +63,40 @@ func settingsCreateIfUpToDate(ctx context.Context, subject *settingsSubject, las
 		return nil, err
 	}
 
-	// Read new saved queries.
-	var newSavedQueries api.PartialConfigSavedQueries
-	if err := subject.readSettings(ctx, &newSavedQueries); err != nil {
-		return nil, err
-	}
+	/*
+		// Read new saved queries.
+		var newSavedQueries api.PartialConfigSavedQueries
+		if err := subject.readSettings(ctx, &newSavedQueries); err != nil {
+			return nil, err
+		}
 
-	// Notify query-runner of any changes.
-	createdOrUpdated := false
-	for i, newQuery := range newSavedQueries.SavedQueries {
-		if i >= len(oldSavedQueries.SavedQueries) {
-			// Created
-			createdOrUpdated = true
-			break
+		// Notify query-runner of any changes.
+		createdOrUpdated := false
+		for i, newQuery := range newSavedQueries.SavedQueries {
+			if i >= len(oldSavedQueries.SavedQueries) {
+				// Created
+				createdOrUpdated = true
+				break
+			}
+			if !newQuery.Equals(oldSavedQueries.SavedQueries[i]) {
+				// Updated or list was re-ordered.
+				createdOrUpdated = true
+				break
+			}
 		}
-		if !newQuery.Equals(oldSavedQueries.SavedQueries[i]) {
-			// Updated or list was re-ordered.
-			createdOrUpdated = true
-			break
+		if createdOrUpdated {
+			go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), subject.toSubject(), newSavedQueries, false)
 		}
-	}
-	if createdOrUpdated {
-		go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), subject.toSubject(), newSavedQueries, false)
-	}
-	for i, deletedQuery := range oldSavedQueries.SavedQueries {
-		if i <= len(newSavedQueries.SavedQueries) {
-			// Not deleted.
-			continue
+		for i, deletedQuery := range oldSavedQueries.SavedQueries {
+			if i <= len(newSavedQueries.SavedQueries) {
+				// Not deleted.
+				continue
+			}
+			// Deleted
+			spec := api.SavedQueryIDSpec{Subject: subject.toSubject(), Key: deletedQuery.Key}
+			go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec, false)
 		}
-		// Deleted
-		spec := api.SavedQueryIDSpec{Subject: subject.toSubject(), Key: deletedQuery.Key}
-		go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec, false)
-	}
+	*/
 
 	return latestSettings, nil
 }
