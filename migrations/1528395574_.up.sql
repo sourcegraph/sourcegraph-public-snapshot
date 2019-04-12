@@ -1,5 +1,7 @@
 BEGIN;
 
+ALTER TABLE saved_queries RENAME TO query_runner_state;
+
 CREATE TYPE user_or_org AS ENUM ('user', 'org');
 
 CREATE TABLE IF NOT EXISTS "saved_searches" (
