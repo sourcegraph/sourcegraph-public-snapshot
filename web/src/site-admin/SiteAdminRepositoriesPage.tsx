@@ -265,10 +265,10 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
             showEnabled: this.state.showEnabled,
         }
 
-        const filters = ([] as FilteredConnectionFilter[]).concat(
-            SiteAdminRepositoriesPage.FILTERS,
-            nodeProps.showEnabled ? SiteAdminRepositoriesPage.ENABLED_FILTERS : []
-        )
+        const filters = [
+            ...SiteAdminRepositoriesPage.FILTERS,
+            ...(nodeProps.showEnabled ? SiteAdminRepositoriesPage.ENABLED_FILTERS : []),
+        ]
 
         return (
             <div className="site-admin-repositories-page">
