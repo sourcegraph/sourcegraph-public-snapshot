@@ -320,6 +320,14 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
+type deadlineExceededError struct {}
+
+func (e *deadlineExceededError) Error() string {
+	return "no results found by deadline in index search"
+}
+
+var DeadlineExceededError = &deadlineExceededError{}
+
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
 func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
@@ -461,7 +469,12 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 	tr.LogFields(otlog.String("maxWallTime", searchOpts.MaxWallTime.String()))
 
+	t0 := time.Now()
 	resp, err := Search().Index.Client.Search(ctx, finalQuery, &searchOpts)
+	tr.LazyPrintf("resp.FileCount: %v, resp.MatchCount: %v, resp.Wait: %v, MaxWallTime: %v", resp.FileCount, resp.MatchCount, resp.Wait, searchOpts.MaxWallTime)
+	if resp.FileCount == 0 && resp.MatchCount == 0 && time.Now().Sub(t0) >= searchOpts.MaxWallTime {
+		return nil, false, nil, DeadlineExceededError
+	}
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -854,6 +867,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		if limitHit {
 			common.limitHit = true
 		}
+		tr.LazyPrintf("searchErr: %v, err: %v, overLimitCanceled: %v", searchErr, err, overLimitCanceled)
 		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr
 			tr.LazyPrintf("cancel indexed search due to error: %v", err)
