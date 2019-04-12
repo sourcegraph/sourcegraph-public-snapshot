@@ -6,12 +6,14 @@
 package usagestats
 
 import (
+	"context"
 	"math/rand"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -249,10 +251,18 @@ func uniques(dayStart time.Time, period *UsageDuration) (*ActiveUsers, error) {
 
 // uniquesCount calculates the number of unique users starting at 00:00:00 on a given UTC date over a
 // period of time (years, months, and days).
-func uniquesCount(dayStart time.Time, period *UsageDuration) (*types.SiteActivityPeriod, error) {
+func uniquesCount(dayStart time.Time, period *UsageDuration, calcStages bool) (*types.SiteActivityPeriod, error) {
 	userIDs, err := uniques(dayStart, period)
 	if err != nil {
 		return nil, err
+	}
+
+	var stages *types.Stages
+	if calcStages {
+		stages, err = stageUniques(dayStart, period, userIDs.Registered)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &types.SiteActivityPeriod{
@@ -261,6 +271,7 @@ func uniquesCount(dayStart time.Time, period *UsageDuration) (*types.SiteActivit
 		RegisteredUserCount:  int32(len(userIDs.Registered)),
 		AnonymousUserCount:   int32(len(userIDs.Anonymous)),
 		IntegrationUserCount: int32(len(userIDs.UsedIntegrations)),
+		Stages:               stages,
 	}, nil
 }
 
@@ -269,7 +280,7 @@ func daus(dayPeriods int) ([]*types.SiteActivityPeriod, error) {
 	var daus []*types.SiteActivityPeriod
 	now := timeNow().UTC()
 	for daysAgo := 0; daysAgo < dayPeriods; daysAgo++ {
-		uniques, err := uniquesCount(now.AddDate(0, 0, -daysAgo), &UsageDuration{Days: 1})
+		uniques, err := uniquesCount(now.AddDate(0, 0, -daysAgo), &UsageDuration{Days: 1}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -289,7 +300,7 @@ func waus(weekPeriods int) ([]*types.SiteActivityPeriod, error) {
 
 	for w := 0; w < weekPeriods; w++ {
 		weekStartDate := startOfWeek(w)
-		uniques, err := uniquesCount(weekStartDate, &UsageDuration{Days: 7})
+		uniques, err := uniquesCount(weekStartDate, &UsageDuration{Days: 7}, true)
 		if err != nil {
 			return nil, err
 		}
@@ -310,7 +321,7 @@ func maus(monthPeriods int) ([]*types.SiteActivityPeriod, error) {
 
 	for m := 0; m < monthPeriods; m++ {
 		monthStartDate := startOfMonth(m)
-		uniques, err := uniquesCount(monthStartDate, &UsageDuration{Months: 1})
+		uniques, err := uniquesCount(monthStartDate, &UsageDuration{Months: 1}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -323,6 +334,119 @@ func maus(monthPeriods int) ([]*types.SiteActivityPeriod, error) {
 func ListUsersThisMonth() (*ActiveUsers, error) {
 	monthStartDate := startOfMonth(0)
 	return uniques(monthStartDate, &UsageDuration{Months: 1})
+}
+
+func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives []string) (*types.Stages, error) {
+	ctx := context.Background()
+	var (
+		manageUserIDs    = map[string]bool{}
+		planUserIDs      = map[string]bool{} // none currently
+		codeUserIDs      = map[string]bool{}
+		reviewUserIDs    = map[string]bool{}
+		verifyUserIDs    = map[string]bool{}
+		packageUserIDs   = map[string]bool{} // none currently
+		deployUserIDs    = map[string]bool{} // none currently
+		configureUserIDs = map[string]bool{} // none currently
+		monitorUserIDs   = map[string]bool{}
+		secureUserIDs    = map[string]bool{} // none currently
+		automateUserIDs  = map[string]bool{} // none currently
+	)
+
+	dayStart = time.Date(dayStart.Year(), dayStart.Month(), dayStart.Day(), 0, 0, 0, 0, time.UTC)
+	dayEnd := dayStart.AddDate(0, period.Months, period.Days)
+
+	var activeUserIDs []int32
+	for _, userID := range registeredActives {
+		userIDInt, err := strconv.Atoi(userID)
+		if err != nil {
+			return nil, err
+		}
+		activeUserIDs = append(activeUserIDs, int32(userIDInt))
+	}
+
+	//// MANAGE ////
+	// 1) any activity from a site admin
+	// 2) any usage of an API access token
+
+	// Loop through all active registered users, see if any are admins
+	users, err := db.Users.List(ctx, &db.UsersListOptions{UserIDs: activeUserIDs})
+	if err != nil {
+		return nil, err
+	}
+	for _, user := range users {
+		if user.SiteAdmin {
+			manageUserIDs[strconv.Itoa(int(user.ID))] = true
+		}
+	}
+	// Loop through all access tokens used in the past week
+	tokens, err := db.AccessTokens.List(ctx, db.AccessTokensListOptions{LastUsedAfter: &dayStart, LastUsedBefore: &dayEnd})
+	if err != nil {
+		return nil, err
+	}
+	for _, token := range tokens {
+		manageUserIDs[strconv.Itoa(int(token.CreatorUserID))] = true
+	}
+
+	//// PLAN ////
+	// none currently
+
+	//// CODE ////
+	// 1) any searches
+
+	//// REVIEW ////
+
+	//// VERIFY ////
+
+	//// PACKAGE ////
+	// none currently
+
+	//// DEPLOY ////
+	// none currently
+
+	//// CONFIGURE ////
+	// none currently
+
+	//// MONITOR ////
+
+	//// SECURE ////
+	// none currently
+
+	//// AUTOMATE ////
+	// none currently
+
+	// // Start at 00:00:00 UTC of the last day, and loop backwards until reaching the start
+	// d := dayEnd.AddDate(0, 0, -1)
+	// for d.After(dayStart) || d.Equal(dayStart) {
+	// 	values, err := redis.Values(c.Do("SMEMBERS", usersActiveKeyFromDate(d)))
+	// 	if err != nil && err != redis.ErrNil {
+	// 		return nil, err
+	// 	}
+	// 	for _, id := range values {
+	// 		bid := id.([]byte)
+	// 		sid := string(bid)
+	// 		allUniqueUserIDs[sid] = true
+	// 		if len(bid) != 36 { // id is a numerical Sourcegraph user id, not an anonymous user's UUID
+	// 			registeredUserIDs[sid] = true
+	// 		} else {
+	// 			anonymousUserIDs[sid] = true
+	// 		}
+	// 	}
+
+	// 	d = d.AddDate(0, 0, -1)
+	// }
+	return &types.Stages{
+		Manage:    int32(len(keys(manageUserIDs))),
+		Plan:      int32(len(keys(planUserIDs))),
+		Code:      int32(len(keys(codeUserIDs))),
+		Review:    int32(len(keys(reviewUserIDs))),
+		Verify:    int32(len(keys(verifyUserIDs))),
+		Package:   int32(len(keys(packageUserIDs))),
+		Deploy:    int32(len(keys(deployUserIDs))),
+		Configure: int32(len(keys(configureUserIDs))),
+		Monitor:   int32(len(keys(monitorUserIDs))),
+		Secure:    int32(len(keys(secureUserIDs))),
+		Automate:  int32(len(keys(automateUserIDs))),
+	}, nil
 }
 
 // gc expires active user sets after the max of daysOfHistory, weeksOfHistory, and monthsOfHistory have passed.
