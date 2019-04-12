@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The new `bitbucketserver.repositoryQuery` setting in [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to use Bitbucket API repository search queries to select repos to be synced.
 - "Quick configure" buttons for common actions have been added to the config editor for all external services.
 - Site-admins now receive an alert every day for the seven days before their license key expires.
-- All users will see a dismissable warning about limited search performance and accuracy on when using a single-node Docker deployment of Sourcegraph that has more than 100 repositories enabled.
+- All users will see a dismissible warning about limited search performance and accuracy on when using the sourcegraph/server Docker image with more than 100 repositories enabled.
 
 ### Changed
 
