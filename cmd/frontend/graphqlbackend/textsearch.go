@@ -415,7 +415,7 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -471,8 +471,9 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
 	tr.LogFields(otlog.Int("resp.FileCount", resp.FileCount), otlog.Int("resp.MatchCount", resp.MatchCount), otlog.Object("searchOpts.MaxWallTime", searchOpts.MaxWallTime))
-	if resp.FileCount == 0 && resp.MatchCount == 0 && time.Since(t0) >= searchOpts.MaxWallTime {
-		return nil, false, nil, errors.New("no results found by deadline in index search")
+	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
+		err2 := errors.New("no results found before timeout in index search (try timeout: directive with larger value)")
+		return nil, false, nil, err2
 	}
 	if err != nil {
 		return nil, false, nil, err
@@ -852,7 +853,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		query := args.Pattern
 		k := zoektResultCountFactor(len(zoektRepos), query)
 		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, Search().Index.Client, opts)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {

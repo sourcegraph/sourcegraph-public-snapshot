@@ -219,20 +219,17 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-// sleepySearcher is a zoekt.Searcher that sleeps for a specified amount of time and then returns no results.
-type sleepySearcher struct {
-	nap time.Duration
+// fakeSearcher is a zoekt.Searcher that returns a predefined search result.
+type fakeSearcher struct {
+	result *zoekt.SearchResult
 
 	// Default all unimplemented zoekt.Searcher methods to panic.
 	zoekt.Searcher
 }
 
-func (ss *sleepySearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	time.Sleep(ss.nap)
-	return &zoekt.SearchResult{}, nil
+func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	return ss.result, nil
 }
-
-var linuxMinimumNap = 10 * time.Millisecond
 
 func Test_zoektSearchHEAD(t *testing.T) {
 	type args struct {
@@ -242,6 +239,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		useFullDeadline bool
 		searcher        zoekt.Searcher
 		opts            zoekt.SearchOptions
+		since			func(time.Time) time.Duration
 	}
 	tests := []struct {
 		name              string
@@ -252,7 +250,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		wantErr           bool
 	}{
 		{
-			name: "taking too long returns deadline exceeded error",
+			name: "returning no results before timeout gives no error",
 			args: args{
 				ctx:   context.Background(),
 				query: &search.PatternInfo{PathPatternsAreRegExps: true},
@@ -260,8 +258,27 @@ func Test_zoektSearchHEAD(t *testing.T) {
 					{Repo: &types.Repo{}},
 				},
 				useFullDeadline: false,
-				searcher:        &sleepySearcher{nap: linuxMinimumNap},
-				opts:            zoekt.SearchOptions{MaxWallTime: linuxMinimumNap / 2},
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
+				since:			 func(time.Time) time.Duration { return time.Second - time.Millisecond },
+			},
+			wantFm:            nil,
+			wantLimitHit:      false,
+			wantReposLimitHit: nil,
+			wantErr:           false,
+		},
+		{
+			name: "taking too long with no matches returns error",
+			args: args{
+				ctx:   context.Background(),
+				query: &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos: []*search.RepositoryRevisions{
+					{Repo: &types.Repo{}},
+				},
+				useFullDeadline: false,
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
+				since:			 func(time.Time) time.Duration { return time.Second },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -271,7 +288,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts)
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
