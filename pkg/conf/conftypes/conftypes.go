@@ -11,8 +11,9 @@ type ServiceConnections struct {
 	// to.
 	GitServers []string `json:"gitServers"`
 
-	// PostgreSQL environment variables configured on the frontend.
-	PGSSLMODE, PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE string
+	// DSN is the DB data source name.
+	// eg: "postgres://sg@pgsql/sourcegraph?sslmode=false"
+	DSN string `json:"dsn"`
 }
 
 // RawUnified is the unparsed variant of conf.Unified.

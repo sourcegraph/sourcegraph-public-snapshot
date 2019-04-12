@@ -6,7 +6,6 @@ import (
 	"database/sql/driver"
 	"net/url"
 	"os"
-	"os/user"
 	"strconv"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/migrations"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -33,62 +31,6 @@ type Tx interface {
 // A TxBeginner captures BeginTx method of a sql.DB
 type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
-}
-
-// NewDSN returns a default DSN overriden with PGXXX environment variables.
-func NewDSN() *url.URL {
-	u := DefaultDSN()
-	UpdateDSNFromConf(u)
-	return u
-}
-
-// DefaultDSN returns the default DSN used by repo updater.
-func DefaultDSN() *url.URL {
-	username := "postgres"
-
-	user, err := user.Current()
-	if err == nil {
-		username = user.Username
-	}
-
-	return &url.URL{
-		Scheme:   "postgres",
-		User:     url.User(username),
-		Host:     "127.0.0.1:5432",
-		Path:     "/sourcegraph",
-		RawQuery: "sslmode=false",
-	}
-}
-
-// UpdateDSNFromConf updates dsn based on PGXXX environment variables set on the frontend.
-func UpdateDSNFromConf(dsn *url.URL) {
-	sc := conf.Get().ServiceConnections
-
-	if sc.PGHOST != "" {
-		dsn.Host = sc.PGHOST
-	}
-
-	if sc.PGPORT != "" {
-		dsn.Host += ":" + sc.PGPORT
-	}
-
-	if sc.PGUSER != "" {
-		if sc.PGPASSWORD != "" {
-			dsn.User = url.UserPassword(sc.PGUSER, sc.PGPASSWORD)
-		} else {
-			dsn.User = url.User(sc.PGUSER)
-		}
-	}
-
-	if sc.PGDATABASE != "" {
-		dsn.Path = sc.PGDATABASE
-	}
-
-	if sc.PGSSLMODE != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sc.PGSSLMODE)
-		dsn.RawQuery = qry.Encode()
-	}
 }
 
 // NewDB returns a new *sql.DB from the given dsn (data source name).

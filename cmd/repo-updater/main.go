@@ -46,10 +46,10 @@ func main() {
 
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	dsn := repos.NewDSN().String()
+	dsn := conf.Get().ServiceConnections.DSN
 	conf.Watch(func() {
-		newDSN := repos.NewDSN().String()
-		if dsn != repos.NewDSN().String() {
+		newDSN := conf.Get().ServiceConnections.DSN
+		if dsn != newDSN {
 			// The DSN was changed (e.g. by someone modifying the env vars on
 			// the frontend). We need to respect the new DSN. Easiest way to do
 			// that is to restart our service (kubernetes/docker/goreman will
