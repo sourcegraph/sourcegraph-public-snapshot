@@ -10,6 +10,7 @@ window.sgdocs = (() => {
     init: (breadcrumbs) => {
       BREADCRUMBS_DATA = breadcrumbs ? breadcrumbs : [];
       BREADCRUMBS = document.querySelector('#breadcrumbs')
+      BREADCRUMBS_MOBILE = document.querySelector('#breadcrumbs-mobile')
 
       SEARCH_FORMS = document.querySelectorAll('.search-form')
 
@@ -19,12 +20,13 @@ window.sgdocs = (() => {
 
       CONTENT_NAV = document.querySelector('#content-nav')
 
-      MOBILE_NAV_BUTTON = BREADCRUMBS.querySelector('input[type="button"]')
+      MOBILE_NAV_BUTTON = BREADCRUMBS_MOBILE.querySelector('input[type="button"]')
 
       searchInit()
       versionSelectorInit()
       mobileNavInit()
       navInit()
+      breadcrumbsInit()
     },
   }
 
@@ -71,7 +73,7 @@ window.sgdocs = (() => {
     MOBILE_NAV_BUTTON.addEventListener('click', e => {
       CONTENT_NAV.classList.toggle('mobile-show')
       document.body.classList.toggle('fix-document.body')
-      BREADCRUMBS.classList.toggle('fixed')
+      BREADCRUMBS_MOBILE.classList.toggle('fixed')
     })
   }
 
@@ -87,6 +89,16 @@ window.sgdocs = (() => {
 
     document.querySelectorAll('button.content-nav-button').forEach(el => {
       el.addEventListener('click', e => e.srcElement.closest('.content-nav-section').classList.toggle('expanded'))
+    })
+  }
+
+  function breadcrumbsInit() {
+    document.querySelectorAll('.breadcrumb-links a').forEach((el, index) => {
+      if(index > 0) {
+        let text = el.text.replace(/_/g, ' ')
+        text = text.charAt(0).toUpperCase() + text.slice(1);
+        el.text = text;
+        }
     })
   }
 })()
