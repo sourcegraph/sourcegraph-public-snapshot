@@ -364,7 +364,58 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 	return b.String()
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
+	// If we're only searching a small number of repositories, return more comprehensive results. This is
+	// arbitrary.
+	k := 1
+	switch {
+	case numRepos <= 500:
+		k = 2
+	case numRepos <= 100:
+		k = 3
+	case numRepos <= 50:
+		k = 5
+	case numRepos <= 25:
+		k = 8
+	case numRepos <= 10:
+		k = 10
+	case numRepos <= 5:
+		k = 100
+	}
+	if query.FileMatchLimit > defaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	}
+	return k
+}
+
+func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
+	searchOpts := zoekt.SearchOptions{
+		MaxWallTime:            1500 * time.Millisecond,
+		ShardMaxMatchCount:     100 * k,
+		TotalMaxMatchCount:     100 * k,
+		ShardMaxImportantMatch: 15 * k,
+		TotalMaxImportantMatch: 25 * k,
+		MaxDocDisplayCount:     2 * defaultMaxSearchResults,
+	}
+
+	// We want zoekt to return more than FileMatchLimit results since we use
+	// the extra results to populate reposLimitHit. Additionally the defaults
+	// are very low, so we always want to return at least 2000.
+	if query.FileMatchLimit > defaultMaxSearchResults {
+		searchOpts.MaxDocDisplayCount = 2 * int(query.FileMatchLimit)
+	}
+	if searchOpts.MaxDocDisplayCount < 2000 {
+		searchOpts.MaxDocDisplayCount = 2000
+	}
+
+	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	}
+
+	return searchOpts
+}
+
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -392,50 +443,6 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		tr.Finish()
 	}()
 
-	// If we're only searching a small number of repositories, return more comprehensive results. This is
-	// arbitrary.
-	k := 1
-	switch {
-	case len(repos) <= 500:
-		k = 2
-	case len(repos) <= 100:
-		k = 3
-	case len(repos) <= 50:
-		k = 5
-	case len(repos) <= 25:
-		k = 8
-	case len(repos) <= 10:
-		k = 10
-	case len(repos) <= 5:
-		k = 100
-	}
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
-	}
-
-	searchOpts := zoekt.SearchOptions{
-		MaxWallTime:            1500 * time.Millisecond,
-		ShardMaxMatchCount:     100 * k,
-		TotalMaxMatchCount:     100 * k,
-		ShardMaxImportantMatch: 15 * k,
-		TotalMaxImportantMatch: 25 * k,
-		MaxDocDisplayCount:     2 * defaultMaxSearchResults,
-	}
-
-	// We want zoekt to return more than FileMatchLimit results since we use
-	// the extra results to populate reposLimitHit. Additionally the defaults
-	// are very low, so we always want to return at least 2000.
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		searchOpts.MaxDocDisplayCount = 2 * int(query.FileMatchLimit)
-	}
-	if searchOpts.MaxDocDisplayCount < 2000 {
-		searchOpts.MaxDocDisplayCount = 2000
-	}
-
-	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
-	}
-
 	if useFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
 		deadline, _ := ctx.Deadline()
@@ -461,7 +468,13 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 	tr.LogFields(otlog.String("maxWallTime", searchOpts.MaxWallTime.String()))
 
-	resp, err := Search().Index.Client.Search(ctx, finalQuery, &searchOpts)
+	t0 := time.Now()
+	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
+	tr.LogFields(otlog.Int("resp.FileCount", resp.FileCount), otlog.Int("resp.MatchCount", resp.MatchCount), otlog.Object("searchOpts.MaxWallTime", searchOpts.MaxWallTime))
+	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
+		err2 := errors.New("no results found before timeout in index search (try timeout: directive with larger value)")
+		return nil, false, nil, err2
+	}
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -483,6 +496,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		return nil, false, nil, nil
 	}
 
+	k := zoektResultCountFactor(len(repos), query)
 	maxLineMatches := 25 + k
 	maxLineFragmentMatches := 3 + k
 	if len(resp.Files) > int(query.FileMatchLimit) {
@@ -741,6 +755,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	}
 
 	var (
+		// TODO: convert wg to an errgroup
 		wg                sync.WaitGroup
 		mu                sync.Mutex
 		unflattened       [][]*fileMatchResolver
@@ -835,7 +850,10 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args.Pattern, zoektRepos, args.UseFullDeadline)
+		query := args.Pattern
+		k := zoektResultCountFactor(len(zoektRepos), query)
+		opts := zoektSearchOpts(k, query)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
@@ -854,6 +872,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		if limitHit {
 			common.limitHit = true
 		}
+		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr
 			tr.LazyPrintf("cancel indexed search due to error: %v", err)
