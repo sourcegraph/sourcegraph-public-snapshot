@@ -446,10 +446,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 	if useFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
 		deadline, _ := ctx.Deadline()
-		remaining := time.Until(deadline)
-		if remaining > 0 {
-			searchOpts.MaxWallTime = remaining
-		}
+		searchOpts.MaxWallTime = time.Until(deadline)
 
 		// We don't want our context's deadline to cut off zoekt so that we can get the results
 		// found before the deadline.
