@@ -174,6 +174,11 @@ type searchOptions struct {
 	LargeFiles []string
 }
 
+// serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
+// not depend on frontend and therefore does not have access to `conf.Watch`.
+// Additionally, it only cares about certain search specific settings so this
+// search specific endpoint is used rather than serving the entire site settings
+// from /.internal/configuration.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	largeFiles := conf.Get().SearchLargeFiles
 	opts := searchOptions{
