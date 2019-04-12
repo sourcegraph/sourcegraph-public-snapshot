@@ -1,5 +1,5 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
-import { WorkspaceRootWithMetadata } from '../api/client/model'
+import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 
 export interface RepoSpec {
     /**
@@ -503,7 +503,7 @@ export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): strin
  * is `git://r?a9cb9d#f`, it would be translated to `git://r?mybranch#f`.
  */
 export function withWorkspaceRootInputRevision(
-    workspaceRoots: WorkspaceRootWithMetadata[],
+    workspaceRoots: readonly WorkspaceRootWithMetadata[],
     uri: ParsedRepoURI
 ): ParsedRepoURI {
     const inWorkspaceRoot = workspaceRoots.find(root => {

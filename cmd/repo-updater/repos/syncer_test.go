@@ -127,6 +127,22 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(bitbucketServerService.URN()),
 	)
 
+	otherService := &repos.ExternalService{
+		ID:   30,
+		Kind: "OTHER",
+	}
+
+	otherRepo := (&repos.Repo{
+		Name: "git-host.com/org/foo",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "git-host.com/org/foo",
+			ServiceID:   "https://git-host.com/",
+			ServiceType: "other",
+		},
+	}).With(
+		repos.Opt.RepoSources(otherService.URN()),
+	)
+
 	clock := repos.NewFakeClock(time.Now(), 0)
 
 	type testCase struct {
@@ -148,6 +164,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{repo: githubRepo, svc: githubService},
 		{repo: gitlabRepo, svc: gitlabService},
 		{repo: bitbucketServerRepo, svc: bitbucketServerService},
+		{repo: otherRepo, svc: otherService},
 	} {
 		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
 		testCases = append(testCases,
@@ -296,6 +313,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &gitlab.Project{Archived: true}
 				case "bitbucketserver":
 					update = &bitbucketserver.Repo{Public: true}
+				case "other":
+					return testCase{}
 				default:
 					panic("test must be extended with new external service kind")
 				}
@@ -324,6 +343,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		t.Helper()
 
 		for _, tc := range testCases {
+			if tc.name == "" {
+				continue
+			}
+
 			tc := tc
 			ctx := context.Background()
 
@@ -371,7 +394,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil {
-					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
+					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
 					for _, d := range have {
 						d.ID = 0 // Exclude auto-generated ID from comparisons
 					}

@@ -405,7 +405,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                         your query.
                                                     </>,
                                                     /* If running on non-cluster, give some smart advice */
-                                                    ...(this.props.isSourcegraphDotCom &&
+                                                    ...(!this.props.isSourcegraphDotCom &&
                                                     !window.context.isClusterDeployment
                                                         ? [
                                                               <>

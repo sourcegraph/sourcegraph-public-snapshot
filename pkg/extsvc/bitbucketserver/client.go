@@ -157,6 +157,9 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
+
 	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
 		return err

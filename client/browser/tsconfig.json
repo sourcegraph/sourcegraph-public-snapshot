@@ -1,11 +1,21 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "typeRoots": ["../../shared/src/types", "../../node_modules/@types", "src/types"],
+    "baseUrl": ".",
+    "typeRoots": [
+      "src/types",
+      "../../shared/src/types",
+      "../../node_modules/@types",
+      "../../node_modules/web-ext-types"
+    ],
     "jsx": "react",
-    "resolveJsonModule": true,
-    "checkJs": true
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "config/**/*.js", "config/**/*.ts", "scripts/**/*.ts", "*.ts"],
-  "exclude": ["../../node_modules", "./build/**/*"]
+  "include": ["**/*"],
+  "exclude": [
+    "../../node_modules",
+    "./build/**/*",
+    "coverage",
+    "stories" // TODO fix type errors and include
+  ]
 }

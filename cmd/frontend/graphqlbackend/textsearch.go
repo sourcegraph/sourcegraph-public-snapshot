@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/google/zoekt"
@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -259,6 +260,9 @@ func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool,
 		nethttp.OperationName("Searcher Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
+
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
 
 	// Limit number of outstanding searcher requests
 	if err := textSearchLimiter.Acquire(ctx); err != nil {
@@ -692,6 +696,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	if err != nil {
 		// Don't hard fail if index is not available yet.
 		tr.LogFields(otlog.String("indexErr", err.Error()))
+		log15.Warn("zoektIndexedRepos failed", "error", err)
 		common.indexUnavailable = true
 		err = nil
 	}
@@ -797,6 +802,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				log15.Warn("searchFilesInRepo failed", "error", searchErr, "repo", repoRev.Repo.Name)
 			}
 			mu.Lock()
 			defer mu.Unlock()

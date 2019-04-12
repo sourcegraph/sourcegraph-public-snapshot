@@ -118,9 +118,19 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	externalService, err := db.ExternalServices.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := db.ExternalServices.Delete(ctx, id); err != nil {
 		return nil, err
 	}
+
+	if err = syncExternalService(ctx, externalService); err != nil {
+		return nil, errors.Wrap(err, "warning: external service deleted, but sync request failed")
+	}
+
 	return &EmptyResponse{}, nil
 }
 
@@ -175,4 +185,29 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 		return nil, err
 	}
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(externalServices) >= r.opt.Limit), nil
+}
+
+type computedExternalServiceConnectionResolver struct {
+	args             graphqlutil.ConnectionArgs
+	externalServices []*types.ExternalService
+}
+
+func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
+	svcs := r.externalServices
+	if r.args.First != nil && int(*r.args.First) < len(svcs) {
+		svcs = svcs[:*r.args.First]
+	}
+	resolvers := make([]*externalServiceResolver, 0, len(svcs))
+	for _, svc := range svcs {
+		resolvers = append(resolvers, &externalServiceResolver{externalService: svc})
+	}
+	return resolvers
+}
+
+func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Context) int32 {
+	return int32(len(r.externalServices))
+}
+
+func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }

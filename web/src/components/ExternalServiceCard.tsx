@@ -1,4 +1,5 @@
 import H from 'history'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
 
@@ -47,6 +48,7 @@ export class ExternalServiceCard extends React.PureComponent<ExternalServiceCard
                     <h3 className="external-service-card__main-header">{this.props.title}</h3>
                     <p className="external-service-card__main-body">{this.props.shortDescription}</p>
                 </div>
+                {this.props.to && <ChevronRightIcon className="align-self-center" />}
             </div>
         )
         if (this.props.to) {

@@ -1,7 +1,7 @@
 import * as comlink from '@sourcegraph/comlink'
 import { isEqual } from 'lodash'
 import { from, Subject, Subscription } from 'rxjs'
-import { concatMap, distinctUntilChanged, map } from 'rxjs/operators'
+import { concatMap } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, TextDocument, Unsubscribable } from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
@@ -73,33 +73,30 @@ export async function createExtensionHostClientConnection(
     subscription.add(clientContext)
 
     // Sync visible views and text documents to the extension host
-    let visibleTextDocuments: TextDocument[] = []
+    let visibleTextDocuments: Pick<TextDocument, 'uri' | 'languageId' | 'text'>[] = []
     subscription.add(
-        from(services.model.model)
+        from(services.editor.editors)
             .pipe(
-                map(({ visibleViewComponents }) => visibleViewComponents),
-                distinctUntilChanged(),
-                concatMap(async viewComponents => {
+                concatMap(async editors => {
                     // Important: Make sure documents were synced before syncing windows, as windows reference them
-                    const nextVisibleTextDocuments = viewComponents ? viewComponents.map(v => v.item) : []
+                    const nextVisibleTextDocuments = editors ? editors.map(v => v.item) : []
                     if (!isEqual(visibleTextDocuments, nextVisibleTextDocuments)) {
                         visibleTextDocuments = nextVisibleTextDocuments
                         await proxy.documents.$acceptDocumentData(nextVisibleTextDocuments)
                     }
                     await proxy.windows.$acceptWindowData(
-                        viewComponents
-                            ? [
-                                  {
-                                      visibleViewComponents: viewComponents.map(viewComponent => ({
-                                          item: {
-                                              uri: viewComponent.item.uri,
-                                          },
-                                          selections: viewComponent.selections,
-                                          isActive: viewComponent.isActive,
-                                      })),
-                                  },
-                              ]
-                            : []
+                        editors
+                            ? {
+                                  editors: editors.map(editor => ({
+                                      type: 'CodeEditor',
+                                      item: {
+                                          uri: editor.item.uri,
+                                      },
+                                      selections: editor.selections,
+                                      isActive: editor.isActive,
+                                  })),
+                              }
+                            : null
                     )
                 })
             )
@@ -123,7 +120,7 @@ export async function createExtensionHostClientConnection(
         }
     )
 
-    const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.model)
+    const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.editor)
 
     const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
     subscription.add(clientCodeEditor)
@@ -136,15 +133,7 @@ export async function createExtensionHostClientConnection(
     )
     const clientSearch = new ClientSearch(services.queryTransformer)
     const clientCommands = new ClientCommands(services.commands)
-    subscription.add(
-        new ClientRoots(
-            proxy.roots,
-            from(services.model.model).pipe(
-                map(({ roots }) => roots),
-                distinctUntilChanged()
-            )
-        )
-    )
+    subscription.add(new ClientRoots(proxy.roots, services.workspace))
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientAPI: ClientAPI = {

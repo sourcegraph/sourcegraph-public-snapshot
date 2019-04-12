@@ -113,6 +113,7 @@ type updateScheduler struct {
 // given GitHubConnection.
 type configuredRepo2 struct {
 	URL     string
+	ID      uint32
 	Name    api.RepoName
 	Enabled bool
 }
@@ -130,11 +131,11 @@ func newUpdateScheduler() *updateScheduler {
 	return &updateScheduler{
 		sourceRepos: make(map[string]sourceRepoMap),
 		updateQueue: &updateQueue{
-			index:         make(map[api.RepoName]*repoUpdate),
+			index:         make(map[uint32]*repoUpdate),
 			notifyEnqueue: make(chan struct{}, notifyChanBuffer),
 		},
 		schedule: &schedule{
-			index:  make(map[api.RepoName]*scheduledRepoUpdate),
+			index:  make(map[uint32]*scheduledRepoUpdate),
 			wakeup: make(chan struct{}, notifyChanBuffer),
 		},
 	}
@@ -238,47 +239,57 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 	return limiter
 }
 
-// UpdateFromDiff updates the list of configured repos from the given sync diff.
-func (s *updateScheduler) UpdateFromDiff(diff Diff) {
+// Update updates the schedule with the given repos.
+func (s *updateScheduler) Update(rs ...*Repo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, del := range diff.Deleted {
-		log15.Debug("scheduler.update-from-diff.deleted", "repo", del.Name)
-		repo := configuredRepo2FromRepo(del)
-		s.schedule.remove(repo)
-		updating := false
-		s.updateQueue.remove(repo, updating)
+	known := 0
+	for _, r := range rs {
+		if r.IsDeleted() {
+			s.remove(r)
+		} else {
+			known++
+			s.upsert(r)
+		}
 	}
 
-	for _, add := range diff.Added {
-		log15.Debug("scheduler.update-from-diff.added", "repo", add.Name)
-		repo := configuredRepo2FromRepo(add)
-		s.schedule.add(repo)
-		s.updateQueue.enqueue(repo, priorityLow)
+	schedKnownRepos.Set(float64(known))
+}
+
+func (s *updateScheduler) upsert(r *Repo) {
+	repo := configuredRepo2FromRepo(r)
+
+	updated := s.schedule.upsert(repo)
+	log15.Debug("scheduler.schedule.upserted", "repo", r.Name, "updated", updated)
+
+	updated = s.updateQueue.enqueue(repo, priorityLow)
+	log15.Debug("scheduler.updateQueue.enqueued", "repo", r.Name, "updated", updated)
+}
+
+func (s *updateScheduler) remove(r *Repo) {
+	repo := configuredRepo2FromRepo(r)
+
+	if s.schedule.remove(repo) {
+		log15.Debug("scheduler.schedule.removed", "repo", r.Name)
 	}
 
-	for _, mod := range diff.Modified {
-		log15.Debug("scheduler.update-from-diff.modified.update", "repo", mod.Name)
-		repo := configuredRepo2FromRepo(mod)
-		s.schedule.update(repo)
-		s.updateQueue.update(repo)
+	if s.updateQueue.remove(repo, false) {
+		log15.Debug("scheduler.updateQueue.removed", "repo", r.Name)
 	}
-
-	for _, unm := range diff.Unmodified {
-		log15.Debug("scheduler.update-from-diff.unmodified", "repo", unm.Name)
-		repo := configuredRepo2FromRepo(unm)
-		s.schedule.add(repo)
-	}
-
-	schedKnownRepos.Set(float64(len(diff.Unmodified) + len(diff.Modified) + len(diff.Added)))
 }
 
 func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
-	repo := configuredRepo2{Name: api.RepoName(r.Name), Enabled: r.Enabled}
+	repo := configuredRepo2{
+		ID:      r.ID,
+		Name:    api.RepoName(r.Name),
+		Enabled: r.Enabled,
+	}
+
 	if urls := r.CloneURLs(); len(urls) > 0 {
 		repo.URL = urls[0]
 	}
+
 	return &repo
 }
 
@@ -303,18 +314,10 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 	}
 
 	// Schedule enabled repos.
-	for key, updatedRepo := range newList {
-		if !updatedRepo.Enabled {
-			continue
-		}
-
-		oldRepo := oldList[key]
-		if oldRepo == nil || !oldRepo.Enabled {
-			s.schedule.add(updatedRepo)
+	for _, updatedRepo := range newList {
+		if updatedRepo.Enabled {
+			s.schedule.upsert(updatedRepo)
 			s.updateQueue.enqueue(updatedRepo, priorityLow)
-		} else {
-			s.schedule.update(updatedRepo)
-			s.updateQueue.update(updatedRepo)
 		}
 	}
 
@@ -326,8 +329,9 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
-func (s *updateScheduler) UpdateOnce(name api.RepoName, url string) {
+func (s *updateScheduler) UpdateOnce(id uint32, name api.RepoName, url string) {
 	repo := &configuredRepo2{
+		ID:   id,
 		Name: name,
 		URL:  url,
 	}
@@ -399,11 +403,11 @@ func (s *updateScheduler) DebugDump() interface{} {
 }
 
 // ScheduleInfo returns the current schedule info for a repo.
-func (s *updateScheduler) ScheduleInfo(name api.RepoName) *protocol.RepoUpdateSchedulerInfoResult {
+func (s *updateScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
 	var result protocol.RepoUpdateSchedulerInfoResult
 
 	s.schedule.mu.Lock()
-	if update := s.schedule.index[name]; update != nil {
+	if update := s.schedule.index[id]; update != nil {
 		result.Schedule = &protocol.RepoScheduleState{
 			Index:           update.Index,
 			Total:           len(s.schedule.index),
@@ -414,7 +418,7 @@ func (s *updateScheduler) ScheduleInfo(name api.RepoName) *protocol.RepoUpdateSc
 	s.schedule.mu.Unlock()
 
 	s.updateQueue.mu.Lock()
-	if update := s.updateQueue.index[name]; update != nil {
+	if update := s.updateQueue.index[id]; update != nil {
 		result.Queue = &protocol.RepoQueueState{
 			Index:    update.Index,
 			Total:    len(s.updateQueue.index),
@@ -432,7 +436,7 @@ type updateQueue struct {
 	mu sync.Mutex
 
 	heap  []*repoUpdate
-	index map[api.RepoName]*repoUpdate
+	index map[uint32]*repoUpdate
 
 	seq uint64
 
@@ -463,29 +467,44 @@ func (q *updateQueue) reset() {
 	defer q.mu.Unlock()
 
 	q.heap = q.heap[:0]
-	q.index = map[api.RepoName]*repoUpdate{}
+	q.index = map[uint32]*repoUpdate{}
 	q.seq = 0
 	q.notifyEnqueue = make(chan struct{}, notifyChanBuffer)
 }
 
-// enqueue add the repo to the queue with the given priority.
-func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) {
+// enqueue adds the repo to the queue with the given priority.
+//
+// If the repo is already in the queue and it isn't yet updating,
+// the repo is updated.
+//
+// If the given priority is higher than the one in the queue,
+// the repo's position in the queue is updated accordingly.
+func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) (updated bool) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
+	}
+
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	update := q.index[repo.Name]
+	update := q.index[repo.ID]
 	if update == nil {
 		heap.Push(q, &repoUpdate{
 			Repo:     repo,
 			Priority: p,
 		})
 		notify(q.notifyEnqueue)
-		return
+		return false
 	}
 
+	if update.Updating {
+		return false
+	}
+
+	update.Repo = repo
 	if p <= update.Priority {
 		// Repo is already in the queue with at least as good priority.
-		return
+		return true
 	}
 
 	// Repo is in the queue at a lower priority.
@@ -493,6 +512,8 @@ func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) {
 	update.Seq = q.nextSeq() // put it after all existing updates with this priority
 	heap.Fix(q, update.Index)
 	notify(q.notifyEnqueue)
+
+	return true
 }
 
 // nextSeq increments and returns the next sequence number.
@@ -502,23 +523,22 @@ func (q *updateQueue) nextSeq() uint64 {
 	return q.seq
 }
 
-// update updates the repo data in the queue.
-// It does nothing if the repo is not in the queue or if the repo is already updating.
-func (q *updateQueue) update(repo *configuredRepo2) {
-	q.mu.Lock()
-	if update := q.index[repo.Name]; update != nil && !update.Updating {
-		update.Repo = repo
-	}
-	q.mu.Unlock()
-}
-
 // remove removes the repo from the queue if the repo.Updating matches the updating argument.
-func (q *updateQueue) remove(repo *configuredRepo2, updating bool) {
-	q.mu.Lock()
-	if update := q.index[repo.Name]; update != nil && update.Updating == updating {
-		heap.Remove(q, update.Index)
+func (q *updateQueue) remove(repo *configuredRepo2, updating bool) (removed bool) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
 	}
-	q.mu.Unlock()
+
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	update := q.index[repo.ID]
+	if update != nil && update.Updating == updating {
+		heap.Remove(q, update.Index)
+		return true
+	}
+
+	return false
 }
 
 // acquireNext acquires the next repo for update.
@@ -569,14 +589,14 @@ func (q *updateQueue) Push(x interface{}) {
 	item.Index = n
 	item.Seq = q.nextSeq()
 	q.heap = append(q.heap, item)
-	q.index[item.Repo.Name] = item
+	q.index[item.Repo.ID] = item
 }
 func (q *updateQueue) Pop() interface{} {
 	n := len(q.heap)
 	item := q.heap[n-1]
 	item.Index = -1 // for safety
 	q.heap = q.heap[0 : n-1]
-	delete(q.index, item.Repo.Name)
+	delete(q.index, item.Repo.ID)
 	return item
 }
 
@@ -585,7 +605,7 @@ type schedule struct {
 	mu sync.Mutex
 
 	heap  []*scheduledRepoUpdate // min heap of scheduledRepoUpdates based on their due time.
-	index map[api.RepoName]*scheduledRepoUpdate
+	index map[uint32]*scheduledRepoUpdate
 
 	// timer sends a value on the wakeup channel when it is time
 	timer  *time.Timer
@@ -600,36 +620,40 @@ type scheduledRepoUpdate struct {
 	Index    int              `json:"-"` // the index in the heap
 }
 
-// add adds a repo to the schedule.
-// It does nothing if the repo already exists in the schedule.
-func (s *schedule) add(repo *configuredRepo2) {
-	s.mu.Lock()
-	if s.index[repo.Name] == nil {
-		heap.Push(s, &scheduledRepoUpdate{
-			Repo:     repo,
-			Interval: minDelay,
-			Due:      timeNow().Add(minDelay),
-		})
-		s.rescheduleTimer()
+// upsert inserts or updates a repo in the schedule.
+func (s *schedule) upsert(repo *configuredRepo2) (updated bool) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
 	}
-	s.mu.Unlock()
-}
 
-// update updates the repo data in the schedule.
-// It does nothing if the repo is not in the schedule.
-func (s *schedule) update(repo *configuredRepo2) {
 	s.mu.Lock()
-	if update := s.index[repo.Name]; update != nil {
+	defer s.mu.Unlock()
+
+	if update := s.index[repo.ID]; update != nil {
 		update.Repo = repo
+		return true
 	}
-	s.mu.Unlock()
+
+	heap.Push(s, &scheduledRepoUpdate{
+		Repo:     repo,
+		Interval: minDelay,
+		Due:      timeNow().Add(minDelay),
+	})
+
+	s.rescheduleTimer()
+
+	return false
 }
 
 // updateInterval updates the update interval of a repo in the schedule.
 // It does nothing if the repo is not in the schedule.
 func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
+	}
+
 	s.mu.Lock()
-	if update := s.index[repo.Name]; update != nil {
+	if update := s.index[repo.ID]; update != nil {
 		switch {
 		case interval > maxDelay:
 			update.Interval = maxDelay
@@ -647,16 +671,25 @@ func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration)
 }
 
 // remove removes a repo from the schedule.
-func (s *schedule) remove(repo *configuredRepo2) {
-	s.mu.Lock()
-	if update := s.index[repo.Name]; update != nil {
-		reschedule := update.Index == 0
-		heap.Remove(s, update.Index)
-		if reschedule {
-			s.rescheduleTimer()
-		}
+func (s *schedule) remove(repo *configuredRepo2) (removed bool) {
+	if repo.ID == 0 {
+		panic("repo.id is zero")
 	}
-	s.mu.Unlock()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	update := s.index[repo.ID]
+	if update == nil {
+		return false
+	}
+
+	reschedule := update.Index == 0
+	if heap.Remove(s, update.Index); reschedule {
+		s.rescheduleTimer()
+	}
+
+	return true
 }
 
 // rescheduleTimer schedules the scheduler to wakeup
@@ -680,7 +713,7 @@ func (s *schedule) reset() {
 	defer s.mu.Unlock()
 
 	s.heap = s.heap[:0]
-	s.index = map[api.RepoName]*scheduledRepoUpdate{}
+	s.index = map[uint32]*scheduledRepoUpdate{}
 	s.wakeup = make(chan struct{}, notifyChanBuffer)
 	if s.timer != nil {
 		s.timer.Stop()
@@ -705,14 +738,14 @@ func (s *schedule) Push(x interface{}) {
 	item := x.(*scheduledRepoUpdate)
 	item.Index = n
 	s.heap = append(s.heap, item)
-	s.index[item.Repo.Name] = item
+	s.index[item.Repo.ID] = item
 }
 func (s *schedule) Pop() interface{} {
 	n := len(s.heap)
 	item := s.heap[n-1]
 	item.Index = -1 // for safety
 	s.heap = s.heap[0 : n-1]
-	delete(s.index, item.Repo.Name)
+	delete(s.index, item.Repo.ID)
 	return item
 }
 

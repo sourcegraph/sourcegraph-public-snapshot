@@ -13,7 +13,6 @@ interface Props {
     iconClassName?: string
     ariaLabel?: string
     onClick?: (e: React.MouseEvent<HTMLElement>) => void
-    label: string
 }
 
 interface State {

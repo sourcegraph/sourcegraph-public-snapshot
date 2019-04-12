@@ -9,7 +9,6 @@ interface Props {
     iconClassName?: string
     ariaLabel?: string
     onClick?: (e: any) => void
-    label: string
 }
 
 export class OpenOnSourcegraph extends React.Component<Props, {}> {

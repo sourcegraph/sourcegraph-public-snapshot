@@ -3,14 +3,13 @@ import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActionNavItemsClassProps, ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
+import { ContributionScope } from '../../../../../shared/src/api/client/context/context'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
-import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { toURIWithPath } from '../../../../../shared/src/util/url'
-import { FileInfo } from '../../libs/code_intelligence'
+import { FileInfoWithContents } from '../../libs/code_intelligence/code_views'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
@@ -24,12 +23,17 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
      * Class name for the `<ul>` element wrapping all toolbar items
      */
     className?: string
+
+    /**
+     * The scope of this toolbar (e.g., the view component that it is associated with).
+     */
+    scope?: ContributionScope
 }
 
 export interface CodeViewToolbarProps
     extends PlatformContextProps<'forceUpdateTooltip'>,
         ExtensionsControllerProps,
-        FileInfo,
+        FileInfoWithContents,
         TelemetryProps,
         CodeViewToolbarClassProps {
     onEnabledChange?: (enabled: boolean) => void
@@ -67,19 +71,11 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     extensionsController={this.props.extensionsController}
                     platformContext={this.props.platformContext}
                     location={this.props.location}
-                    scope={{
-                        type: 'textEditor',
-                        item: {
-                            uri: toURIWithPath(this.props),
-                            languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
-                        },
-                        selections: [],
-                    }}
+                    scope={this.props.scope}
                 />{' '}
                 {this.props.baseCommitID && this.props.baseHasFileContents && (
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
                         <OpenDiffOnSourcegraph
-                            label="View file diff"
                             ariaLabel="View file diff on Sourcegraph"
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}
@@ -100,10 +96,11 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                         />
                     </li>
                 )}{' '}
-                {!this.props.baseCommitID && (
+                {// Only show the "View file" button if we were able to fetch the file contents
+                // from the Sourcegraph instance
+                !this.props.baseCommitID && (this.props.content !== undefined || this.props.baseContent !== undefined) && (
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
                         <OpenOnSourcegraph
-                            label="View file"
                             ariaLabel="View file on Sourcegraph"
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}

@@ -27,7 +27,8 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { ViewComponentData, WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/model'
+import { CodeEditorData } from '../../../../../shared/src/api/client/services/editorService'
+import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
 import { Controller } from '../../../../../shared/src/extensions/controller'
@@ -57,10 +58,9 @@ import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/
 import { ButtonProps, CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { sourcegraphUrl } from '../../shared/util/context'
-import { MutationRecordLike, querySelectorOrSelf } from '../../shared/util/dom'
+import { MutationRecordLike } from '../../shared/util/dom'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
-import { getGlobalDebugMount as defaultGlobalDebugMountGetter } from '../github/extensions'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { fetchFileContents, trackCodeViews } from './code_views'
@@ -83,7 +83,7 @@ export interface CodeViewSpec {
      * `CodeViewToolbar`. This function is responsible for ensuring duplicate
      * mounts aren't created.
      */
-    getToolbarMount?: (codeView: HTMLElement, part?: DiffPart) => HTMLElement
+    getToolbarMount?: (codeView: HTMLElement) => HTMLElement
     /**
      * Resolves the file info for a given code view. It returns an observable
      * because some code hosts need to resolve this asynchronously. The
@@ -170,13 +170,6 @@ export interface CodeHost {
     check: () => boolean
 
     /**
-     * Mount getter for the hover overlay.
-     *
-     * Defaults to a `<div class="hover-overlay-mount">` that is appended to `document.body`.
-     */
-    getOverlayMount?: MountGetter
-
-    /**
      * CSS classes for ActionItem buttons in the hover overlay to customize styling
      */
     hoverOverlayClassProps?: HoverOverlayClassProps
@@ -211,13 +204,6 @@ export interface CodeHost {
      * If undefined, the command palette button won't be rendered on the code host.
      */
     getCommandPaletteMount?: MountGetter
-
-    /**
-     * Mount getter for the small global debug menu for extensions in the bottom right.
-     *
-     * Defaults to a `<div class="global-debug">` that is appended to `document.body`.
-     */
-    getGlobalDebugMount?: MountGetter
 
     /** Construct the URL to the specified file. */
     urlToFile?: (
@@ -275,12 +261,6 @@ export interface FileInfo {
      * Revision for the BASE side of the diff.
      */
     baseRev?: string
-
-    headHasFileContents?: boolean
-    baseHasFileContents?: boolean
-
-    content?: string
-    baseContent?: string
 }
 
 interface CodeIntelligenceProps
@@ -290,6 +270,20 @@ interface CodeIntelligenceProps
     showGlobalDebug?: boolean
 }
 
+export const createOverlayMount = (codeHostName: string): HTMLElement => {
+    const mount = document.createElement('div')
+    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+    document.body.appendChild(mount)
+    return mount
+}
+
+export const createGlobalDebugMount = (): HTMLElement => {
+    const mount = document.createElement('div')
+    mount.className = 'global-debug'
+    document.body.appendChild(mount)
+    return mount
+}
+
 /**
  * Prepares the page for code intelligence. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
@@ -297,11 +291,10 @@ interface CodeIntelligenceProps
  * @param codeHost
  */
 export function initCodeIntelligence({
-    addedElements,
     codeHost,
     platformContext,
     extensionsController,
-}: CodeIntelligenceProps & { addedElements: Observable<HTMLElement> }): {
+}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController'>): {
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
@@ -388,31 +381,10 @@ export function initCodeIntelligence({
         }
     }
 
-    const defaultOverlayMountGetter: MountGetter = (container: HTMLElement): HTMLElement | null => {
-        const body = querySelectorOrSelf(container, 'body')
-        if (!body) {
-            return null
-        }
-        const classNames = ['hover-overlay-mount', `hover-overlay-mount__${codeHost.name}`]
-        let mount = container.querySelector<HTMLElement>('.hover-overlay-mount')
-        if (!mount) {
-            mount = document.createElement('div')
-            container.appendChild(mount)
-        }
-        mount.classList.add(...classNames)
-        return mount
-    }
-
-    subscription.add(
-        addedElements
-            .pipe(
-                map(codeHost.getOverlayMount || defaultOverlayMountGetter),
-                filter(isDefined)
-            )
-            .subscribe(mount => {
-                render(<HoverOverlayContainer />, mount)
-            })
-    )
+    // This renders to document.body, which we can assume is never removed,
+    // so we don't need to subscribe to mutations.
+    const overlayMount = createOverlayMount(codeHost.name)
+    render(<HoverOverlayContainer />, overlayMount)
 
     return { hoverifier, subscription }
 }
@@ -423,7 +395,7 @@ export function initCodeIntelligence({
  */
 export interface ResolvedCodeView extends CodeViewSpecWithOutSelector {
     /** The code view DOM element. */
-    codeViewElement: HTMLElement
+    element: HTMLElement
 }
 
 export function handleCodeHost({
@@ -440,13 +412,7 @@ export function handleCodeHost({
         resolveRev(context).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
-            catchError((err: Error) => {
-                if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
-                    return [false]
-                }
-
-                return [true]
-            })
+            catchError(() => [false])
         )
 
     const openOptionsMenu = () => {
@@ -459,13 +425,7 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
-    const { hoverifier, subscription } = initCodeIntelligence({
-        addedElements,
-        codeHost,
-        extensionsController,
-        platformContext,
-        showGlobalDebug,
-    })
+    const { hoverifier, subscription } = initCodeIntelligence({ codeHost, extensionsController, platformContext })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
 
@@ -488,17 +448,15 @@ export function handleCodeHost({
                 )
         )
     }
+
     // Render extension debug menu
+    // This renders to document.body, which we can assume is never removed,
+    // so we don't need to subscribe to mutations.
     if (showGlobalDebug) {
-        subscriptions.add(
-            addedElements
-                .pipe(
-                    map(codeHost.getGlobalDebugMount || defaultGlobalDebugMountGetter),
-                    filter(isDefined)
-                )
-                .subscribe(renderGlobalDebug({ extensionsController, platformContext, history }))
-        )
+        const mount = createGlobalDebugMount()
+        renderGlobalDebug({ extensionsController, platformContext, history })(mount)
     }
+
     // Render view on Sourcegraph button
     if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
@@ -535,7 +493,7 @@ export function handleCodeHost({
         trackCodeViews(codeHost),
         mergeMap(codeViewEvent =>
             codeViewEvent.type === 'added'
-                ? codeViewEvent.resolveFileInfo(codeViewEvent.codeViewElement).pipe(
+                ? codeViewEvent.resolveFileInfo(codeViewEvent.element).pipe(
                       mergeMap(fileInfo =>
                           fetchFileContents(fileInfo).pipe(
                               map(fileInfoWithContents => ({
@@ -558,21 +516,18 @@ export function handleCodeHost({
 
     interface CodeViewState {
         subscriptions: Subscription
-        visibleViewComponents: ViewComponentData[]
+        editors: CodeEditorData[]
         roots: WorkspaceRootWithMetadata[]
     }
     /** Map from code view element to the state associated with it (to be updated or removed) */
     const codeViewStates = new Map<Element, CodeViewState>()
 
-    // Update model as selections change
+    // Update code editors as selections change
     subscriptions.add(
         selectionsChanges.subscribe(selections => {
-            extensionsController.services.model.model.next({
-                ...extensionsController.services.model.model.value,
-                visibleViewComponents: [...codeViewStates.values()]
-                    .flatMap(state => state.visibleViewComponents)
-                    .map(visibleViewComponent => ({ ...visibleViewComponent, selections })),
-            })
+            extensionsController.services.editor.editors.next(
+                [...codeViewStates.values()].flatMap(state => state.editors).map(editor => ({ ...editor, selections }))
+            )
         })
     )
 
@@ -581,16 +536,16 @@ export function handleCodeHost({
             console.log(`Code view ${codeViewEvent.type}`)
 
             // Handle added or removed view component, workspace root and subscriptions
-            if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.codeViewElement)) {
-                const { codeViewElement, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
+            if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
+                const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
-                    visibleViewComponents: [
+                    editors: [
                         {
-                            type: 'textEditor' as const,
+                            type: 'CodeEditor' as const,
                             item: {
                                 uri: toURIWithPath(fileInfo),
-                                languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                                languageId: getModeFromPath(fileInfo.filePath),
                                 text: fileInfo.content,
                             },
                             selections,
@@ -599,19 +554,19 @@ export function handleCodeHost({
                     ],
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
                 }
-                codeViewStates.set(codeViewElement, codeViewState)
+                codeViewStates.set(element, codeViewState)
 
                 // When codeView is a diff (and not an added file), add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
-                    codeViewState.visibleViewComponents.push({
-                        type: 'textEditor' as const,
+                    codeViewState.editors.push({
+                        type: 'CodeEditor' as const,
                         item: {
                             uri: toURIWithPath({
                                 repoName: fileInfo.baseRepoName,
                                 commitID: fileInfo.baseCommitID,
                                 filePath: fileInfo.baseFilePath,
                             }),
-                            languageId: getModeFromPath(fileInfo.filePath) || 'could not determine mode',
+                            languageId: getModeFromPath(fileInfo.filePath),
                             text: fileInfo.baseContent,
                         },
                         // There is no notion of a selection on diff views yet, so this is empty.
@@ -652,7 +607,7 @@ export function handleCodeHost({
                             .subscribe(decorations => {
                                 decoratedLines = applyDecorations(
                                     domFunctions,
-                                    codeViewElement,
+                                    element,
                                     decorations || [],
                                     decoratedLines
                                 )
@@ -675,17 +630,17 @@ export function handleCodeHost({
                 codeViewState.subscriptions.add(
                     hoverifier.hoverify({
                         dom: domFunctions,
-                        positionEvents: of(codeViewElement).pipe(findPositionsFromEvents(domFunctions)),
+                        positionEvents: of(element).pipe(findPositionsFromEvents(domFunctions)),
                         resolveContext,
                         adjustPosition,
                     })
                 )
 
-                codeViewElement.classList.add('sg-mounted')
+                element.classList.add('sg-mounted')
 
                 // Render toolbar
                 if (getToolbarMount) {
-                    const mount = getToolbarMount(codeViewElement)
+                    const mount = getToolbarMount(element)
                     render(
                         <CodeViewToolbar
                             {...fileInfo}
@@ -695,23 +650,26 @@ export function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
+                            scope={codeViewState.editors[0]}
                         />,
                         mount
                     )
                 }
             } else if (codeViewEvent.type === 'removed') {
-                const codeViewState = codeViewStates.get(codeViewEvent.codeViewElement)
+                const codeViewState = codeViewStates.get(codeViewEvent.element)
                 if (codeViewState) {
                     codeViewState.subscriptions.unsubscribe()
-                    codeViewStates.delete(codeViewEvent.codeViewElement)
+                    codeViewStates.delete(codeViewEvent.element)
                 }
             }
 
-            // Apply added/removed roots/visibleViewComponents
-            extensionsController.services.model.model.next({
-                roots: uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri),
-                visibleViewComponents: [...codeViewStates.values()].flatMap(state => state.visibleViewComponents),
-            })
+            // Apply added/removed roots/editors
+            extensionsController.services.editor.editors.next(
+                [...codeViewStates.values()].flatMap(state => state.editors)
+            )
+            extensionsController.services.workspace.roots.next(
+                uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
+            )
         })
     )
 

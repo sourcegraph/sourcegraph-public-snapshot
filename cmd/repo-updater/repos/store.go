@@ -26,21 +26,27 @@ type Store interface {
 
 // StoreListReposArgs is a query arguments type used by
 // the ListRepos method of Store implementations.
+//
+// Each defined argument must map to a disjunct (i.e. AND) filter predicate.
 type StoreListReposArgs struct {
-	// Names of repos to list.
+	// Names of repos to list. When zero-valued, this is omitted from the predicate set.
 	Names []string
-	// IDs of repos to list.
+	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
 	IDs []uint32
-	// Kinds of repos to list.
+	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
+	// If true, includes deleted repos in the result set.
+	Deleted bool
 }
 
 // StoreListExternalServicesArgs is a query arguments type used by
 // the ListExternalServices method of Store implementations.
+//
+// Each defined argument must map to a disjunct (i.e. AND) filter predicate.
 type StoreListExternalServicesArgs struct {
-	// IDs of external services to list.
+	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
 	IDs []int64
-	// Kinds of external services to list.
+	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 }
 
@@ -168,6 +174,8 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 		preds = append(preds,
 			sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ",")))
 	}
+
+	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
@@ -317,6 +325,10 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 		}
 		preds = append(preds,
 			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
+	}
+
+	if !args.Deleted {
+		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 	}
 
 	if len(preds) == 0 {

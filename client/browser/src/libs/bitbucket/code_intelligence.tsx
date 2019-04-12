@@ -2,7 +2,7 @@ import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegrap
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../shared/util/dom'
-import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
+import { CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import {
@@ -14,7 +14,10 @@ import {
 } from './file_info'
 import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
 
-const createToolbarMount = (codeView: HTMLElement) => {
+/**
+ * Gets or creates the toolbar mount for allcode views.
+ */
+export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
     if (existingMount) {
         return existingMount
@@ -75,7 +78,7 @@ const toolbarButtonProps = {
  * A code view spec for single file code view in the "source" view (not diff).
  */
 const singleFileSourceCodeView: CodeViewSpecWithOutSelector = {
-    getToolbarMount: createToolbarMount,
+    getToolbarMount,
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveFileInfoForSingleFileSourceView,
     adjustPosition: createPositionAdjuster(singleFileDOMFunctions),
@@ -83,7 +86,7 @@ const singleFileSourceCodeView: CodeViewSpecWithOutSelector = {
 }
 
 const baseDiffCodeView = {
-    getToolbarMount: createToolbarMount,
+    getToolbarMount,
     dom: diffDOMFunctions,
     adjustPosition: createPositionAdjuster(diffDOMFunctions),
     toolbarButtonProps,
@@ -182,7 +185,7 @@ export const checkIsBitbucket = (): boolean =>
     !!document.querySelector('.bitbucket-header-logo') ||
     !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
 
-export const bitbucketServerCodeHost: CodeHost = {
+export const bitbucketServerCodeHost = {
     name: 'bitbucket-server',
     check: checkIsBitbucket,
     codeViewSpecResolver,

@@ -55,7 +55,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		{
 			// Some comment
 			"url": "https://github.com",
-			"token": "secret"
+			"token": "secret",
+			"repositoryQuery": ["none"]
 		}`),
 	}
 
@@ -79,7 +80,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		{
 			// Some comment
 			"url": "https://gitlab.com",
-			"token": "secret"
+			"token": "secret",
+			"projectQuery": ["none"]
 		}`),
 	}
 
@@ -103,7 +105,9 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		{
 			// Some comment
 			"url": "https://bitbucketserver.mycorp.com",
-			"token": "secret"
+			"username": "admin",
+			"token": "secret",
+			"repositoryQuery": ["none"]
 		}`),
 	}
 
@@ -300,30 +304,26 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
-					t.Errorf("failed to prepare store: %v", err)
-					return
+					t.Fatalf("failed to prepare store: %v", err)
 				}
 
 				err := repos.EnabledStateDeprecationMigration(tc.sourcer, clock.Now).Run(ctx, tx)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
-					return
+					t.Fatalf("error:\nhave: %v\nwant: %v", have, want)
 				}
 
 				if tc.svcs != nil {
 					svcs, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 					if err != nil {
-						t.Error(err)
-						return
+						t.Fatal(err)
 					}
 					tc.svcs(t, svcs)
 				}
 
 				if tc.repos != nil {
-					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
 					if err != nil {
-						t.Error(err)
-						return
+						t.Fatal(err)
 					}
 					tc.repos(t, rs)
 				}
@@ -452,8 +452,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
-					t.Errorf("failed to prepare store: %v", err)
-					return
+					t.Fatalf("failed to prepare store: %v", err)
 				}
 
 				err := repos.GithubSetDefaultRepositoryQueryMigration(clock.Now).Run(ctx, tx)
@@ -463,8 +462,7 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 
 				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 				if err != nil {
-					t.Error(err)
-					return
+					t.Fatal(err)
 				}
 
 				if tc.assert != nil {
@@ -570,8 +568,7 @@ func testGitLabSetDefaultProjectQueryMigration(store repos.Store) func(*testing.
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
-					t.Errorf("failed to prepare store: %v", err)
-					return
+					t.Fatalf("failed to prepare store: %v", err)
 				}
 
 				err := repos.GitLabSetDefaultProjectQueryMigration(clock.Now).Run(ctx, tx)
@@ -581,8 +578,7 @@ func testGitLabSetDefaultProjectQueryMigration(store repos.Store) func(*testing.
 
 				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 				if err != nil {
-					t.Error(err)
-					return
+					t.Fatal(err)
 				}
 
 				if tc.assert != nil {
@@ -606,7 +602,9 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 		Config: formatJSON(`
 			{
 				// Some comment
-				"url": "https://bitbucketserver.mycorp.com"
+				"url": "https://bitbucketserver.mycorp.com",
+				"username": "admin",
+				"token": "secret"
 			}
 		`),
 	}
@@ -618,6 +616,8 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 			{
 				// Some comment
 				"url": "https://bitbucketserver.mycorp.com",
+				"username": "admin",
+				"token": "secret",
 				"repositoryQuery": ["none"]
 			}
 		`),
@@ -685,8 +685,7 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
-					t.Errorf("failed to prepare store: %v", err)
-					return
+					t.Fatalf("failed to prepare store: %v", err)
 				}
 
 				err := repos.BitbucketServerSetDefaultRepositoryQueryMigration(clock.Now).Run(ctx, tx)
@@ -696,8 +695,7 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 
 				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 				if err != nil {
-					t.Error(err)
-					return
+					t.Fatal(err)
 				}
 
 				if tc.assert != nil {

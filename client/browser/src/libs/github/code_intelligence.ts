@@ -12,17 +12,51 @@ import {
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import {
-    CodeHost,
-    CodeViewSpec,
-    CodeViewSpecResolver,
-    CodeViewSpecWithOutSelector,
-    MountGetter,
-} from '../code_intelligence'
+import { CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
-import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
+import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
-import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
+import { getFileContainers, parseURL } from './util'
+
+/**
+ * Creates the mount element for the CodeViewToolbar.
+ */
+export function createCodeViewToolbarMount(codeView: HTMLElement): HTMLElement {
+    const className = 'sourcegraph-app-annotator'
+    const existingMount = codeView.querySelector('.' + className) as HTMLElement
+    if (existingMount) {
+        return existingMount
+    }
+
+    const mountEl = document.createElement('div')
+    mountEl.style.display = 'inline-flex'
+    mountEl.style.verticalAlign = 'middle'
+    mountEl.style.alignItems = 'center'
+    mountEl.className = className
+
+    const fileActions = codeView.querySelector('.file-actions')
+    if (!fileActions) {
+        throw new Error(
+            "File actions not found. Make sure you aren't trying to create " +
+                "a toolbar mount for a code snippet that shouldn't have one"
+        )
+    }
+
+    const buttonGroup = fileActions.querySelector('.BtnGroup')
+    if (buttonGroup && buttonGroup.parentNode && !codeView.querySelector('.show-file-notes')) {
+        // blob view
+        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
+    } else {
+        // commit & pull request view
+        const note = codeView.querySelector('.show-file-notes')
+        if (!note || !note.parentNode) {
+            throw new Error('cannot find toolbar mount location')
+        }
+        note.parentNode.insertBefore(mountEl, note.nextSibling)
+    }
+
+    return mountEl
+}
 
 const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
@@ -103,10 +137,19 @@ const commentSnippetCodeView: CodeViewSpec = {
     isDiff: false,
 }
 
-const fileLineContainerCodeView: CodeViewSpec = {
+/**
+ * The modern single file blob view.
+ *
+ * @todo This code view does not follow the code view contract because
+ * the selector returns just the code table, not including the toolbar.
+ * This requires `getToolbarMount()` to look at the parent elements, which makes it not possible
+ * unit test like other toolbar mount getters.
+ * Change this after https://github.com/sourcegraph/sourcegraph/issues/3271 is fixed.
+ */
+export const fileLineContainerCodeView = {
     selector: '.js-file-line-container',
     dom: singleFileDOMFunctions,
-    getToolbarMount: fileLineContainer => {
+    getToolbarMount: (fileLineContainer: HTMLElement): HTMLElement => {
         const codeViewParent = fileLineContainer.closest('.repository-content')
         if (!codeViewParent) {
             throw new Error('Repository content element not found')
@@ -187,21 +230,6 @@ export const checkIsGitHubDotCom = (): boolean => /^https?:\/\/(www.)?github.com
  */
 export const checkIsGitHub = (): boolean => checkIsGitHubDotCom() || checkIsGitHubEnterprise()
 
-const getOverlayMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
-    const jsRepoPjaxContainer = querySelectorOrSelf(container, '#js-repo-pjax-container')
-    if (!jsRepoPjaxContainer) {
-        return null
-    }
-    let mount = jsRepoPjaxContainer.querySelector<HTMLElement>('.hover-overlay-mount')
-    if (mount) {
-        return mount
-    }
-    mount = document.createElement('div')
-    mount.className = 'hover-overlay-mount'
-    jsRepoPjaxContainer.appendChild(mount)
-    return mount
-}
-
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
 export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
@@ -222,7 +250,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
     return mount
 }
 
-export const githubCodeHost: CodeHost = {
+export const githubCodeHost = {
     name: 'github',
     codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
     codeViewSpecResolver,
@@ -233,9 +261,7 @@ export const githubCodeHost: CodeHost = {
         iconClassName: 'action-item__icon--github v-align-text-bottom',
     },
     check: checkIsGitHub,
-    getOverlayMount,
     getCommandPaletteMount,
-    getGlobalDebugMount,
     commandPaletteClassProps: {
         popoverClassName: 'Box',
         formClassName: 'p-1',

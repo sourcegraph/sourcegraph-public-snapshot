@@ -10,17 +10,16 @@ const BitbucketServerSchemaJSON = `{
   "description": "Configuration for a connection to Bitbucket Server.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["url"],
+  "required": ["username", "url", "repositoryQuery"],
   "oneOf": [
     {
       "required": ["token"],
       "properties": {
-        "username": { "type": "null" },
         "password": { "type": "null" }
       }
     },
     {
-      "required": ["username", "password"],
+      "required": ["password"],
       "properties": {
         "token": { "type": "null" }
       }

@@ -46,9 +46,7 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
             return
         }
 
-        const extensionID = chrome.runtime.id
-
-        callSentryInit(extensionID)
+        callSentryInit(browser.runtime.id)
 
         Sentry.configureScope(async scope => {
             scope.setTag('script', script)

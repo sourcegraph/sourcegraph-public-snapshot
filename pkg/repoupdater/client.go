@@ -138,11 +138,11 @@ type Repo struct {
 }
 
 // MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
-var MockEnqueueRepoUpdate func(ctx context.Context, repo gitserver.Repo) error
+var MockEnqueueRepoUpdate func(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error)
 
 // EnqueueRepoUpdate requests that the named repository be updated in the near
 // future. It does not wait for the update.
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) error {
+func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error) {
 	if MockEnqueueRepoUpdate != nil {
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
@@ -151,12 +151,26 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) err
 		Repo: repo.Name,
 		URL:  repo.URL,
 	}
+
 	resp, err := c.httpPost(ctx, "enqueue-repo-update", req)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	resp.Body.Close()
-	return nil
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.RepoUpdateResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }
 
 // SyncExternalService requests the given external service to be synced.
@@ -189,6 +203,60 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 	return &result, nil
 }
 
+// RepoExternalServices requests the external services associated with a
+// repository with the given id.
+func (c *Client) RepoExternalServices(ctx context.Context, id uint32) ([]api.ExternalService, error) {
+	req := protocol.RepoExternalServicesRequest{ID: id}
+	resp, err := c.httpPost(ctx, "repo-external-services", &req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.RepoExternalServicesResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return nil, err
+	}
+
+	return res.ExternalServices, nil
+}
+
+// ExcludeRepo adds the repository with the given id to all of the
+// external services exclude lists that match its kind.
+func (c *Client) ExcludeRepo(ctx context.Context, id uint32) (*protocol.ExcludeRepoResponse, error) {
+	if id == 0 {
+		return &protocol.ExcludeRepoResponse{}, nil
+	}
+
+	req := protocol.ExcludeRepoRequest{ID: id}
+	resp, err := c.httpPost(ctx, "exclude-repo", &req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.ExcludeRepoResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {
@@ -211,7 +279,7 @@ func (c *Client) httpPost(ctx context.Context, method string, payload interface{
 
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("RepoUpdater Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()

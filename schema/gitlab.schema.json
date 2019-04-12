@@ -5,7 +5,7 @@
   "description": "Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "token"],
+  "required": ["url", "token", "projectQuery"],
   "properties": {
     "url": {
       "description": "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.",

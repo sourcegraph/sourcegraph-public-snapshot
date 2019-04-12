@@ -24,7 +24,7 @@ You can find built-in searches by:
 
 1. Clicking on the user menu (with your username or avatar) in the top navigation bar.
 1. Clicking **Saved searches**.
-1. Clicking the **Discover built-in searches** button. 
+1. Clicking the **Discover built-in searches** button.
 
 Then mouse over the search description where you can click a **Save** button should you want to add it to your list.
 
@@ -72,9 +72,5 @@ However, it is possible to create more advanced configurations, by using the fol
 
 1.  `notify` (same as **Email notifications** checkbox), whether or not to notify the configuration owner (single user or entire org) via email.
 1.  `notifySlack` (same as **Slack notifications** checkbox), whether or not orgs that are notified will be notified via their configured Slack webhook.
-1.  `notifyUsers`, a list of usernames (e.g. `["kim", "bob", "sarah"]`) to be explicitly notified via email. For example, the search could be saved to your org so others could see it on the Saved Searches page but only notify you (whereas `"notify": true` would notify the entire org).
-1.  `notifyOrganizations`, a list of organization names (e.g.`["dev", "security", "management"]`) to be explicitly notified via email (and Slack if `notifySlack` is `true`). For example, a saved search that reveals authentication code changes could notify the entire `"dev"` and `"security"` orgs, whereas a saved search that reveals potential API secrets could notify the `"security"` and `"management"` orgs.
-
-With the last two options above (`notifyUsers` and `notifyOrganizations`) you get a great degree of control over who is notified for a saved search -- regardless of who the owner of it is.
 
 ---

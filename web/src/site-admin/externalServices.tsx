@@ -130,12 +130,21 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
             },
         },
         {
-            id: 'addSingleRepo',
-            label: 'Add single repository',
+            id: 'addRepo',
+            label: 'Add a repository',
             run: config => {
                 const value = '<GitHub owner>/<GitHub repository name>'
                 const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '<GitHub owner>/<GitHub repository name>' }
+            },
+        },
+        {
+            id: 'excludeRepo',
+            label: 'Exclude a repository',
+            run: config => {
+                const value = { name: '<GitHub owner>/<GitHub repository name>' }
+                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '{"name": "<GitHub owner>/<GitHub repository name>"}' }
             },
         },
         {
@@ -189,12 +198,6 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   // See the repositoryQuery documentation at https://docs.sourcegraph.com/admin/external_service/github#configuration for details.
   "repositoryQuery": [
       "none"
-      // "org:sourcegraph"
-  ],
-
-  // Sync specific repositories by name (in addition to those matched in the repositoryQuery).
-  "repos": [
-      // "sourcegraph/sourcegraph"
   ]
 }`,
 }
@@ -261,9 +264,25 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
 
   "url": "https://bitbucket.example.com",
 
+  // The username of the user that owns the token defined below.
+  "username": "",
+
   // Create a personal access token with read scope at
   // https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add
-  "token": ""
+  "token": "",
+
+  // An array of strings specifying which repositories to mirror on Sourcegraph.
+  // Each string is a URL query string with parameters that filter the list of returned repos.
+  // Example: "?name=my-repo&projectname=PROJECT&visibility=private".
+  //
+  // The special string "none" can be used as the only element to disable this feature.
+  // Repositories matched by multiple query strings are only imported once.
+  //
+  // Here's the official Bitbucket Server documentation about which query string parameters are valid:
+  // https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
+  "repositoryQuery": [
+      "none"
+  ]
 }`,
         editorActions: [
             {
@@ -293,6 +312,33 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                     return { edits, selectText: value }
                 },
             },
+            {
+                id: 'addProjectRepos',
+                label: 'Add project repositories',
+                run: config => {
+                    const value = '?projectname=<project name>'
+                    const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: '<project name>' }
+                },
+            },
+            {
+                id: 'addRepo',
+                label: 'Add a repository',
+                run: config => {
+                    const value = '<projectKey>/<repoSlug>'
+                    const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: '<projectKey>/<repoSlug>' }
+                },
+            },
+            {
+                id: 'excludeRepo',
+                label: 'Exclude a repository',
+                run: config => {
+                    const value = { name: '<projectKey>/<repoSlug>' }
+                    const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: '{"name": "<projectKey>/<repoSlug>"}' }
+                },
+            },
         ],
     },
     [GQL.ExternalServiceKind.GITLAB]: {
@@ -314,7 +360,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   "token": "",
 
   // An array of strings specifying GitLab project search queries to mirror on Sourcegraph.
-  // See the repositoryQuery documentation at https://docs.sourcegraph.com/admin/external_service/gitlab#configuration for details.
+  // See the projectQuery documentation at https://docs.sourcegraph.com/admin/external_service/gitlab#configuration for details.
   "projectQuery": [
       "none"
   ]
@@ -439,6 +485,24 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                     return { edits: [edit], selectText: comment }
                 },
             },
+            {
+                id: 'addProject',
+                label: 'Add a project',
+                run: config => {
+                    const value = { name: '<GitLab Group>/<Project Name>' }
+                    const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: '{"name": "<GitLab Group>/<Project Name>"}' }
+                },
+            },
+            {
+                id: 'excludeProject',
+                label: 'Exclude a project',
+                run: config => {
+                    const value = { name: '<GitLab Group>/<Project Name>' }
+                    const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                    return { edits, selectText: '{"name": "<GitLab Group>/<Project Name>"}' }
+                },
+            },
         ],
     },
     [GQL.ExternalServiceKind.GITOLITE]: {
@@ -514,7 +578,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
             },
             {
                 id: 'addRepository',
-                label: 'Add repository',
+                label: 'Add a repository',
                 run: config => {
                     const value = {
                         callsign: '<Phabricator repository callsign>',
@@ -556,7 +620,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
             },
             {
                 id: 'addRepo',
-                label: 'Add repository',
+                label: 'Add a repository',
                 run: config => {
                     const value = 'path/to/repository'
                     const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
@@ -594,17 +658,7 @@ const externalServiceAddVariants: Partial<
         dotcom: {
             title: 'GitHub.com repositories',
             shortDescription: 'Add GitHub.com repositories.',
-            editorActions: (GITHUB_EXTERNAL_SERVICE.editorActions || []).concat([
-                {
-                    id: 'addPublicRepo',
-                    label: 'Add public repository',
-                    run: config => {
-                        const value = '<GitHub owner>/<GitHub repository name>'
-                        const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
-                        return { edits, selectText: '<GitHub owner>/<GitHub repository name>' }
-                    },
-                },
-            ]),
+            editorActions: GITHUB_EXTERNAL_SERVICE.editorActions || [],
         },
         enterprise: {
             title: 'GitHub Enterprise repositories',

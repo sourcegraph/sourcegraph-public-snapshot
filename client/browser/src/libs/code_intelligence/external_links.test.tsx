@@ -68,7 +68,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         expect(configureClickSpy.calledOnce).toBe(true)
     })
 
-    it('still renders "View Repository" if repo doesn\'t exist and its not pointed at .com', () => {
+    it("still renders if repo doesn't exist and its not pointed at .com", () => {
         const configureClickSpy = sinon.spy()
 
         renderViewContextOnSourcegraph({
@@ -86,6 +86,6 @@ describe('<ViewOnSourcegraphButton />', () => {
 
         const link = document.querySelector<HTMLAnchorElement>('.test')
         expect(link).toBeInstanceOf(HTMLAnchorElement)
-        expect(link!.textContent).toBe(' View Repository')
+        expect(link!.getAttribute('aria-label')).toBe('View repository on Sourcegraph')
     })
 })

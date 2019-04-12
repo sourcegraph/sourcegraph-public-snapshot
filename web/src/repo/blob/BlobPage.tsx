@@ -166,12 +166,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
         )
 
         // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
-        this.subscriptions.add(() =>
-            this.props.extensionsController.services.model.model.next({
-                ...this.props.extensionsController.services.model.model.value,
-                visibleViewComponents: null,
-            })
-        )
+        this.subscriptions.add(() => this.props.extensionsController.services.editor.editors.next([]))
 
         this.propsUpdates.next(this.props)
     }

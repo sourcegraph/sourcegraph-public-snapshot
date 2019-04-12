@@ -36,7 +36,7 @@ export interface ServerURLFormProps {
     onChange: (value: string) => void
     onSubmit: () => void
     urlHasPermissions: boolean
-    requestPermissions: () => void
+    requestPermissions: (url: string) => void
 
     /**
      * Overrides `this.props.status` and `this.state.isUpdating` in order to
@@ -120,12 +120,6 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         autoCorrect="off"
                     />
                 </div>
-                {this.props.status === 'connected' && (
-                    <div className="server-url-form__error">
-                        Extension not working on your private code host? Right-click on the extension's toolbar icon to
-                        allow access on the domain.
-                    </div>
-                )}
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
                     <div className="server-url-form__error">
                         Authentication to Sourcegraph failed.{' '}
@@ -151,7 +145,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         {!this.props.urlHasPermissions && (
                             <p>
                                 You may need to{' '}
-                                <a href="#" onClick={this.props.requestPermissions}>
+                                <a href="#" onClick={this.requestServerURLPermissions}>
                                     grant the Sourcegraph browser extension additional permissions
                                 </a>{' '}
                                 for this URL.
@@ -179,6 +173,8 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
 
         this.submits.next()
     }
+
+    private requestServerURLPermissions = () => this.props.requestPermissions(this.props.value)
 
     private get isUpdating(): boolean {
         if (typeof this.props.overrideUpdatingState !== 'undefined') {

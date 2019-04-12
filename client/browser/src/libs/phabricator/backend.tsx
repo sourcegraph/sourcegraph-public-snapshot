@@ -223,32 +223,30 @@ interface ConduitDifferentialQueryResponse {
     error_info?: string
     result: {
         [index: string]: {
-            // arrays
-            repositoryPHID: string
+            repositoryPHID: string | null
         }
     }
 }
 
-function getRepoPHIDForDifferentialID(differentialID: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const form = createConduitRequestForm()
-        form.set('params[ids]', `[${differentialID}]`)
-
-        fetch(window.location.origin + '/api/differential.query', {
-            method: 'POST',
-            body: form,
-            credentials: 'include',
-            headers: new Headers({ Accept: 'application/json' }),
-        })
-            .then(resp => resp.json())
-            .then((res: ConduitDifferentialQueryResponse) => {
-                if (res.error_code) {
-                    reject(new Error(`error ${res.error_code}: ${res.error_info}`))
-                }
-                resolve(res.result['0'].repositoryPHID)
-            })
-            .catch(reject)
+async function getRepoPHIDForDifferentialID(differentialID: number): Promise<string> {
+    const form = createConduitRequestForm()
+    form.set('params[ids]', `[${differentialID}]`)
+    const response = await fetch(window.location.origin + '/api/differential.query', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        headers: new Headers({ Accept: 'application/json' }),
     })
+    const responseJSON: ConduitDifferentialQueryResponse = await response.json()
+    if (responseJSON.error_code) {
+        throw new Error(`error ${responseJSON.error_code}: ${responseJSON.error_info}`)
+    }
+    const phid = responseJSON.result['0'].repositoryPHID
+    if (!phid) {
+        // This happens for diffs that were created without an associated repository
+        throw new Error(`no repositoryPHID for diff ${differentialID}`)
+    }
+    return phid
 }
 
 interface CreatePhabricatorRepoOptions {
@@ -401,8 +399,9 @@ function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetail
     })
 }
 
-export function getRepoDetailsFromDifferentialID(differentialID: number): Promise<PhabricatorRepoDetails> {
-    return getRepoPHIDForDifferentialID(differentialID).then(getRepoDetailsFromRepoPHID)
+export async function getRepoDetailsFromDifferentialID(differentialID: number): Promise<PhabricatorRepoDetails> {
+    const repositoryPHID = await getRepoPHIDForDifferentialID(differentialID)
+    return await getRepoDetailsFromRepoPHID(repositoryPHID)
 }
 
 function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<PhabricatorRepoDetails | null> {

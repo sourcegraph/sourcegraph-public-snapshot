@@ -136,6 +136,7 @@ Sourcegraph integrations enhance your developer workflow, giving you vital infor
 See the "[Code hosts](#code-hosts)" section above for plans related to repositories, user authentication, and permissions for specific code hosts (such as GitHub).
 
 - [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+- [Mapping local repositories in your editor to Sourcegraph](https://github.com/sourcegraph/sourcegraph/issues/462)
 - [Improve process for adding repositories from local disk](https://github.com/sourcegraph/sourcegraph/issues/1527)
 - Simpler configuration for HTTPS/SSH credentials for cloning repositories
 - [Support internal CA or self-signed TLS certificates for external communication](https://github.com/sourcegraph/sourcegraph/issues/71)

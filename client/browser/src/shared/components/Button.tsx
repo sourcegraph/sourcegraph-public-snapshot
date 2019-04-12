@@ -8,7 +8,7 @@ interface Props {
     ariaLabel?: string
     onClick?: (e: React.MouseEvent<HTMLElement>) => void
     target?: string
-    label: string
+    label?: string
 }
 
 export const SourcegraphIconButton: React.FunctionComponent<Props> = (props: Props) => (

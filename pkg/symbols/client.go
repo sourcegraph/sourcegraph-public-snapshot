@@ -139,10 +139,13 @@ func (c *Client) httpPost(ctx context.Context, method string, key key, payload i
 		span.LogKV("event", "Acquired HTTP limiter")
 	}
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("Symbols Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
+
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
 
 	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }

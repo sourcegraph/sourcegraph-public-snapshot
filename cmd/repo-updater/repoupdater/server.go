@@ -4,11 +4,12 @@ package repoupdater
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -24,9 +25,10 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
+	// Kinds of external services synced with the new syncer
+	Kinds []string
 	repos.Store
 	*repos.Syncer
-	*repos.OtherReposSyncer
 	InternalAPI interface {
 		ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error
 	}
@@ -37,9 +39,166 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
+	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
+	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	return mux
+}
+
+func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoExternalServicesRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+		IDs: []uint32{req.ID},
+	})
+
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if len(rs) == 0 {
+		respond(w, http.StatusNotFound, errors.Errorf("repository with ID %v does not exist", req.ID))
+		return
+	}
+
+	var resp protocol.RepoExternalServicesResponse
+
+	svcIDs := rs[0].ExternalServiceIDs()
+	if len(svcIDs) == 0 {
+		respond(w, http.StatusOK, resp)
+		return
+	}
+
+	args := repos.StoreListExternalServicesArgs{
+		IDs: svcIDs,
+	}
+
+	es, err := s.Store.ListExternalServices(r.Context(), args)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp.ExternalServices = newExternalServices(es...)
+
+	respond(w, http.StatusOK, resp)
+}
+
+func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
+	var resp protocol.ExcludeRepoResponse
+
+	if len(s.Kinds) == 0 {
+		respond(w, http.StatusOK, &resp)
+		return
+	}
+
+	var req protocol.ExcludeRepoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+		IDs:   []uint32{req.ID},
+		Kinds: s.Kinds,
+	})
+
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if len(rs) == 0 {
+		log15.Warn("exclude-repo: repo not found. skipping", "repo.id", req.ID)
+		respond(w, http.StatusOK, resp)
+		return
+	}
+
+	args := repos.StoreListExternalServicesArgs{
+		Kinds: repos.Repos(rs).Kinds(),
+	}
+
+	es, err := s.Store.ListExternalServices(r.Context(), args)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	for _, e := range es {
+		if err := e.Exclude(rs...); err != nil {
+			break
+		}
+	}
+
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp.ExternalServices = newExternalServices(es...)
+
+	respond(w, http.StatusOK, resp)
+}
+
+// TODO(tsenart): Reuse this function in all handlers.
+func respond(w http.ResponseWriter, code int, v interface{}) {
+	switch val := v.(type) {
+	case error:
+		if val != nil {
+			log15.Error(val.Error())
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(code)
+			fmt.Fprintf(w, "%v", val)
+		}
+	default:
+		w.Header().Set("Content-Type", "application/json")
+		bs, err := json.Marshal(v)
+		if err != nil {
+			respond(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.WriteHeader(code)
+		if _, err = w.Write(bs); err != nil {
+			log15.Error("failed to write response", "error", err)
+		}
+	}
+}
+
+func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+	svcs := make([]api.ExternalService, 0, len(es))
+
+	for _, e := range es {
+		svc := api.ExternalService{
+			ID:          e.ID,
+			Kind:        e.Kind,
+			DisplayName: e.DisplayName,
+			Config:      e.Config,
+			CreatedAt:   e.CreatedAt,
+			UpdatedAt:   e.UpdatedAt,
+		}
+
+		if e.IsDeleted() {
+			svc.DeletedAt = &e.DeletedAt
+		}
+
+		svcs = append(svcs, svc)
+	}
+
+	return svcs
 }
 
 func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +208,7 @@ func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	result := repos.Scheduler.ScheduleInfo(args.RepoName)
+	result := repos.Scheduler.ScheduleInfo(args.ID)
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -85,10 +244,37 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respond(w, http.StatusBadRequest, err)
 		return
 	}
-	repos.Scheduler.UpdateOnce(req.Repo, req.URL)
+
+	args := repos.StoreListReposArgs{Names: []string{string(req.Repo)}}
+	rs, err := s.Store.ListRepos(r.Context(), args)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos"))
+		return
+	}
+
+	if len(rs) != 1 {
+		err := errors.Errorf("repo %q not found in store", req.Repo)
+		respond(w, http.StatusNotFound, err)
+		return
+	}
+
+	repo := rs[0]
+	if req.URL == "" {
+		if urls := repo.CloneURLs(); len(urls) > 0 {
+			req.URL = urls[0]
+		}
+	}
+
+	repos.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+
+	respond(w, http.StatusOK, &protocol.RepoUpdateResponse{
+		ID:   repo.ID,
+		Name: repo.Name,
+		URL:  req.URL,
+	})
 }
 
 func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
@@ -98,23 +284,17 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if req.ExternalService.Kind == "OTHER" {
-		res := s.OtherReposSyncer.Sync(r.Context(), &req.ExternalService)
-		if len(res.Errors) > 0 {
-			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", res.Errors)
-			http.Error(w, res.Errors.Error(), http.StatusInternalServerError)
-		}
-		return
-	}
-
 	if s.Syncer == nil {
 		log15.Debug("server.external-service-sync", "syncer", "disabled")
 		return
 	}
 
-	switch req.ExternalService.Kind {
-	case "GITHUB", "GITLAB":
-		_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
+	for _, kind := range s.Kinds {
+		if req.ExternalService.Kind != kind {
+			continue
+		}
+
+		_, err := s.Syncer.Sync(r.Context(), kind)
 		switch {
 		case err == nil:
 			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
@@ -126,8 +306,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	default:
-		// TODO(tsenart): Handle other external service kinds.
 	}
 }
 
@@ -157,24 +335,15 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		fn   func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
 	}
 
-	fns := []getfn{
-		// We begin by searching the "OTHER" external service kind repos because lookups
-		// are fast in-memory only operations, as opposed to the other external service kinds which
-		// don't *always* have enough metadata cached to answer this request without performing network
-		// requests to their respective code host APIs
-		{"OTHER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			r := s.OtherReposSyncer.GetRepoInfoByName(ctx, string(args.Repo))
-			return r, r != nil, nil
-		}},
-	}
+	var fns []getfn
 
-	if s.Store != nil && s.Syncer != nil {
+	if s.Syncer != nil {
 		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
 			repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
 				Names: []string{string(args.Repo)},
 			})
 
-			if err != nil || len(repos) != 1 || repos[0].IsDeleted() {
+			if err != nil || len(repos) != 1 {
 				return nil, false, err
 			}
 

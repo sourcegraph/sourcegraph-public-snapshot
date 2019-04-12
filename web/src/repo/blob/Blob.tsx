@@ -292,21 +292,18 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
-                this.props.extensionsController.services.model.model.next({
-                    ...this.props.extensionsController.services.model.model.value,
-                    visibleViewComponents: [
-                        {
-                            type: 'textEditor' as const,
-                            item: {
-                                uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
-                                languageId: model.mode,
-                                text: model.content,
-                            },
-                            selections: lprToSelectionsZeroIndexed(pos),
-                            isActive: true,
+                this.props.extensionsController.services.editor.editors.next([
+                    {
+                        type: 'CodeEditor' as const,
+                        item: {
+                            uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
+                            languageId: model.mode,
+                            text: model.content,
                         },
-                    ],
-                })
+                        selections: lprToSelectionsZeroIndexed(pos),
+                        isActive: true,
+                    },
+                ])
             })
         )
 
