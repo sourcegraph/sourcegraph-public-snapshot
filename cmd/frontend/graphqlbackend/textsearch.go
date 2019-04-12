@@ -322,11 +322,13 @@ func (e *searcherError) Error() string {
 
 type deadlineExceededError struct {}
 
-func (e *deadlineExceededError) Error() string {
+func (e deadlineExceededError) Error() string {
 	return "no results found by deadline in index search"
 }
+func (e deadlineExceededError) Timeout() bool   { return true }
+func (e deadlineExceededError) Temporary() bool { return true }
 
-var DeadlineExceededError = &deadlineExceededError{}
+var DeadlineExceededError = deadlineExceededError{}
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
