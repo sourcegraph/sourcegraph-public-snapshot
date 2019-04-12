@@ -252,7 +252,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		wantErr           bool
 	}{
 		{
-			name: "returning no results before timeout gives no error",
+			name: "returns no error if search completed with no matches before timeout",
 			args: args{
 				ctx:   context.Background(),
 				query: &search.PatternInfo{PathPatternsAreRegExps: true},
@@ -270,7 +270,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			wantErr:           false,
 		},
 		{
-			name: "taking too long with no matches returns error",
+			name: "returns error if max wall time is exceeded but no matches have been found yet",
 			args: args{
 				ctx:   context.Background(),
 				query: &search.PatternInfo{PathPatternsAreRegExps: true},
