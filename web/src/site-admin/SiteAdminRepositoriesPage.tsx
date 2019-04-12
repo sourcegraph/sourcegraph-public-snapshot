@@ -227,7 +227,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
 
         fetchAllowEnableDisable()
             .toPromise()
-            .then(allowEnableDisable => this.setState({ showEnabled: allowEnableDisable }))
+            .then(allowEnableDisable => this.setState({ showEnabled: allowEnableDisable }), err => console.error(err))
 
         // Refresh global alert about enabling repositories when the user visits here.
         refreshSiteFlags()
