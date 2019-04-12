@@ -232,6 +232,8 @@ func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.
 }
 
 func Test_zoektSearchHEAD(t *testing.T) {
+	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
+	defer cancel()
 	type args struct {
 		ctx             context.Context
 		query           *search.PatternInfo
@@ -279,6 +281,24 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
 				since:           func(time.Time) time.Duration { return time.Second },
+			},
+			wantFm:            nil,
+			wantLimitHit:      false,
+			wantReposLimitHit: nil,
+			wantErr:           true,
+		},
+		{
+			name: "returns error if context timeout already passed",
+			args: args{
+				ctx:   zeroTimeoutCtx,
+				query: &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos: []*search.RepositoryRevisions{
+					{Repo: &types.Repo{}},
+				},
+				useFullDeadline: true,
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{},
+				since:           func(time.Time) time.Duration { return 0 },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
