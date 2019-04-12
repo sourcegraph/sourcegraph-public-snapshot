@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -216,4 +217,74 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
 	}
 	return r
+}
+
+// sleepySearcher is a zoekt.Searcher that sleeps for a specified amount of time and then returns no results.
+type sleepySearcher struct {
+	nap time.Duration
+
+	// Default all unimplemented zoekt.Searcher methods to panic.
+	zoekt.Searcher
+}
+
+func (ss *sleepySearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	time.Sleep(ss.nap)
+	return &zoekt.SearchResult{}, nil
+}
+
+var linuxMinimumNap = 10*time.Millisecond
+
+func Test_zoektSearchHEAD(t *testing.T) {
+	type args struct {
+		ctx             context.Context
+		query           *search.PatternInfo
+		repos           []*search.RepositoryRevisions
+		useFullDeadline bool
+		searcher        zoekt.Searcher
+		opts			zoekt.SearchOptions
+	}
+	tests := []struct {
+		name              string
+		args              args
+		wantFm            []*fileMatchResolver
+		wantLimitHit      bool
+		wantReposLimitHit map[string]struct{}
+		wantErr           error
+	}{
+		{
+			name:"taking too long returns deadline exceeded error",
+			args: args{
+				ctx: context.Background(),
+				query: &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos: []*search.RepositoryRevisions{
+					{Repo: &types.Repo{}},
+				},
+				useFullDeadline: false,
+				searcher: &sleepySearcher{nap: linuxMinimumNap},
+				opts: zoekt.SearchOptions{MaxWallTime: linuxMinimumNap/2},
+			},
+			wantFm: nil,
+			wantLimitHit: false,
+			wantReposLimitHit: nil,
+			wantErr: DeadlineExceededError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts)
+			if err != tt.wantErr {
+				t.Errorf("zoektSearchHEAD() error = %v, want %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotFm, tt.wantFm) {
+				t.Errorf("zoektSearchHEAD() gotFm = %v, want %v", gotFm, tt.wantFm)
+			}
+			if gotLimitHit != tt.wantLimitHit {
+				t.Errorf("zoektSearchHEAD() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
+			}
+			if !reflect.DeepEqual(gotReposLimitHit, tt.wantReposLimitHit) {
+				t.Errorf("zoektSearchHEAD() gotReposLimitHit = %v, want %v", gotReposLimitHit, tt.wantReposLimitHit)
+			}
+		})
+	}
 }
