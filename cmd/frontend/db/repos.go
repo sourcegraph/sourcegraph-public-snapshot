@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -697,6 +698,23 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	)
 
 	return err
+}
+
+// AllowEnableDisable returns true iff there are any repositories that are not
+// managed by the new syncer.
+//
+// TODO(keegan) This should be removed in 3.4.
+// https://github.com/sourcegraph/sourcegraph/issues/2025
+func (s *repos) AllowEnableDisable(ctx context.Context) (bool, error) {
+	err := dbconn.Global.QueryRowContext(ctx, `SELECT 1 FROM repo WHERE sources = '{}' AND deleted_at IS NULL LIMIT 1`).Scan(new(int))
+	switch {
+	case err == nil:
+		return true, nil
+	case err == sql.ErrNoRows:
+		return false, nil
+	default:
+		return false, err
+	}
 }
 
 // dbExternalRepoSpec is convenience type for inserting or selecting *api.ExternalRepoSpec database data.
