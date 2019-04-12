@@ -95,10 +95,9 @@ interface SourcegraphContext {
     needServerRestart: boolean
 
     /**
-     * Whether the site is a Sourcegraph cluster deployment (e.g., to Kubernetes, not just
-     * sourcegraph/server in a single Docker container).
+     * The kind of deployment.
      */
-    isClusterDeployment: boolean
+    deployType: 'cluster' | 'docker-container' | 'dev'
 
     /** Whether signup is allowed on the site. */
     allowSignup: boolean

@@ -406,7 +406,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                     </>,
                                                     /* If running on non-cluster, give some smart advice */
                                                     ...(!this.props.isSourcegraphDotCom &&
-                                                    !window.context.isClusterDeployment
+                                                    window.context.deployType !== 'cluster'
                                                         ? [
                                                               <>
                                                                   Upgrade to Sourcegraph Enterprise for a highly
