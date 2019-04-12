@@ -457,12 +457,13 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 		return errors.Wrap(err, "config")
 	}
 
-	edited, err := jsonc.Edit(e.Config, val, strings.Split(path, ".")...)
-	if err != nil {
-		return errors.Wrap(err, "edit")
+	if !reflect.ValueOf(val).IsNil() {
+		edited, err := jsonc.Edit(e.Config, val, strings.Split(path, ".")...)
+		if err != nil {
+			return errors.Wrap(err, "edit")
+		}
+		e.Config = edited
 	}
-
-	e.Config = edited
 
 	return e.validateConfig()
 }
