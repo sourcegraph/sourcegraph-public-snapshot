@@ -7,8 +7,8 @@ window.sgdocs = (() => {
     MOBILE_NAV_BUTTON
 
   return {
-    init: (breadcrumbs) => {
-      BREADCRUMBS_DATA = breadcrumbs ? breadcrumbs : [];
+    init: breadcrumbs => {
+      BREADCRUMBS_DATA = breadcrumbs ? breadcrumbs : []
       BREADCRUMBS = document.querySelector('#breadcrumbs')
       BREADCRUMBS_MOBILE = document.querySelector('#breadcrumbs-mobile')
 
@@ -82,7 +82,7 @@ window.sgdocs = (() => {
       document
         .querySelector(`ul.content-nav-section[data-nav-section="${BREADCRUMBS_DATA[1].Label}"]`)
         .classList.toggle('expanded')
-        document
+      document
         .querySelector(`ul.content-nav-section a[href="${BREADCRUMBS_DATA[BREADCRUMBS_DATA.length - 1].URL}"]`)
         .parentNode.classList.add('selected')
     }
@@ -94,11 +94,11 @@ window.sgdocs = (() => {
 
   function breadcrumbsInit() {
     document.querySelectorAll('.breadcrumb-links a').forEach((el, index) => {
-      if(index > 0) {
+      if (index > 0) {
         let text = el.text.replace(/_/g, ' ')
-        text = text.charAt(0).toUpperCase() + text.slice(1);
-        el.text = text;
-        }
+        text = text.charAt(0).toUpperCase() + text.slice(1)
+        el.text = text
+      }
     })
   }
 })()
