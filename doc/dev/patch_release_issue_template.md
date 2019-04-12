@@ -14,8 +14,11 @@ See [release_issue_template.md](release_issue_template.md) for the monthly relea
 
 ## Release sourcegraph/server
 
-- [ ] Create an annotated git tag using `VERSION=v3.1.1 git tag -a $VERSION -m $VERSION`.
-- [ ] `git push origin $VERSION`. This publishes the new tag, triggering the Docker image for the new version to start building.
+- [ ] Create an annotated git tag and push it (this triggers CI to build the Docker images for the new version). For example:
+    ```
+    VERSION='v3.2.1-rc.1' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
+    ```
+
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
 
 ## Release Kubernetes deployment

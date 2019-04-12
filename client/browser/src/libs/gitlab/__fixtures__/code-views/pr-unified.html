@@ -1,0 +1,1283 @@
+<div id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf" class="diff-file file-holder">
+    <div class="js-file-title file-title file-title-flex-parent js-file-title file-title">
+        <div class="file-header-content">
+            <svg aria-hidden="true" class="diff-toggle-caret append-right-5 s16 ic-chevron-down">
+                <use
+                    xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#chevron-down"
+                ></use>
+            </svg>
+            <a href="" class="append-right-4 js-title-wrapper"
+                ><span aria-hidden="true"
+                    ><svg class="s18 js-file-icon append-right-5">
+                        <use
+                            xlink:href="https://gitlab.com/assets/file_icons-7262fc6897e02f1ceaf8de43dc33afa5e4f9a2067f4f68ef77dcc87946575e9e.svg#go"
+                        ></use>
+                    </svg>
+                    <!---->
+                    <!----></span
+                >
+                <strong
+                    title=""
+                    data-container="body"
+                    class="file-title-name"
+                    data-original-title="executors/shell/executor_shell_test.go"
+                >
+                    executors/shell/executor_shell_test.go
+                </strong></a
+            >
+            <button
+                title=""
+                data-clipboard-text='{"text":"executors/shell/executor_shell_test.go","gfm":"`executors/shell/executor_shell_test.go`"}'
+                type="button"
+                class="btn btn-secondary btn-default btn-transparent btn-clipboard"
+                data-original-title="Copy file path to clipboard"
+            >
+                <svg aria-hidden="true" class="s16 ic-duplicate">
+                    <use
+                        xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#duplicate"
+                    ></use>
+                </svg>
+            </button>
+            <!---->
+            <!---->
+        </div>
+        <div class="file-actions d-none d-sm-block">
+            <div class="diff-stats d-inline-flex">
+                <!---->
+                <div class="diff-stats-group cgreen">
+                    <svg aria-hidden="true" class="diff-stats-icon s16 ic-file-addition">
+                        <use
+                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#file-addition"
+                        ></use>
+                    </svg>
+                    <strong>10</strong>
+                </div>
+                <div class="diff-stats-group cred">
+                    <svg aria-hidden="true" class="diff-stats-icon s16 ic-file-deletion">
+                        <use
+                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#file-deletion"
+                        ></use>
+                    </svg>
+                    <strong>3</strong>
+                </div>
+            </div>
+            <button
+                disabled="disabled"
+                title="Toggle comments for this file"
+                type="button"
+                class="js-btn-vue-toggle-comments btn"
+            >
+                <svg aria-hidden="true" class="s16 ic-comment">
+                    <use
+                        xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                    ></use>
+                </svg>
+            </button>
+            <a
+                title=""
+                href="/gitlab-org/gitlab-runner/edit/3637-terminal-session-not-killed-when-user-cancel-build/executors/shell/executor_shell_test.go?from_merge_request_iid=1058"
+                class="btn js-edit-blob btn-secondary"
+                data-original-title="Edit file"
+                ><svg aria-hidden="true" class="s16 ic-pencil">
+                    <use
+                        xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#pencil"
+                    ></use></svg
+            ></a>
+            <!---->
+            <div aria-hidden="true" class="d-none" style="display: none;">
+                <div>
+                    <span>View file @ <span class="commit-sha">0362425d</span></span>
+                </div>
+            </div>
+            <a
+                href="/gitlab-org/gitlab-runner/blob/0362425dc5026417338ac6a823c53fe65b10c4a7/executors/shell/executor_shell_test.go"
+                target="blank"
+                class="btn view-file js-view-file-button btn-secondary"
+                data-original-title=""
+                title=""
+                ><svg aria-hidden="true" class="s16 ic-external-link">
+                    <use
+                        xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#external-link"
+                    ></use></svg
+            ></a>
+            <button type="button" class="btn expand-file js-expand-file btn-secondary">
+                Show full file
+                <!---->
+            </button>
+            <!---->
+        </div>
+    </div>
+    <!---->
+    <div class="diff-content">
+        <div class="diff-viewer">
+            <table class="code diff-wrap-lines js-syntax-highlight text-file js-diff-inline-view white">
+                <tbody>
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_null_null" class="line_holder match">
+                        <td class="diff-line-num old_line match unfold js-unfold">
+                            <div><span role="button" class="context-cell">...</span></div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line match unfold js-unfold">
+                            <div><span role="button" class="context-cell">...</span></div>
+                        </td>
+                        <td class="line_content match">
+                            @@ -732,14 +732,21 @@ func TestInteractiveTerminal(t *testing.T) {
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_732_732" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="732" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_732_732"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="732" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_732_732"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content">
+                            <span id="LC732" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">srv</span><span class="x"> </span
+                                ><span class="o">:=</span><span class="x"> </span><span class="n">httptest</span
+                                ><span class="o">.</span><span class="n">NewServer</span><span class="p">(</span
+                                ><span class="n">build</span><span class="o">.</span><span class="n">Session</span
+                                ><span class="o">.</span><span class="n">Mux</span><span class="p">())</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="733" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="733" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content">
+                            <span id="LC733" class="line" lang="go"
+                                ><span class="x"> </span><span class="k">defer</span><span class="x"> </span
+                                ><span class="n">srv</span><span class="o">.</span><span class="n">Close</span
+                                ><span class="p">()</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_734_734" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="734" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_734_734"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="734" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_734_734"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content"><span id="LC734" class="line" lang="go"></span></td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735" class="line_holder old">
+                        <td class="diff-line-num old_line old">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="735" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line old">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content old">
+                            <span id="LC735" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">u</span><span class="x"> </span
+                                ><span class="o">:=</span><span class="x"> </span><span class="n">url</span
+                                ><span class="o">.</span><span class="n">URL</span><span class="p">{</span
+                                ><span class="n">Scheme</span><span class="o">:</span><span class="x"> </span
+                                ><span class="s">"ws"</span><span class="p">,</span><span class="x"> </span
+                                ><span class="n">Host</span><span class="o">:</span><span class="x"> </span
+                                ><span class="n">srv</span><span class="o">.</span><span class="n">Listener</span
+                                ><span class="o">.</span><span class="n">Addr</span><span class="p">()</span
+                                ><span class="o">.</span><span class="n">String</span><span class="p">(),</span
+                                ><span class="x"> </span><span class="n">Path</span><span class="o">:</span
+                                ><span class="x"> </span><span class="n">build</span><span class="o">.</span
+                                ><span class="n">Session</span><span class="o">.</span><span class="n">Endpoint</span
+                                ><span class="x"> </span><span class="o">+</span><span class="x"> </span
+                                ><span class="s">"/exec"</span><span class="p">}</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_736_735" class="line_holder old">
+                        <td class="diff-line-num old_line old">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="736" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_736_735"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line old">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content old">
+                            <span id="LC736" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">conn</span><span class="p">,</span
+                                ><span class="x"> </span><span class="n">resp</span><span class="p">,</span
+                                ><span class="x"> </span><span class="n">err</span><span class="x"> </span
+                                ><span class="o">:=</span><span class="x"> </span><span class="n">websocket</span
+                                ><span class="o">.</span><span class="n">DefaultDialer</span><span class="o">.</span
+                                ><span class="n">Dial</span><span class="p">(</span><span class="n">u</span
+                                ><span class="o">.</span><span class="n">String</span><span class="p">(),</span
+                                ><span class="x"> </span><span class="n">http</span><span class="o">.</span
+                                ><span class="n">Header</span><span class="p">{</span
+                                ><span class="s">"Authorization"</span><span class="o">:</span><span class="x"> </span
+                                ><span class="p">[]</span><span class="kt">string</span><span class="p">{</span
+                                ><span class="n">build</span><span class="o">.</span><span class="n">Session</span
+                                ><span class="o">.</span><span class="n">Token</span><span class="p">}})</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_735" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="735" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_735"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC735" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">u</span><span class="x"> </span
+                                ><span class="o">:=</span><span class="x"> </span><span class="n">url</span
+                                ><span class="o">.</span><span class="n">URL</span><span class="p">{</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_736" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="736" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_736"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC736" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">Scheme</span><span class="o">:</span
+                                ><span class="x"> </span><span class="s">"ws"</span><span class="p">,</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_737" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="737" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_737"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC737" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">Host</span><span class="o">:</span
+                                ><span class="x"> </span><span class="n">srv</span><span class="o">.</span
+                                ><span class="n">Listener</span><span class="o">.</span><span class="n">Addr</span
+                                ><span class="p">()</span><span class="o">.</span><span class="n">String</span
+                                ><span class="p">(),</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_738" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="738" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_738"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC738" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">Path</span><span class="o">:</span
+                                ><span class="x"> </span><span class="n">build</span><span class="o">.</span
+                                ><span class="n">Session</span><span class="o">.</span><span class="n">Endpoint</span
+                                ><span class="x"> </span><span class="o">+</span><span class="x"> </span
+                                ><span class="s">"/exec"</span><span class="p">,</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_739" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="739" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_739"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC739" class="line" lang="go"
+                                ><span class="x"> </span><span class="p">}</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="740" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC740" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">headers</span><span class="x"> </span
+                                ><span class="o">:=</span><span class="x"> </span><span class="n">http</span
+                                ><span class="o">.</span><span class="n">Header</span><span class="p">{</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_741" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="741" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_741"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC741" class="line" lang="go"
+                                ><span class="x"> </span><span class="s">"Authorization"</span><span class="o">:</span
+                                ><span class="x"> </span><span class="p">[]</span><span class="kt">string</span
+                                ><span class="p">{</span><span class="n">build</span><span class="o">.</span
+                                ><span class="n">Session</span><span class="o">.</span><span class="n">Token</span
+                                ><span class="p">},</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_742" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="742" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_742"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC742" class="line" lang="go"
+                                ><span class="x"> </span><span class="p">}</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_743" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="743" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_743"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC743" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">conn</span><span class="p">,</span
+                                ><span class="x"> </span><span class="n">resp</span><span class="p">,</span
+                                ><span class="x"> </span><span class="n">err</span><span class="x"> </span
+                                ><span class="o">:=</span><span class="x"> </span><span class="n">websocket</span
+                                ><span class="o">.</span><span class="n">DefaultDialer</span><span class="o">.</span
+                                ><span class="n">Dial</span><span class="p">(</span><span class="n">u</span
+                                ><span class="o">.</span><span class="n">String</span><span class="p">(),</span
+                                ><span class="x"> </span><span class="n">headers</span><span class="p">)</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_744" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="737" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_744"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="744" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_744"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content">
+                            <span id="LC744" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">assert</span><span class="o">.</span
+                                ><span class="n">NoError</span><span class="p">(</span><span class="n">t</span
+                                ><span class="p">,</span><span class="x"> </span><span class="n">err</span
+                                ><span class="p">)</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_738_745" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="738" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_738_745"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="745" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_738_745"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content">
+                            <span id="LC745" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">assert</span><span class="o">.</span
+                                ><span class="n">Equal</span><span class="p">(</span><span class="n">t</span
+                                ><span class="p">,</span><span class="x"> </span><span class="n">c</span
+                                ><span class="o">.</span><span class="n">expectedStatusCode</span
+                                ><span class="p">,</span><span class="x"> </span><span class="n">resp</span
+                                ><span class="o">.</span><span class="n">StatusCode</span><span class="p">)</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_739_746" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="739" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_739_746"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="746" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_739_746"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content"><span id="LC746" class="line" lang="go"></span></td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_740_747" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="740" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_740_747"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="747" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_740_747"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content">
+                            <span id="LC747" class="line" lang="go"
+                                ><span class="x"> </span><span class="k">defer</span><span class="x"> </span
+                                ><span class="k">func</span><span class="p">()</span><span class="x"> </span
+                                ><span class="p">{</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_741_748" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="741" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_741_748"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="748" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_741_748"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content">
+                            <span id="LC748" class="line" lang="go"
+                                ><span class="x"> </span><span class="k">if</span><span class="x"> </span
+                                ><span class="n">conn</span><span class="x"> </span><span class="o">!=</span
+                                ><span class="x"> </span><span class="no">nil</span><span class="x"> </span
+                                ><span class="p">{</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_742_749" class="line_holder old">
+                        <td class="diff-line-num old_line old">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="742" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_742_749"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line old">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content old">
+                            <span id="LC742" class="line" lang="go"
+                                ><span class="x"> </span><span class="k"><span class="idiff left">defer</span></span
+                                ><span class="x"><span class="idiff right"> </span></span><span class="n">conn</span
+                                ><span class="o">.</span><span class="n">Close</span><span class="p">()</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_743_749" class="line_holder new">
+                        <td class="diff-line-num old_line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <!---->
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line new">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="749" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_743_749"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content new">
+                            <span id="LC749" class="line" lang="go"
+                                ><span class="x"> </span><span class="n">conn</span><span class="o">.</span
+                                ><span class="n">Close</span><span class="p">()</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_743_750" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="743" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_743_750"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="750" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_743_750"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content">
+                            <span id="LC750" class="line" lang="go"
+                                ><span class="x"> </span><span class="p">}</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_744_751" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="744" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_744_751"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="751" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_744_751"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content">
+                            <span id="LC751" class="line" lang="go"
+                                ><span class="x"> </span><span class="p">}()</span></span
+                            >
+                        </td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_745_752" class="line_holder">
+                        <td class="diff-line-num old_line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="745" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_745_752"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line">
+                            <div>
+                                <button
+                                    type="button"
+                                    title="Add a comment to this line"
+                                    class="add-diff-note js-add-diff-note-button qa-diff-comment"
+                                    style="display: none;"
+                                >
+                                    <svg aria-hidden="true" class="s12 ic-comment">
+                                        <use
+                                            xlink:href="https://gitlab.com/assets/icons-24aaa921aa9e411162e6913688816c79861d0de4bee876cf6fc4c794be34ee91.svg#comment"
+                                        ></use>
+                                    </svg>
+                                </button>
+                                <a data-linenumber="752" href="#ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_745_752"></a>
+                                <!---->
+                            </div>
+                        </td>
+                        <td class="line_content"><span id="LC752" class="line" lang="go"></span></td>
+                    </tr>
+                    <!---->
+                    <!---->
+                    <tr id="ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_null_null" class="line_holder match">
+                        <td class="diff-line-num old_line match unfold js-unfold">
+                            <div><span role="button" class="context-cell">...</span></div>
+                        </td>
+                        <td class="diff-line-num new_line qa-new-diff-line match unfold js-unfold">
+                            <div><span role="button" class="context-cell">...</span></div>
+                        </td>
+                        <td class="line_content match"></td>
+                    </tr>
+                    <!---->
+                    <!---->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!---->
+</div>

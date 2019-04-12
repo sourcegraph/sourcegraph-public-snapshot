@@ -1,32 +1,44 @@
+import classNames from 'classnames'
 import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ActionNavItemsClassProps, ActionsNavItems } from '../../../../../shared/src/actions/ActionsNavItems'
+import { ContributionScope } from '../../../../../shared/src/api/client/context/context'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ISite, IUser } from '../../../../../shared/src/graphql/schema'
-import { getModeFromPath } from '../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { toURIWithPath } from '../../../../../shared/src/util/url'
-import { FileInfo } from '../../libs/code_intelligence'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { FileInfoWithContents } from '../../libs/code_intelligence/code_views'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
-    className: string
-    style: React.CSSProperties
-    iconStyle?: React.CSSProperties
+    className?: string
 }
 
-interface CodeViewToolbarProps
+export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
+    /**
+     * Class name for the `<ul>` element wrapping all toolbar items
+     */
+    className?: string
+
+    /**
+     * The scope of this toolbar (e.g., the view component that it is associated with).
+     */
+    scope?: ContributionScope
+}
+
+export interface CodeViewToolbarProps
     extends PlatformContextProps<'forceUpdateTooltip'>,
         ExtensionsControllerProps,
-        FileInfo,
-        ActionNavItemsClassProps {
+        FileInfoWithContents,
+        TelemetryProps,
+        CodeViewToolbarClassProps {
     onEnabledChange?: (enabled: boolean) => void
 
-    buttonProps: ButtonProps
+    buttonProps?: ButtonProps
     location: H.Location
 }
 
@@ -51,77 +63,63 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
 
     public render(): JSX.Element | null {
         return (
-            <div
-                className="code-view-toolbar"
-                style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}
-            >
-                <ul className={`nav ${this.props.platformContext ? 'pr-1' : ''}`}>
-                    <ActionsNavItems
-                        {...this.props}
-                        menu={ContributableMenu.EditorTitle}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
-                        scope={{
-                            type: 'textEditor',
-                            item: {
-                                uri: toURIWithPath(this.props),
-                                languageId: getModeFromPath(this.props.filePath) || 'could not determine mode',
-                            },
-                            selections: [],
-                        }}
-                    />
-                </ul>
+            <ul className={classNames('code-view-toolbar', this.props.className)}>
+                <ActionsNavItems
+                    {...this.props}
+                    listItemClass={classNames('code-view-toolbar__item', this.props.listItemClass)}
+                    menu={ContributableMenu.EditorTitle}
+                    extensionsController={this.props.extensionsController}
+                    platformContext={this.props.platformContext}
+                    location={this.props.location}
+                    scope={this.props.scope}
+                />{' '}
                 {this.props.baseCommitID && this.props.baseHasFileContents && (
-                    <OpenDiffOnSourcegraph
-                        label={'View file diff'}
-                        ariaLabel="View file diff on Sourcegraph"
-                        openProps={{
-                            repoName: this.props.baseRepoName || this.props.repoName,
-                            filePath: this.props.baseFilePath || this.props.filePath,
-                            rev: this.props.baseRev || this.props.baseCommitID,
-                            query: {
-                                diff: {
-                                    rev: this.props.baseCommitID,
+                    <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
+                        <OpenDiffOnSourcegraph
+                            ariaLabel="View file diff on Sourcegraph"
+                            className={this.props.actionItemClass}
+                            iconClassName={this.props.actionItemIconClass}
+                            openProps={{
+                                repoName: this.props.baseRepoName || this.props.repoName,
+                                filePath: this.props.baseFilePath || this.props.filePath,
+                                rev: this.props.baseRev || this.props.baseCommitID,
+                                query: {
+                                    diff: {
+                                        rev: this.props.baseCommitID,
+                                    },
                                 },
-                            },
-                            commit: {
-                                baseRev: this.props.baseRev!,
-                                headRev: this.props.rev!,
-                            },
-                        }}
-                        className={this.props.buttonProps.className}
-                        style={this.props.buttonProps.style}
-                        iconStyle={this.props.buttonProps.iconStyle}
-                    />
+                                commit: {
+                                    baseRev: this.props.baseRev || this.props.baseCommitID,
+                                    headRev: this.props.rev || this.props.commitID,
+                                },
+                            }}
+                        />
+                    </li>
+                )}{' '}
+                {// Only show the "View file" button if we were able to fetch the file contents
+                // from the Sourcegraph instance
+                !this.props.baseCommitID && (this.props.content !== undefined || this.props.baseContent !== undefined) && (
+                    <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
+                        <OpenOnSourcegraph
+                            ariaLabel="View file on Sourcegraph"
+                            className={this.props.actionItemClass}
+                            iconClassName={this.props.actionItemIconClass}
+                            openProps={{
+                                repoName: this.props.repoName,
+                                filePath: this.props.filePath,
+                                rev: this.props.rev || this.props.commitID,
+                                query: this.props.commitID
+                                    ? {
+                                          diff: {
+                                              rev: this.props.commitID,
+                                          },
+                                      }
+                                    : undefined,
+                            }}
+                        />
+                    </li>
                 )}
-
-                {/*
-                  Use a ternary here because prettier insists on changing parens resulting in this button only being rendered
-                  if the condition after the || is satisfied.
-                 */}
-                {!this.props.baseCommitID && (
-                    <OpenOnSourcegraph
-                        label={`View file`}
-                        ariaLabel="View file on Sourcegraph"
-                        openProps={{
-                            repoName: this.props.repoName,
-                            filePath: this.props.filePath,
-                            rev: this.props.rev || this.props.commitID,
-                            query: this.props.commitID
-                                ? {
-                                      diff: {
-                                          rev: this.props.commitID,
-                                      },
-                                  }
-                                : undefined,
-                        }}
-                        className={this.props.buttonProps.className}
-                        style={this.props.buttonProps.style}
-                        iconStyle={this.props.buttonProps.iconStyle}
-                    />
-                )}
-            </div>
+            </ul>
         )
     }
 }

@@ -45,6 +45,11 @@ type ExtensionRegistryResolver interface {
 	LocalExtensionIDPrefix() *string
 
 	ImplementsLocalExtensionRegistry() bool // not exposed via GraphQL
+	// FilterRemoteExtensions enforces `allowRemoteExtensions` by returning a
+	// new slice with extension IDs that were present in
+	// `allowRemoteExtensions`. It returns the original extension IDs if
+	// `allowRemoteExtensions` is not set.
+	FilterRemoteExtensions([]string) []string // not exposed via GraphQL
 }
 
 type RegistryExtensionConnectionArgs struct {

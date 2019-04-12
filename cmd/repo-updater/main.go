@@ -40,7 +40,10 @@ func main() {
 	clock := func() time.Time { return time.Now().UTC() }
 
 	// Syncing relies on access to frontend and git-server, so wait until they started up.
-	api.WaitForFrontend(ctx)
+	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
+		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
+	}
+
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
 	dsn := repos.NewDSN().String()
@@ -64,20 +67,27 @@ func main() {
 	cliFactory := repos.NewHTTPClientFactory()
 	src := repos.NewSourcer(cliFactory)
 
-	for _, m := range []repos.Migration{
+	migrations := []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
-		// TODO(tsenart): Enable the following migrations once we implement the
-		// functionality needed to run them only once.
-		//    repos.GithubReposEnabledStateDeprecationMigration(src, clock),
-	} {
-		if err := m.Run(ctx, store); err != nil {
-			log.Fatalf("failed to run migration: %s", err)
-		}
+		repos.GitLabSetDefaultProjectQueryMigration(clock),
 	}
 
 	var kinds []string
 	if syncerEnabled {
-		kinds = append(kinds, "GITHUB")
+		kinds = append(kinds,
+			"GITHUB",
+			"GITLAB",
+			"BITBUCKETSERVER",
+		)
+		migrations = append(migrations,
+			repos.EnabledStateDeprecationMigration(src, clock, kinds...),
+		)
+	}
+
+	for _, m := range migrations {
+		if err := m.Run(ctx, store); err != nil {
+			log.Fatalf("failed to run migration: %s", err)
+		}
 	}
 
 	newSyncerEnabled := make(map[string]bool, len(kinds))
@@ -149,7 +159,7 @@ func main() {
 		go func() {
 			for diff := range diffs {
 				if !conf.Get().DisableAutoGitUpdates {
-					repos.Scheduler.UpdateFromDiff(diff)
+					repos.Scheduler.Update(diff.Repos()...)
 				}
 			}
 		}()
@@ -163,6 +173,7 @@ func main() {
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{
+		Kinds:            kinds,
 		Store:            store,
 		Syncer:           syncer,
 		OtherReposSyncer: otherSyncer,

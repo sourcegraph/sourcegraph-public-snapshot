@@ -2,7 +2,10 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { CommandListPopoverButton } from '../../../../../shared/src/commandPalette/CommandList'
+import {
+    CommandListPopoverButton,
+    CommandListPopoverButtonProps,
+} from '../../../../../shared/src/commandPalette/CommandList'
 import { Notifications } from '../../../../../shared/src/notifications/Notifications'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
@@ -16,12 +19,10 @@ import {
     ExtensionsControllerProps,
 } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { TelemetryContext } from '../../../../../shared/src/telemetry/telemetryContext'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
-import { eventLogger } from '../../shared/util/context'
-import { getGlobalDebugMount } from '../github/extensions'
 import { CodeHost } from './code_intelligence'
 
 /**
@@ -39,46 +40,44 @@ export function initializeExtensions({
 interface InjectProps
     extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL'>,
         ExtensionsControllerProps {
-    getMount?: () => HTMLElement
     history: H.History
 }
 
-export function injectCommandPalette({ extensionsController, platformContext, getMount, history }: InjectProps): void {
-    if (getMount) {
-        render(
-            <ShortcutProvider>
-                <TelemetryContext.Provider value={eventLogger}>
-                    <CommandListPopoverButton
-                        extensionsController={extensionsController}
-                        menu={ContributableMenu.CommandPalette}
-                        platformContext={platformContext}
-                        location={history.location}
-                    />
-                    <Notifications extensionsController={extensionsController} />
-                </TelemetryContext.Provider>
-            </ShortcutProvider>,
-            getMount()
-        )
-    }
+export const renderCommandPalette = ({
+    extensionsController,
+    history,
+    ...props
+}: InjectProps & Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName'>) => (
+    mount: HTMLElement
+): void => {
+    render(
+        <ShortcutProvider>
+            <CommandListPopoverButton
+                {...props}
+                menu={ContributableMenu.CommandPalette}
+                extensionsController={extensionsController}
+                location={history.location}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+            />
+            <Notifications extensionsController={extensionsController} />
+        </ShortcutProvider>,
+        mount
+    )
 }
 
-export function injectGlobalDebug({
+export const renderGlobalDebug = ({
     extensionsController,
     platformContext,
     history,
-    showGlobalDebug,
-    getMount = getGlobalDebugMount,
-}: InjectProps & { showGlobalDebug?: boolean }): void {
-    if (showGlobalDebug) {
-        render(
-            <GlobalDebug
-                extensionsController={extensionsController}
-                location={history.location}
-                platformContext={platformContext}
-            />,
-            getMount()
-        )
-    }
+}: InjectProps & { showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
+    render(
+        <GlobalDebug
+            extensionsController={extensionsController}
+            location={history.location}
+            platformContext={platformContext}
+        />,
+        mount
+    )
 }
 
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)

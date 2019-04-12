@@ -63,7 +63,7 @@ export const SiteAdminArea = withAuthenticatedUser(
                 settingsCascade: this.props.settingsCascade,
                 isLightTheme: this.props.isLightTheme,
                 activation: this.props.activation,
-                site: { __typename: 'Site' as 'Site', id: window.context.siteGQLID },
+                site: { __typename: 'Site' as const, id: window.context.siteGQLID },
                 overviewComponents: this.props.overviewComponents,
             }
 

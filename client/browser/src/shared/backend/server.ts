@@ -1,7 +1,6 @@
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { IClientConfigurationDetails } from '../../../../../shared/src/graphql/schema'
 import { isOptions } from '../../context'
 import { sourcegraphUrl } from '../util/context'
 import { getContext } from './context'
@@ -11,7 +10,7 @@ import { queryGraphQL } from './graphql'
  * @return Observable that emits the client configuration details.
  *         Errors
  */
-export const resolveClientConfiguration = (): Observable<IClientConfigurationDetails> =>
+export const resolveClientConfiguration = (): Observable<GQL.IClientConfigurationDetails> =>
     queryGraphQL({
         ctx: getContext({ repoKey: '' }),
         request: `query ClientConfiguration() {

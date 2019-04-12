@@ -1,22 +1,16 @@
 .options-menu {
-    min-width: 400px;
-
-    &__section {
-        padding: 0.85rem 1rem;
-        border-top: 1px solid #e4e9f1;
-
-        &__button {
-            margin-top: 1rem;
-        }
-    }
-
-    &__no-border {
-        border-top: none;
-    }
+    width: 25rem;
 
     &--full {
-        max-width: 400px;
         margin: 8rem auto;
         box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    &__section {
+        padding: 1rem;
+        border-top: 1px solid $gray-02;
+        &:first-child {
+            border-top: none;
+        }
     }
 }

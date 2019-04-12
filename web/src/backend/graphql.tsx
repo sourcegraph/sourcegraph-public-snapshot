@@ -43,7 +43,7 @@ export function requestGraphQL<R extends GQL.IGraphQLResponseRoot>(
  * @return Observable That emits the result or errors if the HTTP request failed
  */
 export function queryGraphQL(query: GraphQLDocument, variables: any = {}): Observable<GraphQLResult<GQL.IQuery>> {
-    return requestGraphQL(query, variables) as Observable<GraphQLResult<GQL.IQuery>>
+    return requestGraphQL(query, variables)
 }
 
 /**
@@ -57,5 +57,5 @@ export function mutateGraphQL(
     mutation: GraphQLDocument,
     variables: any = {}
 ): Observable<GraphQLResult<GQL.IMutation>> {
-    return requestGraphQL(mutation, variables) as Observable<GraphQLResult<GQL.IMutation>>
+    return requestGraphQL(mutation, variables)
 }

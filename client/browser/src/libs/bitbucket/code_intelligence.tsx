@@ -1,11 +1,23 @@
 import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
-import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
+import { querySelectorOrSelf } from '../../shared/util/dom'
+import { CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
+import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
-import { resolveDiffFileInfo, resolveFileInfo } from './file_info'
+import {
+    resolveCommitViewFileInfo,
+    resolveCompareFileInfo,
+    resolveFileInfoForSingleFileSourceView,
+    resolvePullRequestFileInfo,
+    resolveSingleFileDiffFileInfo,
+} from './file_info'
+import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
 
-const createToolbarMount = (codeView: HTMLElement) => {
+/**
+ * Gets or creates the toolbar mount for allcode views.
+ */
+export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
     if (existingMount) {
         return existingMount
@@ -58,68 +70,149 @@ const createPositionAdjuster = (
     return of(newPos)
 }
 
-const singleFileCodeView: CodeViewWithOutSelector = {
-    getToolbarMount: createToolbarMount,
+const toolbarButtonProps = {
+    className: 'aui-button',
+}
+
+/**
+ * A code view spec for single file code view in the "source" view (not diff).
+ */
+const singleFileSourceCodeView: CodeViewSpecWithOutSelector = {
+    getToolbarMount,
     dom: singleFileDOMFunctions,
-    resolveFileInfo,
+    resolveFileInfo: resolveFileInfoForSingleFileSourceView,
     adjustPosition: createPositionAdjuster(singleFileDOMFunctions),
-    toolbarButtonProps: {
-        className: 'aui-button',
-        style: { marginLeft: 10 },
-    },
+    toolbarButtonProps,
 }
 
-const diffCodeView: CodeViewWithOutSelector = {
-    getToolbarMount: createToolbarMount,
+const baseDiffCodeView = {
+    getToolbarMount,
     dom: diffDOMFunctions,
-    resolveFileInfo: resolveDiffFileInfo,
     adjustPosition: createPositionAdjuster(diffDOMFunctions),
-    toolbarButtonProps: {
-        className: 'aui-button',
-        style: { marginLeft: 10 },
+    toolbarButtonProps,
+}
+
+/**
+ * A code view spec for a single file "diff to previous" view
+ */
+const singleFileDiffCodeView: CodeViewSpecWithOutSelector = {
+    ...baseDiffCodeView,
+    resolveFileInfo: resolveSingleFileDiffFileInfo,
+}
+
+/**
+ * A code view spec for pull requests
+ */
+const pullRequestDiffCodeView: CodeViewSpecWithOutSelector = {
+    ...baseDiffCodeView,
+    resolveFileInfo: resolvePullRequestFileInfo,
+}
+
+/**
+ * A code view spec for compare pages
+ */
+const compareDiffCodeView: CodeViewSpecWithOutSelector = {
+    ...baseDiffCodeView,
+    resolveFileInfo: resolveCompareFileInfo,
+}
+
+/**
+ * A code view spec for commit pages
+ */
+const commitDiffCodeView: CodeViewSpecWithOutSelector = {
+    ...baseDiffCodeView,
+    resolveFileInfo: resolveCommitViewFileInfo,
+}
+
+const codeViewSpecResolver: CodeViewSpecResolver = {
+    selector: '.file-content',
+    resolveCodeViewSpec: codeView => {
+        const contentView = codeView.querySelector('.content-view')
+        if (!contentView) {
+            return null
+        }
+        if (isCompareView()) {
+            return compareDiffCodeView
+        }
+        if (isCommitsView()) {
+            return commitDiffCodeView
+        }
+        if (isSingleFileView(codeView)) {
+            const isDiff = contentView.classList.contains('diff-view')
+            return isDiff ? singleFileDiffCodeView : singleFileSourceCodeView
+        }
+        if (isPullRequestView()) {
+            return pullRequestDiffCodeView
+        }
+        console.error('Unknown code view', codeView)
+        return null
     },
 }
 
-const resolveCodeView: CodeViewResolver['resolveCodeView'] = codeView => {
-    const contentView = codeView.querySelector('.content-view')
-    if (!contentView) {
+const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
+    const headerElement = querySelectorOrSelf(container, '.aui-header-primary .aui-nav')
+    if (!headerElement) {
         return null
     }
-
-    const isDiff = contentView.classList.contains('diff-view')
-
-    return isDiff ? diffCodeView : singleFileCodeView
-}
-
-const codeViewResolver: CodeViewResolver = {
-    selector: '.file-content',
-    resolveCodeView,
-}
-
-function getCommandPaletteMount(): HTMLElement {
-    const headerElem = document.querySelector('.aui-header-primary .aui-nav')
-    if (!headerElem) {
-        throw new Error('Unable to find command palette mount')
+    const classes = ['command-palette-button', 'command-palette-button--bitbucket-server']
+    const create = (): HTMLElement => {
+        const mount = document.createElement('li')
+        mount.className = classes.join(' ')
+        headerElement.insertAdjacentElement('beforeend', mount)
+        return mount
     }
-
-    const commandListClasses = ['command-palette-button', 'command-palette-button__bitbucket-server']
-
-    const createCommandList = (): HTMLElement => {
-        const commandListElem = document.createElement('li')
-        commandListElem.className = commandListClasses.join(' ')
-        headerElem!.insertAdjacentElement('beforeend', commandListElem)
-
-        return commandListElem
-    }
-
-    return document.querySelector<HTMLElement>(commandListClasses.map(c => `.${c}`).join('')) || createCommandList()
+    const preexisting = headerElement.querySelector<HTMLElement>(classes.map(c => `.${c}`).join(''))
+    return preexisting || create()
 }
 
-export const bitbucketServerCodeHost: CodeHost = {
+function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement | null {
+    const branchSelectorButtons = querySelectorOrSelf(container, '.branch-selector-toolbar .aui-buttons')
+    if (!branchSelectorButtons) {
+        return null
+    }
+    const preexisting = branchSelectorButtons.querySelector<HTMLElement>('#open-on-sourcegraph')
+    if (preexisting) {
+        return preexisting
+    }
+    const mount = document.createElement('span')
+    mount.id = 'open-on-sourcegraph'
+    mount.className = 'open-on-sourcegraph--bitbucket-server'
+    branchSelectorButtons.insertAdjacentElement('beforeend', mount)
+    return mount
+}
+
+export const checkIsBitbucket = (): boolean =>
+    !!document.querySelector('.bitbucket-header-logo') ||
+    !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
+
+export const bitbucketServerCodeHost = {
     name: 'bitbucket-server',
-    check: () =>
-        !!document.querySelector('.bitbucket-header-logo') ||
-        !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket'),
-    codeViewResolver,
+    check: checkIsBitbucket,
+    codeViewSpecResolver,
     getCommandPaletteMount,
+    commandPaletteClassProps: {
+        popoverClassName: 'searchable-selector command-palette-popover--bitbucket-server',
+        resultsContainerClassName: 'results',
+        listClassName: 'results-list',
+        listItemClassName: 'result',
+        selectedListItemClassName: 'focused',
+        noResultsClassName: 'no-results',
+    },
+    codeViewToolbarClassProps: {
+        className: 'aui-buttons',
+        actionItemClass: 'aui-button action-item--bitbucket-server',
+        // actionItemPressedClass is not needed because Bitbucket applies styling to aria-pressed="true"
+        actionItemIconClass: 'aui-icon',
+        listItemClass: 'action-nav-item--bitbucket',
+    },
+    hoverOverlayClassProps: {
+        actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
+        closeButtonClassName: 'aui-button',
+    },
+    getViewContextOnSourcegraphMount,
+    getContext,
+    viewOnSourcegraphButtonClassProps: {
+        className: 'aui-button',
+        iconClassName: 'aui-icon',
+    },
 }

@@ -33,6 +33,7 @@ interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
+    isSourcegraphDotCom: boolean
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
@@ -135,11 +136,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         //  Update the `at` query param with the latest first visible item
         this.subscriptions.add(
             firstVisibleItemChanges
-                .pipe(
-                    // Skip page load
-                    skip(1)
-                )
-                .subscribe(this.setCheckpoint)
+                // Skip page load
+                .pipe(skip(1))
+                .subscribe(checkpoint => this.setCheckpoint(checkpoint))
         )
 
         // Remove the "Jump to top" button when the user starts scrolling
@@ -312,12 +311,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     )}
 
                     {this.props.resultsOrError === undefined ? (
-                        <div className="text-center">
+                        <div className="text-center" data-testid="loading-container">
                             <LoadingSpinner className="icon-inline" /> Loading
                         </div>
                     ) : isErrorLike(this.props.resultsOrError) ? (
                         /* GraphQL, network, query syntax error */
-                        <div className="alert alert-warning">
+                        <div className="alert alert-warning" data-testid="search-results-list-error">
                             <AlertCircleIcon className="icon-inline" />
                             {upperFirst(this.props.resultsOrError.message)}
                         </div>
@@ -336,6 +335,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onExpandAllResultsToggle={this.props.onExpandAllResultsToggle}
                                         onSaveQueryClick={this.props.onSaveQueryClick}
                                         onShowMoreResultsClick={this.props.onShowMoreResultsClick}
+                                        showDotComMarketing={this.props.isSourcegraphDotCom}
                                     />
 
                                     {/* Results */}
@@ -405,7 +405,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                         your query.
                                                     </>,
                                                     /* If running on non-cluster, give some smart advice */
-                                                    ...(!window.context.sourcegraphDotComMode &&
+                                                    ...(!this.props.isSourcegraphDotCom &&
                                                     !window.context.isClusterDeployment
                                                         ? [
                                                               <>

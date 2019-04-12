@@ -1,13 +1,14 @@
 package types
 
-//lint:file-ignore SA6004 We rather have a collection of regular expressions.
-
 import (
 	"errors"
 	"reflect"
 	"regexp"
 	"testing"
 
+	"github.com/leanovate/gopter"
+	"github.com/leanovate/gopter/gen"
+	"github.com/leanovate/gopter/prop"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 )
 
@@ -143,4 +144,80 @@ func TestUnquoteString(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRegexpCompile(t *testing.T) {
+	t.Run("curly brace", func(t *testing.T) {
+		if _, err := regexp.Compile("{"); err != nil {
+			t.Error(err)
+		}
+	})
+}
+
+func Test_autoFix(t *testing.T) {
+	t.Run("handcrafted cases", func(t *testing.T) {
+		tests := []struct {
+			pat  string
+			want string
+		}{
+			{"", ""},
+			{"a", "a"},
+			{"(", `\(`},
+			{"[", `\[`},
+			// Unclosed curly braces are already valid regular expressions.
+			{"{", `{`},
+			{"a(", `a\(`},
+			{"(a", `(a`},
+			{"(a)", "(a)"},
+			{`\ba(`, `\ba\(`},
+			{`\bfoo(`, `\bfoo\(`},
+			{"*", `*`},
+			{"*a", `*a`},
+			{"a*", "a*"},
+			{"$myvar", `$myvar`},
+			{"$f(", `$f\(`},
+			{"f()", `f()`},
+			{"()", `()`},
+			{`(\()`, `(\()`},
+			{"()f", `()f`},
+			{"f(a", `f(a`},
+			{"f(a,", `f(a,`},
+			{"b)", `b)`},
+			{"[)(]", `[)(]`},
+			{"[(]", `[(]`},
+			{"[()]", `[()]`},
+		}
+		for _, tt := range tests {
+			t.Run(tt.pat, func(t *testing.T) {
+				if got := autoFix(tt.pat); got != tt.want {
+					t.Errorf("autoFix(`%v`) = `%v`, want `%v`", tt.pat, got, tt.want)
+				}
+				// Make sure autoFix never causes regexes that compile to no longer compile.
+				_, err := regexp.Compile(tt.pat)
+				if err == nil {
+					if _, err := regexp.Compile(tt.want); err != nil {
+						t.Errorf("want %q regexp fails to compile: %s", tt.want, err)
+					}
+				}
+				once := autoFix(tt.pat)
+				twice := autoFix(once)
+				if twice != once {
+					t.Errorf("autoFix is not idempotent. autoFix(autoFix(`%s`)) = `%s` != autoFix(`%s`) = `%s`", tt.pat, twice, tt.pat, once)
+				}
+			})
+		}
+	})
+	t.Run("quick check", func(t *testing.T) {
+		pp := gopter.DefaultTestParameters()
+		props := gopter.NewProperties(pp)
+		props.Property("idempotent", prop.ForAll(
+			func(s string) bool {
+				once := autoFix(s)
+				twice := autoFix(once)
+				return once == twice
+			},
+			gen.RegexMatch(`^?[abc123()\[\]{}.?\\^$*+]*$?`),
+		))
+		props.TestingRun(t)
+	})
 }

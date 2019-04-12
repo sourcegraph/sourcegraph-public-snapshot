@@ -71,7 +71,7 @@ function getMaxDiffFromTabView(): { diffID: number; revDescription: string } | n
                 continue
             }
             const revDescription = (link.parentNode!.parentNode!.childNodes[2].childNodes[0] as any).href
-            const shaMatch = TAG_PATTERN.exec(revDescription!)
+            const shaMatch = TAG_PATTERN.exec(revDescription)
             if (!shaMatch) {
                 continue
             }
@@ -374,6 +374,8 @@ export async function getPhabricatorState(
 /**
  * This hacks javelin Stratcom to ignore command + click actions on sg-clickable tokens.
  * Without this, two windows open when a user command + clicks on a token.
+ *
+ * TODO could this be eliminated with shadow DOM?
  */
 export function metaClickOverride(): void {
     const JX = (window as any).JX

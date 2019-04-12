@@ -103,19 +103,19 @@ export class Position {
     public compareTo(other: sourcegraph.Position): number {
         if (this._line < other.line) {
             return -1
-        } else if (this._line > other.line) {
-            return 1
-        } else {
-            // equal line
-            if (this._character < other.character) {
-                return -1
-            } else if (this._character > other.character) {
-                return 1
-            } else {
-                // equal line and character
-                return 0
-            }
         }
+        if (this._line > other.line) {
+            return 1
+        }
+        // equal line
+        if (this._character < other.character) {
+            return -1
+        }
+        if (this._character > other.character) {
+            return 1
+        }
+        // equal line and character
+        return 0
     }
 
     public translate(lineDelta?: number, characterDelta?: number): sourcegraph.Position

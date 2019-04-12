@@ -10,7 +10,7 @@ const GitHubSchemaJSON = `{
   "description": "Configuration for a connection to GitHub or GitHub Enterprise.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "token"],
+  "required": ["url", "token", "repositoryQuery"],
   "properties": {
     "url": {
       "description": "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
@@ -35,9 +35,10 @@ const GitHubSchemaJSON = `{
       "minLength": 1
     },
     "certificate": {
-      "description": "TLS certificate of a GitHub Enterprise instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
+      "description": "TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
       "type": "string",
-      "pattern": "^-----BEGIN CERTIFICATE-----\n"
+      "pattern": "^-----BEGIN CERTIFICATE-----\n",
+      "examples": ["-----BEGIN CERTIFICATE-----\n..."]
     },
     "repos": {
       "description": "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",
@@ -50,6 +51,7 @@ const GitHubSchemaJSON = `{
       "minItems": 1,
       "items": {
         "type": "object",
+        "title": "ExcludedGitHubRepo",
         "additionalProperties": false,
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {

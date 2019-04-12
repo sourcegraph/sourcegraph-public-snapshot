@@ -1,21 +1,26 @@
-.hover-overlay-mount__bitbucket-server {
-    .hover-overlay {
-        &__action {
-            padding: 4px 10px;
-            color: #42526e;
-            background-color: rgba(9, 30, 66, 0.04);
-            transition: background-color 0.1s ease-out;
-
-            &:hover {
-                text-decoration: none;
-                background-color: rgba(9, 30, 66, 0.08);
-            }
-        }
-    }
+// Command palette
+.command-palette-button--bitbucket-server {
+    position: relative;
+    top: 5px;
 }
 
-.command-palette-button__bitbucket-server {
-    .popover-button2__container {
-        display: block;
+// Open on Sourcegraph button
+.open-on-sourcegraph--bitbucket-server {
+    margin-left: 2px; // same as other buttons in the row
+}
+
+.action-nav-item--bitbucket {
+    margin-left: 5px;
+}
+
+// Hover overlay buttons
+.hover-action-item--bitbucket-server {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border-bottom: none !important;
+    border-top: none !important;
+    border-right: none !important;
+    &:first-child {
+        border-left: none !important;
     }
 }

@@ -40,6 +40,8 @@ instructions](doc/dev/local_development.md#step-2-install-dependencies).
 
 ### Installation
 
+> Prebuilt Docker images are the fastest way to use Sourcegraph. See the [quickstart installation guide](https://docs.sourcegraph.com/#quickstart).
+
 1.  [Ensure Docker is running](doc/dev/local_development.md#step-5-start-docker)
 1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-4-initialize-your-database)
 1.  Start the development server

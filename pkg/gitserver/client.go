@@ -9,9 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -29,7 +27,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"golang.org/x/net/context/ctxhttp"
@@ -83,7 +81,9 @@ func updateGitServerAddrList() {
 		// ask the frontend for this information. This is generally the code
 		// path that all non-frontend services take.
 		ctx := context.Background()
-		api.WaitForFrontend(ctx)
+		if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
+			log15.Error("failed to wait for frontend", "error", err)
+		}
 
 		fetchAddrsOnce := func() {
 			for {
@@ -370,10 +370,18 @@ func (c *Client) ping(ctx context.Context, addr string) error {
 }
 
 // ListGitolite lists Gitolite repositories.
-func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) ([]string, error) {
+func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
-	return doListOne(ctx, "?gitolite="+url.QueryEscape(gitoliteHost), c.addrForKey(ctx, gitoliteHost))
+
+	resp, err := ctxhttp.Get(ctx, nil, "http://"+c.addrForKey(ctx, gitoliteHost)+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&list)
+	return list, err
 }
 
 // ListCloned lists all cloned repositories
@@ -401,10 +409,10 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 	return repos, err
 }
 
-// GetGitolitePhabricatorMetadata returns Phabricator metadata for a
-// Gitolite repository fetched via a user-provided command.
-func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repo string) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	u := "http://" + c.addrForKey(ctx, gitoliteHost) + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(repo)
+// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
+// a user-provided command.
+func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
+	u := "http://" + c.addrForKey(ctx, gitoliteHost) + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(string(repoName))
 	resp, err := ctxhttp.Get(ctx, nil, u)
 	if err != nil {
 		return nil, err
@@ -416,7 +424,7 @@ func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHos
 	return &metadata, err
 }
 
-func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, error) {
+func doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
 	resp, err := ctxhttp.Get(ctx, nil, "http://"+addr+"/list"+urlSuffix)
 	if err != nil {
 		return nil, err
@@ -476,6 +484,9 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return err
+	}
+	if r.StatusCode != http.StatusOK {
+		return fmt.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
 	}
 
 	// Try unmarshaling new response format (?v=2) first.
@@ -605,39 +616,21 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string,
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
-		span.LogKV("event", "Waiting on HTTP limiter")
 		c.HTTPLimiter.Acquire()
 		defer c.HTTPLimiter.Release()
 		span.LogKV("event", "Acquired HTTP limiter")
 	}
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("Gitserver Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
+
 	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }
-
-func (c *Client) UploadPack(repoName api.RepoName, w http.ResponseWriter, r *http.Request) {
-	repoName = protocol.NormalizeRepo(repoName)
-	addr := c.addrForRepo(r.Context(), repoName)
-
-	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(string(repoName)))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	(&httputil.ReverseProxy{
-		Director: func(r *http.Request) {
-			r.URL = u
-		},
-		ErrorLog: uploadPackErrorLog,
-	}).ServeHTTP(w, r)
-}
-
-var uploadPackErrorLog = log.New(env.DebugOut, "git upload-pack proxy: ", log.LstdFlags)
 
 func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)

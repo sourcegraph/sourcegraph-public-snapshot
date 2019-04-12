@@ -55,7 +55,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         jsonSchema={this.props.jsonSchema}
                         canEdit={false}
                         loading={this.props.loading}
-                        height={300}
+                        height={350}
                         isLightTheme={this.props.isLightTheme}
                         onChange={this.onConfigChange}
                         history={this.props.history}

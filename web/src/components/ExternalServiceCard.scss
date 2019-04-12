@@ -1,0 +1,92 @@
+$icon-colors: (
+    github: #2ebc4f,
+    aws: #f8991d,
+    bitbucket: #2684ff,
+    gitlab: #fc6e26,
+    gitolite: #1c7ed6,
+    phabricator: #4a5f88,
+    git: #f14e32,
+);
+
+.external-service-card {
+    display: flex;
+
+    @each $icon, $color in $icon-colors {
+        &--#{$icon} {
+            border-left: 2px solid $color;
+            border-radius: 2px;
+        }
+    }
+
+    border-top: 1px solid $color-light-border;
+    border-right: 1px solid $color-light-border;
+    border-bottom: 1px solid $color-light-border;
+    border-radius: 0 2px 2px 0;
+
+    &__icon {
+        flex: 0 0 0;
+        padding: 0.25rem 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    &__main {
+        flex: 1 1 0;
+        margin-top: 0.5rem;
+    }
+    &__main-header {
+        margin: 0;
+        padding: 0;
+        font-size: 1.25em;
+    }
+    &__main-body {
+        margin: 0;
+        padding: 0;
+        font-size: 0.75em;
+    }
+
+    .theme-dark & {
+        background-color: #0e121b;
+        border-color: var(--input-border-color);
+        .phabricator-icon.mdi-icon {
+            fill: $color-text;
+        }
+    }
+
+    .theme-light & {
+        background-color: #ffffff;
+        border-color: $border-color;
+    }
+}
+
+.linked-external-service-card {
+    display: block;
+    transition: all 200ms ease-in-out;
+    &:hover {
+        text-decoration: none;
+        transform: translateY(-2px);
+    }
+
+    .theme-dark & {
+        color: $color-text;
+        &:hover {
+            box-shadow: 0 6px 12px 2px rgba(13, 108, 255, 0.125);
+        }
+        @each $icon, $color in $icon-colors {
+            &--#{$icon}:hover {
+                box-shadow: 0 6px 14px 0 transparentize($color, 0.8);
+            }
+        }
+    }
+
+    .theme-light & {
+        color: $color-light-text-1;
+        &:hover {
+            box-shadow: 0 6px 10px 0 rgba(7, 61, 144, 0.05);
+        }
+        @each $icon, $color in $icon-colors {
+            &--#{$icon}:hover {
+                box-shadow: 0 6px 12px 2px transparentize($color, 0.92);
+            }
+        }
+    }
+}

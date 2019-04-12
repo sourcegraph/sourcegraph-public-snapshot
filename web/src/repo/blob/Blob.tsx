@@ -6,12 +6,12 @@ import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
+import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -31,8 +31,10 @@ import {
     toPositionOrRangeHash,
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
+import { WebHoverOverlay } from '../../components/shared'
 import { isDiscussionsEnabled } from '../../discussions'
 import { ThemeProps } from '../../theme'
+import { EventLoggerProps } from '../../tracking/eventLogger'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
@@ -46,6 +48,7 @@ interface BlobProps
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps {
     /** The raw content of the blob. */
@@ -61,7 +64,7 @@ interface BlobProps
     renderMode: RenderMode
 }
 
-interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
+interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The desired position of the discussions gutter overlay */
     discussionsGutterOverlayPosition?: { left: number; top: number }
 
@@ -152,7 +155,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         const hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
-            ActionItemProps
+            ActionItemAction
         >({
             closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -207,13 +210,13 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     filter(isDefined),
                     switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
                     // Ignore click events caused by the user selecting text
-                    filter(() => window.getSelection().toString() === '')
+                    filter(() => window.getSelection()!.toString() === '')
                 )
                 .subscribe(event => {
                     // Prevent selecting text on shift click (click+drag to select will still work)
                     // Note that this is only called if the selection was empty initially (see above),
                     // so this only clears a selection caused by this click.
-                    window.getSelection().removeAllRanges()
+                    window.getSelection()!.removeAllRanges()
 
                     const position = locateTarget(event.target as HTMLElement, domFunctions)
                     let hash: string
@@ -289,21 +292,18 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
-                this.props.extensionsController.services.model.model.next({
-                    ...this.props.extensionsController.services.model.model.value,
-                    visibleViewComponents: [
-                        {
-                            type: 'textEditor' as 'textEditor',
-                            item: {
-                                uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
-                                languageId: model.mode,
-                                text: model.content,
-                            },
-                            selections: lprToSelectionsZeroIndexed(pos),
-                            isActive: true,
+                this.props.extensionsController.services.editor.editors.next([
+                    {
+                        type: 'CodeEditor' as const,
+                        item: {
+                            uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
+                            languageId: model.mode,
+                            text: model.content,
                         },
-                    ],
-                })
+                        selections: lprToSelectionsZeroIndexed(pos),
+                        isActive: true,
+                    },
+                ])
             })
         )
 
@@ -387,7 +387,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         }
 
                         if (decoration.after) {
-                            const codeCell = row.cells[1]!
+                            const codeCell = row.cells[1]
                             this.createLineDecorationAttachmentDOMNode(line, codeCell)
                         }
                     }
@@ -463,13 +463,12 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                 />
                 {this.state.hoverOverlayProps && (
-                    <HoverOverlay
+                    <WebHoverOverlay
+                        {...this.props}
                         {...this.state.hoverOverlayProps}
                         hoverRef={this.nextOverlayElement}
+                        telemetryService={this.props.telemetryService}
                         onCloseButtonClick={this.nextCloseButtonClick}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
                     />
                 )}
                 {this.state.decorationsOrError &&

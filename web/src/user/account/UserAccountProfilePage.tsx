@@ -99,7 +99,7 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                     switchMap(([user]) =>
                         queryUser(user.id).pipe(
                             catchError(error => [asError(error)]),
-                            map(c => ({ userOrError: c } as Pick<State, 'userOrError'>))
+                            map((c): Pick<State, 'userOrError'> => ({ userOrError: c }))
                         )
                     )
                 )
@@ -120,7 +120,7 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                             username: this.state.username === undefined ? null : this.state.username,
                             displayName: this.state.displayName === undefined ? null : this.state.displayName,
                             avatarURL: this.state.avatarURL === undefined ? null : this.state.avatarURL,
-                        }).pipe(catchError(this.handleError))
+                        }).pipe(catchError(err => this.handleError(err)))
                     ),
                     tap(() => {
                         this.setState({ loading: false, saved: true })
@@ -139,7 +139,7 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                     // In case the edited user is the current user, immediately reflect the changes in the UI.
                     mergeMap(() => concat(refreshAuthenticatedUser(), [null]))
                 )
-                .subscribe(undefined, this.handleError)
+                .subscribe({ error: err => this.handleError(err) })
         )
         this.componentUpdates.next(this.props)
     }

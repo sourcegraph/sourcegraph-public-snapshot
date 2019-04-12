@@ -1,12 +1,12 @@
 import { from } from 'rxjs'
-import { filter, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import { isDefined } from '../../util/types'
-import { ViewComponentData } from '../client/model'
+import { CodeEditorData } from '../client/services/editorService'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
-const withSelections = (...selections: { start: number; end: number }[]): ViewComponentData => ({
-    type: 'textEditor',
+const withSelections = (...selections: { start: number; end: number }[]): CodeEditorData => ({
+    type: 'CodeEditor',
     item: { uri: 'foo', languageId: 'l1', text: 't1' },
     selections: selections.map(({ start, end }) => ({
         start: {
@@ -33,14 +33,18 @@ const withSelections = (...selections: { start: number; end: number }[]): ViewCo
 describe('Selections (integration)', () => {
     describe('editor.selectionsChanged', () => {
         test('reflects changes to the current selections', async () => {
-            const { model, extensionAPI } = await integrationTestContext(undefined, {
+            const {
+                services: { editor: editorService },
+                extensionAPI,
+            } = await integrationTestContext(undefined, {
                 roots: [],
-                visibleViewComponents: [],
+                editors: [],
             })
             const selectionChanges = from(extensionAPI.app.activeWindowChanges).pipe(
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
                 filter(isDefined),
+                distinctUntilChanged(),
                 switchMap(editor => editor.selectionsChanges)
             )
             const selectionValues = collectSubscribableValues(selectionChanges)
@@ -50,12 +54,10 @@ describe('Selections (integration)', () => {
                 [],
             ]
             for (const selections of testValues) {
-                model.next({
-                    ...model.value,
-                    visibleViewComponents: [withSelections(...selections)],
-                })
+                editorService.editors.next([withSelections(...selections)])
                 await extensionAPI.internal.sync()
             }
+            await extensionAPI.internal.sync()
             assertToJSON(
                 selectionValues.map(selections => selections.map(s => ({ start: s.start.line, end: s.end.line }))),
                 testValues

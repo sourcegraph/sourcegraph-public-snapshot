@@ -4,16 +4,18 @@ package repoupdater
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -23,6 +25,8 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
+	// Kinds of external services synced with the new syncer
+	Kinds []string
 	repos.Store
 	*repos.Syncer
 	*repos.OtherReposSyncer
@@ -36,9 +40,170 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
+	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
+	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	return mux
+}
+
+func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Request) {
+	var resp protocol.RepoExternalServicesResponse
+
+	if s.Store == nil {
+		respond(w, http.StatusOK, &resp)
+		return
+	}
+
+	var req protocol.RepoExternalServicesRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+		IDs: []uint32{req.ID},
+	})
+
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if len(rs) == 0 {
+		respond(w, http.StatusNotFound, errors.Errorf("repository with ID %v does not exist", req.ID))
+		return
+	}
+
+	svcIDs := rs[0].ExternalServiceIDs()
+	if len(svcIDs) == 0 {
+		respond(w, http.StatusOK, resp)
+		return
+	}
+
+	args := repos.StoreListExternalServicesArgs{
+		IDs: svcIDs,
+	}
+
+	es, err := s.Store.ListExternalServices(r.Context(), args)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp.ExternalServices = newExternalServices(es...)
+
+	respond(w, http.StatusOK, resp)
+}
+
+func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
+	var resp protocol.ExcludeRepoResponse
+
+	if s.Store == nil || len(s.Kinds) == 0 {
+		respond(w, http.StatusOK, &resp)
+		return
+	}
+
+	var req protocol.ExcludeRepoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+		IDs:   []uint32{req.ID},
+		Kinds: s.Kinds,
+	})
+
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if len(rs) == 0 {
+		log15.Warn("exclude-repo: repo not found. skipping", "repo.id", req.ID)
+		respond(w, http.StatusOK, resp)
+		return
+	}
+
+	args := repos.StoreListExternalServicesArgs{
+		Kinds: repos.Repos(rs).Kinds(),
+	}
+
+	es, err := s.Store.ListExternalServices(r.Context(), args)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	for _, e := range es {
+		if err := e.Exclude(rs...); err != nil {
+			break
+		}
+	}
+
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp.ExternalServices = newExternalServices(es...)
+
+	respond(w, http.StatusOK, resp)
+}
+
+// TODO(tsenart): Reuse this function in all handlers.
+func respond(w http.ResponseWriter, code int, v interface{}) {
+	switch val := v.(type) {
+	case error:
+		if val != nil {
+			log15.Error(val.Error())
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(code)
+			fmt.Fprintf(w, "%v", val)
+		}
+	default:
+		w.Header().Set("Content-Type", "application/json")
+		bs, err := json.Marshal(v)
+		if err != nil {
+			respond(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.WriteHeader(code)
+		if _, err = w.Write(bs); err != nil {
+			log15.Error("failed to write response", "error", err)
+		}
+	}
+}
+
+func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+	svcs := make([]api.ExternalService, 0, len(es))
+
+	for _, e := range es {
+		svc := api.ExternalService{
+			ID:          e.ID,
+			Kind:        e.Kind,
+			DisplayName: e.DisplayName,
+			Config:      e.Config,
+			CreatedAt:   e.CreatedAt,
+			UpdatedAt:   e.UpdatedAt,
+		}
+
+		if e.IsDeleted() {
+			svc.DeletedAt = &e.DeletedAt
+		}
+
+		svcs = append(svcs, svc)
+	}
+
+	return svcs
 }
 
 func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
@@ -111,9 +276,12 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	switch req.ExternalService.Kind {
-	case "GITHUB":
-		_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
+	for _, kind := range s.Kinds {
+		if req.ExternalService.Kind != kind {
+			continue
+		}
+
+		_, err := s.Syncer.Sync(r.Context(), kind)
 		switch {
 		case err == nil:
 			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
@@ -125,8 +293,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	default:
-		// TODO(tsenart): Handle other external service kinds.
 	}
 }
 
@@ -169,12 +335,15 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	if s.Store != nil && s.Syncer != nil {
 		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			repo, err := s.Store.GetRepoByName(ctx, string(args.Repo))
-			if err != nil {
+			repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+				Names: []string{string(args.Repo)},
+			})
+
+			if err != nil || len(repos) != 1 || repos[0].IsDeleted() {
 				return nil, false, err
 			}
 
-			info, err := newRepoInfo(repo)
+			info, err := newRepoInfo(repos[0])
 			if err != nil {
 				return nil, false, err
 			}
@@ -182,12 +351,14 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return info, true, nil
 		}})
 	} else {
-		fns = append(fns, getfn{"GITHUB", repos.GetGitHubRepository})
+		fns = append(fns,
+			getfn{"GITHUB", repos.GetGitHubRepository},
+			getfn{"GITLAB", repos.GetGitLabRepository},
+			getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
+		)
 	}
 
 	fns = append(fns,
-		getfn{"GITLAB", repos.GetGitLabRepository},
-		getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
 		getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
 		getfn{"GITOLITE", repos.GetGitoliteRepository},
 	)
@@ -264,6 +435,28 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
 			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
+		}
+	case "gitlab":
+		proj := r.Metadata.(*gitlab.Project)
+		info.Links = &protocol.RepoLinks{
+			Root:   proj.WebURL,
+			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
+		}
+	case "bitbucketserver":
+		repo := r.Metadata.(*bitbucketserver.Repo)
+		if len(repo.Links.Self) == 0 {
+			break
+		}
+
+		href := repo.Links.Self[0].Href
+		root := strings.TrimSuffix(href, "/browse")
+		info.Links = &protocol.RepoLinks{
+			Root:   href,
+			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Commit: pathAppend(root, "/commits/{commit}"),
 		}
 	}
 

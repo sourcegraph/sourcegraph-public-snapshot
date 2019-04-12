@@ -1,0 +1,107 @@
+import * as React from 'react'
+import _VisibilitySensor from 'react-visibility-sensor'
+export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
+    constructor(props: { onChange?: (isVisible: boolean) => void }) {
+        super(props)
+        if (props.onChange) {
+            props.onChange(true)
+        }
+    }
+
+    public render(): JSX.Element {
+        return <>{this.props.children}</>
+    }
+}
+
+jest.mock(
+    'react-visibility-sensor',
+    (): typeof _VisibilitySensor => ({ children, onChange }) => (
+        <>
+            <MockVisibilitySensor onChange={onChange} children={children} />
+        </>
+    )
+)
+
+import { cleanup, getAllByText, getByText, render } from 'react-testing-library'
+import {
+    HIGHLIGHTED_FILE_LINES_REQUEST,
+    HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+} from '../../../web/src/search/testHelpers'
+import { CodeExcerpt } from './CodeExcerpt'
+
+describe('CodeExcerpt', () => {
+    afterAll(cleanup)
+
+    const defaultProps = {
+        repoName: 'github.com/golang/oauth2',
+        commitID: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
+        filePath: '.travis.yml',
+        highlightRanges: [
+            { line: 0, character: 6, highlightLength: 4 },
+            { line: 1, character: 7, highlightLength: 4 },
+            { line: 2, character: 6, highlightLength: 4 },
+        ],
+        isLightTheme: false,
+        className: 'file-match__item-code-excerpt',
+        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+    }
+
+    it('renders correct number of rows', () => {
+        const { container } = render(<CodeExcerpt {...defaultProps} />)
+        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(4)
+    })
+
+    it('renders correct number of rows with context value as 5', () => {
+        const { container } = render(
+            <CodeExcerpt
+                {...defaultProps}
+                context={5}
+                highlightRanges={[{ line: 4, character: 1, highlightLength: 2 }]}
+            />
+        )
+        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(10)
+    })
+
+    it('renders the line number container on each row', () => {
+        // We can't evaluate the content of these containers since the numbers are drawn
+        // by CSS. This is a proxy to make sure the <td> tags with data-line attributes
+        // at least exist.
+        const { container } = render(<CodeExcerpt {...defaultProps} />)
+        const dataLines = container.querySelectorAll('[data-line]')
+        expect(dataLines.length).toBe(4)
+    })
+
+    it('renders the code portion of each row', () => {
+        const { container } = render(<CodeExcerpt {...defaultProps} />)
+        expect(getByText(container, 'first of code')).toBeTruthy()
+        expect(getByText(container, 'second of code')).toBeTruthy()
+        expect(getByText(container, 'third of code')).toBeTruthy()
+        expect(getAllByText(container, 'line').length).toBe(3)
+        expect(getByText(container, 'fourth')).toBeTruthy()
+    })
+
+    it('highlights matches correctly', () => {
+        const { container } = render(<CodeExcerpt {...defaultProps} />)
+        const highlightedSpans = container.querySelectorAll('.selection-highlight')
+        expect(highlightedSpans.length).toBe(3)
+        for (const span of highlightedSpans) {
+            expect(span.textContent === 'line')
+        }
+    })
+
+    it('highlights matches correctly in syntax highlighted code blocks', () => {
+        const highlightRange = [{ line: 12, character: 7, highlightLength: 4 }]
+        const { container } = render(
+            <CodeExcerpt
+                {...defaultProps}
+                highlightRanges={highlightRange}
+                fetchHighlightedFileLines={HIGHLIGHTED_FILE_LINES_REQUEST}
+            />
+        )
+        const highlightedSpans = container.querySelectorAll('.selection-highlight')
+        expect(highlightedSpans.length).toBe(1)
+        for (const span of highlightedSpans) {
+            expect(span.textContent === 'test')
+        }
+    })
+})

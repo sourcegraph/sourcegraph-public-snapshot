@@ -14,7 +14,6 @@ import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
-import { TelemetryContext } from '../../shared/src/telemetry/telemetryContext'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -31,9 +30,11 @@ import { KeybindingsProps } from './keybindings'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { createPlatformContext } from './platform/context'
+import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
+import { search } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -157,16 +158,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     this.setState(() => {
                         if (authenticatedUser) {
                             return { viewerSubject: authenticatedUser }
-                        } else if (
-                            cascade &&
-                            !isErrorLike(cascade) &&
-                            cascade.subjects &&
-                            cascade.subjects.length > 0
-                        ) {
-                            return { viewerSubject: cascade.subjects[0].subject }
-                        } else {
-                            return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
                         }
+                        if (cascade && !isErrorLike(cascade) && cascade.subjects && cascade.subjects.length > 0) {
+                            return { viewerSubject: cascade.subjects[0].subject }
+                        }
+                        return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
                     })
                 }
             )
@@ -238,36 +234,37 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         return (
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
-                    <TelemetryContext.Provider value={eventLogger}>
-                        <BrowserRouter key={0}>
-                            <Route
-                                path="/"
-                                // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                                render={routeComponentProps => (
-                                    <LayoutWithActivation
-                                        {...props}
-                                        {...routeComponentProps}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
-                                        // Theme
-                                        isLightTheme={this.isLightTheme()}
-                                        themePreference={this.state.themePreference}
-                                        onThemePreferenceChange={this.onThemePreferenceChange}
-                                        // Search query
-                                        navbarSearchQuery={this.state.navbarSearchQuery}
-                                        onNavbarQueryChange={this.onNavbarQueryChange}
-                                        // Extensions
-                                        platformContext={this.state.platformContext}
-                                        extensionsController={this.state.extensionsController}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    />
-                                )}
-                            />
-                        </BrowserRouter>
-                        <Tooltip key={1} />
-                        <Notifications key={2} extensionsController={this.state.extensionsController} />
-                    </TelemetryContext.Provider>
+                    <BrowserRouter key={0}>
+                        <Route
+                            path="/"
+                            // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                            render={routeComponentProps => (
+                                <LayoutWithActivation
+                                    {...props}
+                                    {...routeComponentProps}
+                                    authenticatedUser={authenticatedUser}
+                                    viewerSubject={this.state.viewerSubject}
+                                    settingsCascade={this.state.settingsCascade}
+                                    // Theme
+                                    isLightTheme={this.isLightTheme()}
+                                    themePreference={this.state.themePreference}
+                                    onThemePreferenceChange={this.onThemePreferenceChange}
+                                    // Search query
+                                    navbarSearchQuery={this.state.navbarSearchQuery}
+                                    onNavbarQueryChange={this.onNavbarQueryChange}
+                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                    searchRequest={search}
+                                    // Extensions
+                                    platformContext={this.state.platformContext}
+                                    extensionsController={this.state.extensionsController}
+                                    telemetryService={eventLogger}
+                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                />
+                            )}
+                        />
+                    </BrowserRouter>
+                    <Tooltip key={1} />
+                    <Notifications key={2} extensionsController={this.state.extensionsController} />
                 </ShortcutProvider>
             </ErrorBoundary>
         )

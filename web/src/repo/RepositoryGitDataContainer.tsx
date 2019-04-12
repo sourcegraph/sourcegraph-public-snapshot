@@ -3,8 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { RepoQuestionIcon } from '../../../shared/src/components/icons'
-import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { RepoQuestionIcon, RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'

@@ -36,14 +36,15 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Transact", testDBStoreTransact(store)},
 		{"DBStore/ListExternalServices", testStoreListExternalServices(store)},
 		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices(store)},
-		{"DBStore/GetRepoByName", testStoreGetRepoByName(store)},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},
 		{"Syncer/Sync", testSyncerSync(store)},
 		{"Migrations/GithubSetDefaultRepositoryQuery",
 			testGithubSetDefaultRepositoryQueryMigration(store)},
-		{"Migrations/GithubReposEnabledStateDeprecationMigration",
-			testGithubReposEnabledStateDeprecationMigration(store)},
+		{"Migrations/GitLabSetDefaultProjectQueryMigration",
+			testGitLabSetDefaultProjectQueryMigration(store)},
+		{"Migrations/EnabledStateDeprecationMigration",
+			testEnabledStateDeprecationMigration(store)},
 	} {
 		t.Run(tc.name, tc.test)
 	}

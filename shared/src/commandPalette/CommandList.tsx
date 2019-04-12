@@ -1,4 +1,5 @@
 import { ShortcutProps } from '@slimsag/react-shortcuts'
+import classNames from 'classnames'
 import H from 'history'
 import { isArray, sortBy, uniq } from 'lodash'
 import MenuIcon from 'mdi-react/MenuIcon'
@@ -6,17 +7,36 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
-import { ActionItem, ActionItemProps } from '../actions/ActionItem'
+import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { ContributableMenu, EvaluatedContributions } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { PopoverButton } from '../components/PopoverButton'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
+import { TelemetryProps } from '../telemetry/telemetryService'
 
-interface Props
-    extends ExtensionsControllerProps<'services' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+/**
+ * Customizable CSS classes for elements of the the command list
+ */
+export interface CommandListClassProps {
+    popoverClassName?: string
+    inputClassName?: string
+    formClassName?: string
+    listItemClassName?: string
+    selectedListItemClassName?: string
+    selectedActionItemClassName?: string
+    listClassName?: string
+    resultsContainerClassName?: string
+    actionItemClassName?: string
+    noResultsClassName?: string
+}
+
+export interface CommandListProps
+    extends CommandListClassProps,
+        ExtensionsControllerProps<'services' | 'executeCommand'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        TelemetryProps {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
@@ -40,7 +60,7 @@ interface State {
 }
 
 /** Displays a list of commands contributed by extensions for a specific menu. */
-export class CommandList extends React.PureComponent<Props, State> {
+export class CommandList extends React.PureComponent<CommandListProps, State> {
     // Persist recent actions in localStorage. Be robust to serialization errors.
     private static RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
     private static readRecentActions(): string[] | null {
@@ -94,7 +114,7 @@ export class CommandList extends React.PureComponent<Props, State> {
         })
     }
 
-    public componentDidUpdate(_prevProps: Props, prevState: State): void {
+    public componentDidUpdate(_prevProps: CommandListProps, prevState: State): void {
         if (this.state.recentActions !== prevState.recentActions) {
             CommandList.writeRecentActions(this.state.recentActions)
         }
@@ -119,18 +139,18 @@ export class CommandList extends React.PureComponent<Props, State> {
         const selectedIndex = ((this.state.selectedIndex % items.length) + items.length) % items.length
 
         return (
-            <div className="command-list list-group list-group-flush rounded">
-                <div className="list-group-item">
+            <div className="command-list">
+                <header>
                     {/* tslint:disable-next-line:jsx-ban-elements */}
-                    <form className="form" onSubmit={this.onSubmit}>
-                        <label className="sr-only" htmlFor="command-list__input">
+                    <form className={this.props.formClassName} onSubmit={this.onSubmit}>
+                        <label className="sr-only" htmlFor="command-list-input">
                             Command
                         </label>
                         <input
-                            id="command-list__input"
+                            id="command-list-input"
                             ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
                             type="text"
-                            className="form-control px-2 py-1 rounded-0"
+                            className={this.props.inputClassName}
                             value={this.state.input}
                             placeholder="Run Sourcegraph action..."
                             spellCheck={false}
@@ -140,32 +160,42 @@ export class CommandList extends React.PureComponent<Props, State> {
                             onKeyDown={this.onInputKeyDown}
                         />
                     </form>
+                </header>
+                <div className={this.props.resultsContainerClassName}>
+                    <ul className={this.props.listClassName}>
+                        {items.length > 0 ? (
+                            items.map((item, i) => (
+                                <li
+                                    className={classNames(
+                                        this.props.listItemClassName,
+                                        i === selectedIndex && this.props.selectedListItemClassName
+                                    )}
+                                    key={item.action.id}
+                                >
+                                    <ActionItem
+                                        {...this.props}
+                                        className={classNames(
+                                            this.props.actionItemClassName,
+                                            i === selectedIndex && this.props.selectedActionItemClassName
+                                        )}
+                                        {...item}
+                                        ref={i === selectedIndex ? this.setSelectedItem : undefined}
+                                        title={
+                                            <HighlightedMatches
+                                                text={`${item.action.category ? `${item.action.category}: ` : ''}${item
+                                                    .action.title || item.action.command}`}
+                                                pattern={query}
+                                            />
+                                        }
+                                        onDidExecute={this.onActionDidExecute}
+                                    />
+                                </li>
+                            ))
+                        ) : (
+                            <li className={this.props.noResultsClassName}>No matching commands</li>
+                        )}
+                    </ul>
                 </div>
-                {items.length > 0 ? (
-                    items.map((item, i) => (
-                        <ActionItem
-                            className={`list-group-item list-group-item-action px-3 ${
-                                i === selectedIndex ? 'active border-primary' : ''
-                            }`}
-                            key={i}
-                            {...item}
-                            ref={i === selectedIndex ? this.setSelectedItem : undefined}
-                            title={
-                                <HighlightedMatches
-                                    text={`${item.action.category ? `${item.action.category}: ` : ''}${item.action
-                                        .title || item.action.command}`}
-                                    pattern={query}
-                                />
-                            }
-                            onDidExecute={this.onActionDidExecute}
-                            extensionsController={this.props.extensionsController}
-                            platformContext={this.props.platformContext}
-                            location={this.props.location}
-                        />
-                    ))
-                ) : (
-                    <div className="list-group-item text-muted bg-striped-secondary">No matching commands</div>
-                )}
             </div>
         )
     }
@@ -218,10 +248,10 @@ export class CommandList extends React.PureComponent<Props, State> {
 }
 
 export function filterAndRankItems(
-    items: Pick<ActionItemProps, 'action'>[],
+    items: Pick<ActionItemAction, 'action'>[],
     query: string,
     recentActions: string[] | null
-): ActionItemProps[] {
+): ActionItemAction[] {
     if (!query) {
         if (recentActions === null) {
             return items
@@ -229,7 +259,7 @@ export function filterAndRankItems(
         // Show recent actions first.
         return sortBy(
             items,
-            (item: Pick<ActionItemProps, 'action'>): number | null => {
+            (item: Pick<ActionItemAction, 'action'>): number | null => {
                 const index = recentActions.indexOf(item.action.id)
                 return index === -1 ? null : index
             },
@@ -260,10 +290,12 @@ export function filterAndRankItems(
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
 }
 
+export interface CommandListPopoverButtonProps extends CommandListProps {
+    toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
+}
+
 export class CommandListPopoverButton extends React.PureComponent<
-    Props & {
-        toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
-    },
+    CommandListPopoverButtonProps,
     { hideOnChange?: any }
 > {
     public state: { hideOnChange?: any } = {}
@@ -271,8 +303,8 @@ export class CommandListPopoverButton extends React.PureComponent<
     public render(): JSX.Element | null {
         return (
             <PopoverButton
-                popoverClassName="rounded"
-                placement="auto-end"
+                popoverClassName={this.props.popoverClassName}
+                placement="bottom-end"
                 toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 hideOnChange={this.state.hideOnChange}
                 popoverElement={<CommandList {...this.props} onSelect={this.dismissPopover} />}

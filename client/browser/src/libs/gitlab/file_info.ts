@@ -2,7 +2,6 @@ import { Observable, of, throwError } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { FileInfo } from '../code_intelligence'
-import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 
 import { getBaseCommitIDForCommit, getBaseCommitIDForMergeRequest } from './api'
 import {
@@ -37,7 +36,7 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
             filePath,
             commitID,
             rev,
-        }).pipe(ensureRevisionsAreCloned)
+        })
     } catch (error) {
         return throwError(error)
     }
@@ -81,8 +80,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
             // https://github.com/sourcegraph/browser-extensions/issues/185
             headHasFileContents: true,
             baseHasFileContents: true,
-        })),
-        ensureRevisionsAreCloned
+        }))
     )
 
 /**
@@ -109,6 +107,5 @@ export const resolveCommitFileInfo = (codeView: HTMLElement): Observable<FileInf
             // https://github.com/sourcegraph/browser-extensions/issues/185
             headHasFileContents: true,
             baseHasFileContents: true,
-        })),
-        ensureRevisionsAreCloned
+        }))
     )

@@ -110,20 +110,20 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                                     productNameWithBrand={
                                         this.state.productSubscriptionOrError.activeLicense &&
                                         this.state.productSubscriptionOrError.activeLicense.info
-                                            ? this.state.productSubscriptionOrError.activeLicense!.info!
+                                            ? this.state.productSubscriptionOrError.activeLicense.info
                                                   .productNameWithBrand
                                             : this.state.productSubscriptionOrError.invoiceItem!.plan.nameWithBrand
                                     }
                                     userCount={
                                         this.state.productSubscriptionOrError.activeLicense &&
                                         this.state.productSubscriptionOrError.activeLicense.info
-                                            ? this.state.productSubscriptionOrError.activeLicense!.info!.userCount
+                                            ? this.state.productSubscriptionOrError.activeLicense.info.userCount
                                             : this.state.productSubscriptionOrError.invoiceItem!.userCount
                                     }
                                     expiresAt={
                                         this.state.productSubscriptionOrError.activeLicense &&
                                         this.state.productSubscriptionOrError.activeLicense.info
-                                            ? this.state.productSubscriptionOrError.activeLicense!.info!.expiresAt
+                                            ? this.state.productSubscriptionOrError.activeLicense.info.expiresAt
                                             : this.state.productSubscriptionOrError.invoiceItem!.expiresAt
                                     }
                                     licenseKey={

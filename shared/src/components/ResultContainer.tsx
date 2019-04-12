@@ -93,7 +93,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         const Icon = this.props.icon
         const stringIcon = this.props.stringIcon ? this.props.stringIcon : undefined
         return (
-            <div className="result-container">
+            <div className="result-container" data-testid="result-container">
                 <div
                     className={
                         'result-container__header' +
@@ -106,7 +106,10 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     ) : (
                         <Icon className="icon-inline" />
                     )}
-                    <div className={`result-container__header-title ${this.props.titleClassName || ''}`}>
+                    <div
+                        className={`result-container__header-title ${this.props.titleClassName || ''}`}
+                        data-testid="result-container-header"
+                    >
                         {this.props.collapsible ? (
                             <span onClick={blockExpandAndCollapse}>{this.props.title}</span>
                         ) : (

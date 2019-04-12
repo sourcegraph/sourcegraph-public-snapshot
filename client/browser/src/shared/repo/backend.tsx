@@ -94,7 +94,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
                             return true
                         }
 
-                        // Don't swollow other errors.
+                        // Don't swallow other errors.
                         throw err
                     }),
                     delay(1000)
@@ -109,6 +109,12 @@ const trimRepoName = <T extends { repoName: string }>({ repoName, ...rest }: T):
         ...rest,
     } as T)
 
+/**
+ * Fetches the lines of a given file at a given commit from the Sourcegraph API.
+ * Will return an empty array if the repo, commit or file does not exist or an error happened (TODO change this!).
+ *
+ * Only emits once.
+ */
 export const fetchBlobContentLines = memoizeObservable(
     (ctx: RepoSpec & ResolvedRevSpec & FileSpec): Observable<string[]> =>
         queryGraphQL({
@@ -135,7 +141,7 @@ export const fetchBlobContentLines = memoizeObservable(
                 ) {
                     return []
                 }
-                return data.repository.commit.file!.content.split('\n')
+                return data.repository.commit.file.content.split('\n')
             }),
             catchError(({ errors, ...rest }) => {
                 if (errors && errors.length === 1) {

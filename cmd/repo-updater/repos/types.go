@@ -30,7 +30,7 @@ type ExternalService struct {
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
-	return "extsvc:" + strconv.FormatInt(e.ID, 10)
+	return "extsvc:" + strings.ToLower(e.Kind) + ":" + strconv.FormatInt(e.ID, 10)
 }
 
 // IsDeleted returns true if the external service is deleted.
@@ -66,9 +66,160 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 	return modified
 }
 
-// ExcludeGithubRepos changes the configuration of a Github external service to exclude the
+// Configuration returns the external service config.
+func (e ExternalService) Configuration() (cfg interface{}, _ error) {
+	switch strings.ToLower(e.Kind) {
+	case "awscodecommit":
+		cfg = &schema.AWSCodeCommitConnection{}
+	case "bitbucketserver":
+		cfg = &schema.BitbucketServerConnection{}
+	case "github":
+		cfg = &schema.GitHubConnection{}
+	case "gitlab":
+		cfg = &schema.GitLabConnection{}
+	case "gitolite":
+		cfg = &schema.GitoliteConnection{}
+	case "phabricator":
+		cfg = &schema.PhabricatorConnection{}
+	case "other":
+		cfg = &schema.OtherExternalServiceConnection{}
+	default:
+		return nil, fmt.Errorf("unknown external service kind %q", e.Kind)
+	}
+	return cfg, jsonc.Unmarshal(e.Config, cfg)
+}
+
+// Exclude changes the configuration of an external service to exclude the given
+// repos from being synced.
+func (e *ExternalService) Exclude(rs ...*Repo) error {
+	switch strings.ToLower(e.Kind) {
+	case "github":
+		return e.excludeGithubRepos(rs...)
+	case "gitlab":
+		return e.excludeGitLabRepos(rs...)
+	case "bitbucketserver":
+		return e.excludeBitbucketServerRepos(rs...)
+	default:
+		return errors.Errorf("external service kind %q doesn't have an exclude list", e.Kind)
+	}
+}
+
+// Include changes the configuration of an external service to explicitly enlist the
+// given repos to be synced.
+func (e *ExternalService) Include(rs ...*Repo) error {
+	switch strings.ToLower(e.Kind) {
+	case "github":
+		return e.includeGithubRepos(rs...)
+	case "gitlab":
+		return e.includeGitLabRepos(rs...)
+	case "bitbucketserver":
+		return e.includeBitbucketServerRepos(rs...)
+	default:
+		return errors.Errorf("external service kind %q doesn't have an include list", e.Kind)
+	}
+}
+
+// excludeGitLabRepos changes the configuration of a GitLab external service to exclude the
 // given repos from being synced.
-func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
+func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("gitlab", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.GitLabConnection)
+		set := make(map[string]bool, len(c.Exclude)*2)
+		for _, ex := range c.Exclude {
+			if ex.Id != 0 {
+				set[strconv.Itoa(ex.Id)] = true
+			}
+
+			if ex.Name != "" {
+				set[strings.ToLower(ex.Name)] = true
+			}
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "gitlab" {
+				continue
+			}
+
+			id := r.ExternalRepo.ID
+			name := nameWithOwner(r.Name)
+
+			if !set[name] && !set[id] {
+				n, _ := strconv.Atoi(id)
+				c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{
+					Name: name,
+					Id:   n,
+				})
+
+				if id != "" {
+					set[id] = true
+				}
+
+				if name != "" {
+					set[name] = true
+				}
+			}
+		}
+
+		return "exclude", c.Exclude
+	})
+}
+
+// excludeBitbucketServerRepos changes the configuration of a BitbucketServer external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("bitbucketserver", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.BitbucketServerConnection)
+		set := make(map[string]bool, len(c.Exclude)*2)
+		for _, ex := range c.Exclude {
+			if ex.Id != 0 {
+				set[strconv.Itoa(ex.Id)] = true
+			}
+
+			if ex.Name != "" {
+				set[strings.ToLower(ex.Name)] = true
+			}
+		}
+
+		for _, r := range rs {
+			if strings.ToLower(r.ExternalRepo.ServiceType) != "bitbucketserver" {
+				continue
+			}
+
+			id := r.ExternalRepo.ID
+			name := nameWithOwner(r.Name)
+
+			if !set[name] && !set[id] {
+				n, _ := strconv.Atoi(id)
+				c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{
+					Name: name,
+					Id:   n,
+				})
+
+				if id != "" {
+					set[id] = true
+				}
+
+				if name != "" {
+					set[name] = true
+				}
+			}
+		}
+
+		return "exclude", c.Exclude
+	})
+}
+
+// excludeGithubRepos changes the configuration of a Github external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -92,10 +243,10 @@ func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
 			}
 
 			id := r.ExternalRepo.ID
-			name := githubNameWithOwner(r.Name)
+			name := nameWithOwner(r.Name)
 
 			if !set[name] && !set[id] {
-				c.Exclude = append(c.Exclude, &schema.Exclude{
+				c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{
 					Name: name,
 					Id:   id,
 				})
@@ -114,7 +265,7 @@ func (e *ExternalService) ExcludeGithubRepos(rs ...*Repo) error {
 	})
 }
 
-func githubNameWithOwner(name string) string {
+func nameWithOwner(name string) string {
 	u, _ := urlx.Parse(name)
 	if u != nil {
 		name = strings.TrimPrefix(u.Path, "/")
@@ -122,9 +273,9 @@ func githubNameWithOwner(name string) string {
 	return strings.ToLower(name)
 }
 
-// IncludeGithubRepos changes the configuration of a Github external service to explicitly enlist the
+// includeGithubRepos changes the configuration of a Github external service to explicitly enlist the
 // given repos to be synced.
-func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
+func (e *ExternalService) includeGithubRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -142,7 +293,73 @@ func (e *ExternalService) IncludeGithubRepos(rs ...*Repo) error {
 				continue
 			}
 
-			if name := githubNameWithOwner(r.Name); !set[name] {
+			if name := nameWithOwner(r.Name); !set[name] {
+				c.Repos = append(c.Repos, name)
+				set[name] = true
+			}
+		}
+
+		return "repos", c.Repos
+	})
+}
+
+// includeGitLabRepos changes the configuration of a GitLab external service to explicitly enlist the
+// given repos to be synced.
+func (e *ExternalService) includeGitLabRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("gitlab", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.GitLabConnection)
+
+		set := make(map[string]bool, len(c.Projects))
+		for _, p := range c.Projects {
+			set[p.Name] = true
+			set[strconv.Itoa(p.Id)] = true
+		}
+
+		for _, r := range rs {
+			if r.ExternalRepo.ServiceType != "gitlab" {
+				continue
+			}
+
+			if name := nameWithOwner(r.Name); !set[name] && !set[r.ExternalRepo.ID] {
+				n, _ := strconv.Atoi(r.ExternalRepo.ID)
+				c.Projects = append(c.Projects, &schema.GitLabProject{
+					Name: name,
+					Id:   n,
+				})
+				set[name] = true
+				set[r.ExternalRepo.ID] = true
+			}
+		}
+
+		return "projects", c.Projects
+	})
+}
+
+// includeBitbucketServerRepos changes the configuration of a BitbucketServer external service to explicitly enlist the
+// given repos to be synced.
+func (e *ExternalService) includeBitbucketServerRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("bitbucketserver", func(v interface{}) (string, interface{}) {
+		c := v.(*schema.BitbucketServerConnection)
+
+		set := make(map[string]bool, len(c.Repos))
+		for _, name := range c.Repos {
+			set[strings.ToLower(name)] = true
+		}
+
+		for _, r := range rs {
+			if strings.ToLower(r.ExternalRepo.ServiceType) != "bitbucketserver" {
+				continue
+			}
+
+			if name := nameWithOwner(r.Name); !set[name] {
 				c.Repos = append(c.Repos, name)
 				set[name] = true
 			}
@@ -157,16 +374,9 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
 	}
 
-	var c interface{}
-	switch kind {
-	case "github":
-		c = new(schema.GitHubConnection)
-	default:
-		panic("not implemented")
-	}
-
-	if err := jsonc.Unmarshal(e.Config, c); err != nil {
-		return fmt.Errorf("external service id=%d config unmarshaling error: %s", e.ID, err)
+	c, err := e.Configuration()
+	if err != nil {
+		return errors.Wrap(err, "config")
 	}
 
 	path, val := opt(c)
@@ -295,12 +505,12 @@ type SourceInfo struct {
 // ExternalServiceID returns the ID of the external service this
 // SourceInfo refers to.
 func (i SourceInfo) ExternalServiceID() int64 {
-	ps := strings.SplitN(i.ID, ":", 2)
-	if len(ps) != 2 {
+	ps := strings.SplitN(i.ID, ":", 3)
+	if len(ps) != 3 {
 		return -1
 	}
 
-	id, err := strconv.ParseInt(ps[1], 10, 64)
+	id, err := strconv.ParseInt(ps[2], 10, 64)
 	if err != nil {
 		return -1
 	}
@@ -317,6 +527,16 @@ func (r *Repo) CloneURLs() []string {
 		}
 	}
 	return urls
+}
+
+// ExternalServiceIDs returns the IDs of the external services this
+// repo belongs to.
+func (r *Repo) ExternalServiceIDs() []int64 {
+	ids := make([]int64, 0, len(r.Sources))
+	for _, src := range r.Sources {
+		ids = append(ids, src.ExternalServiceID())
+	}
+	return ids
 }
 
 // IsDeleted returns true if the repo is deleted.
@@ -401,6 +621,28 @@ func (rs Repos) Names() []string {
 	return names
 }
 
+// IDs returns the list of ids from all Repos.
+func (rs Repos) IDs() []uint32 {
+	ids := make([]uint32, len(rs))
+	for i := range rs {
+		ids[i] = rs[i].ID
+	}
+	return ids
+}
+
+// Kinds returns the unique set of kinds from all Repos.
+func (rs Repos) Kinds() (kinds []string) {
+	set := map[string]bool{}
+	for _, r := range rs {
+		kind := strings.ToUpper(r.ExternalRepo.ServiceType)
+		if !set[kind] {
+			kinds = append(kinds, kind)
+			set[kind] = true
+		}
+	}
+	return kinds
+}
+
 func (rs Repos) Len() int {
 	return len(rs)
 }
@@ -442,6 +684,13 @@ func (rs Repos) Apply(opts ...func(*Repo)) {
 	}
 }
 
+// With returns a clone of the given repos with the given functional options applied.
+func (rs Repos) With(opts ...func(*Repo)) Repos {
+	clone := rs.Clone()
+	clone.Apply(opts...)
+	return clone
+}
+
 // Filter returns all the Repos that match the given predicate.
 func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	for _, r := range rs {
@@ -463,6 +712,18 @@ func (es ExternalServices) DisplayNames() []string {
 		names[i] = es[i].DisplayName
 	}
 	return names
+}
+
+// Kinds returns the unique set of Kinds in the given external services list.
+func (es ExternalServices) Kinds() (kinds []string) {
+	set := make(map[string]bool, len(es))
+	for _, e := range es {
+		if !set[e.Kind] {
+			kinds = append(kinds, e.Kind)
+			set[e.Kind] = true
+		}
+	}
+	return kinds
 }
 
 // URNs returns the list of URNs from all ExternalServices.

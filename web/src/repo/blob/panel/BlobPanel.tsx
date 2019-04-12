@@ -2,8 +2,8 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { from, Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith, tap } from 'rxjs/operators'
-import { modelToTextDocumentPositionParams } from '../../../../../shared/src/api/client/model'
+import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/editorService'
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
@@ -95,42 +95,50 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.model.model).pipe(
-                map(model => {
-                    if (!registry.hasProvidersForActiveTextDocument(model)) {
-                        return null
-                    }
-                    const params: TextDocumentPositionParams | null = modelToTextDocumentPositionParams(model)
-                    if (!params) {
-                        return null
-                    }
-                    return {
-                        title,
-                        content: '',
-                        priority,
+            provider: from(this.props.extensionsController.services.editor.editors).pipe(
+                switchMap(editors =>
+                    registry
+                        .hasProvidersForActiveTextDocument(
+                            this.props.extensionsController.services.editor.editors.value
+                        )
+                        .pipe(
+                            map(hasProviders => {
+                                if (!hasProviders) {
+                                    return null
+                                }
+                                const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(editors)
+                                if (!params) {
+                                    return null
+                                }
+                                return {
+                                    title,
+                                    content: '',
+                                    priority,
 
-                        // This disable directive is necessary because TypeScript is not yet smart
-                        // enough to know that (typeof params & typeof extraParams) is P.
-                        //
-                        // tslint:disable-next-line:no-object-literal-type-assertion
-                        locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
-                            tap(locationsObservable =>
-                                locationsObservable.pipe(
-                                    tap(locations => {
-                                        if (
-                                            this.props.activation &&
-                                            id === 'references' &&
-                                            locations &&
-                                            locations.length > 0
-                                        ) {
-                                            this.props.activation.update({ FoundReferences: true })
-                                        }
-                                    })
-                                )
-                            )
-                        ),
-                    }
-                })
+                                    // This disable directive is necessary because TypeScript is not yet smart
+                                    // enough to know that (typeof params & typeof extraParams) is P.
+                                    //
+                                    // tslint:disable-next-line:no-object-literal-type-assertion
+                                    locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
+                                        map(locationsObservable =>
+                                            locationsObservable.pipe(
+                                                tap(locations => {
+                                                    if (
+                                                        this.props.activation &&
+                                                        id === 'references' &&
+                                                        locations &&
+                                                        locations.length > 0
+                                                    ) {
+                                                        this.props.activation.update({ FoundReferences: true })
+                                                    }
+                                                })
+                                            )
+                                        )
+                                    ),
+                                }
+                            })
+                        )
+                )
             ),
         })
 

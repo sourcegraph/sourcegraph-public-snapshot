@@ -1,7 +1,7 @@
 import { basename, dirname, extname } from 'path'
 import { TextDocument } from 'sourcegraph'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { Model, ViewComponentData } from '../model'
+import { CodeEditorData } from '../services/editorService'
 
 /**
  * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
@@ -33,7 +33,7 @@ export interface Context<T = never>
     > {}
 
 export type ContributionScope =
-    | (Pick<ViewComponentData, 'type' | 'selections'> & {
+    | (Pick<CodeEditorData, 'type' | 'selections'> & {
           item: Pick<TextDocument, 'uri' | 'languageId'>
       })
     | {
@@ -50,7 +50,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    model: Model,
+    editors: readonly CodeEditorData[],
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,
@@ -64,13 +64,12 @@ export function getComputedContextProperty(
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const component: ContributionScope | null =
-        scope || (model.visibleViewComponents && model.visibleViewComponents.find(({ isActive }) => isActive)) || null
+    const component: ContributionScope | null = scope || editors.find(({ isActive }) => isActive) || null
     if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
         return !!component
     }
     if (key.startsWith('resource.')) {
-        if (!component || component.type !== 'textEditor') {
+        if (!component || component.type !== 'CodeEditor') {
             return null
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
@@ -93,13 +92,13 @@ export function getComputedContextProperty(
         }
     }
     if (key.startsWith('component.')) {
-        if (!component || component.type !== 'textEditor') {
+        if (!component || component.type !== 'CodeEditor') {
             return null
         }
         const prop = key.slice('component.'.length)
         switch (prop) {
             case 'type':
-                return 'textEditor'
+                return 'CodeEditor'
             case 'selections':
                 return component.selections
             case 'selection':

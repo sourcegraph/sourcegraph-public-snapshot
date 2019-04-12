@@ -1,18 +1,36 @@
 import '../../config/polyfill'
 
+import { Observable } from 'rxjs'
+import { startWith } from 'rxjs/operators'
 import { setSourcegraphUrl } from '../../shared/util/context'
-import { injectCodeIntelligence } from '../code_intelligence'
+import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
+import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
 import { metaClickOverride } from './util'
 
-// NOTE: injectModules is idempotent, so safe to call multiple times on the same page.
+// Just for informational purposes (see getPlatformContext())
+window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
+
+// NOT idempotent.
 async function injectModules(): Promise<void> {
+    // This is added so that the browser extension doesn't
+    // interfere with the native Phabricator integration.
+    // TODO this is racy because the script is loaded async
     const extensionMarker = document.createElement('div')
     extensionMarker.id = 'sourcegraph-app-background'
     extensionMarker.style.display = 'none'
     document.body.appendChild(extensionMarker)
 
-    await injectCodeIntelligence()
+    const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
+        childList: true,
+        subtree: true,
+    }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
+
+    // TODO handle subscription
+    const codeHost = await determineCodeHost()
+    if (codeHost) {
+        await injectCodeIntelligenceToCodeHost(mutations, codeHost)
+    }
 }
 
 function init(): void {
@@ -33,7 +51,7 @@ function init(): void {
             .then(sourcegraphUrl => {
                 getPhabricatorCSS()
                     .then(css => {
-                        const style = document.createElement('style') as HTMLStyleElement
+                        const style = document.createElement('style')
                         style.setAttribute('type', 'text/css')
                         style.id = 'sourcegraph-styles'
                         style.textContent = css
@@ -50,7 +68,6 @@ function init(): void {
             })
             .catch(e => console.error(e))
     } else {
-        // tslint:disable-next-line
         console.log(
             `Sourcegraph on Phabricator is disabled because window.localStorage.getItem('SOURCEGRAPH_DISABLED') is set to ${window.localStorage.getItem(
                 'SOURCEGRAPH_DISABLED'

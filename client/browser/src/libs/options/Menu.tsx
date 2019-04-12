@@ -19,12 +19,25 @@ export interface OptionsMenuProps
     isSettingsOpen?: boolean
     toggleFeatureFlag: (key: string) => void
     featureFlags?: ConfigurableFeatureFlag[]
+    currentTabStatus?: {
+        host: string
+        protocol: string
+        hasPermissions: boolean
+    }
 }
 
 const buildFeatureFlagToggleHandler = (key: string, handler: OptionsMenuProps['toggleFeatureFlag']) => () =>
     handler(key)
 
 const isFullPage = (): boolean => !new URLSearchParams(window.location.search).get('popup')
+
+const buildRequestPermissionsHandler = (
+    { protocol, host }: NonNullable<OptionsMenuProps['currentTabStatus']>,
+    requestPermissions: OptionsMenuProps['requestPermissions']
+) => (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    event.preventDefault()
+    requestPermissions(`${protocol}//${host}`)
+}
 
 export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
@@ -33,17 +46,37 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     isSettingsOpen,
     toggleFeatureFlag,
     featureFlags,
+    status,
+    requestPermissions,
+    currentTabStatus,
     ...props
 }) => (
     <div className={`options-menu ${isFullPage() ? 'options-menu--full' : ''}`}>
-        <OptionsHeader {...props} className="options-menu__section options-menu__no-border" />
+        <OptionsHeader {...props} className="options-menu__section" />
         <ServerURLForm
             {...props}
             value={sourcegraphURL}
             onChange={onURLChange}
             onSubmit={onURLSubmit}
+            status={status}
+            requestPermissions={requestPermissions}
             className="options-menu__section"
         />
+        {status === 'connected' && currentTabStatus && !currentTabStatus.hasPermissions && (
+            <div className="options-menu__section">
+                <div className="alert alert-danger">
+                    Sourcegraph is not enabled on <strong>{currentTabStatus.host}</strong>.{' '}
+                    <a
+                        href=""
+                        onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
+                        className="request-permissions__test"
+                    >
+                        Grant permissions
+                    </a>{' '}
+                    to enable Sourcegraph.
+                </div>
+            </div>
+        )}
         {isSettingsOpen && featureFlags && (
             <div className="options-menu__section">
                 <label>Configuration</label>
@@ -53,7 +86,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
                             <label className="form-check-label">
                                 <input
                                     id={key}
-                                    onClick={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
+                                    onChange={buildFeatureFlagToggleHandler(key, toggleFeatureFlag)}
                                     className="form-check-input"
                                     type="checkbox"
                                     checked={value}

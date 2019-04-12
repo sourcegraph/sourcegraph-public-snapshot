@@ -7,9 +7,10 @@ import { render } from 'react-dom'
 import { noop, Subscription } from 'rxjs'
 import storage from '../../browser/storage'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
+import { OptionsMenuProps } from '../../libs/options/Menu'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { initSentry } from '../../libs/sentry'
-import { fetchCurrentUser, fetchSite } from '../../shared/backend/server'
+import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -31,6 +32,21 @@ const toggleFeatureFlag = (key: string) => {
     }
 }
 
+const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStatus']> => {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+    if (tabs.length > 1) {
+        throw new Error('Querying for the currently active tab returned more than one result')
+    }
+    const { url } = tabs[0]
+    if (!url) {
+        throw new Error('Currently active tab has no URL')
+    }
+    const { host, protocol } = new URL(url)
+    const hasPermissions = await browser.permissions.contains({
+        origins: [`${protocol}//${host}/*`],
+    })
+    return { host, protocol, hasPermissions }
+}
 class Options extends React.Component<{}, State> {
     public state: State = { sourcegraphURL: null, allowErrorReporting: false }
 
@@ -63,7 +79,15 @@ class Options extends React.Component<{}, State> {
             sourcegraphURL: this.state.sourcegraphURL,
 
             ensureValidSite: fetchSite,
-            fetchCurrentUser,
+            fetchCurrentTabStatus,
+            hasPermissions: url =>
+                browser.permissions.contains({
+                    origins: [`${url}/*`],
+                }),
+            requestPermissions: url =>
+                browser.permissions.request({
+                    origins: [`${url}/*`],
+                }),
 
             setSourcegraphURL: (url: string) => {
                 storage.setSync({ sourcegraphURL: url })

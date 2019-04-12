@@ -82,15 +82,18 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 
 // BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
 type BitbucketServerConnection struct {
-	Certificate                 string `json:"certificate,omitempty"`
-	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
-	GitURLType                  string `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
-	Password                    string `json:"password,omitempty"`
-	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
-	Token                       string `json:"token,omitempty"`
-	Url                         string `json:"url"`
-	Username                    string `json:"username,omitempty"`
+	Certificate                 string                         `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
+	ExcludePersonalRepositories bool                           `json:"excludePersonalRepositories,omitempty"`
+	GitURLType                  string                         `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                           `json:"initialRepositoryEnablement,omitempty"`
+	Password                    string                         `json:"password,omitempty"`
+	Repos                       []string                       `json:"repos,omitempty"`
+	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string                       `json:"repositoryQuery"`
+	Token                       string                         `json:"token,omitempty"`
+	Url                         string                         `json:"url"`
+	Username                    string                         `json:"username"`
 }
 type BrandAssets struct {
 	Logo   string `json:"logo,omitempty"`
@@ -142,8 +145,16 @@ type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
 }
-type Exclude struct {
+type ExcludedBitbucketServerRepo struct {
+	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+type ExcludedGitHubRepo struct {
 	Id   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+type ExcludedGitLabProject struct {
+	Id   int    `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 }
 
@@ -182,16 +193,16 @@ type GitHubAuthorization struct {
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
 type GitHubConnection struct {
-	Authorization               *GitHubAuthorization `json:"authorization,omitempty"`
-	Certificate                 string               `json:"certificate,omitempty"`
-	Exclude                     []*Exclude           `json:"exclude,omitempty"`
-	GitURLType                  string               `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool                 `json:"initialRepositoryEnablement,omitempty"`
-	Repos                       []string             `json:"repos,omitempty"`
-	RepositoryPathPattern       string               `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string             `json:"repositoryQuery,omitempty"`
-	Token                       string               `json:"token"`
-	Url                         string               `json:"url"`
+	Authorization               *GitHubAuthorization  `json:"authorization,omitempty"`
+	Certificate                 string                `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedGitHubRepo `json:"exclude,omitempty"`
+	GitURLType                  string                `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                  `json:"initialRepositoryEnablement,omitempty"`
+	Repos                       []string              `json:"repos,omitempty"`
+	RepositoryPathPattern       string                `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string              `json:"repositoryQuery"`
+	Token                       string                `json:"token"`
+	Url                         string                `json:"url"`
 }
 
 // GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".
@@ -211,14 +222,20 @@ type GitLabAuthorization struct {
 
 // GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
 type GitLabConnection struct {
-	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
-	Certificate                 string               `json:"certificate,omitempty"`
-	GitURLType                  string               `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool                 `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string             `json:"projectQuery,omitempty"`
-	RepositoryPathPattern       string               `json:"repositoryPathPattern,omitempty"`
-	Token                       string               `json:"token"`
-	Url                         string               `json:"url"`
+	Authorization               *GitLabAuthorization     `json:"authorization,omitempty"`
+	Certificate                 string                   `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedGitLabProject `json:"exclude,omitempty"`
+	GitURLType                  string                   `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                     `json:"initialRepositoryEnablement,omitempty"`
+	ProjectQuery                []string                 `json:"projectQuery"`
+	Projects                    []*GitLabProject         `json:"projects,omitempty"`
+	RepositoryPathPattern       string                   `json:"repositoryPathPattern,omitempty"`
+	Token                       string                   `json:"token"`
+	Url                         string                   `json:"url"`
+}
+type GitLabProject struct {
+	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.

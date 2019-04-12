@@ -18,7 +18,7 @@ export const OptionsHeader: React.FunctionComponent<OptionsHeaderProps> = ({
         <img src={`${assetsDir || ''}/img/sourcegraph-logo.svg`} className="options-header__logo" />
         <div className="options-header__right">
             <span>v{version}</span>
-            <button className="options-header__right__settings btn btn-icon" onClick={onSettingsClick}>
+            <button className="options-header__settings btn btn-icon" onClick={onSettingsClick}>
                 <SettingsOutlineIcon className="icon-inline" />
             </button>
         </div>

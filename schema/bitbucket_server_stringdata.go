@@ -10,17 +10,16 @@ const BitbucketServerSchemaJSON = `{
   "description": "Configuration for a connection to Bitbucket Server.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["url"],
+  "required": ["username", "url", "repositoryQuery"],
   "oneOf": [
     {
       "required": ["token"],
       "properties": {
-        "username": { "type": "null" },
         "password": { "type": "null" }
       }
     },
     {
-      "required": ["username", "password"],
+      "required": ["password"],
       "properties": {
         "token": { "type": "null" }
       }
@@ -59,7 +58,7 @@ const BitbucketServerSchemaJSON = `{
       "examples": ["ssh"]
     },
     "certificate": {
-      "description": "TLS certificate of a Bitbucket Server instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
+      "description": "TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
       "type": "string",
       "pattern": "^-----BEGIN CERTIFICATE-----\n",
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
@@ -74,6 +73,47 @@ const BitbucketServerSchemaJSON = `{
       "description": "Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information.",
       "type": "boolean",
       "default": false
+    },
+    "repositoryQuery": {
+      "description": "An array of strings specifying which repositories to mirror on Sourcegraph. Each string is a URL query string with parameters that filter the list of returned repos. Examples: \"?name=my-repo&projectname=PROJECT&visibility=private\".\n\nThe special string \"none\" can be used as the only element to disable this feature. Repositories matched by multiple query strings are only imported once. Here's the official Bitbucket Server documentation about which query string parameters are valid: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": ["none"],
+      "minItems": 1
+    },
+    "repos": {
+      "description": "An array of repository \"projectKey/repositorySlug\" strings specifying  repositories to mirror on Sourcegraph.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[\\w-]+/[\\w.-]+$"
+      }
+    },
+    "exclude": {
+      "description": "A list of repositories to never mirror from this Bitbucket Server instance. Takes precedence over \"repos\" and \"repositoryQuery\".",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedBitbucketServerRepo",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a Bitbucket Server repo (\"projectKey/repositorySlug\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          },
+          "id": {
+            "description": "The ID of a Bitbucket Server repo (as returned by the Bitbucket Server instance's API) to exclude from mirroring.",
+            "type": "integer"
+          }
+        }
+      }
     },
     "initialRepositoryEnablement": {
       "description": "Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.",

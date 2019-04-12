@@ -78,7 +78,6 @@ func TestPrepareZip(t *testing.T) {
 	_, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
 	if err != nil {
 		t.Fatal("expected prepareZip to succeed:", err)
-		return
 	}
 }
 
@@ -99,7 +98,6 @@ func tmpStore(t *testing.T) (*Store, func()) {
 	d, err := ioutil.TempDir("", "search_test")
 	if err != nil {
 		t.Fatal(err)
-		return nil, nil
 	}
 	return &Store{
 		Path: d,
@@ -112,7 +110,6 @@ func emptyTar(t *testing.T) io.ReadCloser {
 	err := w.Close()
 	if err != nil {
 		t.Fatal(err)
-		return nil
 	}
 	return ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
 }

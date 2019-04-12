@@ -3,6 +3,7 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,7 +12,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 )
 
 func TestSyncer_Sync(t *testing.T) {
@@ -73,22 +76,58 @@ func TestSyncer_Sync(t *testing.T) {
 }
 
 func testSyncerSync(s repos.Store) func(*testing.T) {
-	foo := repos.Repo{
-		Name:     "foo",
+	githubService := &repos.ExternalService{
+		ID:   1,
+		Kind: "GITHUB",
+	}
+
+	githubRepo := (&repos.Repo{
+		Name:     "github.com/org/foo",
 		Metadata: &github.Repository{},
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo-external-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: "github",
 		},
+	}).With(
+		repos.Opt.RepoSources(githubService.URN()),
+	)
+
+	gitlabService := &repos.ExternalService{
+		ID:   10,
+		Kind: "GITLAB",
 	}
 
-	svcs := repos.ExternalServices{
-		{ID: 1, Kind: "github"},
-		{ID: 2, Kind: "github"},
+	gitlabRepo := (&repos.Repo{
+		Name:     "gitlab.com/org/foo",
+		Metadata: &gitlab.Project{},
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "12345",
+			ServiceID:   "https://gitlab.com/",
+			ServiceType: "gitlab",
+		},
+	}).With(
+		repos.Opt.RepoSources(gitlabService.URN()),
+	)
+
+	bitbucketServerService := &repos.ExternalService{
+		ID:   20,
+		Kind: "BITBUCKETSERVER",
 	}
 
-	repos.Opt.RepoSources(svcs[0].URN())(&foo)
+	bitbucketServerRepo := (&repos.Repo{
+		Name:     "bitbucketserver.mycorp.com/org/foo",
+		Metadata: &bitbucketserver.Repo{},
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "23456",
+			ServiceID:   "https://bitbucketserver.mycorp.com/",
+			ServiceType: "bitbucketServer",
+		},
+	}).With(
+		repos.Opt.RepoSources(bitbucketServerService.URN()),
+	)
+
+	clock := repos.NewFakeClock(time.Now(), 0)
 
 	type testCase struct {
 		name    string
@@ -101,182 +140,188 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		err     string
 	}
 
-	return func(t *testing.T) {
-		t.Helper()
-
-		var testCases []testCase
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
-				name:    "new repo",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.Clone())),
-				store:   s,
-				stored:  repos.Repos{},
-				now:     clock.Now,
-				diff: repos.Diff{Added: repos.Repos{foo.With(
+	var testCases []testCase
+	for _, tc := range []struct {
+		repo *repos.Repo
+		svc  *repos.ExternalService
+	}{
+		{repo: githubRepo, svc: githubService},
+		{repo: gitlabRepo, svc: gitlabService},
+		{repo: bitbucketServerRepo, svc: bitbucketServerService},
+	} {
+		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
+		testCases = append(testCases,
+			testCase{
+				name: "new repo",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
+				),
+				store:  s,
+				stored: repos.Repos{},
+				now:    clock.Now,
+				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
 					repos.Opt.RepoCreatedAt(clock.Time(1)),
-					repos.Opt.RepoSources(svcs[0].URN()),
+					repos.Opt.RepoSources(tc.svc.Clone().URN()),
 				)}},
 				err: "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
+			},
+			testCase{
 				name:    "had name and got external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.Clone())),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
-				stored: repos.Repos{foo.With(func(r *repos.Repo) {
+				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ID = ""
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
+					tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
+			},
+			testCase{
+				name:    "updated external_id",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
+				store:   s,
+				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
+					r.ExternalRepo.ID = "old-and-out-of-date"
+				})},
+				now: clock.Now,
+				diff: repos.Diff{Modified: repos.Repos{
+					tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
+				}},
+				err: "<nil>",
+			},
+			testCase{
 				name: "new repo sources",
 				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(svcs[0], nil, foo.Clone()),
-					repos.NewFakeSource(svcs[1], nil, foo.Clone()),
+					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
+					repos.NewFakeSource(svcdup.Clone(), nil, tc.repo.Clone()),
 				),
 				store:  s,
-				stored: repos.Repos{foo.Clone()},
+				stored: repos.Repos{tc.repo.Clone()},
 				now:    clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{foo.With(
+				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
-					repos.Opt.RepoSources(svcs.URNs()...),
+					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)}},
 				err: "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
+			},
+			testCase{
 				name: "enabled field is not updateable",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.With(func(r *repos.Repo) {
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.With(func(r *repos.Repo) {
 					r.Enabled = !r.Enabled
 				}))),
 				store:  s,
-				stored: repos.Repos{foo.Clone()},
+				stored: repos.Repos{tc.repo.Clone()},
 				now:    clock.Now,
-				diff:   repos.Diff{Unmodified: repos.Repos{foo.Clone()}},
+				diff:   repos.Diff{Unmodified: repos.Repos{tc.repo.Clone()}},
 				err:    "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
+			},
+			testCase{
 				name: "enabled field of a undeleted repo is not updateable",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.With(func(r *repos.Repo) {
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.With(func(r *repos.Repo) {
 					r.Enabled = !r.Enabled
 				}))),
 				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoDeletedAt(clock.Time(0)))},
+				stored: repos.Repos{tc.repo.With(repos.Opt.RepoDeletedAt(clock.Time(0)))},
 				now:    clock.Now,
-				diff: repos.Diff{Added: repos.Repos{foo.With(
+				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
 					repos.Opt.RepoCreatedAt(clock.Time(1)),
 				)}},
 				err: "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
+			},
+			testCase{
 				name: "deleted repo source",
 				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(svcs[0], nil, foo.Clone()),
+					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
 				),
-				store:  s,
-				stored: repos.Repos{foo.With(repos.Opt.RepoSources(svcs.URNs()...))},
-				now:    clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{foo.With(
+				store: s,
+				stored: repos.Repos{tc.repo.With(
+					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+				)},
+				now: clock.Now,
+				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
 				)}},
 				err: "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
+			},
+			testCase{
 				name:    "deleted ALL repo sources",
 				sourcer: repos.NewFakeSourcer(nil),
 				store:   s,
-				stored:  repos.Repos{foo.With(repos.Opt.RepoSources(svcs.URNs()...))},
-				now:     clock.Now,
-				diff: repos.Diff{Deleted: repos.Repos{foo.With(
-					repos.Opt.RepoDeletedAt(clock.Time(1))),
-				}},
+				stored: repos.Repos{tc.repo.With(
+					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+				)},
+				now: clock.Now,
+				diff: repos.Diff{Deleted: repos.Repos{tc.repo.With(
+					repos.Opt.RepoDeletedAt(clock.Time(1)),
+					repos.Opt.RepoEnabled(true),
+				)}},
 				err: "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
+			},
+			testCase{
 				name:    "renamed repo is detected via external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.Clone())),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
-				stored: repos.Repos{foo.With(func(r *repos.Repo) {
+				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
 					r.Name = "old-name"
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{foo.With(
+				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
 					repos.Opt.RepoModifiedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
-			})
-		}
-
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
+			},
+			testCase{
 				name:    "renamed repo which was deleted is detected and added",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil, foo.Clone())),
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
-				stored: repos.Repos{foo.With(func(r *repos.Repo) {
+				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
 					r.Sources = map[string]*repos.SourceInfo{}
 					r.Name = "old-name"
 					r.DeletedAt = clock.Time(0)
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Added: repos.Repos{foo.With(
+				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
 					repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
-			})
-		}
+			},
+			func() testCase {
+				var update interface{}
+				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
+				case "github":
+					update = &github.Repository{IsArchived: true}
+				case "gitlab":
+					update = &gitlab.Project{Archived: true}
+				case "bitbucketserver":
+					update = &bitbucketserver.Repo{Public: true}
+				default:
+					panic("test must be extended with new external service kind")
+				}
 
-		{
-			clock := repos.NewFakeClock(time.Now(), time.Second)
-			testCases = append(testCases, testCase{
-				name: "metadata update",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svcs[0], nil,
-					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)),
-						repos.Opt.RepoMetadata(&github.Repository{IsArchived: true})),
-				)),
-				store:  s,
-				stored: repos.Repos{foo.Clone()},
-				now:    clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
-					foo.With(repos.Opt.RepoModifiedAt(clock.Time(1)),
-						repos.Opt.RepoMetadata(&github.Repository{IsArchived: true})),
-				}},
-				err: "<nil>",
-			})
-		}
+				return testCase{
+					name: "metadata update",
+					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+						tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1)),
+							repos.Opt.RepoMetadata(update)),
+					)),
+					store:  s,
+					stored: repos.Repos{tc.repo.Clone()},
+					now:    clock.Now,
+					diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
+						repos.Opt.RepoModifiedAt(clock.Time(1)),
+						repos.Opt.RepoMetadata(update),
+					)}},
+					err: "<nil>",
+				}
+			}(),
+		)
 
-		kinds := []string{"github"}
+	}
+
+	return func(t *testing.T) {
+		t.Helper()
 
 		for _, tc := range testCases {
 			tc := tc
@@ -307,7 +352,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
-				diff, err := syncer.Sync(ctx, kinds...)
+				diff, err := syncer.Sync(ctx)
 
 				var want repos.Repos
 				want.Concat(diff.Added, diff.Modified, diff.Unmodified, diff.Deleted)
@@ -326,7 +371,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil {
-					have, _ := st.ListRepos(ctx)
+					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
 					for _, d := range have {
 						d.ID = 0 // Exclude auto-generated ID from comparisons
 					}

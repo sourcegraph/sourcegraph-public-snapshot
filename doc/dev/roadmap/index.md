@@ -54,7 +54,7 @@ We're continually refining code intelligence (hovers, go-to-definition, find-ref
 - Continually ensure code navigation/intelligence works on code hosts using our [browser extension](../../integration/browser_extension.md) and [native code host integrations](#code-hosts).
 - [Analyze and expose dependency graph for all major languages and build systems](https://github.com/sourcegraph/sourcegraph/issues/2928)
 - [Compute and expose programming language statistics](https://github.com/sourcegraph/sourcegraph/issues/2587)
-- Show panel (with references/etc.) UI in code host integrations
+- [Show panel (with references/etc.) UI in code host integrations](https://github.com/sourcegraph/sourcegraph/issues/3089)
 - Allow extensions to handle diffs and pull requests as a first-class concern
 - [Bazel support roadmap](https://github.com/sourcegraph/sourcegraph/issues/2982)
 - [Cross-language, cross-repository definitions and references support for APIs/IDLs (GraphQL, Thrift, Protobuf, etc.)](https://github.com/sourcegraph/sourcegraph/issues/981)
@@ -136,6 +136,7 @@ Sourcegraph integrations enhance your developer workflow, giving you vital infor
 See the "[Code hosts](#code-hosts)" section above for plans related to repositories, user authentication, and permissions for specific code hosts (such as GitHub).
 
 - [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+- [Mapping local repositories in your editor to Sourcegraph](https://github.com/sourcegraph/sourcegraph/issues/462)
 - [Improve process for adding repositories from local disk](https://github.com/sourcegraph/sourcegraph/issues/1527)
 - Simpler configuration for HTTPS/SSH credentials for cloning repositories
 - [Support internal CA or self-signed TLS certificates for external communication](https://github.com/sourcegraph/sourcegraph/issues/71)

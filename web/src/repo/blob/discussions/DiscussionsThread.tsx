@@ -164,7 +164,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         return addCommentToThread(this.props.threadID, contents).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => undefined),
-            catchError(e => throwError('Error creating comment: ' + asError(e).message))
+            catchError(e => throwError(new Error('Error creating comment: ' + asError(e).message)))
         )
     }
 

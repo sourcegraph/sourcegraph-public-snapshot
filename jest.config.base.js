@@ -1,9 +1,16 @@
 // @ts-check
 
+const path = require('path')
+
 /** @type {jest.InitialOptions} */
 const config = {
+  // uses latest jsdom and exposes jsdom as a global,
+  // for example to change the URL in window.location
+  testEnvironment: __dirname + '/shared/dev/jest-environment.js',
+
   collectCoverage: true,
   coverageDirectory: '<rootDir>/coverage',
+  coveragePathIgnorePatterns: [/\.test\.tsx?$/.source],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   preset: 'ts-jest/presets/js-with-ts',
   roots: ['<rootDir>/src'],
@@ -27,9 +34,12 @@ const config = {
     'ts-jest': {
       diagnostics: {
         pathRegex: '(client/browser|shared|web)/src',
+        warnOnly: true,
       },
     },
   },
+
+  setupFiles: [path.join(__dirname, 'shared/dev/mockDate.js')],
 }
 
 module.exports = config
