@@ -364,7 +364,7 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 	return b.String()
 }
 
-func kFromNumRepos(numRepos int, query *search.PatternInfo) int {
+func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
 	// If we're only searching a small number of repositories, return more comprehensive results. This is
 	// arbitrary.
 	k := 1
@@ -388,7 +388,7 @@ func kFromNumRepos(numRepos int, query *search.PatternInfo) int {
 	return k
 }
 
-func zoektSearchOpts(numRepos, k int, query *search.PatternInfo) zoekt.SearchOptions {
+func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	searchOpts := zoekt.SearchOptions{
 		MaxWallTime:            1500 * time.Millisecond,
 		ShardMaxMatchCount:     100 * k,
@@ -495,7 +495,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		return nil, false, nil, nil
 	}
 
-	k := kFromNumRepos(len(repos), query)
+	k := zoektResultCountFactor(len(repos), query)
 	maxLineMatches := 25 + k
 	maxLineFragmentMatches := 3 + k
 	if len(resp.Files) > int(query.FileMatchLimit) {
@@ -850,8 +850,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
 		query := args.Pattern
-		k := kFromNumRepos(len(zoektRepos), query)
-		opts := zoektSearchOpts(len(zoektRepos), k, query)
+		k := zoektResultCountFactor(len(zoektRepos), query)
+		opts := zoektSearchOpts(k, query)
 		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, Search().Index.Client, opts)
 		mu.Lock()
 		defer mu.Unlock()
