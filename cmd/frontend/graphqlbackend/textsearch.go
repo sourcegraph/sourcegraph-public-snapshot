@@ -470,7 +470,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
-	tr.LazyPrintf("resp.FileCount: %v, resp.MatchCount: %v, resp.Wait: %v, MaxWallTime: %v", resp.FileCount, resp.MatchCount, resp.Wait, searchOpts.MaxWallTime)
+	tr.LogFields(otlog.Int("resp.FileCount", resp.FileCount), otlog.Int("resp.MatchCount", resp.MatchCount), otlog.Object("searchOpts.MaxWallTime", searchOpts.MaxWallTime))
 	if resp.FileCount == 0 && resp.MatchCount == 0 && time.Since(t0) >= searchOpts.MaxWallTime {
 		return nil, false, nil, errors.New("no results found by deadline in index search")
 	}
