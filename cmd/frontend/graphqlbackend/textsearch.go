@@ -872,7 +872,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		if limitHit {
 			common.limitHit = true
 		}
-		tr.LogFields(otlog.Object("searchErr", searchErr),  otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr
 			tr.LazyPrintf("cancel indexed search due to error: %v", err)
