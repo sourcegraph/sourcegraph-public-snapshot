@@ -14,7 +14,6 @@ import { asError } from '../../../../../shared/src/util/errors'
 import { Form } from '../../../components/Form'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
 
 /**
  * How & whether or not to render a title input field.
@@ -49,7 +48,7 @@ interface Props {
 
 interface State {
     titleInputValue: string
-    textArea: { textAreaValue: string; selectionStart: number; element?: HTMLElement }
+    textAreaValue: string
     submitting: boolean
     error?: Error
 
@@ -72,9 +71,6 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
 
     private textAreaKeyDowns = new Subject<React.KeyboardEvent<HTMLTextAreaElement>>()
     private nextTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (this.onKeyDownFilter && this.onKeyDownFilter(e)) {
-            return
-        }
         this.textAreaKeyDowns.next(e)
     }
 
@@ -90,13 +86,9 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     private tabChanges = new Subject<string>()
     private nextTabChange = (tab: string) => this.tabChanges.next(tab)
 
-    private onBlurHandler?: OnBlurHandler
-    private onKeyDownFilter?: OnKeyDownFilter
-    private textAreaRef?: HTMLTextAreaElement
-
     public state: State = {
         titleInputValue: '',
-        textArea: { textAreaValue: '', selectionStart: 0 },
+        textAreaValue: '',
         submitting: false,
     }
 
@@ -218,7 +210,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { titleInputValue, textArea, error, previewLoading, previewHTML } = this.state
+        const { titleInputValue, textAreaValue, error, previewLoading, previewHTML } = this.state
 
         return (
             <Form className="discussions-input" onSubmit={this.nextSubmit}>
@@ -245,26 +237,12 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     onSelectTab={this.nextTabChange}
                 >
                     <div key="write">
-                        {textArea.element && (
-                            <DiscussionsInputMentionOverlay
-                                location={this.props.location}
-                                history={this.props.history}
-                                textAreaValue={textArea.textAreaValue}
-                                selectionStart={textArea.selectionStart}
-                                setTextAreaValue={this.setTextAreaValue}
-                                textAreaElement={textArea.element}
-                                setOnBlurHandler={this.setOnBlurHandler}
-                                setOnKeyDownFilter={this.setOnKeyDownFilter}
-                            />
-                        )}
                         <textarea
                             className="form-control discussions-input__text-box"
                             placeholder="Leave a comment"
                             onChange={this.nextTextAreaChange}
                             onKeyDown={this.nextTextAreaKeyDown}
-                            onBlur={this.onBlurHandler}
-                            value={textArea.textAreaValue}
-                            ref={this.setTextAreaRef}
+                            value={textAreaValue}
                             autoFocus={this.props.titleMode !== TitleMode.Explicit}
                         />
                     </div>
@@ -305,30 +283,9 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     }
 
     private canSubmit = (): boolean => {
-        const textAreaEmpty = !this.state.textArea.textAreaValue.trim()
+        const textAreaEmpty = !this.state.textAreaValue.trim()
         const titleRequired = this.props.titleMode !== TitleMode.None
         const titleEmpty = !this.state.titleInputValue.trim()
         return !this.state.submitting && !textAreaEmpty && (!titleRequired || !titleEmpty)
     }
-
-    private setOnBlurHandler = (h: OnBlurHandler) => {
-        this.onBlurHandler = h
-    }
-
-    private setOnKeyDownFilter = (f: OnKeyDownFilter) => {
-        this.onKeyDownFilter = f
-    }
-
-    private setTextAreaValue = (v: { newValue: string; newSelectionStart: number }) => {
-        this.textAreaChanges.next({
-            textAreaValue: v.newValue,
-            selectionStart: v.newSelectionStart,
-            element: this.state.textArea.element,
-        })
-        this.textAreaRef!.value = v.newValue
-        this.textAreaRef!.selectionStart = v.newSelectionStart
-        this.textAreaRef!.selectionEnd = v.newSelectionStart
-    }
-
-    private setTextAreaRef = (ref: HTMLTextAreaElement) => (this.textAreaRef = ref)
 }

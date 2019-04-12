@@ -2629,11 +2629,6 @@
   resolved "https://registry.npmjs.org/@types/tapable/-/tapable-1.0.4.tgz#b4ffc7dc97b498c969b360a41eee247f82616370"
   integrity sha512-78AdXtlhpCHT0K3EytMpn4JNxaf5tbqbLcbIRoQIHzpTIyjpxLQKRoxU55ujBXAtg3Nl2h/XWvfDa9dsMOd0pQ==
 
-"@types/textarea-caret@3.0.0":
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/@types/textarea-caret/-/textarea-caret-3.0.0.tgz#4c5c5e3de5c59511f93ffe929e5383471b828896"
-  integrity sha512-RNXko6Kl+oQibqxuQZJZ+RgsQAGez4VQxeC4zq+GXjUlHcfjy5EthnsPIQXC5wUSRf5WbyA+4+//mVSc6XwxNw==
-
 "@types/tmp@0.1.0":
   version "0.1.0"
   resolved "https://registry.npmjs.org/@types/tmp/-/tmp-0.1.0.tgz#19cf73a7bcf641965485119726397a096f0049bd"
@@ -14354,11 +14349,6 @@ text-table@0.2.0:
   version "0.2.0"
   resolved "https://registry.npmjs.org/text-table/-/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
   integrity sha1-f17oI66AUgfACvLfSoTsP8+lcLQ=
-
-textarea-caret@3.1.0:
-  version "3.1.0"
-  resolved "https://registry.npmjs.org/textarea-caret/-/textarea-caret-3.1.0.tgz#5d5a35bb035fd06b2ff0e25d5359e97f2655087f"
-  integrity sha512-cXAvzO9pP5CGa6NKx0WYHl+8CHKZs8byMkt3PCJBCmq2a34YA9pO1NrQET5pzeqnBjBdToF5No4rrmkDUgQC2Q==
 
 thenify-all@^1.0.0:
   version "1.6.0"
