@@ -22,3 +22,23 @@
         }
     }
 }
+
+.critical-config-page {
+    &__action-groups {
+        margin-bottom: 0.75rem;
+    }
+
+    &__action-group-header {
+        font-weight: bold;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    &__action {
+        margin: 0.25rem 0.5rem 0.25rem 0;
+        flex: 0 auto;
+    }
+}

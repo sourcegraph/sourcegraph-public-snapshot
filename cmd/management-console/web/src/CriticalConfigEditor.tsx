@@ -1,3 +1,7 @@
+import * as jsonc from '@sqs/jsonc-parser'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import * as _monaco from 'monaco-editor'
+
 import { truncate } from 'lodash'
 import * as React from 'react'
 import { from, interval, Observable, of, Subject, Subscription, timer } from 'rxjs'
@@ -80,7 +84,109 @@ interface ErrorResponse {
     code: string
 }
 
-export class CriticalConfigEditor extends React.Component<Props, State> {
+const defaultFormattingOptions = {
+    eol: '\n',
+    insertSpaces: true,
+    tabSize: 2,
+}
+
+const quickConfigureActions = [
+    {
+        id: 'setExternalURL',
+        label: 'Set external URL',
+        run: config => {
+            const value = '<external URL>'
+            const edits = setProperty(config, ['externalURL'], value, defaultFormattingOptions)
+            return { edits, selectText: '<external URL>' }
+        },
+    },
+    {
+        id: 'setLicenseKey',
+        label: 'Set license key',
+        run: config => {
+            const value = '<license key>'
+            const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
+            return { edits, selectText: '<license key>' }
+        },
+    },
+    {
+        id: 'addGitLabAuth',
+        label: 'Add GitLab auth',
+        run: config => {
+            const edits = setProperty(
+                config,
+                ['auth.providers', -1],
+                {
+                    type: 'gitlab',
+                    displayName: 'GitLab',
+                    url: '<GitLab URL>',
+                    clientID: '<client ID>',
+                    clientSecret: '<client secret>',
+                },
+                defaultFormattingOptions
+            )
+            return { edits, selectText: '<GitLab URL>' }
+        },
+    },
+    {
+        id: 'addGitHubAuth',
+        label: 'Add GitHub auth',
+        run: config => {
+            const edits = setProperty(
+                config,
+                ['auth.providers', -1],
+                {
+                    type: 'github',
+                    displayName: 'GitHub',
+                    url: 'https://github.com/',
+                    allowSignup: true,
+                    clientID: '<client ID>',
+                    clientSecret: '<client secret>',
+                },
+                defaultFormattingOptions
+            )
+            return { edits, selectText: '<client ID>' }
+        },
+    },
+    {
+        id: 'useSAML',
+        label: 'Add SAML auth',
+        run: config => {
+            const edits = setProperty(
+                config,
+                ['auth.providers', -1],
+                {
+                    type: 'saml',
+                    displayName: 'SAML',
+                    identityProviderMetadataURL: '<SAML IdP metadata URL>',
+                },
+                defaultFormattingOptions
+            )
+            return { edits, selectText: '<SAML IdP metadata URL>' }
+        },
+    },
+    {
+        id: 'useOIDC',
+        label: 'Add OpenID Connect auth',
+        run: config => {
+            const edits = setProperty(
+                config,
+                ['auth.providers', -1],
+                {
+                    type: 'openidconnect',
+                    displayName: 'OpenID Connect',
+                    issuer: '<identity provider URL>',
+                    clientID: '<client ID>',
+                    clientSecret: '<client secret>',
+                },
+                defaultFormattingOptions
+            )
+            return { edits, selectText: '<identity provider URL>' }
+        },
+    },
+]
+
+export class CriticalConfigEditor extends React.PureComponent<Props, State> {
     public state: State = {
         criticalConfig: null,
         content: null,
@@ -89,6 +195,8 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
         showSaved: false,
         showSavingError: null,
     }
+
+    private configEditor?: _monaco.editor.ICodeEditor
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -129,38 +237,126 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
+    private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
+        if (editor) {
+            const action = editor.getAction(id)
+            action.run().then(() => void 0, (err: any) => console.error(err))
+        } else {
+            alert('Wait for editor to load before running action.')
+        }
+    }
+
+    public static isStandaloneCodeEditor(
+        editor: _monaco.editor.ICodeEditor
+    ): editor is _monaco.editor.IStandaloneCodeEditor {
+        return editor.getEditorType() === _monaco.editor.EditorType.ICodeEditor
+    }
+
     public render(): JSX.Element | null {
+        const actions = quickConfigureActions
         return (
-            <div className="critical-config-editor">
-                <div
-                    className={`critical-config-editor__monaco-reserved-space${
-                        this.state.criticalConfig ? ' critical-config-editor__monaco-reserved-space--monaco' : ''
-                    }`}
-                >
-                    {!this.state.criticalConfig && this.state.canShowLoader && <div>Loading...</div>}
-                    {this.state.criticalConfig && (
-                        <MonacoEditor
-                            content={this.state.criticalConfig.Contents}
-                            language="json"
-                            onDidContentChange={this.onDidContentChange}
-                            onDidSave={this.onDidSave}
-                        />
+            <div>
+                {actions && (
+                    <div className="critical-config-page__action-groups">
+                        <div className="critical-config-page__action-groups">
+                            <div className="critical-config-page__action-group-header">Quick configure:</div>
+                            <div className="critical-config-page__actions">
+                                {actions.map(({ id, label }) => (
+                                    <button
+                                        key={id}
+                                        className="btn btn-secondary btn-sm critical-config-page__action"
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        onClick={() => this.runAction(id, this.configEditor)}
+                                        type="button"
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <div className="critical-config-editor">
+                    <div
+                        className={`critical-config-editor__monaco-reserved-space${
+                            this.state.criticalConfig ? ' critical-config-editor__monaco-reserved-space--monaco' : ''
+                        }`}
+                    >
+                        {!this.state.criticalConfig && this.state.canShowLoader && <div>Loading...</div>}
+
+                        {this.state.criticalConfig && (
+                            <MonacoEditor
+                                content={this.state.criticalConfig.Contents}
+                                language="json"
+                                onDidContentChange={this.onDidContentChange}
+                                onDidSave={this.onDidSave}
+                                editorWillMount={this.editorWillMount}
+                            />
+                        )}
+                    </div>
+                    <button onClick={this.onDidSave}>Save changes</button>
+                    {this.state.showSaving && (
+                        <span className="critical-config-editor__status-indicator">Saving...</span>
+                    )}
+                    {this.state.showSaved && (
+                        <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--success">
+                            Saved!
+                        </span>
+                    )}
+                    {this.state.showSavingError && (
+                        <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--error">
+                            {this.state.showSavingError}
+                        </span>
                     )}
                 </div>
-                <button onClick={this.onDidSave}>Save changes</button>
-                {this.state.showSaving && <span className="critical-config-editor__status-indicator">Saving...</span>}
-                {this.state.showSaved && (
-                    <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--success">
-                        Saved!
-                    </span>
-                )}
-                {this.state.showSavingError && (
-                    <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--error">
-                        {this.state.showSavingError}
-                    </span>
-                )}
             </div>
         )
+    }
+
+    /**
+     * Private helper that stores a reference to the Monaco editor after it's mounted.
+     * This is used to run the "Quick configure" actions.
+     */
+    private editorWillMount = (editor: _monaco.editor.IStandaloneCodeEditor, model: _monaco.editor.IModel) => {
+        this.configEditor = editor
+
+        if (CriticalConfigEditor.isStandaloneCodeEditor(editor)) {
+            for (const { id, label, run } of quickConfigureActions) {
+                editor.addAction({
+                    label,
+                    id,
+                    run: editor => {
+                        // copy-pasta
+                        editor.focus()
+                        editor.pushUndoStop()
+                        const { edits, selectText } = run(editor.getValue())
+                        const monacoEdits = toMonacoEdits(model, edits)
+                        let selection: _monaco.Selection | undefined
+                        if (typeof selectText === 'string') {
+                            const afterText = jsonc.applyEdits(editor.getValue(), edits)
+                            let offset = afterText.slice(edits[0].offset).indexOf(selectText)
+                            if (offset !== -1) {
+                                offset += edits[0].offset
+                                selection = _monaco.Selection.fromPositions(
+                                    getPositionAt(afterText, offset),
+                                    getPositionAt(afterText, offset + selectText.length)
+                                )
+                            }
+                        }
+                        if (!selection) {
+                            // TODO: This is buggy. See
+                            // https://github.com/sourcegraph/sourcegraph/issues/2756.
+                            selection = _monaco.Selection.fromPositions(
+                                monacoEdits[0].range.getStartPosition(),
+                                monacoEdits[monacoEdits.length - 1].range.getEndPosition()
+                            )
+                        }
+                        editor.executeEdits(id, monacoEdits, [selection])
+                        editor.revealPositionInCenter(selection.getStartPosition())
+                    },
+                })
+            }
+        }
     }
 
     private onDidContentChange = (content: string) => this.setState({ content })
@@ -221,4 +417,33 @@ export class CriticalConfigEditor extends React.Component<Props, State> {
                 )
         )
     }
+}
+
+function toMonacoEdits(
+    model: _monaco.editor.IModel,
+    edits: jsonc.Edit[]
+): _monaco.editor.IIdentifiedSingleEditOperation[] {
+    return edits.map((edit, i) => ({
+        identifier: { major: model.getVersionId(), minor: i },
+        range: _monaco.Range.fromPositions(
+            model.getPositionAt(edit.offset),
+            model.getPositionAt(edit.offset + edit.length)
+        ),
+        forceMoveMarkers: true,
+        text: edit.content,
+    }))
+}
+
+function getPositionAt(text: string, offset: number): _monaco.IPosition {
+    const lines = text.split('\n')
+    let pos = 0
+    let i = 0
+    for (const line of lines) {
+        if (offset < pos + line.length + 1) {
+            return new _monaco.Position(i + 1, offset - pos + 1)
+        }
+        pos += line.length + 1
+        i++
+    }
+    throw new Error(`offset ${offset} out of bounds in text of length ${text.length}`)
 }
