@@ -5,7 +5,9 @@ import { map } from 'rxjs/operators'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { CodeHost, CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
+import { CodeHost } from '../code_intelligence'
+import { CodeViewSpec, CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { ViewResolver } from '../code_intelligence/views'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
 
@@ -78,7 +80,7 @@ const adjustPosition: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedR
 const toolbarButtonProps = {
     className: 'button grey button-grey has-icon has-text phui-button-default msl',
 }
-const commitCodeView: CodeViewSpecWithOutSelector = {
+const commitCodeView: CodeViewSpecResolver = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveRevisionFileInfo,
     adjustPosition,
@@ -124,9 +126,9 @@ export const diffCodeView = {
     isDiff: true,
 }
 
-const codeViewSpecResolver: CodeViewSpecResolver = {
+const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
     selector: '.differential-changeset',
-    resolveCodeViewSpec: (codeView: HTMLElement): CodeViewSpecWithOutSelector => {
+    resolveView: (codeView: HTMLElement): CodeViewSpecResolver => {
         if (window.location.pathname.match(/^\/r/)) {
             return commitCodeView
         }

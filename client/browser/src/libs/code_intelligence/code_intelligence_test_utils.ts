@@ -1,7 +1,8 @@
 import assert from 'assert'
 import { readFile } from 'mz/fs'
 import { SetIntersection } from 'utility-types'
-import { CodeHost, CodeViewSpec, MountGetter } from './code_intelligence'
+import { CodeHost, MountGetter } from './code_intelligence'
+import { CodeViewSpec } from './code_views'
 
 const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = (typeof mountGetterKeys)[number]
