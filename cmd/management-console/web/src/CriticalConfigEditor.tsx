@@ -9,6 +9,7 @@ import { ajax } from 'rxjs/ajax'
 import { catchError, delay, distinctUntilChanged, mapTo, startWith, takeUntil } from 'rxjs/operators'
 import './CriticalConfigEditor.scss'
 import { MonacoEditor } from './MonacoEditor'
+import { json } from 'body-parser'
 
 const DEBUG_LOADING_STATE_DELAY = 0 // ms
 
@@ -111,7 +112,7 @@ const quickConfigureActions = [
     },
     {
         id: 'addGitLabAuth',
-        label: 'Add GitLab auth',
+        label: 'Add GitLab sign-in',
         run: config => {
             const edits = setProperty(
                 config,
@@ -130,7 +131,7 @@ const quickConfigureActions = [
     },
     {
         id: 'addGitHubAuth',
-        label: 'Add GitHub auth',
+        label: 'Add GitHub sign-in',
         run: config => {
             const edits = setProperty(
                 config,
@@ -149,8 +150,59 @@ const quickConfigureActions = [
         },
     },
     {
+        id: 'useOneLoginSAML',
+        label: 'Add OneLogin SAML',
+        run: config => {
+            let externalURL
+            let externalURLRegexp
+            try {
+                externalURL = jsonc.parse(config).externalURL
+                externalURLRegexp = externalURL.replace(/\//g, '\\/')
+            } catch {
+                /* not necessarily an error, config might be empty */
+            }
+            if (!externalURL) {
+                externalURL = '<externalURL>'
+                externalURLRegexp = '<externalURL regex>'
+            }
+            const value = {
+                COMMENT_1: true,
+                type: 'saml',
+                displayName: 'OneLogin',
+                COMMENT_2: true,
+                identityProviderMetadataURL: '<identity provider metadata URL>',
+            }
+            const comments = {
+                COMMENT_1: `// Before proceeding, ensure you've set externalURL to the appropriate value.
+      //
+      // To enable OneLogin SAML sign-in, you'll first need to create a SAML app in OneLogin:
+      // 1. Go to https://mycompany.onelogin.com/apps/find (replace "mycompany" with your
+      //    company's OneLogin ID).
+      // 2. Select "SAML Test Connector (SP)" and create the app.
+      // 3. Under the "Configuration" tab, set the following properties:
+      //    Audience:  ${externalURL}/.auth/saml/metadata
+      //    Recipient: ${externalURL}/.auth/saml/acs
+      //    ACS (Consumer) URL Validator: ${externalURLRegexp}\\/\\.auth\\/saml\\/acs
+      //    ACS (Consumer) URL: ${externalURL}/.auth/saml/acs
+      // 4. Under the "Parameters" tab, ensure the following parameters exist:
+      //    Email (NameID): Email
+      //    DisplayName:    First Name         Include in SAML Assertion: ✓
+      //    login:          AD user name       Include in SAML Assertion: ✓
+      // 5. Save the app in OneLogin and then fill in the fields below:
+`,
+                COMMENT_2: `
+      // This URL describes OneLogin to Sourcegraph. Find it in the OneLogin app config GUI
+      // under the "SSO" tab, under "Issuer URL".
+      // It should look something like "https://mycompany.onelogin.com/saml/metadata/000000"
+      // or "https://app.onelogin.com/saml/metadata/000000".`,
+            }
+            const edits = [editWithComments(config, ['auth.providers', -1], value, comments)]
+            return { edits, selectText: '<identity provider metadata URL>' }
+        },
+    },
+    {
         id: 'useSAML',
-        label: 'Add SAML auth',
+        label: 'Add other SAML',
         run: config => {
             const edits = setProperty(
                 config,
@@ -167,7 +219,7 @@ const quickConfigureActions = [
     },
     {
         id: 'useOIDC',
-        label: 'Add OpenID Connect auth',
+        label: 'Add OpenID Connect',
         run: config => {
             const edits = setProperty(
                 config,
@@ -446,4 +498,23 @@ function getPositionAt(text: string, offset: number): _monaco.IPosition {
         i++
     }
     throw new Error(`offset ${offset} out of bounds in text of length ${text.length}`)
+}
+
+/**
+ * editWithComment returns a Monaco edit action that sets the value of a JSON field with a
+ * "//" comment annotating the field. The comment is inserted wherever
+ * `"COMMENT_SENTINEL": true` appears in the JSON.
+ */
+function editWithComments(
+    config: string,
+    path: jsonc.JSONPath,
+    value: any,
+    comments: { [key: string]: string }
+): jsonc.Edit {
+    const edit = setProperty(config, path, value, defaultFormattingOptions)[0]
+    for (const commentKey of Object.keys(comments)) {
+        edit.content = edit.content.replace(`"${commentKey}": true,`, comments[commentKey])
+        edit.content = edit.content.replace(`"${commentKey}": true`, comments[commentKey])
+    }
+    return edit
 }
