@@ -15,17 +15,10 @@ describe('Documents (integration)', () => {
 
         test('adds new text documents', async () => {
             const {
-                services: { editor: editorService },
+                services: { model: modelService },
                 extensionAPI,
             } = await integrationTestContext()
-            editorService.editors.next([
-                {
-                    type: 'CodeEditor',
-                    item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                    selections: [],
-                    isActive: true,
-                },
-            ])
+            modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
             await from(extensionAPI.workspace.openedTextDocuments)
                 .pipe(take(1))
                 .toPromise()
@@ -39,21 +32,14 @@ describe('Documents (integration)', () => {
     describe('workspace.openedTextDocuments', () => {
         test('fires when a text document is opened', async () => {
             const {
-                services: { editor: editorService },
+                services: { model: modelService },
                 extensionAPI,
             } = await integrationTestContext()
 
             const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
             expect(values).toEqual([] as TextDocument[])
 
-            editorService.editors.next([
-                {
-                    type: 'CodeEditor',
-                    item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                    selections: [],
-                    isActive: true,
-                },
-            ])
+            modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
             await from(extensionAPI.workspace.openedTextDocuments)
                 .pipe(take(1))
                 .toPromise()

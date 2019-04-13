@@ -12,7 +12,7 @@ import { PlatformContext } from '../../../platform/context'
 import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { CodeEditorData, ReadonlyEditorService } from './editorService'
+import { CodeEditorDataWithModel, EditorService } from './editorService'
 import { SettingsService } from './settings'
 
 /**
@@ -55,7 +55,7 @@ interface PartialContext extends Pick<PlatformContext, 'queryGraphQL' | 'getScri
 export class ExtensionsService {
     public constructor(
         private platformContext: PartialContext,
-        private editorService: ReadonlyEditorService,
+        private editorService: Pick<EditorService, 'editorsWithModel'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
         private fetchSideloadedExtension: (
@@ -119,7 +119,7 @@ export class ExtensionsService {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs: string[] = []
-        return combineLatest(from(this.editorService.editors), this.enabledExtensions).pipe(
+        return combineLatest(from(this.editorService.editorsWithModel), this.enabledExtensions).pipe(
             tap(([editors, enabledExtensions]) => {
                 const activeExtensions = this.extensionActivationFilter(enabledExtensions, editors)
                 for (const x of activeExtensions) {
@@ -169,7 +169,7 @@ function asObservable(input: string | ObservableInput<string>): Observable<strin
 
 function extensionsWithMatchedActivationEvent(
     enabledExtensions: ConfiguredExtension[],
-    editors: readonly CodeEditorData[]
+    editors: readonly CodeEditorDataWithModel[]
 ): ConfiguredExtension[] {
     return enabledExtensions.filter(x => {
         try {
@@ -194,7 +194,7 @@ function extensionsWithMatchedActivationEvent(
                 console.warn(`Extension ${x.id} has no activation events, so it will never be activated.`)
                 return false
             }
-            const visibleTextDocumentLanguages = editors.map(({ item: { languageId } }) => languageId)
+            const visibleTextDocumentLanguages = editors.map(({ model: { languageId } }) => languageId)
             return x.manifest.activationEvents.some(
                 e => e === '*' || visibleTextDocumentLanguages.some(l => e === `onLanguage:${l}`)
             )

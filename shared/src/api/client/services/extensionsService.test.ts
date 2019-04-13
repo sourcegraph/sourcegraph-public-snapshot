@@ -2,7 +2,7 @@ import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorData, ReadonlyEditorService } from './editorService'
+import { CodeEditorDataWithModel, EditorService } from './editorService'
 import { createTestEditorService } from './editorService.test'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
@@ -12,11 +12,11 @@ const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
-        editorService: ReadonlyEditorService,
+        editorService: Pick<EditorService, 'editorsWithModel'>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
-            editors: readonly CodeEditorData[]
+            editors: readonly CodeEditorDataWithModel[]
         ) => ConfiguredExtension[],
         sideloadedExtensionURL: Subscribable<string | null>,
         fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
@@ -46,7 +46,7 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [],
                         createTestEditorService(
-                            cold<readonly CodeEditorData[]>('-a-|', {
+                            cold<readonly CodeEditorDataWithModel[]>('-a-|', {
                                 a: [],
                             })
                         ),
@@ -69,11 +69,12 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
                         createTestEditorService(
-                            cold<readonly CodeEditorData[]>('-a-b-|', {
+                            cold<readonly CodeEditorDataWithModel[]>('-a-b-|', {
                                 a: [
                                     {
                                         type: 'CodeEditor',
-                                        item: { languageId: 'x', text: '', uri: '' },
+                                        resource: 'u',
+                                        model: { languageId: 'x', text: '', uri: 'u' },
                                         selections: [],
                                         isActive: true,
                                     },
@@ -81,7 +82,8 @@ describe('activeExtensions', () => {
                                 b: [
                                     {
                                         type: 'CodeEditor',
-                                        item: { languageId: 'y', text: '', uri: '' },
+                                        resource: 'u2',
+                                        model: { languageId: 'y', text: '', uri: 'u2' },
                                         selections: [],
                                         isActive: true,
                                     },
@@ -96,7 +98,7 @@ describe('activeExtensions', () => {
                         },
                         (enabledExtensions, editors) =>
                             enabledExtensions.filter(x =>
-                                editors.some(({ item: { languageId } }) => x.id === languageId)
+                                editors.some(({ model: { languageId } }) => x.id === languageId)
                             ),
                         cold('-a--|', { a: '' }),
                         () => of(null)
@@ -115,7 +117,7 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
                         createTestEditorService(
-                            cold<readonly CodeEditorData[]>('a-|', {
+                            cold<readonly CodeEditorDataWithModel[]>('a-|', {
                                 a: [],
                             })
                         ),
@@ -160,7 +162,7 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
                         createTestEditorService(
-                            cold<readonly CodeEditorData[]>('a-|', {
+                            cold<readonly CodeEditorDataWithModel[]>('a-|', {
                                 a: [],
                             })
                         ),

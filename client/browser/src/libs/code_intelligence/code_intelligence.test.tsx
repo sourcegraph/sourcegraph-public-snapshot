@@ -188,11 +188,7 @@ describe('code_intelligence', () => {
             expect(editors).toEqual([
                 {
                     isActive: true,
-                    item: {
-                        languageId: 'typescript',
-                        text: undefined,
-                        uri: 'git://foo?1#/bar.ts',
-                    },
+                    resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
                 },
@@ -253,7 +249,7 @@ describe('code_intelligence', () => {
                 services.textDocumentDecoration
                     .getDecorations({ uri: 'git://foo?1#/bar.ts' })
                     .pipe(
-                        filter(decorations => decorations !== []),
+                        filter(decorations => Boolean(decorations && decorations.length > 0)),
                         take(1)
                     )
                     .toPromise()

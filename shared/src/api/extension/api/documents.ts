@@ -1,11 +1,12 @@
 import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
+import { TextModel } from '../../client/services/modelService'
 import { ExtDocument } from './textDocument'
 
 /** @internal */
 export interface ExtDocumentsAPI extends ProxyValue {
-    $acceptDocumentData(doc: Pick<TextDocument, 'uri' | 'languageId' | 'text'>[]): void
+    $acceptDocumentData(models: readonly TextModel[]): void
 }
 
 /** @internal */
@@ -56,11 +57,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
 
     public openedTextDocuments = new Subject<TextDocument>()
 
-    public $acceptDocumentData(models: Pick<TextDocument, 'uri' | 'languageId' | 'text'>[] | null): void {
-        if (!models) {
-            // We don't ever (yet) communicate to the extension when docs are closed.
-            return
-        }
+    public $acceptDocumentData(models: readonly TextModel[]): void {
         for (const model of models) {
             const isNew = !this.documents.has(model.uri)
             const doc = new ExtDocument(model)

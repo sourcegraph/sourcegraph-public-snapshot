@@ -17,11 +17,11 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
     private resource: string
 
     constructor(
-        data: CodeEditorData<Pick<sourcegraph.TextDocument, 'uri'>>,
+        data: CodeEditorData,
         private proxy: ProxyResult<ClientCodeEditorAPI>,
         private documents: ExtDocuments
     ) {
-        this.resource = data.item.uri
+        this.resource = data.resource
         this.update(data)
     }
 

@@ -95,49 +95,45 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.editor.editors).pipe(
+            provider: from(this.props.extensionsController.services.editor.editorsWithModel).pipe(
                 switchMap(editors =>
-                    registry
-                        .hasProvidersForActiveTextDocument(
-                            this.props.extensionsController.services.editor.editors.value
-                        )
-                        .pipe(
-                            map(hasProviders => {
-                                if (!hasProviders) {
-                                    return null
-                                }
-                                const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(editors)
-                                if (!params) {
-                                    return null
-                                }
-                                return {
-                                    title,
-                                    content: '',
-                                    priority,
+                    registry.hasProvidersForActiveTextDocument(editors).pipe(
+                        map(hasProviders => {
+                            if (!hasProviders) {
+                                return null
+                            }
+                            const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(editors)
+                            if (!params) {
+                                return null
+                            }
+                            return {
+                                title,
+                                content: '',
+                                priority,
 
-                                    // This disable directive is necessary because TypeScript is not yet smart
-                                    // enough to know that (typeof params & typeof extraParams) is P.
-                                    //
-                                    // tslint:disable-next-line:no-object-literal-type-assertion
-                                    locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
-                                        map(locationsObservable =>
-                                            locationsObservable.pipe(
-                                                tap(locations => {
-                                                    if (
-                                                        this.props.activation &&
-                                                        id === 'references' &&
-                                                        locations &&
-                                                        locations.length > 0
-                                                    ) {
-                                                        this.props.activation.update({ FoundReferences: true })
-                                                    }
-                                                })
-                                            )
+                                // This disable directive is necessary because TypeScript is not yet smart
+                                // enough to know that (typeof params & typeof extraParams) is P.
+                                //
+                                // tslint:disable-next-line:no-object-literal-type-assertion
+                                locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
+                                    map(locationsObservable =>
+                                        locationsObservable.pipe(
+                                            tap(locations => {
+                                                if (
+                                                    this.props.activation &&
+                                                    id === 'references' &&
+                                                    locations &&
+                                                    locations.length > 0
+                                                ) {
+                                                    this.props.activation.update({ FoundReferences: true })
+                                                }
+                                            })
                                         )
-                                    ),
-                                }
-                            })
-                        )
+                                    )
+                                ),
+                            }
+                        })
+                    )
                 )
             ),
         })
