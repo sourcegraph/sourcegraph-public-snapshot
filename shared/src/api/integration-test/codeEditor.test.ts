@@ -15,19 +15,12 @@ describe('CodeEditor (integration)', () => {
                 services: { editor: editorService },
                 extensionAPI,
             } = await integrationTestContext()
+            const editors = await from(editorService.editors)
+                .pipe(first())
+                .toPromise()
 
-            const setSelections = (selections: Selection[]) => {
-                editorService.nextEditors([
-                    {
-                        type: 'CodeEditor',
-                        resource: 'file:///f',
-                        selections,
-                        isActive: true,
-                    },
-                ])
-            }
-            setSelections([new Selection(1, 2, 3, 4)])
-            setSelections([])
+            editorService.setSelections(editors[0], [new Selection(1, 2, 3, 4)])
+            editorService.setSelections(editors[0], [])
 
             const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                 .pipe(

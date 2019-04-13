@@ -143,16 +143,13 @@ function testLocationProvider<P>({
             const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
             await extensionAPI.internal.sync()
 
-            services.editor.nextEditors([])
             services.model.addModel({ uri: 'file:///f2', languageId: 'l1', text: 't1' })
-            services.editor.nextEditors([
-                {
-                    type: 'CodeEditor',
-                    resource: 'file:///f2',
-                    selections: [],
-                    isActive: true,
-                },
-            ])
+            services.editor.addEditor({
+                type: 'CodeEditor',
+                resource: 'file:///f2',
+                selections: [],
+                isActive: true,
+            })
 
             expect(
                 await getResult(services, 'file:///f2')
