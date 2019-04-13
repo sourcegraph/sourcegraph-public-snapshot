@@ -1,91 +1,85 @@
-import { from, merge, Observable, of, zip } from 'rxjs'
-import { catchError, concatAll, filter, map, mergeMap, switchMap } from 'rxjs/operators'
-import { isDefined, isInstanceOf } from '../../../../../shared/src/util/types'
+import { DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { Observable, of, zip } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, isErrorLike } from '../../shared/backend/errors'
+import { ButtonProps } from '../../shared/components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
-import { CodeHost, CodeViewSpec, CodeViewSpecResolver, FileInfo, ResolvedCodeView } from './code_intelligence'
+import { CodeHost, FileInfo } from './code_intelligence'
 import { ensureRevisionsAreCloned } from './util/file_info'
+import { trackViews, ViewResolver } from './views'
 
-export interface AddedCodeView extends ResolvedCodeView {
-    type: 'added'
+/**
+ * Defines a type of code view a given code host can have. It tells us how to
+ * look for the code view and how to do certain things when we find it.
+ */
+export interface CodeViewSpec {
+    /** A selector used by `document.querySelectorAll` to find the code view. */
+    selector: string
+    /** The DOMFunctions for the code view. */
+    dom: DOMFunctions
+    /**
+     * Finds or creates a DOM element where we should inject the
+     * `CodeViewToolbar`. This function is responsible for ensuring duplicate
+     * mounts aren't created.
+     */
+    getToolbarMount?: (codeView: HTMLElement) => HTMLElement
+    /**
+     * Resolves the file info for a given code view. It returns an observable
+     * because some code hosts need to resolve this asynchronously. The
+     * observable should only emit once.
+     */
+    resolveFileInfo: (codeView: HTMLElement) => Observable<FileInfo>
+    /**
+     * In some situations, we need to be able to adjust the position going into
+     * and coming out of codeintellify. For example, Phabricator converts tabs
+     * to spaces in it's DOM.
+     */
+    adjustPosition?: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
+    /** Props for styling the buttons in the `CodeViewToolbar`. */
+    toolbarButtonProps?: ButtonProps
+
+    isDiff?: boolean
 }
 
-export interface RemovedCodeView extends Pick<ResolvedCodeView, 'element'> {
-    type: 'removed'
+/**
+ * Resolves a code view element found by a {@link CodeViewSpec} to a {@link ResolvedCodeView}.
+ */
+export interface CodeViewSpecResolver extends Pick<CodeViewSpec, Exclude<keyof CodeViewSpec, 'selector'>> {}
+
+/**
+ * A code view found on the page.
+ */
+export interface ResolvedCodeView extends CodeViewSpecResolver {
+    /** The code view's HTML element. */
+    element: HTMLElement
 }
 
-export type CodeViewEvent = AddedCodeView | RemovedCodeView
-
-/** Converts a static CodeViewSpec to a dynamic CodeViewSpecResolver */
-const toCodeViewResolver = ({ selector, ...spec }: CodeViewSpec): CodeViewSpecResolver => ({
+/** Converts a static CodeViewSpec to a dynamic CodeViewSpecResolver. */
+const toCodeViewResolver = ({ selector, ...spec }: CodeViewSpec): ViewResolver<ResolvedCodeView> => ({
     selector,
-    resolveCodeViewSpec: () => spec,
+    resolveView: element => ({ ...spec, element }),
 })
 
 /**
- * Find all the code views on a page given a CodeHostSpec from DOM mutations.
- *
- * Emits every code view that gets added or removed.
- *
- * At any given time, there can be 0-n code views on a page.
+ * Find all the code views on a page using both the code view specs and the code view spec
+ * resolvers, calling down to {@link trackViews}.
  */
 export const trackCodeViews = ({
     codeViewSpecs = [],
     codeViewSpecResolver,
-}: Pick<CodeHost, 'codeViewSpecs' | 'codeViewSpecResolver'>) => (
-    mutations: Observable<MutationRecordLike[]>
-): Observable<CodeViewEvent> => {
+}: Pick<CodeHost, 'codeViewSpecs' | 'codeViewSpecResolver'>) => {
     const codeViewSpecResolvers = codeViewSpecs.map(toCodeViewResolver)
     if (codeViewSpecResolver) {
-        codeViewSpecResolvers.push(codeViewSpecResolver)
+        codeViewSpecResolvers.push({
+            selector: codeViewSpecResolver.selector,
+            resolveView: element => {
+                const view = codeViewSpecResolver.resolveView(element)
+                return view ? { ...view, element } : null
+            },
+        })
     }
-    return mutations.pipe(
-        concatAll(),
-        mergeMap(mutation =>
-            merge(
-                // Find all new code views within the added nodes
-                // (MutationObservers don't emit all descendant nodes of an addded node recursively)
-                from(mutation.addedNodes).pipe(
-                    filter(isInstanceOf(HTMLElement)),
-                    mergeMap(addedElement =>
-                        from(codeViewSpecResolvers).pipe(
-                            mergeMap(spec =>
-                                [...(querySelectorAllOrSelf(addedElement, spec.selector) as Iterable<HTMLElement>)]
-                                    .map(element => {
-                                        const codeViewSpec = spec.resolveCodeViewSpec(element)
-                                        return (
-                                            codeViewSpec && {
-                                                ...codeViewSpec,
-                                                element,
-                                                type: 'added' as const,
-                                            }
-                                        )
-                                    })
-                                    .filter(isDefined)
-                            )
-                        )
-                    )
-                ),
-                // For removed nodes, find the removed elements, but don't resolve the kind (it's not relevant)
-                from(mutation.removedNodes).pipe(
-                    filter(isInstanceOf(HTMLElement)),
-                    mergeMap(removedElement =>
-                        from(codeViewSpecResolvers).pipe(
-                            mergeMap(
-                                ({ selector }) =>
-                                    querySelectorAllOrSelf(removedElement, selector) as Iterable<HTMLElement>
-                            ),
-                            map(element => ({
-                                element,
-                                type: 'removed' as const,
-                            }))
-                        )
-                    )
-                )
-            )
-        )
-    )
+    return trackViews<ResolvedCodeView>(codeViewSpecResolvers)
 }
 
 export interface FileInfoWithContents extends FileInfo {
@@ -121,7 +115,7 @@ export const fetchFileContents = (info: FileInfo): Observable<FileInfoWithConten
                         baseHasFileContents: baseFileContent ? baseFileContent.length > 0 : undefined,
                     })
                 ),
-                catchError(error => [info])
+                catchError(() => [info])
             )
         }),
         catchError((err: any) => {

@@ -2,7 +2,9 @@ import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegrap
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../shared/util/dom'
-import { CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
+import { MountGetter } from '../code_intelligence'
+import { CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { ViewResolver } from '../code_intelligence/views'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import {
@@ -77,7 +79,7 @@ const toolbarButtonProps = {
 /**
  * A code view spec for single file code view in the "source" view (not diff).
  */
-const singleFileSourceCodeView: CodeViewSpecWithOutSelector = {
+const singleFileSourceCodeView: CodeViewSpecResolver = {
     getToolbarMount,
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveFileInfoForSingleFileSourceView,
@@ -95,7 +97,7 @@ const baseDiffCodeView = {
 /**
  * A code view spec for a single file "diff to previous" view
  */
-const singleFileDiffCodeView: CodeViewSpecWithOutSelector = {
+const singleFileDiffCodeView: CodeViewSpecResolver = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveSingleFileDiffFileInfo,
 }
@@ -103,7 +105,7 @@ const singleFileDiffCodeView: CodeViewSpecWithOutSelector = {
 /**
  * A code view spec for pull requests
  */
-const pullRequestDiffCodeView: CodeViewSpecWithOutSelector = {
+const pullRequestDiffCodeView: CodeViewSpecResolver = {
     ...baseDiffCodeView,
     resolveFileInfo: resolvePullRequestFileInfo,
 }
@@ -111,7 +113,7 @@ const pullRequestDiffCodeView: CodeViewSpecWithOutSelector = {
 /**
  * A code view spec for compare pages
  */
-const compareDiffCodeView: CodeViewSpecWithOutSelector = {
+const compareDiffCodeView: CodeViewSpecResolver = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveCompareFileInfo,
 }
@@ -119,14 +121,14 @@ const compareDiffCodeView: CodeViewSpecWithOutSelector = {
 /**
  * A code view spec for commit pages
  */
-const commitDiffCodeView: CodeViewSpecWithOutSelector = {
+const commitDiffCodeView: CodeViewSpecResolver = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveCommitViewFileInfo,
 }
 
-const codeViewSpecResolver: CodeViewSpecResolver = {
+const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
     selector: '.file-content',
-    resolveCodeViewSpec: codeView => {
+    resolveView: codeView => {
         const contentView = codeView.querySelector('.content-view')
         if (!contentView) {
             return null
