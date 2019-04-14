@@ -172,7 +172,7 @@ const quickConfigureActions = [
       // Create a SAML app in OneLogin:
       // 1. Go to https://mycompany.onelogin.com/apps/find (replace "mycompany" with your
       //    company's OneLogin ID).
-      // 2. Select "SAML Test Connector (SP)" and create the app.
+      // 2. Select "SAML Test Connector (SP)" and click "Save".
       // 3. Under the "Configuration" tab, set the following properties:
       //    Audience:  ${externalURL}/.auth/saml/metadata
       //    Recipient: ${externalURL}/.auth/saml/acs
