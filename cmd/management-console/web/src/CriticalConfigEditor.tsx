@@ -153,29 +153,23 @@ const quickConfigureActions = [
         id: 'useOneLoginSAML',
         label: 'Add OneLogin SAML',
         run: config => {
-            let externalURL
-            let externalURLRegexp
-            try {
-                externalURL = jsonc.parse(config).externalURL
-                externalURLRegexp = externalURL.replace(/\//g, '\\/')
-            } catch {
-                /* not necessarily an error, config might be empty */
-            }
-            if (!externalURL) {
-                externalURL = '<externalURL>'
-                externalURLRegexp = '<externalURL regex>'
-            }
+            const { externalURL, externalURLRegexp } = getExternalURLPlaceholders(config)
             const value = {
-                COMMENT_1: true,
                 type: 'saml',
                 displayName: 'OneLogin',
+                COMMENT_1: true,
                 COMMENT_2: true,
                 identityProviderMetadataURL: '<identity provider metadata URL>',
             }
             const comments = {
-                COMMENT_1: `// Before proceeding, ensure you've set externalURL to the appropriate value.
+                COMMENT_1: `
+      // OneLogin SAML instructions
+      // ==========================
       //
-      // To enable OneLogin SAML sign-in, you'll first need to create a SAML app in OneLogin:
+      // Before proceeding, ensure you've set externalURL to the appropriate value.
+      // (The instructions below use the current value of externalURL.)
+      //
+      // Create a SAML app in OneLogin:
       // 1. Go to https://mycompany.onelogin.com/apps/find (replace "mycompany" with your
       //    company's OneLogin ID).
       // 2. Select "SAML Test Connector (SP)" and create the app.
@@ -188,16 +182,63 @@ const quickConfigureActions = [
       //    Email (NameID): Email
       //    DisplayName:    First Name         Include in SAML Assertion: ✓
       //    login:          AD user name       Include in SAML Assertion: ✓
-      // 5. Save the app in OneLogin and then fill in the fields below:
-`,
+      // 5. Save the app in OneLogin and fill in the fields below:`,
                 COMMENT_2: `
       // This URL describes OneLogin to Sourcegraph. Find it in the OneLogin app config GUI
       // under the "SSO" tab, under "Issuer URL".
-      // It should look something like "https://mycompany.onelogin.com/saml/metadata/000000"
-      // or "https://app.onelogin.com/saml/metadata/000000".`,
+      // It should look something like "https://mycompany.onelogin.com/saml/metadata/123456"
+      // or "https://app.onelogin.com/saml/metadata/123456".`,
             }
             const edits = [editWithComments(config, ['auth.providers', -1], value, comments)]
-            return { edits, selectText: '<identity provider metadata URL>' }
+            return { edits, selectText: 'OneLogin SAML instructions' }
+        },
+    },
+    {
+        id: 'useOktaSAML',
+        label: 'Add Okta SAML',
+        run: config => {
+            const { externalURL, externalURLRegexp } = getExternalURLPlaceholders(config)
+            const value = {
+                type: 'saml',
+                displayName: 'Okta',
+                COMMENT_1: true,
+                COMMENT_2: true,
+                identityProviderMetadataURL: '<identity provider metadata URL>',
+            }
+            const comments = {
+                COMMENT_1: `
+      // Okta SAML instructions
+      // ======================
+      //
+      // Before proceeding, ensure you've set externalURL to the appropriate value.
+      // (The instructions below use the current value of externalURL.)
+      //
+      // Create a SAML app in Okta:
+      // 1. Go to the Okta admin "Add Application" page, classic UI (looks like
+      //    https://my-org.okta.com/admin/apps/add-app or https://dev-12345.oktapreview.com/admin/apps/add-app).
+      // 2. Click "Create New App", select "SAML 2.0", and "Create".
+      // 3. Give the app the name "Sourcegraph", click "Next".
+      // 4. Set the following SAML settings:
+      //    Single Sign On URL: ${externalURL}/.auth/saml/acs
+      //      Use this for Recipient URL and Destination URL: ✓
+      //    Audience URI (SP Entity ID) / Audience Restriction: ${externalURL}/.auth/saml/metadata
+      //    Attribute statements:
+      //      Email: user.email
+      //      Login: user.login
+      //      DisplayName: \${user.firstName} \${user.lastName}
+      //    Click "Next".
+      // 5. Select "I'm an Okta customer adding an internal app" and click "Finish".
+      // 6. Go to the "Assignments" tab, click the "Assign" dropdown > "Assign to Groups"
+      //    > Everyone ("Assign" button).
+      // 7. Fill in the fields below:`,
+                COMMENT_2: `
+      // This URL describes Okta to Sourcegraph. Go to the "Sign On" tab and copy
+      // the hyperlink "Identity Provider metadata is available if this application
+      // supports dynamic configuration." The value looks like
+      // "https://my-org.okta.com/app/abcdefghijk012345678/sso/saml/metadata" or "https://dev-123435.oktapreview.com/app/abcdefghijk012345678/sso/saml/metadata".`,
+            }
+            const edits = [editWithComments(config, ['auth.providers', -1], value, comments)]
+            return { edits, selectText: 'Okta SAML instructions' }
         },
     },
     {
@@ -517,4 +558,20 @@ function editWithComments(
         edit.content = edit.content.replace(`"${commentKey}": true`, comments[commentKey])
     }
     return edit
+}
+
+function getExternalURLPlaceholders(config: string): { externalURL: string; externalURLRegexp: string } {
+    let externalURL
+    let externalURLRegexp
+    try {
+        externalURL = jsonc.parse(config).externalURL
+        externalURLRegexp = externalURL.replace(/\//g, '\\/')
+    } catch {
+        /* not necessarily an error, config might be empty */
+    }
+    if (!externalURL) {
+        externalURL = '<externalURL>'
+        externalURLRegexp = '<externalURL regex>'
+    }
+    return { externalURL, externalURLRegexp }
 }
