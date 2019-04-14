@@ -3,7 +3,7 @@ import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
@@ -226,11 +226,7 @@ export class OrgArea extends React.Component<Props> {
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         // tslint:disable-next-line:jsx-no-lambda
                                         render={routeComponentProps => (
-                                            <OrgAccountArea
-                                                {...routeComponentProps}
-                                                {...transferProps}
-                                                isLightTheme={this.props.isLightTheme}
-                                            />
+                                            <Redirect to={`${this.props.match.url}/settings/profile`} />
                                         )}
                                     />
                                     <Route key="hardcoded-key" component={NotFoundPage} />

@@ -106,6 +106,19 @@
         "type": "boolean",
         "description": "`true` to enable the extension, `false` to disable the extension (if it was previously enabled)"
       }
+    },
+    "browserExtension.permissions": {
+      "description": "The permissions that browser extension users must grant to the Sourcegraph browser extension.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^https?://" },
+      "examples": [["https://sourcegraph.com/*", "https://github.com/*", "https://gitlab.com/*"]]
+    },
+    "browserExtension.url": {
+      "description": "The URL of the Sourcegraph instance for the browser extension to communicate with.",
+      "type": "string",
+      "format": "uri",
+      "default": "https://sourcegraph.com",
+      "examples": ["https://sourcegraph.com", "https://self-hosted-sourcegraph.example.com"]
     }
   },
   "definitions": {

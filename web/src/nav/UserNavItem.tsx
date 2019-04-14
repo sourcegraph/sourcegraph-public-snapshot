@@ -69,23 +69,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/search/searches" className="dropdown-item">
                         Saved searches
                     </Link>
-                    {window.context.sourcegraphDotComMode ? (
-                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
-                            Help
-                        </a>
-                    ) : (
-                        <Link to="/help" className="dropdown-item">
-                            Help
-                        </Link>
-                    )}
-                    {this.props.authenticatedUser.siteAdmin && (
-                        <>
-                            <DropdownItem divider={true} />
-                            <Link to="/site-admin" className="dropdown-item">
-                                Site admin
-                            </Link>
-                        </>
-                    )}
                     <DropdownItem divider={true} />
                     <div className="px-2 py-1">
                         <div className="d-flex align-items-center">
@@ -116,6 +99,34 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             </div>
                         )}
                     </div>
+                    {this.props.authenticatedUser.organizations.nodes.length > 0 && (
+                        <>
+                            <DropdownItem divider={true} />
+                            <DropdownItem header={true}>Organizations</DropdownItem>
+                            {this.props.authenticatedUser.organizations.nodes.map(org => (
+                                <Link key={org.id} to={org.url} className="dropdown-item">
+                                    {org.displayName || org.name}
+                                </Link>
+                            ))}
+                        </>
+                    )}
+                    {this.props.authenticatedUser.siteAdmin && (
+                        <>
+                            <DropdownItem divider={true} />
+                            <Link to="/site-admin" className="dropdown-item">
+                                Site admin
+                            </Link>
+                        </>
+                    )}
+                    {window.context.sourcegraphDotComMode ? (
+                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
+                            Help
+                        </a>
+                    ) : (
+                        <Link to="/help" className="dropdown-item">
+                            Help
+                        </Link>
+                    )}
                     {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
                         <>
                             <DropdownItem divider={true} />

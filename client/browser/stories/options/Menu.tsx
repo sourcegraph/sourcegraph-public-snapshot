@@ -9,7 +9,9 @@ import { OptionsMenu } from '../../src/libs/options/Menu'
 
 storiesOf('Options - OptionsMenu', module)
     .add('Default', () => (
-        <div style={{ maxWidth: 400, marginLeft: 20, marginTop: 20, boxShadow: '0 0 12px 0 rgba(0, 0, 0, 0.15)' }}>
+        <div
+            style={{ width: 'fit-content', marginLeft: 20, marginTop: 20, boxShadow: '0 0 12px 0 rgba(0, 0, 0, 0.15)' }}
+        >
             <OptionsMenu
                 version={'0.0.0'}
                 status={'connected'}
@@ -24,7 +26,9 @@ storiesOf('Options - OptionsMenu', module)
         </div>
     ))
     .add('Settings open', () => (
-        <div style={{ maxWidth: 400, marginLeft: 20, marginTop: 20, boxShadow: '0 0 12px 0 rgba(0, 0, 0, 0.15)' }}>
+        <div
+            style={{ width: 'fit-content', marginLeft: 20, marginTop: 20, boxShadow: '0 0 12px 0 rgba(0, 0, 0, 0.15)' }}
+        >
             <OptionsMenu
                 version={'0.0.0'}
                 status={'connected'}

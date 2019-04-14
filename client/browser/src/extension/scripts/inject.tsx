@@ -32,8 +32,6 @@ setLinkComponent(({ to, children, ...props }) => (
  * Main entry point into browser extension.
  */
 async function main(): Promise<void> {
-    console.log('Sourcegraph browser extension is running')
-
     // Make sure DOM is fully loaded
     if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
         await new Promise<Event>(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }))

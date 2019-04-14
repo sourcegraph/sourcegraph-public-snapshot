@@ -13,4 +13,16 @@
             border-top: none;
         }
     }
+
+    &__settings {
+        background-color: transparent;
+        color: $color-light-bg-5;
+
+        padding: 0.5rem;
+
+        &:hover,
+        &:focus {
+            color: $gray-23;
+        }
+    }
 }
