@@ -12,7 +12,14 @@ describe('UserNavItem', () => {
     afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
 
     // tslint:disable-next-line:no-object-literal-type-assertion
-    const USER = { username: 'u', url: '/u', settingsURL: '/u/settings' } as GQL.IUser
+    const ORG_CONNECTION = {
+        __typename: 'OrgConnection',
+        nodes: [{ id: '1', displayName: 'd', settingsURL: 'u' }, { id: '2', name: 'n', settingsURL: 'u' }] as unknown,
+        totalCount: 2,
+    } as GQL.IOrgConnection
+    // tslint:disable-next-line: no-object-literal-type-assertion
+    const USER = { username: 'u', url: '/u', settingsURL: '/u/settings', organizations: ORG_CONNECTION } as GQL.IUser
+
     const history = H.createMemoryHistory({ keyLength: 0 })
 
     test('simple', () => {
