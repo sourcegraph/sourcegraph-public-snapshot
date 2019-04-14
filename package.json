@@ -201,7 +201,7 @@
     "d3-selection": "^1.2.0",
     "d3-shape": "^1.2.0",
     "date-fns": "^2.0.0-alpha.7",
-    "downshift": "^2.0.14",
+    "downshift": "^2.2.3",
     "graphiql": "^0.12.0",
     "he": "^1.2.0",
     "highlight.js": "^9.13.1",
