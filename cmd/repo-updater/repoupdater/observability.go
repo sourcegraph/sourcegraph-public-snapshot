@@ -73,26 +73,26 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rr := &responseRecorder{w, http.StatusOK, 0}
 
 	defer func(begin time.Time) {
+		took := time.Since(begin)
+
 		if h.log != nil {
 			h.log.Debug(
 				"http.request",
 				"method", r.Method,
 				"route", r.URL.Path,
 				"code", rr.code,
-				"duration", time.Since(begin),
+				"duration", took,
 			)
 		}
 
 		if h.metrics.ServeHTTP != nil {
-			secs := time.Since(begin).Seconds()
-
 			var err error
 			if rr.code >= 400 {
 				err = errors.New(http.StatusText(rr.code))
 			}
 
 			h.metrics.ServeHTTP.Observe(
-				secs,
+				took.Seconds(),
 				1,
 				&err,
 				r.URL.Path,
