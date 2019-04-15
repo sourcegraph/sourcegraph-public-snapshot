@@ -55,6 +55,10 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
                         New subscription
                     </Link>
                 </div>
+                <p>
+                    A subscription gives you a license key to run a self-hosted Sourcegraph instance. See{' '}
+                    <a href="https://about.sourcegraph.com/pricing">Sourcegraph pricing</a> for more information.
+                </p>
                 <FilteredProductSubscriptionConnection
                     className="mt-3"
                     listComponent="table"
