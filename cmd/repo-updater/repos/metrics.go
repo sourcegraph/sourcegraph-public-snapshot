@@ -54,28 +54,28 @@ var (
 		Subsystem: "repoupdater",
 		Name:      "syncer_sync_last_time",
 		Help:      "The last time a sync finished",
-	}, []string{"kind"})
+	}, []string{})
 
 	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "syncer_synced_repos_total",
 		Help:      "Total number of synced repositories",
-	}, []string{"kind"})
+	}, []string{"state"})
 
 	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "syncer_sync_errors_total",
 		Help:      "Total number of sync errors",
-	}, []string{"kind"})
+	}, []string{})
 
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "other_external_services_sync_duration",
 		Help:      "Time spent syncing",
-	}, []string{"kind"})
+	}, []string{"success"})
 
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",

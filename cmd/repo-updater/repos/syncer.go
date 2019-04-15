@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -236,16 +237,23 @@ func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) 
 
 func (s *Syncer) observe(began time.Time, d *Diff, err *error) {
 	now := s.now()
-	took := now.Sub(began).Seconds()
-	repos := d.Repos()
-	synced := len(d.Added) + len(d.Modified) + len(d.Deleted)
+	took := s.now().Sub(began).Seconds()
 
-	for _, kind := range repos.Kinds() {
-		lastSync.WithLabelValues(kind).Set(float64(now.Unix()))
-		syncedTotal.WithLabelValues(kind).Add(float64(synced))
-		syncDuration.WithLabelValues(kind).Observe(took)
-		if err != nil && *err != nil {
-			syncErrors.WithLabelValues(kind).Add(1)
-		}
+	for state, count := range map[string]int{
+		"added":      len(d.Added),
+		"modified":   len(d.Modified),
+		"deleted":    len(d.Deleted),
+		"unmodified": len(d.Unmodified),
+	} {
+		syncedTotal.WithLabelValues(state).Add(float64(count))
+	}
+
+	lastSync.WithLabelValues().Set(float64(now.Unix()))
+
+	success := err == nil || *err == nil
+	syncDuration.WithLabelValues(strconv.FormatBool(success)).Observe(took)
+
+	if !success {
+		syncErrors.WithLabelValues().Add(1)
 	}
 }
