@@ -32,6 +32,12 @@ import {
 
 interface RepositoryNodeProps extends ActivationProps {
     node: GQL.IRepository
+    /**
+     * If true the enable/disable state and actions are shown.
+     *
+     * This field will disappear in 3.4 (always false). See
+     * https://github.com/sourcegraph/sourcegraph/issues/2025.
+     */
     showEnabled: boolean
     onDidUpdate?: () => void
 }
