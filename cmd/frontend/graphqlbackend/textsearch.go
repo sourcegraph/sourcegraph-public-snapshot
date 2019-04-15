@@ -468,12 +468,6 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
-	tr.LogFields(
-		otlog.Int("resp.FileCount", resp.FileCount),
-		otlog.Int("resp.MatchCount", resp.MatchCount),
-		otlog.Object("searchOpts.MaxWallTime", searchOpts.MaxWallTime),
-		otlog.Object("since(t0)", since(t0)),
-	)
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
 		timeoutToTry := 2 * searchOpts.MaxWallTime
 		if timeoutToTry <= 0 {
