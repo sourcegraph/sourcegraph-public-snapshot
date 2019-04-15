@@ -510,7 +510,17 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					ch <- batch{repos: repos}
 
 					if hasNextPage {
-						time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
+						// GitHub search has vastly different rate limits to
+						// the normal GitHub API (30req/m vs
+						// 5000req/h). RecommendedWaitForBackgroundOp has
+						// heuristics tuned for the normal API, part of which
+						// is to not sleep if we have ample rate limit left.
+						//
+						// So we only let the heuristic kick in if we have
+						// less than 5 requests left.
+						if remaining, _, ok := c.searchClient.RateLimit.Get(); ok && remaining < 5 {
+							time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(1))
+						}
 					}
 				}
 			}
