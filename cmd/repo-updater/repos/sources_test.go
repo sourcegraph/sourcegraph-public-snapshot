@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestOtherRepoName(t *testing.T) {
@@ -416,7 +417,7 @@ func TestSources_ListRepos(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			srcs, err := NewSourcer(cf)(tc.svcs...)
+			srcs, err := NewSourcer(cf, ObservedSource(log15.Root()))(tc.svcs...)
 			if err != nil {
 				t.Fatal(err)
 			}

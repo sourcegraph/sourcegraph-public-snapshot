@@ -61,10 +61,13 @@ func main() {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
-	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+	store := repos.NewObservedStore(
+		repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable}),
+		log15.Root(),
+	)
 
 	cliFactory := repos.NewHTTPClientFactory()
-	src := repos.NewSourcer(cliFactory)
+	src := repos.NewSourcer(cliFactory, repos.ObservedSource(log15.Root()))
 
 	migrations := []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),

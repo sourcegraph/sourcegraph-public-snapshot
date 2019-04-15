@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // This error is passed to txstore.Done in order to always
@@ -25,15 +26,17 @@ func TestIntegration(t *testing.T) {
 	db, cleanup := testDatabase(t)
 	defer cleanup()
 
-	store := repos.NewDBStore(ctx, db, sql.TxOptions{
+	dbstore := repos.NewDBStore(ctx, db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
+
+	store := repos.NewObservedStore(dbstore, log15.Root())
 
 	for _, tc := range []struct {
 		name string
 		test func(*testing.T)
 	}{
-		{"DBStore/Transact", testDBStoreTransact(store)},
+		{"DBStore/Transact", testDBStoreTransact(dbstore)},
 		{"DBStore/ListExternalServices", testStoreListExternalServices(store)},
 		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices(store)},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
