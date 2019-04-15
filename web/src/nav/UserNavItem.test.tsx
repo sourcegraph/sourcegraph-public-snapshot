@@ -12,7 +12,7 @@ describe('UserNavItem', () => {
     afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
 
     // tslint:disable-next-line:no-object-literal-type-assertion
-    const USER = { username: 'u', url: '/u' } as GQL.IUser
+    const USER = { username: 'u', url: '/u', settingsURL: '/u/settings' } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
 
     test('simple', () => {

@@ -40,13 +40,6 @@ exports[`UserNavItem simple 1`] = `
     />
     <a
       className="dropdown-item"
-      href="/u/account"
-      onClick={[Function]}
-    >
-      Account
-    </a>
-    <a
-      className="dropdown-item"
       href="/u/settings"
       onClick={[Function]}
     >

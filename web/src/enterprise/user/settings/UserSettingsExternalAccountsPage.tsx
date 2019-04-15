@@ -23,12 +23,12 @@ class FilteredExternalAccountConnection extends FilteredConnection<
 /**
  * Displays the external accounts (from authentication providers) associated with the user's account.
  */
-export class UserAccountExternalAccountsPage extends React.Component<Props> {
+export class UserSettingsExternalAccountsPage extends React.Component<Props> {
     private subscriptions = new Subscription()
     private externalAccountUpdates = new Subject<void>()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserAccountExternalAccounts')
+        eventLogger.logViewEvent('UserSettingsExternalAccounts')
     }
 
     public componentWillUnmount(): void {

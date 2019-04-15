@@ -118,7 +118,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                     </div>
                                     <div className="text-nowrap flex-wrap-reverse">
                                         <a
-                                            href="http://sourcegraph.com/user/subscriptions/new"
+                                            href="http://sourcegraph.com/subscriptions/new"
                                             className="btn btn-primary btn-sm"
                                             target="_blank"
                                             data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"

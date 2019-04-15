@@ -4,19 +4,19 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../backend/graphql'
-import { PageTitle } from '../../components/PageTitle'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { createAggregateError } from '../../../../../shared/src/util/errors'
+import { queryGraphQL } from '../../../backend/graphql'
+import { PageTitle } from '../../../components/PageTitle'
 import {
     accessTokenFragment,
     AccessTokenNode,
     AccessTokenNodeProps,
     FilteredAccessTokenConnection,
-} from '../../settings/tokens/AccessTokenNode'
-import { eventLogger } from '../../tracking/eventLogger'
-import { UserAreaRouteContext } from '../area/UserArea'
+} from '../../../settings/tokens/AccessTokenNode'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { UserAreaRouteContext } from '../../area/UserArea'
 
 interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     /**
@@ -37,7 +37,7 @@ interface State {}
 /**
  * Displays access tokens whose subject is a specific user.
  */
-export class UserAccountTokensPage extends React.PureComponent<Props, State> {
+export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
     private static clearNewTokenTimer: number | undefined = undefined
 
     public state: State = {}
@@ -45,10 +45,10 @@ export class UserAccountTokensPage extends React.PureComponent<Props, State> {
     private accessTokenUpdates = new Subject<void>()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserAccountTokens')
+        eventLogger.logViewEvent('UserSettingsTokens')
 
-        if (UserAccountTokensPage.clearNewTokenTimer !== undefined) {
-            clearTimeout(UserAccountTokensPage.clearNewTokenTimer)
+        if (UserSettingsTokensPage.clearNewTokenTimer !== undefined) {
+            clearTimeout(UserSettingsTokensPage.clearNewTokenTimer)
         }
     }
 

@@ -4,21 +4,21 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { combineLatest, concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
-import { USER_DISPLAY_NAME_MAX_LENGTH } from '..'
-import { percentageDone } from '../../../../shared/src/components/activation/Activation'
-import { ActivationChecklist } from '../../../../shared/src/components/activation/ActivationChecklist'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { refreshAuthenticatedUser } from '../../auth'
-import { UsernameInput } from '../../auth/SignInSignUpCommon'
-import { queryGraphQL } from '../../backend/graphql'
-import { Form } from '../../components/Form'
-import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { UserAreaRouteContext } from '../area/UserArea'
-import { UserAvatar } from '../UserAvatar'
-import { updateUser } from './backend'
+import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
+import { percentageDone } from '../../../../../shared/src/components/activation/Activation'
+import { ActivationChecklist } from '../../../../../shared/src/components/activation/ActivationChecklist'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { refreshAuthenticatedUser } from '../../../auth'
+import { UsernameInput } from '../../../auth/SignInSignUpCommon'
+import { queryGraphQL } from '../../../backend/graphql'
+import { Form } from '../../../components/Form'
+import { PageTitle } from '../../../components/PageTitle'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { UserAreaRouteContext } from '../../area/UserArea'
+import { UserAvatar } from '../../UserAvatar'
+import { updateUser } from '../backend'
 
 function queryUser(user: GQL.ID): Observable<GQL.IUser> {
     return queryGraphQL(
@@ -62,7 +62,7 @@ interface State {
     avatarURL?: string
 }
 
-export class UserAccountProfilePage extends React.Component<Props, State> {
+export class UserSettingsProfilePage extends React.Component<Props, State> {
     public state: State = { loading: false, saved: false }
 
     private componentUpdates = new Subject<Props>()
