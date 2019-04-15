@@ -144,7 +144,7 @@ describe('code_intelligence', () => {
         })
 
         test('detects code views based on selectors', async () => {
-            const { services } = await integrationTestContext()
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
             const codeView = createTestElement()
             codeView.id = 'code'
             const toolbarMount = document.createElement('div')
@@ -181,17 +181,19 @@ describe('code_intelligence', () => {
             )
             const editors = await from(services.editor.editors)
                 .pipe(
-                    skip(1),
+                    skip(2),
                     take(1)
                 )
                 .toPromise()
             expect(editors).toEqual([
                 {
+                    editorId: 'editor#0',
                     isActive: true,
-                    item: {
-                        languageId: 'typescript',
-                        text: undefined,
+                    resource: 'git://foo?1#/bar.ts',
+                    model: {
                         uri: 'git://foo?1#/bar.ts',
+                        text: undefined,
+                        languageId: 'typescript',
                     },
                     selections: [],
                     type: 'CodeEditor',
@@ -253,7 +255,7 @@ describe('code_intelligence', () => {
                 services.textDocumentDecoration
                     .getDecorations({ uri: 'git://foo?1#/bar.ts' })
                     .pipe(
-                        filter(decorations => decorations !== []),
+                        filter(decorations => Boolean(decorations && decorations.length > 0)),
                         take(1)
                     )
                     .toPromise()

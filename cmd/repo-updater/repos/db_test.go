@@ -5,6 +5,7 @@ import (
 	"flag"
 	"math/rand"
 	"net/url"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -28,7 +29,7 @@ func testDatabase(t testing.TB) (*sql.DB, func()) {
 	if err != nil {
 		t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
 	}
-	repos.UpdateDSNFromEnv(config)
+	updateDSNFromEnv(config)
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
@@ -76,3 +77,33 @@ func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
 const killClientConnsQuery = `
 SELECT pg_terminate_backend(pg_stat_activity.pid)
 FROM pg_stat_activity WHERE datname = $1`
+
+// updateDSNFromEnv updates dsn based on PGXXX environment variables set on
+// the frontend.
+func updateDSNFromEnv(dsn *url.URL) {
+	if host := os.Getenv("PGHOST"); host != "" {
+		dsn.Host = host
+	}
+
+	if port := os.Getenv("PGPORT"); port != "" {
+		dsn.Host += ":" + port
+	}
+
+	if user := os.Getenv("PGUSER"); user != "" {
+		if password := os.Getenv("PGPASSWORD"); password != "" {
+			dsn.User = url.UserPassword(user, password)
+		} else {
+			dsn.User = url.User(user)
+		}
+	}
+
+	if db := os.Getenv("PGDATABASE"); db != "" {
+		dsn.Path = db
+	}
+
+	if sslmode := os.Getenv("PGSSLMODE"); sslmode != "" {
+		qry := dsn.Query()
+		qry.Set("sslmode", sslmode)
+		dsn.RawQuery = qry.Encode()
+	}
+}

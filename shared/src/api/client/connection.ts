@@ -1,8 +1,7 @@
 import * as comlink from '@sourcegraph/comlink'
-import { isEqual } from 'lodash'
 import { from, Subject, Subscription } from 'rxjs'
 import { concatMap } from 'rxjs/operators'
-import { ContextValues, Progress, ProgressOptions, TextDocument, Unsubscribable } from 'sourcegraph'
+import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
@@ -72,34 +71,15 @@ export async function createExtensionHostClientConnection(
     )
     subscription.add(clientContext)
 
-    // Sync visible views and text documents to the extension host
-    let visibleTextDocuments: TextDocument[] = []
+    // Sync models and editors to the extension host
+    subscription.add(
+        from(services.model.models)
+            .pipe(concatMap(models => proxy.documents.$acceptDocumentData(models)))
+            .subscribe()
+    )
     subscription.add(
         from(services.editor.editors)
-            .pipe(
-                concatMap(async editors => {
-                    // Important: Make sure documents were synced before syncing windows, as windows reference them
-                    const nextVisibleTextDocuments = editors ? editors.map(v => v.item) : []
-                    if (!isEqual(visibleTextDocuments, nextVisibleTextDocuments)) {
-                        visibleTextDocuments = nextVisibleTextDocuments
-                        await proxy.documents.$acceptDocumentData(nextVisibleTextDocuments)
-                    }
-                    await proxy.windows.$acceptWindowData(
-                        editors
-                            ? {
-                                  editors: editors.map(editor => ({
-                                      type: 'CodeEditor',
-                                      item: {
-                                          uri: editor.item.uri,
-                                      },
-                                      selections: editor.selections,
-                                      isActive: editor.isActive,
-                                  })),
-                              }
-                            : null
-                    )
-                })
-            )
+            .pipe(concatMap(editors => proxy.windows.$acceptWindowData({ editors })))
             .subscribe()
     )
 

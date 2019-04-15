@@ -1,5 +1,7 @@
 // @ts-check
 
+const path = require('path')
+
 /** @type {jest.InitialOptions} */
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
@@ -36,6 +38,8 @@ const config = {
       },
     },
   },
+
+  setupFiles: [path.join(__dirname, 'shared/dev/mockDate.js')],
 }
 
 module.exports = config

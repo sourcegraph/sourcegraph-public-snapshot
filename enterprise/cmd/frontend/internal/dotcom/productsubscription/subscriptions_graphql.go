@@ -147,7 +147,7 @@ func (r *productSubscription) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return accountUser.URL() + "/subscriptions/" + string(r.v.ID), nil
+	return *accountUser.SettingsURL() + "/subscriptions/" + string(r.v.ID), nil
 }
 
 func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {

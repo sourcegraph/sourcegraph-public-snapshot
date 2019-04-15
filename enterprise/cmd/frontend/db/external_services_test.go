@@ -717,7 +717,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "OTHER",
 			desc:   "without URL but with empty repos array",
 			config: `{"repos": []}`,
-			assert: includes(`repos: Array must have at least 1 items`),
+			assert: excludes(`repos: Array must have at least 1 items`),
 		},
 		{
 			kind:   "OTHER",
@@ -753,7 +753,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "OTHER",
 			desc:   "with URL but empty repos array",
 			config: `{"url": "http://github.com/", "repos": []}`,
-			assert: includes(`repos: Array must have at least 1 items`),
+			assert: excludes(`repos: Array must have at least 1 items`),
 		},
 		{
 			kind:   "OTHER",

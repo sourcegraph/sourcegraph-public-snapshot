@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -21,6 +22,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestOtherRepoName(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		in   string
+		out  string
+	}{
+		{"user and password elided", "https://user:pass@foo.bar/baz", "foo.bar/baz"},
+		{"scheme elided", "https://user@foo.bar/baz", "foo.bar/baz"},
+		{"raw query elided", "https://foo.bar/baz?secret_token=12345", "foo.bar/baz"},
+		{"fragment elided", "https://foo.bar/baz#fragment", "foo.bar/baz"},
+		{": replaced with -", "git://foo.bar/baz:bam", "foo.bar/baz-bam"},
+		{"@ replaced with -", "ssh://foo.bar/baz@bam", "foo.bar/baz-bam"},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			cloneURL, err := url.Parse(tc.in)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := otherRepoName(cloneURL), tc.out; have != want {
+				t.Errorf("otherRepoName(%q):\nhave: %q\nwant: %q", tc.in, have, want)
+			}
+		})
+	}
+}
 
 func TestNewSourcer(t *testing.T) {
 	now := time.Now()
@@ -145,6 +175,15 @@ func TestSources_ListRepos(t *testing.T) {
 					RepositoryQuery: []string{
 						"?visibility=private",
 						"?visibility=public",
+					},
+				}),
+			},
+			{
+				Kind: "OTHER",
+				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+					Url: "https://github.com",
+					Repos: []string{
+						"google/go-cmp",
 					},
 				}),
 			},
@@ -332,6 +371,15 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "OTHER",
+				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+					Url: "https://github.com",
+					Repos: []string{
+						"google/go-cmp",
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -347,6 +395,7 @@ func TestSources_ListRepos(t *testing.T) {
 					"127.0.0.1/ORG/bar",
 					"127.0.0.1/ORG/baz",
 					"127.0.0.1/ORG/foo",
+					"github.com/google/go-cmp",
 					"github.com/sourcegraph/sourcegraph",
 					"github.com/tsenart/vegeta",
 					"gitlab.com/gitlab-org/gitlab-ce",

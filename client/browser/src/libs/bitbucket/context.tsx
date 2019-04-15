@@ -29,7 +29,7 @@ function getRevSpecFromRevisionSelector(): RevSpec {
     let revisionRefInfo: RevisionRefInfo | null = null
     try {
         revisionRefInfo = revisionRefStr && JSON.parse(revisionRefStr)
-    } catch {
+    } catch (err) {
         throw new Error(`Could not parse revisionRefStr: ${revisionRefStr}`)
     }
     if (revisionRefInfo && revisionRefInfo.latestCommit) {

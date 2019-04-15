@@ -26,6 +26,10 @@ var ActualUserCountDate = func(ctx context.Context) (string, error) {
 // nil if there is no limit.
 var NoLicenseMaximumAllowedUserCount *int32
 
+// NoLicenseWarningUserCount is the user count at which point a warning is shown to all users when
+// there is no license, or nil if there is no limit.
+var NoLicenseWarningUserCount *int32
+
 // productSubscriptionStatus implements the GraphQL type ProductSubscriptionStatus.
 type productSubscriptionStatus struct{}
 
@@ -48,6 +52,14 @@ func (productSubscriptionStatus) ActualUserCount(ctx context.Context) (int32, er
 
 func (productSubscriptionStatus) ActualUserCountDate(ctx context.Context) (string, error) {
 	return ActualUserCountDate(ctx)
+}
+
+func (productSubscriptionStatus) NoLicenseWarningUserCount(ctx context.Context) (*int32, error) {
+	if info, err := GetConfiguredProductLicenseInfo(); info != nil {
+		// if a license exists, warnings never need to be shown.
+		return nil, err
+	}
+	return NoLicenseWarningUserCount, nil
 }
 
 func (productSubscriptionStatus) MaximumAllowedUserCount(ctx context.Context) (*int32, error) {

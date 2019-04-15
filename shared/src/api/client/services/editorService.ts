@@ -1,42 +1,126 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { BehaviorSubject, NextObserver, Subscribable } from 'rxjs'
-import { TextDocument } from 'sourcegraph'
+import { BehaviorSubject, combineLatest, Subscribable } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
-
+import { ModelService, TextModel } from './modelService'
 /**
- * Describes a code editor view component.
- *
- * @template D The type of text documents referred to by this data. If the document text is managed
- * out-of-band, this can just be an object containing the document URI.
+ * EditorId exposes the unique ID of an editor.
  */
-export interface CodeEditorData<D extends Pick<TextDocument, 'uri'> = TextDocument> {
-    type: 'CodeEditor'
-    item: D
-    selections: Selection[]
-    isActive: boolean
+export interface EditorId {
+    /** The unique ID of the editor. */
+    readonly editorId: string
 }
 
-/** For callers that only need to subscribe to this value. */
-export interface ReadonlyEditorService {
-    readonly editors: Subscribable<readonly CodeEditorData[]>
+/**
+ * Describes a code editor to be created.
+ */
+export interface CodeEditorData {
+    readonly type: 'CodeEditor'
+
+    /** The URI of the model that this editor is displaying. */
+    readonly resource: string
+
+    readonly selections: Selection[]
+    readonly isActive: boolean
+}
+
+/**
+ * Describes a code editor that has been added to the {@link EditorService}.
+ */
+export interface CodeEditor extends EditorId, CodeEditorData {
+    /**
+     * The model that represents the editor's document (and includes its contents).
+     */
+    readonly model: TextModel
 }
 
 /**
  * The editor service manages editors and documents.
  */
-export interface EditorService extends ReadonlyEditorService {
-    /** All code editors. */
-    readonly editors: Subscribable<readonly CodeEditorData[]> & { value: readonly CodeEditorData[] } & NextObserver<
-            readonly CodeEditorData[]
-        >
+export interface EditorService {
+    /** All code editors, with each editor's model. */
+    readonly editors: Subscribable<readonly CodeEditor[]>
+
+    /**
+     * Add an editor.
+     *
+     * @param editor The description of the editor to add.
+     * @returns The added code editor (which must be passed as the first argument to other
+     * {@link EditorService} methods to operate on this editor).
+     */
+    addEditor(editor: CodeEditorData): EditorId
+
+    /**
+     * Sets the selections for an editor.
+     *
+     * @param editor The editor for which to set the selections.
+     * @param selections The new selections to apply.
+     * @throws if no editor exists with the given editor ID.
+     */
+    setSelections(editor: EditorId, selections: Selection[]): void
+
+    /**
+     * Remove an editor.
+     *
+     * @param editor The editor to remove.
+     */
+    removeEditor(editor: EditorId): void
+
+    /**
+     * Remove all editors.
+     */
+    removeAllEditors(): void
 }
 
 /**
  * Creates a {@link EditorService} instance.
  */
-export function createEditorService(): EditorService {
+export function createEditorService(modelService: Pick<ModelService, 'models'>): EditorService {
+    // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
+    // test code (because the IDs change depending on test execution order).
+    let id = 0
+    const nextId = () => `editor#${id++}`
+
+    const findModelForEditor = (models: readonly TextModel[], { resource }: Pick<CodeEditorData, 'resource'>) => {
+        const model = models.find(m => m.uri === resource)
+        if (!model) {
+            throw new Error(`editor model not found: ${resource}`)
+        }
+        return model
+    }
+
+    type AddedCodeEditor = Pick<CodeEditor, Exclude<keyof CodeEditor, 'model'>>
+    const editors = new BehaviorSubject<readonly AddedCodeEditor[]>([])
+    const exists = (editorId: EditorId['editorId']) => editors.value.some(e => e.editorId === editorId)
     return {
-        editors: new BehaviorSubject<readonly CodeEditorData[]>([]),
+        editors: combineLatest(editors, modelService.models).pipe(
+            map(([editors, models]) =>
+                editors.map(editor => ({ ...editor, model: findModelForEditor(models, editor) }))
+            )
+        ),
+        addEditor: data => {
+            const editor: AddedCodeEditor = { ...data, editorId: nextId() }
+            editors.next([...editors.value, editor])
+            return editor
+        },
+        setSelections({ editorId }: EditorId, selections: Selection[]): void {
+            if (!exists(editorId)) {
+                throw new Error(`editor not found: ${editorId}`)
+            }
+            editors.next([
+                ...editors.value.filter(e => e.editorId !== editorId),
+                { ...editors.value.find(e => e.editorId === editorId)!, selections },
+            ])
+        },
+        removeEditor({ editorId }: EditorId): void {
+            if (!exists(editorId)) {
+                throw new Error(`editor not found: ${editorId}`)
+            }
+            editors.next(editors.value.filter(e => e.editorId !== editorId))
+        },
+        removeAllEditors(): void {
+            editors.next([])
+        },
     }
 }
 
@@ -45,9 +129,7 @@ export function createEditorService(): EditorService {
  * {@link EditorService#editors}. If there is no active editor or it has no position, it returns
  * null.
  */
-export function getActiveCodeEditorPosition<D extends Pick<TextDocument, 'uri'> = TextDocument>(
-    editors: readonly CodeEditorData<D>[]
-): (TextDocumentPositionParams & { textDocument: D }) | null {
+export function getActiveCodeEditorPosition(editors: readonly CodeEditorData[]): TextDocumentPositionParams | null {
     const activeEditor = editors.find(({ isActive }) => isActive)
     if (!activeEditor) {
         return null
@@ -66,7 +148,7 @@ export function getActiveCodeEditorPosition<D extends Pick<TextDocument, 'uri'> 
         return null
     }
     return {
-        textDocument: activeEditor.item,
+        textDocument: { uri: activeEditor.resource },
         position: sel.start,
     }
 }

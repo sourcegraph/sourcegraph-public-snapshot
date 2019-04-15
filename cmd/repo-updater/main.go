@@ -23,14 +23,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
 const port = "3182"
 
 func main() {
-	syncerEnabled, _ := strconv.ParseBool(env.Get("SRC_SYNCER_ENABLED", "false", "Use the new repo metadata syncer."))
+	syncerEnabled, _ := strconv.ParseBool(env.Get("SRC_SYNCER_ENABLED", "true", "Use the new repo metadata syncer."))
 
 	ctx := context.Background()
 	env.Lock()
@@ -46,7 +45,18 @@ func main() {
 
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	db, err := repos.NewDB(repos.NewDSN().String())
+	dsn := conf.Get().ServiceConnections.PostgresDSN
+	conf.Watch(func() {
+		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		if dsn != newDSN {
+			// The DSN was changed (e.g. by someone modifying the env vars on
+			// the frontend). We need to respect the new DSN. Easiest way to do
+			// that is to restart our service (kubernetes/docker/goreman will
+			// handle starting us back up).
+			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
+		}
+	})
+	db, err := repos.NewDB(dsn)
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
@@ -67,6 +77,7 @@ func main() {
 			"GITHUB",
 			"GITLAB",
 			"BITBUCKETSERVER",
+			"OTHER",
 		)
 		migrations = append(migrations,
 			repos.EnabledStateDeprecationMigration(src, clock, kinds...),
@@ -84,10 +95,7 @@ func main() {
 		newSyncerEnabled[kind] = true
 	}
 
-	// Synced repos of other external service kind will be sent here.
-	otherSynced := make(chan *protocol.RepoInfo)
 	frontendAPI := repos.NewInternalAPI(10 * time.Second)
-	otherSyncer := repos.NewOtherReposSyncer(frontendAPI, otherSynced)
 
 	for _, kind := range []string{
 		"AWSCODECOMMIT",
@@ -120,16 +128,7 @@ func main() {
 		case "PHABRICATOR":
 			go repos.RunPhabricatorRepositorySyncWorker(ctx)
 		case "OTHER":
-			go func() { log.Fatal(otherSyncer.Run(ctx, repos.GetUpdateInterval())) }()
-
-			go func() {
-				for repo := range otherSynced {
-					if !conf.Get().DisableAutoGitUpdates {
-						repos.Scheduler.UpdateOnce(repo.Name, repo.VCS.URL)
-					}
-				}
-			}()
-
+			log15.Warn("Other external service kind only supported with SRC_SYNCER_ENABLED=true")
 		default:
 			log.Fatalf("unknown external service kind %q", kind)
 		}
@@ -162,11 +161,10 @@ func main() {
 
 	// Start up handler that frontend relies on
 	repoupdater := repoupdater.Server{
-		Kinds:            kinds,
-		Store:            store,
-		Syncer:           syncer,
-		OtherReposSyncer: otherSyncer,
-		InternalAPI:      frontendAPI,
+		Kinds:       kinds,
+		Store:       store,
+		Syncer:      syncer,
+		InternalAPI: frontendAPI,
 	}
 
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())

@@ -370,7 +370,7 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		return nil, false, 1, err
 	}
 	if response.IncompleteResults {
-		return nil, false, 1, errors.Errorf("github repository search returned incomplete results: query=%q page=%d total=%d", searchString, page, response.TotalCount)
+		return nil, false, 1, errors.Errorf("github repository search returned incomplete results. This is an ephemeral error: query=%q page=%d total=%d", searchString, page, response.TotalCount)
 	}
 	repos = make([]*Repository, 0, len(response.Items))
 	for _, restRepo := range response.Items {

@@ -1,7 +1,6 @@
 import { basename, dirname, extname } from 'path'
-import { TextDocument } from 'sourcegraph'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorData } from '../services/editorService'
+import { CodeEditor } from '../services/editorService'
 
 /**
  * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
@@ -32,10 +31,12 @@ export interface Context<T = never>
         string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
     > {}
 
+export type PartialCodeEditor = Pick<CodeEditor, 'type' | 'resource' | 'selections' | 'isActive'> & {
+    model: Pick<CodeEditor['model'], 'uri' | 'languageId'>
+}
+
 export type ContributionScope =
-    | (Pick<CodeEditorData, 'type' | 'selections'> & {
-          item: Pick<TextDocument, 'uri' | 'languageId'>
-      })
+    | PartialCodeEditor
     | {
           type: 'panelView'
           id: string
@@ -50,7 +51,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    editors: readonly CodeEditorData[],
+    editors: readonly PartialCodeEditor[],
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,
@@ -78,15 +79,15 @@ export function getComputedContextProperty(
         const prop = key.slice('resource.'.length)
         switch (prop) {
             case 'uri':
-                return component.item.uri
+                return component.resource
             case 'basename':
-                return basename(component.item.uri)
+                return basename(component.resource)
             case 'dirname':
-                return dirname(component.item.uri)
+                return dirname(component.resource)
             case 'extname':
-                return extname(component.item.uri)
+                return extname(component.resource)
             case 'language':
-                return component.item.languageId
+                return component.model.languageId
             case 'type':
                 return 'textDocument'
         }

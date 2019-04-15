@@ -9,7 +9,7 @@ import { UserAvatar } from '../user/UserAvatar'
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
     authenticatedUser: GQL.IUser
-    showAbout: boolean
+    showDotComMarketing: boolean
     showDiscussions: boolean
 }
 
@@ -22,8 +22,8 @@ interface State {
  * authenticated viewers.
  */
 export class UserNavItem extends React.PureComponent<Props, State> {
-    private supportsSystemTheme = window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)')
-        .matches
+    private supportsSystemTheme =
+        !!window.matchMedia && window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
     public state: State = { isOpen: false }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -52,10 +52,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         Signed in as <strong>@{this.props.authenticatedUser.username}</strong>
                     </DropdownItem>
                     <DropdownItem divider={true} />
-                    <Link to={`${this.props.authenticatedUser.url}/account`} className="dropdown-item">
-                        Account
-                    </Link>
-                    <Link to={`${this.props.authenticatedUser.url}/settings`} className="dropdown-item">
+                    <Link to={this.props.authenticatedUser.settingsURL!} className="dropdown-item">
                         Settings
                     </Link>
                     <Link to="/extensions" className="dropdown-item">
@@ -69,7 +66,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/search/searches" className="dropdown-item">
                         Saved searches
                     </Link>
-                    {window.context.sourcegraphDotComMode ? (
+                    {this.props.showDotComMarketing ? (
                         <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
                             Help
                         </a>
@@ -124,7 +121,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             </a>
                         </>
                     )}
-                    {this.props.showAbout && (
+                    {this.props.showDotComMarketing && (
                         <>
                             <DropdownItem divider={true} />
                             <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">

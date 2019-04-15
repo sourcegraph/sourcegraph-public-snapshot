@@ -73,6 +73,9 @@ func initLicensing() {
 	noLicenseMaximumAllowedUserCount := licensing.NoLicenseMaximumAllowedUserCount
 	graphqlbackend.NoLicenseMaximumAllowedUserCount = &noLicenseMaximumAllowedUserCount
 
+	noLicenseWarningUserCount := licensing.NoLicenseWarningUserCount
+	graphqlbackend.NoLicenseWarningUserCount = &noLicenseWarningUserCount
+
 	// Make the Site.productSubscription GraphQL field return the actual info about the product license,
 	// if any.
 	graphqlbackend.GetConfiguredProductLicenseInfo = func() (*graphqlbackend.ProductLicenseInfo, error) {

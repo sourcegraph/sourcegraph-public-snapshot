@@ -1,0 +1,129 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UserNavItem simple 1`] = `
+<div
+  className="nav-link py-0 btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle dropdown-toggle nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    <strong>
+      u
+    </strong>
+  </a>
+  <div
+    aria-hidden={true}
+    className="user-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <h6
+      className="py-1 dropdown-header"
+      onClick={[Function]}
+      tabIndex="-1"
+    >
+      Signed in as 
+      <strong>
+        @
+        u
+      </strong>
+    </h6>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
+    <a
+      className="dropdown-item"
+      href="/u/settings"
+      onClick={[Function]}
+    >
+      Settings
+    </a>
+    <a
+      className="dropdown-item"
+      href="/extensions"
+      onClick={[Function]}
+    >
+      Extensions
+    </a>
+    <a
+      className="dropdown-item"
+      href="/discussions"
+      onClick={[Function]}
+    >
+      Discussions
+    </a>
+    <a
+      className="dropdown-item"
+      href="/search/searches"
+      onClick={[Function]}
+    >
+      Saved searches
+    </a>
+    <a
+      className="dropdown-item"
+      href="https://docs.sourcegraph.com"
+      target="_blank"
+    >
+      Help
+    </a>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
+    <div
+      className="px-2 py-1"
+    >
+      <div
+        className="d-flex align-items-center"
+      >
+        <div
+          className="mr-2"
+        >
+          Theme
+        </div>
+        <select
+          className="custom-select custom-select-sm e2e-theme-toggle"
+          onChange={[Function]}
+          value="light"
+        >
+          <option
+            value="light"
+          >
+            Light
+          </option>
+          <option
+            value="dark"
+          >
+            Dark
+          </option>
+          <option
+            value="system"
+          >
+            System
+          </option>
+        </select>
+      </div>
+    </div>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
+    <a
+      className="dropdown-item"
+      href="https://about.sourcegraph.com"
+      target="_blank"
+    >
+      About Sourcegraph
+    </a>
+  </div>
+</div>
+`;
