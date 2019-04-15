@@ -77,35 +77,31 @@ func NewSourceMetrics() SourceMetrics {
 				Subsystem: "repoupdater",
 				Name:      "source_duration_seconds",
 				Help:      "Time spent sourcing repos",
-			}, []string{"kind"}),
+			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
 				Name:      "source_repos_total",
 				Help:      "Total number of sourced repositories",
-			}, []string{"kind"}),
+			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
 				Name:      "source_errors_total",
 				Help:      "Total number of sourcing errors",
-			}, []string{"kind"}),
+			}, []string{}),
 		},
 	}
 }
 
 // ListRepos calls into the inner Source registers the observed results.
 func (o *observedSource) ListRepos(ctx context.Context) (rs []*Repo, err error) {
-	defer log(o.log, "source.list-repos", &err)
-	if o.metrics.ListRepos != nil {
-		defer func(began time.Time) {
-			secs := time.Since(began).Seconds()
-			count := float64(len(rs))
-			for _, kind := range o.Source.Kinds() {
-				o.metrics.ListRepos.Observe(secs, count, &err, kind)
-			}
-		}(time.Now())
-	}
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(rs))
+		o.metrics.ListRepos.Observe(secs, count, &err)
+		log(o.log, "source.list-repos", &err)
+	}(time.Now())
 	return o.Source.ListRepos(ctx)
 }
 
@@ -187,19 +183,19 @@ func NewStoreMetrics() StoreMetrics {
 				Subsystem: "repoupdater",
 				Name:      "store_upsert_repos_duration_seconds",
 				Help:      "Time spent upserting repos",
-			}, []string{"kind"}),
+			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
 				Name:      "store_upsert_repos_total",
 				Help:      "Total number of upserted repositories",
-			}, []string{"kind"}),
+			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
 				Name:      "store_upsert_repos_errors_total",
 				Help:      "Total number of errors when upserting repos",
-			}, []string{"kind"}),
+			}, []string{}),
 		},
 		ListRepos: &OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -207,19 +203,19 @@ func NewStoreMetrics() StoreMetrics {
 				Subsystem: "repoupdater",
 				Name:      "store_list_repos_duration_seconds",
 				Help:      "Time spent listing repos",
-			}, []string{"kind"}),
+			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
 				Name:      "store_list_repos_total",
 				Help:      "Total number of listed repositories",
-			}, []string{"kind"}),
+			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
 				Name:      "store_list_repos_errors_total",
 				Help:      "Total number of errors when listing repos",
-			}, []string{"kind"}),
+			}, []string{}),
 		},
 		UpsertExternalServices: &OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -227,19 +223,19 @@ func NewStoreMetrics() StoreMetrics {
 				Subsystem: "external_serviceupdater",
 				Name:      "store_upsert_external_services_duration_seconds",
 				Help:      "Time spent upserting external_services",
-			}, []string{"kind"}),
+			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "external_serviceupdater",
 				Name:      "store_upsert_external_services_total",
 				Help:      "Total number of upserted external_servicesitories",
-			}, []string{"kind"}),
+			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "external_serviceupdater",
 				Name:      "store_upsert_external_services_errors_total",
 				Help:      "Total number of errors when upserting external_services",
-			}, []string{"kind"}),
+			}, []string{}),
 		},
 		ListExternalServices: &OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -247,19 +243,19 @@ func NewStoreMetrics() StoreMetrics {
 				Subsystem: "repoupdater",
 				Name:      "store_list_external_services_duration_seconds",
 				Help:      "Time spent listing external_services",
-			}, []string{"kind"}),
+			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
 				Name:      "store_list_external_services_total",
 				Help:      "Total number of listed external_servicesitories",
-			}, []string{"kind"}),
+			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
 				Name:      "store_list_external_services_errors_total",
 				Help:      "Total number of errors when listing external_services",
-			}, []string{"kind"}),
+			}, []string{}),
 		},
 	}
 }
@@ -267,13 +263,11 @@ func NewStoreMetrics() StoreMetrics {
 // Transact calls into the inner Store Transact method and
 // returns an observed TxStore.
 func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
-	defer log(o.log, "store.transact", &err)
-	if o.metrics.Transact != nil {
-		defer func(began time.Time) {
-			secs := time.Since(began).Seconds()
-			o.metrics.Transact.Observe(secs, 1, &err)
-		}(time.Now())
-	}
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		o.metrics.Transact.Observe(secs, 1, &err)
+		log(o.log, "store.transact", &err)
+	}(time.Now())
 
 	s, err = o.store.(Transactor).Transact(ctx)
 	if err != nil {
@@ -304,75 +298,51 @@ func (o *ObservedStore) Done(errs ...*error) {
 
 // ListExternalServices calls into the inner Store and registers the observed results.
 func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*ExternalService, err error) {
-	defer log(o.log, "store.list-external-services", &err, "args", fmt.Sprintf("%+v", args))
-	if o.metrics.ListExternalServices != nil {
-		defer func(began time.Time) {
-			secs := time.Since(began).Seconds()
-			count := float64(len(es))
-			if len(args.Kinds) == 0 {
-				o.metrics.ListExternalServices.Observe(secs, count, &err, "ANY")
-			}
-			for _, kind := range args.Kinds {
-				o.metrics.ListExternalServices.Observe(secs, count, &err, kind)
-			}
-		}(time.Now())
-	}
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(es))
+		o.metrics.ListExternalServices.Observe(secs, count, &err)
+		log(o.log, "store.list-external-services", &err, "args", fmt.Sprintf("%+v", args))
+	}(time.Now())
 	return o.store.ListExternalServices(ctx, args)
 }
 
 // UpsertExternalServices calls into the inner Store and registers the observed results.
 func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) (err error) {
-	defer log(o.log, "store.upsert-external-services", &err,
-		"count", len(svcs),
-		"names", ExternalServices(svcs).DisplayNames(),
-	)
-	if o.metrics.UpsertExternalServices != nil {
-		defer func(began time.Time) {
-			secs := time.Since(began).Seconds()
-			count := float64(len(svcs))
-			kinds := ExternalServices(svcs).Kinds()
-			for _, kind := range kinds {
-				o.metrics.UpsertExternalServices.Observe(secs, count, &err, kind)
-			}
-		}(time.Now())
-	}
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(svcs))
+		o.metrics.UpsertExternalServices.Observe(secs, count, &err)
+		log(o.log, "store.upsert-external-services", &err,
+			"count", len(svcs),
+			"names", ExternalServices(svcs).DisplayNames(),
+		)
+	}(time.Now())
 	return o.store.UpsertExternalServices(ctx, svcs...)
 }
 
 // ListRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) (rs []*Repo, err error) {
-	defer log(o.log, "store.list-external-services", &err, "args", fmt.Sprintf("%+v", args))
-	if o.metrics.ListRepos != nil {
-		defer func(began time.Time) {
-			secs := time.Since(began).Seconds()
-			count := float64(len(rs))
-			if len(args.Kinds) == 0 {
-				o.metrics.ListRepos.Observe(secs, count, &err, "ANY")
-			}
-			for _, kind := range args.Kinds {
-				o.metrics.ListRepos.Observe(secs, count, &err, kind)
-			}
-		}(time.Now())
-	}
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(rs))
+		o.metrics.ListRepos.Observe(secs, count, &err)
+		log(o.log, "store.list-external-services", &err, "args", fmt.Sprintf("%+v", args))
+	}(time.Now())
 	return o.store.ListRepos(ctx, args)
 }
 
 // UpsertRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
-	defer log(o.log, "store.list-external-services", &err,
-		"count", len(repos),
-		"names", Repos(repos).Names(),
-	)
-	if o.metrics.UpsertRepos != nil {
-		defer func(began time.Time) {
-			secs := time.Since(began).Seconds()
-			count := float64(len(repos))
-			kinds := Repos(repos).Kinds()
-			for _, kind := range kinds {
-				o.metrics.UpsertRepos.Observe(secs, count, &err, kind)
-			}
-		}(time.Now())
-	}
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(repos))
+		o.metrics.UpsertRepos.Observe(secs, count, &err)
+		log(o.log, "store.list-external-services", &err,
+			"count", len(repos),
+			"names", Repos(repos).Names(),
+		)
+	}(time.Now())
 	return o.store.UpsertRepos(ctx, repos...)
 }
 

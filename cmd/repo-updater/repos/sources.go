@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sort"
 	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -97,29 +96,12 @@ func includesGitHubDotComSource(srcs []Source) bool {
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
-	// Kinds returns the different kinds of repos a source yields.
-	Kinds() []string
 	// ListRepos returns all the repos a source yields.
 	ListRepos(context.Context) ([]*Repo, error)
 }
 
 // Sources is a list of Sources that implements the Source interface.
 type Sources []Source
-
-// Kinds returns the kinds of repos this source yields.
-func (srcs Sources) Kinds() (kinds []string) {
-	set := make(map[string]bool)
-	for _, src := range srcs {
-		for _, kind := range src.Kinds() {
-			if !set[kind] {
-				set[kind] = true
-				kinds = append(kinds, kind)
-			}
-		}
-	}
-	sort.Strings(kinds)
-	return kinds
-}
 
 // ListRepos lists all the repos of all the sources and returns the
 // aggregate result.
@@ -209,9 +191,6 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf httpcl
 	return &GithubSource{svc: svc, conn: conn}, nil
 }
 
-// Kinds returns the kinds of repos this source yields.
-func (s GithubSource) Kinds() []string { return []string{"GITHUB"} }
-
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
@@ -268,9 +247,6 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf httpcl
 	}
 	return &GitLabSource{svc: svc, conn: conn}, nil
 }
-
-// Kinds returns the kinds of repos this source yields.
-func (s GitLabSource) Kinds() []string { return []string{"GITLAB"} }
 
 // ListRepos returns all GitLab repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
@@ -329,9 +305,6 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	return &BitbucketServerSource{svc: svc, conn: conn}, nil
 }
 
-// Kinds returns the kinds of repos this source yields.
-func (s BitbucketServerSource) Kinds() []string { return []string{"BITBUCKETSERVER"} }
-
 // ListRepos returns all BitbucketServer repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s BitbucketServerSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
@@ -381,9 +354,6 @@ func NewOtherSource(svc *ExternalService) (*OtherSource, error) {
 	}
 	return &OtherSource{svc: svc, conn: &c}, nil
 }
-
-// Kinds returns the kinds of repos this source yields.
-func (s OtherSource) Kinds() []string { return []string{"OTHER"} }
 
 // ListRepos returns all Other repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.

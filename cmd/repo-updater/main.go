@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -198,14 +197,24 @@ func main() {
 	go repos.RunRepositoryPurgeWorker(ctx)
 
 	// Start up handler that frontend relies on
-	repoupdater := repoupdater.Server{
+	server := repoupdater.Server{
 		Kinds:       kinds,
 		Store:       store,
 		Syncer:      syncer,
 		InternalAPI: frontendAPI,
 	}
 
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
+	var handler http.Handler
+	{
+		m := repoupdater.NewHandlerMetrics()
+		m.ServeHTTP.MustRegister(prometheus.DefaultRegisterer)
+		handler = repoupdater.ObservedHandler(
+			log15.Root(),
+			m,
+			opentracing.GlobalTracer(),
+		)(server.Handler())
+	}
+
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
