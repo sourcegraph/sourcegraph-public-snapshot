@@ -1007,6 +1007,62 @@ declare module 'sourcegraph' {
         provideLocations(document: TextDocument, position: Position): ProviderResult<Location[]>
     }
 
+    /**
+     * A completion item is a suggestion to complete text that the user has typed.
+     *
+     * @see {@link CompletionItemProvider#provideCompletionItems}
+     */
+    export interface CompletionItem {
+        /**
+         * The label of this completion item, which is rendered prominently. If no
+         * {@link CompletionItem#insertText} is specified, the label is the text inserted when the
+         * user selects this completion.
+         */
+        label: string
+
+        /**
+         * The description of this completion item, which is rendered less prominently but still
+         * alongside the {@link CompletionItem#label}.
+         */
+        description?: string
+
+        /**
+         * A string to insert in a document when the user selects this completion. When not set, the
+         * {@link CompletionItem#label} is used.
+         */
+        insertText?: string
+    }
+
+    /**
+     * A collection of [completion items](#CompletionItem) to be presented in the editor.
+     */
+    export interface CompletionList {
+        /**
+         * The list of completions.
+         */
+        items: CompletionItem[]
+    }
+
+    /**
+     * A completion item provider provides suggestions to insert or apply at the cursor as the user
+     * is typing.
+     *
+     * Providers are queried for completions as the user types in any document matching the document
+     * selector specified at registration time.
+     */
+    export interface CompletionItemProvider {
+        /**
+         * Provide completion items for the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         *
+         * @return An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
+         * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
+    }
+
     export namespace languages {
         /**
          * Registers a hover provider, which returns a formatted hover message (intended for display in a tooltip)
@@ -1072,6 +1128,22 @@ declare module 'sourcegraph' {
             id: string,
             selector: DocumentSelector,
             provider: LocationProvider
+        ): Unsubscribable
+
+        /**
+         * Registers a completion item provider.
+         *
+         * Multiple providers can be registered with overlapping document selectors. In that case,
+         * providers are queried in parallel and the results are merged. A failing provider will not
+         * cause the whole operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider applies to.
+         * @param provider A completion item provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerCompletionItemProvider(
+            selector: DocumentSelector,
+            provider: CompletionItemProvider
         ): Unsubscribable
     }
 

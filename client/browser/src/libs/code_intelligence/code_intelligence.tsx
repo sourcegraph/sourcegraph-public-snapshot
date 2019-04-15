@@ -41,6 +41,7 @@ import { TextModel } from '../../../../../shared/src/api/client/services/modelSe
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
+import { CompletionWidgetClassProps } from '../../../../../shared/src/components/completion/CompletionWidget'
 import { ApplyLinkPreviewOptions } from '../../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
@@ -79,6 +80,7 @@ import { CodeViewSpec, CodeViewSpecResolver, fetchFileContents, trackCodeViews }
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
 
 registerHighlightContributions()
@@ -162,6 +164,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     contentViewResolvers?: ViewResolver<ContentView>[]
 
     /**
+     * Resolve {@link TextField}s from the DOM.
+     */
+    textFieldResolvers?: ViewResolver<TextField>[]
+
+    /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
      * elements that throw off the position of the tooltip within the relative
      * element.
@@ -194,6 +201,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * CSS classes for the code view toolbar to customize styling
      */
     codeViewToolbarClassProps?: CodeViewToolbarClassProps
+
+    /**
+     * CSS classes for the completion widget to customize styling
+     */
+    completionWidgetClassProps?: CompletionWidgetClassProps
 }
 
 export interface FileInfo {
@@ -651,6 +663,17 @@ export function handleCodeHost({
     subscriptions.add(
         handleContentViews(
             from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
+                switchMap(enabled => (enabled ? mutations : []))
+            ),
+            { extensionsController },
+            codeHost
+        )
+    )
+
+    // Show completions in text fields (feature-flagged).
+    subscriptions.add(
+        handleTextFields(
+            from(featureFlags.isEnabled('experimentalTextFieldCompletion')).pipe(
                 switchMap(enabled => (enabled ? mutations : []))
             ),
             { extensionsController },

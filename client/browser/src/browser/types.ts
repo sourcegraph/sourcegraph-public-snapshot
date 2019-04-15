@@ -35,6 +35,11 @@ export interface FeatureFlags {
      * Support link previews from extensions in content views (such as GitHub issues).
      */
     experimentalLinkPreviews: boolean
+
+    /**
+     * Support completion in text fields (such as on GitHub issues).
+     */
+    experimentalTextFieldCompletion: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
@@ -42,6 +47,7 @@ export const featureFlagDefaults: FeatureFlags = {
     inlineSymbolSearchEnabled: true,
     allowErrorReporting: false,
     experimentalLinkPreviews: false,
+    experimentalTextFieldCompletion: false,
 }
 
 // TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by
