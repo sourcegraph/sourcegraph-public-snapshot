@@ -360,6 +360,7 @@ type restSearchResponse struct {
 
 // RepositoryListPage is a page of repositories returned from the GitHub Search API.
 type RepositoryListPage struct {
+	TotalCount  int
 	Repos       []*Repository
 	HasNextPage bool
 }
@@ -383,8 +384,10 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	c.addRepositoriesToCache("", repos)
+
 	return RepositoryListPage{
+		TotalCount:  response.TotalCount,
 		Repos:       repos,
-		HasNextPage: len(repos) > 0,
+		HasNextPage: page*100 < response.TotalCount,
 	}, nil
 }
