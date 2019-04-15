@@ -2,6 +2,7 @@ import React from 'react'
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
+import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
 const UserSettingsExternalAccountsPage = React.lazy(async () => ({
     default: (await import('./UserSettingsExternalAccountsPage')).UserSettingsExternalAccountsPage,
 }))
@@ -29,6 +30,7 @@ export const enterpriseUserSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRou
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
         render: props => <UserSettingsExternalAccountsPage {...props} />,
+        condition: () => authExp,
     },
     {
         path: '/subscriptions/new',
