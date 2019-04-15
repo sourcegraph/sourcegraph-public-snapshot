@@ -10,7 +10,7 @@ func TestPostgresDSN(t *testing.T) {
 	}{{
 		name: "default",
 		env:  map[string]string{},
-		dsn:  "postgres://testuser@127.0.0.1:5432/sourcegraph?sslmode=disable",
+		dsn:  "postgres://testuser@127.0.0.1:5432?sslmode=disable",
 	}, {
 		name: "deploy-sourcegraph",
 		env: map[string]string{
