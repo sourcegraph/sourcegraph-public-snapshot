@@ -1,6 +1,12 @@
 .critical-config-editor {
+    width: 50rem;
+    margin-bottom: 10rem;
+
     &__monaco-reserved-space {
-        height: 50rem;
+        height: 35rem;
+        overflow: hidden;
+        resize: both;
+
         padding-top: 1rem;
         padding-bottom: 1rem;
         margin-bottom: 0.75rem;

@@ -350,21 +350,19 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
             <div className="critical-config-editor">
                 {actions && (
                     <div className="critical-config-editor__action-groups">
-                        <div className="critical-config-editor__action-groups">
-                            <div className="critical-config-editor__action-group-header">Quick configure:</div>
-                            <div className="critical-config-editor__actions">
-                                {actions.map(({ id, label }) => (
-                                    <button
-                                        key={id}
-                                        className="btn btn-secondary btn-sm critical-config-editor__action"
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        onClick={() => this.runAction(id, this.configEditor)}
-                                        type="button"
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
+                        <div className="critical-config-editor__action-group-header">Quick configure:</div>
+                        <div className="critical-config-editor__actions">
+                            {actions.map(({ id, label }) => (
+                                <button
+                                    key={id}
+                                    className="btn btn-secondary btn-sm critical-config-editor__action"
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.runAction(id, this.configEditor)}
+                                    type="button"
+                                >
+                                    {label}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 )}
