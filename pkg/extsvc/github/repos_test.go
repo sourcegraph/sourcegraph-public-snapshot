@@ -324,7 +324,7 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	// If we have incomplete results we want to fail. Our syncer requires all
 	// repositories to be returned, otherwise it will delete the missing
 	// repositories.
-	want := `github repository search returned incomplete results: query="org:sourcegraph" page=1 total=2`
+	want := `github repository search returned incomplete results. This is an ephemeral error: query="org:sourcegraph" page=1 total=2`
 	_, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
 
 	if have := fmt.Sprint(err); want != have {
