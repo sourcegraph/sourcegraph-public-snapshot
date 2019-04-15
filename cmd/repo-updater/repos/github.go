@@ -499,10 +499,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 						break
 					}
 
-					var repos []*github.Repository
-					var rateLimitCost int
-					var err error
-					repos, hasNextPage, rateLimitCost, err = c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
+					reposPage, err := c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
 					if err != nil {
 						if totalRepos >= 1000 {
 							// GitHub's advanced repository search will only
@@ -515,14 +512,18 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 						ch <- batch{err: errors.Wrapf(err, "failed to list GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery)}
 						break
 					}
+
+					hasNextPage = reposPage.HasNextPage
+					repos := reposPage.Repos
+
 					rateLimitRemaining, rateLimitReset, _ := c.searchClient.RateLimit.Get()
-					log15.Debug("github sync: ListRepositoriesForSearch", "searchString", repositoryQuery, "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
+					log15.Debug("github sync: ListRepositoriesForSearch", "searchString", repositoryQuery, "repos", len(repos), "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
 
 					totalRepos += len(repos)
 					ch <- batch{repos: repos}
 
 					if hasNextPage {
-						time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
+						time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(1))
 					}
 				}
 			}
