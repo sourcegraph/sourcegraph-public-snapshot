@@ -42,8 +42,8 @@ import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import { UserAccountAreaRoute } from './user/settings/UserAccountArea'
-import { UserAccountSidebarItems } from './user/settings/UserAccountSidebar'
+import { UserAccountAreaRoute } from './user/settings/UserSettingsArea'
+import { UserAccountSidebarItems } from './user/settings/UserSettingsSidebar'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>

@@ -5,12 +5,12 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PasswordInput } from '../../auth/SignInSignUpCommon'
-import { Form } from '../../components/Form'
-import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { updatePassword } from './backend'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PasswordInput } from '../../../auth/SignInSignUpCommon'
+import { Form } from '../../../components/Form'
+import { PageTitle } from '../../../components/PageTitle'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { updatePassword } from '../backend'
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser

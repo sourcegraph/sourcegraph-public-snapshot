@@ -1,19 +1,19 @@
 import React from 'react'
-import { UserAccountAreaRoute } from './UserAccountArea'
+import { UserAccountAreaRoute } from './UserSettingsArea'
 const UserAccountCreateAccessTokenPage = React.lazy(async () => ({
-    default: (await import('./UserAccountCreateAccessTokenPage')).UserAccountCreateAccessTokenPage,
+    default: (await import('./accessTokens/UserSettingsCreateAccessTokenPage')).UserAccountCreateAccessTokenPage,
 }))
 const UserAccountEmailsPage = React.lazy(async () => ({
-    default: (await import('./UserAccountEmailsPage')).UserAccountEmailsPage,
+    default: (await import('./emails/UserSettingsEmailsPage')).UserAccountEmailsPage,
 }))
 const UserAccountPasswordPage = React.lazy(async () => ({
-    default: (await import('./UserAccountPasswordPage')).UserAccountPasswordPage,
+    default: (await import('./auth/UserSettingsPasswordPage')).UserAccountPasswordPage,
 }))
 const UserAccountProfilePage = React.lazy(async () => ({
-    default: (await import('./UserAccountProfilePage')).UserAccountProfilePage,
+    default: (await import('./profile/UserSettingsProfilePage')).UserAccountProfilePage,
 }))
 const UserAccountTokensPage = React.lazy(async () => ({
-    default: (await import('./UserAccountTokensPage')).UserAccountTokensPage,
+    default: (await import('./accessTokens/UserSettingsTokensPage')).UserAccountTokensPage,
 }))
 
 export const userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [

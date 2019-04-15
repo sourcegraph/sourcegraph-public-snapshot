@@ -13,7 +13,7 @@ import { siteFlags } from '../../site/backend'
 import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
-import { UserAccountSidebar, UserAccountSidebarItems } from './UserAccountSidebar'
+import { UserAccountSidebar, UserAccountSidebarItems } from './UserSettingsSidebar'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 

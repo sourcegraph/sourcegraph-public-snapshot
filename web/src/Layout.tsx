@@ -34,8 +34,8 @@ import { ThemePreferenceProps, ThemeProps } from './theme'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import { UserAccountAreaRoute } from './user/settings/UserAccountArea'
-import { UserAccountSidebarItems } from './user/settings/UserAccountSidebar'
+import { UserAccountAreaRoute } from './user/settings/UserSettingsArea'
+import { UserAccountSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps

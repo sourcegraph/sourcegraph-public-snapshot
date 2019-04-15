@@ -1,4 +1,4 @@
-import { UserAccountSidebarItems } from './UserAccountSidebar'
+import { UserAccountSidebarItems } from './UserSettingsSidebar'
 
 export const userAccountSideBarItems: UserAccountSidebarItems = {
     account: [

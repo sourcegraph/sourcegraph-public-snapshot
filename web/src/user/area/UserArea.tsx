@@ -17,8 +17,8 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
-import { UserAccountAreaRoute } from '../settings/UserAccountArea'
-import { UserAccountSidebarItems } from '../settings/UserAccountSidebar'
+import { UserAccountAreaRoute } from '../settings/UserSettingsArea'
+import { UserAccountSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
