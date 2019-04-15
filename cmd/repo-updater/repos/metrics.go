@@ -73,7 +73,7 @@ var (
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "other_external_services_sync_duration",
+		Name:      "syncer_sync_duration_seconds",
 		Help:      "Time spent syncing",
 	}, []string{"success"})
 
