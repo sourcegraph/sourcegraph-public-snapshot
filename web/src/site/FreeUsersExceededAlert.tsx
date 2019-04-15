@@ -10,14 +10,14 @@ export const FreeUsersExceededAlert: React.FunctionComponent<{
 }> = ({ noLicenseWarningUserCount, className = '' }) => (
     <div className={`alert alert-danger alert-animated-bg ${className}`}>
         <WarningIcon className="icon-inline mr-2" />
-        You have exceeded {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users,
-        and need to{' '}
+        This Sourcegraph instance has exceeded{' '}
+        {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users, and an admin must{' '}
         <a className="site-alert__link" href="https://sourcegraph.com/user/subscriptions/new">
             <span className="underline">purchase a license</span>
         </a>{' '}
         or{' '}
         <a className="site-alert__link" href="https://about.sourcegraph.com/contact/sales">
-            <span className="underline">contact us for a free trial</span>
+            <span className="underline">contact Sourcegraph for a free trial</span>
         </a>
     </div>
 )

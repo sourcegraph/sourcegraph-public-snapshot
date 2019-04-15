@@ -2995,7 +2995,8 @@ type ProductSubscriptionStatus {
     # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
     # it is the user limit for instances without a license, or null if there is no limit.
     maximumAllowedUserCount: Int
-    # The number of free users allowed on a site without a license before a warning is shown to all users.
+    # The number of free users allowed on a site without a license before a warning is shown to all users, or null
+    # if a valid license is in use.
     noLicenseWarningUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
