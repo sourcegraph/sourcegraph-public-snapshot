@@ -1,13 +1,10 @@
 import React from 'react'
-import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { Redirect } from 'react-router'
+
 import { UserAreaRoute } from './UserArea'
 
 const UserOverviewPage = React.lazy(async () => ({
     default: (await import('./UserOverviewPage')).UserOverviewPage,
-}))
-
-const SettingsArea = React.lazy(async () => ({
-    default: (await import('../../settings/SettingsArea')).SettingsArea,
 }))
 
 const UserSettingsArea = React.lazy(async () => ({
@@ -23,28 +20,6 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
     },
     {
         path: '/settings',
-        exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => (
-            <SettingsArea
-                {...props}
-                subject={props.user}
-                isLightTheme={props.isLightTheme}
-                extraHeader={
-                    <>
-                        {props.authenticatedUser && props.user.id !== props.authenticatedUser.id && (
-                            <SiteAdminAlert className="sidebar__alert">
-                                Viewing settings for <strong>{props.user.username}</strong>
-                            </SiteAdminAlert>
-                        )}
-                        <p>User settings override global and organization settings.</p>
-                    </>
-                }
-            />
-        ),
-    },
-    {
-        path: '/account',
         // tslint:disable-next-line:jsx-no-lambda
         render: props => (
             <UserSettingsArea
@@ -54,5 +29,11 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
                 isLightTheme={props.isLightTheme}
             />
         ),
+    },
+
+    // Redirect from previous /users/:username/account -> /users/:username/settings/profile.
+    {
+        path: '/account',
+        render: props => <Redirect to={`${props.url}/settings/profile`} />,
     },
 ]

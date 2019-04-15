@@ -96,7 +96,7 @@ interface UserAreaState {
  * Properties passed to all page components in the user area.
  */
 export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ThemeProps, ActivationProps {
-    /** The extension registry area main URL. */
+    /** The user area main URL. */
     url: string
 
     /**

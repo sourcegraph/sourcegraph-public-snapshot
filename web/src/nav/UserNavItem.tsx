@@ -52,10 +52,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         Signed in as <strong>@{this.props.authenticatedUser.username}</strong>
                     </DropdownItem>
                     <DropdownItem divider={true} />
-                    <Link to={`${this.props.authenticatedUser.url}/account`} className="dropdown-item">
-                        Account
-                    </Link>
-                    <Link to={`${this.props.authenticatedUser.url}/settings`} className="dropdown-item">
+                    <Link to={this.props.authenticatedUser.settingsURL!} className="dropdown-item">
                         Settings
                     </Link>
                     <Link to="/extensions" className="dropdown-item">

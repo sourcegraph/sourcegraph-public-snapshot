@@ -4,7 +4,7 @@ import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
 export const enterpriseUserSettingsSideBarItems = {
     ...userSettingsSideBarItems,
     account: [
-        ...userSettingsSideBarItems.account.slice(0, 1),
+        ...userSettingsSideBarItems.account.slice(0, 2),
         {
             label: 'External accounts',
             to: `/external-accounts`,

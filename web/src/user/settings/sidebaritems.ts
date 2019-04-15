@@ -3,6 +3,11 @@ import { UserSettingsSidebarItems } from './UserSettingsSidebar'
 export const userSettingsSideBarItems: UserSettingsSidebarItems = {
     account: [
         {
+            label: 'Settings',
+            to: ``,
+            exact: true,
+        },
+        {
             label: 'Profile',
             to: `/profile`,
             exact: true,

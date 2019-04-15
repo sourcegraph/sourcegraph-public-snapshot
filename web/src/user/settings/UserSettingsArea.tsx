@@ -2,7 +2,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Redirect } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -80,10 +79,6 @@ export const UserSettingsArea = withAuthenticatedUser(
                         subtitle="You are not authorized to view or edit this user's settings."
                     />
                 )
-            }
-
-            if (this.props.match.isExact) {
-                return <Redirect to={`${this.props.match.path}/profile`} />
             }
 
             const { children, ...props } = this.props

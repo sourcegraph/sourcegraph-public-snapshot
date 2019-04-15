@@ -1,5 +1,9 @@
 import React from 'react'
+import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
+const SettingsArea = React.lazy(async () => ({
+    default: (await import('../../settings/SettingsArea')).SettingsArea,
+}))
 const UserSettingsCreateAccessTokenPage = React.lazy(async () => ({
     default: (await import('./accessTokens/UserSettingsCreateAccessTokenPage')).UserSettingsCreateAccessTokenPage,
 }))
@@ -17,7 +21,28 @@ const UserSettingsTokensPage = React.lazy(async () => ({
 }))
 
 export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
-    // Render empty page if no settings page selected
+    {
+        path: '',
+        exact: true,
+        // tslint:disable-next-line:jsx-no-lambda
+        render: props => (
+            <SettingsArea
+                {...props}
+                subject={props.user}
+                isLightTheme={props.isLightTheme}
+                extraHeader={
+                    <>
+                        {props.authenticatedUser && props.user.id !== props.authenticatedUser.id && (
+                            <SiteAdminAlert className="sidebar__alert">
+                                Viewing settings for <strong>{props.user.username}</strong>
+                            </SiteAdminAlert>
+                        )}
+                        <p>User settings override global and organization settings.</p>
+                    </>
+                }
+            />
+        ),
+    },
     {
         path: '/profile',
         exact: true,
