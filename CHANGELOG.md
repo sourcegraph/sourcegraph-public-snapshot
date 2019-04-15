@@ -19,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The new required `bitbucketserver.repositoryQuery` setting in [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to use Bitbucket API repository search queries to select repos to be synced. Existing configurations will be migrate to have it set to `["?visibility=public", "?visibility=private"]` which is equivalent to the previous implicit behaviour that this setting supersedes.
 - "Quick configure" buttons for common actions have been added to the config editor for all external services.
 - Site-admins now receive an alert every day for the seven days before their license key expires.
+- All users on an instance now see a non-dismissable alert when when there's no license key in use and the limit of free user accounts is exceeded.
 
 ### Changed
 
@@ -31,7 +32,6 @@ All notable changes to Sourcegraph are documented in this file.
 - The default `gitlab.projectQuery` of a [GitLab external service configuration](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) has been changed to `["none"]` and is now a required field. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["?membership=true"]`).
 - The `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) is now **required**. This field is necessary to authenticate with the Bitbucket Server API with either `password` or `token`.
 - The settings and account pages for users and organizations are now combined into a single tab.
-- All users on an instance now see a non-dismissable alert when when there's no license key in use and the limit of free user accounts is exceeded.
 
 ### Removed
 
