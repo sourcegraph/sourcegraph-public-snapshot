@@ -1,6 +1,6 @@
 import React from 'react'
-import { userAccountAreaRoutes } from '../../../user/account/routes'
-import { UserAccountAreaRoute } from '../../../user/account/UserAccountArea'
+import { userAccountAreaRoutes } from '../../../user/settings/routes'
+import { UserAccountAreaRoute } from '../../../user/settings/UserAccountArea'
 const UserAccountExternalAccountsPage = React.lazy(async () => ({
     default: (await import('./UserAccountExternalAccountsPage')).UserAccountExternalAccountsPage,
 }))

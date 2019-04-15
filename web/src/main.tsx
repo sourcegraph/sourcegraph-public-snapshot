@@ -22,10 +22,10 @@ import { siteAdminOverviewComponents } from './site-admin/overviewComponents'
 import { siteAdminAreaRoutes } from './site-admin/routes'
 import { siteAdminSidebarGroups } from './site-admin/sidebaritems'
 import { SourcegraphWebApp } from './SourcegraphWebApp'
-import { userAccountAreaRoutes } from './user/account/routes'
-import { userAccountSideBarItems } from './user/account/sidebaritems'
 import { userAreaHeaderNavItems } from './user/area/navitems'
 import { userAreaRoutes } from './user/area/routes'
+import { userAccountAreaRoutes } from './user/settings/routes'
+import { userAccountSideBarItems } from './user/settings/sidebaritems'
 
 window.addEventListener('DOMContentLoaded', () => {
     render(

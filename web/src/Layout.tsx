@@ -32,10 +32,10 @@ import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreferenceProps, ThemeProps } from './theme'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
-import { UserAccountAreaRoute } from './user/account/UserAccountArea'
-import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserAccountAreaRoute } from './user/settings/UserAccountArea'
+import { UserAccountSidebarItems } from './user/settings/UserAccountSidebar'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps

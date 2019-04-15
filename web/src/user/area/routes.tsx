@@ -11,7 +11,7 @@ const SettingsArea = React.lazy(async () => ({
 }))
 
 const UserAccountArea = React.lazy(async () => ({
-    default: (await import('../account/UserAccountArea')).UserAccountArea,
+    default: (await import('../settings/UserAccountArea')).UserAccountArea,
 }))
 
 export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [

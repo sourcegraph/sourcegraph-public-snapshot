@@ -40,10 +40,10 @@ import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
-import { UserAccountAreaRoute } from './user/account/UserAccountArea'
-import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserAccountAreaRoute } from './user/settings/UserAccountArea'
+import { UserAccountSidebarItems } from './user/settings/UserAccountSidebar'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
