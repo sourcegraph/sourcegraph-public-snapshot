@@ -171,7 +171,6 @@ func doPostgresDSN(currentUser string, getenv func(string) string) string {
 	dsn := &url.URL{
 		Scheme:   "postgres",
 		Host:     "127.0.0.1:5432",
-		Path:     "/sourcegraph",
 		RawQuery: "sslmode=disable",
 	}
 
