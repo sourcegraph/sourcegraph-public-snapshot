@@ -1,7 +1,9 @@
 package repos
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -489,6 +491,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 			default:
 				// Run the query as a GitHub advanced repository search
 				// (https://github.com/search/advanced).
+				totalRepos := 0
 				hasNextPage := true
 				for page := 1; hasNextPage; page++ {
 					if err := ctx.Err(); err != nil {
@@ -501,12 +504,21 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					var err error
 					repos, hasNextPage, rateLimitCost, err = c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery)}
+						if totalRepos >= 1000 {
+							// GitHub's advanced repository search will only
+							// return 1000 results. We specially handle this
+							// case to ensure the admin gets a detailed error
+							// message. https://github.com/sourcegraph/sourcegraph/issues/2562
+							ch <- batch{err: errors.Wrapf(err, "repositoryQuery %q would return more than 1000 results. GitHub's Search API only returns up to 1000 results. Please adjust your repository query into multiple queries such that each returns less than 1000 results. For example: repositoryQuery: %s", repositoryQuery, exampleRepositoryQuerySplit(repositoryQuery))}
+							break
+						}
+						ch <- batch{err: errors.Wrapf(err, "failed to list GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery)}
 						break
 					}
 					rateLimitRemaining, rateLimitReset, _ := c.searchClient.RateLimit.Get()
 					log15.Debug("github sync: ListRepositoriesForSearch", "searchString", repositoryQuery, "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
 
+					totalRepos += len(repos)
 					ch <- batch{repos: repos}
 
 					if hasNextPage {
@@ -574,4 +586,17 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 	}
 
 	return repos, errs.ErrorOrNil()
+}
+
+func exampleRepositoryQuerySplit(q string) string {
+	var qs []string
+	for _, suffix := range []string{"created:>=2019", "created:2018", "created:2016..2017", "created:<2016"} {
+		qs = append(qs, fmt.Sprintf("%s %s", q, suffix))
+	}
+	// Avoid escaping < and >
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(qs)
+	return strings.TrimSpace(b.String())
 }
