@@ -22,7 +22,7 @@ To set this up, add GitHub as an external service to Sourcegraph:
 There are three fields for configuring which repositories are mirrored/synchronized:
 
 - [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
-- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: GitHub advanced search queries must return [less than 1000 results](#repositoryquery-returns-first-1000-results-only).
+- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires GitHub advanced search queries to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, and `repositoryQuery` fields.
 
 ## GitHub API token and access
@@ -71,3 +71,5 @@ GitHub's [Search API](https://developer.github.com/v3/search/) only returns the 
 ```
 
 If splitting by creation date does not work, try another field. See [GitHub advanced search query](https://github.com/search/advanced) for other fields you can try.
+
+See [Handle GitHub repositoryQuery that has more than 1000 results](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
