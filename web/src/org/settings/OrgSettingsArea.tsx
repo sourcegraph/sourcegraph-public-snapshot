@@ -7,8 +7,8 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { OrgAccountSidebar } from './OrgSettingsSidebar'
-import { OrgAccountProfilePage } from './profile/OrgSettingsProfilePage'
+import { OrgSettingsSidebar } from './OrgSettingsSidebar'
+import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -26,7 +26,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * Renders a layout of a sidebar and a content area to display pages related to
  * an organization's settings.
  */
-export const OrgAccountArea: React.FunctionComponent<Props> = props => {
+export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
     if (props.location.pathname === props.match.path) {
         return <Redirect to={`${props.match.path}/profile`} />
     }
@@ -42,8 +42,8 @@ export const OrgAccountArea: React.FunctionComponent<Props> = props => {
         settingsCascade: props.settingsCascade,
     }
     return (
-        <div className="org-settings-area area">
-            <OrgAccountSidebar {...props} className="area__sidebar" />
+        <div className="area">
+            <OrgSettingsSidebar {...props} className="area__sidebar" />
             <div className="area__content">
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
@@ -54,7 +54,7 @@ export const OrgAccountArea: React.FunctionComponent<Props> = props => {
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <OrgAccountProfilePage {...routeComponentProps} {...transferProps} />
+                                    <OrgSettingsProfilePage {...routeComponentProps} {...transferProps} />
                                 )}
                             />
                             <Route component={NotFoundPage} />

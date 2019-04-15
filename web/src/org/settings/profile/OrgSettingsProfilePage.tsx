@@ -22,9 +22,9 @@ interface State {
 }
 
 /**
- * The organization profile page.
+ * The organization profile settings page.
  */
-export class OrgAccountProfilePage extends React.PureComponent<Props, State> {
+export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
     private orgChanges = new Subject<GQL.IOrg>()
     private submits = new Subject<void>()
     private subscriptions = new Subscription()
@@ -44,7 +44,7 @@ export class OrgAccountProfilePage extends React.PureComponent<Props, State> {
             this.orgChanges
                 .pipe(
                     distinctUntilChanged(),
-                    tap(org => eventLogger.logViewEvent('OrgAccountProfile', { organization: { org_name: org.name } }))
+                    tap(org => eventLogger.logViewEvent('OrgSettingsProfile', { organization: { org_name: org.name } }))
                 )
                 .subscribe()
         )
@@ -87,15 +87,15 @@ export class OrgAccountProfilePage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="org-account-profile-page">
+            <div className="org-settings-profile-page">
                 <PageTitle title={this.props.org.name} />
                 <h2>Organization profile</h2>
-                <Form className="org-account-profile-page" onSubmit={this.onSubmit}>
+                <Form className="org-settings-profile-page" onSubmit={this.onSubmit}>
                     <div className="form-group">
                         <label>Display name</label>
                         <input
                             type="text"
-                            className="form-control org-account-profile-page__display-name"
+                            className="form-control org-settings-profile-page__display-name"
                             placeholder="Organization name"
                             onChange={this.onDisplayNameFieldChange}
                             value={this.state.displayName}
@@ -106,15 +106,15 @@ export class OrgAccountProfilePage extends React.PureComponent<Props, State> {
                     <button
                         type="submit"
                         disabled={this.state.loading}
-                        className="btn btn-primary org-account-profile-page__submit-button"
+                        className="btn btn-primary org-settings-profile-page__submit-button"
                     >
                         Update
                     </button>
                     {this.state.loading && <LoadingSpinner className="icon-inline" />}
                     <div
                         className={
-                            'org-account-profile-page__updated-text' +
-                            (this.state.updated ? ' org-account-profile-page__updated-text--visible' : '')
+                            'org-settings-profile-page__updated-text' +
+                            (this.state.updated ? ' org-settings-profile-page__updated-text--visible' : '')
                         }
                     >
                         <small>Updated!</small>

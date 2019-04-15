@@ -9,9 +9,9 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
 }
 
 /**
- * Sidebar for org settings pages
+ * Sidebar for org settings pages.
  */
-export const OrgAccountSidebar: React.FunctionComponent<Props> = ({ org, authenticatedUser, className, match }) => {
+export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authenticatedUser, className, match }) => {
     if (!org) {
         return null
     }
@@ -19,7 +19,7 @@ export const OrgAccountSidebar: React.FunctionComponent<Props> = ({ org, authent
     const siteAdminViewingOtherOrg = authenticatedUser && org.viewerCanAdminister && !org.viewerIsMember
 
     return (
-        <div className={`org-account-sidebar ${className || ''}`}>
+        <div className={`org-settings-sidebar ${className || ''}`}>
             {/* Indicate when the site admin is viewing another org's settings */}
             {siteAdminViewingOtherOrg && (
                 <SiteAdminAlert className="sidebar__alert">

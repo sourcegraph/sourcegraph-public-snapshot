@@ -17,7 +17,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { ThemeProps } from '../../theme'
-import { OrgAccountArea } from '../settings/OrgSettingsArea'
+import { OrgSettingsArea } from '../settings/OrgSettingsArea'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
@@ -226,7 +226,7 @@ export class OrgArea extends React.Component<Props> {
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         // tslint:disable-next-line:jsx-no-lambda
                                         render={routeComponentProps => (
-                                            <OrgAccountArea
+                                            <OrgSettingsArea
                                                 {...routeComponentProps}
                                                 {...transferProps}
                                                 isLightTheme={this.props.isLightTheme}
