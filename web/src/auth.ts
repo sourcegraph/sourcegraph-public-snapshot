@@ -35,6 +35,9 @@ export function refreshAuthenticatedUser(): Observable<never> {
                     nodes {
                         id
                         name
+                        displayName
+                        url
+                        settingsURL
                     }
                 }
                 session {

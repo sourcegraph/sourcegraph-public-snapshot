@@ -66,13 +66,6 @@ exports[`UserNavItem simple 1`] = `
     >
       Saved searches
     </a>
-    <a
-      className="dropdown-item"
-      href="https://docs.sourcegraph.com"
-      target="_blank"
-    >
-      Help
-    </a>
     <div
       className="dropdown-divider"
       onClick={[Function]}
@@ -112,6 +105,44 @@ exports[`UserNavItem simple 1`] = `
         </select>
       </div>
     </div>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
+    <h6
+      className="dropdown-header"
+      onClick={[Function]}
+      tabIndex="-1"
+    >
+      Organizations
+    </h6>
+    <a
+      className="dropdown-item"
+      href="/u"
+      onClick={[Function]}
+    >
+      d
+    </a>
+    <a
+      className="dropdown-item"
+      href="/u"
+      onClick={[Function]}
+    >
+      n
+    </a>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
+    <a
+      className="dropdown-item"
+      href="https://docs.sourcegraph.com"
+      target="_blank"
+    >
+      Help
+    </a>
     <div
       className="dropdown-divider"
       onClick={[Function]}
