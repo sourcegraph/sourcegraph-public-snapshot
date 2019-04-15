@@ -39,6 +39,11 @@ const buildRequestPermissionsHandler = (
     requestPermissions(`${protocol}//${host}`)
 }
 
+/**
+ * A list of hosts where we should *not* show the permissions notification.
+ */
+const PERMISSIONS_HOST_BLACKLIST = ['extensions', 'newtab']
+
 export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
     onURLChange,
@@ -62,21 +67,24 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
             requestPermissions={requestPermissions}
             className="options-menu__section"
         />
-        {status === 'connected' && currentTabStatus && !currentTabStatus.hasPermissions && (
-            <div className="options-menu__section">
-                <div className="alert alert-danger">
-                    Sourcegraph is not enabled on <strong>{currentTabStatus.host}</strong>.{' '}
-                    <a
-                        href=""
-                        onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
-                        className="request-permissions__test"
-                    >
-                        Grant permissions
-                    </a>{' '}
-                    to enable Sourcegraph.
+        {status === 'connected' &&
+            currentTabStatus &&
+            !currentTabStatus.hasPermissions &&
+            !PERMISSIONS_HOST_BLACKLIST.includes(currentTabStatus.host) && (
+                <div className="options-menu__section">
+                    <div className="alert alert-danger">
+                        Sourcegraph is not enabled on <strong>{currentTabStatus.host}</strong>.{' '}
+                        <a
+                            href=""
+                            onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
+                            className="request-permissions__test"
+                        >
+                            Grant permissions
+                        </a>{' '}
+                        to enable Sourcegraph.
+                    </div>
                 </div>
-            </div>
-        )}
+            )}
         {isSettingsOpen && featureFlags && (
             <div className="options-menu__section">
                 <label>Configuration</label>
