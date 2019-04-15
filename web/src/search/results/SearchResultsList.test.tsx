@@ -5,7 +5,7 @@ import { cleanup, getAllByTestId, getByTestId, getByText, queryByTestId, render 
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { HIGHLIGHTED_FILE_LINES_REQUEST, MULTIPLE_SEARCH_REQUEST, SEARCH_REQUEST } from '../testHelpers'
-import { SearchResultsList } from './SearchResultsList'
+import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 
 describe('SearchResultsList', () => {
     setLinkComponent((props: any) => <a {...props} />)
@@ -18,11 +18,12 @@ describe('SearchResultsList', () => {
     const history = createBrowserHistory()
     history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
-    const defaultProps = {
+    const defaultProps: SearchResultsListProps = {
         location: history.location,
         history,
         authenticatedUser: null,
         isSourcegraphDotCom: false,
+        deployType: 'dev',
 
         resultsOrError: SEARCH_REQUEST(),
         onShowMoreResultsClick: sinon.spy(),

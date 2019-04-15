@@ -38,6 +38,7 @@ export interface SearchResultsProps extends ExtensionsControllerProps<'services'
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
+    deployType: DeployType
 }
 
 interface SearchScope {
@@ -238,6 +239,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     isLightTheme={this.props.isLightTheme}
                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                    deployType={this.props.deployType}
                 />
             </div>
         )

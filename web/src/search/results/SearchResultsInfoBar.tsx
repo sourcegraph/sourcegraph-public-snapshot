@@ -10,6 +10,7 @@ import * as React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { ServerBanner } from '../../marketing/ServerBanner'
+import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 
 interface SearchResultsInfoBarProps {
     /** The currently authenticated user or null */
@@ -28,6 +29,8 @@ interface SearchResultsInfoBarProps {
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
+
+    displayPerformanceWarning: boolean
 }
 
 /**
@@ -137,5 +140,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             </small>
         )}
         {!props.results.alert && props.showDotComMarketing && <ServerBanner />}
+        {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
     </div>
 )

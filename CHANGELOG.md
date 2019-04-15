@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - "Quick configure" buttons for common actions have been added to the config editor for all external services.
 - Site-admins now receive an alert every day for the seven days before their license key expires.
 - All users on an instance now see a non-dismissable alert when when there's no license key in use and the limit of free user accounts is exceeded.
+- All users will see a dismissible warning about limited search performance and accuracy on when using the sourcegraph/server Docker image with more than 100 repositories enabled.
 
 ### Changed
 
