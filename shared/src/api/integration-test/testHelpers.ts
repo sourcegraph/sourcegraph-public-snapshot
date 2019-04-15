@@ -1,20 +1,20 @@
 import 'message-port-polyfill'
 
 import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
-import { first, take } from 'rxjs/operators'
+import { filter, first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { isDefined } from '../../util/types'
 import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
-import { CodeEditorData } from '../client/services/editorService'
+import { CodeEditor } from '../client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
-    editors: readonly CodeEditorData[]
+    editors: readonly Pick<CodeEditor, Exclude<keyof CodeEditor, 'editorId'>>[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
@@ -22,7 +22,8 @@ const FIXTURE_INIT_DATA: TestInitData = {
     editors: [
         {
             type: 'CodeEditor',
-            item: {
+            resource: 'file:///f',
+            model: {
                 uri: 'file:///f',
                 languageId: 'l',
                 text: 't',
@@ -89,7 +90,10 @@ export async function integrationTestContext(
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     const extensionAPI = await extensionHost.extensionAPI
-    services.editor.editors.next(initModel.editors)
+    for (const { model, ...editor } of initModel.editors) {
+        services.model.addModel(model)
+        services.editor.addEditor(editor)
+    }
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
@@ -98,7 +102,15 @@ export async function integrationTestContext(
             .pipe(take(initModel.editors.length))
             .toPromise(),
         from(extensionAPI.app.activeWindowChanges)
-            .pipe(first(isDefined))
+            .pipe(
+                first(isDefined),
+                switchMap(activeWindow =>
+                    from(activeWindow.activeViewComponentChanges).pipe(
+                        filter(isDefined),
+                        take(initModel.editors.length)
+                    )
+                )
+            )
             .toPromise(),
     ])
 

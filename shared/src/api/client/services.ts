@@ -8,6 +8,7 @@ import { createEditorService } from './services/editorService'
 import { ExtensionsService } from './services/extensionsService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
+import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
 import { createSettingsService } from './services/settings'
@@ -33,7 +34,8 @@ export class Services {
     public readonly commands = new CommandRegistry()
     public readonly context = createContextService(this.platformContext)
     public readonly workspace = createWorkspaceService()
-    public readonly editor = createEditorService()
+    public readonly model = createModelService()
+    public readonly editor = createEditorService(this.model)
     public readonly notifications = new NotificationsService()
     public readonly settings = createSettingsService(this.platformContext)
     public readonly contribution = new ContributionRegistry(this.editor, this.settings, this.context.data)

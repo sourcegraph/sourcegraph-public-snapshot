@@ -120,6 +120,7 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 
 		if !c.DisableAutoGitUpdates {
 			newMap[createdRepo.Name] = &configuredRepo2{
+				ID:      uint32(createdRepo.ID),
 				Name:    createdRepo.Name,
 				URL:     op.URL,
 				Enabled: createdRepo.Enabled,

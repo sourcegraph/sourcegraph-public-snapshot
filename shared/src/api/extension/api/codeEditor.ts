@@ -3,7 +3,7 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import { CodeEditorData } from '../../client/services/editorService'
+import { CodeEditorData, EditorId } from '../../client/services/editorService'
 import { Range } from '../types/range'
 import { Selection } from '../types/selection'
 import { createDecorationType } from './decorations'
@@ -13,15 +13,15 @@ const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
 export class ExtCodeEditor implements sourcegraph.CodeEditor {
-    /** The URI of the text document shown in this code editor */
+    /** The URI of this editor's document. */
     private resource: string
 
     constructor(
-        data: CodeEditorData<Pick<sourcegraph.TextDocument, 'uri'>>,
+        data: CodeEditorData & EditorId,
         private proxy: ProxyResult<ClientCodeEditorAPI>,
         private documents: ExtDocuments
     ) {
-        this.resource = data.item.uri
+        this.resource = data.resource
         this.update(data)
     }
 

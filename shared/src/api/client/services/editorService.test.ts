@@ -1,11 +1,129 @@
-import { of, Subscribable } from 'rxjs'
-import { CodeEditorData, getActiveCodeEditorPosition, ReadonlyEditorService } from './editorService'
+import { Selection } from '@sourcegraph/extension-api-types'
+import { from, of, Subscribable } from 'rxjs'
+import { first, map } from 'rxjs/operators'
+import { TestScheduler } from 'rxjs/testing'
+import { CodeEditor, createEditorService, EditorService, getActiveCodeEditorPosition } from './editorService'
+import { TextModel } from './modelService'
 
 export function createTestEditorService(
-    editors: Subscribable<readonly CodeEditorData[]> = of([])
-): ReadonlyEditorService {
+    editors: Subscribable<readonly CodeEditor[]> = of([])
+): Pick<EditorService, 'editors'> {
     return { editors }
 }
+
+const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+
+describe('EditorService', () => {
+    describe('editors', () => {
+        test('merges in model data', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                const editorService = createEditorService({
+                    models: cold<TextModel[]>('a', { a: [{ uri: 'u', text: 't', languageId: 'l' }] }),
+                })
+                editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
+                expectObservable(
+                    from(editorService.editors).pipe(
+                        map(editors => editors.map(e => ({ resource: e.resource, model: e.model })))
+                    )
+                ).toBe('a', {
+                    a: [
+                        {
+                            resource: 'u',
+                            model: { uri: 'u', text: 't', languageId: 'l' },
+                        },
+                    ],
+                })
+            })
+        })
+    })
+
+    test('addEditor', async () => {
+        const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+        const editor = editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
+        expect(editor.editorId).toEqual('editor#0')
+        expect(
+            await from(editorService.editors)
+                .pipe(first())
+                .toPromise()
+        ).toEqual([
+            {
+                type: 'CodeEditor',
+                editorId: 'editor#0',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+                model: { uri: 'u', text: 't', languageId: 'l' },
+            },
+        ])
+    })
+
+    describe('setSelections', () => {
+        test('ok', async () => {
+            const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+            const editor = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
+            const SELECTIONS: Selection[] = [
+                {
+                    start: { line: 3, character: -1 },
+                    end: { line: 3, character: -1 },
+                    anchor: { line: 3, character: -1 },
+                    active: { line: 3, character: -1 },
+                    isReversed: false,
+                },
+            ]
+            editorService.setSelections(editor, SELECTIONS)
+            expect(
+                await from(editorService.editors)
+                    .pipe(
+                        first(),
+                        map(editors => editors.map(e => e.selections))
+                    )
+                    .toPromise()
+            ).toEqual([SELECTIONS])
+        })
+        test('not found', () => {
+            const editorService = createEditorService({ models: of([]) })
+            expect(() => editorService.setSelections({ editorId: 'x' }, [])).toThrowError('editor not found: x')
+        })
+    })
+
+    describe('removeEditor', () => {
+        test('ok', async () => {
+            const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+            const editor = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
+            editorService.removeEditor(editor)
+            expect(
+                await from(editorService.editors)
+                    .pipe(first())
+                    .toPromise()
+            ).toEqual([])
+        })
+        test('not found', () => {
+            const editorService = createEditorService({ models: of([]) })
+            expect(() => editorService.removeEditor({ editorId: 'x' })).toThrowError('editor not found: x')
+        })
+    })
+
+    test('removeAllEditors', async () => {
+        const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+        editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
+        editorService.removeAllEditors()
+        expect(
+            await from(editorService.editors)
+                .pipe(first())
+                .toPromise()
+        ).toEqual([])
+    })
+})
 
 describe('getActiveCodeEditorPosition', () => {
     test('null if code editor is empty', () => {
@@ -19,7 +137,7 @@ describe('getActiveCodeEditorPosition', () => {
                     type: 'CodeEditor',
                     isActive: false,
                     selections: [],
-                    item: { uri: 'u', text: 't', languageId: 'l' },
+                    resource: 'u',
                 },
             ])
         ).toBeNull()
@@ -32,7 +150,7 @@ describe('getActiveCodeEditorPosition', () => {
                     type: 'CodeEditor',
                     isActive: true,
                     selections: [],
-                    item: { uri: 'u', text: 't', languageId: 'l' },
+                    resource: 'u',
                 },
             ])
         ).toBeNull()
@@ -53,7 +171,7 @@ describe('getActiveCodeEditorPosition', () => {
                             isReversed: false,
                         },
                     ],
-                    item: { uri: 'u', text: 't', languageId: 'l' },
+                    resource: 'u',
                 },
             ])
         ).toBeNull()
@@ -74,9 +192,9 @@ describe('getActiveCodeEditorPosition', () => {
                             isReversed: false,
                         },
                     ],
-                    item: { uri: 'u', text: 't', languageId: 'l' },
+                    resource: 'u',
                 },
             ])
-        ).toEqual({ textDocument: { uri: 'u', text: 't', languageId: 'l' }, position: { line: 3, character: 2 } })
+        ).toEqual({ textDocument: { uri: 'u' }, position: { line: 3, character: 2 } })
     })
 })

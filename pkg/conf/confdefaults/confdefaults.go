@@ -44,8 +44,7 @@ var DockerContainer = conftypes.RawUnified{
 	]
 }`,
 	Site: `{
-	"disablePublicRepoRedirects": true,
-	"maxReposToSearch": 50,
+	"disablePublicRepoRedirects": true
 }`,
 }
 

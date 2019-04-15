@@ -122,7 +122,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         <UserNavItem
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
-                            showAbout={this.props.showDotComMarketing}
+                            showDotComMarketing={this.props.showDotComMarketing}
                             showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
                         />
                     </li>

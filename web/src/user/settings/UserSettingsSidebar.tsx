@@ -18,23 +18,24 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
-export interface UserAccountSidebarItemConditionContext {
+export interface UserSettingsSidebarItemConditionContext {
+    user: Pick<GQL.IUser, 'viewerCanAdminister'>
     authProviders: GQL.IAuthProvider[]
 }
 
-export type UserAccountSidebarItems = Record<
+export type UserSettingsSidebarItems = Record<
     'account',
-    ReadonlyArray<NavItemDescriptor<UserAccountSidebarItemConditionContext>>
+    ReadonlyArray<NavItemDescriptor<UserSettingsSidebarItemConditionContext>>
 >
 
-export interface UserAccountSidebarProps extends UserAreaRouteContext, RouteComponentProps<{}> {
-    items: UserAccountSidebarItems
+export interface UserSettingsSidebarProps extends UserAreaRouteContext, RouteComponentProps<{}> {
+    items: UserSettingsSidebarItems
     authProviders: GQL.IAuthProvider[]
     className?: string
 }
 
 /** Sidebar for user account pages. */
-export const UserAccountSidebar: React.FunctionComponent<UserAccountSidebarProps> = props => {
+export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
     if (!props.authenticatedUser) {
         return null
     }
@@ -43,7 +44,7 @@ export const UserAccountSidebar: React.FunctionComponent<UserAccountSidebarProps
     const siteAdminViewingOtherUser = props.user.id !== props.authenticatedUser.id
 
     return (
-        <div className={`user-account-sidebar ${props.className || ''}`}>
+        <div className={`user-settings-sidebar ${props.className || ''}`}>
             {/* Indicate when the site admin is viewing another user's account */}
             {siteAdminViewingOtherUser && (
                 <SiteAdminAlert className="sidebar__alert">
@@ -56,7 +57,7 @@ export const UserAccountSidebar: React.FunctionComponent<UserAccountSidebarProps
                 <SidebarGroupItems>
                     {props.items.account.map(
                         ({ label, to, exact, condition = () => true }) =>
-                            condition({ authProviders: props.authProviders }) && (
+                            condition({ authProviders: props.authProviders, user: props.user }) && (
                                 <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
                                     {label}
                                 </SidebarNavItem>

@@ -12,7 +12,7 @@ import {
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
-import { ReadonlyEditorService } from './editorService'
+import { EditorService } from './editorService'
 import { SettingsService } from './settings'
 
 /** A registered set of contributions from an extension in the registry. */
@@ -41,7 +41,7 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     public constructor(
-        private editorService: ReadonlyEditorService,
+        private editorService: Pick<EditorService, 'editors'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
     ) {}

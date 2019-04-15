@@ -1,7 +1,12 @@
-import { UserAccountSidebarItems } from './UserAccountSidebar'
+import { UserSettingsSidebarItems } from './UserSettingsSidebar'
 
-export const userAccountSideBarItems: UserAccountSidebarItems = {
+export const userSettingsSideBarItems: UserSettingsSidebarItems = {
     account: [
+        {
+            label: 'Settings',
+            to: ``,
+            exact: true,
+        },
         {
             label: 'Profile',
             to: `/profile`,

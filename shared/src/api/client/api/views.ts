@@ -1,9 +1,8 @@
 import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { isEqual, omit } from 'lodash'
 import { combineLatest, from, of, ReplaySubject, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'
-import { isDefined } from '../../../util/types'
 import { ContributableViewContainer } from '../../protocol'
 import { EditorService, getActiveCodeEditorPosition } from '../services/editorService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
@@ -44,20 +43,22 @@ export class ClientViews implements ClientViewsAPI {
                 ),
                 panelView.pipe(
                     map(({ component }) => component),
-                    filter(isDefined),
-                    map(({ locationProvider }) => locationProvider),
-                    distinctUntilChanged(),
-                    map(locationProvider =>
-                        from(this.editorService.editors).pipe(
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    map(component => {
+                        if (!component) {
+                            return undefined
+                        }
+
+                        return from(this.editorService.editors).pipe(
                             switchMap(editors => {
                                 const params = getActiveCodeEditorPosition(editors)
                                 if (!params) {
                                     return of(of(null))
                                 }
-                                return this.textDocumentLocations.getLocations(locationProvider, params)
+                                return this.textDocumentLocations.getLocations(component.locationProvider, params)
                             })
                         )
-                    )
+                    })
                 )
             ).pipe(
                 map(([{ title, content, priority }, locationProvider]) => {

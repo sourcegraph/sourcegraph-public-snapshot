@@ -1,7 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorData } from '../services/editorService'
-import { applyContextUpdate, Context, getComputedContextProperty } from './context'
+import { applyContextUpdate, Context, getComputedContextProperty, PartialCodeEditor } from './context'
 
 describe('applyContextUpdate', () => {
     test('merges properties', () =>
@@ -30,13 +29,13 @@ describe('getComputedContextProperty', () => {
     })
 
     describe('with code editors', () => {
-        const editors: CodeEditorData[] = [
+        const editors: PartialCodeEditor[] = [
             {
                 type: 'CodeEditor',
-                item: {
+                resource: 'file:///inactive',
+                model: {
                     uri: 'file:///inactive',
                     languageId: 'inactive',
-                    text: 'inactive',
                 },
                 selections: [
                     {
@@ -51,10 +50,10 @@ describe('getComputedContextProperty', () => {
             },
             {
                 type: 'CodeEditor',
-                item: {
+                resource: 'file:///a/b.c',
+                model: {
                     uri: 'file:///a/b.c',
                     languageId: 'l',
-                    text: 't',
                 },
                 selections: [
                     {
@@ -104,7 +103,7 @@ describe('getComputedContextProperty', () => {
             test('returns null when there are no code editors', () =>
                 expect(getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(null))
 
-            function assertSelection(editors: CodeEditorData[], expr: string, expected: Selection): void {
+            function assertSelection(editors: PartialCodeEditor[], expr: string, expected: Selection): void {
                 expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, expr)).toEqual(expected)
                 expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start`)).toEqual(
                     expected.start
@@ -148,7 +147,7 @@ describe('getComputedContextProperty', () => {
                     ]
                 ))
 
-            function assertNoSelection(editors: CodeEditorData[]): void {
+            function assertNoSelection(editors: PartialCodeEditor[]): void {
                 expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selection')).toBe(
                     null
                 )
@@ -180,8 +179,9 @@ describe('getComputedContextProperty', () => {
             test('returns null when there is no selection', () => {
                 assertNoSelection([
                     {
-                        type: 'CodeEditor',
-                        item: {
+                        type: 'CodeEditor' as const,
+                        resource: 'file:///a/b.c',
+                        model: {
                             uri: 'file:///a/b.c',
                             languageId: 'l',
                             text: 't',
