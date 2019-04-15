@@ -53,34 +53,55 @@ func ObservedHandler(
 	tr opentracing.Tracer,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return nethttp.Middleware(tr,
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				rr := &responseRecorder{w, http.StatusOK, 0}
-				defer func(begin time.Time) {
-					if log != nil {
-						log.Info(
-							"http.request",
-							"method", r.Method,
-							"route", r.URL.Path,
-							"code", rr.code,
-							"duration", time.Since(begin),
-						)
-					}
-
-					if m.ServeHTTP != nil {
-						secs := time.Since(begin).Seconds()
-						var err error
-						if rr.code >= 400 {
-							err = errors.New(http.StatusText(rr.code))
-						}
-						m.ServeHTTP.Observe(secs, 1, &err, r.URL.Path, strconv.Itoa(rr.code))
-					}
-				}(time.Now())
-
-				next.ServeHTTP(rr, r)
-			}),
-		)
+		return nethttp.Middleware(tr, &observedHandler{
+			next:    next,
+			log:     log,
+			metrics: m,
+			tracer:  tr,
+		})
 	}
+}
+
+type observedHandler struct {
+	next    http.Handler
+	log     log15.Logger
+	metrics HandlerMetrics
+	tracer  opentracing.Tracer
+}
+
+func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	rr := &responseRecorder{w, http.StatusOK, 0}
+
+	defer func(begin time.Time) {
+		if h.log != nil {
+			h.log.Info(
+				"http.request",
+				"method", r.Method,
+				"route", r.URL.Path,
+				"code", rr.code,
+				"duration", time.Since(begin),
+			)
+		}
+
+		if h.metrics.ServeHTTP != nil {
+			secs := time.Since(begin).Seconds()
+
+			var err error
+			if rr.code >= 400 {
+				err = errors.New(http.StatusText(rr.code))
+			}
+
+			h.metrics.ServeHTTP.Observe(
+				secs,
+				1,
+				&err,
+				r.URL.Path,
+				strconv.Itoa(rr.code),
+			)
+		}
+	}(time.Now())
+
+	h.next.ServeHTTP(rr, r)
 }
 
 type responseRecorder struct {
