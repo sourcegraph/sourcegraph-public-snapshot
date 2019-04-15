@@ -245,7 +245,7 @@ func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) 
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
 	return srcs.ListRepos(ctx)
