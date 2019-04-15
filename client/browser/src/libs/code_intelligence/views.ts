@@ -26,7 +26,7 @@ interface AddedViewEvent {
     type: 'added'
 }
 
-interface RemovedView {
+interface RemovedViewEvent {
     type: 'removed'
 
     /** The HTML element that was removed. */
@@ -38,7 +38,7 @@ interface RemovedView {
  *
  * @template V The type of view, such as a code view.
  */
-export type ViewEvent<V> = (AddedViewEvent & V) | RemovedView
+export type ViewEvent<V> = (AddedViewEvent & V) | RemovedViewEvent
 
 /**
  * Find all the views (e.g., code views) on a page using view resolvers (defined in
