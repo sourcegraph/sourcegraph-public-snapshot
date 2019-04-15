@@ -14,22 +14,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 )
 
-var dsn = flag.String(
-	"dsn",
-	"postgres://sourcegraph:sourcegraph@localhost/postgres?sslmode=disable&timezone=UTC",
-	"Database connection string to use in integration tests",
-)
+var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func init() {
 	flag.Parse()
 }
 
 func testDatabase(t testing.TB) (*sql.DB, func()) {
-	config, err := url.Parse(*dsn)
-	if err != nil {
-		t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
+	var err error
+	var config *url.URL
+	if *dsn == "" {
+		config, err = url.Parse("postgres://127.0.0.1/?sslmode=disable&timezone=UTC")
+		if err != nil {
+			t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
+		}
+		updateDSNFromEnv(config)
+	} else {
+		config, err = url.Parse(*dsn)
+		if err != nil {
+			t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
+		}
 	}
-	updateDSNFromEnv(config)
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
