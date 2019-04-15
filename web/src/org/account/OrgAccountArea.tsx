@@ -8,6 +8,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
 import { OrgAreaPageProps } from '../area/OrgArea'
 import { OrgAccountProfilePage } from './OrgAccountProfilePage'
+import { OrgAccountSidebar } from './OrgAccountSidebar'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -41,23 +42,26 @@ export const OrgAccountArea: React.FunctionComponent<Props> = props => {
         settingsCascade: props.settingsCascade,
     }
     return (
-        <div className="mt-3">
-            <ErrorBoundary location={props.location}>
-                <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                    <Switch>
-                        <Route
-                            path={`${props.match.path}/profile`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <OrgAccountProfilePage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
-                        <Route component={NotFoundPage} />
-                    </Switch>
-                </React.Suspense>
-            </ErrorBoundary>
+        <div className="org-settings-area area">
+            <OrgAccountSidebar {...props} className="area__sidebar" />
+            <div className="area__content">
+                <ErrorBoundary location={props.location}>
+                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                        <Switch>
+                            <Route
+                                path={`${props.match.path}/profile`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <OrgAccountProfilePage {...routeComponentProps} {...transferProps} />
+                                )}
+                            />
+                            <Route component={NotFoundPage} />
+                        </Switch>
+                    </React.Suspense>
+                </ErrorBoundary>
+            </div>
         </div>
     )
 }
