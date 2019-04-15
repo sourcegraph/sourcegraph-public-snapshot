@@ -30,6 +30,9 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
             <div className="card">
                 <div className="card-header">Organization</div>
                 <div className="list-group list-group-flush">
+                    <NavLink to={match.url} exact={true} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
+                        Settings
+                    </NavLink>
                     <NavLink to={`${match.url}/profile`} exact={true} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
                         Profile
                     </NavLink>
