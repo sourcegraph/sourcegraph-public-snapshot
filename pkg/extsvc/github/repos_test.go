@@ -286,14 +286,12 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 		},
 	}
 
-	repos, _, _, err :=
-		c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
-
+	reposPage, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !repoListsAreEqual(repos, wantRepos) {
-		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
+	if !repoListsAreEqual(reposPage.Repos, wantRepos) {
+		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(reposPage.Repos), stringForRepoList(wantRepos))
 	}
 }
 
@@ -327,8 +325,7 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	// repositories to be returned, otherwise it will delete the missing
 	// repositories.
 	want := `github repository search returned incomplete results. This is an ephemeral error: query="org:sourcegraph" page=1 total=2`
-	_, _, _, err :=
-		c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
+	_, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
 
 	if have := fmt.Sprint(err); want != have {
 		t.Errorf("\nhave: %s\nwant: %s", have, want)

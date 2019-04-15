@@ -22,7 +22,7 @@ To set this up, add GitHub as an external service to Sourcegraph:
 There are three fields for configuring which repositories are mirrored/synchronized:
 
 - [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
-- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced).
+- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires GitHub advanced search queries to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, and `repositoryQuery` fields.
 
 ## GitHub API token and access
@@ -51,3 +51,25 @@ To configure GitHub as an authentication provider (which will enable sign-in via
 GitHub external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
+
+## Troubleshooting
+
+### RepositoryQuery returns first 1000 results only
+
+GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To workaround this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
+
+```jsonx
+{
+  // ...
+  "repositoryQuery": [
+    "org:Microsoft fork:no created:>=2019",
+    "org:Microsoft fork:no created:2018",
+    "org:Microsoft fork:no created:2016..2017",
+    "org:Microsoft fork:no created:<2016"
+  ]
+}
+```
+
+If splitting by creation date does not work, try another field. See [GitHub advanced search query](https://github.com/search/advanced) for other fields you can try.
+
+See [Handle GitHub repositoryQuery that has more than 1000 results](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
