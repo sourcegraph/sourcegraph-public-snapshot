@@ -14,6 +14,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -66,8 +67,16 @@ func main() {
 		log15.Root(),
 	)
 
-	cliFactory := repos.NewHTTPClientFactory()
-	src := repos.NewSourcer(cliFactory, repos.ObservedSource(log15.Root()))
+	var src repos.Sourcer
+	{
+		m := repos.NewSourceMetrics()
+		prometheus.Register(m.Duration)
+		prometheus.Register(m.Errors)
+		prometheus.Register(m.Repos)
+
+		cf := repos.NewHTTPClientFactory()
+		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
+	}
 
 	migrations := []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),

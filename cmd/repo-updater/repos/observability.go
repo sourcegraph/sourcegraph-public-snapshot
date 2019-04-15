@@ -3,8 +3,10 @@ package repos
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // ErrorLogger captures the method required for logging an error.
@@ -14,23 +16,72 @@ type ErrorLogger interface {
 
 // ObservedSource returns a decorator that wraps a Source
 // with error logging, Prometheus metrics and tracing.
-func ObservedSource(l ErrorLogger) func(Source) Source {
+func ObservedSource(l ErrorLogger, m *SourceMetrics) func(Source) Source {
 	return func(s Source) Source {
-		return &observedSource{source: s, log: l}
+		return &observedSource{
+			Source:  s,
+			log:     l,
+			metrics: m,
+		}
 	}
 }
 
 // An observedSource wraps another Source with error logging,
 // Prometheus metrics and tracing.
 type observedSource struct {
-	source Source
-	log    ErrorLogger
+	Source
+	log     ErrorLogger
+	metrics *SourceMetrics
+}
+
+// SourceMetrics encapsulates the Prometheus metrics of a Source.
+type SourceMetrics struct {
+	Duration *prometheus.HistogramVec
+	Repos    *prometheus.CounterVec
+	Errors   *prometheus.CounterVec
+}
+
+// NewSourceMetrics returns SourceMetrics that need to be registered
+// in a Prometheus registry.
+func NewSourceMetrics() *SourceMetrics {
+	return &SourceMetrics{
+		Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "src",
+			Subsystem: "repoupdater",
+			Name:      "source_duration_seconds",
+			Help:      "Time spent sourcing repos",
+		}, []string{"kind"}),
+		Repos: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "src",
+			Subsystem: "repoupdater",
+			Name:      "source_repos_total",
+			Help:      "Total number of sourced repositories",
+		}, []string{"kind"}),
+		Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "src",
+			Subsystem: "repoupdater",
+			Name:      "source_errors_total",
+			Help:      "Total number of sourcing errors",
+		}, []string{"kind"}),
+	}
 }
 
 // ListRepos calls into the inner Source registers the observed results.
 func (o *observedSource) ListRepos(ctx context.Context) (rs []*Repo, err error) {
 	defer log(o.log, "source.list-repos", &err)
-	return o.source.ListRepos(ctx)
+	if o.metrics != nil {
+		defer func(began time.Time) {
+			took := time.Since(began).Seconds()
+			for _, kind := range o.Source.Kinds() {
+				o.metrics.Duration.WithLabelValues(kind).Observe(took)
+				o.metrics.Repos.WithLabelValues(kind).Add(float64(len(rs)))
+				if err != nil {
+					o.metrics.Errors.WithLabelValues(kind).Add(1)
+				}
+			}
+		}(time.Now())
+	}
+	return o.Source.ListRepos(ctx)
 }
 
 // NewObservedStore wraps the given Store with error logging,
