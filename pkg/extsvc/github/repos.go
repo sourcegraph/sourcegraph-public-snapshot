@@ -358,7 +358,14 @@ type restSearchResponse struct {
 	Items             []restRepository `json:"items"`
 }
 
-func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+// RepositoryListPage is a page of repositories returned from the GitHub Search API.
+type RepositoryListPage struct {
+	TotalCount  int
+	Repos       []*Repository
+	HasNextPage bool
+}
+
+func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
 	urlValues := url.Values{
 		"q":        []string{searchString},
 		"page":     []string{strconv.Itoa(page)},
@@ -367,15 +374,20 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 	path := "search/repositories?" + urlValues.Encode()
 	var response restSearchResponse
 	if err := c.requestGet(ctx, "", path, &response); err != nil {
-		return nil, false, 1, err
+		return RepositoryListPage{}, err
 	}
 	if response.IncompleteResults {
-		return nil, false, 1, errors.Errorf("github repository search returned incomplete results: query=%q page=%d total=%d", searchString, page, response.TotalCount)
+		return RepositoryListPage{}, errors.Errorf("github repository search returned incomplete results. This is an ephemeral error: query=%q page=%d total=%d", searchString, page, response.TotalCount)
 	}
-	repos = make([]*Repository, 0, len(response.Items))
+	repos := make([]*Repository, 0, len(response.Items))
 	for _, restRepo := range response.Items {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	c.addRepositoriesToCache("", repos)
-	return repos, len(repos) > 0, 1, nil
+
+	return RepositoryListPage{
+		TotalCount:  response.TotalCount,
+		Repos:       repos,
+		HasNextPage: page*100 < response.TotalCount,
+	}, nil
 }

@@ -788,10 +788,24 @@ type Query {
     ): SurveyResponseConnection!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
+    # Queries which are for internal use only.
+    #
+    # FOR INTERNAL USE ONLY.
+    internal: InternalQuery!
     # Queries that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
+}
+
+# Queries which are for internal use only.
+type InternalQuery {
+    # Indicates that there are repositories which are managed via enable/disable state.
+    # This field will disappear in 3.4. See https://github.com/sourcegraph/sourcegraph/issues/2025
+    #
+    # Only site admins can query this field.
+    # FOR INTERNAL USE ONLY.
+    allowEnableDisable: Boolean!
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
@@ -2705,6 +2719,9 @@ type Site implements SettingsSubject {
     updateCheck: UpdateCheck!
     # Whether the site needs to be configured to add repositories.
     needsRepositoryConfiguration: Boolean!
+    # Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
+    # Only applies if the site does not have a valid license.
+    freeUsersExceeded: Boolean!
     # Whether the site has zero access-enabled repositories.
     noRepositoriesEnabled: Boolean!
     # Alerts to display to the viewer.
@@ -2985,6 +3002,9 @@ type ProductSubscriptionStatus {
     # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
     # it is the user limit for instances without a license, or null if there is no limit.
     maximumAllowedUserCount: Int
+    # The number of free users allowed on a site without a license before a warning is shown to all users, or null
+    # if a valid license is in use.
+    noLicenseWarningUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
 }

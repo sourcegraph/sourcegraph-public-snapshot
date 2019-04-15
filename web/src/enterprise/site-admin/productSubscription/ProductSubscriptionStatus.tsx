@@ -68,7 +68,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             productNameWithBrand,
             actualUserCount,
             actualUserCountDate,
-            maximumAllowedUserCount,
+            noLicenseWarningUserCount,
             license,
         } = this.state.statusOrError
 
@@ -112,8 +112,8 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                 <>
                                     <div className="mr-2">
                                         Add a license key to activate Sourcegraph Enterprise features{' '}
-                                        {typeof maximumAllowedUserCount === 'number'
-                                            ? `or to exceed ${maximumAllowedUserCount} users`
+                                        {typeof noLicenseWarningUserCount === 'number'
+                                            ? `or to exceed ${noLicenseWarningUserCount} users`
                                             : ''}
                                     </div>
                                     <div className="text-nowrap flex-wrap-reverse">
@@ -163,7 +163,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                         productNameWithBrand
                         actualUserCount
                         actualUserCountDate
-                        maximumAllowedUserCount
+                        noLicenseWarningUserCount
                         license {
                             tags
                             userCount
