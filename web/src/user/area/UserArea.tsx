@@ -61,7 +61,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
     )
 
 const NotFoundPage = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}

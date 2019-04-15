@@ -49,7 +49,7 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
         return (
             <div className="user-subscriptions-product-subscriptions-page">
                 <PageTitle title="Subscriptions" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Subscriptions</h2>
                     <Link to={`${this.props.match.path}/new`} className="btn btn-primary">
                         New subscription

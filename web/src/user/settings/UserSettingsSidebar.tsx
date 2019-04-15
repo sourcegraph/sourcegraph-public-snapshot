@@ -19,6 +19,7 @@ import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 export interface UserSettingsSidebarItemConditionContext {
+    user: Pick<GQL.IUser, 'viewerCanAdminister'>
     authProviders: GQL.IAuthProvider[]
 }
 
@@ -56,7 +57,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 <SidebarGroupItems>
                     {props.items.account.map(
                         ({ label, to, exact, condition = () => true }) =>
-                            condition({ authProviders: props.authProviders }) && (
+                            condition({ authProviders: props.authProviders, user: props.user }) && (
                                 <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
                                     {label}
                                 </SidebarNavItem>
