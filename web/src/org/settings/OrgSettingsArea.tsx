@@ -7,8 +7,8 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { OrgAccountProfilePage } from './OrgAccountProfilePage'
-import { OrgAccountSidebar } from './OrgAccountSidebar'
+import { OrgAccountSidebar } from './OrgSettingsSidebar'
+import { OrgAccountProfilePage } from './profile/OrgSettingsProfilePage'
 
 const NotFoundPage = () => (
     <HeroPage
