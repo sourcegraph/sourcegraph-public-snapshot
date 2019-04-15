@@ -347,16 +347,16 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         const actions = quickConfigureActions
         return (
-            <div>
+            <div className="critical-config-editor">
                 {actions && (
-                    <div className="critical-config-page__action-groups">
-                        <div className="critical-config-page__action-groups">
-                            <div className="critical-config-page__action-group-header">Quick configure:</div>
-                            <div className="critical-config-page__actions">
+                    <div className="critical-config-editor__action-groups">
+                        <div className="critical-config-editor__action-groups">
+                            <div className="critical-config-editor__action-group-header">Quick configure:</div>
+                            <div className="critical-config-editor__actions">
                                 {actions.map(({ id, label }) => (
                                     <button
                                         key={id}
-                                        className="btn btn-secondary btn-sm critical-config-page__action"
+                                        className="btn btn-secondary btn-sm critical-config-editor__action"
                                         // tslint:disable-next-line:jsx-no-lambda
                                         onClick={() => this.runAction(id, this.configEditor)}
                                         type="button"
@@ -368,39 +368,36 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
                         </div>
                     </div>
                 )}
-                <div className="critical-config-editor">
-                    <div
-                        className={`critical-config-editor__monaco-reserved-space${
-                            this.state.criticalConfig ? ' critical-config-editor__monaco-reserved-space--monaco' : ''
-                        }`}
-                    >
-                        {!this.state.criticalConfig && this.state.canShowLoader && <div>Loading...</div>}
 
-                        {this.state.criticalConfig && (
-                            <MonacoEditor
-                                content={this.state.criticalConfig.Contents}
-                                language="json"
-                                onDidContentChange={this.onDidContentChange}
-                                onDidSave={this.onDidSave}
-                                editorWillMount={this.editorWillMount}
-                            />
-                        )}
-                    </div>
-                    <button onClick={this.onDidSave}>Save changes</button>
-                    {this.state.showSaving && (
-                        <span className="critical-config-editor__status-indicator">Saving...</span>
-                    )}
-                    {this.state.showSaved && (
-                        <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--success">
-                            Saved!
-                        </span>
-                    )}
-                    {this.state.showSavingError && (
-                        <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--error">
-                            {this.state.showSavingError}
-                        </span>
+                <div
+                    className={`critical-config-editor__monaco-reserved-space${
+                        this.state.criticalConfig ? ' critical-config-editor__monaco-reserved-space--monaco' : ''
+                    }`}
+                >
+                    {!this.state.criticalConfig && this.state.canShowLoader && <div>Loading...</div>}
+
+                    {this.state.criticalConfig && (
+                        <MonacoEditor
+                            content={this.state.criticalConfig.Contents}
+                            language="json"
+                            onDidContentChange={this.onDidContentChange}
+                            onDidSave={this.onDidSave}
+                            editorWillMount={this.editorWillMount}
+                        />
                     )}
                 </div>
+                <button onClick={this.onDidSave}>Save changes</button>
+                {this.state.showSaving && <span className="critical-config-editor__status-indicator">Saving...</span>}
+                {this.state.showSaved && (
+                    <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--success">
+                        Saved!
+                    </span>
+                )}
+                {this.state.showSavingError && (
+                    <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--error">
+                        {this.state.showSavingError}
+                    </span>
+                )}
             </div>
         )
     }
