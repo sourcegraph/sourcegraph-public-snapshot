@@ -509,7 +509,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 						// return 1000 results. We specially handle this case
 						// to ensure the admin gets a detailed error
 						// message. https://github.com/sourcegraph/sourcegraph/issues/2562
-						ch <- batch{err: errors.Wrapf(err, `repositoryQuery %q would return %d results. GitHub's Search API only returns up to 1000 results. Please adjust your repository query into multiple queries such that each returns less than 1000 results. For example: {"repositoryQuery": %s}`, repositoryQuery, reposPage.TotalCount, exampleRepositoryQuerySplit(repositoryQuery))}
+						ch <- batch{err: errors.Errorf(`repositoryQuery %q would return %d results. GitHub's Search API only returns up to 1000 results. Please adjust your repository query into multiple queries such that each returns less than 1000 results. For example: {"repositoryQuery": %s}`, repositoryQuery, reposPage.TotalCount, exampleRepositoryQuerySplit(repositoryQuery))}
 						break
 					}
 
