@@ -7,6 +7,7 @@ import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
+import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
@@ -139,6 +140,7 @@ function createExtensionAPI(
     const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
+    const content = new ExtContent(proxy.content)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -252,6 +254,11 @@ function createExtensionAPI(
                 commands.registerCommand({ command, callback }),
 
             executeCommand: (command: string, ...args: any[]) => commands.executeCommand(command, args),
+        },
+
+        content: {
+            registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
+                content.registerLinkPreviewProvider(urlMatchPattern, provider),
         },
 
         internal: {

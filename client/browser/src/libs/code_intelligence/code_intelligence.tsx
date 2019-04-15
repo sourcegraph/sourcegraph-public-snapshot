@@ -11,7 +11,17 @@ import * as H from 'history'
 import { isEqual, uniqBy } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { animationFrameScheduler, EMPTY, fromEvent, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import {
+    animationFrameScheduler,
+    EMPTY,
+    from,
+    fromEvent,
+    Observable,
+    of,
+    Subject,
+    Subscription,
+    Unsubscribable,
+} from 'rxjs'
 import {
     catchError,
     concatAll,
@@ -22,6 +32,7 @@ import {
     mergeMap,
     observeOn,
     startWith,
+    switchMap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
@@ -30,6 +41,7 @@ import { TextModel } from '../../../../../shared/src/api/client/services/modelSe
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
+import { ApplyLinkPreviewOptions } from '../../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
@@ -58,11 +70,13 @@ import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/compone
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { sourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
+import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeViewSpec, CodeViewSpecResolver, fetchFileContents, trackCodeViews } from './code_views'
+import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
 import { ViewResolver } from './views'
@@ -93,7 +107,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 export type CodeHostContext = RepoSpec & Partial<RevSpec>
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
-export interface CodeHost {
+export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * The name of the code host. This will be added as a className to the overlay mount.
      */
@@ -141,6 +155,11 @@ export interface CodeHost {
      * The set of code views tracked on a page is the union of all code views found using `codeViewSpecs` and `codeViewResolver`.
      */
     codeViewSpecResolver?: ViewResolver<CodeViewSpecResolver>
+
+    /**
+     * Resolve {@link ContentView}s from the DOM.
+     */
+    contentViewResolvers?: ViewResolver<ContentView>[]
 
     /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
@@ -626,6 +645,17 @@ export function handleCodeHost({
                 uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
             )
         })
+    )
+
+    // Show link previews on content views (feature-flagged).
+    subscriptions.add(
+        handleContentViews(
+            from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
+                switchMap(enabled => (enabled ? mutations : []))
+            ),
+            { extensionsController },
+            codeHost
+        )
     )
 
     return subscriptions

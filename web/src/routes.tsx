@@ -42,6 +42,9 @@ const RedirectToUserPage = React.lazy(async () => ({
 const RedirectToUserSettings = React.lazy(async () => ({
     default: (await import('./user/settings/RedirectToUserSettings')).RedirectToUserSettings,
 }))
+const SnippetsPage = React.lazy(async () => ({
+    default: (await import('./snippets/SnippetsPage')).SnippetsPage,
+}))
 
 export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
 
@@ -201,6 +204,10 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
             window.location.reload()
             return null
         },
+    },
+    {
+        path: '/snippets',
+        render: props => <SnippetsPage {...props} />,
     },
     repoRevRoute,
 ]
