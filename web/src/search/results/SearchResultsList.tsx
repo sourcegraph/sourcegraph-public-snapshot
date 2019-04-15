@@ -24,7 +24,7 @@ import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { displayPerformanceWarning } from '../backend'
+import { shouldDisplayPerformanceWarning } from '../backend'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
@@ -271,7 +271,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         this.componentUpdates.next(this.props)
 
         this.subscriptions.add(
-            displayPerformanceWarning(this.props.deployType).subscribe(displayPerformanceWarning =>
+            shouldDisplayPerformanceWarning(this.props.deployType).subscribe(displayPerformanceWarning =>
                 this.setState({ displayPerformanceWarning })
             )
         )
