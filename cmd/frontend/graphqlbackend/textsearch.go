@@ -884,7 +884,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	}()
 
 	wg.Wait()
-	tr.LogFields(otlog.Object("err after wait", err), otlog.Object("unflattened", unflattened))
 	if err != nil {
 		return nil, common, err
 	}
