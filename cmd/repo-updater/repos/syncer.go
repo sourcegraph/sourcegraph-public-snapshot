@@ -50,7 +50,9 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...strin
 }
 
 // Sync synchronizes the repositories of the given external service kinds.
-func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) {
+func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err error) {
+	defer s.observe(s.now(), &diff, &err)
+
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, kinds...); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
@@ -72,7 +74,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) 
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
-	diff := NewDiff(sourced, stored)
+	diff = NewDiff(sourced, stored)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
@@ -230,4 +232,20 @@ func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) 
 	defer cancel()
 
 	return srcs.ListRepos(ctx)
+}
+
+func (s *Syncer) observe(began time.Time, d *Diff, err *error) {
+	now := s.now()
+	took := now.Sub(began).Seconds()
+	repos := d.Repos()
+	synced := len(d.Added) + len(d.Modified) + len(d.Deleted)
+
+	for _, kind := range repos.Kinds() {
+		lastSync.WithLabelValues(kind).Set(float64(now.Unix()))
+		syncedTotal.WithLabelValues(kind).Add(float64(synced))
+		syncDuration.WithLabelValues(kind).Observe(took)
+		if err != nil && *err != nil {
+			syncErrors.WithLabelValues(kind).Add(1)
+		}
+	}
 }

@@ -49,26 +49,33 @@ var (
 		Help:      "The last time a comprehensive Gitolite sync finished",
 	})
 
-	otherExternalServicesLastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	lastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "other_external_services_sync_last_time",
-		Help:      "The last time a sync of OTHER external services finished",
-	}, []string{"id"})
+		Name:      "syncer_sync_last_time",
+		Help:      "The last time a sync finished",
+	}, []string{"kind"})
 
-	otherExternalServicesSyncedReposTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "other_external_services_synced_repos_total",
-		Help:      "Total number of synced repositories of OTHER external services",
-	}, []string{"id", "success"})
+		Name:      "syncer_synced_repos_total",
+		Help:      "Total number of synced repositories",
+	}, []string{"kind"})
 
-	otherExternalServicesSyncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "syncer_sync_errors_total",
+		Help:      "Total number of sync errors",
+	}, []string{"kind"})
+
+	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "other_external_services_sync_duration",
-		Help:      "Time spent syncing a single external service of kind OTHER",
-	}, []string{"id"})
+		Help:      "Time spent syncing",
+	}, []string{"kind"})
 
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
