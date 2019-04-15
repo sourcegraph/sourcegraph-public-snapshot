@@ -356,18 +356,13 @@ func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*
 		}
 	}
 
-	// We need to adjust rate limit heuristics for search since it is 30r/min
-	// vs the normal 5000r/hour.
-	searchClient := github.NewClient(apiURL, config.Token, cli)
-	searchClient.RateLimit.NoWaitMinimum = 8
-
 	return &githubConnection{
 		config:           config,
 		exclude:          exclude,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, config.Token, cli),
-		searchClient:     searchClient,
+		searchClient:     github.NewClient(apiURL, config.Token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }

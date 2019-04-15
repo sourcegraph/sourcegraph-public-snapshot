@@ -14,16 +14,6 @@ import (
 type Monitor struct {
 	HeaderPrefix string // "X-" (GitHub) or "" (GitLab)
 
-	// NoWaitMinimum determines if RecommendedWaitForBackgroundOp returns a
-	// zero duration. Psuedocode
-	//
-	//   limit > NoWaitMinimum:     0
-	//   limit > NoWaitMinimum / 2: 250ms
-	//   default:                   time.Until(reset) / remaining
-	//
-	// Defaults to 500 (suitable for GitHub's 5000 hour limit)
-	NoWaitMinimum int
-
 	mu        sync.Mutex
 	known     bool
 	limit     int       // last RateLimit-Limit HTTP response header value
@@ -83,15 +73,10 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	if n < 1 {
 		return timeRemaining
 	}
-
-	noWait := float64(c.NoWaitMinimum)
-	if noWait == 0 {
-		noWait = 500
-	}
-	if n > noWait {
+	if n > 500 {
 		return 0
 	}
-	if n > noWait/2 {
+	if n > 250 {
 		return 200 * time.Millisecond
 	}
 	// N is limitRemaining / cost. timeRemaining / N is thus
