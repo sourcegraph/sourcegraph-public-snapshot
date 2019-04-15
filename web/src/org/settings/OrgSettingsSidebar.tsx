@@ -1,6 +1,11 @@
 import * as React from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
-import { SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS } from '../../components/Sidebar'
+import {
+    SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
+    SidebarGroup,
+    SidebarGroupHeader,
+    SidebarGroupItems,
+} from '../../components/Sidebar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
@@ -27,17 +32,17 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
                 </SiteAdminAlert>
             )}
 
-            <div className="card">
-                <div className="card-header">Organization</div>
-                <div className="list-group list-group-flush">
+            <SidebarGroup>
+                <SidebarGroupHeader label="Organization" />
+                <SidebarGroupItems>
                     <NavLink to={match.url} exact={true} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
                         Settings
                     </NavLink>
                     <NavLink to={`${match.url}/profile`} exact={true} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
                         Profile
                     </NavLink>
-                </div>
-            </div>
+                </SidebarGroupItems>
+            </SidebarGroup>
         </div>
     )
 }
