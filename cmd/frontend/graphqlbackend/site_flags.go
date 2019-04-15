@@ -73,3 +73,25 @@ func (*siteResolver) DisableBuiltInSearches() bool {
 }
 
 func (*siteResolver) SendsEmailVerificationEmails() bool { return conf.EmailVerificationRequired() }
+
+func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
+	if envvar.SourcegraphDotComMode() {
+		return false, nil
+	}
+
+	// If a license exists, warnings never need to be shown.
+	if info, err := GetConfiguredProductLicenseInfo(); info != nil {
+		return false, err
+	}
+	// If OSS, warnings never need to be shown.
+	if NoLicenseWarningUserCount == nil {
+		return false, nil
+	}
+
+	userCount, err := db.Users.Count(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+
+	return *NoLicenseWarningUserCount < int32(userCount), nil
+}
