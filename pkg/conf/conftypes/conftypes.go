@@ -10,6 +10,10 @@ type ServiceConnections struct {
 	// GitServers is the addresses of gitserver instances that should be talked
 	// to.
 	GitServers []string `json:"gitServers"`
+
+	// PostgresDSN is the PostgreSQL DB data source name.
+	// eg: "postgres://sg@pgsql/sourcegraph?sslmode=false"
+	PostgresDSN string `json:"postgresDSN"`
 }
 
 // RawUnified is the unparsed variant of conf.Unified.
