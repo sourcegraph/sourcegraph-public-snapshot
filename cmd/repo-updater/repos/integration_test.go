@@ -30,7 +30,11 @@ func TestIntegration(t *testing.T) {
 		Isolation: sql.LevelSerializable,
 	})
 
-	store := repos.NewObservedStore(dbstore, log15.Root())
+	store := repos.NewObservedStore(
+		dbstore,
+		log15.Root(),
+		repos.StoreMetrics{},
+	)
 
 	for _, tc := range []struct {
 		name string

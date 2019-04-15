@@ -417,7 +417,8 @@ func TestSources_ListRepos(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			srcs, err := NewSourcer(cf, ObservedSource(log15.Root(), nil))(tc.svcs...)
+			obs := ObservedSource(log15.Root(), SourceMetrics{})
+			srcs, err := NewSourcer(cf, obs)(tc.svcs...)
 			if err != nil {
 				t.Fatal(err)
 			}

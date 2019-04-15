@@ -62,17 +62,31 @@ func main() {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
-	store := repos.NewObservedStore(
-		repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable}),
-		log15.Root(),
-	)
+	var store repos.Store
+	{
+		m := repos.NewStoreMetrics()
+		for _, om := range []*repos.OperationMetrics{
+			m.Transact,
+			m.Done,
+			m.ListRepos,
+			m.UpsertRepos,
+			m.ListExternalServices,
+			m.UpsertExternalServices,
+		} {
+			om.MustRegister(prometheus.DefaultRegisterer)
+		}
+
+		store = repos.NewObservedStore(
+			repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable}),
+			log15.Root(),
+			m,
+		)
+	}
 
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
-		prometheus.Register(m.Duration)
-		prometheus.Register(m.Errors)
-		prometheus.Register(m.Repos)
+		m.ListRepos.MustRegister(prometheus.DefaultRegisterer)
 
 		cf := repos.NewHTTPClientFactory()
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
