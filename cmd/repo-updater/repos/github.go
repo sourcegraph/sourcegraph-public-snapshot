@@ -427,7 +427,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 			switch repositoryQuery {
 			case "public":
 				if c.githubDotCom {
-					ch <- batch{err: errors.New(`ignoring unsupported configuration "public" for "repositoryQuery" for github.com`)}
+					ch <- batch{err: errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)}
 					return
 				}
 				var sinceRepoID int64
@@ -439,13 +439,13 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 
 					repos, err := c.client.ListPublicRepositories(ctx, sinceRepoID)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing public repositories: sinceRepoID=%d", sinceRepoID)}
+						ch <- batch{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
 						return
 					}
 					if len(repos) == 0 {
 						return
 					}
-					log15.Debug("github sync public", "repos", len(repos), "err", err)
+					log15.Debug("github sync public", "repos", len(repos), "error", err)
 					for _, r := range repos {
 						if sinceRepoID < r.DatabaseID {
 							sinceRepoID = r.DatabaseID
@@ -466,7 +466,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					var err error
 					repos, hasNextPage, rateLimitCost, err = c.client.ListUserRepositories(ctx, page)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing affiliated GitHub repositories page %d", page)}
+						ch <- batch{err: errors.Wrapf(err, "failed to list affiliated GitHub repositories page %d", page)}
 						break
 					}
 					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
@@ -506,7 +506,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					var err error
 					repos, hasNextPage, rateLimitCost, err = c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery)}
+						ch <- batch{err: errors.Wrapf(err, "failed to list GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery)}
 						break
 					}
 					rateLimitRemaining, rateLimitReset, _ := c.searchClient.RateLimit.Get()
