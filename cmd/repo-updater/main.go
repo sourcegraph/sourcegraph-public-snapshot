@@ -29,7 +29,7 @@ import (
 const port = "3182"
 
 func main() {
-	syncerEnabled, _ := strconv.ParseBool(env.Get("SRC_SYNCER_ENABLED", "false", "Use the new repo metadata syncer."))
+	syncerEnabled, _ := strconv.ParseBool(env.Get("SRC_SYNCER_ENABLED", "true", "Use the new repo metadata syncer."))
 
 	ctx := context.Background()
 	env.Lock()
