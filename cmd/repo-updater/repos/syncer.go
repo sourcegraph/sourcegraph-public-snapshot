@@ -6,7 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -75,24 +74,6 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (_ Diff, err error) 
 
 	diff := NewDiff(sourced, stored)
 	upserts := s.upserts(diff)
-
-	if len(diff.Added) > 0 {
-		log15.Debug("syncer.sync", "diff.added", pp.Sprint(diff.Added))
-	}
-
-	if len(diff.Modified) > 0 {
-		log15.Debug("syncer.sync", "diff.modified", pp.Sprint(diff.Modified))
-	}
-
-	if len(diff.Deleted) > 0 {
-		log15.Debug("syncer.sync", "diff.deleted", pp.Sprint(diff.Deleted))
-	}
-
-	if len(diff.Unmodified) > 0 {
-		log15.Debug("syncer.sync", "diff.unmodified", pp.Sprint(diff.Unmodified))
-	}
-
-	log15.Debug("syncer.sync", "upserts", pp.Sprint(upserts))
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")

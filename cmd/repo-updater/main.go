@@ -149,6 +149,18 @@ func main() {
 		// Start new repo syncer updates scheduler relay thread.
 		go func() {
 			for diff := range diffs {
+				if len(diff.Added) > 0 {
+					log15.Debug("syncer.sync", "diff.added", diff.Added.Names())
+				}
+
+				if len(diff.Modified) > 0 {
+					log15.Debug("syncer.sync", "diff.modified", diff.Modified.Names())
+				}
+
+				if len(diff.Deleted) > 0 {
+					log15.Debug("syncer.sync", "diff.deleted", diff.Deleted.Names())
+				}
+
 				if !conf.Get().DisableAutoGitUpdates {
 					repos.Scheduler.Update(diff.Repos()...)
 				}
