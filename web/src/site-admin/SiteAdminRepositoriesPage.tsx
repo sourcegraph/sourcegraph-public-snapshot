@@ -12,7 +12,7 @@ import { catchError } from 'rxjs/operators'
 import { Activation, ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { asError } from '../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -165,7 +165,11 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
 interface Props extends RouteComponentProps<any>, ActivationProps {}
 
 interface State {
-    showEnabled: 'loading' | boolean | Error
+    /**
+     * Field indicating if we should show enable/disable actions and filters.
+     * 'loading' while fetching the value or ErrorLike if fetching fails.
+     */
+    showEnabledOrError: 'loading' | boolean | ErrorLike
 }
 
 class FilteredRepositoryConnection extends FilteredConnection<
@@ -229,7 +233,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
     private repositoryUpdates = new Subject<void>()
 
     public state: State = {
-        showEnabled: 'loading',
+        showEnabledOrError: 'loading',
     }
 
     public componentDidMount(): void {
@@ -238,7 +242,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
         this.subscriptions.add(
             fetchAllowEnableDisable()
                 .pipe(catchError(err => [asError(err)]))
-                .subscribe(v => this.setState({ showEnabled: v }))
+                .subscribe(v => this.setState({ showEnabledOrError: v }))
         )
 
         // Refresh global alert about enabling repositories when the user visits here.
@@ -257,18 +261,18 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
     }
 
     public render(): JSX.Element | null {
-        if (this.state.showEnabled === 'loading') {
+        if (this.state.showEnabledOrError === 'loading') {
             return <LoadingSpinner className="icon-inline" />
         }
 
-        if (this.state.showEnabled instanceof Error) {
-            return <div className="alert alert-danger">{upperFirst(this.state.showEnabled.message)}</div>
+        if (isErrorLike(this.state.showEnabledOrError)) {
+            return <div className="alert alert-danger">{upperFirst(this.state.showEnabledOrError.message)}</div>
         }
 
         const nodeProps: Pick<RepositoryNodeProps, 'onDidUpdate' | 'showEnabled' | 'activation'> = {
             onDidUpdate: this.onDidUpdateRepository,
             activation: this.props.activation,
-            showEnabled: this.state.showEnabled,
+            showEnabled: this.state.showEnabledOrError,
         }
 
         const filters = [
