@@ -9,7 +9,6 @@ import { ajax } from 'rxjs/ajax'
 import { catchError, delay, distinctUntilChanged, mapTo, startWith, takeUntil } from 'rxjs/operators'
 import './CriticalConfigEditor.scss'
 import { MonacoEditor } from './MonacoEditor'
-import { json } from 'body-parser'
 
 const DEBUG_LOADING_STATE_DELAY = 0 // ms
 
@@ -419,7 +418,6 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
                     label,
                     id,
                     run: editor => {
-                        // copy-pasta
                         editor.focus()
                         editor.pushUndoStop()
                         const { edits, selectText } = run(editor.getValue())
@@ -527,6 +525,10 @@ function toMonacoEdits(
     }))
 }
 
+/**
+ * Returns the (line, column) position into the text (@param text) at the given
+ * byte offset (@param offset).
+ */
 function getPositionAt(text: string, offset: number): _monaco.IPosition {
     const lines = text.split('\n')
     let pos = 0
