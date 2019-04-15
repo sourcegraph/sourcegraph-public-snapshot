@@ -37,7 +37,7 @@ interface State {}
 /**
  * Displays access tokens whose subject is a specific user.
  */
-export class UserAccountTokensPage extends React.PureComponent<Props, State> {
+export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
     private static clearNewTokenTimer: number | undefined = undefined
 
     public state: State = {}
@@ -45,10 +45,10 @@ export class UserAccountTokensPage extends React.PureComponent<Props, State> {
     private accessTokenUpdates = new Subject<void>()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserAccountTokens')
+        eventLogger.logViewEvent('UserSettingsTokens')
 
-        if (UserAccountTokensPage.clearNewTokenTimer !== undefined) {
-            clearTimeout(UserAccountTokensPage.clearNewTokenTimer)
+        if (UserSettingsTokensPage.clearNewTokenTimer !== undefined) {
+            clearTimeout(UserSettingsTokensPage.clearNewTokenTimer)
         }
     }
 

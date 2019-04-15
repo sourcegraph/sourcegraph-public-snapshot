@@ -1,16 +1,16 @@
 import React from 'react'
-import { userAccountAreaRoutes } from '../../../user/settings/routes'
-import { UserAccountAreaRoute } from '../../../user/settings/UserSettingsArea'
-const UserAccountExternalAccountsPage = React.lazy(async () => ({
-    default: (await import('./UserSettingsExternalAccountsPage')).UserAccountExternalAccountsPage,
+import { userSettingsAreaRoutes } from '../../../user/settings/routes'
+import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
+const UserSettingsExternalAccountsPage = React.lazy(async () => ({
+    default: (await import('./UserSettingsExternalAccountsPage')).UserSettingsExternalAccountsPage,
 }))
 
-export const enterpriseUserAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [
-    ...userAccountAreaRoutes,
+export const enterpriseUserSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
+    ...userSettingsAreaRoutes,
     {
         path: '/external-accounts',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserAccountExternalAccountsPage {...props} />,
+        render: props => <UserSettingsExternalAccountsPage {...props} />,
     },
 ]

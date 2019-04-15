@@ -10,8 +10,8 @@ const SettingsArea = React.lazy(async () => ({
     default: (await import('../../settings/SettingsArea')).SettingsArea,
 }))
 
-const UserAccountArea = React.lazy(async () => ({
-    default: (await import('../settings/UserSettingsArea')).UserAccountArea,
+const UserSettingsArea = React.lazy(async () => ({
+    default: (await import('../settings/UserSettingsArea')).UserSettingsArea,
 }))
 
 export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
@@ -47,10 +47,10 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
         path: '/account',
         // tslint:disable-next-line:jsx-no-lambda
         render: props => (
-            <UserAccountArea
+            <UserSettingsArea
                 {...props}
-                routes={props.userAccountAreaRoutes}
-                sideBarItems={props.userAccountSideBarItems}
+                routes={props.userSettingsAreaRoutes}
+                sideBarItems={props.userSettingsSideBarItems}
                 isLightTheme={props.isLightTheme}
             />
         ),

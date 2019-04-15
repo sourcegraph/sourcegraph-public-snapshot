@@ -17,8 +17,8 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
-import { UserAccountAreaRoute } from '../settings/UserSettingsArea'
-import { UserAccountSidebarItems } from '../settings/UserSettingsSidebar'
+import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
@@ -74,8 +74,8 @@ interface UserAreaProps
         ActivationProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
 
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
@@ -114,8 +114,8 @@ export interface UserAreaRouteContext extends PlatformContextProps, SettingsCasc
      * user is Bob.
      */
     authenticatedUser: GQL.IUser | null
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
 }
 
 /**
@@ -186,8 +186,8 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             activation: this.props.activation,
-            userAccountAreaRoutes: this.props.userAccountAreaRoutes,
-            userAccountSideBarItems: this.props.userAccountSideBarItems,
+            userSettingsAreaRoutes: this.props.userSettingsAreaRoutes,
+            userSettingsSideBarItems: this.props.userSettingsSideBarItems,
         }
         return (
             <div className="user-area area--vertical">

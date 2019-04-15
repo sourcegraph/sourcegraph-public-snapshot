@@ -155,14 +155,14 @@ interface UserEmailConnection {
     totalCount: number
 }
 
-export class UserAccountEmailsPage extends React.Component<Props, State> {
+export class UserSettingsEmailsPage extends React.Component<Props, State> {
     public state: State = {}
 
     private userEmailUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserAccountEmails')
+        eventLogger.logViewEvent('UserSettingsEmails')
 
         this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
     }

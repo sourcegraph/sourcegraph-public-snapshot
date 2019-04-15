@@ -26,7 +26,7 @@ interface State {
     newPasswordConfirmation: string
 }
 
-export class UserAccountPasswordPage extends React.Component<Props, State> {
+export class UserSettingsPasswordPage extends React.Component<Props, State> {
     public state: State = {
         oldPassword: '',
         newPassword: '',
@@ -40,7 +40,7 @@ export class UserAccountPasswordPage extends React.Component<Props, State> {
     private setNewPasswordConfirmationField = (e: HTMLInputElement | null) => (this.newPasswordConfirmationField = e)
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserAccountPassword')
+        eventLogger.logViewEvent('UserSettingsPassword')
         this.subscriptions.add(
             this.submits
                 .pipe(
@@ -82,7 +82,7 @@ export class UserAccountPasswordPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="user-account-password-page">
+            <div className="user-settings-password-page">
                 <PageTitle title="Change password" />
                 <h2>Change password</h2>
                 {this.props.authenticatedUser.id !== this.props.user.id ? (
@@ -144,7 +144,7 @@ export class UserAccountPasswordPage extends React.Component<Props, State> {
                                 />
                             </div>
                             <button
-                                className="btn btn-primary user-account-password-page__button"
+                                className="btn btn-primary user-settings-password-page__button"
                                 type="submit"
                                 disabled={this.state.loading}
                             >

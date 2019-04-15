@@ -58,7 +58,7 @@ interface State {
 /**
  * A page with a form to create an access token for a user.
  */
-export class UserAccountCreateAccessTokenPage extends React.PureComponent<Props, State> {
+export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props, State> {
     public state: State = {
         note: '',
         scopes: [AccessTokenScopes.UserAll],

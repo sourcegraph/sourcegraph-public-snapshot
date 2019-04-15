@@ -13,19 +13,19 @@ import { siteFlags } from '../../site/backend'
 import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
-import { UserAccountSidebar, UserAccountSidebarItems } from './UserSettingsSidebar'
+import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
-export interface UserAccountAreaRoute extends RouteDescriptor<UserAccountAreaRouteContext> {}
+export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
 
-export interface UserAccountAreaProps extends UserAreaRouteContext, RouteComponentProps<{}>, ThemeProps {
+export interface UserSettingsAreaProps extends UserAreaRouteContext, RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: GQL.IUser
-    sideBarItems: UserAccountSidebarItems
-    routes: ReadonlyArray<UserAccountAreaRoute>
+    sideBarItems: UserSettingsSidebarItems
+    routes: ReadonlyArray<UserSettingsAreaRoute>
 }
 
-export interface UserAccountAreaRouteContext extends UserAccountAreaProps {
+export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
     /**
      * The user who is the subject of the page. This can differ from the authenticatedUser (e.g., when a site admin
      * is viewing another user's account page).
@@ -37,11 +37,11 @@ export interface UserAccountAreaRouteContext extends UserAccountAreaProps {
     onDidPresentNewToken: (value?: GQL.ICreateAccessTokenResult) => void
 }
 
-interface UserAccountAreaState {
+interface UserSettingsAreaState {
     authProviders: GQL.IAuthProvider[]
 
     /**
-     * Holds the newly created access token (from UserAccountCreateAccessTokenPage), if any. After
+     * Holds the newly created access token (from UserSettingsCreateAccessTokenPage), if any. After
      * it is displayed to the user, this subject's value is set back to undefined.
      */
     newlyCreatedAccessToken?: GQL.ICreateAccessTokenResult
@@ -50,9 +50,9 @@ interface UserAccountAreaState {
 /**
  * Renders a layout of a sidebar and a content area to display user settings.
  */
-export const UserAccountArea = withAuthenticatedUser(
-    class UserAccountArea extends React.Component<UserAccountAreaProps, UserAccountAreaState> {
-        public state: UserAccountAreaState = { authProviders: [] }
+export const UserSettingsArea = withAuthenticatedUser(
+    class UserSettingsArea extends React.Component<UserSettingsAreaProps, UserSettingsAreaState> {
+        public state: UserSettingsAreaState = { authProviders: [] }
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
@@ -87,7 +87,7 @@ export const UserAccountArea = withAuthenticatedUser(
             }
 
             const { children, ...props } = this.props
-            const context: UserAccountAreaRouteContext = {
+            const context: UserSettingsAreaRouteContext = {
                 ...props,
                 newToken: this.state.newlyCreatedAccessToken,
                 user: this.props.user,
@@ -98,7 +98,7 @@ export const UserAccountArea = withAuthenticatedUser(
 
             return (
                 <div className="user-settings-area area">
-                    <UserAccountSidebar
+                    <UserSettingsSidebar
                         items={this.props.sideBarItems}
                         authProviders={this.state.authProviders}
                         {...this.props}

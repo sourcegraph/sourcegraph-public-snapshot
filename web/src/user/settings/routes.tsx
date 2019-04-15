@@ -1,53 +1,53 @@
 import React from 'react'
-import { UserAccountAreaRoute } from './UserSettingsArea'
-const UserAccountCreateAccessTokenPage = React.lazy(async () => ({
-    default: (await import('./accessTokens/UserSettingsCreateAccessTokenPage')).UserAccountCreateAccessTokenPage,
+import { UserSettingsAreaRoute } from './UserSettingsArea'
+const UserSettingsCreateAccessTokenPage = React.lazy(async () => ({
+    default: (await import('./accessTokens/UserSettingsCreateAccessTokenPage')).UserSettingsCreateAccessTokenPage,
 }))
-const UserAccountEmailsPage = React.lazy(async () => ({
-    default: (await import('./emails/UserSettingsEmailsPage')).UserAccountEmailsPage,
+const UserSettingsEmailsPage = React.lazy(async () => ({
+    default: (await import('./emails/UserSettingsEmailsPage')).UserSettingsEmailsPage,
 }))
-const UserAccountPasswordPage = React.lazy(async () => ({
-    default: (await import('./auth/UserSettingsPasswordPage')).UserAccountPasswordPage,
+const UserSettingsPasswordPage = React.lazy(async () => ({
+    default: (await import('./auth/UserSettingsPasswordPage')).UserSettingsPasswordPage,
 }))
-const UserAccountProfilePage = React.lazy(async () => ({
-    default: (await import('./profile/UserSettingsProfilePage')).UserAccountProfilePage,
+const UserSettingsProfilePage = React.lazy(async () => ({
+    default: (await import('./profile/UserSettingsProfilePage')).UserSettingsProfilePage,
 }))
-const UserAccountTokensPage = React.lazy(async () => ({
-    default: (await import('./accessTokens/UserSettingsTokensPage')).UserAccountTokensPage,
+const UserSettingsTokensPage = React.lazy(async () => ({
+    default: (await import('./accessTokens/UserSettingsTokensPage')).UserSettingsTokensPage,
 }))
 
-export const userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [
+export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     // Render empty page if no settings page selected
     {
         path: '/profile',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserAccountProfilePage {...props} />,
+        render: props => <UserSettingsProfilePage {...props} />,
     },
     {
         path: '/password',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserAccountPasswordPage {...props} />,
+        render: props => <UserSettingsPasswordPage {...props} />,
     },
     {
         path: '/emails',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserAccountEmailsPage {...props} />,
+        render: props => <UserSettingsEmailsPage {...props} />,
     },
     {
         path: '/tokens',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserAccountTokensPage {...props} />,
+        render: props => <UserSettingsTokensPage {...props} />,
         condition: () => window.context.accessTokensAllow !== 'none',
     },
     {
         path: '/tokens/new',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserAccountCreateAccessTokenPage {...props} />,
+        render: props => <UserSettingsCreateAccessTokenPage {...props} />,
         condition: () => window.context.accessTokensAllow !== 'none',
     },
 ]

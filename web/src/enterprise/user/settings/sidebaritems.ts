@@ -1,16 +1,16 @@
-import { userAccountSideBarItems } from '../../../user/settings/sidebaritems'
+import { userSettingsSideBarItems } from '../../../user/settings/sidebaritems'
 import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
 
-export const enterpriseUserAccountSideBarItems = {
-    ...userAccountSideBarItems,
+export const enterpriseUserSettingsSideBarItems = {
+    ...userSettingsSideBarItems,
     account: [
-        ...userAccountSideBarItems.account.slice(0, 1),
+        ...userSettingsSideBarItems.account.slice(0, 1),
         {
             label: 'External accounts',
             to: `/external-accounts`,
             exact: true,
             condition: () => authExp,
         },
-        ...userAccountSideBarItems.account.slice(2),
+        ...userSettingsSideBarItems.account.slice(2),
     ],
 }

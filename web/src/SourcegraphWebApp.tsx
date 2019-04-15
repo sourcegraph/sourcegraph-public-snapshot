@@ -42,8 +42,8 @@ import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import { UserAccountAreaRoute } from './user/settings/UserSettingsArea'
-import { UserAccountSidebarItems } from './user/settings/UserSettingsSidebar'
+import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
@@ -56,8 +56,8 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     routes: ReadonlyArray<LayoutRouteProps>
