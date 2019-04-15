@@ -74,7 +74,7 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer func(begin time.Time) {
 		if h.log != nil {
-			h.log.Info(
+			h.log.Debug(
 				"http.request",
 				"method", r.Method,
 				"route", r.URL.Path,
