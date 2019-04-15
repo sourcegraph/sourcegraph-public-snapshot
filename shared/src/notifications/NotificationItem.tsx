@@ -71,11 +71,10 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         const bootstrapClass = getBootstrapClass(this.props.notification.type)
         return (
             <div
-                className={`sourcegraph-notification-item alert alert-${bootstrapClass} p-0 ${this.props.className ||
-                    ''}`}
+                className={`sourcegraph-notification-item alert alert-${bootstrapClass} ${this.props.className || ''}`}
             >
-                <div className="w-100 d-flex align-items-start">
-                    <div className="p-2 flex-grow-1 mw-100">
+                <div className="sourcegraph-notification-item__body-container">
+                    <div className="sourcegraph-notification-item__body">
                         <div
                             className="sourcegraph-notification-item__title"
                             dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.notification.message || '') }}
@@ -92,7 +91,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     {(!this.props.notification.progress || !this.state.progress) && (
                         <button
                             type="button"
-                            className="sourcegraph-notification-item__close close p-2 flex-grow-0 flex-shrink-0"
+                            className="sourcegraph-notification-item__close close"
                             onClick={this.onDismiss}
                             aria-label="Close"
                         >
