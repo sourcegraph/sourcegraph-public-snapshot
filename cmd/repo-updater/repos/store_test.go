@@ -33,7 +33,7 @@ func TestFakeStore(t *testing.T) {
 		t.Run(tc.name, tc.test(repos.NewObservedStore(
 			new(repos.FakeStore),
 			log15.Root(),
-			repos.StoreMetrics{},
+			repos.NewStoreMetrics(),
 		)))
 	}
 }

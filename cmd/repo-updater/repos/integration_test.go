@@ -33,7 +33,7 @@ func TestIntegration(t *testing.T) {
 	store := repos.NewObservedStore(
 		dbstore,
 		log15.Root(),
-		repos.StoreMetrics{},
+		repos.NewStoreMetrics(),
 	)
 
 	for _, tc := range []struct {
