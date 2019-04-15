@@ -49,7 +49,7 @@ func (m *OperationMetrics) Observe(secs, count float64, err *error, lvals ...str
 
 	m.Duration.WithLabelValues(lvals...).Observe(secs)
 	m.Count.WithLabelValues(lvals...).Add(count)
-	if err != nil {
+	if err != nil && *err != nil {
 		m.Errors.WithLabelValues(lvals...).Add(1)
 	}
 }
