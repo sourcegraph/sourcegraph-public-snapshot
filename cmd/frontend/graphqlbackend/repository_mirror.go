@@ -32,13 +32,14 @@ type repositoryMirrorInfoResolver struct {
 
 	// memoize the gitserver RepoInfo call
 	repoInfoOnce     sync.Once
-	repoInfoResponse *protocol.RepoInfoResponse
+	repoInfoResponse *protocol.RepoInfo
 	repoInfoErr      error
 }
 
-func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfoResponse, error) {
+func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
 	r.repoInfoOnce.Do(func() {
-		r.repoInfoResponse, r.repoInfoErr = gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
+		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
+		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.repo.Name], err
 	})
 	return r.repoInfoResponse, r.repoInfoErr
 }

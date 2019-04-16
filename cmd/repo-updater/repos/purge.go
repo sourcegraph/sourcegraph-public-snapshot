@@ -72,15 +72,20 @@ func purge(ctx context.Context, log log15.Logger) error {
 		// We skip repositories that have been cloned in the last 12
 		// hours. This is to give time for a user to enable a repository they
 		// manually placed directly into gitserver's repository directory.
-		if info, err := gitserver.DefaultClient.RepoInfo(ctx, repo); err != nil {
+		infos, err := gitserver.DefaultClient.RepoInfo(ctx, repo)
+		if err != nil {
 			// Do not fail at this point, just log so we can remove other
 			// repos.
 			log.Error("failed to get RepoInfo of cloned repository", "repo", repo, "error", err)
 			purgeFailed.Inc()
 			failed++
 			continue
-		} else if info.CloneTime != nil && time.Since(*info.CloneTime) < 12*time.Hour {
-			log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", time.Since(*info.CloneTime))
+		}
+
+		info := infos.Results[repo]
+		age := time.Since(*info.CloneTime)
+		if info.CloneTime != nil && age < 12*time.Hour {
+			log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", age)
 			purgeSkipped.Inc()
 			skipped++
 			continue
@@ -89,8 +94,7 @@ func purge(ctx context.Context, log log15.Logger) error {
 		// Race condition: A repo can be re-enabled between our listing and
 		// now. This should be very rare, so we ignore it since it will get
 		// cloned again.
-		err := gitserver.DefaultClient.Remove(ctx, repo)
-		if err != nil {
+		if err = gitserver.DefaultClient.Remove(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other
 			// repos.
 			log.Error("failed to remove disabled repository", "repo", repo, "error", err)
