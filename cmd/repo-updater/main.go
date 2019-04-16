@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
@@ -79,6 +80,7 @@ func main() {
 			repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable}),
 			log15.Root(),
 			m,
+			trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		)
 	}
 

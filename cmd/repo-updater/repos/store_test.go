@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/kylelemons/godebug/pretty"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -34,6 +36,7 @@ func TestFakeStore(t *testing.T) {
 			new(repos.FakeStore),
 			log15.Root(),
 			repos.NewStoreMetrics(),
+			trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		)))
 	}
 }

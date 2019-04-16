@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"testing"
 
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -34,6 +36,7 @@ func TestIntegration(t *testing.T) {
 		dbstore,
 		log15.Root(),
 		repos.NewStoreMetrics(),
+		trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	)
 
 	for _, tc := range []struct {

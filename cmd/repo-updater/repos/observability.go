@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -300,8 +301,7 @@ func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 // Done calls into the inner Store Done method.
 func (o *ObservedStore) Done(errs ...*error) {
 	tr := o.txtrace
-	f := Field{}
-	tr.LazyPrintf("Store.Done")
+	tr.LogFields(otlog.String("event", "Store.Done"))
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		if len(errs) == 0 {
