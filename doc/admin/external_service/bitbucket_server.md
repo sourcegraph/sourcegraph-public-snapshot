@@ -14,7 +14,7 @@ To set this up, add Bitbucket Server as an external service to Sourcegraph:
 
 ## Repository syncing
 
-There are four fields for configuring which repositories are mirrored/synchronized:
+There are four fields for configuring which repositories are mirrored:
 
 - [`repos`](bitbucket_server.md#configuration)<br>A list of repositories in `projectKey/repositorySlug` format.
 - [`repositoryQuery`](bitbucket_server.md#configuration)<br>A list of strings with one pre-defined option (`none`), and/or a [Bitbucket Server Repo Search Request Query Parameters](https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355).
