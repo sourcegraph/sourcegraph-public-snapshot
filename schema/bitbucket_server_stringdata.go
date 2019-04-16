@@ -38,12 +38,12 @@ const BitbucketServerSchemaJSON = `{
       "examples": ["https://bitbucket.example.com"]
     },
     "token": {
-      "description": "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add.\n\nFor Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the \"username\" and \"password\" fields.",
+      "description": "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add. Also set the corresponding \"username\" field.\n\nFor Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the \"username\" and \"password\" fields.",
       "type": "string",
       "minLength": 1
     },
     "username": {
-      "description": "The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"password\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
+      "description": "The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"token\" or \"password\" field.",
       "type": "string"
     },
     "password": {
@@ -82,19 +82,21 @@ const BitbucketServerSchemaJSON = `{
         "minLength": 1
       },
       "default": ["none"],
-      "minItems": 1
+      "minItems": 1,
+      "examples": [["?name=my-repo&projectname=PROJECT&visibility=private"]]
     },
     "repos": {
-      "description": "An array of repository \"projectKey/repositorySlug\" strings specifying  repositories to mirror on Sourcegraph.",
+      "description": "An array of repository \"projectKey/repositorySlug\" strings specifying repositories to mirror on Sourcegraph.",
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "string",
         "pattern": "^[\\w-]+/[\\w.-]+$"
-      }
+      },
+      "examples": [["myproject/myrepo", "myproject/myotherrepo"]]
     },
     "exclude": {
-      "description": "A list of repositories to never mirror from this Bitbucket Server instance. Takes precedence over \"repos\" and \"repositoryQuery\".",
+      "description": "A list of repositories to never mirror from this Bitbucket Server instance. Takes precedence over \"repos\" and \"repositoryQuery\".\n\nSupports excluding by name ({\"name\": \"projectKey/repositorySlug\"}) or by ID ({\"id\": 42}).",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -113,7 +115,11 @@ const BitbucketServerSchemaJSON = `{
             "type": "integer"
           }
         }
-      }
+      },
+      "examples": [
+        [{ "name": "myproject/myrepo" }, { "id": 42 }],
+        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }]
+      ]
     },
     "initialRepositoryEnablement": {
       "description": "Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.",
