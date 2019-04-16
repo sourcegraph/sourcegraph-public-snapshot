@@ -38,7 +38,8 @@
     "repos": {
       "description": "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",
       "type": "array",
-      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" }
+      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" },
+      "examples": [["owner/name"], ["kubernetes/kubernetes", "golang/go", "facebook/react"]]
     },
     "exclude": {
       "description": "A list of repositories to never mirror from this GitHub instance. Takes precedence over \"repos\" and \"repositoryQuery\" configuration.",
@@ -56,12 +57,16 @@
             "pattern": "^[\\w-]+/[\\w.-]+$"
           },
           "id": {
-            "description": "The ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring.",
+            "description": "The node ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring. Use this to exclude the repository, even if renamed. Note: This is the GraphQL ID, not the GitHub database ID. eg: \"curl https://api.github.com/repos/vuejs/vue | jq .node_id\"",
             "type": "string",
             "minLength": 1
           }
         }
-      }
+      },
+      "examples": [
+        [{ "name": "owner/name" }, { "id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==" }],
+        [{ "name": "vuejs/vue" }, { "name": "php/php-src" }]
+      ]
     },
     "repositoryQuery": {
       "description": "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:\n\n- `public` mirrors all public repositories for GitHub Enterprise and is the equivalent of `none` for GitHub\n\n- `affiliated` mirrors all repositories affiliated with the configured token's user:\n\t- Private repositories with read access\n\t- Public repositories owned by the user or their orgs\n\t- Public repositories with write access\n\n- `none` mirrors no repositories (except those specified in the `repos` configuration property or added manually)\n\n- All other values are executed as a GitHub advanced repository search as described at https://github.com/search/advanced. Example: to sync all repositories from the \"sourcegraph\" organization including forks the query would be \"org:sourcegraph fork:true\".\n\nIf multiple values are provided, their results are unioned.\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
