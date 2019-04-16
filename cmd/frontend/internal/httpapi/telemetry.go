@@ -32,14 +32,14 @@ func init() {
 				var tr eventlogger.TelemetryRequest
 				err := json.NewDecoder(req.Body).Decode(&tr)
 				if err != nil {
-					log15.Error("Decode", "error", err)
+					log15.Error("telemetryHandler: Decode", "error", err)
 				}
 
-				data, err := json.Marshal(tr.Payload)
-				if err != nil {
-					log15.Error("Marshal", "error", err)
+				var buf bytes.Buffer
+				if err := json.NewEncoder(&buf).Encode(tr.Payload); err != nil {
+					log15.Error("telemetryHandler: Encode", "error", err)
 				}
-				req.Body = ioutil.NopCloser(bytes.NewReader(data))
+				req.Body = ioutil.NopCloser(&buf)
 			},
 			ErrorLog: log.New(env.DebugOut, "telemetry proxy: ", log.LstdFlags),
 		}
@@ -48,12 +48,12 @@ func init() {
 			var tr eventlogger.TelemetryRequest
 			err := json.NewDecoder(r.Body).Decode(&tr)
 			if err != nil {
-				log15.Error("Decode", "error", err)
+				log15.Error("telemetryHandler: Decode(2)", "error", err)
 			}
 			if tr.UserID != 0 && tr.EventLabel == "SavedSearchEmailNotificationSent" {
 				err = usagestats.LogActivity(true, tr.UserID, "", "STAGEVERIFY")
 				if err != nil {
-					log15.Error("usagestats.LogActivity", "error", err)
+					log15.Error("telemetryHandler: usagestats.LogActivity", "error", err)
 				}
 			}
 

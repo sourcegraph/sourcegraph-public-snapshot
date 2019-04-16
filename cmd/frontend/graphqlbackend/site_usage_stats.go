@@ -110,78 +110,45 @@ type siteUsageStagesResolver struct {
 }
 
 func (s *siteUsageStagesResolver) Manage() int32 {
-	if s.stages != nil {
-		return s.stages.Manage
-	}
-	return 0
+	return s.stages.Manage
 }
 
 func (s *siteUsageStagesResolver) Plan() int32 {
-	if s.stages != nil {
-		return s.stages.Plan
-	}
-	return 0
+	return s.stages.Plan
 }
 
 func (s *siteUsageStagesResolver) Code() int32 {
-	if s.stages != nil {
-		return s.stages.Code
-	}
-	return 0
+	return s.stages.Code
 }
 
 func (s *siteUsageStagesResolver) Review() int32 {
-	if s.stages != nil {
-		return s.stages.Review
-	}
-	return 0
+	return s.stages.Review
 }
 
 func (s *siteUsageStagesResolver) Verify() int32 {
-	if s.stages != nil {
-		return s.stages.Verify
-	}
-	return 0
+	return s.stages.Verify
 }
 
 func (s *siteUsageStagesResolver) Package() int32 {
-	if s.stages != nil {
-		return s.stages.Package
-	}
-	return 0
+	return s.stages.Package
 }
 
 func (s *siteUsageStagesResolver) Deploy() int32 {
-	if s.stages != nil {
-		return s.stages.Deploy
-	}
-	return 0
+	return s.stages.Deploy
 }
 
 func (s *siteUsageStagesResolver) Configure() int32 {
-	if s.stages != nil {
-		return s.stages.Configure
-	}
-	return 0
+	return s.stages.Configure
 }
 
 func (s *siteUsageStagesResolver) Monitor() int32 {
-	if s.stages != nil {
-		return s.stages.Monitor
-	}
-	return 0
+	return s.stages.Monitor
 }
 
 func (s *siteUsageStagesResolver) Secure() int32 {
-	if s.stages != nil {
-		return s.stages.Secure
-	}
-	return 0
+	return s.stages.Secure
 }
 
 func (s *siteUsageStagesResolver) Automate() int32 {
-	if s.stages != nil {
-		return s.stages.Automate
-	}
-	return 0
+	return s.stages.Automate
 }

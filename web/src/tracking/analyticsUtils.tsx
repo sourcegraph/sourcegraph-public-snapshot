@@ -60,8 +60,10 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
     const parsedUrl = new URL(url)
 
     const utmSource = parsedUrl.searchParams.get('utm_source')
-    if (utmSource === 'saved-search-email' || utmSource === 'saved-search-slack') {
-        eventLogger.log('SavedSearchClicked')
+    if (utmSource === 'saved-search-email') {
+        eventLogger.log('SavedSearchEmailClicked')
+    } else if (utmSource === 'saved-search-slack') {
+        eventLogger.log('SavedSearchSlackClicked')
     }
 
     return {
