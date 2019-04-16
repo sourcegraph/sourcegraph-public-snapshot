@@ -38,7 +38,7 @@ func (t Tracer) New(ctx context.Context, family, title string) (*Trace, context.
 	)
 	family, ctx = nameWithParents(ctx, family)
 	tr := nettrace.New(family, title)
-	return &Trace{span: span, trace: tr}, ctx
+	return &Trace{span: span, trace: tr, family: family}, ctx
 }
 
 const traceNameKey = "traceName"
@@ -49,11 +49,20 @@ func nameWithParents(ctx context.Context, name string) (string, context.Context)
 	return name, context.WithValue(ctx, traceNameKey, name+" > ")
 }
 
+// ContextWithSpan returns a new context.Context that holds a reference to
+// trace's SpanContext.
+func ContextWithTrace(ctx context.Context, tr *Trace) context.Context {
+	ctx = opentracing.ContextWithSpan(ctx, tr.span)
+	ctx = context.WithValue(ctx, traceNameKey, tr.family)
+	return ctx
+}
+
 // Trace is a combined version of golang.org/x/net/trace.Trace and
 // opentracing.Span. Use New to construct one.
 type Trace struct {
-	trace nettrace.Trace
-	span  opentracing.Span
+	trace  nettrace.Trace
+	span   opentracing.Span
+	family string
 }
 
 // LazyLog adds x to the net/trace event log. It will be evaluated each time

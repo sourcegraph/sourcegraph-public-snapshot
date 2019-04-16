@@ -274,7 +274,7 @@ func NewStoreMetrics() StoreMetrics {
 // Transact calls into the inner Store Transact method and
 // returns an observed TxStore.
 func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
-	tr, ctx := trace.New(ctx, "Store.Transact", "")
+	tr, ctx := o.trace(ctx, "Store.Transact")
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -332,7 +332,7 @@ func (o *ObservedStore) Done(errs ...*error) {
 
 // ListExternalServices calls into the inner Store and registers the observed results.
 func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*ExternalService, err error) {
-	tr, ctx := trace.New(ctx, "Store.ListExternalServices", "")
+	tr, ctx := o.trace(ctx, "Store.ListExternalServices")
 	tr.LogFields(
 		otlog.Object("args.ids", args.IDs),
 		otlog.Object("args.kinds", args.Kinds),
@@ -362,7 +362,7 @@ func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreList
 
 // UpsertExternalServices calls into the inner Store and registers the observed results.
 func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) (err error) {
-	tr, ctx := trace.New(ctx, "Store.UpsertExternalServices", "")
+	tr, ctx := o.trace(ctx, "Store.UpsertExternalServices")
 	tr.LogFields(
 		otlog.Int("count", len(svcs)),
 		otlog.Object("names", ExternalServices(svcs).DisplayNames()),
@@ -388,7 +388,7 @@ func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*Ext
 
 // ListRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) (rs []*Repo, err error) {
-	tr, ctx := trace.New(ctx, "Store.ListRepos", "")
+	tr, ctx := o.trace(ctx, "Store.ListRepos")
 	tr.LogFields(
 		otlog.Object("args.names", args.Names),
 		otlog.Object("args.ids", args.IDs),
@@ -416,7 +416,7 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 
 // UpsertRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
-	tr, ctx := trace.New(ctx, "Store.UpsertRepos", "")
+	tr, ctx := o.trace(ctx, "Store.UpsertRepos")
 	tr.LogFields(otlog.Int("count", len(repos)))
 
 	defer func(began time.Time) {
@@ -434,10 +434,12 @@ func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err er
 }
 
 func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
-	if o.txctx != nil {
-		ctx = o.txctx
+	txctx := o.txctx
+	if txctx == nil {
+		txctx = ctx
 	}
-	return trace.New(ctx, family, "")
+	tr, _ := trace.New(txctx, family, "")
+	return tr, trace.ContextWithTrace(ctx, tr)
 }
 
 func log(lg ErrorLogger, msg string, err *error, ctx ...interface{}) {
