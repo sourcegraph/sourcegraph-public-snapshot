@@ -107,6 +107,7 @@ export class CompletionWidget extends React.Component<Props, State> {
                 handled = this.scrollUp()
                 break
             case Key.Enter:
+            case Key.Tab:
                 handled = this.selectHighlightedItem()
                 break
             case Key.Escape:
