@@ -36,9 +36,6 @@ func NewFakeSource(svc *ExternalService, err error, rs ...*Repo) *FakeSource {
 	return &FakeSource{svc: svc, err: err, repos: rs}
 }
 
-// Kinds returns the kinds of repos this source yields.
-func (s FakeSource) Kinds() []string { return []string{s.svc.Kind} }
-
 // ListRepos returns the Repos that FakeSource was instantiated with
 // as well as the error, if any.
 func (s FakeSource) ListRepos(context.Context) ([]*Repo, error) {
