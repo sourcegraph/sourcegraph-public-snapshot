@@ -311,6 +311,7 @@ func (o *ObservedStore) Done(errs ...*error) {
 
 		for _, err := range errs {
 			if err != nil && *err != nil {
+				done = true
 				tr.SetError(*err)
 				o.metrics.Done.Observe(secs, 1, err)
 				log(o.log, "store.done", err)
@@ -431,11 +432,4 @@ func log(lg ErrorLogger, msg string, err *error, ctx ...interface{}) {
 	args = append(args, ctx...)
 
 	lg.Error(msg, args...)
-}
-
-func max(n int, rs ...*Repo) []*Repo {
-	if len(rs) > n {
-		return rs[:n]
-	}
-	return rs
 }
