@@ -274,6 +274,7 @@ func NewStoreMetrics() StoreMetrics {
 // returns an observed TxStore.
 func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 	tr, ctx := trace.New(ctx, "Store.Transact", "")
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		o.metrics.Transact.Observe(secs, 1, &err)
@@ -303,18 +304,26 @@ func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 func (o *ObservedStore) Done(errs ...*error) {
 	tr := o.txtrace
 	tr.LogFields(otlog.String("event", "Store.Done"))
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		if len(errs) == 0 {
+		done := false
+
+		for _, err := range errs {
+			if err != nil && *err != nil {
+				tr.SetError(*err)
+				o.metrics.Done.Observe(secs, 1, err)
+				log(o.log, "store.done", err)
+			}
+		}
+
+		if !done {
 			o.metrics.Done.Observe(secs, 1, nil)
 		}
-		for _, err := range errs {
-			tr.SetError(*err)
-			o.metrics.Done.Observe(secs, 1, err)
-			log(o.log, "store.done", err)
-		}
+
 		tr.Finish()
 	}(time.Now())
+
 	o.store.(TxStore).Done(errs...)
 }
 
@@ -326,8 +335,12 @@ func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreList
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		count := float64(len(es))
+
 		o.metrics.ListExternalServices.Observe(secs, count, &err)
-		log(o.log, "store.list-external-services", &err, "args", fmt.Sprintf("%+v", args))
+		log(o.log, "store.list-external-services", &err,
+			"args", fmt.Sprintf("%+v", args),
+			"count", len(es),
+		)
 
 		tr.LogFields(
 			otlog.Int("count", len(es)),
@@ -337,6 +350,7 @@ func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreList
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
+
 	return o.store.ListExternalServices(ctx, args)
 }
 
@@ -352,6 +366,7 @@ func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*Ext
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		count := float64(len(svcs))
+
 		o.metrics.UpsertExternalServices.Observe(secs, count, &err)
 		log(o.log, "store.upsert-external-services", &err,
 			"count", len(svcs),
@@ -361,31 +376,49 @@ func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*Ext
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
+
 	return o.store.UpsertExternalServices(ctx, svcs...)
 }
 
 // ListRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) (rs []*Repo, err error) {
+	tr, ctx := trace.New(ctx, "Store.ListRepos", "")
+	tr.LogFields(otlog.Object("args", args))
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		count := float64(len(rs))
+
 		o.metrics.ListRepos.Observe(secs, count, &err)
-		log(o.log, "store.list-external-services", &err, "args", fmt.Sprintf("%+v", args))
+		log(o.log, "store.list-repos", &err,
+			"args", fmt.Sprintf("%+v", args),
+			"count", len(rs),
+		)
+
+		tr.LogFields(otlog.Int("count", len(rs)))
+		tr.SetError(err)
+		tr.Finish()
 	}(time.Now())
+
 	return o.store.ListRepos(ctx, args)
 }
 
 // UpsertRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
+	tr, ctx := trace.New(ctx, "Store.UpsertRepos", "")
+	tr.LogFields(otlog.Int("count", len(repos)))
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		count := float64(len(repos))
+
 		o.metrics.UpsertRepos.Observe(secs, count, &err)
-		log(o.log, "store.list-external-services", &err,
-			"count", len(repos),
-			"names", Repos(repos).Names(),
-		)
+		log(o.log, "store.upsert-repos", &err, "count", len(repos))
+
+		tr.SetError(err)
+		tr.Finish()
 	}(time.Now())
+
 	return o.store.UpsertRepos(ctx, repos...)
 }
 
@@ -398,4 +431,11 @@ func log(lg ErrorLogger, msg string, err *error, ctx ...interface{}) {
 	args = append(args, ctx...)
 
 	lg.Error(msg, args...)
+}
+
+func max(n int, rs ...*Repo) []*Repo {
+	if len(rs) > n {
+		return rs[:n]
+	}
+	return rs
 }
