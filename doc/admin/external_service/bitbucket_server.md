@@ -14,21 +14,22 @@ To set this up, add Bitbucket Server as an external service to Sourcegraph:
 
 ## Repository syncing
 
+There are four fields for configuring which repositories are mirrored/synchronized:
+
+- [`repos`](bitbucket_server.md#configuration)<br>A list of repositories in `projectKey/repositorySlug` format.
+- [`repositoryQuery`](bitbucket_server.md#configuration)<br>A list of strings with one pre-defined option (`none`), and/or a [Bitbucket Server Repo Search Request Query Parameters](https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355).
+- [`exclude`](bitbucket_server.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, and `repositoryQuery` fields.
+- ['excludePersonalRepositories'](bitbucket_server.md#configuration)<br>With this enabled, Sourcegraph will exclude any personal repositories from being imported, even if it has access to them.
+
 ### Authentication for older Bitbucket Server versions
 
 Bitbucket Server versions older than v5.5 require specifying a less secure username and password combination, as those versions of Bitbucket Server do not support [personal access tokens](https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html).
 
-### Excluding personal repositories
-
-Sourcegraph will be able to view and clone the repositories that the account you provide has access to. For example, if you provide a personal access token or username/password of an administrator Bitbucket Server account, Sourcegraph will be able to view and clone all repositories -- even personal ones.
-
-We recommend that you create a new Bitbucket user account specifically for Sourcegraph (e.g. a "Sourcegraph Bot" account) and only give that account access to the repositories you wish to be viewable on Sourcegraph.
-
-If you don't wish to create a separate Bitbucket user account just for Sourcegraph, you can specify `"excludePersonalRepositories": true` in the configuration. With this enabled, Sourcegraph will exclude any personal repositories from being imported, even if it has access to them.
-
 ### HTTPS cloning
 
-Sourcegraph by default clones repositories from your Bitbucket Server via HTTP(S), using the access token or account credentials you provide in the configuration. SSH cloning is not used, so you don't need to configure SSH cloning.
+Sourcegraph by default clones repositories from your Bitbucket Server via HTTP(S), using the access token or account credentials you provide in the configuration. The [`username`](bitbucket_server.md#configuration) field is always used when cloning, so is required.
+
+SSH cloning is not used, so you don't need to configure SSH cloning.
 
 ## Configuration
 
