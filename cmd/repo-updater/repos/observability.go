@@ -131,6 +131,7 @@ type ObservedStore struct {
 	metrics StoreMetrics
 	tracer  trace.Tracer
 	txtrace *trace.Trace
+	txctx   context.Context
 }
 
 // StoreMetrics encapsulates the Prometheus metrics of a Store.
@@ -297,6 +298,7 @@ func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 		metrics: o.metrics,
 		tracer:  o.tracer,
 		txtrace: tr,
+		txctx:   ctx,
 	}, nil
 }
 
@@ -331,7 +333,10 @@ func (o *ObservedStore) Done(errs ...*error) {
 // ListExternalServices calls into the inner Store and registers the observed results.
 func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*ExternalService, err error) {
 	tr, ctx := trace.New(ctx, "Store.ListExternalServices", "")
-	tr.LogFields(otlog.Object("args", args))
+	tr.LogFields(
+		otlog.Object("args.ids", args.IDs),
+		otlog.Object("args.kinds", args.Kinds),
+	)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -384,7 +389,12 @@ func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*Ext
 // ListRepos calls into the inner Store and registers the observed results.
 func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) (rs []*Repo, err error) {
 	tr, ctx := trace.New(ctx, "Store.ListRepos", "")
-	tr.LogFields(otlog.Object("args", args))
+	tr.LogFields(
+		otlog.Object("args.names", args.Names),
+		otlog.Object("args.ids", args.IDs),
+		otlog.Object("args.kinds", args.Kinds),
+		otlog.Bool("args.deleted", args.Deleted),
+	)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -421,6 +431,13 @@ func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err er
 	}(time.Now())
 
 	return o.store.UpsertRepos(ctx, repos...)
+}
+
+func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
+	if o.txctx != nil {
+		ctx = o.txctx
+	}
+	return trace.New(ctx, family, "")
 }
 
 func log(lg ErrorLogger, msg string, err *error, ctx ...interface{}) {
