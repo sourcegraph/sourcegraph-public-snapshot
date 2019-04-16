@@ -14,10 +14,10 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func (s *Server) doRepoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfoResponse, error) {
+func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfo, error) {
 	repo = protocol.NormalizeRepo(repo)
 	dir := path.Join(s.ReposDir, string(repo))
-	resp := protocol.RepoInfoResponse{
+	resp := protocol.RepoInfo{
 		Cloned: repoCloned(dir),
 	}
 	if resp.Cloned {
@@ -64,10 +64,10 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]*protocol.RepoInfoResponse, len(req.Repos)),
+		Results: make(map[api.RepoName]*protocol.RepoInfo, len(req.Repos)),
 	}
 	for _, repoName := range req.Repos {
-		result, err := s.doRepoInfo(r.Context(), repoName)
+		result, err := s.repoInfo(r.Context(), repoName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

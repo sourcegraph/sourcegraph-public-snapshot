@@ -104,8 +104,9 @@ type RepoDeleteRequest struct {
 	Repo api.RepoName
 }
 
-// RepoInfoResponse is the response to a repository information request (RepoInfoRequest).
-type RepoInfoResponse struct {
+// RepoInfo is the information requests about a single repository
+// via a RepoInfoRequest.
+type RepoInfo struct {
 	URL             string     // this repository's Git remote URL
 	CloneInProgress bool       // whether the repository is currently being cloned
 	CloneProgress   string     // a progress message from the running clone command.
@@ -123,7 +124,7 @@ type RepoInfoResponse struct {
 // for multiple repositories at the same time.
 type RepoInfoResponse struct {
 	// Results mapping from the repository name to the repository information.
-	Results map[api.RepoName]*RepoInfoResponse
+	Results map[api.RepoName]*RepoInfo
 }
 
 // CreateCommitFromPatchRequest is the request information needed for creating

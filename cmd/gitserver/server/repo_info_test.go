@@ -45,7 +45,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		defer func() { repoCloned = origRepoCloned }()
 
 		want := protocol.RepoInfoResponse{
-			Results: map[api.RepoName]*protocol.RepoInfoResponse{
+			Results: map[api.RepoName]*protocol.RepoInfo{
 				"x": {},
 			},
 		}
@@ -60,7 +60,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		defer func() { repoCloned = origRepoCloned }()
 
 		want := protocol.RepoInfoResponse{
-			Results: map[api.RepoName]*protocol.RepoInfoResponse{
+			Results: map[api.RepoName]*protocol.RepoInfo{
 				"a": {
 					CloneInProgress: true,
 					CloneProgress:   "test status",
@@ -92,7 +92,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		defer func() { repoRemoteURL = origRepoRemoteURL }()
 
 		want := protocol.RepoInfoResponse{
-			Results: map[api.RepoName]*protocol.RepoInfoResponse{
+			Results: map[api.RepoName]*protocol.RepoInfo{
 				"x": {
 					Cloned:      true,
 					LastFetched: &lastFetched,
@@ -112,7 +112,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		defer func() { repoCloned = origRepoCloned }()
 
 		want := protocol.RepoInfoResponse{
-			Results: map[api.RepoName]*protocol.RepoInfoResponse{
+			Results: map[api.RepoName]*protocol.RepoInfo{
 				"a": {
 					CloneInProgress: true,
 					CloneProgress:   "test status",
