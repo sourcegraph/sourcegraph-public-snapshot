@@ -41,7 +41,7 @@ const GitLabSchemaJSON = `{
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
     },
     "projects": {
-      "description": "A list of projects to mirror from this GitLab instance.",
+      "description": "A list of projects to mirror from this GitLab instance. Supports including by name ({\"name\": \"group/name\"}) or by ID ({\"id\": 42}).",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -51,7 +51,7 @@ const GitLabSchemaJSON = `{
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
           "name": {
-            "description": "The name of a GitLab project (\"owner/name\") to mirror.",
+            "description": "The name of a GitLab project (\"group/name\") to mirror.",
             "type": "string",
             "pattern": "^[\\w-]+/[\\w.-]+$"
           },
@@ -60,10 +60,14 @@ const GitLabSchemaJSON = `{
             "type": "integer"
           }
         }
-      }
+      },
+      "examples": [
+        [{ "name": "group/name" }, { "id": 42 }],
+        [{ "name": "gnachman/iterm2" }, { "name": "gitlab-org/gitlab-ce" }]
+      ]
     },
     "exclude": {
-      "description": "A list of projects to never mirror from this GitLab instance. Takes precedence over \"projects\" and \"projectQuery\" configuration.",
+      "description": "A list of projects to never mirror from this GitLab instance. Takes precedence over \"projects\" and \"projectQuery\" configuration. Supports excluding by name ({\"name\": \"group/name\"}) or by ID ({\"id\": 42}).",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -73,7 +77,7 @@ const GitLabSchemaJSON = `{
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
           "name": {
-            "description": "The name of a GitLab project (\"owner/name\") to exclude from mirroring.",
+            "description": "The name of a GitLab project (\"group/name\") to exclude from mirroring.",
             "type": "string",
             "pattern": "^[\\w-]+/[\\w.-]+$"
           },
@@ -82,7 +86,11 @@ const GitLabSchemaJSON = `{
             "type": "integer"
           }
         }
-      }
+      },
+      "examples": [
+        [{ "name": "group/name" }, { "id": 42 }],
+        [{ "name": "gitlab-org/gitlab-ee" }, { "name": "gitlab-com/www-gitlab-com" }]
+      ]
     },
     "projectQuery": {
       "description": "An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL path and query that targets a GitLab API endpoint returning a list of projects. If the string only contains a query, then \"projects\" is used as the path. Examples: \"?membership=true&search=foo\", \"groups/mygroup/projects\".\n\nThe special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. Here are a few endpoints that return a list of projects: https://docs.gitlab.com/ee/api/projects.html#list-all-projects, https://docs.gitlab.com/ee/api/groups.html#list-a-groups-projects, https://docs.gitlab.com/ee/api/search.html#scope-projects.",
@@ -92,7 +100,8 @@ const GitLabSchemaJSON = `{
         "type": "string",
         "minLength": 1
       },
-      "minItems": 1
+      "minItems": 1,
+      "examples": [["?membership=true&search=foo", "groups/mygroup/projects"]]
     },
     "repositoryPathPattern": {
       "description": "The pattern used to generate a the corresponding Sourcegraph repository name for a GitLab project. In the pattern, the variable \"{host}\" is replaced with the GitLab URL's host (such as gitlab.example.com), and \"{pathWithNamespace}\" is replaced with the GitLab project's \"namespace/path\" (such as \"myteam/myproject\").\n\nFor example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{pathWithNamespace}\" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
