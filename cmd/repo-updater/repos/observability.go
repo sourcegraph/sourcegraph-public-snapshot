@@ -438,7 +438,7 @@ func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace,
 	if txctx == nil {
 		txctx = ctx
 	}
-	tr, _ := trace.New(txctx, family, "")
+	tr, _ := o.tracer.New(txctx, family, "")
 	return tr, trace.ContextWithTrace(ctx, tr)
 }
 
