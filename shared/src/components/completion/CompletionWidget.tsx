@@ -218,9 +218,7 @@ export class CompletionWidget extends React.Component<Props, State> {
             return null
         }
 
-        const caretCoordinates = getCaretCoordinates(this.props.textArea, this.props.textArea.selectionStart, {
-            debug: true,
-        })
+        const caretCoordinates = getCaretCoordinates(this.props.textArea, this.props.textArea.selectionStart)
 
         // Support textareas that scroll vertically. Fixes
         // https://github.com/sourcegraph/sourcegraph/issues/3424.
