@@ -17,6 +17,7 @@ import { createLinkClickHandler } from '../../../shared/src/util/linkClickHandle
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { isDefined } from '../../../shared/src/util/types'
 import { COMPLETION_WIDGET_CLASS_PROPS } from '../components/completion/styles'
+import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'
 import { setElementTooltip } from '../components/tooltip/Tooltip'
 
 interface Props extends ExtensionsControllerProps {
@@ -131,7 +132,7 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
                                 dangerousInnerHTML={renderMarkdown(view.content)}
                                 extensionsController={props.extensionsController}
                                 setElementTooltip={setElementTooltip}
-                                linkPreviewContentClass="mx-1 rounded border p-1 small bg-secondary text-muted"
+                                linkPreviewContentClass={LINK_PREVIEW_CLASS}
                             >
                                 {props => <Markdown {...props} />}
                             </WithLinkPreviews>
