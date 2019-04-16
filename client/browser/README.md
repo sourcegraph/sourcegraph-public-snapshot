@@ -70,6 +70,8 @@ For each browser run:
 yarn run dev
 ```
 
+To only build for a single browser (which makes builds faster in local development), set the env var `TARGETS=chrome` or `TARGETS=firefox`.
+
 Now, follow the steps below for the browser you intend to work with.
 
 ### Chrome

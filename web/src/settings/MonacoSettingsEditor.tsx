@@ -208,7 +208,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     public static isStandaloneCodeEditor(
         editor: monaco.editor.ICodeEditor
     ): editor is monaco.editor.IStandaloneCodeEditor {
-        return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor
+        const editorAny = editor as any
+        return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor && editorAny.addAction
     }
 
     public static addEditorAction(

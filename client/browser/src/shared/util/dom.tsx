@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 
 /**
  * commitIDFromPermalink finds the permalink element on the page and extracts
@@ -41,39 +41,48 @@ export interface MutationRecordLike {
  * Instructs the user agent to observe a given `target` (a node) and report any mutations based on
  * the criteria given by `options` (an object).
  *
- * The `options` argument allows for setting mutation
- * observation options via object members. These are the object members that
- * can be used:
- * - `childList`
- *   Set to true if mutations to target's children are to be observed.
- * - `attributes`
- *   Set to true if mutations to target's attributes are to be observed. Can be omitted if attributeOldValue or attributeFilter is
- *   specified.
- * - `characterData`
- *   Set to true if mutations to target's data are to be observed. Can be omitted if characterDataOldValue is specified.
- * - `subtree`
- *   Set to true if mutations to not just target, but
- *   also target's descendants are to be
+ * The `options` argument allows for setting mutation observation options via object members. These
+ * are the object members that can be used:
+ * - `childList` Set to true if mutations to target's children are to be observed.
+ * - `attributes` Set to true if mutations to target's attributes are to be observed. Can be omitted
+ *   if attributeOldValue or attributeFilter is specified.
+ * - `characterData` Set to true if mutations to target's data are to be observed. Can be omitted if
+ *   characterDataOldValue is specified.
+ * - `subtree` Set to true if mutations to not just target, but also target's descendants are to be
  *   observed.
- * - `attributeOldValue`
- *   Set to true if attributes is true or omitted
- *   and target's attribute value before the mutation
- *   needs to be recorded.
- * - `characterDataOldValue`
- *   Set to true if characterData is set to true or omitted and target's data before the mutation
- *   needs to be recorded.
- * - `attributeFilter`
- *   Set to a list of attribute local names (without namespace) if not all attribute mutations need to be
- *   observed and attributes is true
- *   or omitted.
+ * - `attributeOldValue` Set to true if attributes is true or omitted and target's attribute value
+ *   before the mutation needs to be recorded.
+ * - `characterDataOldValue` Set to true if characterData is set to true or omitted and target's
+ *   data before the mutation needs to be recorded.
+ * - `attributeFilter` Set to a list of attribute local names (without namespace) if not all
+ *   attribute mutations need to be observed and attributes is true or omitted.
+ *
+ * @param paused Allows pausing (via {@link MutationObserver#disconnect}) and resuming (via
+ * {@link MutationObserver#observe}) of the mutation observer. This is useful if the caller is
+ * itself mutating the DOM and doesn't want to receive events for its own mutations.
  */
-export const observeMutations = (target: Node, options?: MutationObserverInit): Observable<MutationRecord[]> =>
+export const observeMutations = (
+    target: Node,
+    options?: MutationObserverInit,
+    paused?: Subject<boolean>
+): Observable<MutationRecord[]> =>
     new Observable<MutationRecord[]>(subscriber => {
-        const mutationObserver = new MutationObserver(mutations => {
-            subscriber.next(mutations)
-        })
+        const subscriptions = new Subscription()
+        const mutationObserver = new MutationObserver(mutations => subscriber.next(mutations))
         mutationObserver.observe(target, options)
-        return () => mutationObserver.disconnect()
+        subscriptions.add(() => mutationObserver.disconnect())
+        if (paused) {
+            subscriptions.add(
+                paused.subscribe(paused => {
+                    if (paused) {
+                        mutationObserver.disconnect()
+                    } else {
+                        mutationObserver.observe(target, options)
+                    }
+                })
+            )
+        }
+        return () => subscriptions.unsubscribe()
     })
 
 /**
