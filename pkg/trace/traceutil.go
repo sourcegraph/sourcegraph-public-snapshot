@@ -17,8 +17,25 @@ var SpanURL = func(span opentracing.Span) string {
 
 // New returns a new Trace with the specified family and title.
 func New(ctx context.Context, family, title string) (*Trace, context.Context) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, family)
+	tr := Tracer{Tracer: opentracing.GlobalTracer()}
+	return tr.New(ctx, family, title)
+}
 
+// A Tracer for trace creation, parameterised over an
+// opentracing.Tracer. Use this if you don't want to use
+// the global tracer.
+type Tracer struct {
+	Tracer opentracing.Tracer
+}
+
+// New returns a new Trace with the specified family and title.
+func (t Tracer) New(ctx context.Context, family, title string) (*Trace, context.Context) {
+	span, ctx := opentracing.StartSpanFromContextWithTracer(
+		ctx,
+		t.Tracer,
+		family,
+		opentracing.Tag{Key: "title", Value: title},
+	)
 	family, ctx = nameWithParents(ctx, family)
 	tr := nettrace.New(family, title)
 	return &Trace{span: span, trace: tr}, ctx
