@@ -53,12 +53,21 @@ func ObservedHandler(
 	tr opentracing.Tracer,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return nethttp.Middleware(tr, &observedHandler{
-			next:    next,
-			log:     log,
-			metrics: m,
-			tracer:  tr,
-		})
+		return nethttp.Middleware(tr,
+			&observedHandler{
+				next:    next,
+				log:     log,
+				metrics: m,
+				tracer:  tr,
+			},
+			nethttp.OperationNameFunc(func(r *http.Request) string {
+				return "HTTP " + r.Method + ":" + r.URL.Path
+			}),
+			nethttp.MWComponentName("repo-updater"),
+			nethttp.MWSpanObserver(func(sp opentracing.Span, r *http.Request) {
+				sp.SetTag("http.uri", r.URL.EscapedPath())
+			}),
+		)
 	}
 }
 
