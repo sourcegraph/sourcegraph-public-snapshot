@@ -69,3 +69,7 @@ func incrementUserCounter(userID int32, isAuthenticated bool, counterKey string)
 
 	return c.Send("HINCRBY", key, counterKey, 1)
 }
+
+func keyFromStage(stage string) string {
+	return "user-last-active-" + stage
+}

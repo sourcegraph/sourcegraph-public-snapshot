@@ -99,7 +99,7 @@ export class EventLogger implements TelemetryService {
         }
         telligent.track('view', decoratedProps)
         if (logUserEvent) {
-            serverAdmin.trackPageView()
+            serverAdmin.trackPageView(pageTitle)
         }
         this.logToConsole(pageTitle, decoratedProps)
 

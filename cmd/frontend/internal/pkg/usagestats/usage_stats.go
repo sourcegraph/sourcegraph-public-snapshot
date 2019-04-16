@@ -300,7 +300,7 @@ func waus(weekPeriods int) ([]*types.SiteActivityPeriod, error) {
 
 	for w := 0; w < weekPeriods; w++ {
 		weekStartDate := startOfWeek(w)
-		uniques, err := uniquesCount(weekStartDate, &UsageDuration{Days: 7}, true)
+		uniques, err := uniquesCount(weekStartDate, &UsageDuration{Days: 7}, w == 0)
 		if err != nil {
 			return nil, err
 		}
@@ -338,18 +338,19 @@ func ListUsersThisMonth() (*ActiveUsers, error) {
 
 func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives []string) (*types.Stages, error) {
 	ctx := context.Background()
+
 	var (
 		manageUserIDs    = map[string]bool{}
-		planUserIDs      = map[string]bool{} // none currently
-		codeUserIDs      = map[string]bool{}
+		planUserIDs      map[string]bool // none currently
+		codeUserIDs      map[string]bool
 		reviewUserIDs    = map[string]bool{}
-		verifyUserIDs    = map[string]bool{}
-		packageUserIDs   = map[string]bool{} // none currently
-		deployUserIDs    = map[string]bool{} // none currently
-		configureUserIDs = map[string]bool{} // none currently
+		verifyUserIDs    map[string]bool
+		packageUserIDs   map[string]bool // none currently
+		deployUserIDs    map[string]bool // none currently
+		configureUserIDs map[string]bool // none currently
 		monitorUserIDs   = map[string]bool{}
-		secureUserIDs    = map[string]bool{} // none currently
-		automateUserIDs  = map[string]bool{} // none currently
+		secureUserIDs    map[string]bool // none currently
+		automateUserIDs  map[string]bool // none currently
 	)
 
 	dayStart = time.Date(dayStart.Year(), dayStart.Month(), dayStart.Day(), 0, 0, 0, 0, time.UTC)
@@ -392,10 +393,32 @@ func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives [
 
 	//// CODE ////
 	// 1) any searches
+	// 2) any file, repo, tree views
+	// 3) TODO(Dan): any code host integration usage (other than for code review)
+
+	// Loop through all active user IDs, see if any executed searches in the window
+	codeUserIDs, err = usersSince(registeredActives, dayStart, keyFromStage("STAGECODE"))
+	if err != nil {
+		return nil, err
+	}
 
 	//// REVIEW ////
+	// 1) TODO(Dan): code host integration usage for code review
+
+	reviewUserIDs, err = usersSince(registeredActives, dayStart, keyFromStage("STAGEREVIEW"))
+	if err != nil {
+		return nil, err
+	}
 
 	//// VERIFY ////
+	// 1) receiving a saved search notification (email)
+	// 2) TODO(Dan): receiving a saved search notification (slack)
+	// 3) clicking a saved search notification (email or slack)
+	// 4) TODO(Dan): having a saved search defined in your user or org settings
+	verifyUserIDs, err = usersSince(registeredActives, dayStart, keyFromStage("STAGEVERIFY"))
+	if err != nil {
+		return nil, err
+	}
 
 	//// PACKAGE ////
 	// none currently
@@ -407,6 +430,12 @@ func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives [
 	// none currently
 
 	//// MONITOR ////
+	// 1) running a diff search
+	// 2) TODO(Dan): monitoring extension enabled (e.g. LightStep, Sentry, Datadog)
+	monitorUserIDs, err = usersSince(registeredActives, dayStart, keyFromStage("STAGEMONITOR"))
+	if err != nil {
+		return nil, err
+	}
 
 	//// SECURE ////
 	// none currently
@@ -414,26 +443,6 @@ func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives [
 	//// AUTOMATE ////
 	// none currently
 
-	// // Start at 00:00:00 UTC of the last day, and loop backwards until reaching the start
-	// d := dayEnd.AddDate(0, 0, -1)
-	// for d.After(dayStart) || d.Equal(dayStart) {
-	// 	values, err := redis.Values(c.Do("SMEMBERS", usersActiveKeyFromDate(d)))
-	// 	if err != nil && err != redis.ErrNil {
-	// 		return nil, err
-	// 	}
-	// 	for _, id := range values {
-	// 		bid := id.([]byte)
-	// 		sid := string(bid)
-	// 		allUniqueUserIDs[sid] = true
-	// 		if len(bid) != 36 { // id is a numerical Sourcegraph user id, not an anonymous user's UUID
-	// 			registeredUserIDs[sid] = true
-	// 		} else {
-	// 			anonymousUserIDs[sid] = true
-	// 		}
-	// 	}
-
-	// 	d = d.AddDate(0, 0, -1)
-	// }
 	return &types.Stages{
 		Manage:    int32(len(keys(manageUserIDs))),
 		Plan:      int32(len(keys(planUserIDs))),
@@ -447,6 +456,37 @@ func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives [
 		Secure:    int32(len(keys(secureUserIDs))),
 		Automate:  int32(len(keys(automateUserIDs))),
 	}, nil
+}
+
+func usersSince(userList []string, dayStart time.Time, userField string) (map[string]bool, error) {
+	c := pool.Get()
+	defer c.Close()
+
+	var userIDs = map[string]bool{}
+	for _, uid := range userList {
+		userKey := keyPrefix + uid
+		err := c.Send("HGET", userKey, userField)
+		if err != nil && err != redis.ErrNil {
+			return nil, err
+		}
+	}
+	c.Flush()
+	for _, uid := range userList {
+		lastEvent, err := redis.String(c.Receive())
+		if err != nil && err != redis.ErrNil {
+			return nil, err
+		}
+		if lastEvent != "" {
+			t, err := time.Parse(time.RFC3339, lastEvent)
+			if err != nil {
+				return nil, err
+			}
+			if t.After(dayStart) || t.Equal(dayStart) {
+				userIDs[uid] = true
+			}
+		}
+	}
+	return userIDs, nil
 }
 
 // gc expires active user sets after the max of daysOfHistory, weeksOfHistory, and monthsOfHistory have passed.

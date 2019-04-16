@@ -58,6 +58,12 @@ export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
  */
 export function pageViewQueryParameters(url: string): EventQueryParameters {
     const parsedUrl = new URL(url)
+
+    const utmSource = parsedUrl.searchParams.get('utm_source')
+    if (utmSource === 'saved-search-email' || utmSource === 'saved-search-slack') {
+        eventLogger.log('SavedSearchClicked')
+    }
+
     return {
         utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
         utm_source: parsedUrl.searchParams.get('utm_source') || undefined,

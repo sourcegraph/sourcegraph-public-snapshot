@@ -51,6 +51,7 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 	}
 
 	if handlers, ok := eventHandlers[event]; ok {
+		fmt.Println("===== Event found: " + event)
 		for _, handler := range handlers {
 			err := handler(userID, event, isAuthenticated)
 			if err != nil {
@@ -126,7 +127,7 @@ var logCodeIntelAction = func(userID int32, _ string, isAuthenticated bool) erro
 	return incrementUserCounter(userID, isAuthenticated, fCodeIntelActions)
 }
 
-// logCodeIntelRefsAction increments a user's code intelligence usage count
+// logCodeIntelRefsAction increments a user's code intelligence usage count.
 // and their find refs action count.
 var logCodeIntelRefsAction = func(userID int32, _ string, isAuthenticated bool) error {
 	if err := incrementUserCounter(userID, isAuthenticated, fCodeIntelActions); err != nil {
@@ -135,7 +136,7 @@ var logCodeIntelRefsAction = func(userID int32, _ string, isAuthenticated bool) 
 	return incrementUserCounter(userID, isAuthenticated, fFindRefsActions)
 }
 
-// logCodeHostIntegrationUsage logs the last time a user was active on a code host integration
+// logCodeHostIntegrationUsage logs the last time a user was active on a code host integration.
 var logCodeHostIntegrationUsage = func(userID int32, _ string, isAuthenticated bool) error {
 	if !isAuthenticated {
 		return nil
@@ -148,7 +149,16 @@ var logCodeHostIntegrationUsage = func(userID int32, _ string, isAuthenticated b
 	return c.Send("HSET", key, fLastActiveCodeHostIntegration, now.Format(time.RFC3339))
 }
 
-// TODO(Dan) implement stage action logging
+// logStageEvent logs the last time a user did an action from a specific stage.
 var logStageEvent = func(userID int32, event string, isAuthenticated bool) error {
-	return nil
+	fmt.Println("===== Logging stage event: " + event + ", " + strconv.Itoa(int(userID)) + ", " + keyFromStage(event))
+	if !isAuthenticated {
+		return nil
+	}
+	key := keyPrefix + strconv.Itoa(int(userID))
+	c := pool.Get()
+	defer c.Close()
+
+	now := timeNow().UTC()
+	return c.Send("HSET", key, keyFromStage(event), now.Format(time.RFC3339))
 }

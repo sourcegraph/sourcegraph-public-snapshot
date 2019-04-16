@@ -2949,6 +2949,22 @@ type SiteUsagePeriod {
     # The count of registered users that have been active on a code host integration.
     # Excludes anonymous users.
     integrationUserCount: Int!
+    # The user count of Sourcegraph products at each stage of the software development lifecycle.
+    stages: SiteUsageStages
+}
+
+type SiteUsageStages {
+    manage: Int!
+    plan: Int!
+    code: Int!
+    review: Int!
+    verify: Int!
+    package: Int!
+    deploy: Int!
+    configure: Int!
+    monitor: Int!
+    secure: Int!
+    automate: Int!
 }
 
 # A deployment configuration.

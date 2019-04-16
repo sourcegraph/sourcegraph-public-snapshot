@@ -204,7 +204,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		time.Now().UTC().Format(time.RFC3339),
 	)
 
-	eventlogger.LogEvent("", "ServerUpdateCheck", json.RawMessage(message))
+	eventlogger.LogEvent(0, "", "ServerUpdateCheck", json.RawMessage(message))
 
 	if pubsubutil.Enabled() {
 		err := pubsubutil.Publish(pubsubutil.PubSubTopicID, message)

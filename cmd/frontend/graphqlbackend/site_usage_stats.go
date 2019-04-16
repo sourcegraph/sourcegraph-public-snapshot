@@ -95,3 +95,93 @@ func (s *siteUsagePeriodResolver) AnonymousUserCount() int32 {
 func (s *siteUsagePeriodResolver) IntegrationUserCount() int32 {
 	return s.siteUsagePeriod.IntegrationUserCount
 }
+
+func (s *siteUsagePeriodResolver) Stages() *siteUsageStagesResolver {
+	if s.siteUsagePeriod.Stages == nil {
+		return nil
+	}
+	return &siteUsageStagesResolver{
+		stages: s.siteUsagePeriod.Stages,
+	}
+}
+
+type siteUsageStagesResolver struct {
+	stages *types.Stages
+}
+
+func (s *siteUsageStagesResolver) Manage() int32 {
+	if s.stages != nil {
+		return s.stages.Manage
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Plan() int32 {
+	if s.stages != nil {
+		return s.stages.Plan
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Code() int32 {
+	if s.stages != nil {
+		return s.stages.Code
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Review() int32 {
+	if s.stages != nil {
+		return s.stages.Review
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Verify() int32 {
+	if s.stages != nil {
+		return s.stages.Verify
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Package() int32 {
+	if s.stages != nil {
+		return s.stages.Package
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Deploy() int32 {
+	if s.stages != nil {
+		return s.stages.Deploy
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Configure() int32 {
+	if s.stages != nil {
+		return s.stages.Configure
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Monitor() int32 {
+	if s.stages != nil {
+		return s.stages.Monitor
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Secure() int32 {
+	if s.stages != nil {
+		return s.stages.Secure
+	}
+	return 0
+}
+
+func (s *siteUsageStagesResolver) Automate() int32 {
+	if s.stages != nil {
+		return s.stages.Automate
+	}
+	return 0
+}

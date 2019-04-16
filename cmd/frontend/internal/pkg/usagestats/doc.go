@@ -34,6 +34,11 @@ const (
 const (
 	fPageViews                     = "pageviews"
 	fLastActive                    = "lastactive"
+	fLastStageCode                 = "laststagecode"
+	fLastStageReview               = "laststagereview"
+	fLastStageVerify               = "laststageverify"
+	fLastStageMonitor              = "laststagemonitor"
+	fLastDiffSearch                = "lastdiffsearch"
 	fSearchQueries                 = "searchqueries"
 	fCodeIntelActions              = "codeintelactions"
 	fFindRefsActions               = "codeintelactions:findrefs"
