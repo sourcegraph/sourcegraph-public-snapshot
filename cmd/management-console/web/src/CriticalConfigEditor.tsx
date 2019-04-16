@@ -66,6 +66,9 @@ interface State {
     /** Whether or not the loader can be shown yet, iff criticalConfig === null */
     canShowLoader: boolean
 
+    /** Whether or not the Monaco editor has loaded */
+    hasLoadedEditor: boolean
+
     /** Whether or not to show a "Saving..." indicator */
     showSaving: boolean
 
@@ -286,6 +289,7 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
         showSaving: false,
         showSaved: false,
         showSavingError: null,
+        hasLoadedEditor: false,
     }
 
     private configEditor?: _monaco.editor.ICodeEditor
@@ -333,8 +337,6 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
         if (editor) {
             const action = editor.getAction(id)
             action.run().then(() => void 0, (err: any) => console.error(err))
-        } else {
-            alert('Wait for editor to load before running action.')
         }
     }
 
@@ -348,7 +350,7 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
         const actions = quickConfigureActions
         return (
             <div className="critical-config-editor">
-                {actions && (
+                {actions && this.state.hasLoadedEditor && (
                     <div className="critical-config-editor__action-groups">
                         <div className="critical-config-editor__action-group-header">Quick configure:</div>
                         <div className="critical-config-editor__actions">
@@ -406,7 +408,6 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
      */
     private editorWillMount = (editor: _monaco.editor.IStandaloneCodeEditor, model: _monaco.editor.IModel) => {
         this.configEditor = editor
-
         if (CriticalConfigEditor.isStandaloneCodeEditor(editor)) {
             for (const { id, label, run } of quickConfigureActions) {
                 editor.addAction({
@@ -443,6 +444,7 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
                 })
             }
         }
+        this.setState({ hasLoadedEditor: true })
     }
 
     private onDidContentChange = (content: string) => this.setState({ content })
