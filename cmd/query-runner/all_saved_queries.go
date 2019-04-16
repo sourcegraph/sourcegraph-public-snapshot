@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"sync"
 	"time"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var allSavedQueries = &allSavedQueriesCached{}
@@ -152,6 +152,69 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log15.Info("saved query deleted", "total_saved_queries", len(allSavedQueries.allSavedQueries))
+}
+
+func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) (deleted, updated, created map[*api.SavedQuerySpecAndConfig]*api.SavedQuerySpecAndConfig) {
+	deleted = map[*api.SavedQuerySpecAndConfig]*api.SavedQuerySpecAndConfig{}
+	updated = map[*api.SavedQuerySpecAndConfig]*api.SavedQuerySpecAndConfig{}
+	created = map[*api.SavedQuerySpecAndConfig]*api.SavedQuerySpecAndConfig{}
+	isEqual := reflect.DeepEqual(oldList, newList)
+	fmt.Printf("%v+\n", oldList)
+	fmt.Printf("%v+\n", newList)
+	if isEqual {
+		return nil, nil, nil
+	}
+
+	for k, v := range oldList {
+		if _, ok := newList[k]; !ok {
+			deleted[&v] = &api.SavedQuerySpecAndConfig{}
+		}
+	}
+	for k, v := range newList {
+		if oldVal, ok := oldList[k]; !ok {
+			created[&oldVal] = &v
+			continue
+		}
+		if ok := reflect.DeepEqual(newList[k], oldList[k]); !ok {
+			oldVal := oldList[k]
+			newVal := newList[k]
+			updated[&oldVal] = &newVal
+		}
+	}
+
+	return deleted, updated, created
+}
+
+func sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) {
+	fmt.Println("SEND NOTIF FOR UPDATED CREATED OR DELETED")
+	deleted, updated, created := diffSavedQueryConfigs(oldList, newList)
+	// fmt.Println(deleted)
+	// fmt.Println(updated)
+	// fmt.Println(created)
+	for oldVal, newVal := range deleted {
+		go func() {
+			if err := notifySavedQueryWasCreatedOrUpdated(*oldVal, *newVal); err != nil {
+				log15.Error("Failed to handle deleted saved search.", "query", oldVal.Config.Query, "error", err)
+
+			}
+		}()
+	}
+	for oldVal, newVal := range created {
+		go func() {
+			if err := notifySavedQueryWasCreatedOrUpdated(*oldVal, *newVal); err != nil {
+				log15.Error("Failed to handle deleted saved search.", "query", oldVal.Config.Query, "error", err)
+
+			}
+		}()
+	}
+	for oldVal, newVal := range updated {
+		go func() {
+			if err := notifySavedQueryWasCreatedOrUpdated(*oldVal, *newVal); err != nil {
+				log15.Error("Failed to handle deleted saved search.", "query", oldVal.Config.Query, "error", err)
+
+			}
+		}()
+	}
 }
 
 func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAndConfig) error {

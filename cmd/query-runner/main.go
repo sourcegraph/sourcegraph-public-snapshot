@@ -101,7 +101,7 @@ func (e *executorT) run(ctx context.Context) error {
 	// TODO(slimsag): Make gitserver notify us about repositories being updated
 	// as we could avoid executing queries if repositories haven't updated
 	// (impossible for new results to exist).
-	// var oldList map[string]api.SavedQuerySpecAndConfig
+	var oldList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig
 	for {
 		// allSavedQueries := allSavedQueries.get()
 		allSavedQueries, err := api.InternalClient.SavedQueriesListAll(context.Background())
@@ -110,9 +110,11 @@ func (e *executorT) run(ctx context.Context) error {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		// if oldList != nil {
-		// 	sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, allSavedQueries)
-		// }
+
+		if oldList != nil {
+			sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, allSavedQueries)
+		}
+		oldList = allSavedQueries
 
 		start := time.Now()
 		for _, query := range allSavedQueries {
