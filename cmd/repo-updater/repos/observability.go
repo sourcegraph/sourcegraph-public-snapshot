@@ -280,6 +280,7 @@ func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 		log(o.log, "store.transact", &err)
 		if err != nil {
 			tr.SetError(err)
+			// Finish is called in Done in the non-error case
 			tr.Finish()
 		}
 	}(time.Now())
@@ -319,17 +320,35 @@ func (o *ObservedStore) Done(errs ...*error) {
 
 // ListExternalServices calls into the inner Store and registers the observed results.
 func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*ExternalService, err error) {
+	tr, ctx := trace.New(ctx, "Store.ListExternalServices", "")
+	tr.LogFields(otlog.Object("args", args))
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		count := float64(len(es))
 		o.metrics.ListExternalServices.Observe(secs, count, &err)
 		log(o.log, "store.list-external-services", &err, "args", fmt.Sprintf("%+v", args))
+
+		tr.LogFields(
+			otlog.Int("count", len(es)),
+			otlog.Object("names", ExternalServices(es).DisplayNames()),
+			otlog.Object("urns", ExternalServices(es).URNs()),
+		)
+		tr.SetError(err)
+		tr.Finish()
 	}(time.Now())
 	return o.store.ListExternalServices(ctx, args)
 }
 
 // UpsertExternalServices calls into the inner Store and registers the observed results.
 func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) (err error) {
+	tr, ctx := trace.New(ctx, "Store.UpsertExternalServices", "")
+	tr.LogFields(
+		otlog.Int("count", len(svcs)),
+		otlog.Object("names", ExternalServices(svcs).DisplayNames()),
+		otlog.Object("urns", ExternalServices(svcs).URNs()),
+	)
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		count := float64(len(svcs))
@@ -338,6 +357,9 @@ func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*Ext
 			"count", len(svcs),
 			"names", ExternalServices(svcs).DisplayNames(),
 		)
+
+		tr.SetError(err)
+		tr.Finish()
 	}(time.Now())
 	return o.store.UpsertExternalServices(ctx, svcs...)
 }
