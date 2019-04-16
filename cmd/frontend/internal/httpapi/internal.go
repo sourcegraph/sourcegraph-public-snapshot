@@ -186,7 +186,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	}
 	err := json.NewEncoder(w).Encode(opts)
 	if err != nil {
-		return errors.Wrap(err, "Encode")
+		return errors.Wrap(err, "encode")
 	}
 	return nil
 }

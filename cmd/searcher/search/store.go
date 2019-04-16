@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"log"
 	"path/filepath"
@@ -68,11 +69,6 @@ type Store struct {
 
 	// zipCache provides efficient access to repo zip files.
 	zipCache zipCache
-
-	// largeFilesPatterns is a list of large file glob patterns where files that
-	// match any pattern in the list should be searched regardless of their size.
-	largeFilePatterns []string
-	lfMu              sync.RWMutex
 }
 
 // SetMaxConcurrentFetchTar sets the maximum number of concurrent calls allowed
@@ -103,7 +99,6 @@ func (s *Store) Start() {
 			BeforeEvict:       s.zipCache.delete,
 		}
 		go s.watchAndEvict()
-		go s.watchLargeFilesChange()
 	})
 }
 
@@ -129,8 +124,13 @@ func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo.Name, commit)
 	}
 
+	largeFilePatterns := conf.Get().SearchLargeFiles
+	lfpBytes, err := json.Marshal(largeFilePatterns)
+	if err != nil {
+		return "", errors.Errorf("error marshalling large file patterns: %v", err)
+	}
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(string(repo.Name) + " " + string(commit)))
+	h := sha256.Sum256([]byte(string(repo.Name) + " " + string(commit) + " " + string(lfpBytes)))
 	key := hex.EncodeToString(h[:])
 	span.LogKV("key", key)
 
@@ -285,8 +285,6 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, ignoreSizeMax func(string) b
 			return err
 		}
 
-		_ = ignoreSizeMax(hdr.Name)
-
 		// We do not search the content of large files unless they are
 		// whitelisted.
 		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name) {
@@ -352,61 +350,13 @@ func (s *Store) watchAndEvict() {
 // ignoreSizeMax determines whether the max size should be ignored. It uses
 // the glob syntax found here: https://golang.org/pkg/path/filepath/#Match.
 func (s *Store) ignoreSizeMax(name string) bool {
-	s.lfMu.RLock()
-	defer s.lfMu.RUnlock()
-	for _, pattern := range s.largeFilePatterns {
+	for _, pattern := range conf.Get().SearchLargeFiles {
 		pattern = strings.TrimSpace(pattern)
 		if m, _ := filepath.Match(pattern, name); m {
 			return true
 		}
 	}
 	return false
-}
-
-// stringSlicesAreEqual checks to make sure that two string slices have the same
-// items.
-func stringSlicesAreEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	aMap := map[string]struct{}{}
-	for i := range a {
-		aMap[a[i]] = struct{}{}
-	}
-	for i := range b {
-		if _, ok := aMap[b[i]]; !ok {
-			return false
-		}
-	}
-	return true
-}
-
-// watchLargeFilesSettingChange watches for changes to the search.largeFiles
-// setting and clears the disk cache when it is changed.
-func (s *Store) watchLargeFilesChange() {
-	get := func() []string { return conf.Get().SearchLargeFiles }
-	set := func(f []string) {
-		s.lfMu.Lock()
-		s.largeFilePatterns = f
-		s.lfMu.Unlock()
-	}
-
-	if s.largeFilePatterns == nil {
-		set(get())
-	}
-
-	conf.Watch(func() {
-		// Ensure the slices are actually different so we don't blow away the
-		// cache needlessly.
-		if lfp := get(); !stringSlicesAreEqual(lfp, s.largeFilePatterns) {
-			set(lfp)
-
-			_, err := s.cache.Evict(0)
-			if err != nil {
-				log.Printf("failed to clearn searcher archives: %s", err)
-			}
-		}
-	})
 }
 
 var (
