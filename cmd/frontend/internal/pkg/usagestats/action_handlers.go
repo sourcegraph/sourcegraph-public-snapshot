@@ -51,7 +51,6 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 	}
 
 	if handlers, ok := eventHandlers[event]; ok {
-		fmt.Println("===== Event found: " + event)
 		for _, handler := range handlers {
 			err := handler(userID, event, isAuthenticated)
 			if err != nil {
@@ -151,7 +150,6 @@ var logCodeHostIntegrationUsage = func(userID int32, _ string, isAuthenticated b
 
 // logStageEvent logs the last time a user did an action from a specific stage.
 var logStageEvent = func(userID int32, event string, isAuthenticated bool) error {
-	fmt.Println("===== Logging stage event: " + event + ", " + strconv.Itoa(int(userID)) + ", " + keyFromStage(event))
 	if !isAuthenticated {
 		return nil
 	}
