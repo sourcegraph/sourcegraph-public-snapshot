@@ -46,11 +46,10 @@ func main() {
 
 	go debugserver.Start()
 
-	http.HandleFunc(queryrunnerapi.PathSavedQueryWasCreatedOrUpdated, serveSavedQueryWasCreatedOrUpdated)
-	http.HandleFunc(queryrunnerapi.PathSavedQueryWasDeleted, serveSavedQueryWasDeleted)
-	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
-
 	ctx := context.Background()
+
+	api.WaitForFrontend(ctx)
+	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
 
 	go func() {
 		err := executor.run(ctx)
@@ -99,16 +98,22 @@ func (e *executorT) run(ctx context.Context) error {
 		e.forceRunInterval = &forceRunInterval
 	}
 
-	// Kick off fetching of the full list of saved queries from the frontend.
-	// Important to do this early on in case we get created/updated/deleted
-	// notifications for saved queries.
-	allSavedQueries.fetchInitialListFromFrontend()
-
 	// TODO(slimsag): Make gitserver notify us about repositories being updated
 	// as we could avoid executing queries if repositories haven't updated
 	// (impossible for new results to exist).
+	// var oldList map[string]api.SavedQuerySpecAndConfig
 	for {
-		allSavedQueries := allSavedQueries.get()
+		// allSavedQueries := allSavedQueries.get()
+		allSavedQueries, err := api.InternalClient.SavedQueriesListAll(context.Background())
+		if err != nil {
+			log15.Error("executor: error fetching saved queries list (trying again in 5s", "error", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		// if oldList != nil {
+		// 	sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, allSavedQueries)
+		// }
+
 		start := time.Now()
 		for _, query := range allSavedQueries {
 			err := e.runQuery(ctx, query.Spec, query.Config)

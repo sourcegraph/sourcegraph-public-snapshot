@@ -69,7 +69,7 @@ func InsertSavedQueryIntoDB(ctx context.Context, s *api.Settings, sq *SavedQuery
 			if err != nil {
 				log15.Error(`Warning: unable to migrate saved query into database.`, err.Error())
 			}
-			_, err = dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "org", s.AuthorUserID)
+			_, err = dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, org_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "org", s.AuthorUserID)
 			if err != nil {
 				log15.Error(`Warning: unable to migrate saved query into database.`, err.Error())
 			}

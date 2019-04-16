@@ -12,6 +12,7 @@ var (
 	Orgs                      = &orgs{}
 	OrgMembers                = &orgMembers{}
 	RecentSearches            = &recentSearches{}
+	SavedSearches             = &savedSearches{}
 	Settings                  = &settings{}
 	Users                     = &users{}
 	UserEmails                = &userEmails{}

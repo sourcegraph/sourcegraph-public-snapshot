@@ -217,29 +217,30 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
-	settings, err := db.Settings.ListAll(r.Context(), "")
+	settings, err := db.SavedSearches.ListAll(r.Context())
 	if err != nil {
 		return errors.Wrap(err, "db.Settings.ListAll")
 	}
 
 	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
-	for _, settings := range settings {
-		var config api.PartialConfigSavedQueries
-		if err := jsonc.Unmarshal(settings.Contents, &config); err != nil {
-			return err
+	for _, s := range settings {
+		var spec api.SavedQueryIDSpec
+		if s.Config.UserOrOrg == "user" {
+			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.ID}
+		} else if s.Config.UserOrOrg == "org" {
+			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.ID}
 		}
-		for _, query := range config.SavedQueries {
-			spec := api.SavedQueryIDSpec{Subject: settings.Subject, Key: query.Key}
-			queries = append(queries, api.SavedQuerySpecAndConfig{
-				Spec:   spec,
-				Config: query,
-			})
-		}
+
+		queries = append(queries, api.SavedQuerySpecAndConfig{
+			Spec:   spec,
+			Config: s.Config,
+		})
 	}
 
 	if err := json.NewEncoder(w).Encode(queries); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
+
 	return nil
 }
 
