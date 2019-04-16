@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -52,7 +55,8 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...strin
 
 // Sync synchronizes the repositories of the given external service kinds.
 func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err error) {
-	defer s.observe(s.now(), &diff, &err)
+	ctx, save := s.observe(ctx, "Syncer.Sync", strings.Join(kinds, " "))
+	defer save(&diff, &err)
 
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, kinds...); err != nil {
@@ -235,25 +239,41 @@ func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) 
 	return srcs.ListRepos(ctx)
 }
 
-func (s *Syncer) observe(began time.Time, d *Diff, err *error) {
-	now := s.now()
-	took := s.now().Sub(began).Seconds()
+func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
+	began := s.now()
+	tr, ctx := trace.New(ctx, family, title)
 
-	for state, count := range map[string]int{
-		"added":      len(d.Added),
-		"modified":   len(d.Modified),
-		"deleted":    len(d.Deleted),
-		"unmodified": len(d.Unmodified),
-	} {
-		syncedTotal.WithLabelValues(state).Add(float64(count))
-	}
+	return ctx, func(d *Diff, err *error) {
+		now := s.now()
+		took := s.now().Sub(began).Seconds()
 
-	lastSync.WithLabelValues().Set(float64(now.Unix()))
+		fields := make([]otlog.Field, 0, 7)
+		for state, repos := range map[string]Repos{
+			"added":      d.Added,
+			"modified":   d.Modified,
+			"deleted":    d.Deleted,
+			"unmodified": d.Unmodified,
+		} {
+			fields = append(fields, otlog.Int(state+".count", len(repos)))
+			if state != "unmodified" {
+				fields = append(fields,
+					otlog.Object(state+".repos", repos.Names()))
+			}
+			syncedTotal.WithLabelValues(state).Add(float64(len(repos)))
+		}
 
-	success := err == nil || *err == nil
-	syncDuration.WithLabelValues(strconv.FormatBool(success)).Observe(took)
+		tr.LogFields(fields...)
 
-	if !success {
-		syncErrors.WithLabelValues().Add(1)
+		lastSync.WithLabelValues().Set(float64(now.Unix()))
+
+		success := err == nil || *err == nil
+		syncDuration.WithLabelValues(strconv.FormatBool(success)).Observe(took)
+
+		if !success {
+			tr.SetError(*err)
+			syncErrors.WithLabelValues().Add(1)
+		}
+
+		tr.Finish()
 	}
 }
