@@ -105,15 +105,19 @@ function synchronizeTextField(
 
     // Keep the text field in sync with the editor and model.
     subscriptions.add(
-        fromEvent(element, 'input').subscribe(() => {
-            EditorTextFieldUtils.updateModelFromElement(modelService, modelUri, element)
-            EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
-        })
+        fromEvent(element, 'input')
+            .pipe(observeOn(animationFrameScheduler))
+            .subscribe(() => {
+                EditorTextFieldUtils.updateModelFromElement(modelService, modelUri, element)
+                EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
+            })
     )
     subscriptions.add(
-        fromEvent(element, 'keydown').subscribe(() => {
-            EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
-        })
+        fromEvent(element, 'keydown')
+            .pipe(observeOn(animationFrameScheduler))
+            .subscribe(() => {
+                EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
+            })
     )
     subscriptions.add(
         EditorTextFieldUtils.updateElementOnEditorOrModelChanges(

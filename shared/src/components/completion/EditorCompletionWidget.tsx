@@ -12,12 +12,14 @@ import {
     share,
     switchMap,
     takeUntil,
+    throttleTime,
 } from 'rxjs/operators'
 import { CompletionItem, CompletionList } from 'sourcegraph'
 import { CodeEditor, EditorId } from '../../api/client/services/editorService'
 import { offsetToPosition, positionToOffset } from '../../api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { asError, ErrorLike } from '../../util/errors'
+import { throttleTimeWindow } from '../../util/rxjs/throttleTimeWindow'
 import { getWordAtText } from '../../util/wordHelpers'
 import { CompletionWidget, CompletionWidgetClassProps } from './CompletionWidget'
 
@@ -53,6 +55,11 @@ export const EditorCompletionWidget: React.FunctionComponent<Props> = ({
         const subscription = from(editorService.editors)
             .pipe(
                 debounceTime(0), // Debounce multiple synchronous changes so we only handle them once.
+                // These throttles are tweaked for maximum perceived responsiveness. They can
+                // probably be made even more responsive (more lenient throttling) when
+                // https://github.com/sourcegraph/sourcegraph/issues/3433 is fixed.
+                throttleTime(100, undefined, { leading: true, trailing: true }),
+                throttleTimeWindow(500, 2),
                 map(editors => findEditor(editors, editorId)),
                 distinctUntilChanged((a, b) => isEqual(a.selections, b.selections) && a.model.text === b.model.text),
                 switchMap(editor => {

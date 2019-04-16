@@ -57,7 +57,17 @@ function endpointFromPort(port: chrome.runtime.Port): MessagePort {
                 return
             }
             const chromePortListener = (data: object) => {
-                messageListener.call(this, new MessageEvent('message', { data }))
+                // This callback is called *very* often (e.g., ~900 times per keystroke in a
+                // monitored textarea). Avoid creating unneeded objects here because GC
+                // significantly hurts perf. See
+                // https://github.com/sourcegraph/sourcegraph/issues/3433#issuecomment-483561297 and
+                // watch that issue for a (possibly better) fix.
+                //
+                // HACK: Use a simple object here instead of `new MessageEvent('message', { data })`
+                // to reduce the amount of garbage created. There are no callers that depend on
+                // other MessageEvent properties; they would be set to their default values anyway,
+                // so losing the properties is not a big problem.
+                messageListener.call(this, { data } as any)
             }
             listeners.set(messageListener, chromePortListener)
             port.onMessage.addListener(chromePortListener)
