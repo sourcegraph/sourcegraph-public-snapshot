@@ -67,7 +67,7 @@ export const EditorCompletionWidget: React.FunctionComponent<Props> = ({
                         .pipe(share())
                     return merge(
                         of(LOADING).pipe(
-                            delay(500),
+                            delay(2000),
                             takeUntil(result)
                         ),
                         result
