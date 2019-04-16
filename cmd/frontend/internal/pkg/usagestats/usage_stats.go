@@ -349,12 +349,12 @@ func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives [
 		manageUserIDs    = map[string]bool{}
 		planUserIDs      map[string]bool // none currently
 		codeUserIDs      map[string]bool
-		reviewUserIDs    = map[string]bool{}
+		reviewUserIDs    map[string]bool
 		verifyUserIDs    map[string]bool
 		packageUserIDs   map[string]bool // none currently
 		deployUserIDs    map[string]bool // none currently
 		configureUserIDs map[string]bool // none currently
-		monitorUserIDs   = map[string]bool{}
+		monitorUserIDs   map[string]bool
 		secureUserIDs    map[string]bool // none currently
 		automateUserIDs  map[string]bool // none currently
 	)
