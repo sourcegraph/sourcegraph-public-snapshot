@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // ErrorLogger captures the method required for logging an error.
@@ -107,11 +108,17 @@ func (o *observedSource) ListRepos(ctx context.Context) (rs []*Repo, err error) 
 
 // NewObservedStore wraps the given Store with error logging,
 // Prometheus metrics and tracing.
-func NewObservedStore(s Store, l ErrorLogger, m StoreMetrics) *ObservedStore {
+func NewObservedStore(
+	s Store,
+	l ErrorLogger,
+	m StoreMetrics,
+	t trace.Tracer,
+) *ObservedStore {
 	return &ObservedStore{
 		store:   s,
 		log:     l,
 		metrics: m,
+		tracer:  t,
 	}
 }
 
@@ -121,6 +128,8 @@ type ObservedStore struct {
 	store   Store
 	log     ErrorLogger
 	metrics StoreMetrics
+	tracer  trace.Tracer
+	txtrace *trace.Trace
 }
 
 // StoreMetrics encapsulates the Prometheus metrics of a Store.
@@ -263,10 +272,15 @@ func NewStoreMetrics() StoreMetrics {
 // Transact calls into the inner Store Transact method and
 // returns an observed TxStore.
 func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
+	tr, ctx := trace.New(ctx, "Store.Transact", "")
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		o.metrics.Transact.Observe(secs, 1, &err)
 		log(o.log, "store.transact", &err)
+		if err != nil {
+			tr.SetError(err)
+			tr.Finish()
+		}
 	}(time.Now())
 
 	s, err = o.store.(Transactor).Transact(ctx)
@@ -278,20 +292,27 @@ func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 		store:   s,
 		log:     o.log,
 		metrics: o.metrics,
+		tracer:  o.tracer,
+		txtrace: tr,
 	}, nil
 }
 
 // Done calls into the inner Store Done method.
 func (o *ObservedStore) Done(errs ...*error) {
+	tr := o.txtrace
+	f := Field{}
+	tr.LazyPrintf("Store.Done")
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		if len(errs) == 0 {
 			o.metrics.Done.Observe(secs, 1, nil)
 		}
 		for _, err := range errs {
+			tr.SetError(*err)
 			o.metrics.Done.Observe(secs, 1, err)
 			log(o.log, "store.done", err)
 		}
+		tr.Finish()
 	}(time.Now())
 	o.store.(TxStore).Done(errs...)
 }
