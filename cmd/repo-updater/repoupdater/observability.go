@@ -84,30 +84,26 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func(begin time.Time) {
 		took := time.Since(begin)
 
-		if h.log != nil {
-			h.log.Debug(
-				"http.request",
-				"method", r.Method,
-				"route", r.URL.Path,
-				"code", rr.code,
-				"duration", took,
-			)
+		h.log.Debug(
+			"http.request",
+			"method", r.Method,
+			"route", r.URL.Path,
+			"code", rr.code,
+			"duration", took,
+		)
+
+		var err error
+		if rr.code >= 400 {
+			err = errors.New(http.StatusText(rr.code))
 		}
 
-		if h.metrics.ServeHTTP != nil {
-			var err error
-			if rr.code >= 400 {
-				err = errors.New(http.StatusText(rr.code))
-			}
-
-			h.metrics.ServeHTTP.Observe(
-				took.Seconds(),
-				1,
-				&err,
-				r.URL.Path,
-				strconv.Itoa(rr.code),
-			)
-		}
+		h.metrics.ServeHTTP.Observe(
+			took.Seconds(),
+			1,
+			&err,
+			r.URL.Path,
+			strconv.Itoa(rr.code),
+		)
 	}(time.Now())
 
 	h.next.ServeHTTP(rr, r)
