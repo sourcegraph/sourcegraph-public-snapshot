@@ -170,10 +170,6 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type searchOptions struct {
-	LargeFiles []string
-}
-
 // serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
 // not depend on frontend and therefore does not have access to `conf.Watch`.
 // Additionally, it only cares about certain search specific settings so this
@@ -181,7 +177,9 @@ type searchOptions struct {
 // from /.internal/configuration.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	largeFiles := conf.Get().SearchLargeFiles
-	opts := searchOptions{
+	opts := struct {
+		LargeFiles []string
+	}{
 		LargeFiles: largeFiles,
 	}
 	err := json.NewEncoder(w).Encode(opts)

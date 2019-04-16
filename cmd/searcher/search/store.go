@@ -234,7 +234,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		defer r.Close()
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
-		err := copySearchable(tr, zw, s.ignoreSizeMax)
+		err := copySearchable(tr, zw)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
@@ -248,7 +248,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 // copySearchable copies searchable files from tr to zw. A searchable file is
 // any file that is a candidate for being searched (under size limit and
 // non-binary).
-func copySearchable(tr *tar.Reader, zw *zip.Writer, ignoreSizeMax func(string) bool) error {
+func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -287,7 +287,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, ignoreSizeMax func(string) b
 
 		// We do not search the content of large files unless they are
 		// whitelisted.
-		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name) {
+		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, conf.Get().SearchLargeFiles) {
 			continue
 		}
 
@@ -349,8 +349,8 @@ func (s *Store) watchAndEvict() {
 
 // ignoreSizeMax determines whether the max size should be ignored. It uses
 // the glob syntax found here: https://golang.org/pkg/path/filepath/#Match.
-func (s *Store) ignoreSizeMax(name string) bool {
-	for _, pattern := range conf.Get().SearchLargeFiles {
+func ignoreSizeMax(name string, patterns []string) bool {
+	for _, pattern := range patterns {
 		pattern = strings.TrimSpace(pattern)
 		if m, _ := filepath.Match(pattern, name); m {
 			return true
