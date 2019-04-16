@@ -559,7 +559,8 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 // If multiple errors occurred, an incomplete result is returned along with a
 // *multierror.Error.
 func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	shards := make(map[string]*protocol.RepoInfoRequest)
+	numPossibleShards := len(c.Addrs(ctx))
+	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos) / numPossibleShards) * 1.5) // 1.5x because it may not be a perfect division
 
 	for _, r := range repos {
 		addr := c.addrForRepo(ctx, r)
@@ -596,6 +597,8 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol
 					Op:  "RepoInfo",
 					Err: errors.Errorf("RepoInfo: http status %d", resp.StatusCode),
 				}
+				ch <- o
+				return // we never get an error status code AND result
 			}
 
 			o.res = new(protocol.RepoInfoResponse)
