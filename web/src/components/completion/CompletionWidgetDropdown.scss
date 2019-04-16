@@ -1,10 +1,12 @@
 .completion-widget-dropdown {
     cursor: pointer;
-    border: 1px solid #dfe2e5;
+    border: 1px solid var(--border-color);
     box-shadow: 0 0 5px rgba(27, 31, 35, 0.1);
 
     &__item {
-        border-bottom: 1px solid #dfe2e5;
+        border-bottom: 1px solid var(--border-color);
+        background-color: $color-bg-2;
+        color: $color-text-2;
         &--selected {
             color: #ffffff !important;
         }
@@ -14,5 +16,14 @@
         border-bottom: 0;
         border-bottom-right-radius: 3px;
         border-bottom-left-radius: 3px;
+    }
+}
+
+.theme-light {
+    .completion-widget-dropdown {
+        &__item {
+            color: $color-light-text-1;
+            background-color: #ffffff;
+        }
     }
 }
