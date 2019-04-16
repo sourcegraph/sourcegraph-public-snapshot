@@ -550,25 +550,14 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 	return cloned, nil
 }
 
-// RepoInfo is a helper for calling MultiRepoInfo with one repository. See that
-// method for details.
-func (c *Client) RepoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfoResponse, error) {
-	info, err := c.MultiRepoInfo(ctx, []api.RepoName{repo})
-	if err != nil {
-		return nil, err
-	}
-	return info.Results[repo], nil
-}
-
-// MultiRepoInfo retrieves information about multiple repositories on gitserver.
+// RepoInfo retrieves information about one or more repositories on gitserver.
 //
 // The repository not existing is not an error; in that case, MultiRepoInfoResponse.Results[i].Cloned
 // will be false and the error will be nil.
 //
-//
 // If multiple errors occurred, an incomplete result is returned along with a
 // *multierror.Error.
-func (c *Client) MultiRepoInfo(ctx context.Context, repos []api.RepoName) (*protocol.MultiRepoInfoResponse, error) {
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.MultiRepoInfoResponse, error) {
 	req := &protocol.MultiRepoInfoRequest{
 		Repos: repos,
 	}
