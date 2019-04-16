@@ -51,7 +51,10 @@ func init() {
 				log15.Error("Decode", "error", err)
 			}
 			if tr.UserID != 0 && tr.EventLabel == "SavedSearchEmailNotificationSent" {
-				usagestats.LogActivity(true, tr.UserID, "", "STAGEVERIFY")
+				err = usagestats.LogActivity(true, tr.UserID, "", "STAGEVERIFY")
+				if err != nil {
+					log15.Error("usagestats.LogActivity", "error", err)
+				}
 			}
 
 			fmt.Fprintln(w, "event-level telemetry is disabled")

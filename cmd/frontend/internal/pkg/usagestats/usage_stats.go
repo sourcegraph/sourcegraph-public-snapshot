@@ -336,7 +336,13 @@ func ListUsersThisMonth() (*ActiveUsers, error) {
 	return uniques(monthStartDate, &UsageDuration{Months: 1})
 }
 
+var MockStageUniques func(dayStart time.Time, period *UsageDuration, registeredActives []string) (*types.Stages, error)
+
 func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives []string) (*types.Stages, error) {
+	if MockStageUniques != nil {
+		return MockStageUniques(dayStart, period, registeredActives)
+	}
+
 	ctx := context.Background()
 
 	var (
