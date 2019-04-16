@@ -154,31 +154,42 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	log15.Info("saved query deleted", "total_saved_queries", len(allSavedQueries.allSavedQueries))
 }
 
-func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) (deleted, updated, created map[*api.SavedQuerySpecAndConfig]*api.SavedQuerySpecAndConfig) {
-	deleted = map[*api.SavedQuerySpecAndConfig]*api.SavedQuerySpecAndConfig{}
-	updated = map[*api.SavedQuerySpecAndConfig]*api.SavedQuerySpecAndConfig{}
-	created = map[*api.SavedQuerySpecAndConfig]*api.SavedQuerySpecAndConfig{}
-	isEqual := reflect.DeepEqual(oldList, newList)
-	fmt.Printf("%v+\n", oldList)
-	fmt.Printf("%v+\n", newList)
-	if isEqual {
-		return nil, nil, nil
+func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) (deleted, updated, created map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig) {
+	deleted = map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig{}
+	updated = map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig{}
+	created = map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig{}
+
+	// Because the api.SavedqueryIDSpec contains pointers, we should use its
+	// unique string key.
+	//
+	// TODO(slimsag/farhan): long term: plz coding overlords let's make these
+	// api.SavedQuery Spec types more sane / remove them (in reality, this will
+	// be easy to do once we move query runner to frontend later.)
+	oldByKey := make(map[string]api.SavedQuerySpecAndConfig, len(oldList))
+	for k, v := range oldList {
+		oldByKey[k.Key] = v
+	}
+	newByKey := make(map[string]api.SavedQuerySpecAndConfig, len(newList))
+	for k, v := range newList {
+		newByKey[k.Key] = v
+	}
+	// Detect deleted entries
+	for k, oldVal := range oldByKey {
+		if _, ok := newByKey[k]; !ok {
+			deleted[oldVal] = api.SavedQuerySpecAndConfig{}
+		}
 	}
 
-	for k, v := range oldList {
-		if _, ok := newList[k]; !ok {
-			deleted[&v] = &api.SavedQuerySpecAndConfig{}
-		}
-	}
-	for k, v := range newList {
-		if oldVal, ok := oldList[k]; !ok {
-			created[&oldVal] = &v
+	for k, newVal := range newByKey {
+		// Detect created entries
+		if oldVal, ok := oldByKey[k]; !ok {
+			created[oldVal] = newVal
 			continue
 		}
-		if ok := reflect.DeepEqual(newList[k], oldList[k]); !ok {
-			oldVal := oldList[k]
-			newVal := newList[k]
-			updated[&oldVal] = &newVal
+		// Detect updated entries
+		oldVal := oldByKey[k]
+		if ok := reflect.DeepEqual(newVal, oldVal); !ok {
+			updated[oldVal] = newVal
 		}
 	}
 
@@ -186,31 +197,32 @@ func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQu
 }
 
 func sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) {
-	fmt.Println("SEND NOTIF FOR UPDATED CREATED OR DELETED")
 	deleted, updated, created := diffSavedQueryConfigs(oldList, newList)
-	// fmt.Println(deleted)
-	// fmt.Println(updated)
-	// fmt.Println(created)
 	for oldVal, newVal := range deleted {
+		oldVal := oldVal
+		newVal := newVal
 		go func() {
-			if err := notifySavedQueryWasCreatedOrUpdated(*oldVal, *newVal); err != nil {
+			if err := notifySavedQueryWasCreatedOrUpdated(oldVal, newVal); err != nil {
 				log15.Error("Failed to handle deleted saved search.", "query", oldVal.Config.Query, "error", err)
-
 			}
 		}()
 	}
 	for oldVal, newVal := range created {
+		oldVal := oldVal
+		newVal := newVal
 		go func() {
-			if err := notifySavedQueryWasCreatedOrUpdated(*oldVal, *newVal); err != nil {
-				log15.Error("Failed to handle deleted saved search.", "query", oldVal.Config.Query, "error", err)
+			if err := notifySavedQueryWasCreatedOrUpdated(oldVal, newVal); err != nil {
+				log15.Error("Failed to handle created saved search.", "query", oldVal.Config.Query, "error", err)
 
 			}
 		}()
 	}
 	for oldVal, newVal := range updated {
+		oldVal := oldVal
+		newVal := newVal
 		go func() {
-			if err := notifySavedQueryWasCreatedOrUpdated(*oldVal, *newVal); err != nil {
-				log15.Error("Failed to handle deleted saved search.", "query", oldVal.Config.Query, "error", err)
+			if err := notifySavedQueryWasCreatedOrUpdated(oldVal, newVal); err != nil {
+				log15.Error("Failed to handle updated saved search.", "query", oldVal.Config.Query, "error", err)
 
 			}
 		}()

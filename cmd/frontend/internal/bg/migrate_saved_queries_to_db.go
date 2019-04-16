@@ -77,5 +77,3 @@ func InsertSavedQueryIntoDB(ctx context.Context, s *api.Settings, sq *SavedQuery
 	}
 
 }
-
-// List all saved queries from db using db.Settings.ListAll(ctx, "search.savedQueries")
