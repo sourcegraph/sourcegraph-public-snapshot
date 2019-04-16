@@ -109,7 +109,7 @@ We are targeting the following editors (many of which already support the featur
 Sourcegraph integrations enhance your developer workflow, giving you vital information you need while coding. These integrations add features such as contextual links to/from Sourcegraph and contextual information overlays on code in Sourcegraph.
 
 - [Codecov integration](https://github.com/sourcegraph/sourcegraph/issues/2920) (code coverage)
-- [Datadog integration](https://github.com/sourcegraph/sourcegraph/issues/2983) (tracing and performance monitoring)
+- [Datadog integration](https://github.com/sourcegraph/sourcegraph/issues/3297) (tracing and performance monitoring)
 - [LightStep integration](https://github.com/sourcegraph/sourcegraph/issues/2984) (tracing and performance monitoring)
 - [Sentry integration](https://github.com/sourcegraph/sourcegraph/issues/2985) (error monitoring)
 - [Slack integration](https://github.com/sourcegraph/sourcegraph/issues/2986) (team chat)
