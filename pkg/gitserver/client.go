@@ -552,13 +552,13 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 
 // RepoInfo retrieves information about one or more repositories on gitserver.
 //
-// The repository not existing is not an error; in that case, MultiRepoInfoResponse.Results[i].Cloned
+// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
 // will be false and the error will be nil.
 //
 // If multiple errors occurred, an incomplete result is returned along with a
 // *multierror.Error.
-func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.MultiRepoInfoResponse, error) {
-	req := &protocol.MultiRepoInfoRequest{
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+	req := &protocol.RepoInfoRequest{
 		Repos: repos,
 	}
 	resp, err := c.httpPost(ctx, repos[0], "repos", req)
@@ -570,7 +570,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d", resp.StatusCode)}
 	}
 
-	var info *protocol.MultiRepoInfoResponse
+	var info *protocol.RepoInfoResponse
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
 }

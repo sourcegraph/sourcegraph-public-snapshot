@@ -56,14 +56,14 @@ func (s *Server) doRepoInfo(ctx context.Context, repo api.RepoName) (*protocol.R
 	return &resp, nil
 }
 
-func (s *Server) handleMultiRepoInfo(w http.ResponseWriter, r *http.Request) {
-	var req protocol.MultiRepoInfoRequest
+func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoInfoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	resp := protocol.MultiRepoInfoResponse{
+	resp := protocol.RepoInfoResponse{
 		Results: make(map[api.RepoName]*protocol.RepoInfoResponse),
 	}
 	for _, repoName := range req.Repos {

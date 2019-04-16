@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 )
 
-func TestServer_handleMultiRepoInfo(t *testing.T) {
+func TestServer_handleRepoInfo(t *testing.T) {
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
 	_, ok := s.locker.TryAcquire("/testroot/a", "test status")
@@ -22,9 +22,9 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 		t.Fatal("could not acquire lock")
 	}
 
-	getMultiRepoInfo := func(t *testing.T, repos ...api.RepoName) (resp protocol.MultiRepoInfoResponse) {
+	getRepoInfo := func(t *testing.T, repos ...api.RepoName) (resp protocol.RepoInfoResponse) {
 		rr := httptest.NewRecorder()
-		body, err := json.Marshal(protocol.MultiRepoInfoRequest{Repos: repos})
+		body, err := json.Marshal(protocol.RepoInfoRequest{Repos: repos})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -44,12 +44,12 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 		repoCloned = func(dir string) bool { return false }
 		defer func() { repoCloned = origRepoCloned }()
 
-		want := protocol.MultiRepoInfoResponse{
+		want := protocol.RepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfoResponse{
 				"x": {},
 			},
 		}
-		if got := getMultiRepoInfo(t, "x"); !reflect.DeepEqual(got, want) {
+		if got := getRepoInfo(t, "x"); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v, want %+v", got, want)
 		}
 	})
@@ -59,7 +59,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 		repoCloned = func(dir string) bool { return false }
 		defer func() { repoCloned = origRepoCloned }()
 
-		want := protocol.MultiRepoInfoResponse{
+		want := protocol.RepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfoResponse{
 				"a": {
 					CloneInProgress: true,
@@ -67,7 +67,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 				},
 			},
 		}
-		if got := getMultiRepoInfo(t, "a"); !reflect.DeepEqual(got, want) {
+		if got := getRepoInfo(t, "a"); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v, want %+v", got, want)
 		}
 	})
@@ -91,7 +91,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 		repoRemoteURL = func(context.Context, string) (string, error) { return "u", nil }
 		defer func() { repoRemoteURL = origRepoRemoteURL }()
 
-		want := protocol.MultiRepoInfoResponse{
+		want := protocol.RepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfoResponse{
 				"x": {
 					Cloned:      true,
@@ -101,7 +101,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 				},
 			},
 		}
-		if got := getMultiRepoInfo(t, "x"); !reflect.DeepEqual(got, want) {
+		if got := getRepoInfo(t, "x"); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v, want %+v", got, want)
 		}
 	})
@@ -111,7 +111,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 		repoCloned = func(dir string) bool { return false }
 		defer func() { repoCloned = origRepoCloned }()
 
-		want := protocol.MultiRepoInfoResponse{
+		want := protocol.RepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfoResponse{
 				"a": {
 					CloneInProgress: true,
@@ -120,7 +120,7 @@ func TestServer_handleMultiRepoInfo(t *testing.T) {
 				"b": {}, // not cloned
 			},
 		}
-		if got := getMultiRepoInfo(t, "a", "b"); !reflect.DeepEqual(got, want) {
+		if got := getRepoInfo(t, "a", "b"); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v want %+v", got, want)
 		}
 	})
