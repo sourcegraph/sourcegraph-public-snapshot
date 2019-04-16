@@ -56,6 +56,60 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 	return &resp, nil
 }
 
+// TODO(slimsag): Remove this after 3.3 is released.
+func (s *Server) handleDeprecatedRepoInfo(w http.ResponseWriter, r *http.Request) {
+	var req protocol.DeprecatedRepoInfoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	repo := protocol.NormalizeRepo(req.Repo)
+	dir := path.Join(s.ReposDir, string(repo))
+
+	resp := protocol.DeprecatedRepoInfoResponse{
+		Cloned: repoCloned(dir),
+	}
+	if resp.Cloned {
+		remoteURL, err := repoRemoteURL(r.Context(), dir)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		resp.URL = remoteURL
+	}
+	{
+		resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
+		if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+			resp.CloneInProgress = true
+			resp.CloneProgress = "This will never finish cloning"
+		}
+	}
+	if resp.Cloned {
+		if mtime, err := repoLastFetched(dir); err != nil {
+			log15.Warn("error computing last-fetched date", "repo", req.Repo, "err", err)
+		} else {
+			resp.LastFetched = &mtime
+		}
+
+		if cloneTime, err := getRecloneTime(dir); err != nil {
+			log15.Warn("error getting reclone time", "repo", req.Repo, "err", err)
+		} else {
+			resp.CloneTime = &cloneTime
+		}
+
+		if lastChanged, err := repoLastChanged(dir); err != nil {
+			log15.Warn("error getting last changed", "repo", req.Repo, "err", err)
+		} else {
+			resp.LastChanged = &lastChanged
+		}
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoInfoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
