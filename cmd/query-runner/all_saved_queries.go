@@ -83,7 +83,6 @@ func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQu
 			updated[oldVal] = newVal
 		}
 	}
-
 	return deleted, updated, created
 }
 
