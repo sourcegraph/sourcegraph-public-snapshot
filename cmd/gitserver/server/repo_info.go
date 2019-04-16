@@ -64,7 +64,7 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]*protocol.RepoInfoResponse),
+		Results: make(map[api.RepoName]*protocol.RepoInfoResponse, len(req.Repos)),
 	}
 	for _, repoName := range req.Repos {
 		result, err := s.doRepoInfo(r.Context(), repoName)
