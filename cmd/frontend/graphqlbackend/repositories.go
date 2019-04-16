@@ -135,7 +135,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 					lookup[repo.Name] = repo
 				}
 				keepRepos := repos[:0]
-				info, err := gitserver.DefaultClient.MultiRepoInfo(ctx, repoNames)
+				info, err := gitserver.DefaultClient.RepoInfo(ctx, repoNames)
 				if err != nil {
 					r.err = err
 					return
