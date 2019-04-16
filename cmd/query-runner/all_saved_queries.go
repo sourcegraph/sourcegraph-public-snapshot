@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
@@ -44,114 +43,6 @@ func (sq *allSavedQueriesCached) get() map[string]api.SavedQuerySpecAndConfig {
 		cpy[k] = v
 	}
 	return cpy
-}
-
-// fetchInitialListFromFrontend blocks until the initial list can be initialized.
-func (sq *allSavedQueriesCached) fetchInitialListFromFrontend() {
-	sq.mu.Lock()
-	defer sq.mu.Unlock()
-
-	attempts := 0
-	for {
-		allSavedQueries, err := api.InternalClient.SavedQueriesListAll(context.Background())
-		if err != nil {
-			if attempts > 3 {
-				// Only print the error if we've retried a few times, otherwise
-				// we would be needlessly verbose when the frontend just hasn't
-				// started yet but will soon.
-				log15.Error("executor: error fetching saved queries list (trying again in 5s)", "error", err)
-			}
-			time.Sleep(5 * time.Second)
-			attempts++
-			continue
-		}
-		sq.allSavedQueries = make(map[string]api.SavedQuerySpecAndConfig, len(allSavedQueries))
-		for spec, config := range allSavedQueries {
-			sq.allSavedQueries[savedQueryIDSpecKey(spec)] = api.SavedQuerySpecAndConfig{
-				Spec:   spec,
-				Config: config.Config,
-			}
-		}
-		log15.Debug("existing saved queries detected", "total_saved_queries", len(sq.allSavedQueries))
-		return
-	}
-}
-
-func serveSavedQueryWasCreatedOrUpdated(w http.ResponseWriter, r *http.Request) {
-	allSavedQueries.mu.Lock()
-	defer allSavedQueries.mu.Unlock()
-
-	var args *queryrunnerapi.SavedQueryWasCreatedOrUpdatedArgs
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		writeError(w, errors.Wrap(err, "decoding JSON arguments"))
-		return
-	}
-
-	for _, query := range args.SubjectAndConfig.Config.SavedQueries {
-		spec := api.SavedQueryIDSpec{Subject: args.SubjectAndConfig.Subject, Key: query.Key}
-		key := savedQueryIDSpecKey(spec)
-		newValue := api.SavedQuerySpecAndConfig{
-			Spec:   spec,
-			Config: query,
-		}
-
-		oldValue := allSavedQueries.allSavedQueries[key]
-		if !args.DisableSubscriptionNotifications {
-			// Notify users of saved query creation and updates.
-			go func() {
-				if err := notifySavedQueryWasCreatedOrUpdated(oldValue, newValue); err != nil {
-					log15.Error("Failed to handle created/updated saved search.", "query", query, "error", err)
-				}
-			}()
-		}
-
-		allSavedQueries.allSavedQueries[key] = newValue
-	}
-	log15.Info("saved query created or updated", "total_saved_queries", len(allSavedQueries.allSavedQueries))
-	w.WriteHeader(http.StatusOK)
-}
-
-func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
-	allSavedQueries.mu.Lock()
-	defer allSavedQueries.mu.Unlock()
-
-	var args *queryrunnerapi.SavedQueryWasDeletedArgs
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		writeError(w, errors.Wrap(err, "decoding JSON arguments"))
-		return
-	}
-
-	key := savedQueryIDSpecKey(args.Spec)
-	query, ok := allSavedQueries.allSavedQueries[key]
-	if !ok {
-		return // query to delete already doesn't exist; do nothing
-	}
-	delete(allSavedQueries.allSavedQueries, key)
-
-	if !args.DisableSubscriptionNotifications {
-		// Notify users of saved query deletions.
-		go func() {
-			if err := notifySavedQueryWasCreatedOrUpdated(query, api.SavedQuerySpecAndConfig{}); err != nil {
-				log15.Error("Failed to handle created/updated saved search.", "query", query, "error", err)
-			}
-		}()
-	}
-
-	// Delete from database, but only if another saved query is not the same.
-	anotherExists := false
-	for _, other := range allSavedQueries.allSavedQueries {
-		if other.Config.Query == query.Config.Query {
-			anotherExists = true
-			break
-		}
-	}
-	if !anotherExists {
-		if err := api.InternalClient.SavedQueriesDeleteInfo(r.Context(), query.Config.Query); err != nil {
-			log15.Error("Failed to delete saved query from DB: SavedQueriesDeleteInfo", "error", err)
-			return
-		}
-	}
-	log15.Info("saved query deleted", "total_saved_queries", len(allSavedQueries.allSavedQueries))
 }
 
 func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) (deleted, updated, created map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig) {

@@ -939,11 +939,15 @@ type SearchAlert {
 type SavedQuery {
     # The unique ID of the saved query.
     id: ID!
+    # DEPRECATED: this will be removed in a future release.
+    #
     # The subject whose settings this saved query was defined in.
     subject: SettingsSubject!
     # The unique key of this saved query (unique only among all other saved
     # queries of the same subject).
     key: String
+    # DEPRECATED: this will be removed in a future release.
+    #
     # The 0-indexed index of this saved query in the subject's settings.
     index: Int!
     # The description.

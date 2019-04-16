@@ -244,23 +244,7 @@ export function fetchReposByQuery(query: string): Observable<{ name: string; url
 const savedQueryFragment = gql`
     fragment SavedQueryFields on SavedQuery {
         id
-        subject {
-            ... on Site {
-                id
-                viewerCanAdminister
-            }
-            ... on Org {
-                id
-                viewerCanAdminister
-            }
-            ... on User {
-                id
-                viewerCanAdminister
-            }
-        }
-        index
         description
-        showOnHomepage
         notify
         notifySlack
         query

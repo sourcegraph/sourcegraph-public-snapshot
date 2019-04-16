@@ -8,6 +8,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -17,7 +18,6 @@ import (
 
 type savedQueryResolver struct {
 	key                                 string
-	subject                             *settingsSubject
 	index                               int
 	description                         string
 	query                               string
@@ -45,26 +45,14 @@ func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, er
 	}
 	for i, e := range config.SavedQueries {
 		if e.Key == spec.Key {
-			return toSavedQueryResolver(i, subject, e), nil
+			return toSavedQueryResolver(i, e), nil
 		}
 	}
 	return nil, errors.New("saved query not found")
 }
 
 func (r savedQueryResolver) ID() graphql.ID {
-	var subject api.SettingsSubject
-	switch {
-	case r.subject.user != nil:
-		subject.User = &r.subject.user.user.ID
-	case r.subject.org != nil:
-		subject.Org = &r.subject.org.org.ID
-	case r.subject.site != nil:
-		subject.Site = true
-	}
-	return marshalSavedQueryID(api.SavedQueryIDSpec{
-		Subject: subject,
-		Key:     r.key,
-	})
+	return marshalSavedQueryID(api.SavedQueryIDSpec{Key: r.key})
 }
 
 func marshalSavedQueryID(spec api.SavedQueryIDSpec) graphql.ID {
@@ -88,7 +76,8 @@ func (r savedQueryResolver) NotifySlack() bool {
 	return r.notifySlack
 }
 
-func (r savedQueryResolver) Subject() *settingsSubject { return r.subject }
+// DEPRECATED
+func (r savedQueryResolver) Subject() *settingsSubject { return nil }
 
 func (r savedQueryResolver) Key() *string {
 	if r.key == "" {
@@ -97,15 +86,15 @@ func (r savedQueryResolver) Key() *string {
 	return &r.key
 }
 
+// DEPRECATED
 func (r savedQueryResolver) Index() int32 { return int32(r.index) }
 
 func (r savedQueryResolver) Description() string { return r.description }
 
 func (r savedQueryResolver) Query() string { return r.query }
 
-func toSavedQueryResolver(index int, subject *settingsSubject, entry api.ConfigSavedQuery) *savedQueryResolver {
+func toSavedQueryResolver(index int, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
-		subject:        subject,
 		key:            entry.Key,
 		index:          index,
 		description:    entry.Description,
@@ -117,24 +106,13 @@ func toSavedQueryResolver(index int, subject *settingsSubject, entry api.ConfigS
 }
 
 func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolver, error) {
-	config, err := r.ViewerSettings(ctx)
-	if err != nil {
-		return nil, err
-	}
-	configSubjects, err := config.Subjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var savedQueries []*savedQueryResolver
-	for _, subject := range configSubjects {
-		var config api.PartialConfigSavedQueries
-		if err := subject.readSettings(ctx, &config); err != nil {
-			return nil, err
-		}
-		for i, e := range config.SavedQueries {
-			savedQueries = append(savedQueries, toSavedQueryResolver(i, subject, e))
-		}
+	savedSearches, err := db.SavedSearches.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i, savedSearch := range savedSearches {
+		savedQueries = append(savedQueries, toSavedQueryResolver(i, savedSearch.Config))
 	}
 
 	return savedQueries, nil
@@ -180,7 +158,6 @@ func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
 	// go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config, args.DisableSubscriptionNotifications)
 
 	return &savedQueryResolver{
-		subject:        r.subject,
 		key:            key,
 		index:          index,
 		description:    args.Description,
@@ -261,7 +238,7 @@ func (r *settingsMutation) UpdateSavedQuery(ctx context.Context, args *struct {
 		return nil, err
 	}
 	// go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), spec.Subject, config, false)
-	return toSavedQueryResolver(index, r.subject, config.SavedQueries[index]), nil
+	return toSavedQueryResolver(index, config.SavedQueries[index]), nil
 }
 
 func (r *settingsMutation) DeleteSavedQuery(ctx context.Context, args *struct {
