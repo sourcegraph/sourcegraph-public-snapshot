@@ -43,7 +43,7 @@ We want to help you stay on top of the code changes you care about, with better 
 - More configurable notification destinations per-saved search
 - Add GitHub/GitLab PR commit status integration for saved searches
 - Show read/unread saved search results
-- Allow creating issues (GitHub/GitLab/JIRA/etc.) from saved search results
+- Allow creating issues (GitHub/GitLab/Jira/etc.) from saved search results
 
 ## Code navigation and intelligence
 
@@ -115,7 +115,7 @@ Sourcegraph integrations enhance your developer workflow, giving you vital infor
 - [Slack integration](https://github.com/sourcegraph/sourcegraph/issues/2986) (team chat)
 - [G Suite integration](https://github.com/sourcegraph/sourcegraph/issues/2987) (Google domain management)
 - Future:
-  - [JIRA integration](https://github.com/sourcegraph/sourcegraph/issues/2930) (project planning and issue tracking)
+  - [Jira integration](https://github.com/sourcegraph/sourcegraph/issues/2930) (project planning and issue tracking)
   - [Bazel integration](https://github.com/sourcegraph/sourcegraph/issues/2982) (builds)
   - [LaunchDarkly integration](https://github.com/sourcegraph/sourcegraph/issues/1249) (feature flags)
   - [FOSSA integration](https://github.com/sourcegraph/sourcegraph/issues/2988) (license compliance)
