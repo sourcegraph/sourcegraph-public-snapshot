@@ -321,7 +321,7 @@ func maus(monthPeriods int) ([]*types.SiteActivityPeriod, error) {
 
 	for m := 0; m < monthPeriods; m++ {
 		monthStartDate := startOfMonth(m)
-		uniques, err := uniquesCount(monthStartDate, &UsageDuration{Months: 1}, false)
+		uniques, err := uniquesCount(monthStartDate, &UsageDuration{Months: 1}, m == 0)
 		if err != nil {
 			return nil, err
 		}
