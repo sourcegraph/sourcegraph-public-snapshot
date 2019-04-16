@@ -4,7 +4,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
-import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, EMPTY, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
@@ -152,6 +152,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
+        const pinningEnabled = false
+
         const hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
@@ -168,6 +170,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             ),
             getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             getActions: context => getHoverActions(this.props, context),
+            pinningEnabled,
         })
         this.subscriptions.add(hoverifier)
 
@@ -197,8 +200,30 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 dom: domFunctions,
             })
         )
+        const j2d = (ev: MouseEvent) => {
+            const j2daction =
+                this.state.actionsOrError instanceof Array &&
+                this.state.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
+            if (j2daction) {
+                console.log('navigating to', j2daction.action.commandArguments![0])
+                window.location = j2daction.action.commandArguments![0]
+                ev.stopPropagation()
+            } else {
+                console.log('not navigating =(')
+            }
+        }
         this.subscriptions.add(
             hoverifier.hoverStateUpdates.subscribe(update => {
+                if (this.state.token !== update.token) {
+                    if (this.state.token) {
+                        this.state.token.style.cursor = 'auto'
+                        this.state.token.removeEventListener('click', j2d)
+                    }
+                    if (update.token) {
+                        update.token.style.cursor = 'pointer'
+                        update.token.addEventListener('click', j2d)
+                    }
+                }
                 this.setState(update)
             })
         )
