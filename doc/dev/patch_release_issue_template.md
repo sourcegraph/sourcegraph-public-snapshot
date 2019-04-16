@@ -26,7 +26,7 @@ See [release_issue_template.md](release_issue_template.md) for the monthly relea
 In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
 
 - [ ] Wait for Renovate to open a PR to update the image tags and merge that PR ([example](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)).
-- [ ] Tag the `vMAJOR.MINOR.PATCH` release at this commit.
+- [ ] Follow the ["Cutting a new patch version" instructions in https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#cutting-a-new-patch-version-eg-v2121)
 
 ## Update the docs
 
