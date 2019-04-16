@@ -27,7 +27,8 @@ func (n *notifier) slackNotify(ctx context.Context) {
 			log15.Error("Failed to post Slack notification message.", "recipient", recipient, "text", text, "error", err)
 		}
 	}
-	logEvent("", "SavedSearchSlackNotificationSent", "results")
+	// TODO(Dan): find all users in the recipient list and log events for all of them
+	logEvent(0, "", "SavedSearchSlackNotificationSent", "results")
 }
 
 func slackNotifySubscribed(ctx context.Context, recipient *recipient, query api.SavedQuerySpecAndConfig) error {
@@ -38,7 +39,8 @@ func slackNotifySubscribed(ctx context.Context, recipient *recipient, query api.
 	if err := slackNotify(ctx, recipient, text); err != nil {
 		return err
 	}
-	logEvent("", "SavedSearchSlackNotificationSent", "enabled")
+	// TODO(Dan): find all users in the recipient list and log events for all of them
+	logEvent(0, "", "SavedSearchSlackNotificationSent", "enabled")
 	return nil
 }
 
@@ -50,7 +52,8 @@ func slackNotifyUnsubscribed(ctx context.Context, recipient *recipient, query ap
 	if err := slackNotify(ctx, recipient, text); err != nil {
 		return err
 	}
-	logEvent("", "SavedSearchSlackNotificationSent", "disabled")
+	// TODO(Dan): find all users in the recipient list and log events for all of them
+	logEvent(0, "", "SavedSearchSlackNotificationSent", "disabled")
 	return nil
 }
 

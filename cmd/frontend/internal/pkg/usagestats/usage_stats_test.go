@@ -62,7 +62,7 @@ func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logSearchQuery(user.ID)
+	err := LogActivity(true, user.ID, "test-cookie-id", "SEARCHQUERY")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestUserUsageStatistics_LogCodeIntelAction(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logCodeIntelAction(user.ID)
+	err := LogActivity(true, user.ID, "test-cookie-id", "CODEINTEL")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,6 +169,10 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 }
 
 func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
+	MockStageUniques = func(_ time.Time, _ *UsageDuration, _ []string) (*types.Stages, error) {
+		return nil, nil
+	}
+
 	defer func() {
 		timeNow = time.Now
 	}()

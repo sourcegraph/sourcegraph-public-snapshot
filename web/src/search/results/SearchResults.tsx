@@ -84,9 +84,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter((query): query is string => !!query),
                     tap(query => {
+                        const query_data = queryTelemetryData(query)
                         this.props.telemetryService.log('SearchResultsQueried', {
-                            code_search: { query_data: queryTelemetryData(query) },
+                            code_search: { query_data },
                         })
+                        if (
+                            query_data.query &&
+                            query_data.query.field_type &&
+                            query_data.query.field_type.value_diff > 0
+                        ) {
+                            this.props.telemetryService.log('DiffSearchResultsQueried')
+                        }
                     }),
                     switchMap(query =>
                         concat(
