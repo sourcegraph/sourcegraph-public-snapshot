@@ -45,6 +45,12 @@ func (sq *allSavedQueriesCached) get() map[string]api.SavedQuerySpecAndConfig {
 	return cpy
 }
 
+// diffSavedQueryConfigs takes the old and new saved queries configurations.
+//
+// It returns maps whose keys represent the old value and value represent the
+// new value, i.e. a map of the saved query in the oldList and what its new
+// value is in the newList for each respective category. For deleted, the new
+// value will be an empty struct.
 func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) (deleted, updated, created map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig) {
 	deleted = map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig{}
 	updated = map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig{}
