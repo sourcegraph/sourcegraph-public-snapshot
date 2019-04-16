@@ -114,6 +114,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                                 onReport={this.onCommentReport}
                                 onClearReports={this.onCommentClearReports}
                                 onDelete={this.onCommentDelete}
+                                extensionsController={this.props.extensionsController}
                             />
                         ))}
                         <DiscussionsInput
