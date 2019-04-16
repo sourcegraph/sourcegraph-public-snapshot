@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
@@ -31,7 +32,12 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	s := &Server{
 		InternalAPI: &internalAPIFake{},
 	}
-	h := s.Handler()
+
+	h := ObservedHandler(
+		log15.Root(),
+		NewHandlerMetrics(),
+		opentracing.GlobalTracer(),
+	)(s.Handler())
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
 		t.Helper()

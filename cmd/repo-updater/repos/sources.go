@@ -26,7 +26,9 @@ type Sourcer func(...*ExternalService) (Sources, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // Deleted external services are ignored.
-func NewSourcer(cf httpcli.Factory) Sourcer {
+//
+// The provided decorator functions will be applied to each Source.
+func NewSourcer(cf httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
 		errs := new(multierror.Error)
@@ -34,11 +36,19 @@ func NewSourcer(cf httpcli.Factory) Sourcer {
 		for _, svc := range svcs {
 			if svc.IsDeleted() {
 				continue
-			} else if src, err := NewSource(svc, cf); err != nil {
-				errs = multierror.Append(errs, err)
-			} else {
-				srcs = append(srcs, src)
 			}
+
+			src, err := NewSource(svc, cf)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+
+			for _, dec := range decs {
+				src = dec(src)
+			}
+
+			srcs = append(srcs, src)
 		}
 
 		if !includesGitHubDotComSource(srcs) {
@@ -86,7 +96,7 @@ func includesGitHubDotComSource(srcs []Source) bool {
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
-	// TODO(keegancsmith) document contract of ListRepos + contract tests
+	// ListRepos returns all the repos a source yields.
 	ListRepos(context.Context) ([]*Repo, error)
 }
 
