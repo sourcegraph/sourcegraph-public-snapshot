@@ -52,7 +52,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 
 		var sourced Repos
 		{
-			ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, time.Minute)
 			sourced, err = srcs.ListRepos(ctx)
 			cancel()
 		}
