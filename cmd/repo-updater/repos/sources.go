@@ -81,10 +81,12 @@ func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
 }
 
 func includesGitHubDotComSource(srcs []Source) bool {
-	for _, src := range srcs {
-		if gs, ok := src.(*GithubSource); !ok {
+	for _, svc := range Sources(srcs).ExternalServices() {
+		if !strings.EqualFold(svc.Kind, "GITHUB") {
 			continue
-		} else if u, err := url.Parse(gs.conn.config.Url); err != nil {
+		} else if cfg, err := svc.Configuration(); err != nil {
+			continue
+		} else if u, err := url.Parse(cfg.(*schema.GitHubConnection).Url); err != nil {
 			continue
 		} else if strings.HasSuffix(u.Hostname(), "github.com") {
 			return true
