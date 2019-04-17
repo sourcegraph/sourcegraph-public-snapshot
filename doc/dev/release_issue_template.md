@@ -56,6 +56,8 @@ for the patch release checklist.
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Run the new version of Sourcegraph on a clean Kubernetes cluster with no previous data.
+    - [ ] Log in to https://console.cloud.google.com, select `sourcegraph-dev` project and create the new Kubernetes cluster.
+    - [ ] Set up the new version of Sourcegraph on that cluster using our docs.
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
@@ -63,7 +65,8 @@ for the patch release checklist.
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
     - [ ] Tear down this Kubernetes cluster.
 - [ ] Upgrade Sourcegraph on a Kubernetes cluster.
-    - [ ] Setup a Kubernetes cluster that is running the previous release.
+    - [ ] Log in to https://console.cloud.google.com, select `sourcegraph-dev` project and create the new Kubernetes cluster.
+    - [ ] Set up an old version of Sourcegraph on that cluster using our docs.
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
