@@ -26,6 +26,21 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// searchSymbolResult is a type that holds the data needed to create a symbol
+// resolver. Each field is a parameter for toSymbolResolver. This type is used
+// to prevent search code from being tangled up with other parts of the
+// graphql.
+type searchSymbolResult struct {
+	symbol  protocol.Symbol
+	baseURI *gituri.URI
+	lang    string
+	commit  *gitCommitResolver // TODO: change to utility type we create to remove git resolvers from search.
+}
+
+func (s *searchSymbolResult) uri() *gituri.URI {
+	return s.baseURI.WithFilePath(s.symbol.Path)
+}
+
 var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
@@ -148,18 +163,23 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		if inputRev != "" {
 			commit.inputRev = &inputRev
 		}
-		symbolRes := toSymbolResolver(symbol, baseURI, strings.ToLower(symbol.Language), commit)
+		symbolRes := &searchSymbolResult{
+			symbol:  symbol,
+			baseURI: baseURI,
+			lang:    strings.ToLower(symbol.Language),
+			commit:  commit,
+		}
 		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
 			fileMatch := &fileMatchResolver{
-				symbols: []*symbolResolver{symbolRes},
+				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
-				repo:    symbolRes.location.resource.commit.repo.repo,
+				repo:    symbolRes.commit.repo.repo,
 				// Don't get commit from gitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
-				commitID: api.CommitID(symbolRes.location.resource.commit.oid),
+				commitID: api.CommitID(symbolRes.commit.oid),
 			}
 			fileMatchesByURI[uri] = fileMatch
 			fileMatches = append(fileMatches, fileMatch)
@@ -168,13 +188,14 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	return fileMatches, err
 }
 
-// makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbolResolver to use in a fileMatchResolver
-func makeFileMatchURIFromSymbol(symbolResolver *symbolResolver, inputRev string) string {
-	uri := "git:/" + string(symbolResolver.location.resource.commit.repo.URL())
+// makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
+// search result to use in a fileMatchResolver
+func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
+	uri := "git:/" + string(symbolResult.commit.repo.URL())
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}
-	uri += "#" + symbolResolver.location.resource.path
+	uri += "#" + symbolResult.uri().Fragment
 	return uri
 }
 
