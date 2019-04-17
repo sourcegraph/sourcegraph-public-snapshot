@@ -1,8 +1,9 @@
 import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
-import { DocumentSelector, Unsubscribable } from 'sourcegraph'
+import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { ProvideCompletionItemSignature } from '../services/completion'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
@@ -38,6 +39,13 @@ export interface ClientLanguageFeaturesAPI extends ProxyValue {
             ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue
+
+    $registerCompletionItemProvider(
+        selector: DocumentSelector,
+        providerFunction: ProxyResult<
+            ((params: TextDocumentPositionParams) => ProxySubscribable<CompletionList | null | undefined>) & ProxyValue
+        >
+    ): Unsubscribable & ProxyValue
 }
 
 /** @internal */
@@ -51,7 +59,11 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
         >,
         private definitionRegistry: TextDocumentLocationProviderRegistry,
         private referencesRegistry: TextDocumentLocationProviderRegistry<ReferenceParams>,
-        private locationRegistry: TextDocumentLocationProviderIDRegistry
+        private locationRegistry: TextDocumentLocationProviderIDRegistry,
+        private completionItemsRegistry: FeatureProviderRegistry<
+            TextDocumentRegistrationOptions,
+            ProvideCompletionItemSignature
+        >
     ) {}
 
     public $registerHoverProvider(
@@ -102,6 +114,19 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
     ): Unsubscribable & ProxyValue {
         return proxyValue(
             this.locationRegistry.registerProvider({ id, documentSelector }, params =>
+                wrapRemoteObservable(providerFunction(params))
+            )
+        )
+    }
+
+    public $registerCompletionItemProvider(
+        documentSelector: DocumentSelector,
+        providerFunction: ProxyResult<
+            ((params: TextDocumentPositionParams) => ProxySubscribable<CompletionList | null | undefined>) & ProxyValue
+        >
+    ): Unsubscribable & ProxyValue {
+        return proxyValue(
+            this.completionItemsRegistry.registerProvider({ documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
             )
         )

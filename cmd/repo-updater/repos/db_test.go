@@ -5,6 +5,7 @@ import (
 	"flag"
 	"math/rand"
 	"net/url"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -13,22 +14,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 )
 
-var dsn = flag.String(
-	"dsn",
-	"postgres://sourcegraph:sourcegraph@localhost/postgres?sslmode=disable&timezone=UTC",
-	"Database connection string to use in integration tests",
-)
+var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func init() {
 	flag.Parse()
 }
 
 func testDatabase(t testing.TB) (*sql.DB, func()) {
-	config, err := url.Parse(*dsn)
-	if err != nil {
-		t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
+	var err error
+	var config *url.URL
+	if *dsn == "" {
+		config, err = url.Parse("postgres://127.0.0.1/?sslmode=disable&timezone=UTC")
+		if err != nil {
+			t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
+		}
+		updateDSNFromEnv(config)
+	} else {
+		config, err = url.Parse(*dsn)
+		if err != nil {
+			t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
+		}
 	}
-	repos.UpdateDSNFromEnv(config)
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
@@ -76,3 +82,33 @@ func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
 const killClientConnsQuery = `
 SELECT pg_terminate_backend(pg_stat_activity.pid)
 FROM pg_stat_activity WHERE datname = $1`
+
+// updateDSNFromEnv updates dsn based on PGXXX environment variables set on
+// the frontend.
+func updateDSNFromEnv(dsn *url.URL) {
+	if host := os.Getenv("PGHOST"); host != "" {
+		dsn.Host = host
+	}
+
+	if port := os.Getenv("PGPORT"); port != "" {
+		dsn.Host += ":" + port
+	}
+
+	if user := os.Getenv("PGUSER"); user != "" {
+		if password := os.Getenv("PGPASSWORD"); password != "" {
+			dsn.User = url.UserPassword(user, password)
+		} else {
+			dsn.User = url.User(user)
+		}
+	}
+
+	if db := os.Getenv("PGDATABASE"); db != "" {
+		dsn.Path = db
+	}
+
+	if sslmode := os.Getenv("PGSSLMODE"); sslmode != "" {
+		qry := dsn.Query()
+		qry.Set("sslmode", sslmode)
+		dsn.RawQuery = qry.Encode()
+	}
+}

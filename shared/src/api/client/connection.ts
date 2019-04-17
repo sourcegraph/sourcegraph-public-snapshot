@@ -9,6 +9,7 @@ import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
 import { ClientCommands } from './api/commands'
 import { ClientConfiguration } from './api/configuration'
+import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
@@ -109,12 +110,15 @@ export async function createExtensionHostClientConnection(
         services.textDocumentHover,
         services.textDocumentDefinition,
         services.textDocumentReferences,
-        services.textDocumentLocations
+        services.textDocumentLocations,
+        services.completionItems
     )
     const clientSearch = new ClientSearch(services.queryTransformer)
     const clientCommands = new ClientCommands(services.commands)
     subscription.add(new ClientRoots(proxy.roots, services.workspace))
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
+
+    const clientContent = createClientContent(services.linkPreviews)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
@@ -126,6 +130,7 @@ export async function createExtensionHostClientConnection(
         windows: clientWindows,
         codeEditor: clientCodeEditor,
         views: clientViews,
+        content: clientContent,
     }
     comlink.expose(clientAPI, endpoints.expose)
 

@@ -15,7 +15,7 @@ The Sourcegraph GraphQL API supports the following types of queries:
 Generate an access token on your Sourcegraph instance at:
 
 ```none
-https://sourcegraph.example.com/user/account/tokens
+https://sourcegraph.example.com/user/settings/tokens
 ```
 
 Then run this query to echo your username back:

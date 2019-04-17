@@ -1,4 +1,6 @@
-import { CodeHost, CodeViewSpecResolver, CodeViewSpecWithOutSelector } from '../code_intelligence'
+import { CodeHost } from '../code_intelligence'
+import { CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { ViewResolver } from '../code_intelligence/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
@@ -42,7 +44,7 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     return mount
 }
 
-const singleFileCodeView: CodeViewSpecWithOutSelector = {
+const singleFileCodeView: CodeViewSpecResolver = {
     dom: singleFileDOMFunctions,
     isDiff: false,
     getToolbarMount,
@@ -50,7 +52,7 @@ const singleFileCodeView: CodeViewSpecWithOutSelector = {
     toolbarButtonProps,
 }
 
-const mergeRequestCodeView: CodeViewSpecWithOutSelector = {
+const mergeRequestCodeView: CodeViewSpecResolver = {
     dom: diffDOMFunctions,
     isDiff: true,
     getToolbarMount,
@@ -58,7 +60,7 @@ const mergeRequestCodeView: CodeViewSpecWithOutSelector = {
     toolbarButtonProps,
 }
 
-const commitCodeView: CodeViewSpecWithOutSelector = {
+const commitCodeView: CodeViewSpecResolver = {
     dom: diffDOMFunctions,
     isDiff: true,
     getToolbarMount,
@@ -66,7 +68,7 @@ const commitCodeView: CodeViewSpecWithOutSelector = {
     toolbarButtonProps,
 }
 
-const resolveCodeViewSpec = (codeView: HTMLElement): CodeViewSpecWithOutSelector => {
+const resolveView = (codeView: HTMLElement): CodeViewSpecResolver => {
     const { pageKind } = getPageInfo()
 
     if (pageKind === GitLabPageKind.File) {
@@ -80,9 +82,9 @@ const resolveCodeViewSpec = (codeView: HTMLElement): CodeViewSpecWithOutSelector
     return commitCodeView
 }
 
-const codeViewSpecResolver: CodeViewSpecResolver = {
+const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
     selector: '.file-holder',
-    resolveCodeViewSpec,
+    resolveView,
 }
 
 export const gitlabCodeHost: CodeHost = {

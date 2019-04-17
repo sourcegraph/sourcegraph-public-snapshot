@@ -136,34 +136,29 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
                         >
                             <ArrowLeftIcon className="icon-inline" /> Subscription
                         </Link>
-                        <div className="row">
-                            <div className="col-md-9">
-                                <h2>Upgrade or change subscription {this.state.productSubscriptionOrError.name}</h2>
-                                <ProductSubscriptionForm
-                                    accountID={this.props.user.id}
-                                    subscriptionID={this.state.productSubscriptionOrError.id}
-                                    isLightTheme={this.props.isLightTheme}
-                                    onSubmit={this.onSubmit}
-                                    submissionState={this.state.updateOrError}
-                                    initialValue={
-                                        this.state.productSubscriptionOrError.invoiceItem
-                                            ? {
-                                                  billingPlanID: this.state.productSubscriptionOrError.invoiceItem.plan
-                                                      .billingPlanID,
-                                                  userCount: this.state.productSubscriptionOrError.invoiceItem
-                                                      .userCount,
-                                              }
-                                            : undefined
-                                    }
-                                    primaryButtonText="Upgrade subscription"
-                                    afterPrimaryButton={
-                                        <small className="form-text text-muted">
-                                            An upgraded license key will be available immediately after payment.
-                                        </small>
-                                    }
-                                />
-                            </div>
-                        </div>
+                        <h2>Upgrade or change subscription {this.state.productSubscriptionOrError.name}</h2>
+                        <ProductSubscriptionForm
+                            accountID={this.props.user.id}
+                            subscriptionID={this.state.productSubscriptionOrError.id}
+                            isLightTheme={this.props.isLightTheme}
+                            onSubmit={this.onSubmit}
+                            submissionState={this.state.updateOrError}
+                            initialValue={
+                                this.state.productSubscriptionOrError.invoiceItem
+                                    ? {
+                                          billingPlanID: this.state.productSubscriptionOrError.invoiceItem.plan
+                                              .billingPlanID,
+                                          userCount: this.state.productSubscriptionOrError.invoiceItem.userCount,
+                                      }
+                                    : undefined
+                            }
+                            primaryButtonText="Upgrade subscription"
+                            afterPrimaryButton={
+                                <small className="form-text text-muted">
+                                    An upgraded license key will be available immediately after payment.
+                                </small>
+                            }
+                        />
                     </>
                 )}
             </div>

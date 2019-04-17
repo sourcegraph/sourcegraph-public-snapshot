@@ -19,7 +19,11 @@ To set this up, add GitLab as an external service to Sourcegraph:
 
 ## Repository syncing
 
-By default, Sourcegraph adds every GitLab project where the token's user is a member. If you wish to limit the set of repositories that is indexed by Sourcegraph, the recommended way is to create a Sourcegraph "bot" user, which is just a normal user account with the desired access scope. For instance, if you wanted to add all internal GitLab projects to Sourcegraph, you could create a user "sourcegraph-bot" and give it no explicit access to any GitLab repositories.
+There are three fields for configuring which projects are mirrored/synchronized:
+
+- [`projects`](gitlab.md#configuration)<br>A list of projects in `{"name": "group/name"}` or `{"id": id}` format.
+- [`projectQuery`](gitlab.md#configuration)<br>A list of strings with one pre-defined option (`none`), and/or an URL path and query that targets a GitLab API endpoint returing a list of projects.
+- [`exclude`](gitlab.md#configuration)<br>A list of projects to exclude which takes precedence over the `projects`, and `projectQuery` fields. It has the same format as `projects`.
 
 ### Troubleshooting
 

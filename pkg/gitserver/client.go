@@ -19,6 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -550,26 +551,81 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 	return cloned, nil
 }
 
-// RepoInfo retrieves information about the repository on gitserver.
+// RepoInfo retrieves information about one or more repositories on gitserver.
 //
-// The repository not existing is not an error; in that case, RepoInfoResponse.Cloned will be false
-// and the error will be nil.
-func (c *Client) RepoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfoResponse, error) {
-	req := &protocol.RepoInfoRequest{
-		Repo: repo,
-	}
-	resp, err := c.httpPost(ctx, repo, "repo", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d", resp.StatusCode)}
+// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
+// will be false and the error will be nil.
+//
+// If multiple errors occurred, an incomplete result is returned along with a
+// *multierror.Error.
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+	numPossibleShards := len(c.Addrs(ctx))
+	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+
+	for _, r := range repos {
+		addr := c.addrForRepo(ctx, r)
+		shard := shards[addr]
+
+		if shard == nil {
+			shard = new(protocol.RepoInfoRequest)
+			shards[addr] = shard
+		}
+
+		shard.Repos = append(shard.Repos, r)
 	}
 
-	var info *protocol.RepoInfoResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
+	type op struct {
+		req *protocol.RepoInfoRequest
+		res *protocol.RepoInfoResponse
+		err error
+	}
+
+	ch := make(chan op, len(shards))
+	for _, req := range shards {
+		go func(o op) {
+			var resp *http.Response
+			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repos", o.req)
+			if o.err != nil {
+				ch <- o
+				return
+			}
+
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				o.err = &url.Error{
+					URL: resp.Request.URL.String(),
+					Op:  "RepoInfo",
+					Err: errors.Errorf("RepoInfo: http status %d", resp.StatusCode),
+				}
+				ch <- o
+				return // we never get an error status code AND result
+			}
+
+			o.res = new(protocol.RepoInfoResponse)
+			o.err = json.NewDecoder(resp.Body).Decode(o.res)
+			ch <- o
+		}(op{req: req})
+	}
+
+	err := new(multierror.Error)
+	res := protocol.RepoInfoResponse{
+		Results: make(map[api.RepoName]*protocol.RepoInfo),
+	}
+
+	for i := 0; i < cap(ch); i++ {
+		o := <-ch
+
+		if o.err != nil {
+			err = multierror.Append(err, o.err)
+			continue
+		}
+
+		for repo, info := range o.res.Results {
+			res.Results[repo] = info
+		}
+	}
+
+	return &res, err.ErrorOrNil()
 }
 
 // Remove removes the repository clone from gitserver.
@@ -590,6 +646,8 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	return nil
 }
 
+// httpPost performs a POST request to a gitserver, sharding based on the given
+// repo name (the repo name is otherwise not used).
 func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {

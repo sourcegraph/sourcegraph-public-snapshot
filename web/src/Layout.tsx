@@ -32,10 +32,10 @@ import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreferenceProps, ThemeProps } from './theme'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
-import { UserAccountAreaRoute } from './user/account/UserAccountArea'
-import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
@@ -58,8 +58,8 @@ export interface LayoutProps
     siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     routes: ReadonlyArray<LayoutRouteProps>

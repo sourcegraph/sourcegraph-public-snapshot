@@ -1,4 +1,5 @@
 // Regular imports
+import * as _monaco from 'monaco-editor'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
@@ -65,6 +66,9 @@ interface Props {
      * Called when the user presses the key binding for "save" (Ctrl+S/Cmd+S).
      */
     onDidSave: () => void
+
+    /** Called when the editor will mount. */
+    editorWillMount: (editor: monaco.editor.IStandaloneCodeEditor, model: monaco.editor.IModel) => void
 }
 
 export class MonacoEditor extends React.Component<Props, {}> {
@@ -113,7 +117,7 @@ export class MonacoEditor extends React.Component<Props, {}> {
         })
 
         // Create the actual Monaco editor.
-        monaco.editor.create(this.ref, {
+        const editor = monaco.editor.create(this.ref, {
             lineNumbers: 'on',
             automaticLayout: true,
             minimap: { enabled: false },
@@ -132,6 +136,8 @@ export class MonacoEditor extends React.Component<Props, {}> {
             theme: 'vs-dark',
             model,
         })
+
+        this.props.editorWillMount(editor, model)
 
         // Register theme for the editor.
         monaco.editor.defineTheme('sourcegraph-dark', {
@@ -184,7 +190,11 @@ export class MonacoEditor extends React.Component<Props, {}> {
     }
 
     public render(): JSX.Element | null {
-        return <div className="monaco-editor-container" ref={ref => (this.ref = ref)} />
+        return <div className="monaco-editor-container" ref={this.setRef} />
+    }
+
+    private setRef = (e: HTMLElement | null): void => {
+        this.ref = e
     }
 }
 

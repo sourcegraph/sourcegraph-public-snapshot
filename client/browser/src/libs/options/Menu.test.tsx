@@ -37,6 +37,39 @@ describe('ServerURLForm', () => {
         ).toMatchSnapshot()
     })
 
+    test("doesn't render the permissions alert on chrome://extensions", () => {
+        expect(
+            renderer.create(
+                <OptionsMenu
+                    {...stubs}
+                    currentTabStatus={{ host: 'extensions', protocol: 'chrome:', hasPermissions: false }}
+                />
+            )
+        ).toMatchSnapshot()
+    })
+
+    test("doesn't render the permissions alert on chrome://newtab", () => {
+        expect(
+            renderer.create(
+                <OptionsMenu
+                    {...stubs}
+                    currentTabStatus={{ host: 'newtab', protocol: 'chrome:', hasPermissions: false }}
+                />
+            )
+        ).toMatchSnapshot()
+    })
+
+    test("doesn't render the permissions alert on about://addons", () => {
+        expect(
+            renderer.create(
+                <OptionsMenu
+                    {...stubs}
+                    currentTabStatus={{ host: 'addons', protocol: 'about:', hasPermissions: false }}
+                />
+            )
+        ).toMatchSnapshot()
+    })
+
     test('fires requestPermissions', () => {
         const requestPermissions = sinon.spy()
         const { container } = render(

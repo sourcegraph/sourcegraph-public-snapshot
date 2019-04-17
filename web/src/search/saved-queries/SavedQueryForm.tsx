@@ -1,9 +1,10 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+
 import { from, fromEvent, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
+import { Link } from '../../../../shared/src/components/Link'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps, SettingsSubject } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
@@ -277,7 +278,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private getConfigureSlackURL = () => {
         const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
         if (!chosen) {
-            return ''
+            return 'https://docs.sourcegraph.com/user/search/saved_searches#configuring-email-and-slack-notifications'
         }
         if (chosen.__typename === 'Org') {
             return `/organizations/${chosen.name}/settings`
@@ -285,7 +286,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
         if (chosen.__typename === 'User') {
             return `/settings`
         }
-        return '' // unexpected
+        return 'https://docs.sourcegraph.com/user/search/saved_searches#configuring-email-and-slack-notifications' // unexpected
     }
 
     private saveTargetName = () => {

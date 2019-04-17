@@ -157,6 +157,27 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
     )
 }
 
+/**
+ * Checks if there are any repositories that require enable/disable state.
+ *
+ * @return Observable that emits a boolean allowEnableDisable
+ */
+export function fetchAllowEnableDisable(): Observable<boolean> {
+    return queryGraphQL(
+        gql`
+            query AllowEnableDisable {
+                internal {
+                    allowEnableDisable
+                }
+            }
+        `,
+        {}
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.internal.allowEnableDisable)
+    )
+}
+
 export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
     // Poll if there are repositories that are being cloned.
     //

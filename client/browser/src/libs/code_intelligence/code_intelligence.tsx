@@ -2,18 +2,26 @@ import {
     ContextResolver,
     createHoverifier,
     DiffPart,
-    DOMFunctions,
     findPositionsFromEvents,
     Hoverifier,
     HoverState,
-    PositionAdjuster,
 } from '@sourcegraph/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, uniqBy } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { animationFrameScheduler, EMPTY, fromEvent, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import {
+    animationFrameScheduler,
+    EMPTY,
+    from,
+    fromEvent,
+    Observable,
+    of,
+    Subject,
+    Subscription,
+    Unsubscribable,
+} from 'rxjs'
 import {
     catchError,
     concatAll,
@@ -24,6 +32,7 @@ import {
     mergeMap,
     observeOn,
     startWith,
+    switchMap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
@@ -32,6 +41,8 @@ import { TextModel } from '../../../../../shared/src/api/client/services/modelSe
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
+import { CompletionWidgetClassProps } from '../../../../../shared/src/components/completion/CompletionWidget'
+import { ApplyLinkPreviewOptions } from '../../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
@@ -56,66 +67,23 @@ import { sendMessage } from '../../browser/runtime'
 import { isInPage } from '../../context'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
-import { ButtonProps, CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
+import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { sourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
+import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
-import { fetchFileContents, trackCodeViews } from './code_views'
+import { CodeViewSpec, CodeViewSpecResolver, fetchFileContents, trackCodeViews } from './code_views'
+import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import { handleTextFields, TextField } from './text_fields'
+import { ViewResolver } from './views'
 
 registerHighlightContributions()
-
-/**
- * Defines a type of code view a given code host can have. It tells us how to
- * look for the code view and how to do certain things when we find it.
- */
-export interface CodeViewSpec {
-    /** A selector used by `document.querySelectorAll` to find the code view. */
-    selector: string
-    /** The DOMFunctions for the code view. */
-    dom: DOMFunctions
-    /**
-     * Finds or creates a DOM element where we should inject the
-     * `CodeViewToolbar`. This function is responsible for ensuring duplicate
-     * mounts aren't created.
-     */
-    getToolbarMount?: (codeView: HTMLElement) => HTMLElement
-    /**
-     * Resolves the file info for a given code view. It returns an observable
-     * because some code hosts need to resolve this asynchronously. The
-     * observable should only emit once.
-     */
-    resolveFileInfo: (codeView: HTMLElement) => Observable<FileInfo>
-    /**
-     * In some situations, we need to be able to adjust the position going into
-     * and coming out of codeintellify. For example, Phabricator converts tabs
-     * to spaces in it's DOM.
-     */
-    adjustPosition?: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
-    /** Props for styling the buttons in the `CodeViewToolbar`. */
-    toolbarButtonProps?: ButtonProps
-
-    isDiff?: boolean
-}
-
-export type CodeViewSpecWithOutSelector = Pick<CodeViewSpec, Exclude<keyof CodeViewSpec, 'selector'>>
-
-export interface CodeViewSpecResolver {
-    /**
-     * Selector that is used to find code views on the page with `querySelectorAll()`.
-     */
-    selector: string
-
-    /**
-     * Function that is called for each element that was found with `selector` to determine which code view the element is.
-     */
-    resolveCodeViewSpec: (elem: HTMLElement) => CodeViewSpecWithOutSelector | null
-}
 
 interface OverlayPosition {
     top: number
@@ -141,7 +109,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 export type CodeHostContext = RepoSpec & Partial<RevSpec>
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
-export interface CodeHost {
+export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * The name of the code host. This will be added as a className to the overlay mount.
      */
@@ -188,7 +156,17 @@ export interface CodeHost {
      *
      * The set of code views tracked on a page is the union of all code views found using `codeViewSpecs` and `codeViewResolver`.
      */
-    codeViewSpecResolver?: CodeViewSpecResolver
+    codeViewSpecResolver?: ViewResolver<CodeViewSpecResolver>
+
+    /**
+     * Resolve {@link ContentView}s from the DOM.
+     */
+    contentViewResolvers?: ViewResolver<ContentView>[]
+
+    /**
+     * Resolve {@link TextField}s from the DOM.
+     */
+    textFieldResolvers?: ViewResolver<TextField>[]
 
     /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
@@ -223,6 +201,11 @@ export interface CodeHost {
      * CSS classes for the code view toolbar to customize styling
      */
     codeViewToolbarClassProps?: CodeViewToolbarClassProps
+
+    /**
+     * CSS classes for the completion widget to customize styling
+     */
+    completionWidgetClassProps?: CompletionWidgetClassProps
 }
 
 export interface FileInfo {
@@ -388,15 +371,6 @@ export function initCodeIntelligence({
     render(<HoverOverlayContainer />, overlayMount)
 
     return { hoverifier, subscription }
-}
-
-/**
- * ResolvedCodeView attaches an actual code view DOM element that was found on
- * the page to the CodeView type being passed around by this file.
- */
-export interface ResolvedCodeView extends CodeViewSpecWithOutSelector {
-    /** The code view DOM element. */
-    element: HTMLElement
 }
 
 export function handleCodeHost({
@@ -683,6 +657,28 @@ export function handleCodeHost({
                 uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
             )
         })
+    )
+
+    // Show link previews on content views (feature-flagged).
+    subscriptions.add(
+        handleContentViews(
+            from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
+                switchMap(enabled => (enabled ? mutations : []))
+            ),
+            { extensionsController },
+            codeHost
+        )
+    )
+
+    // Show completions in text fields (feature-flagged).
+    subscriptions.add(
+        handleTextFields(
+            from(featureFlags.isEnabled('experimentalTextFieldCompletion')).pipe(
+                switchMap(enabled => (enabled ? mutations : []))
+            ),
+            { extensionsController },
+            codeHost
+        )
     )
 
     return subscriptions

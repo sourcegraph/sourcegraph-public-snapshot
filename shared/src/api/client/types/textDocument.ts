@@ -3,6 +3,17 @@ import minimatch from 'minimatch'
 import { DocumentFilter, DocumentSelector, TextDocument } from 'sourcegraph'
 
 /**
+ * The URI scheme for the resources that hold the body of comments (such as comments on a GitHub
+ * issue).
+ */
+export const COMMENT_URI_SCHEME = 'comment'
+
+/**
+ * The URI scheme for the resources that hold the body of snippets.
+ */
+export const SNIPPET_URI_SCHEME = 'snippet'
+
+/**
  * A literal to identify a text document in the client.
  */
 export interface TextDocumentIdentifier {

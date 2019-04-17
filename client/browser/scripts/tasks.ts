@@ -103,6 +103,12 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
         writeSchema(env, browser, buildDir)
 
         return () => {
+            // Allow only building for specific browser targets. Useful in local dev for faster
+            // builds.
+            if (process.env.TARGETS && !process.env.TARGETS.includes(browser)) {
+                return
+            }
+
             signale.await(`Building the ${title} ${env} bundle`)
 
             copyDist(buildDir)

@@ -12,10 +12,15 @@ import {
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
-import { CodeViewSpec, CodeViewSpecResolver, CodeViewSpecWithOutSelector, MountGetter } from '../code_intelligence'
+import { CodeHost, MountGetter } from '../code_intelligence'
+import { CodeViewSpec, CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { ViewResolver } from '../code_intelligence/views'
+import { markdownBodyViewResolver } from './content_views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
+import { commentTextFieldResolver } from './text_fields'
+import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 
 /**
@@ -62,7 +67,7 @@ const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
 }
 
-const diffCodeView: CodeViewSpecWithOutSelector = {
+const diffCodeView: CodeViewSpecResolver = {
     dom: diffDomFunctions,
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
@@ -70,12 +75,12 @@ const diffCodeView: CodeViewSpecWithOutSelector = {
     isDiff: true,
 }
 
-const diffConversationCodeView: CodeViewSpecWithOutSelector = {
+const diffConversationCodeView: CodeViewSpecResolver = {
     ...diffCodeView,
     getToolbarMount: undefined,
 }
 
-const singleFileCodeView: CodeViewSpecWithOutSelector = {
+const singleFileCodeView: CodeViewSpecResolver = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo,
@@ -177,9 +182,9 @@ export const fileLineContainerCodeView = {
     isDiff: false,
 }
 
-const codeViewSpecResolver: CodeViewSpecResolver = {
+const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
     selector: '.file',
-    resolveCodeViewSpec: (elem: HTMLElement): CodeViewSpecWithOutSelector | null => {
+    resolveView: (elem: HTMLElement): CodeViewSpecResolver | null => {
         if (elem.querySelector('article.markdown-body')) {
             // This code view is rendered markdown, we shouldn't add code intelligence
             return null
@@ -250,10 +255,12 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
     return mount
 }
 
-export const githubCodeHost = {
+export const githubCodeHost: CodeHost = {
     name: 'github',
     codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
     codeViewSpecResolver,
+    contentViewResolvers: [markdownBodyViewResolver],
+    textFieldResolvers: [commentTextFieldResolver],
     getContext: parseURL,
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
@@ -281,11 +288,20 @@ export const githubCodeHost = {
         actionItemPressedClass: 'selected',
         actionItemIconClass: 'action-item__icon--github v-align-text-bottom',
     },
+    completionWidgetClassProps: {
+        widgetContainerClassName: 'suggester-container',
+        widgetClassName: 'suggester',
+        listClassName: 'suggestions',
+        selectedListItemClassName: 'navigation-focus',
+        listItemClassName: 'text-normal',
+    },
     hoverOverlayClassProps: {
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
     },
+    setElementTooltip,
+    linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
     urlToFile: (
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => {

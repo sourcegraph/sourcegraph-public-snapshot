@@ -92,20 +92,18 @@ type IsRepoClonedRequest struct {
 	Repo api.RepoName
 }
 
-// RepoInfoRequest is a request for information about a repository on gitserver.
-type RepoInfoRequest struct {
+// DeprecatedRepoInfoRequest is a request for information about a repository on gitserver.
+//
+// TODO(slimsag): Remove this after 3.3 is released.
+type DeprecatedRepoInfoRequest struct {
 	// Repo is the repository to get information about.
 	Repo api.RepoName
 }
 
-// RepoDeleteRequest is a request to delete a repository clone on gitserver
-type RepoDeleteRequest struct {
-	// Repo is the repository to delete.
-	Repo api.RepoName
-}
-
-// RepoInfoResponse is the response to a repository information request (RepoInfoRequest).
-type RepoInfoResponse struct {
+// DeprecatedRepoInfoResponse is the response to a repository information request (RepoInfoRequest).
+//
+// TODO(slimsag): Remove this after 3.3 is released.
+type DeprecatedRepoInfoResponse struct {
 	URL             string     // this repository's Git remote URL
 	CloneInProgress bool       // whether the repository is currently being cloned
 	CloneProgress   string     // a progress message from the running clone command.
@@ -117,6 +115,41 @@ type RepoInfoResponse struct {
 	// recloned automatically, so this time is likely to move forward
 	// periodically.
 	CloneTime *time.Time
+}
+
+// RepoInfoRequest is a request for information about multiple repositories on gitserver.
+type RepoInfoRequest struct {
+	// Repos are the repositories to get information about.
+	Repos []api.RepoName
+}
+
+// RepoDeleteRequest is a request to delete a repository clone on gitserver
+type RepoDeleteRequest struct {
+	// Repo is the repository to delete.
+	Repo api.RepoName
+}
+
+// RepoInfo is the information requests about a single repository
+// via a RepoInfoRequest.
+type RepoInfo struct {
+	URL             string     // this repository's Git remote URL
+	CloneInProgress bool       // whether the repository is currently being cloned
+	CloneProgress   string     // a progress message from the running clone command.
+	Cloned          bool       // whether the repository has been cloned successfully
+	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
+	LastChanged     *time.Time // timestamp of the most recent ref in the git repository
+
+	// CloneTime is the time the clone occurred. Note: Repositories may be
+	// recloned automatically, so this time is likely to move forward
+	// periodically.
+	CloneTime *time.Time
+}
+
+// RepoInfoResponse is the response to a repository information request
+// for multiple repositories at the same time.
+type RepoInfoResponse struct {
+	// Results mapping from the repository name to the repository information.
+	Results map[api.RepoName]*RepoInfo
 }
 
 // CreateCommitFromPatchRequest is the request information needed for creating

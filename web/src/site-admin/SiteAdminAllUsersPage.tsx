@@ -15,7 +15,7 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
-import { setUserEmailVerified } from '../user/account/backend'
+import { setUserEmailVerified } from '../user/settings/backend'
 import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
 
 interface UserNodeProps {

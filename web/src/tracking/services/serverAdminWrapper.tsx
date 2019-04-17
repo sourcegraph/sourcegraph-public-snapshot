@@ -1,6 +1,6 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { authenticatedUser } from '../../auth'
-import { logUserEvent } from '../../user/account/backend'
+import { logUserEvent } from '../../user/settings/backend'
 
 class ServerAdminWrapper {
     /**
@@ -19,20 +19,30 @@ class ServerAdminWrapper {
         }
     }
 
-    public trackPageView(): void {
+    public trackPageView(eventAction: string): void {
         logUserEvent(GQL.UserEvent.PAGEVIEW)
+        if (this.isAuthenicated) {
+            if (eventAction === 'ViewRepository' || eventAction === 'ViewBlob' || eventAction === 'ViewTree') {
+                logUserEvent(GQL.UserEvent.STAGECODE)
+            }
+        }
     }
 
     public trackAction(eventAction: string): void {
         if (this.isAuthenicated) {
-            if (eventAction === 'SearchSubmitted') {
+            if (eventAction === 'SearchResultsQueried') {
                 logUserEvent(GQL.UserEvent.SEARCHQUERY)
+                logUserEvent(GQL.UserEvent.STAGECODE)
             } else if (
                 eventAction === 'goToDefinition' ||
                 eventAction === 'goToDefinition.preloaded' ||
                 eventAction === 'hover'
             ) {
                 logUserEvent(GQL.UserEvent.CODEINTEL)
+            } else if (eventAction === 'SavedSearchEmailClicked' || eventAction === 'SavedSearchSlackClicked') {
+                logUserEvent(GQL.UserEvent.STAGEVERIFY)
+            } else if (eventAction === 'DiffSearchResultsQueried') {
+                logUserEvent(GQL.UserEvent.STAGEMONITOR)
             }
         }
     }

@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -23,13 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
 const port = "3182"
 
 func main() {
-	syncerEnabled, _ := strconv.ParseBool(env.Get("SRC_SYNCER_ENABLED", "false", "Use the new repo metadata syncer."))
+	syncerEnabled, _ := strconv.ParseBool(env.Get("SRC_SYNCER_ENABLED", "true", "Use the new repo metadata syncer."))
 
 	ctx := context.Background()
 	env.Lock()
@@ -45,15 +46,52 @@ func main() {
 
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
-	db, err := repos.NewDB(repos.NewDSN().String())
+	dsn := conf.Get().ServiceConnections.PostgresDSN
+	conf.Watch(func() {
+		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		if dsn != newDSN {
+			// The DSN was changed (e.g. by someone modifying the env vars on
+			// the frontend). We need to respect the new DSN. Easiest way to do
+			// that is to restart our service (kubernetes/docker/goreman will
+			// handle starting us back up).
+			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
+		}
+	})
+	db, err := repos.NewDB(dsn)
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
-	store := repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable})
+	var store repos.Store
+	{
+		m := repos.NewStoreMetrics()
+		for _, om := range []*repos.OperationMetrics{
+			m.Transact,
+			m.Done,
+			m.ListRepos,
+			m.UpsertRepos,
+			m.ListExternalServices,
+			m.UpsertExternalServices,
+		} {
+			om.MustRegister(prometheus.DefaultRegisterer)
+		}
 
-	cliFactory := repos.NewHTTPClientFactory()
-	src := repos.NewSourcer(cliFactory)
+		store = repos.NewObservedStore(
+			repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable}),
+			log15.Root(),
+			m,
+			trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		)
+	}
+
+	var src repos.Sourcer
+	{
+		m := repos.NewSourceMetrics()
+		m.ListRepos.MustRegister(prometheus.DefaultRegisterer)
+
+		cf := repos.NewHTTPClientFactory()
+		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
+	}
 
 	migrations := []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
@@ -135,6 +173,18 @@ func main() {
 		// Start new repo syncer updates scheduler relay thread.
 		go func() {
 			for diff := range diffs {
+				if len(diff.Added) > 0 {
+					log15.Debug("syncer.sync", "diff.added", diff.Added.Names())
+				}
+
+				if len(diff.Modified) > 0 {
+					log15.Debug("syncer.sync", "diff.modified", diff.Modified.Names())
+				}
+
+				if len(diff.Deleted) > 0 {
+					log15.Debug("syncer.sync", "diff.deleted", diff.Deleted.Names())
+				}
+
 				if !conf.Get().DisableAutoGitUpdates {
 					repos.Scheduler.Update(diff.Repos()...)
 				}
@@ -149,14 +199,24 @@ func main() {
 	go repos.RunRepositoryPurgeWorker(ctx)
 
 	// Start up handler that frontend relies on
-	repoupdater := repoupdater.Server{
+	server := repoupdater.Server{
 		Kinds:       kinds,
 		Store:       store,
 		Syncer:      syncer,
 		InternalAPI: frontendAPI,
 	}
 
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
+	var handler http.Handler
+	{
+		m := repoupdater.NewHandlerMetrics()
+		m.ServeHTTP.MustRegister(prometheus.DefaultRegisterer)
+		handler = repoupdater.ObservedHandler(
+			log15.Root(),
+			m,
+			opentracing.GlobalTracer(),
+		)(server.Handler())
+	}
+
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"

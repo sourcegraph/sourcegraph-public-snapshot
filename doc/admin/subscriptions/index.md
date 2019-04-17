@@ -4,7 +4,7 @@
 
 Organizations using Sourcegraph can [upgrade to Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) to get the features that large organizations need (single sign-on, backups and recovery, cluster deployment, etc.). These additional features in Sourcegraph Enterprise are paid and not open source.
 
-You can [buy a subscription](https://sourcegraph.com/user/subscriptions/new) on Sourcegraph.com. This entitles you to a license key (immediately generated after purchase), which activates Enterprise features on your Sourcegraph instance.
+You can [buy a subscription](https://sourcegraph.com/subscriptions/new) on Sourcegraph.com. This entitles you to a license key (immediately generated after purchase), which activates Enterprise features on your Sourcegraph instance.
 
 ## Volume discounts
 

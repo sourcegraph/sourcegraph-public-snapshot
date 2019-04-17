@@ -781,10 +781,24 @@ type Query {
     ): SurveyResponseConnection!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
+    # Queries which are for internal use only.
+    #
+    # FOR INTERNAL USE ONLY.
+    internal: InternalQuery!
     # Queries that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
+}
+
+# Queries which are for internal use only.
+type InternalQuery {
+    # Indicates that there are repositories which are managed via enable/disable state.
+    # This field will disappear in 3.4. See https://github.com/sourcegraph/sourcegraph/issues/2025
+    #
+    # Only site admins can query this field.
+    # FOR INTERNAL USE ONLY.
+    allowEnableDisable: Boolean!
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
@@ -2698,6 +2712,9 @@ type Site implements SettingsSubject {
     updateCheck: UpdateCheck!
     # Whether the site needs to be configured to add repositories.
     needsRepositoryConfiguration: Boolean!
+    # Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
+    # Only applies if the site does not have a valid license.
+    freeUsersExceeded: Boolean!
     # Whether the site has zero access-enabled repositories.
     noRepositoriesEnabled: Boolean!
     # Alerts to display to the viewer.
@@ -2878,6 +2895,19 @@ enum UserEvent {
     CODEINTELREFS
     CODEINTELINTEGRATION
     CODEINTELINTEGRATIONREFS
+
+    # Product stages
+    STAGEMANAGE
+    STAGEPLAN
+    STAGECODE
+    STAGEREVIEW
+    STAGEVERIFY
+    STAGEPACKAGE
+    STAGEDEPLOY
+    STAGECONFIGURE
+    STAGEMONITOR
+    STAGESECURE
+    STAGEAUTOMATE
 }
 
 # A period of time in which a set of users have been active.
@@ -2919,6 +2949,34 @@ type SiteUsagePeriod {
     # The count of registered users that have been active on a code host integration.
     # Excludes anonymous users.
     integrationUserCount: Int!
+    # The user count of Sourcegraph products at each stage of the software development lifecycle.
+    stages: SiteUsageStages
+}
+
+# Aggregate site usage of features by software development lifecycle stage.
+type SiteUsageStages {
+    # The number of users using management stage features.
+    manage: Int!
+    # The number of users using planning stage features.
+    plan: Int!
+    # The number of users using coding stage features.
+    code: Int!
+    # The number of users using review stage features.
+    review: Int!
+    # The number of users using verification stage features.
+    verify: Int!
+    # The number of users using packaging stage features.
+    package: Int!
+    # The number of users using deployment stage features.
+    deploy: Int!
+    # The number of users using configuration stage features.
+    configure: Int!
+    # The number of users using monitoring stage features.
+    monitor: Int!
+    # The number of users using security stage features.
+    secure: Int!
+    # The number of users using automation stage features.
+    automate: Int!
 }
 
 # A deployment configuration.
@@ -2978,6 +3036,9 @@ type ProductSubscriptionStatus {
     # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
     # it is the user limit for instances without a license, or null if there is no limit.
     maximumAllowedUserCount: Int
+    # The number of free users allowed on a site without a license before a warning is shown to all users, or null
+    # if a valid license is in use.
+    noLicenseWarningUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
 }

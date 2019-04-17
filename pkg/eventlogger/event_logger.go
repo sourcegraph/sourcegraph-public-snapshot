@@ -28,9 +28,9 @@ var defaultLogger = new()
 // to wait for the frontend to start.
 //
 // Note: This does not block since it creates a new goroutine.
-func LogEvent(userEmail string, eventLabel string, eventProperties json.RawMessage) {
+func LogEvent(userID int32, userEmail string, eventLabel string, eventProperties json.RawMessage) {
 	go func() {
-		err := defaultLogger.logEvent(userEmail, eventLabel, eventProperties)
+		err := defaultLogger.logEvent(userID, userEmail, eventLabel, eventProperties)
 		if err != nil {
 			log15.Warn("eventlogger.LogEvent failed", "event", eventLabel, "error", err)
 		}
@@ -88,7 +88,7 @@ func (logger *eventLogger) newPayload(userEmail string, event *Event) *Payload {
 }
 
 // logEvent sends a payload representing some user event to the InternalClient telemetry API
-func (logger *eventLogger) logEvent(userEmail string, eventLabel string, eventProperties json.RawMessage) error {
+func (logger *eventLogger) logEvent(userID int32, userEmail string, eventLabel string, eventProperties json.RawMessage) error {
 	event := &Event{
 		Type:            eventLabel,
 		EventID:         uuid.New().String(),
@@ -99,9 +99,14 @@ func (logger *eventLogger) logEvent(userEmail string, eventLabel string, eventPr
 		},
 	}
 	payload := logger.newPayload(userEmail, event)
+	reqBody := &TelemetryRequest{
+		UserID:     userID,
+		EventLabel: eventLabel,
+		Payload:    payload,
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	return api.InternalClient.LogTelemetry(ctx, logger.env, payload)
+	return api.InternalClient.LogTelemetry(ctx, logger.env, reqBody)
 }
