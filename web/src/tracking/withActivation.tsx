@@ -67,8 +67,6 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
             }
             if (isSiteAdmin) {
                 completed.ConnectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
-                completed.EnabledRepository =
-                    data.repositories && data.repositories.totalCount !== null && data.repositories.totalCount > 0
                 if (authProviders) {
                     completed.EnabledSharing =
                         data.users.totalCount > 1 || authProviders.filter(p => !p.isBuiltin).length > 0
@@ -122,13 +120,6 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             title: 'Connect your code host',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
             link: { to: '/site-admin/external-services' },
-            siteAdminOnly: true,
-        },
-        {
-            id: 'EnabledRepository',
-            title: 'Enable repositories',
-            detail: 'Select which repositories Sourcegraph should pull and index from your code host(s).',
-            link: { to: '/site-admin/repositories' },
             siteAdminOnly: true,
         },
         {
