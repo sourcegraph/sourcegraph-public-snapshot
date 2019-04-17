@@ -82,8 +82,7 @@ func Code(ctx context.Context, content []byte, filepath string, disableTimeout b
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
 	} else if err != nil {
-		postTooLarge := strings.HasSuffix(err.Error(), "EOF")
-		if postTooLarge {
+		if err == gosyntect.ErrInvalidRequest {
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
 			table, err2 := generatePlainTable(code)
