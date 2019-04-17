@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -48,6 +49,8 @@ func maxReposToSearch() int {
 	}
 }
 
+var nestedRx = regexp.MustCompile(`^!(hier|nested)!`)
+
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
 	Query string
@@ -57,8 +60,13 @@ func (r *schemaResolver) Search(args *struct {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 }, error) {
-	if strings.HasPrefix(args.Query, "!hier!") {
-		return newSearcherResolver(strings.TrimPrefix(args.Query, "!hier!"))
+	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
+	defer tr.Finish()
+	nested := nestedRx.MatchString(args.Query)
+	query2 := nestedRx.ReplaceAllString(args.Query, "")
+	tr.LogFields(otlog.Bool("nested", nested), otlog.String("query", args.Query), otlog.String("query2", query2))
+	if nested {
+		return newSearcherResolver(query2)
 	}
 
 	go addQueryToSearchesTable(args.Query)
