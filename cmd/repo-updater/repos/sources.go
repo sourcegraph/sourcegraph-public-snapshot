@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -94,6 +95,9 @@ func includesGitHubDotComSource(srcs []Source) bool {
 	}
 	return false
 }
+
+// sourceTimeout is the default timeout to use on Source.ListRepos
+const sourceTimeout = 10 * time.Minute
 
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
