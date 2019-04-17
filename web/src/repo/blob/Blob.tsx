@@ -205,7 +205,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 this.state.actionsOrError instanceof Array &&
                 this.state.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
             if (j2daction) {
-                window.location = j2daction.action.commandArguments![0]
+                this.props.history.push(j2daction.action.commandArguments![0])
                 ev.stopPropagation()
             }
         }
