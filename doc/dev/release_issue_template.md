@@ -26,7 +26,10 @@ for the patch release checklist.
 
 - [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` ([example](https://github.com/sourcegraph/sourcegraph/pull/2323)).
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
-- [ ] Tag the first release candidate `vMAJOR.MINOR.0-rc.1`.
+- [ ] Tag the first release candidate `vMAJOR.MINOR.0-rc.1`:
+    ```
+    VERSION='vMAJOR.MINOR.0-rc.1' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
+    ```
 - [ ] Send a message to #dev-announce to announce the release candidate.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] Run the new version of Sourcegraph.
@@ -83,7 +86,7 @@ for the patch release checklist.
 
 - [ ] **HH:MM AM/PM PT** Tag the final release.
     ```
-    VERSION=v3.2.0; git tag -a $VERSION -m $VERSION; git push origin $VERSION
+    VERSION='vMAJOR.MINOR.0' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
     ```
 - [ ] Send a message to #dev-announce to announce the final release.
 - [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
@@ -93,7 +96,7 @@ for the patch release checklist.
     - [ ] Create the `MAJOR.MINOR` release branch from this commit.
     - [ ] Tag the `vMAJOR.MINOR.0` release at this commit.
         ```
-        VERSION=v3.2.0; git tag -a $VERSION -m $VERSION; git push origin $VERSION
+        VERSION='vMAJOR.MINOR.0' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
         ```
 - [ ] Open (but do not merge) PRs that do the following:
     - [ ] Update the documented version of Sourcegraph ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/701780fefa5809abb16669c9fb29738ec3bb2039)).
