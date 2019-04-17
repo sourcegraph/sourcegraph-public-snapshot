@@ -98,6 +98,8 @@ func includesGitHubDotComSource(srcs []Source) bool {
 type Source interface {
 	// ListRepos returns all the repos a source yields.
 	ListRepos(context.Context) ([]*Repo, error)
+	// ExternalServices returns the ExternalServices for the Source.
+	ExternalServices() ExternalServices
 }
 
 // Sources is a list of Sources that implements the Source interface.
@@ -145,12 +147,7 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 func (srcs Sources) ExternalServices() ExternalServices {
 	es := make(ExternalServices, 0, len(srcs))
 	for _, src := range srcs {
-		switch s := src.(type) {
-		case *GithubSource:
-			es = append(es, s.svc)
-		case *FakeSource:
-			es = append(es, s.svc)
-		}
+		es = append(es, src.ExternalServices()...)
 	}
 	return es
 }
@@ -199,6 +196,11 @@ func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) 
 		repos = append(repos, githubRepoToRepo(s.svc, r, s.conn))
 	}
 	return repos, err
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s GithubSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
 }
 
 func githubRepoToRepo(
@@ -258,6 +260,11 @@ func (s GitLabSource) ListRepos(ctx context.Context) (repos []*Repo, err error) 
 	return repos, err
 }
 
+// ExternalServices returns a singleton slice containing the external service.
+func (s GitLabSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
 func gitlabProjectToRepo(
 	svc *ExternalService,
 	proj *gitlab.Project,
@@ -315,6 +322,11 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context) (repos []*Repo, er
 	return repos, err
 }
 
+// ExternalServices returns a singleton slice containing the external service.
+func (s BitbucketServerSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
 func bitbucketserverRepoToRepo(
 	svc *ExternalService,
 	repo *bitbucketserver.Repo,
@@ -370,6 +382,11 @@ func (s OtherSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 	}
 
 	return repos, nil
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s OtherSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
 }
 
 func (s OtherSource) cloneURLs() ([]*url.URL, error) {
