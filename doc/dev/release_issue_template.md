@@ -34,7 +34,7 @@ for the patch release checklist.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] Run the new version of Sourcegraph.
         ```
-        CLEAN=true IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh
+        CLEAN=true IMAGE=sourcegraph/server:vMAJOR.minor.0-rc.1 ./dev/run-server-image.sh
         ```
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
@@ -51,7 +51,7 @@ for the patch release checklist.
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Stop the previous version of Sourcegraph and run the new version of Sourcegraph with the same data.
         ```
-        CLEAN=false IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh
+        CLEAN=true IMAGE=sourcegraph/server:vMAJOR.minor.0-rc.1 ./dev/run-server-image.sh
         ```
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
