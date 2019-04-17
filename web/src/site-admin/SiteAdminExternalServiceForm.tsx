@@ -1,9 +1,10 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
+import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { ExternalServiceKindMetadata } from './externalServices'
@@ -26,7 +27,12 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
-                {this.props.error && <p className="alert alert-danger">{upperFirst(this.props.error.message)}</p>}
+                {this.props.error && (
+                    <div className="alert alert-danger">
+                        <p>Error saving invalid configuration:</p>
+                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.error.message)} />
+                    </div>
+                )}
                 <div className="form-group">
                     <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
                         Display name:
