@@ -9,6 +9,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+## Changed
+
+### Removed
+
+### Fixed
+
+## 3.3.0
+
+### Added
+
 - In search queries, treat `foo(` as `foo\(` and `bar[` as `bar\[` rather than failing with an error message.
 - Enterprise admins can now customize the appearance of the homepage and search icon.
 - A new settings property `notices` allows showing custom informational messages on the homepage and at the top of each page. The `motd` property is deprecated and its value is automatically migrated to the new `notices` property.
