@@ -83,7 +83,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 }
 
 func (u *users) DeletePasswordResetCode(ctx context.Context, id int32) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL WHERE id=$2", id)
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL WHERE id=$1", id)
 	return err
 }
 
