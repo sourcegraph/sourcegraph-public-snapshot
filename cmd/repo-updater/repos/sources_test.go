@@ -476,7 +476,10 @@ func TestSources_ListRepos(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			obs := ObservedSource(log15.Root(), NewSourceMetrics())
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			obs := ObservedSource(lg, NewSourceMetrics())
 			srcs, err := NewSourcer(cf, obs)(tc.svcs...)
 			if err != nil {
 				t.Fatal(err)
