@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { ViewComponentData } from '../../../../shared/src/api/client/model'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
@@ -41,38 +40,43 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         // API's support for diffs.
         const dummyText = ''
 
-        const visibleViewComponents: ViewComponentData[] = []
+        this.props.extensionsController.services.editor.removeAllEditors()
+
         if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
             for (const fileDiff of fileDiffsOrError.nodes) {
                 if (fileDiff.oldPath) {
-                    visibleViewComponents.push({
-                        type: 'textEditor',
-                        item: {
-                            uri: `git://${nodeProps.base.repoName}?${nodeProps.base.commitID}#${fileDiff.oldPath}`,
+                    const uri = `git://${nodeProps.base.repoName}?${nodeProps.base.commitID}#${fileDiff.oldPath}`
+                    if (!this.props.extensionsController.services.model.hasModel(uri)) {
+                        this.props.extensionsController.services.model.addModel({
+                            uri,
                             languageId: getModeFromPath(fileDiff.oldPath),
                             text: dummyText,
-                        },
+                        })
+                    }
+                    this.props.extensionsController.services.editor.addEditor({
+                        type: 'CodeEditor',
+                        resource: uri,
                         selections: [],
                         isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
                     })
                 }
                 if (fileDiff.newPath) {
-                    visibleViewComponents.push({
-                        type: 'textEditor',
-                        item: {
-                            uri: `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`,
+                    const uri = `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`
+                    if (!this.props.extensionsController.services.model.hasModel(uri)) {
+                        this.props.extensionsController.services.model.addModel({
+                            uri,
                             languageId: getModeFromPath(fileDiff.newPath),
                             text: dummyText,
-                        },
+                        })
+                    }
+                    this.props.extensionsController.services.editor.addEditor({
+                        type: 'CodeEditor',
+                        resource: uri,
                         selections: [],
                         isActive: true,
                     })
                 }
             }
         }
-        this.props.extensionsController.services.model.model.next({
-            ...this.props.extensionsController.services.model.model.value,
-            visibleViewComponents,
-        })
     }
 }

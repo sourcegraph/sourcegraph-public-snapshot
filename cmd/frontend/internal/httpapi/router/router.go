@@ -29,10 +29,8 @@ const (
 	CanSendEmail           = "internal.can-send-email"
 	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
-	GitInfoRefs            = "internal.git.info-refs"
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitTar                 = "internal.git.tar"
-	GitUploadPack          = "internal.git.upload-pack"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposCreateIfNotExists = "internal.repos.create-if-not-exists"
 	ReposGetByName         = "internal.repos.get-by-name"
@@ -42,6 +40,7 @@ const (
 	ReposListEnabled       = "internal.repos.list-enabled"
 	ReposUpdateMetadata    = "internal.repos.update-metadata"
 	Configuration          = "internal.configuration"
+	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
 	ExternalServicesList   = "internal.external-services.list"
 )
@@ -93,10 +92,8 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
-	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoName:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
 	base.Path("/git/{RepoName:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
-	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/external-services/list").Methods("POST").Name(ExternalServicesList)
@@ -108,6 +105,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
+	base.Path("/search/configuration").Methods("GET").Name(SearchConfiguration)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)

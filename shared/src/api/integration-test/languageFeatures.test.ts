@@ -2,7 +2,6 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { asyncScheduler, Observable, of } from 'rxjs'
 import { observeOn, switchMap, take, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { languages as sourcegraphLanguages } from 'sourcegraph'
 import { Services } from '../client/services'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { createBarrier, integrationTestContext } from './testHelpers'
@@ -21,9 +20,9 @@ describe('LanguageFeatures (integration)', () => {
             contents: labels.map(label => ({ value: label, kind: sourcegraph.MarkupKind.PlainText })),
         }),
         providerWithImplementation: run => ({ provideHover: run } as sourcegraph.HoverProvider),
-        getResult: services =>
+        getResult: (services, uri) =>
             services.textDocumentHover.getHover({
-                textDocument: { uri: 'file:///f' },
+                textDocument: { uri },
                 position: { line: 1, character: 2 },
             }),
     })
@@ -36,10 +35,10 @@ describe('LanguageFeatures (integration)', () => {
         }),
         labeledProviderResults: labeledDefinitionResults,
         providerWithImplementation: run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
-        getResult: services =>
+        getResult: (services, uri) =>
             services.textDocumentDefinition
                 .getLocations({
-                    textDocument: { uri: 'file:///f' },
+                    textDocument: { uri },
                     position: { line: 1, character: 2 },
                 })
                 .pipe(switchMap(locations => locations)),
@@ -63,10 +62,10 @@ describe('LanguageFeatures (integration)', () => {
                     _context: sourcegraph.ReferenceContext
                 ) => run(doc, pos),
             } as sourcegraph.ReferenceProvider),
-        getResult: services =>
+        getResult: (services, uri) =>
             services.textDocumentReferences
                 .getLocations({
-                    textDocument: { uri: 'file:///f' },
+                    textDocument: { uri },
                     position: { line: 1, character: 2 },
                     context: { includeDeclaration: true },
                 })
@@ -85,10 +84,10 @@ describe('LanguageFeatures (integration)', () => {
             ({
                 provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => run(doc, pos),
             } as sourcegraph.LocationProvider),
-        getResult: services =>
+        getResult: (services, uri) =>
             services.textDocumentLocations
                 .getLocations('x', {
-                    textDocument: { uri: 'file:///f' },
+                    textDocument: { uri },
                     position: { line: 1, character: 2 },
                 })
                 .pipe(switchMap(x => x)),
@@ -107,14 +106,14 @@ function testLocationProvider<P>({
     providerWithImplementation,
     getResult,
 }: {
-    name: keyof typeof sourcegraphLanguages
+    name: keyof typeof sourcegraph.languages
     registerProvider: (
         extensionAPI: typeof sourcegraph
     ) => (selector: sourcegraph.DocumentSelector, provider: P) => sourcegraph.Unsubscribable
     labeledProvider: (label: string) => P
     labeledProviderResults: (labels: string[]) => any
     providerWithImplementation: (run: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => void) => P
-    getResult: (services: Services) => Observable<any>
+    getResult: (services: Services, uri: string) => Observable<any>
 }): void {
     describe(`languages.${name}`, () => {
         test('registers and unregisters a single provider', async () => {
@@ -124,7 +123,7 @@ function testLocationProvider<P>({
             const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
             await extensionAPI.internal.sync()
             expect(
-                await getResult(services)
+                await getResult(services, 'file:///f')
                     .pipe(take(1))
                     .toPromise()
             ).toEqual(labeledProviderResults(['a']))
@@ -132,10 +131,33 @@ function testLocationProvider<P>({
             // Unregister the provider and ensure it's removed.
             subscription.unsubscribe()
             expect(
-                await getResult(services)
+                await getResult(services, 'file:///f')
                     .pipe(take(1))
                     .toPromise()
             ).toEqual(null)
+        })
+
+        test('syncs with models', async () => {
+            const { services, extensionAPI } = await integrationTestContext()
+
+            const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
+            await extensionAPI.internal.sync()
+
+            services.model.addModel({ uri: 'file:///f2', languageId: 'l1', text: 't1' })
+            services.editor.addEditor({
+                type: 'CodeEditor',
+                resource: 'file:///f2',
+                selections: [],
+                isActive: true,
+            })
+
+            expect(
+                await getResult(services, 'file:///f2')
+                    .pipe(take(1))
+                    .toPromise()
+            ).toEqual(labeledProviderResults(['a']))
+
+            subscription.unsubscribe()
         })
 
         test('supplies params to the provideXyz method', async () => {
@@ -150,7 +172,7 @@ function testLocationProvider<P>({
                 })
             )
             await extensionAPI.internal.sync()
-            await getResult(services)
+            await getResult(services, 'file:///f')
                 .pipe(take(1))
                 .toPromise()
             await wait
@@ -166,7 +188,7 @@ function testLocationProvider<P>({
 
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
             expect(
-                await getResult(services)
+                await getResult(services, 'file:///f')
                     .pipe(
                         take(2),
                         toArray()

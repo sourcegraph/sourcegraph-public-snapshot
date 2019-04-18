@@ -109,7 +109,7 @@ describe('getViews', () => {
                         a: [
                             {
                                 registrationOptions: { container: FIXTURE_CONTAINER, id: 'err' },
-                                provider: throwError('err'),
+                                provider: throwError(new Error('err')),
                             },
                             FIXTURE_ENTRY_1,
                         ],

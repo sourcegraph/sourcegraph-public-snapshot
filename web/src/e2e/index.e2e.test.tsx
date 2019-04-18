@@ -58,6 +58,7 @@ describe('e2e test suite', function(this: any): void {
                 url: 'https://github.com',
                 token: gitHubToken,
                 repos: repoSlugs,
+                repositoryQuery: ['none'],
             }),
             repoSlugs
         )
@@ -190,6 +191,7 @@ describe('e2e test suite', function(this: any): void {
             method: 'keyboard',
         })
         await page.click('.e2e-add-external-service-button')
+        await page.waitForNavigation()
 
         if (ensureRepos) {
             // Wait for repositories to sync.
@@ -291,7 +293,7 @@ describe('e2e test suite', function(this: any): void {
             await ensureHasExternalService(
                 'github',
                 displayName,
-                '{"url": "https://github.myenterprise.com", "token": "initial-token"}'
+                '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}'
             )
             await page.goto(baseURL + '/site-admin/external-services')
             await (await page.waitForSelector(
@@ -301,7 +303,8 @@ describe('e2e test suite', function(this: any): void {
             // Type in a new external service configuration.
             await replaceText({
                 selector: '.view-line',
-                newText: '{"url": "https://github.myenterprise.com", "token": "second-token"}',
+                newText:
+                    '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
                 method: 'keyboard',
             })
             await page.click('.e2e-update-external-service-button')

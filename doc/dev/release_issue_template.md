@@ -15,6 +15,7 @@ for the patch release checklist.
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
 - [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release (send calendar invites to team@sourcegraph.com).
+- [ ] Create reminders for yourself to preform the remaining sections in this checklist at appropriate times.
 
 ## 5 working days before release (YYYY-MM-DD)
 
@@ -25,13 +26,15 @@ for the patch release checklist.
 
 - [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` ([example](https://github.com/sourcegraph/sourcegraph/pull/2323)).
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
-- [ ] Tag the first release candidate `vMAJOR.MINOR.0-rc.1`.
+- [ ] Tag the first release candidate `vMAJOR.MINOR.0-rc.1`:
+    ```
+    VERSION='vMAJOR.MINOR.0-rc.1' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
+    ```
 - [ ] Send a message to #dev-announce to announce the release candidate.
-- [ ] Ensure that `master` is deployed to dogfood.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] Run the new version of Sourcegraph.
         ```
-        CLEAN=true IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh
+        CLEAN=true IMAGE=sourcegraph/server:vMAJOR.minor.0-rc.1 ./dev/run-server-image.sh
         ```
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
@@ -48,11 +51,13 @@ for the patch release checklist.
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Stop the previous version of Sourcegraph and run the new version of Sourcegraph with the same data.
         ```
-        CLEAN=false IMAGE=sourcegraph/server:$NEWVERSION ./dev/run-server-image.sh
+        CLEAN=true IMAGE=sourcegraph/server:vMAJOR.minor.0-rc.1 ./dev/run-server-image.sh
         ```
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Run the new version of Sourcegraph on a clean Kubernetes cluster with no previous data.
+    - [ ] Log in to https://console.cloud.google.com, select `sourcegraph-dev` project and create the new Kubernetes cluster.
+    - [ ] Set up the new version of Sourcegraph on that cluster using our docs.
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
@@ -60,7 +65,8 @@ for the patch release checklist.
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
     - [ ] Tear down this Kubernetes cluster.
 - [ ] Upgrade Sourcegraph on a Kubernetes cluster.
-    - [ ] Setup a Kubernetes cluster that is running the previous release.
+    - [ ] Log in to https://console.cloud.google.com, select `sourcegraph-dev` project and create the new Kubernetes cluster.
+    - [ ] Set up an old version of Sourcegraph on that cluster using our docs.
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
@@ -83,7 +89,7 @@ for the patch release checklist.
 
 - [ ] **HH:MM AM/PM PT** Tag the final release.
     ```
-    VERSION=v3.2.0; git tag -a $VERSION -m $VERSION; git push origin $VERSION
+    VERSION='vMAJOR.MINOR.0' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
     ```
 - [ ] Send a message to #dev-announce to announce the final release.
 - [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
@@ -93,7 +99,7 @@ for the patch release checklist.
     - [ ] Create the `MAJOR.MINOR` release branch from this commit.
     - [ ] Tag the `vMAJOR.MINOR.0` release at this commit.
         ```
-        VERSION=v3.2.0; git tag -a $VERSION -m $VERSION; git push origin $VERSION
+        VERSION='vMAJOR.MINOR.0' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
         ```
 - [ ] Open (but do not merge) PRs that do the following:
     - [ ] Update the documented version of Sourcegraph ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/701780fefa5809abb16669c9fb29738ec3bb2039)).

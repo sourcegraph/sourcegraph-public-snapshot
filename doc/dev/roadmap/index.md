@@ -43,7 +43,7 @@ We want to help you stay on top of the code changes you care about, with better 
 - More configurable notification destinations per-saved search
 - Add GitHub/GitLab PR commit status integration for saved searches
 - Show read/unread saved search results
-- Allow creating issues (GitHub/GitLab/JIRA/etc.) from saved search results
+- Allow creating issues (GitHub/GitLab/Jira/etc.) from saved search results
 
 ## Code navigation and intelligence
 
@@ -54,7 +54,7 @@ We're continually refining code intelligence (hovers, go-to-definition, find-ref
 - Continually ensure code navigation/intelligence works on code hosts using our [browser extension](../../integration/browser_extension.md) and [native code host integrations](#code-hosts).
 - [Analyze and expose dependency graph for all major languages and build systems](https://github.com/sourcegraph/sourcegraph/issues/2928)
 - [Compute and expose programming language statistics](https://github.com/sourcegraph/sourcegraph/issues/2587)
-- Show panel (with references/etc.) UI in code host integrations
+- [Show panel (with references/etc.) UI in code host integrations](https://github.com/sourcegraph/sourcegraph/issues/3089)
 - Allow extensions to handle diffs and pull requests as a first-class concern
 - [Bazel support roadmap](https://github.com/sourcegraph/sourcegraph/issues/2982)
 - [Cross-language, cross-repository definitions and references support for APIs/IDLs (GraphQL, Thrift, Protobuf, etc.)](https://github.com/sourcegraph/sourcegraph/issues/981)
@@ -109,13 +109,13 @@ We are targeting the following editors (many of which already support the featur
 Sourcegraph integrations enhance your developer workflow, giving you vital information you need while coding. These integrations add features such as contextual links to/from Sourcegraph and contextual information overlays on code in Sourcegraph.
 
 - [Codecov integration](https://github.com/sourcegraph/sourcegraph/issues/2920) (code coverage)
-- [Datadog integration](https://github.com/sourcegraph/sourcegraph/issues/2983) (tracing and performance monitoring)
+- [Datadog integration](https://github.com/sourcegraph/sourcegraph/issues/3297) (tracing and performance monitoring)
 - [LightStep integration](https://github.com/sourcegraph/sourcegraph/issues/2984) (tracing and performance monitoring)
 - [Sentry integration](https://github.com/sourcegraph/sourcegraph/issues/2985) (error monitoring)
 - [Slack integration](https://github.com/sourcegraph/sourcegraph/issues/2986) (team chat)
 - [G Suite integration](https://github.com/sourcegraph/sourcegraph/issues/2987) (Google domain management)
 - Future:
-  - [JIRA integration](https://github.com/sourcegraph/sourcegraph/issues/2930) (project planning and issue tracking)
+  - [Jira integration](https://github.com/sourcegraph/sourcegraph/issues/2930) (project planning and issue tracking)
   - [Bazel integration](https://github.com/sourcegraph/sourcegraph/issues/2982) (builds)
   - [LaunchDarkly integration](https://github.com/sourcegraph/sourcegraph/issues/1249) (feature flags)
   - [FOSSA integration](https://github.com/sourcegraph/sourcegraph/issues/2988) (license compliance)
@@ -136,6 +136,7 @@ Sourcegraph integrations enhance your developer workflow, giving you vital infor
 See the "[Code hosts](#code-hosts)" section above for plans related to repositories, user authentication, and permissions for specific code hosts (such as GitHub).
 
 - [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
+- [Mapping local repositories in your editor to Sourcegraph](https://github.com/sourcegraph/sourcegraph/issues/462)
 - [Improve process for adding repositories from local disk](https://github.com/sourcegraph/sourcegraph/issues/1527)
 - Simpler configuration for HTTPS/SSH credentials for cloning repositories
 - [Support internal CA or self-signed TLS certificates for external communication](https://github.com/sourcegraph/sourcegraph/issues/71)

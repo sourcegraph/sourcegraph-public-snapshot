@@ -151,7 +151,9 @@ func (s *accessTokens) GetByID(ctx context.Context, id int64) (*AccessToken, err
 
 // AccessTokensListOptions contains options for listing access tokens.
 type AccessTokensListOptions struct {
-	SubjectUserID int32 // only list access tokens with this user as the subject
+	SubjectUserID  int32 // only list access tokens with this user as the subject
+	LastUsedAfter  *time.Time
+	LastUsedBefore *time.Time
 	*LimitOffset
 }
 
@@ -159,6 +161,12 @@ func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 	if o.SubjectUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("subject_user_id=%d", o.SubjectUserID))
+	}
+	if o.LastUsedAfter != nil {
+		conds = append(conds, sqlf.Sprintf("last_used_at>%d", o.LastUsedAfter))
+	}
+	if o.LastUsedBefore != nil {
+		conds = append(conds, sqlf.Sprintf("last_used_at<%d", o.LastUsedBefore))
 	}
 	return conds
 }

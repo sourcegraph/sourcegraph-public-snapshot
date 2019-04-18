@@ -88,13 +88,12 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GitServerAddrs).Handler(trace.TraceRoute(handler(serveGitServerAddrs)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.TraceRoute(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
-	m.Get(apirouter.GitInfoRefs).Handler(trace.TraceRoute(handler(serveGitInfoRefs)))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))
-	m.Get(apirouter.GitUploadPack).Handler(trace.TraceRoute(handler(serveGitUploadPack)))
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
+	m.Get(apirouter.SearchConfiguration).Handler(trace.TraceRoute(handler(serveSearchConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

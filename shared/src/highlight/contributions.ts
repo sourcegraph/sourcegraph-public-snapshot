@@ -16,6 +16,7 @@ export function registerHighlightContributions(): void {
         return
     }
     registered = true
+    // tslint:disable no-require-imports
     registerLanguage('go', require('highlight.js/lib/languages/go'))
     registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
     registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))
@@ -43,4 +44,5 @@ export function registerHighlightContributions(): void {
     registerLanguage('yaml', require('highlight.js/lib/languages/yaml'))
     registerLanguage('kotlin', require('highlight.js/lib/languages/kotlin'))
     registerLanguage('dart', require('highlight.js/lib/languages/dart'))
+    // tslint:enable no-require-imports
 }

@@ -15,7 +15,7 @@ It takes less than 5 minutes to install Sourcegraph using Docker. If you've got 
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.2.0</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.2.2</code></pre>
 
 Access the server on port `7080`, then the below screencast will show you how to configure Sourcegraph to search public and private repositories, and enable code intelligence on Sourcegraph and GitHub.com.
 
@@ -26,6 +26,14 @@ Access the server on port `7080`, then the below screencast will show you how to
 </p>
 
 Once Sourcegraph has been configured, head to the [site administration documentation](admin/index.md) for next steps.
+
+## Upgrading Sourcegraph
+
+All you need to do to upgrade Sourcegraph is to restart your Docker server with a new image tag.
+
+We actively maintain the two most recent [monthly releases of Sourcegraph](dev/releases.md) and we support upgrading from the two previous monthly releases.
+
+For example, if you are running Sourcegraph 3.1, then you can upgrade directly to 3.2 and 3.3. If you want to upgrade to 3.4, then you first need to upgrade to 3.3 before you can upgrade to 3.4.
 
 ## Documentation
 
@@ -59,7 +67,7 @@ You can use Sourcegraph in 2 ways:
 - [Self-hosted Sourcegraph](admin/install/index.md): Deploy and manage your own Sourcegraph instance.
 - [Sourcegraph.com](https://sourcegraph.com): For public code only. No signup or installation required.
 
-For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes cluster on-premises or on your preferred cloud provider. There are [2 tiers](https://about.sourcegraph.com/pricing): Core (free) and Enterprise. Enterprise features require a [Sourcegraph subscription](https://sourcegraph.com/user/subscriptions).
+For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes cluster on-premises or on your preferred cloud provider. There are [2 tiers](https://about.sourcegraph.com/pricing): Core (free) and Enterprise. Enterprise features require a [Sourcegraph subscription](https://sourcegraph.com/subscriptions/new).
 
 ## Other links
 

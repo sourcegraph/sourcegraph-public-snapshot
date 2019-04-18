@@ -14,10 +14,10 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { ActionItemProps } from '../actions/ActionItem'
+import { ActionItemAction } from '../actions/ActionItem'
 import { Context } from '../api/client/context/context'
-import { Model } from '../api/client/model'
 import { Services } from '../api/client/services'
+import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { ContributableMenu, TextDocumentPositionParams } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -37,7 +37,7 @@ const LOADING: 'loading' = 'loading'
 export function getHoverActions(
     { extensionsController, platformContext }: ExtensionsControllerProps & PlatformContextProps<'urlToFile'>,
     hoverContext: HoveredToken & HoverContext
-): Observable<ActionItemProps[]> {
+): Observable<ActionItemAction[]> {
     return getHoverActionsContext({ extensionsController, platformContext }, hoverContext).pipe(
         switchMap(context =>
             extensionsController.services.contribution
@@ -75,8 +75,8 @@ export function getHoverActionsContext(
         | {
               extensionsController: {
                   services: {
-                      model: {
-                          model: { value: Pick<Model, 'roots'> }
+                      workspace: {
+                          roots: { value: readonly WorkspaceRootWithMetadata[] }
                       }
                       textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
                       textDocumentReferences: Pick<Services['textDocumentReferences'], 'providersForDocument'>
@@ -139,8 +139,7 @@ export function getHoverActionsContext(
                     definitionURLOrError !== LOADING &&
                     !isErrorLike(definitionURLOrError) &&
                     definitionURLOrError === null,
-                'goToDefinition.error':
-                    isErrorLike(definitionURLOrError) && ((definitionURLOrError as any).stack as any),
+                'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
                 'findReferences.url':
                     hasReferenceProvider && showFindReferences
@@ -164,11 +163,11 @@ export function getHoverActionsContext(
 export function getDefinitionURL(
     { urlToFile }: Pick<PlatformContext, 'urlToFile'>,
     {
-        model,
+        workspace,
         textDocumentDefinition,
     }: {
-        model: {
-            model: { value: Pick<Model, 'roots'> }
+        workspace: {
+            roots: { value: readonly WorkspaceRootWithMetadata[] }
         }
         textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
@@ -187,7 +186,7 @@ export function getDefinitionURL(
             if (definitions.length > 1) {
                 // Open the panel to show all definitions.
                 const uri = withWorkspaceRootInputRevision(
-                    model.model.value.roots || [],
+                    workspace.roots.value || [],
                     parseRepoURI(params.textDocument.uri)
                 )
                 return {
@@ -206,7 +205,7 @@ export function getDefinitionURL(
             // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
             // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
             // branch name to a URL with a full Git commit SHA.
-            const uri = withWorkspaceRootInputRevision(model.model.value.roots || [], parseRepoURI(def.uri))
+            const uri = withWorkspaceRootInputRevision(workspace.roots.value || [], parseRepoURI(def.uri))
 
             if (def.range) {
                 uri.position = {
@@ -239,8 +238,8 @@ export function registerHoverContributions({
     | {
           extensionsController: {
               services: Pick<Services, 'commands' | 'contribution'> & {
-                  model: {
-                      model: { value: Pick<Model, 'roots'> }
+                  workspace: {
+                      roots: { value: readonly WorkspaceRootWithMetadata[] }
                   }
                   textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
               }
@@ -365,7 +364,7 @@ export function registerHoverContributions({
                         {
                             action: 'findReferences',
                             when:
-                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error || goToDefinition.notFound)',
+                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
                         },
                     ],
                 },

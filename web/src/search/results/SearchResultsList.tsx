@@ -24,16 +24,18 @@ import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
+import { shouldDisplayPerformanceWarning } from '../backend'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
-interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps {
+export interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
     isSourcegraphDotCom: boolean
+    deployType: DeployType
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
@@ -59,6 +61,7 @@ interface State {
     didScrollToItem: boolean
     /** Map from repo name to display name */
     fileMatchRepoDisplayNames: ReadonlyMap<string, string>
+    displayPerformanceWarning: boolean
 }
 
 export class SearchResultsList extends React.PureComponent<SearchResultsListProps, State> {
@@ -93,6 +96,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             visibleItems: new Set<number>(),
             didScrollToItem: false,
             fileMatchRepoDisplayNames: new Map<string, string>(),
+            displayPerformanceWarning: false,
         }
 
         // Handle items that have become visible
@@ -136,11 +140,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         //  Update the `at` query param with the latest first visible item
         this.subscriptions.add(
             firstVisibleItemChanges
-                .pipe(
-                    // Skip page load
-                    skip(1)
-                )
-                .subscribe(this.setCheckpoint)
+                // Skip page load
+                .pipe(skip(1))
+                .subscribe(checkpoint => this.setCheckpoint(checkpoint))
         )
 
         // Remove the "Jump to top" button when the user starts scrolling
@@ -267,6 +269,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
+
+        this.subscriptions.add(
+            shouldDisplayPerformanceWarning(this.props.deployType).subscribe(displayPerformanceWarning =>
+                this.setState({ displayPerformanceWarning })
+            )
+        )
     }
 
     public componentDidUpdate(): void {
@@ -338,6 +346,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onSaveQueryClick={this.props.onSaveQueryClick}
                                         onShowMoreResultsClick={this.props.onShowMoreResultsClick}
                                         showDotComMarketing={this.props.isSourcegraphDotCom}
+                                        displayPerformanceWarning={this.state.displayPerformanceWarning}
                                     />
 
                                     {/* Results */}
@@ -407,8 +416,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                         your query.
                                                     </>,
                                                     /* If running on non-cluster, give some smart advice */
-                                                    ...(this.props.isSourcegraphDotCom &&
-                                                    !window.context.isClusterDeployment
+                                                    ...(!this.props.isSourcegraphDotCom &&
+                                                    window.context.deployType !== 'cluster'
                                                         ? [
                                                               <>
                                                                   Upgrade to Sourcegraph Enterprise for a highly

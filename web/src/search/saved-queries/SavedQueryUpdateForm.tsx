@@ -20,7 +20,6 @@ export const SavedQueryUpdateForm: React.FunctionComponent<Props> = props => (
             key: props.savedQuery.key,
             description: props.savedQuery.description,
             query: props.savedQuery.query,
-            showOnHomepage: props.savedQuery.showOnHomepage,
             notify: props.savedQuery.notify,
             notifySlack: props.savedQuery.notifySlack,
             ownerKind: props.savedQuery.ownerKind,

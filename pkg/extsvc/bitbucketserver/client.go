@@ -90,8 +90,24 @@ func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, 
 	return &resp, err
 }
 
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {
-	u := fmt.Sprintf("rest/api/1.0/repos%s", pageToken.Query())
+func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries ...string) ([]*Repo, *PageToken, error) {
+	qry := make(url.Values)
+	for k, vs := range pageToken.Values() {
+		qry[k] = append(qry[k], vs...)
+	}
+
+	for _, q := range searchQueries {
+		sq, err := url.ParseQuery(q)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for k, vs := range sq {
+			qry[k] = append(qry[k], vs...)
+		}
+	}
+
+	u := fmt.Sprintf("rest/api/1.0/repos?%s", qry.Encode())
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, nil, err
@@ -104,6 +120,7 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken) ([]*Repo, *Pag
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return resp.Values, resp.PageToken, nil
 }
 
@@ -140,10 +157,14 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
+
 	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
 		return err
 	}
+
 	if d := time.Since(startWait); d > 200*time.Millisecond {
 		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
@@ -207,6 +228,14 @@ func (t *PageToken) Query() string {
 	if t == nil {
 		return ""
 	}
+	v := t.Values()
+	if len(v) == 0 {
+		return ""
+	}
+	return "?" + v.Encode()
+}
+
+func (t *PageToken) Values() url.Values {
 	v := url.Values{}
 	if t.NextPageStart != 0 {
 		v.Set("start", strconv.Itoa(t.NextPageStart))
@@ -214,10 +243,7 @@ func (t *PageToken) Query() string {
 	if t.Limit != 0 {
 		v.Set("limit", strconv.Itoa(t.Limit))
 	}
-	if len(v) == 0 {
-		return ""
-	}
-	return "?" + v.Encode()
+	return v
 }
 
 type Repo struct {
@@ -258,6 +284,15 @@ type Project struct {
 			Href string `json:"href"`
 		} `json:"self"`
 	} `json:"links"`
+}
+
+// IsNotFound reports whether err is a Bitbucket Server API not found error.
+func IsNotFound(err error) bool {
+	switch e := errors.Cause(err).(type) {
+	case *httpError:
+		return e.NotFound()
+	}
+	return false
 }
 
 type httpError struct {

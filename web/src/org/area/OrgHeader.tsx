@@ -1,5 +1,4 @@
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import TuneVerticalIcon from 'mdi-react/TuneVerticalIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
@@ -43,20 +42,10 @@ export const OrgHeader: React.FunctionComponent<Props> = (props: Props) => (
                             {props.org.viewerCanAdminister && (
                                 <NavLink
                                     to={`${props.match.url}/settings`}
-                                    exact={true}
                                     className="btn area-header__nav-link"
                                     activeClassName="area-header__nav-link--active"
                                 >
                                     <SettingsIcon className="icon-inline" /> Settings
-                                </NavLink>
-                            )}
-                            {props.org.viewerCanAdminister && (
-                                <NavLink
-                                    to={`${props.match.url}/account`}
-                                    className="btn area-header__nav-link"
-                                    activeClassName="area-header__nav-link--active"
-                                >
-                                    <TuneVerticalIcon className="icon-inline" /> Account
                                 </NavLink>
                             )}
                         </div>

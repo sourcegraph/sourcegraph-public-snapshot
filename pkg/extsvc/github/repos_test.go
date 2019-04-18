@@ -286,14 +286,49 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 		},
 	}
 
-	repos, _, _, err :=
-		c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
-
+	reposPage, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !repoListsAreEqual(repos, wantRepos) {
-		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
+	if !repoListsAreEqual(reposPage.Repos, wantRepos) {
+		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(reposPage.Repos), stringForRepoList(wantRepos))
+	}
+}
+
+func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
+	mock := mockHTTPResponseBody{
+		responseBody: `
+{
+  "total_count": 2,
+  "incomplete_results": true,
+  "items": [
+    {
+      "node_id": "i",
+      "full_name": "o/r",
+      "description": "d",
+      "html_url": "https://github.example.com/o/r",
+      "fork": true
+    },
+    {
+      "node_id": "j",
+      "full_name": "a/b",
+      "description": "c",
+      "html_url": "https://github.example.com/a/b",
+      "fork": false
+    }
+  ]
+}
+`}
+	c := newTestClient(t, &mock)
+
+	// If we have incomplete results we want to fail. Our syncer requires all
+	// repositories to be returned, otherwise it will delete the missing
+	// repositories.
+	want := `github repository search returned incomplete results. This is an ephemeral error: query="org:sourcegraph" page=1 total=2`
+	_, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
+
+	if have := fmt.Sprint(err); want != have {
+		t.Errorf("\nhave: %s\nwant: %s", have, want)
 	}
 }
 

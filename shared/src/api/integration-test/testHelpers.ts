@@ -1,22 +1,29 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, from, NEVER, NextObserver, Subscribable, throwError } from 'rxjs'
-import { first, take } from 'rxjs/operators'
+import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
+import { filter, first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { isDefined } from '../../util/types'
 import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
-import { Model } from '../client/model'
 import { Services } from '../client/services'
+import { CodeEditor } from '../client/services/editorService'
+import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 
-const FIXTURE_MODEL: Model = {
+interface TestInitData {
+    roots: readonly WorkspaceRootWithMetadata[]
+    editors: readonly Pick<CodeEditor, Exclude<keyof CodeEditor, 'editorId'>>[]
+}
+
+const FIXTURE_INIT_DATA: TestInitData = {
     roots: [{ uri: 'file:///' }],
-    visibleViewComponents: [
+    editors: [
         {
-            type: 'textEditor',
-            item: {
+            type: 'CodeEditor',
+            resource: 'file:///f',
+            model: {
                 uri: 'file:///f',
                 languageId: 'l',
                 text: 't',
@@ -25,11 +32,6 @@ const FIXTURE_MODEL: Model = {
             isActive: true,
         },
     ],
-}
-
-interface TestContext {
-    client: ExtensionHostClient
-    extensionAPI: typeof sourcegraph
 }
 
 interface Mocks
@@ -59,13 +61,12 @@ const NOOP_MOCKS: Mocks = {
  */
 export async function integrationTestContext(
     partialMocks: Partial<Mocks> = NOOP_MOCKS,
-    initModel: Model = FIXTURE_MODEL
-): Promise<
-    TestContext & {
-        model: Subscribable<Model> & { value: Model } & NextObserver<Model>
-        services: Services
-    }
-> {
+    initModel: TestInitData = FIXTURE_INIT_DATA
+): Promise<{
+    client: ExtensionHostClient
+    extensionAPI: typeof sourcegraph
+    services: Services
+}> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
     const clientAPIChannel = new MessageChannel()
@@ -89,15 +90,27 @@ export async function integrationTestContext(
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     const extensionAPI = await extensionHost.extensionAPI
-    services.model.model.next(initModel)
+    for (const { model, ...editor } of initModel.editors) {
+        services.model.addModel(model)
+        services.editor.addEditor(editor)
+    }
+    services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
     await Promise.all([
         from(extensionAPI.workspace.openedTextDocuments)
-            .pipe(take((initModel.visibleViewComponents || []).length))
+            .pipe(take(initModel.editors.length))
             .toPromise(),
         from(extensionAPI.app.activeWindowChanges)
-            .pipe(first(isDefined))
+            .pipe(
+                first(isDefined),
+                switchMap(activeWindow =>
+                    from(activeWindow.activeViewComponentChanges).pipe(
+                        filter(isDefined),
+                        take(initModel.editors.length)
+                    )
+                )
+            )
             .toPromise(),
     ])
 
@@ -105,7 +118,6 @@ export async function integrationTestContext(
         client,
         extensionAPI,
         services,
-        model: services.model.model,
     }
 }
 

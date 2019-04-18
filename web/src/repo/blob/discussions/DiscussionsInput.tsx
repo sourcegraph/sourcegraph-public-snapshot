@@ -1,20 +1,27 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
+import { uniqueId } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
+import { catchError, filter, map, mergeMap, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { CodeEditor, EditorId } from '../../../../../shared/src/api/client/services/editorService'
+import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
+import { COMMENT_URI_SCHEME } from '../../../../../shared/src/api/client/types/textDocument'
+import { EditorCompletionWidget } from '../../../../../shared/src/components/completion/EditorCompletionWidget'
+import { EditorTextField } from '../../../../../shared/src/components/editorTextField/EditorTextField'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import {
     Spacer,
     TabBorderClassName,
     TabsWithLocalStorageViewStatePersistence,
 } from '../../../../../shared/src/components/Tabs'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError } from '../../../../../shared/src/util/errors'
+import { COMPLETION_WIDGET_CLASS_PROPS } from '../../../components/completion/styles'
 import { Form } from '../../../components/Form'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
 
 /**
  * How & whether or not to render a title input field.
@@ -30,7 +37,7 @@ export enum TitleMode {
     None,
 }
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     location: H.Location
     history: H.History
 
@@ -49,7 +56,9 @@ interface Props {
 
 interface State {
     titleInputValue: string
-    textArea: { textAreaValue: string; selectionStart: number; element?: HTMLElement }
+    textAreaValue: string
+    editorId?: string
+    modelUri?: string
     submitting: boolean
     error?: Error
 
@@ -72,37 +81,63 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
 
     private textAreaKeyDowns = new Subject<React.KeyboardEvent<HTMLTextAreaElement>>()
     private nextTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (this.onKeyDownFilter && this.onKeyDownFilter(e)) {
-            return
-        }
         this.textAreaKeyDowns.next(e)
     }
 
-    private textAreaChanges = new Subject<{ textAreaValue: string; selectionStart: number; element?: HTMLElement }>()
-    private nextTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        this.textAreaChanges.next({
-            textAreaValue: e.currentTarget.value,
-            selectionStart: e.currentTarget.selectionStart,
-            element: e.currentTarget,
-        })
+    private valueChanges = new Subject<string>()
+    private nextTextAreaChange = (value: string) => {
+        this.valueChanges.next(value)
     }
 
     private tabChanges = new Subject<string>()
     private nextTabChange = (tab: string) => this.tabChanges.next(tab)
 
-    private onBlurHandler?: OnBlurHandler
-    private onKeyDownFilter?: OnKeyDownFilter
-    private textAreaRef?: HTMLTextAreaElement
+    private textAreaRef = React.createRef<HTMLTextAreaElement>()
 
     public state: State = {
         titleInputValue: '',
-        textArea: { textAreaValue: '', selectionStart: 0 },
+        textAreaValue: '',
         submitting: false,
     }
 
     // TODO(slimsag:discussions): ASAP: "preview" tab does not get reset after you submit a comment
 
     public componentDidMount(): void {
+        const textAreaValueChanges = this.valueChanges.pipe(startWith(''))
+
+        // Update input model and editor.
+        const editorResets = new Subject<void>()
+        this.subscriptions.add(
+            editorResets.subscribe(() => {
+                this.setState({ editorId: undefined, modelUri: undefined })
+            })
+        )
+        const editorInstantiations = editorResets.pipe(
+            startWith(void 0),
+            switchMap(
+                () =>
+                    new Observable<EditorId & { modelUri: CodeEditor['resource'] }>(sub => {
+                        const model: TextModel = {
+                            uri: uniqueId(`${COMMENT_URI_SCHEME}://`),
+                            languageId: 'plaintext',
+                            text: '',
+                        }
+                        this.props.extensionsController.services.model.addModel(model)
+                        const editor = this.props.extensionsController.services.editor.addEditor({
+                            type: 'CodeEditor',
+                            resource: model.uri,
+                            selections: [],
+                            isActive: true,
+                        })
+                        sub.next({ editorId: editor.editorId, modelUri: model.uri })
+                        return () => {
+                            this.props.extensionsController.services.editor.removeEditor(editor)
+                            this.props.extensionsController.services.model.removeModel(model.uri)
+                        }
+                    })
+            )
+        )
+
         this.subscriptions.add(
             merge(
                 this.titleInputChanges.pipe(
@@ -110,16 +145,19 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     map((titleInputValue): Update => state => ({ ...state, titleInputValue }))
                 ),
 
-                this.textAreaChanges.pipe(
-                    startWith({ textAreaValue: '', selectionStart: 0, element: undefined }),
+                textAreaValueChanges.pipe(
                     map(
-                        (textArea): Update => state => {
+                        (textAreaValue): Update => state => {
                             if (this.props.titleMode === TitleMode.Implicit) {
-                                this.titleInputChanges.next(textArea.textAreaValue.trimLeft().split('\n')[0])
+                                this.titleInputChanges.next(textAreaValue.trimLeft().split('\n')[0])
                             }
-                            return { ...state, textArea }
+                            return { ...state, textAreaValue }
                         }
                     )
+                ),
+
+                editorInstantiations.pipe(
+                    map(({ editorId, modelUri }): Update => state => ({ ...state, editorId, modelUri }))
                 ),
 
                 // Handle tab changes by logging the event and fetching preview data.
@@ -132,8 +170,8 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         }
                     }),
                     filter(tab => tab === 'preview'),
-                    withLatestFrom(this.textAreaChanges),
-                    mergeMap(([, { textAreaValue }]) =>
+                    withLatestFrom(this.valueChanges),
+                    mergeMap(([, textAreaValue]) =>
                         concat(
                             of<Update>(state => ({ ...state, previewHTML: undefined, previewLoading: true })),
                             renderMarkdown({ markdown: this.trimImplicitTitle(textAreaValue) }).pipe(
@@ -150,7 +188,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                         return [
                                             state => ({
                                                 ...state,
-                                                error: new Error('Error rendering markdown: ' + error.message),
+                                                error: new Error('Error rendering Markdown: ' + error.message),
                                                 previewLoading: false,
                                             }),
                                         ]
@@ -171,11 +209,11 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     )
                 ).pipe(
                     withLatestFrom(
-                        this.textAreaChanges,
+                        this.valueChanges,
                         this.titleInputChanges.pipe(startWith('')),
                         this.componentUpdates.pipe(startWith(this.props))
                     ),
-                    mergeMap(([, { textAreaValue }, titleInputValue, props]) =>
+                    mergeMap(([, textAreaValue, titleInputValue, props]) =>
                         concat(
                             // Start with setting submitting: true
                             of<Update>(state => ({ ...state, submitting: true })),
@@ -185,9 +223,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                         ...state,
                                         submitting: false,
                                         titleInputValue: '',
-                                        textArea: { ...state, textAreaValue: '', selectionStart: 0 },
+                                        textAreaValue: '',
                                     })
                                 ),
+                                tap(() => editorResets.next()),
                                 catchError(
                                     (error): Update[] => {
                                         console.error(error)
@@ -218,7 +257,11 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { titleInputValue, textArea, error, previewLoading, previewHTML } = this.state
+        const { titleInputValue, editorId, modelUri, error, previewLoading, previewHTML } = this.state
+
+        if (!editorId || !modelUri) {
+            return null
+        }
 
         return (
             <Form className="discussions-input" onSubmit={this.nextSubmit}>
@@ -245,27 +288,24 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     onSelectTab={this.nextTabChange}
                 >
                     <div key="write">
-                        {textArea.element && (
-                            <DiscussionsInputMentionOverlay
-                                location={this.props.location}
-                                history={this.props.history}
-                                textAreaValue={textArea.textAreaValue}
-                                selectionStart={textArea.selectionStart}
-                                setTextAreaValue={this.setTextAreaValue}
-                                textAreaElement={textArea.element}
-                                setOnBlurHandler={this.setOnBlurHandler}
-                                setOnKeyDownFilter={this.setOnKeyDownFilter}
+                        {this.textAreaRef.current && (
+                            <EditorCompletionWidget
+                                textArea={this.textAreaRef.current}
+                                editorId={editorId}
+                                extensionsController={this.props.extensionsController}
+                                {...COMPLETION_WIDGET_CLASS_PROPS}
                             />
                         )}
-                        <textarea
+                        <EditorTextField
                             className="form-control discussions-input__text-box"
                             placeholder="Leave a comment"
-                            onChange={this.nextTextAreaChange}
+                            editorId={editorId}
+                            modelUri={modelUri}
+                            onValueChange={this.nextTextAreaChange}
                             onKeyDown={this.nextTextAreaKeyDown}
-                            onBlur={this.onBlurHandler}
-                            value={textArea.textAreaValue}
-                            ref={this.setTextAreaRef}
+                            textAreaRef={this.textAreaRef}
                             autoFocus={this.props.titleMode !== TitleMode.Explicit}
+                            extensionsController={this.props.extensionsController}
                         />
                     </div>
                     <div key="preview" className="discussions-input__preview">
@@ -305,30 +345,9 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     }
 
     private canSubmit = (): boolean => {
-        const textAreaEmpty = !this.state.textArea.textAreaValue.trim()
+        const textAreaEmpty = !this.state.textAreaValue.trim()
         const titleRequired = this.props.titleMode !== TitleMode.None
         const titleEmpty = !this.state.titleInputValue.trim()
         return !this.state.submitting && !textAreaEmpty && (!titleRequired || !titleEmpty)
     }
-
-    private setOnBlurHandler = (h: OnBlurHandler) => {
-        this.onBlurHandler = h
-    }
-
-    private setOnKeyDownFilter = (f: OnKeyDownFilter) => {
-        this.onKeyDownFilter = f
-    }
-
-    private setTextAreaValue = (v: { newValue: string; newSelectionStart: number }) => {
-        this.textAreaChanges.next({
-            textAreaValue: v.newValue,
-            selectionStart: v.newSelectionStart,
-            element: this.state.textArea.element,
-        })
-        this.textAreaRef!.value = v.newValue
-        this.textAreaRef!.selectionStart = v.newSelectionStart
-        this.textAreaRef!.selectionEnd = v.newSelectionStart
-    }
-
-    private setTextAreaRef = (ref: HTMLTextAreaElement) => (this.textAreaRef = ref)
 }

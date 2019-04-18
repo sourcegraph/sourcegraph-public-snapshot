@@ -90,8 +90,8 @@ require (
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
-	github.com/opentracing-contrib/go-stdlib v0.0.0-20190104202730-77df8e8e70b4
-	github.com/opentracing/opentracing-go v1.0.2
+	github.com/opentracing-contrib/go-stdlib v0.0.0-20190324214902-3020fec0e66b
+	github.com/opentracing/opentracing-go v1.1.0
 	github.com/peterhellberg/link v1.0.0
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
@@ -99,7 +99,7 @@ require (
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
 	github.com/prometheus/common v0.2.0 // indirect
 	github.com/prometheus/procfs v0.0.0-20190209105433-f8d8b3f739bd // indirect
-	github.com/russellhaering/gosaml2 v0.3.1
+	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/sergi/go-diff v1.0.0
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
@@ -119,7 +119,7 @@ require (
 	github.com/sourcegraph/go-jsonschema v0.0.0-20190205151546-7939fa138765
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
-	github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10
+	github.com/sourcegraph/gosyntect v0.0.0-20180604231642-47acbff8ee17
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
@@ -141,7 +141,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190212230446-3e8b2be13635
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190322080309-f49334f85ddc
-	golang.org/x/time v0.0.0-20190104202802-85acf8d2951c
+	golang.org/x/time v0.0.0-20190401211219-9d24e82272b4
 	golang.org/x/tools v0.0.0-20190322203728-c1a832b0ad89
 	google.golang.org/api v0.1.0 // indirect
 	google.golang.org/genproto v0.0.0-20190215211957-bd968387e4aa // indirect
@@ -159,7 +159,6 @@ replace (
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190116094554-8aa57bd35909
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
-	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538
 )
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8

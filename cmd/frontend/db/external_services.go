@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -100,7 +101,16 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		return errors.Wrap(err, "failed to validate config against schema")
 	}
 
-	errs := new(multierror.Error)
+	errs := &multierror.Error{
+		ErrorFormat: func(errs []error) string {
+			// Markdown bullet list of error messages.
+			var buf bytes.Buffer
+			for _, err := range errs {
+				fmt.Fprintf(&buf, "- %s\n", err)
+			}
+			return buf.String()
+		},
+	}
 	for _, err := range res.Errors() {
 		errs = multierror.Append(errs, errors.New(err.String()))
 	}
@@ -420,14 +430,17 @@ func (c *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context
 var migrateOnce sync.Once
 
 // migrateJsonConfigToExternalServices performs a one time migration to populate
-// the new external_services database table with relavant entries in the site config.
+// the new external_services database table with relevant entries in the site config.
 // It is idempotent.
 //
 // This migration can be deleted as soon as (whichever happens first):
 //   - All customers have updated to 3.0 or newer.
 //   - 3 months after 3.0 is released.
-func (c *ExternalServicesStore) migrateJsonConfigToExternalServices(ctx context.Context) {
+func (c *ExternalServicesStore) migrateJsonConfigToExternalServices() {
 	migrateOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
 		// Run in a transaction because we are racing with other frontend replicas.
 		err := dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 			now := time.Now()
@@ -530,7 +543,7 @@ func (c *ExternalServicesStore) migrateJsonConfigToExternalServices(ctx context.
 }
 
 func (c *ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
-	c.migrateJsonConfigToExternalServices(ctx)
+	c.migrateJsonConfigToExternalServices()
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at
 		FROM external_services

@@ -137,8 +137,10 @@ export const submitTrialRequest = (email: string): void => {
             map(dataOrThrowErrors),
             map(() => undefined)
         )
-        .subscribe(undefined, error => {
-            // Swallow errors since the form submission is a non-blocking request that happens during site-init
-            // if a trial license key is requested.
+        .subscribe({
+            error: error => {
+                // Swallow errors since the form submission is a non-blocking request that happens during site-init
+                // if a trial license key is requested.
+            },
         })
 }

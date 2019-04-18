@@ -17,6 +17,7 @@ import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
 import { ThemeProps } from '../theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
@@ -32,6 +33,7 @@ export interface RepoRevContainerContext
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
+        EventLoggerProps,
         ActivationProps {
     repo: GQL.IRepository
     rev: string
@@ -47,6 +49,7 @@ interface RepoRevContainerProps
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps {
@@ -195,6 +198,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
             isLightTheme: this.props.isLightTheme,
+            telemetryService: this.props.telemetryService,
             activation: this.props.activation,
             repo: this.props.repo,
             repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,

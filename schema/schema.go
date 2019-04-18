@@ -82,15 +82,18 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 
 // BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
 type BitbucketServerConnection struct {
-	Certificate                 string `json:"certificate,omitempty"`
-	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
-	GitURLType                  string `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
-	Password                    string `json:"password,omitempty"`
-	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
-	Token                       string `json:"token,omitempty"`
-	Url                         string `json:"url"`
-	Username                    string `json:"username,omitempty"`
+	Certificate                 string                         `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
+	ExcludePersonalRepositories bool                           `json:"excludePersonalRepositories,omitempty"`
+	GitURLType                  string                         `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                           `json:"initialRepositoryEnablement,omitempty"`
+	Password                    string                         `json:"password,omitempty"`
+	Repos                       []string                       `json:"repos,omitempty"`
+	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string                       `json:"repositoryQuery"`
+	Token                       string                         `json:"token,omitempty"`
+	Url                         string                         `json:"url"`
+	Username                    string                         `json:"username"`
 }
 type BrandAssets struct {
 	Logo   string `json:"logo,omitempty"`
@@ -141,6 +144,10 @@ type CriticalConfiguration struct {
 type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
+}
+type ExcludedBitbucketServerRepo struct {
+	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 type ExcludedGitHubRepo struct {
 	Id   string `json:"id,omitempty"`
@@ -193,7 +200,7 @@ type GitHubConnection struct {
 	InitialRepositoryEnablement bool                  `json:"initialRepositoryEnablement,omitempty"`
 	Repos                       []string              `json:"repos,omitempty"`
 	RepositoryPathPattern       string                `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string              `json:"repositoryQuery,omitempty"`
+	RepositoryQuery             []string              `json:"repositoryQuery"`
 	Token                       string                `json:"token"`
 	Url                         string                `json:"url"`
 }
@@ -220,7 +227,7 @@ type GitLabConnection struct {
 	Exclude                     []*ExcludedGitLabProject `json:"exclude,omitempty"`
 	GitURLType                  string                   `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool                     `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string                 `json:"projectQuery,omitempty"`
+	ProjectQuery                []string                 `json:"projectQuery"`
 	Projects                    []*GitLabProject         `json:"projects,omitempty"`
 	RepositoryPathPattern       string                   `json:"repositoryPathPattern,omitempty"`
 	Token                       string                   `json:"token"`
@@ -425,6 +432,7 @@ type SiteConfiguration struct {
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
+	SearchLargeFiles                  []string                    `json:"search.largeFiles,omitempty"`
 }
 
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.

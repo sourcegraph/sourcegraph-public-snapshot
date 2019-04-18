@@ -26,6 +26,11 @@ describe('Range', () => {
         assertToJSON(range, { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } })
     })
 
+    test('toPlain', () => {
+        const range = new Range(1, 2, 3, 4)
+        expect(range.toPlain()).toEqual({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } })
+    })
+
     test('sorting', () => {
         // sorts start/end
         let range = new Range(1, 0, 0, 0)

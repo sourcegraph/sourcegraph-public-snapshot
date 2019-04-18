@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
-import { isEqual } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ReactStripeElements } from 'react-stripe-elements'
@@ -207,7 +206,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                 <div className="form-group mt-3">
                                     <Link
                                         to={`/sign-up?returnTo=${encodeURIComponent(
-                                            `/user/subscriptions/new${productSubscriptionInputForLocationHash(
+                                            `/subscriptions/new${productSubscriptionInputForLocationHash(
                                                 productSubscriptionInput
                                             )}`
                                         )}`}

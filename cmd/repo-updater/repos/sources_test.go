@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -20,7 +21,37 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+func TestOtherRepoName(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		in   string
+		out  string
+	}{
+		{"user and password elided", "https://user:pass@foo.bar/baz", "foo.bar/baz"},
+		{"scheme elided", "https://user@foo.bar/baz", "foo.bar/baz"},
+		{"raw query elided", "https://foo.bar/baz?secret_token=12345", "foo.bar/baz"},
+		{"fragment elided", "https://foo.bar/baz#fragment", "foo.bar/baz"},
+		{": replaced with -", "git://foo.bar/baz:bam", "foo.bar/baz-bam"},
+		{"@ replaced with -", "ssh://foo.bar/baz@bam", "foo.bar/baz-bam"},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			cloneURL, err := url.Parse(tc.in)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := otherRepoName(cloneURL), tc.out; have != want {
+				t.Errorf("otherRepoName(%q):\nhave: %q\nwant: %q", tc.in, have, want)
+			}
+		})
+	}
+}
 
 func TestNewSourcer(t *testing.T) {
 	now := time.Now()
@@ -96,6 +127,15 @@ func TestNewSourcer(t *testing.T) {
 }
 
 func TestSources_ListRepos(t *testing.T) {
+
+	// NOTE(tsenart): Updating this test's testdata with the `-update` flag requires
+	// setting up a local instance of Bitbucket Server and populating it.
+	// $ docker run \
+	//    -v ~/.bitbucket/:/var/atlassian/application-data/bitbucket \
+	//    --name="bitbucket"\
+	//    -d -p 7990:7990 -p 7999:7999 \
+	//    atlassian/bitbucket-server
+
 	type testCase struct {
 		name   string
 		ctx    context.Context
@@ -128,6 +168,26 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:   "http://127.0.0.1:7990",
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryQuery: []string{
+						"?visibility=private",
+						"?visibility=public",
+					},
+				}),
+			},
+			{
+				Kind: "OTHER",
+				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+					Url: "https://github.com",
+					Repos: []string{
+						"google/go-cmp",
+					},
+				}),
+			},
 		}
 
 		kinds := make(map[string]struct{})
@@ -144,7 +204,7 @@ func TestSources_ListRepos(t *testing.T) {
 				set := make(map[string]bool)
 
 				for _, r := range rs {
-					set[r.ExternalRepo.ServiceType] = true
+					set[strings.ToLower(r.ExternalRepo.ServiceType)] = true
 					if !r.Enabled {
 						t.Errorf("repo %q is not enabled", r.Name)
 					}
@@ -183,7 +243,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "GITLAB",
 				Config: marshalJSON(t, &schema.GitLabConnection{
-					Url: "https://gitlab.com",
+					Url:   "https://gitlab.com",
+					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{
 						"?search=gokulkarthick",
 						"?search=dotfiles-vegetableman",
@@ -191,6 +252,24 @@ func TestSources_ListRepos(t *testing.T) {
 					Exclude: []*schema.ExcludedGitLabProject{
 						{Name: "gokulkarthick/gokulkarthick"},
 						{Id: 7789240},
+					},
+				}),
+			},
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:   "http://127.0.0.1:7990",
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					Repos: []string{
+						"ORG/foo",
+						"org/BAZ",
+					},
+					RepositoryQuery: []string{
+						"?visibility=private",
+					},
+					Exclude: []*schema.ExcludedBitbucketServerRepo{
+						{Name: "ORG/Foo"}, // test case insensitivity
+						{Id: 3},           // baz id
 					},
 				}),
 			},
@@ -223,6 +302,10 @@ func TestSources_ListRepos(t *testing.T) {
 						for _, e := range cfg.Exclude {
 							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id)})
 						}
+					case *schema.BitbucketServerConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id)})
+						}
 					}
 
 					if len(ex) == 0 {
@@ -231,7 +314,8 @@ func TestSources_ListRepos(t *testing.T) {
 
 					for _, e := range ex {
 						name := e.name
-						if s.Kind == "GITHUB" {
+						switch s.Kind {
+						case "GITHUB", "BITBUCKETSERVER":
 							name = strings.ToLower(name)
 						}
 						set[name], set[e.id] = true, true
@@ -266,11 +350,34 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITLAB",
 				Config: marshalJSON(t, &schema.GitLabConnection{
 					Url:          "https://gitlab.com",
+					Token:        os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{"none"},
 					Projects: []*schema.GitLabProject{
 						{Name: "gnachman/iterm2"},
 						{Name: "gnachman/iterm2-missing"},
 						{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
+					},
+				}),
+			},
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:             "http://127.0.0.1:7990",
+					Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryQuery: []string{"none"},
+					Repos: []string{
+						"Org/foO",
+						"org/baz",
+						"ORG/bar",
+					},
+				}),
+			},
+			{
+				Kind: "OTHER",
+				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+					Url: "https://github.com",
+					Repos: []string{
+						"google/go-cmp",
 					},
 				}),
 			},
@@ -286,10 +393,73 @@ func TestSources_ListRepos(t *testing.T) {
 				sort.Strings(have)
 
 				want := []string{
+					"127.0.0.1/ORG/bar",
+					"127.0.0.1/ORG/baz",
+					"127.0.0.1/ORG/foo",
+					"github.com/google/go-cmp",
 					"github.com/sourcegraph/sourcegraph",
 					"github.com/tsenart/vegeta",
 					"gitlab.com/gitlab-org/gitlab-ce",
 					"gitlab.com/gnachman/iterm2",
+				}
+
+				if !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:                   "https://github.com",
+					Token:                 os.Getenv("GITHUB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{nameWithOwner}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"tsenart/vegeta"},
+				}),
+			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:                   "https://gitlab.com",
+					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
+					ProjectQuery:          []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+					},
+				}),
+			},
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:                   "http://127.0.0.1:7990",
+					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"org/baz"},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "repositoryPathPattern determines the repo name",
+			svcs: svcs,
+			assert: func(t testing.TB, rs Repos) {
+				t.Helper()
+
+				have := rs.Names()
+				sort.Strings(have)
+
+				want := []string{
+					"127.0.0.1/a/b/c/ORG/baz",
+					"github.com/a/b/c/tsenart/vegeta",
+					"gitlab.com/a/b/c/gnachman/iterm2",
 				}
 
 				if !reflect.DeepEqual(have, want) {
@@ -306,10 +476,10 @@ func TestSources_ListRepos(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			srcs, err := NewSourcer(cf)(tc.svcs...)
+			obs := ObservedSource(log15.Root(), NewSourceMetrics())
+			srcs, err := NewSourcer(cf, obs)(tc.svcs...)
 			if err != nil {
-				t.Error(err)
-				return // Let defers run
+				t.Fatal(err)
 			}
 
 			ctx := tc.ctx
@@ -333,21 +503,20 @@ func newClientFactory(t testing.TB, name string) (httpcli.Factory, func(testing.
 	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
 	rec := newRecorder(t, cassete, *update)
 	mw := httpcli.NewMiddleware(
-		redirect(map[string]string{"github-proxy": "api.github.com"}),
+		githubProxyRedirectMiddleware,
 	)
 	return httpcli.NewFactory(mw, newRecorderOpt(t, rec)),
 		func(t testing.TB) { save(t, rec) }
 }
 
-func redirect(rules map[string]string) httpcli.Middleware {
-	return func(cli httpcli.Doer) httpcli.Doer {
-		return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-			if host, ok := rules[req.URL.Hostname()]; ok {
-				req.URL.Host = host
-			}
-			return cli.Do(req)
-		})
-	}
+func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
+	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Hostname() == "github-proxy" {
+			req.URL.Host = "api.github.com"
+			req.URL.Scheme = "https"
+		}
+		return cli.Do(req)
+	})
 }
 
 func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {

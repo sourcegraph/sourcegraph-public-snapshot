@@ -12,7 +12,7 @@ import {
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
-import { Model } from '../model'
+import { EditorService } from './editorService'
 import { SettingsService } from './settings'
 
 /** A registered set of contributions from an extension in the registry. */
@@ -41,7 +41,7 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     public constructor(
-        private model: Subscribable<Model>,
+        private editorService: Pick<EditorService, 'editors'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
     ) {}
@@ -114,11 +114,11 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            this.model,
+            this.editorService.editors,
             this.settingsService.data,
             this.context
         ).pipe(
-            map(([multiContributions, model, settings, context]) => {
+            map(([multiContributions, editors, settings, context]) => {
                 // Merge in extra context.
                 if (extraContext) {
                     context = { ...context, ...extraContext }
@@ -126,7 +126,7 @@ export class ContributionRegistry {
 
                 // TODO(sqs): use {@link ContextService#observeValue}
                 const computedContext = {
-                    get: (key: string) => getComputedContextProperty(model, settings, context, key, scope),
+                    get: (key: string) => getComputedContextProperty(editors, settings, context, key, scope),
                 }
                 return flatten(multiContributions).map(contributions => {
                     try {

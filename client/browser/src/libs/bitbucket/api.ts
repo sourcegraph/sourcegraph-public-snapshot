@@ -1,10 +1,10 @@
-import { isDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { first } from 'lodash'
 import { Observable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { filter, map } from 'rxjs/operators'
-
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
+import { isDefined } from '../../../../../shared/src/util/types'
+import { DiffResolvedRevSpec } from '../../shared/repo'
 import { BitbucketRepoInfo } from './scrape'
 
 //
@@ -44,7 +44,7 @@ interface PRResponse {
  */
 export const getCommitsForPR: (
     info: BitbucketRepoInfo & { prID: number }
-) => Observable<{ baseCommitID: string; headCommitID: string }> = memoizeObservable(
+) => Observable<DiffResolvedRevSpec> = memoizeObservable(
     ({ project, repoSlug, prID }) =>
         get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
             map(({ fromRef, toRef }) => ({ baseCommitID: toRef.latestCommit, headCommitID: fromRef.latestCommit }))
@@ -71,5 +71,6 @@ export const getBaseCommit: (info: GetBaseCommitInput) => Observable<string> = m
             map(({ parents }) => first(parents)),
             filter(isDefined),
             map(({ id }) => id)
-        )
+        ),
+    ({ project, repoSlug, commitID }) => `${project}:${repoSlug}:${commitID}`
 )

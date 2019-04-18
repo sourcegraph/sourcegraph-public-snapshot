@@ -140,9 +140,19 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "BITBUCKETSERVER",
-			desc:   "without url",
+			desc:   "without url, username nor repositoryQuery",
 			config: `{}`,
-			assert: includes("url: url is required"),
+			assert: includes(
+				"url: url is required",
+				"username: username is required",
+				"repositoryQuery: repositoryQuery is required",
+			),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "without username",
+			config: `{}`,
+			assert: includes("username: username is required"),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -155,21 +165,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "bad url scheme",
 			config: `{"url": "badscheme://bitbucket.com"}`,
 			assert: includes("url: Does not match pattern '^https?://'"),
-		},
-		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "with token AND username / password",
-			config: `{"token": "foo", "username": "bar", "password": "baz"}`,
-			assert: includes("(root): Must validate one and only one schema (oneOf)"),
-		},
-		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "with token AND username",
-			config: `{"token": "foo", "username": "bar"}`,
-			assert: includes(
-				"(root): Must validate one and only one schema (oneOf)",
-				"username: Invalid type. Expected: null, given: string",
-			),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -199,18 +194,110 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "valid",
-			config: `{"url": "https://bitbucket.com/", "token": "secret-token"}`,
+			kind: "BITBUCKETSERVER",
+			desc: "valid",
+			config: `
+			{
+				"url": "https://bitbucket.com/",
+				"username": "admin",
+				"token": "secret-token",
+				"repositoryQuery": ["none"]
+			}`,
 			assert: equals("<nil>"),
 		},
 		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "empty repositoryQuery",
+			config: `{"repositoryQuery": []}`,
+			assert: includes(`repositoryQuery: Array must have at least 1 items`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "empty repositoryQuery item",
+			config: `{"repositoryQuery": [""]}`,
+			assert: includes(`repositoryQuery.0: String length must be greater than or equal to 1`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid empty exclude",
+			config: `{"exclude": []}`,
+			assert: includes(`exclude: Array must have at least 1 items`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": "bar"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid additional exclude item properties",
+			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
+			assert: includes(`bar: Additional property bar is not allowed`),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "both name and id can be specified in exclude",
+			config: `
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
+				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
+				"exclude": [
+					{"name": "foo/bar", "id": 1234}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid empty repos",
+			config: `{"repos": []}`,
+			assert: includes(`repos: Array must have at least 1 items`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid empty repos item",
+			config: `{"repos": [""]}`,
+			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "valid repos",
+			config: `
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
+				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
+				"repos": [
+					"foo/bar",
+					"bar/baz"
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
 			kind:   "GITHUB",
-			desc:   "without url nor token",
+			desc:   "without url, token nor repositoryQuery",
 			config: `{}`,
 			assert: includes(
 				"url: url is required",
 				"token: token is required",
+				"repositoryQuery: repositoryQuery is required",
 			),
 		},
 		{
@@ -313,6 +400,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			{
 				"url": "https://github.corp.com",
 				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
 				"exclude": [
 					{"name": "foo/bar", "id": "AAAAA="}
 				]
@@ -368,6 +456,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			{
 				"url": "https://gitlab.corp.com",
 				"token": "very-secret-token",
+				"projectQuery": ["none"],
 				"exclude": [
 					{"name": "foo/bar", "id": 1234}
 				]
@@ -411,6 +500,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			{
 				"url": "https://gitlab.corp.com",
 				"token": "very-secret-token",
+				"projectQuery": ["none"],
 				"projects": [
 					{"name": "foo/bar", "id": 1234}
 				]
@@ -419,11 +509,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
-			desc:   "without url nor token",
+			desc:   "without url, token nor projectQuery",
 			config: `{}`,
 			assert: includes(
 				"url: url is required",
 				"token: token is required",
+				"projectQuery: projectQuery is required",
 			),
 		},
 		{
@@ -567,6 +658,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			{
 				"url": "https://gitlab.foo.bar",
 				"token": "super-secret-token",
+				"projectQuery": ["none"],
 				"authorization": {
 					"identityProvider": {
 						"type": "username",
@@ -625,7 +717,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "OTHER",
 			desc:   "without URL but with empty repos array",
 			config: `{"repos": []}`,
-			assert: includes(`repos: Array must have at least 1 items`),
+			assert: excludes(`repos: Array must have at least 1 items`),
 		},
 		{
 			kind:   "OTHER",
@@ -661,7 +753,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "OTHER",
 			desc:   "with URL but empty repos array",
 			config: `{"url": "http://github.com/", "repos": []}`,
-			assert: includes(`repos: Array must have at least 1 items`),
+			assert: excludes(`repos: Array must have at least 1 items`),
 		},
 		{
 			kind:   "OTHER",

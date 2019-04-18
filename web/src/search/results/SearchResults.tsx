@@ -26,18 +26,19 @@ import { SearchResultsList } from './SearchResultsList'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
+export interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     navbarSearchQuery: string
-    eventLogger: Pick<EventLogger, 'log' | 'logViewEvent'>
+    telemetryService: Pick<EventLogger, 'log' | 'logViewEvent'>
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: string,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
+    deployType: DeployType
 }
 
 interface SearchScope {
@@ -72,7 +73,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.props.eventLogger.logViewEvent('SearchResults')
+        this.props.telemetryService.logViewEvent('SearchResults')
 
         this.subscriptions.add(
             this.componentUpdates
@@ -83,9 +84,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter((query): query is string => !!query),
                     tap(query => {
-                        this.props.eventLogger.log('SearchResultsQueried', {
-                            code_search: { query_data: queryTelemetryData(query) },
+                        const query_data = queryTelemetryData(query)
+                        this.props.telemetryService.log('SearchResultsQueried', {
+                            code_search: { query_data },
                         })
+                        if (
+                            query_data.query &&
+                            query_data.query.field_type &&
+                            query_data.query.field_type.value_diff > 0
+                        ) {
+                            this.props.telemetryService.log('DiffSearchResultsQueried')
+                        }
                     }),
                     switchMap(query =>
                         concat(
@@ -96,7 +105,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 // Log telemetry
                                 tap(
                                     results =>
-                                        this.props.eventLogger.log('SearchResultsFetched', {
+                                        this.props.telemetryService.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
                                                 results: {
@@ -108,7 +117,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             },
                                         }),
                                     error => {
-                                        this.props.eventLogger.log('SearchResultsFetchFailed', {
+                                        this.props.telemetryService.log('SearchResultsFetchFailed', {
                                             code_search: { error_message: error.message },
                                         })
                                         console.error(error)
@@ -142,12 +151,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private onDidCreateSavedQuery = () => {
-        this.props.eventLogger.log('SavedQueryCreated')
+        this.props.telemetryService.log('SavedQueryCreated')
         this.setState({ showSavedQueryModal: false, didSaveQuery: true })
     }
 
     private onModalClose = () => {
-        this.props.eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: false } })
+        this.props.telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
         this.setState({ didSaveQuery: false, showSavedQueryModal: false })
     }
 
@@ -238,6 +247,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     isLightTheme={this.props.isLightTheme}
                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                    deployType={this.props.deployType}
                 />
             </div>
         )
@@ -312,13 +322,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         this.setState(
             state => ({ allExpanded: !state.allExpanded }),
             () => {
-                this.props.eventLogger.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+                this.props.telemetryService.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
             }
         )
     }
 
     private onDynamicFilterClicked = (value: string) => {
-        this.props.eventLogger.log('DynamicFilterClicked', {
+        this.props.telemetryService.log('DynamicFilterClicked', {
             search_filter: { value },
         })
 

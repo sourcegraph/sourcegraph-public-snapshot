@@ -3,6 +3,7 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { createBarrier } from '../api/integration-test/testHelpers'
 import { setLinkComponent } from '../components/Link'
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem } from './ActionItem'
 
 describe('ActionItem', () => {
@@ -14,6 +15,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
                 platformContext={NOOP_PLATFORM_CONTEXT}
@@ -26,6 +28,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 variant="actionItem"
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
@@ -39,6 +42,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
                 platformContext={NOOP_PLATFORM_CONTEXT}
@@ -47,10 +51,25 @@ describe('ActionItem', () => {
         expect(component.toJSON()).toMatchSnapshot()
     })
 
-    test('pressed actionItem', () => {
+    test('pressed toggle actionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'a', command: 'c', actionItem: { pressed: true, label: 'b' } }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                variant="actionItem"
+                location={history.location}
+                extensionsController={NOOP_EXTENSIONS_CONTROLLER}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )
+        expect(component.toJSON()).toMatchSnapshot()
+    })
+
+    test('non-pressed actionItem', () => {
+        const component = renderer.create(
+            <ActionItem
+                action={{ id: 'a', command: 'c', actionItem: { pressed: false, label: 'b' } }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 variant="actionItem"
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
@@ -64,6 +83,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 variant="actionItem"
                 title={<span>t2</span>}
                 location={history.location}
@@ -80,6 +100,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 variant="actionItem"
                 disabledDuringExecution={true}
                 location={history.location}
@@ -108,6 +129,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 variant="actionItem"
                 showLoadingSpinnerDuringExecution={true}
                 location={history.location}
@@ -134,6 +156,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 variant="actionItem"
                 disabledDuringExecution={true}
                 location={history.location}
@@ -158,6 +181,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 variant="actionItem"
                 showInlineError={true}
                 location={history.location}
@@ -185,6 +209,7 @@ describe('ActionItem', () => {
         const component = renderer.create(
             <ActionItem
                 action={{ id: 'c', command: 'open', commandArguments: ['https://example.com'], title: 't' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
                 platformContext={NOOP_PLATFORM_CONTEXT}

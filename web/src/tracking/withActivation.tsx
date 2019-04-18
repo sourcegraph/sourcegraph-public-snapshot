@@ -11,7 +11,7 @@ import {
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
-import { logUserEvent } from '../user/account/backend'
+import { logUserEvent } from '../user/settings/backend'
 
 /**
  * Fetches activation status from server.
@@ -67,8 +67,6 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
             }
             if (isSiteAdmin) {
                 completed.ConnectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
-                completed.EnabledRepository =
-                    data.repositories && data.repositories.totalCount !== null && data.repositories.totalCount > 0
                 if (authProviders) {
                     completed.EnabledSharing =
                         data.users.totalCount > 1 || authProviders.filter(p => !p.isBuiltin).length > 0
@@ -103,7 +101,7 @@ const fetchReferencesLink = (): Observable<string | null> =>
             }
             const repositoryURLs = data.repositories.nodes
                 .filter(r => r.gitRefs && r.gitRefs.totalCount > 0)
-                .sort((r1, r2) => r2.gitRefs!.totalCount! - r1.gitRefs!.totalCount)
+                .sort((r1, r2) => r2.gitRefs.totalCount - r1.gitRefs.totalCount)
                 .map(r => r.url)
             if (repositoryURLs.length === 0) {
                 return null
@@ -122,13 +120,6 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             title: 'Connect your code host',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
             link: { to: '/site-admin/external-services' },
-            siteAdminOnly: true,
-        },
-        {
-            id: 'EnabledRepository',
-            title: 'Enable repositories',
-            detail: 'Select which repositories Sourcegraph should pull and index from your code host(s).',
-            link: { to: '/site-admin/repositories' },
             siteAdminOnly: true,
         },
         {

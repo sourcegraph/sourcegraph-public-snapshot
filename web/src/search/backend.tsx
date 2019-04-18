@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
@@ -396,7 +396,6 @@ export function updateSavedQuery(
     id: GQL.ID,
     description: string,
     query: string,
-    showOnHomepage: boolean,
     notify: boolean,
     notifySlack: boolean
 ): Observable<GQL.ISavedQuery> {
@@ -408,7 +407,6 @@ export function updateSavedQuery(
                 $id: ID!
                 $description: String
                 $query: String
-                $showOnHomepage: Boolean
                 $notify: Boolean
                 $notifySlack: Boolean
             ) {
@@ -417,7 +415,6 @@ export function updateSavedQuery(
                         id: $id
                         description: $description
                         query: $query
-                        showOnHomepage: $showOnHomepage
                         notify: $notify
                         notifySlack: $notifySlack
                     ) {
@@ -427,7 +424,7 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, showOnHomepage, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
+        { id, description, query, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.settingsMutation || !data.settingsMutation.updateSavedQuery) {
@@ -508,3 +505,31 @@ export const highlightCode = memoizeObservable(
         ),
     ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${ctx.disableTimeout}:${ctx.isLightTheme}`
 )
+
+/**
+ * Returns true if search performance and accuracy are limited because this is a
+ * single-node Docker deployment that is configured with more than 100 repositories.
+ */
+export function shouldDisplayPerformanceWarning(deployType: DeployType): Observable<boolean> {
+    if (deployType !== 'docker-container') {
+        return of(false)
+    }
+    const manyReposWarningLimit = 100
+    return queryGraphQL(
+        gql`
+            query ManyReposWarning($first: Int) {
+                repositories(enabled: true, first: $first) {
+                    nodes {
+                        enabled
+                    }
+                }
+            }
+        `,
+        {
+            first: manyReposWarningLimit + 1,
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => (data.repositories.nodes || []).length > manyReposWarningLimit)
+    )
+}

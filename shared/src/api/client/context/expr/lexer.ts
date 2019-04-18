@@ -316,7 +316,8 @@ export class Lexer {
             if (ch === quote) {
                 terminated = true
                 break
-            } else if (ch === '\\') {
+            }
+            if (ch === '\\') {
                 str += backslashEscapeCodeString(this.getNextChar())
             } else {
                 str += ch
@@ -356,7 +357,8 @@ export class Lexer {
                 tail = true
                 terminated = true
                 break
-            } else if (ch === '\\') {
+            }
+            if (ch === '\\') {
                 str += backslashEscapeCodeString(this.getNextChar())
             } else {
                 if (ch === '$') {

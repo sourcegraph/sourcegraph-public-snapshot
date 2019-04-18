@@ -111,11 +111,12 @@ function confirmAddExtension(extensionID: string): boolean {
 function extractErrors(c: SettingsCascadeOrError): SettingsCascade | ErrorLike {
     if (c.subjects === null) {
         return new Error('Subjects was ' + c.subjects)
-    } else if (c.final === null || isErrorLike(c.final)) {
-        return new Error('Merged was ' + c.final)
-    } else if (c.subjects.find(isErrorLike)) {
-        return new Error('One of the subjects was ' + c.subjects.find(isErrorLike))
-    } else {
-        return c as SettingsCascade
     }
+    if (c.final === null || isErrorLike(c.final)) {
+        return new Error('Merged was ' + c.final)
+    }
+    if (c.subjects.find(isErrorLike)) {
+        return new Error('One of the subjects was ' + c.subjects.find(isErrorLike))
+    }
+    return c as SettingsCascade
 }

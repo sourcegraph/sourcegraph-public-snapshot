@@ -1,16 +1,22 @@
+import classNames from 'classnames'
+import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, switchMap } from 'rxjs/operators'
-import { Button } from '../../shared/components/Button'
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { SourcegraphIconButton } from '../../shared/components/Button'
 import { CodeHost, CodeHostContext } from './code_intelligence'
 
-interface ViewOnSourcegraphButtonProps {
+export interface ViewOnSourcegraphButtonClassProps {
+    className?: string
+    iconClassName?: string
+}
+
+interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
     context: CodeHostContext
     sourcegraphUrl: string
     ensureRepoExists: (context: CodeHostContext, sourcegraphUrl: string) => Observable<boolean>
     onConfigureSourcegraphClick?: () => void
-    className?: string
 }
 
 interface ViewOnSourcegraphButtonState {
@@ -21,18 +27,21 @@ interface ViewOnSourcegraphButtonState {
 }
 
 class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonProps, ViewOnSourcegraphButtonState> {
-    public state: ViewOnSourcegraphButtonState = {}
-
     private componentUpdates = new Subject<ViewOnSourcegraphButtonProps>()
     private subscriptions = new Subscription()
 
     constructor(props: ViewOnSourcegraphButtonProps) {
         super(props)
-
+        this.state = {}
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    distinctUntilChanged(),
+                    map(({ context, sourcegraphUrl, ensureRepoExists }) => ({
+                        context,
+                        sourcegraphUrl,
+                        ensureRepoExists,
+                    })),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
                     switchMap(({ context, sourcegraphUrl, ensureRepoExists }) =>
                         ensureRepoExists(context, sourcegraphUrl)
                     )
@@ -51,6 +60,10 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         this.componentUpdates.next(this.props)
     }
 
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): React.ReactNode {
         if (this.state.repoExists === undefined) {
             return null
@@ -64,23 +77,22 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
             this.props.onConfigureSourcegraphClick
         ) {
             return (
-                <Button
+                <SourcegraphIconButton
                     label="Configure Sourcegraph"
+                    ariaLabel="Install Sourcegraph for search and code intelligence on private instance"
+                    className={classNames('open-on-sourcegraph', this.props.className)}
+                    iconClassName={classNames('open-on-sourcegraph__icon--muted', this.props.iconClassName)}
                     onClick={this.props.onConfigureSourcegraphClick}
-                    iconStyle={{ filter: 'grayscale(100%)', marginTop: '-1px', paddingRight: '4px', fontSize: '18px' }}
-                    style={{ border: 'none', background: 'none' }}
-                    className={`${this.props.className} btn btn-sm tooltipped tooltipped-s muted`}
-                    ariaLabel="Install Sourcegraph for search and code intelligence on private repositories"
                 />
             )
         }
 
         return (
-            <Button
+            <SourcegraphIconButton
                 url={this.getURL()}
-                label="View Repository"
                 ariaLabel="View repository on Sourcegraph"
-                className={`open-on-sourcegraph ${this.props.className || ''}`}
+                className={classNames('open-on-sourcegraph', this.props.className)}
+                iconClassName={this.props.iconClassName}
             />
         )
     }
@@ -92,29 +104,22 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
     }
 }
 
-export function injectViewContextOnSourcegraph(
-    sourcegraphUrl: string,
-    {
-        getContext,
-        getViewContextOnSourcegraphMount,
-        contextButtonClassName,
-    }: Pick<CodeHost, 'getContext' | 'getViewContextOnSourcegraphMount' | 'contextButtonClassName'>,
-    ensureRepoExists: ViewOnSourcegraphButtonProps['ensureRepoExists'],
+export const renderViewContextOnSourcegraph = ({
+    sourcegraphUrl,
+    getContext,
+    ensureRepoExists,
+    viewOnSourcegraphButtonClassProps,
+    onConfigureSourcegraphClick,
+}: {
+    sourcegraphUrl: string
+    ensureRepoExists: ViewOnSourcegraphButtonProps['ensureRepoExists']
     onConfigureSourcegraphClick?: ViewOnSourcegraphButtonProps['onConfigureSourcegraphClick']
-): void {
-    if (!getContext || !getViewContextOnSourcegraphMount) {
-        return
-    }
-
-    const mount = getViewContextOnSourcegraphMount()
-    if (!mount) {
-        return
-    }
-
+} & Required<Pick<CodeHost, 'getContext'>> &
+    Pick<CodeHost, 'viewOnSourcegraphButtonClassProps'>) => (mount: HTMLElement): void => {
     render(
         <ViewOnSourcegraphButton
+            {...viewOnSourcegraphButtonClassProps}
             context={getContext()}
-            className={contextButtonClassName}
             sourcegraphUrl={sourcegraphUrl}
             ensureRepoExists={ensureRepoExists}
             onConfigureSourcegraphClick={onConfigureSourcegraphClick}

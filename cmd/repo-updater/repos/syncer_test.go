@@ -3,6 +3,7 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 )
@@ -108,6 +110,39 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(gitlabService.URN()),
 	)
 
+	bitbucketServerService := &repos.ExternalService{
+		ID:   20,
+		Kind: "BITBUCKETSERVER",
+	}
+
+	bitbucketServerRepo := (&repos.Repo{
+		Name:     "bitbucketserver.mycorp.com/org/foo",
+		Metadata: &bitbucketserver.Repo{},
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "23456",
+			ServiceID:   "https://bitbucketserver.mycorp.com/",
+			ServiceType: "bitbucketServer",
+		},
+	}).With(
+		repos.Opt.RepoSources(bitbucketServerService.URN()),
+	)
+
+	otherService := &repos.ExternalService{
+		ID:   30,
+		Kind: "OTHER",
+	}
+
+	otherRepo := (&repos.Repo{
+		Name: "git-host.com/org/foo",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "git-host.com/org/foo",
+			ServiceID:   "https://git-host.com/",
+			ServiceType: "other",
+		},
+	}).With(
+		repos.Opt.RepoSources(otherService.URN()),
+	)
+
 	clock := repos.NewFakeClock(time.Now(), 0)
 
 	type testCase struct {
@@ -128,6 +163,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	}{
 		{repo: githubRepo, svc: githubService},
 		{repo: gitlabRepo, svc: gitlabService},
+		{repo: bitbucketServerRepo, svc: bitbucketServerService},
+		{repo: otherRepo, svc: otherService},
 	} {
 		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
 		testCases = append(testCases,
@@ -151,6 +188,19 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				store:   s,
 				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
 					r.ExternalRepo.ID = ""
+				})},
+				now: clock.Now,
+				diff: repos.Diff{Modified: repos.Repos{
+					tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
+				}},
+				err: "<nil>",
+			},
+			testCase{
+				name:    "updated external_id",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
+				store:   s,
+				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
+					r.ExternalRepo.ID = "old-and-out-of-date"
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
@@ -221,8 +271,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				)},
 				now: clock.Now,
 				diff: repos.Diff{Deleted: repos.Repos{tc.repo.With(
-					repos.Opt.RepoDeletedAt(clock.Time(1))),
-				}},
+					repos.Opt.RepoDeletedAt(clock.Time(1)),
+					repos.Opt.RepoEnabled(true),
+				)}},
 				err: "<nil>",
 			},
 			testCase{
@@ -255,11 +306,15 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			},
 			func() testCase {
 				var update interface{}
-				switch tc.repo.ExternalRepo.ServiceType {
+				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
 				case "github":
 					update = &github.Repository{IsArchived: true}
 				case "gitlab":
 					update = &gitlab.Project{Archived: true}
+				case "bitbucketserver":
+					update = &bitbucketserver.Repo{Public: true}
+				case "other":
+					return testCase{}
 				default:
 					panic("test must be extended with new external service kind")
 				}
@@ -287,12 +342,11 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
-		kinds := []string{
-			"GITHUB",
-			"GITLAB",
-		}
-
 		for _, tc := range testCases {
+			if tc.name == "" {
+				continue
+			}
+
 			tc := tc
 			ctx := context.Background()
 
@@ -321,7 +375,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
-				diff, err := syncer.Sync(ctx, kinds...)
+				diff, err := syncer.Sync(ctx)
 
 				var want repos.Repos
 				want.Concat(diff.Added, diff.Modified, diff.Unmodified, diff.Deleted)
@@ -340,7 +394,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil {
-					have, _ := st.ListRepos(ctx)
+					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
 					for _, d := range have {
 						d.ID = 0 // Exclude auto-generated ID from comparisons
 					}

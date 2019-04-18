@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -23,7 +27,9 @@ type Sourcer func(...*ExternalService) (Sources, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // Deleted external services are ignored.
-func NewSourcer(cf httpcli.Factory) Sourcer {
+//
+// The provided decorator functions will be applied to each Source.
+func NewSourcer(cf httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
 		errs := new(multierror.Error)
@@ -31,11 +37,19 @@ func NewSourcer(cf httpcli.Factory) Sourcer {
 		for _, svc := range svcs {
 			if svc.IsDeleted() {
 				continue
-			} else if src, err := NewSource(svc, cf); err != nil {
-				errs = multierror.Append(errs, err)
-			} else {
-				srcs = append(srcs, src)
 			}
+
+			src, err := NewSource(svc, cf)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+
+			for _, dec := range decs {
+				src = dec(src)
+			}
+
+			srcs = append(srcs, src)
 		}
 
 		if !includesGitHubDotComSource(srcs) {
@@ -58,16 +72,22 @@ func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
 		return NewGithubSource(svc, cf)
 	case "gitlab":
 		return NewGitLabSource(svc, cf)
+	case "bitbucketserver":
+		return NewBitbucketServerSource(svc, cf)
+	case "other":
+		return NewOtherSource(svc)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
 }
 
 func includesGitHubDotComSource(srcs []Source) bool {
-	for _, src := range srcs {
-		if gs, ok := src.(*GithubSource); !ok {
+	for _, svc := range Sources(srcs).ExternalServices() {
+		if !strings.EqualFold(svc.Kind, "GITHUB") {
 			continue
-		} else if u, err := url.Parse(gs.conn.config.Url); err != nil {
+		} else if cfg, err := svc.Configuration(); err != nil {
+			continue
+		} else if u, err := url.Parse(cfg.(*schema.GitHubConnection).Url); err != nil {
 			continue
 		} else if strings.HasSuffix(u.Hostname(), "github.com") {
 			return true
@@ -76,11 +96,16 @@ func includesGitHubDotComSource(srcs []Source) bool {
 	return false
 }
 
+// sourceTimeout is the default timeout to use on Source.ListRepos
+const sourceTimeout = 10 * time.Minute
+
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
-	// TODO(keegancsmith) document contract of ListRepos + contract tests
+	// ListRepos returns all the repos a source yields.
 	ListRepos(context.Context) ([]*Repo, error)
+	// ExternalServices returns the ExternalServices for the Source.
+	ExternalServices() ExternalServices
 }
 
 // Sources is a list of Sources that implements the Source interface.
@@ -128,12 +153,7 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 func (srcs Sources) ExternalServices() ExternalServices {
 	es := make(ExternalServices, 0, len(srcs))
 	for _, src := range srcs {
-		switch s := src.(type) {
-		case *GithubSource:
-			es = append(es, s.svc)
-		case *FakeSource:
-			es = append(es, s.svc)
-		}
+		es = append(es, src.ExternalServices()...)
 	}
 	return es
 }
@@ -182,6 +202,11 @@ func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) 
 		repos = append(repos, githubRepoToRepo(s.svc, r, s.conn))
 	}
 	return repos, err
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s GithubSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
 }
 
 func githubRepoToRepo(
@@ -241,6 +266,11 @@ func (s GitLabSource) ListRepos(ctx context.Context) (repos []*Repo, err error) 
 	return repos, err
 }
 
+// ExternalServices returns a singleton slice containing the external service.
+func (s GitLabSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
 func gitlabProjectToRepo(
 	svc *ExternalService,
 	proj *gitlab.Project,
@@ -261,5 +291,172 @@ func gitlabProjectToRepo(
 			},
 		},
 		Metadata: proj,
+	}
+}
+
+// A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
+// in Sourcegraph via the external services configuration.
+type BitbucketServerSource struct {
+	svc  *ExternalService
+	conn *bitbucketServerConnection
+}
+
+// NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
+func NewBitbucketServerSource(svc *ExternalService, cf httpcli.Factory) (*BitbucketServerSource, error) {
+	var c schema.BitbucketServerConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newBitbucketServerSource(svc, &c, cf)
+}
+
+func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf httpcli.Factory) (*BitbucketServerSource, error) {
+	conn, err := newBitbucketServerConnection(c, cf)
+	if err != nil {
+		return nil, err
+	}
+	return &BitbucketServerSource{svc: svc, conn: conn}, nil
+}
+
+// ListRepos returns all BitbucketServer repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s BitbucketServerSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+	rs, err := s.conn.listAllRepos(ctx)
+	for _, r := range rs {
+		repos = append(repos, bitbucketserverRepoToRepo(s.svc, r, s.conn))
+	}
+	return repos, err
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s BitbucketServerSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
+func bitbucketserverRepoToRepo(
+	svc *ExternalService,
+	repo *bitbucketserver.Repo,
+	conn *bitbucketServerConnection,
+) *Repo {
+	info := bitbucketServerRepoInfo(conn.config, repo)
+	urn := svc.URN()
+	return &Repo{
+		Name:         string(info.Name),
+		ExternalRepo: *info.ExternalRepo,
+		Description:  info.Description,
+		Fork:         info.Fork,
+		Enabled:      true,
+		Archived:     info.Archived,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: info.VCS.URL,
+			},
+		},
+		Metadata: repo,
+	}
+}
+
+// A OtherSource yields repositories from a single Other connection configured
+// in Sourcegraph via the external services configuration.
+type OtherSource struct {
+	svc  *ExternalService
+	conn *schema.OtherExternalServiceConnection
+}
+
+// NewOtherSource returns a new OtherSource from the given external service.
+func NewOtherSource(svc *ExternalService) (*OtherSource, error) {
+	var c schema.OtherExternalServiceConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
+	}
+	return &OtherSource{svc: svc, conn: &c}, nil
+}
+
+// ListRepos returns all Other repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s OtherSource) ListRepos(ctx context.Context) ([]*Repo, error) {
+	urls, err := s.cloneURLs()
+	if err != nil {
+		return nil, err
+	}
+
+	urn := s.svc.URN()
+	repos := make([]*Repo, 0, len(urls))
+	for _, u := range urls {
+		repos = append(repos, otherRepoFromCloneURL(urn, u))
+	}
+
+	return repos, nil
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s OtherSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
+func (s OtherSource) cloneURLs() ([]*url.URL, error) {
+	if len(s.conn.Repos) == 0 {
+		return nil, nil
+	}
+
+	var base *url.URL
+	if s.conn.Url != "" {
+		var err error
+		if base, err = url.Parse(s.conn.Url); err != nil {
+			return nil, err
+		}
+	}
+
+	cloneURLs := make([]*url.URL, 0, len(s.conn.Repos))
+	for _, repo := range s.conn.Repos {
+		cloneURL, err := otherRepoCloneURL(base, repo)
+		if err != nil {
+			return nil, err
+		}
+		cloneURLs = append(cloneURLs, cloneURL)
+	}
+
+	return cloneURLs, nil
+}
+
+func otherRepoCloneURL(base *url.URL, repo string) (*url.URL, error) {
+	if base == nil {
+		return url.Parse(repo)
+	}
+	return base.Parse(repo)
+}
+
+var otherRepoNameReplacer = strings.NewReplacer(":", "-", "@", "-", "//", "")
+
+func otherRepoName(cloneURL *url.URL) string {
+	u := *cloneURL
+	u.User = nil
+	u.Scheme = ""
+	u.RawQuery = ""
+	u.Fragment = ""
+	return otherRepoNameReplacer.Replace(u.String())
+}
+
+func otherRepoFromCloneURL(urn string, u *url.URL) *Repo {
+	repoURL := u.String()
+	repoName := otherRepoName(u)
+	u.Path, u.RawQuery = "", ""
+	serviceID := u.String()
+
+	return &Repo{
+		Name: repoName,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          string(repoName),
+			ServiceType: "other",
+			ServiceID:   serviceID,
+		},
+		Enabled: true,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: repoURL,
+			},
+		},
 	}
 }

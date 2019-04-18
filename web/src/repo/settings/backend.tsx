@@ -34,6 +34,13 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                             total
                         }
                     }
+                    externalServices {
+                        nodes {
+                            id
+                            kind
+                            displayName
+                        }
+                    }
                 }
             }
         `,

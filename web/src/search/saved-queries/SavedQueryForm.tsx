@@ -1,9 +1,10 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+
 import { from, fromEvent, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
+import { Link } from '../../../../shared/src/components/Link'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps, SettingsSubject } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
@@ -14,7 +15,6 @@ export interface SavedQueryFields {
     description: string
     query: string
     subject: GQL.ID
-    showOnHomepage: boolean
     notify: boolean
     notifySlack: boolean
     ownerKind: GQL.SavedQueryOwnerKind
@@ -45,7 +45,6 @@ interface State {
 
 export class SavedQueryForm extends React.Component<Props, State> {
     private handleDescriptionChange = this.createInputChangeHandler('description')
-    private handleShowOnHomeChange = this.createInputChangeHandler('showOnHomepage')
     private handleNotifyChange = this.createInputChangeHandler('notify')
     private handleNotifySlackChange = this.createInputChangeHandler('notifySlack') // This needs to update the subject to correspond to the org that is selected now.
 
@@ -63,7 +62,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 query: (defaultValues && defaultValues.query) || '',
                 description: (defaultValues && defaultValues.description) || '',
                 subject: (defaultValues && defaultValues.subject) || '',
-                showOnHomepage: !!(defaultValues && defaultValues.showOnHomepage),
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
                 ownerKind: (defaultValues && defaultValues.ownerKind) || ('USER' as GQL.SavedQueryOwnerKind.USER),
@@ -102,7 +100,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             try {
                                 const settings = subject.settings
                                 if (settings && settings['notifications.slack']) {
-                                    slackWebhookURL = settings['notifications.slack']!.webhookURL
+                                    slackWebhookURL = settings['notifications.slack'].webhookURL
                                 }
                             } catch (e) {
                                 slackWebhookURL = null
@@ -135,7 +133,12 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
+<<<<<<< HEAD
             values: { query, description, subject, showOnHomepage, notify, notifySlack, userID, orgID },
+=======
+            values: { query, description, subject, notify, notifySlack },
+            subjectOptions,
+>>>>>>> master
             isSubmitting,
             error,
         } = this.state
@@ -213,17 +216,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             ))}
                     </div>
                     <div className="saved-query-form__save-location">
-                        <span className="saved-query-form__save-location-options">
-                            <label>
-                                <input
-                                    className="saved-query-form__save-location-input"
-                                    type="checkbox"
-                                    defaultChecked={showOnHomepage}
-                                    onChange={this.handleShowOnHomeChange}
-                                />{' '}
-                                Show on homepage
-                            </label>
-                        </span>
                         <span className="saved-query-form__save-location-options">
                             <label data-tooltip={`Send email notifications to config owner (${this.saveTargetName()})`}>
                                 <input
@@ -309,7 +301,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private getConfigureSlackURL = () => {
         const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
         if (!chosen) {
-            return ''
+            return 'https://docs.sourcegraph.com/user/search/saved_searches#configuring-email-and-slack-notifications'
         }
         if (chosen.__typename === 'Org') {
             return `/organizations/${chosen.name}/settings`
@@ -317,7 +309,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
         if (chosen.__typename === 'User') {
             return `/settings`
         }
-        return '' // unexpected
+        return 'https://docs.sourcegraph.com/user/search/saved_searches#configuring-email-and-slack-notifications' // unexpected
     }
 
     private saveTargetName = () => {
@@ -346,7 +338,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         return []
                     })
                 )
-                .subscribe(this.props.onDidCommit)
+                .subscribe(() => this.props.onDidCommit())
         )
     }
 

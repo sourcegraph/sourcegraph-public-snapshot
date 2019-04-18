@@ -14,7 +14,6 @@ import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
-import { TelemetryContext } from '../../shared/src/telemetry/telemetryContext'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -41,10 +40,10 @@ import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
-import { UserAccountAreaRoute } from './user/account/UserAccountArea'
-import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
@@ -57,8 +56,8 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     routes: ReadonlyArray<LayoutRouteProps>
@@ -159,16 +158,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     this.setState(() => {
                         if (authenticatedUser) {
                             return { viewerSubject: authenticatedUser }
-                        } else if (
-                            cascade &&
-                            !isErrorLike(cascade) &&
-                            cascade.subjects &&
-                            cascade.subjects.length > 0
-                        ) {
-                            return { viewerSubject: cascade.subjects[0].subject }
-                        } else {
-                            return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
                         }
+                        if (cascade && !isErrorLike(cascade) && cascade.subjects && cascade.subjects.length > 0) {
+                            return { viewerSubject: cascade.subjects[0].subject }
+                        }
+                        return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
                     })
                 }
             )
@@ -240,39 +234,37 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         return (
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
-                    <TelemetryContext.Provider value={eventLogger}>
-                        <BrowserRouter key={0}>
-                            <Route
-                                path="/"
-                                // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                                render={routeComponentProps => (
-                                    <LayoutWithActivation
-                                        {...props}
-                                        {...routeComponentProps}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
-                                        // Theme
-                                        isLightTheme={this.isLightTheme()}
-                                        themePreference={this.state.themePreference}
-                                        onThemePreferenceChange={this.onThemePreferenceChange}
-                                        // Search query
-                                        navbarSearchQuery={this.state.navbarSearchQuery}
-                                        onNavbarQueryChange={this.onNavbarQueryChange}
-                                        fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                        searchRequest={search}
-                                        // Extensions
-                                        platformContext={this.state.platformContext}
-                                        extensionsController={this.state.extensionsController}
-                                        eventLogger={eventLogger}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    />
-                                )}
-                            />
-                        </BrowserRouter>
-                        <Tooltip key={1} />
-                        <Notifications key={2} extensionsController={this.state.extensionsController} />
-                    </TelemetryContext.Provider>
+                    <BrowserRouter key={0}>
+                        <Route
+                            path="/"
+                            // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                            render={routeComponentProps => (
+                                <LayoutWithActivation
+                                    {...props}
+                                    {...routeComponentProps}
+                                    authenticatedUser={authenticatedUser}
+                                    viewerSubject={this.state.viewerSubject}
+                                    settingsCascade={this.state.settingsCascade}
+                                    // Theme
+                                    isLightTheme={this.isLightTheme()}
+                                    themePreference={this.state.themePreference}
+                                    onThemePreferenceChange={this.onThemePreferenceChange}
+                                    // Search query
+                                    navbarSearchQuery={this.state.navbarSearchQuery}
+                                    onNavbarQueryChange={this.onNavbarQueryChange}
+                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                    searchRequest={search}
+                                    // Extensions
+                                    platformContext={this.state.platformContext}
+                                    extensionsController={this.state.extensionsController}
+                                    telemetryService={eventLogger}
+                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                />
+                            )}
+                        />
+                    </BrowserRouter>
+                    <Tooltip key={1} />
+                    <Notifications key={2} extensionsController={this.state.extensionsController} />
                 </ShortcutProvider>
             </ErrorBoundary>
         )

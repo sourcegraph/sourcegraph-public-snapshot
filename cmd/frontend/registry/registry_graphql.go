@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/pkg/registry"
 )
 
 func init() {
@@ -104,6 +105,19 @@ func (*extensionRegistryResolver) LocalExtensionIDPrefix() *string {
 // registry (which is a Sourcegraph Enterprise feature).
 func (r *extensionRegistryResolver) ImplementsLocalExtensionRegistry() bool {
 	return r.ViewerPublishersFunc != nil && r.PublishersFunc != nil && r.CreateExtensionFunc != nil && r.UpdateExtensionFunc != nil && r.PublishExtensionFunc != nil && r.DeleteExtensionFunc != nil
+}
+
+func (r *extensionRegistryResolver) FilterRemoteExtensions(ids []string) []string {
+	extensions := make([]*registry.Extension, len(ids))
+	for i, id := range ids {
+		extensions[i] = &registry.Extension{ExtensionID: id}
+	}
+	keepExtensions := FilterRemoteExtensions(extensions)
+	keep := make([]string, len(keepExtensions))
+	for i, extension := range keepExtensions {
+		keep[i] = extension.ExtensionID
+	}
+	return keep
 }
 
 type ExtensionRegistryMutationResult struct {

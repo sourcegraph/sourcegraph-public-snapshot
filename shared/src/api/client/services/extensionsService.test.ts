@@ -2,7 +2,8 @@ import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { Model } from '../model'
+import { CodeEditor, EditorService } from './editorService'
+import { createTestEditorService } from './editorService.test'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
 
@@ -11,11 +12,11 @@ const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
-        model: Subscribable<Pick<Model, 'visibleViewComponents'>>,
+        editorService: Pick<EditorService, 'editors'>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
-            model: Pick<Model, 'visibleViewComponents'>
+            editors: readonly CodeEditor[]
         ) => ConfiguredExtension[],
         sideloadedExtensionURL: Subscribable<string | null>,
         fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
@@ -28,7 +29,7 @@ class TestExtensionsService extends ExtensionsService {
                 getScriptURLForExtension: scriptURL => scriptURL,
                 sideloadedExtensionURL,
             },
-            model,
+            editorService,
             settingsService,
             extensionActivationFilter,
             fetchSideloadedExtension
@@ -44,9 +45,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [],
-                        cold<Pick<Model, 'visibleViewComponents'>>('-a-|', {
-                            a: { visibleViewComponents: [] },
-                        }),
+                        createTestEditorService(
+                            cold<readonly CodeEditor[]>('-a-|', {
+                                a: [],
+                            })
+                        ),
                         { data: cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }) },
                         enabledExtensions => enabledExtensions,
                         cold('-a-|', { a: '' }),
@@ -65,37 +68,39 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
-                        cold<Pick<Model, 'visibleViewComponents'>>('-a-b-|', {
-                            a: {
-                                visibleViewComponents: [
+                        createTestEditorService(
+                            cold<readonly CodeEditor[]>('-a-b-|', {
+                                a: [
                                     {
-                                        type: 'textEditor',
-                                        item: { languageId: 'x', text: '', uri: '' },
+                                        type: 'CodeEditor',
+                                        editorId: 'editor#0',
+                                        resource: 'u',
+                                        model: { languageId: 'x', text: '', uri: 'u' },
                                         selections: [],
                                         isActive: true,
                                     },
                                 ],
-                            },
-                            b: {
-                                visibleViewComponents: [
+                                b: [
                                     {
-                                        type: 'textEditor',
-                                        item: { languageId: 'y', text: '', uri: '' },
+                                        type: 'CodeEditor',
+                                        editorId: 'editor#1',
+                                        resource: 'u2',
+                                        model: { languageId: 'y', text: '', uri: 'u2' },
                                         selections: [],
                                         isActive: true,
                                     },
                                 ],
-                            },
-                        }),
+                            })
+                        ),
                         {
                             data: cold<SettingsCascadeOrError>('-a-b-|', {
                                 a: { final: { extensions: { x: true } }, subjects: [] },
                                 b: { final: { extensions: { x: true, y: true } }, subjects: [] },
                             }),
                         },
-                        (enabledExtensions, { visibleViewComponents }) =>
+                        (enabledExtensions, editors) =>
                             enabledExtensions.filter(x =>
-                                (visibleViewComponents || []).some(({ item: { languageId } }) => x.id === languageId)
+                                editors.some(({ model: { languageId } }) => x.id === languageId)
                             ),
                         cold('-a--|', { a: '' }),
                         () => of(null)
@@ -113,9 +118,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
-                        cold<Pick<Model, 'visibleViewComponents'>>('a-|', {
-                            a: { visibleViewComponents: [] },
-                        }),
+                        createTestEditorService(
+                            cold<readonly CodeEditor[]>('a-|', {
+                                a: [],
+                            })
+                        ),
                         {
                             data: cold<SettingsCascadeOrError>('a-|', {
                                 a: {
@@ -156,9 +163,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
-                        cold<Pick<Model, 'visibleViewComponents'>>('a-|', {
-                            a: { visibleViewComponents: [] },
-                        }),
+                        createTestEditorService(
+                            cold<readonly CodeEditor[]>('a-|', {
+                                a: [],
+                            })
+                        ),
                         {
                             data: cold<SettingsCascadeOrError>('a-|', {
                                 a: {
@@ -173,7 +182,7 @@ describe('activeExtensions', () => {
                         },
                         enabledExtensions => enabledExtensions,
                         cold('a-|', { a: 'bar' }),
-                        () => throwError('baz')
+                        () => throwError(new Error('baz'))
                     ).activeExtensions
                 )
             ).toBe('a-|', {

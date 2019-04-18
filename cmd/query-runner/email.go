@@ -141,7 +141,7 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txt
 	}); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("InternalClient.SendEmail to email=%q userID=%d", *email, userID))
 	}
-	logEvent(*email, "SavedSearchEmailNotificationSent", eventType)
+	logEvent(userID, *email, "SavedSearchEmailNotificationSent", eventType)
 	return nil
 }
 

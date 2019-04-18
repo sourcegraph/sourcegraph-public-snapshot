@@ -1,5 +1,8 @@
 .code-view-toolbar {
-    .icon-inline {
-        vertical-align: middle;
+    margin: 0;
+    list-style: none;
+
+    &__item {
+        display: inline-block;
     }
 }

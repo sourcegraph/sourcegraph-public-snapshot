@@ -1,6 +1,7 @@
 package bg
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -33,8 +34,25 @@ func TestMigrateAllSettingsMOTDToNotices(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-	t.Run("invalid", func(t *testing.T) {
+	t.Run("no changes needed", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u2"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, `{"other": 123}`); err != nil {
+			t.Fatal(err)
+		}
+		db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
+			t.Fatal("want no settings changes")
+			panic("unreachable")
+		}
+		defer func() { db.Mocks.Settings.CreateIfUpToDate = nil }()
+		if err := doMigrateAllSettingsMOTDToNotices(ctx, 0); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("invalid", func(t *testing.T) {
+		u, err := db.Users.Create(ctx, db.NewUser{Username: "u3"})
 		if err != nil {
 			t.Fatal(err)
 		}

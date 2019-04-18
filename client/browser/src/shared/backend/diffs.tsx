@@ -40,11 +40,12 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
                 if (!data || !data.repository) {
                     throw createAggregateError(errors)
                 }
-                const repo = data.repository as GQL.IRepository
+                const repo = data.repository
                 if (!repo.comparison || !repo.comparison.fileDiffs || errors) {
                     throw createAggregateError(errors)
                 }
                 return repo.comparison.fileDiffs
             })
-        )
+        ),
+    ({ repo, base, head, first }) => `${repo}:${base}:${head}:${first}`
 )

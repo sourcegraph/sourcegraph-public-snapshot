@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
+	"os/user"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -122,7 +124,9 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 		Site:     site.Contents,
 
 		// TODO(slimsag): future: pass GitServers list via this.
-		ServiceConnections: conftypes.ServiceConnections{},
+		ServiceConnections: conftypes.ServiceConnections{
+			PostgresDSN: postgresDSN(),
+		},
 	}, nil
 }
 
@@ -146,4 +150,62 @@ func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnifi
 		return errors.Wrap(err, "confdb.SiteCreateIfUpToDate")
 	}
 	return nil
+}
+
+func postgresDSN() string {
+	username := ""
+	if user, err := user.Current(); err == nil {
+		username = user.Username
+	}
+	return doPostgresDSN(username, os.Getenv)
+}
+
+func doPostgresDSN(currentUser string, getenv func(string) string) string {
+	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
+	if dsn := getenv("PGDATASOURCE"); dsn != "" {
+		return dsn
+	}
+
+	// TODO match logic in lib/pq
+	// https://sourcegraph.com/github.com/lib/pq@d6156e141ac6c06345c7c73f450987a9ed4b751f/-/blob/connector.go#L42
+	dsn := &url.URL{
+		Scheme:   "postgres",
+		Host:     "127.0.0.1:5432",
+		RawQuery: "sslmode=disable",
+	}
+
+	// Username preference: PGUSER, $USER, postgres
+	username := "postgres"
+	if currentUser != "" {
+		username = currentUser
+	}
+	if user := getenv("PGUSER"); user != "" {
+		username = user
+	}
+
+	if password := getenv("PGPASSWORD"); password != "" {
+		dsn.User = url.UserPassword(username, password)
+	} else {
+		dsn.User = url.User(username)
+	}
+
+	if host := getenv("PGHOST"); host != "" {
+		dsn.Host = host
+	}
+
+	if port := getenv("PGPORT"); port != "" {
+		dsn.Host += ":" + port
+	}
+
+	if db := getenv("PGDATABASE"); db != "" {
+		dsn.Path = db
+	}
+
+	if sslmode := getenv("PGSSLMODE"); sslmode != "" {
+		qry := dsn.Query()
+		qry.Set("sslmode", sslmode)
+		dsn.RawQuery = qry.Encode()
+	}
+
+	return dsn.String()
 }

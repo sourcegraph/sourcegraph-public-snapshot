@@ -2,13 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -128,15 +128,21 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 			if !r.cloned || !r.cloneInProgress || !r.notCloned {
 				// Query gitserver to filter by repository clone status.
+				repoNames := make([]api.RepoName, len(repos))
+				lookup := make(map[api.RepoName]*types.Repo)
+				for i, repo := range repos {
+					repoNames[i] = repo.Name
+					lookup[repo.Name] = repo
+				}
 				keepRepos := repos[:0]
-				for _, repo := range repos {
-					info, err := gitserver.DefaultClient.RepoInfo(ctx, repo.Name)
-					if err != nil {
-						r.err = err
-						return
-					}
+				info, err := gitserver.DefaultClient.RepoInfo(ctx, repoNames...)
+				if err != nil {
+					r.err = err
+					return
+				}
+				for repoName, info := range info.Results {
 					if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
-						keepRepos = append(keepRepos, repo)
+						keepRepos = append(keepRepos, lookup[repoName])
 					}
 				}
 				repos = keepRepos
@@ -252,8 +258,27 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Repos.SetEnabled(ctx, repo.repo.ID, args.Enabled); err != nil {
-		return nil, err
+
+	// We only want to set the enabled state of a repo that isn't yet managed
+	// by the new syncer. Repo-updater returns the set of external services that
+	// were updated to exclude the given repo. If that set is empty, it means that
+	// the given repo isn't yet managed by the new syncer, so we proceed to update
+	// the enabled state regardless.
+	var done bool
+	if !args.Enabled {
+		resp, err := repoupdater.DefaultClient.ExcludeRepo(ctx, uint32(repo.repo.ID))
+		if err != nil {
+			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
+		}
+
+		// Have any external services been updated to exclude the given repo?
+		done = len(resp.ExternalServices) > 0
+	}
+
+	if !done {
+		if err = db.Repos.SetEnabled(ctx, repo.repo.ID, args.Enabled); err != nil {
+			return nil, err
+		}
 	}
 
 	// Trigger update when enabling.
@@ -262,7 +287,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 			return nil, err
 		}
 	}

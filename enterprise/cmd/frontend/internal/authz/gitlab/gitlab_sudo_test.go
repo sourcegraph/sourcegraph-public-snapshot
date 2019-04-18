@@ -198,8 +198,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				t.Run(c.description, func(t *testing.T) {
 					acct, err := authzProvider.FetchAccount(ctx, c.user, c.current)
 					if err != nil {
-						t.Errorf("unexpected error: %v", err)
-						return
+						t.Fatalf("unexpected error: %v", err)
 					}
 					// ignore AccountData field in comparison
 					if acct != nil {

@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/dghubble/gologin/github"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	githubcodehost "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -27,7 +28,7 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 	oauth2Cfg := oauth2.Config{
 		ClientID:     p.ClientID,
 		ClientSecret: p.ClientSecret,
-		Scopes:       []string{"repo", "user:email"},
+		Scopes:       requestedScopes(),
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  codeHost.BaseURL().ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
 			TokenURL: codeHost.BaseURL().ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
@@ -51,4 +52,11 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 			nil,
 		),
 	}), nil
+}
+
+func requestedScopes() []string {
+	if envvar.SourcegraphDotComMode() {
+		return []string{"public_repo", "user:email"}
+	}
+	return []string{"repo", "user:email"}
 }

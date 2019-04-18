@@ -283,7 +283,7 @@ export const renderMarkdown = memoizeObservable(
             ctx
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.renderMarkdown) {
+                if (!data || (errors && errors.length > 0)) {
                     throw createAggregateError(errors)
                 }
                 return data.renderMarkdown

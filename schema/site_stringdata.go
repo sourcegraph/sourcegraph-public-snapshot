@@ -27,6 +27,15 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Search"
     },
+    "search.largeFiles": {
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "group": "Search",
+      "examples": [["go.sum", "package-lock.json", "*.thrift"]]
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -106,9 +115,9 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "maxReposToSearch": {
-      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
+      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
-      "default": 500,
+      "default": -1,
       "group": "Search"
     },
     "parentSourcegraph": {

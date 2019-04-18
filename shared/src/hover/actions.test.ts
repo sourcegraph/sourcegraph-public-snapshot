@@ -1,16 +1,17 @@
 import { HoveredToken, LOADER_DELAY } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { createMemoryHistory } from 'history'
-import { from, Observable, of } from 'rxjs'
+import { BehaviorSubject, from, Observable, of } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 // tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
-import { ActionItemProps } from '../actions/ActionItem'
-import { EMPTY_MODEL, Model } from '../api/client/model'
+import { ActionItemAction } from '../actions/ActionItem'
 import { Services } from '../api/client/services'
 import { CommandRegistry } from '../api/client/services/command'
 import { ContributionRegistry } from '../api/client/services/contribution'
+import { createTestEditorService } from '../api/client/services/editorService.test'
 import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
+import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
 import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
@@ -40,10 +41,10 @@ const FIXTURE_HOVER_CONTEXT: HoveredToken & HoverContext = {
     character: 2,
 }
 
-function testModelService(
-    roots: Model['roots'] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }]
-): { model: { value: Pick<Model, 'roots'> } } {
-    return { model: { value: { roots } } }
+function testWorkspaceService(
+    roots: readonly WorkspaceRootWithMetadata[] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }]
+): WorkspaceService {
+    return { roots: new BehaviorSubject(roots) }
 }
 
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar
@@ -61,7 +62,7 @@ describe('getHoverActionsContext', () => {
                         {
                             extensionsController: {
                                 services: {
-                                    model: testModelService(),
+                                    workspace: testWorkspaceService(),
                                     textDocumentDefinition: {
                                         getLocations: () =>
                                             cold<Observable<Location[]>>(`- ${LOADER_DELAY}ms --- d`, {
@@ -127,7 +128,7 @@ describe('getHoverActionsContext', () => {
                         {
                             extensionsController: {
                                 services: {
-                                    model: testModelService(),
+                                    workspace: testWorkspaceService(),
                                     textDocumentDefinition: {
                                         getLocations: () =>
                                             cold<Observable<Location[]>>(`-b`, { b: of([FIXTURE_LOCATION]) }),
@@ -182,7 +183,7 @@ describe('getDefinitionURL', () => {
             getDefinitionURL(
                 { urlToFile },
                 {
-                    model: testModelService(),
+                    workspace: testWorkspaceService(),
                     textDocumentDefinition: { getLocations: () => of(of(null)) },
                 },
                 FIXTURE_PARAMS
@@ -196,7 +197,7 @@ describe('getDefinitionURL', () => {
             getDefinitionURL(
                 { urlToFile },
                 {
-                    model: testModelService(),
+                    workspace: testWorkspaceService(),
                     textDocumentDefinition: { getLocations: () => of(of([])) },
                 },
                 FIXTURE_PARAMS
@@ -212,7 +213,7 @@ describe('getDefinitionURL', () => {
                     getDefinitionURL(
                         { urlToFile },
                         {
-                            model: testModelService(),
+                            workspace: testWorkspaceService(),
                             textDocumentDefinition: {
                                 getLocations: () => of<Observable<Location[]>>(of([{ uri: 'git://r3?c3#f' }])),
                             },
@@ -230,7 +231,7 @@ describe('getDefinitionURL', () => {
                     getDefinitionURL(
                         { urlToFile },
                         {
-                            model: testModelService(),
+                            workspace: testWorkspaceService(),
                             textDocumentDefinition: {
                                 getLocations: () => of<Observable<Location[]>>(of([FIXTURE_LOCATION])),
                             },
@@ -246,7 +247,7 @@ describe('getDefinitionURL', () => {
                     getDefinitionURL(
                         { urlToFile },
                         {
-                            model: testModelService(),
+                            workspace: testWorkspaceService(),
                             textDocumentDefinition: {
                                 getLocations: () =>
                                     of<Observable<Location[]>>(of([{ ...FIXTURE_LOCATION, range: undefined }])),
@@ -265,7 +266,7 @@ describe('getDefinitionURL', () => {
             getDefinitionURL(
                 { urlToFile },
                 {
-                    model: testModelService([{ uri: 'git://r?c', inputRevision: 'v' }]),
+                    workspace: testWorkspaceService([{ uri: 'git://r?c', inputRevision: 'v' }]),
                     textDocumentDefinition: {
                         getLocations: () =>
                             of<Observable<Location[]>>(of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }])),
@@ -279,7 +280,11 @@ describe('getDefinitionURL', () => {
 })
 
 describe('registerHoverContributions', () => {
-    const contribution = new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+    const contribution = new ContributionRegistry(
+        createTestEditorService(of([])),
+        { data: of(EMPTY_SETTINGS_CASCADE) },
+        of({})
+    )
     const commands = new CommandRegistry()
     const textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'> = {
         getLocations: () => of(of(null)),
@@ -290,7 +295,7 @@ describe('registerHoverContributions', () => {
             services: {
                 contribution,
                 commands,
-                model: testModelService(),
+                workspace: testWorkspaceService(),
                 textDocumentDefinition,
             },
         },
@@ -309,7 +314,7 @@ describe('registerHoverContributions', () => {
             .toPromise()
 
     describe('getHoverActions', () => {
-        const GO_TO_DEFINITION_ACTION: ActionItemProps = {
+        const GO_TO_DEFINITION_ACTION: ActionItemAction = {
             action: {
                 command: 'goToDefinition',
                 commandArguments: ['{"textDocument":{"uri":"git://r?c#f"},"position":{"line":1,"character":1}}'],
@@ -318,7 +323,7 @@ describe('registerHoverContributions', () => {
             },
             altAction: undefined,
         }
-        const GO_TO_DEFINITION_PRELOADED_ACTION: ActionItemProps = {
+        const GO_TO_DEFINITION_PRELOADED_ACTION: ActionItemAction = {
             action: {
                 command: 'open',
                 commandArguments: ['/r2@c2/-/blob/f2#L3:3'],
@@ -327,7 +332,7 @@ describe('registerHoverContributions', () => {
             },
             altAction: undefined,
         }
-        const FIND_REFERENCES_ACTION: ActionItemProps = {
+        const FIND_REFERENCES_ACTION: ActionItemAction = {
             action: {
                 command: 'open',
                 commandArguments: ['/r@v/-/blob/f#L2:2&tab=references'],
@@ -421,7 +426,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
-        test('shows findReferences when the definition was not found', async () =>
+        test('does not show findReferences when the definition was not found', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -431,7 +436,7 @@ describe('registerHoverContributions', () => {
                     'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
                     hoverPosition: FIXTURE_PARAMS,
                 })
-            ).resolves.toEqual([FIND_REFERENCES_ACTION]))
+            ).resolves.toEqual([]))
     })
 
     describe('goToDefinition command', () => {

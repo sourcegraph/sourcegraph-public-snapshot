@@ -67,7 +67,7 @@ func unmarshalSavedQueryID(id graphql.ID) (spec api.SavedQueryIDSpec, err error)
 }
 
 func (r savedQueryResolver) ShowOnHomepage() bool {
-	return r.showOnHomepage
+	return false
 }
 
 func (r savedQueryResolver) Notify() bool {
@@ -98,16 +98,15 @@ func (r savedQueryResolver) OrgID() *int32     { return r.orgID }
 
 func toSavedQueryResolver(index int, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
-		key:            entry.Key,
-		index:          index,
-		description:    entry.Description,
-		query:          entry.Query,
-		showOnHomepage: entry.ShowOnHomepage,
-		notify:         entry.Notify,
-		notifySlack:    entry.NotifySlack,
-		ownerKind:      entry.OwnerKind,
-		userID:         entry.UserID,
-		orgID:          entry.OrgID,
+		key:         entry.Key,
+		index:       index,
+		description: entry.Description,
+		query:       entry.Query,
+		notify:      entry.Notify,
+		notifySlack: entry.NotifySlack,
+		ownerKind:   entry.OwnerKind,
+		userID:      entry.UserID,
+		orgID:       entry.OrgID,
 	}
 }
 
@@ -142,12 +141,11 @@ func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
 		key = generateUniqueSavedQueryKey(config.SavedQueries)
 
 		value := api.ConfigSavedQuery{
-			Key:            key,
-			Description:    args.Description,
-			Query:          args.Query,
-			ShowOnHomepage: args.ShowOnHomepage,
-			Notify:         args.Notify,
-			NotifySlack:    args.NotifySlack,
+			Key:         key,
+			Description: args.Description,
+			Query:       args.Query,
+			Notify:      args.Notify,
+			NotifySlack: args.NotifySlack,
 		}
 		edits, _, err = jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", -1), value, nil, conf.FormatOptions)
 		return edits, err
@@ -164,13 +162,12 @@ func (r *settingsMutation) CreateSavedQuery(ctx context.Context, args *struct {
 	// go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config, args.DisableSubscriptionNotifications)
 
 	return &savedQueryResolver{
-		key:            key,
-		index:          index,
-		description:    args.Description,
-		query:          args.Query,
-		showOnHomepage: args.ShowOnHomepage,
-		notify:         args.Notify,
-		notifySlack:    args.NotifySlack,
+		key:         key,
+		index:       index,
+		description: args.Description,
+		query:       args.Query,
+		notify:      args.Notify,
+		notifySlack: args.NotifySlack,
 	}, nil
 }
 
@@ -222,7 +219,6 @@ func (r *settingsMutation) UpdateSavedQuery(ctx context.Context, args *struct {
 		fieldUpdates["query"] = *args.Query
 	}
 
-	fieldUpdates["showOnHomepage"] = args.ShowOnHomepage
 	fieldUpdates["notify"] = args.Notify
 	fieldUpdates["notifySlack"] = args.NotifySlack
 

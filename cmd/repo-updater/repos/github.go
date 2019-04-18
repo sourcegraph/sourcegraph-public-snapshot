@@ -1,7 +1,9 @@
 package repos
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -415,20 +417,14 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 	ch := make(chan batch)
 
 	var wg sync.WaitGroup
-
-	repositoryQueries := c.config.RepositoryQuery
-	if len(repositoryQueries) == 0 {
-		repositoryQueries = append(repositoryQueries, "none")
-	}
-
-	for _, repositoryQuery := range repositoryQueries {
+	for _, repositoryQuery := range c.config.RepositoryQuery {
 		wg.Add(1)
 		go func(repositoryQuery string) {
 			defer wg.Done()
 			switch repositoryQuery {
 			case "public":
 				if c.githubDotCom {
-					ch <- batch{err: errors.New(`ignoring unsupported configuration "public" for "repositoryQuery" for github.com`)}
+					ch <- batch{err: errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)}
 					return
 				}
 				var sinceRepoID int64
@@ -440,13 +436,13 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 
 					repos, err := c.client.ListPublicRepositories(ctx, sinceRepoID)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing public repositories: sinceRepoID=%d", sinceRepoID)}
+						ch <- batch{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
 						return
 					}
 					if len(repos) == 0 {
 						return
 					}
-					log15.Debug("github sync public", "repos", len(repos), "err", err)
+					log15.Debug("github sync public", "repos", len(repos), "error", err)
 					for _, r := range repos {
 						if sinceRepoID < r.DatabaseID {
 							sinceRepoID = r.DatabaseID
@@ -467,7 +463,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					var err error
 					repos, hasNextPage, rateLimitCost, err = c.client.ListUserRepositories(ctx, page)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing affiliated GitHub repositories page %d", page)}
+						ch <- batch{err: errors.Wrapf(err, "failed to list affiliated GitHub repositories page %d", page)}
 						break
 					}
 					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
@@ -502,21 +498,41 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 						break
 					}
 
-					var repos []*github.Repository
-					var rateLimitCost int
-					var err error
-					repos, hasNextPage, rateLimitCost, err = c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
+					reposPage, err := c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
 					if err != nil {
-						ch <- batch{err: errors.Wrapf(err, "Error listing GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery)}
+						ch <- batch{err: errors.Wrapf(err, "failed to list GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery)}
 						break
 					}
+
+					if reposPage.TotalCount > 1000 {
+						// GitHub's advanced repository search will only
+						// return 1000 results. We specially handle this case
+						// to ensure the admin gets a detailed error
+						// message. https://github.com/sourcegraph/sourcegraph/issues/2562
+						ch <- batch{err: errors.Errorf(`repositoryQuery %q would return %d results. GitHub's Search API only returns up to 1000 results. Please adjust your repository query into multiple queries such that each returns less than 1000 results. For example: {"repositoryQuery": %s}`, repositoryQuery, reposPage.TotalCount, exampleRepositoryQuerySplit(repositoryQuery))}
+						break
+					}
+
+					hasNextPage = reposPage.HasNextPage
+					repos := reposPage.Repos
+
 					rateLimitRemaining, rateLimitReset, _ := c.searchClient.RateLimit.Get()
-					log15.Debug("github sync: ListRepositoriesForSearch", "searchString", repositoryQuery, "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
+					log15.Debug("github sync: ListRepositoriesForSearch", "searchString", repositoryQuery, "repos", len(repos), "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
 
 					ch <- batch{repos: repos}
 
 					if hasNextPage {
-						time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
+						// GitHub search has vastly different rate limits to
+						// the normal GitHub API (30req/m vs
+						// 5000req/h). RecommendedWaitForBackgroundOp has
+						// heuristics tuned for the normal API, part of which
+						// is to not sleep if we have ample rate limit left.
+						//
+						// So we only let the heuristic kick in if we have
+						// less than 5 requests left.
+						if remaining, _, ok := c.searchClient.RateLimit.Get(); ok && remaining < 5 {
+							time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(1))
+						}
 					}
 				}
 			}
@@ -580,4 +596,17 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 	}
 
 	return repos, errs.ErrorOrNil()
+}
+
+func exampleRepositoryQuerySplit(q string) string {
+	var qs []string
+	for _, suffix := range []string{"created:>=2019", "created:2018", "created:2016..2017", "created:<2016"} {
+		qs = append(qs, fmt.Sprintf("%s %s", q, suffix))
+	}
+	// Avoid escaping < and >
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(qs)
+	return strings.TrimSpace(b.String())
 }

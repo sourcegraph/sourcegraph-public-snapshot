@@ -57,7 +57,7 @@ export SRC_PROF_HTTP=
 export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
-export ZOEKT_HOST=localhost:6070
+export ZOEKT_HOST=localhost:3070
 
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
 # until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to

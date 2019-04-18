@@ -30,10 +30,14 @@ export function refreshAuthenticatedUser(): Observable<never> {
                 siteAdmin
                 tags
                 url
+                settingsURL
                 organizations {
                     nodes {
                         id
                         name
+                        displayName
+                        url
+                        settingsURL
                         databaseID
                     }
                 }

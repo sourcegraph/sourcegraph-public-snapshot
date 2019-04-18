@@ -21,14 +21,6 @@ exports[`withActivation user, admin 1`] = `
       }
     },
     {
-      "id": "EnabledRepository",
-      "title": "Enable repositories",
-      "detail": "Select which repositories Sourcegraph should pull and index from your code host(s).",
-      "link": {
-        "to": "/site-admin/repositories"
-      }
-    },
-    {
       "id": "DidSearch",
       "title": "Search your code",
       "detail": "Perform a search query on your code.",

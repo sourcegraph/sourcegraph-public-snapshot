@@ -6,6 +6,7 @@ import * as React from 'react'
 import { Redirect } from 'react-router'
 import { combineLatest, Subject, Subscription, throwError } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, repeatWhen, startWith, switchMap, tap } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError } from '../../../../../shared/src/util/errors'
 import { addCommentToThread, fetchDiscussionThreadAndComments, updateComment } from '../../../discussions/backend'
@@ -15,7 +16,7 @@ import { formatHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     threadID: GQL.ID
     commentID?: GQL.ID
     repoID: GQL.ID
@@ -113,6 +114,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                                 onReport={this.onCommentReport}
                                 onClearReports={this.onCommentClearReports}
                                 onDelete={this.onCommentDelete}
+                                extensionsController={this.props.extensionsController}
                             />
                         ))}
                         <DiscussionsInput
@@ -164,7 +166,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         return addCommentToThread(this.props.threadID, contents).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => undefined),
-            catchError(e => throwError('Error creating comment: ' + asError(e).message))
+            catchError(e => throwError(new Error('Error creating comment: ' + asError(e).message)))
         )
     }
 

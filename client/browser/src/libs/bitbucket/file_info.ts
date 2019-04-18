@@ -1,82 +1,57 @@
-import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { Observable, of } from 'rxjs'
-import { filter, map, switchMap } from 'rxjs/operators'
-
-import { DiffResolvedRevSpec } from '../../shared/repo'
-import { fetchBlobContentLines } from '../../shared/repo/backend'
+import { map } from 'rxjs/operators'
 import { FileInfo } from '../code_intelligence'
-import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { getBaseCommit, getCommitsForPR } from './api'
 import {
-    getDiffFileInfoFromCodeView,
-    getFileInfoFromCodeView,
+    getCommitInfoFromComparePage,
+    getFileInfoFromCommitDiffCodeView,
+    getFileInfoFromSingleFileDiffCodeView,
+    getFileInfoFromSingleFileSourceCodeView,
+    getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView,
     getPRIDFromPathName,
-    getResolvedDiffFromBranchComparePage,
 } from './scrape'
 
 /**
- * Resolves file information for a page with a single file, not including diffs with only one file.
+ * Resolves file information for a page with a single file in source (not diff) view.
  */
-export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
-    of(codeView).pipe(
-        map(getFileInfoFromCodeView),
-        filter(propertyIsDefined('filePath')),
-        ensureRevisionsAreCloned
-    )
+export const resolveFileInfoForSingleFileSourceView = (codeView: HTMLElement): Observable<FileInfo> => {
+    const fileInfo = getFileInfoFromSingleFileSourceCodeView(codeView)
+    return of(fileInfo)
+}
 
-const fetchDiffFiles = (
-    info: Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> & DiffResolvedRevSpec
-): Observable<FileInfo> =>
-    of(info).pipe(
-        map(({ headCommitID, ...rest }) => ({ ...rest, commitID: headCommitID })),
-        switchMap(info =>
-            fetchBlobContentLines(info).pipe(
-                map(lines => ({
-                    ...info,
-                    content: lines.join('\n'),
-                    headHasFileContents: lines.length > 0,
-                }))
-            )
-        ),
-        switchMap(({ repoName, filePath, baseCommitID, ...rest }) =>
-            fetchBlobContentLines({
-                repoName,
-                filePath,
-                commitID: baseCommitID,
-            }).pipe(
-                map(lines => ({
-                    repoName,
-                    filePath,
-                    baseCommitID,
-                    baseContent: lines.join('\n'),
-                    baseHasFileContents: lines.length > 0,
-                    ...rest,
-                }))
-            )
-        )
+/**
+ * Gets the file info for a PR diff code view.
+ */
+export const resolvePullRequestFileInfo = (codeView: HTMLElement): Observable<FileInfo> => {
+    const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
+    const prID = getPRIDFromPathName()
+    return getCommitsForPR({ ...fileInfo, prID }).pipe(
+        map(({ headCommitID, baseCommitID }) => ({ ...fileInfo, commitID: headCommitID, baseCommitID }))
     )
+}
 
-export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
-    of(codeView).pipe(
-        map(getDiffFileInfoFromCodeView),
-        switchMap(({ commitID, project, repoSlug, ...rest }) => {
-            if (commitID) {
-                return getBaseCommit({ commitID, project, repoSlug }).pipe(
-                    map(baseCommitID => ({ baseCommitID, headCommitID: commitID, ...rest }))
-                )
-            } else {
-                const prID = getPRIDFromPathName()
-                return getCommitsForPR({ project, repoSlug, prID }).pipe(map(commits => ({ ...rest, ...commits })))
-            }
-        }),
-        switchMap(fetchDiffFiles)
-    )
+/**
+ * Gets the file info for a single-file "diff to previous" code view.
+ */
+export const resolveSingleFileDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> => {
+    const fileInfo = getFileInfoFromSingleFileDiffCodeView(codeView)
+    return getBaseCommit(fileInfo).pipe(map(baseCommitID => ({ baseCommitID, ...fileInfo })))
+}
 
+export const resolveCommitViewFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
+    of(getFileInfoFromCommitDiffCodeView(codeView))
+
+/**
+ * Resolves the file info on a compare page.
+ */
 export const resolveCompareFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(
-        map(codeView => ({
-            ...getDiffFileInfoFromCodeView(codeView),
-            ...getResolvedDiffFromBranchComparePage(),
-        })),
-        switchMap(fetchDiffFiles)
+        map(codeView => {
+            const { baseCommitID, headCommitID } = getCommitInfoFromComparePage()
+            return {
+                ...getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView),
+                commitID: headCommitID,
+                baseCommitID,
+            }
+        })
     )

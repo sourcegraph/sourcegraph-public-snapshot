@@ -32,20 +32,24 @@ type repositoryMirrorInfoResolver struct {
 
 	// memoize the gitserver RepoInfo call
 	repoInfoOnce     sync.Once
-	repoInfoResponse *protocol.RepoInfoResponse
+	repoInfoResponse *protocol.RepoInfo
 	repoInfoErr      error
 }
 
-func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfoResponse, error) {
+func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
 	r.repoInfoOnce.Do(func() {
-		r.repoInfoResponse, r.repoInfoErr = gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
+		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
+		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.repo.Name], err
 	})
 	return r.repoInfoResponse, r.repoInfoErr
 }
 
 func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
 	r.repoUpdateSchedulerInfoOnce.Do(func() {
-		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{RepoName: r.repository.repo.Name}
+		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{
+			RepoName: r.repository.repo.Name,
+			ID:       uint32(r.repository.repo.ID),
+		}
 		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
 	})
 	return r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr
@@ -244,7 +248,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -270,7 +274,7 @@ func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*Empt
 		if err != nil {
 			return nil, err
 		}
-		if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 			return nil, err
 		}
 	}

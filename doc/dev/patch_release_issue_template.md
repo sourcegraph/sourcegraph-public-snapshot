@@ -14,8 +14,11 @@ See [release_issue_template.md](release_issue_template.md) for the monthly relea
 
 ## Release sourcegraph/server
 
-- [ ] Create an annotated git tag using `VERSION=v3.1.1 git tag -a $VERSION -m $VERSION`.
-- [ ] `git push origin $VERSION`. This publishes the new tag, triggering the Docker image for the new version to start building.
+- [ ] Create an annotated git tag and push it (this triggers CI to build the Docker images for the new version). For example:
+    ```
+    VERSION='v3.2.1-rc.1' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
+    ```
+
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
 
 ## Release Kubernetes deployment
@@ -23,7 +26,7 @@ See [release_issue_template.md](release_issue_template.md) for the monthly relea
 In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
 
 - [ ] Wait for Renovate to open a PR to update the image tags and merge that PR ([example](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)).
-- [ ] Tag the `vMAJOR.MINOR.PATCH` release at this commit.
+- [ ] Follow the ["Cutting a new patch version" instructions in https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#cutting-a-new-patch-version-eg-v2121)
 
 ## Update the docs
 

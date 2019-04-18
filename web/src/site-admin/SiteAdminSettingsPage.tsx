@@ -21,6 +21,7 @@ export class SiteAdminSettingsPage extends React.Component<Props> {
                     {...this.props}
                     subject={this.props.site}
                     authenticatedUser={this.props.authenticatedUser}
+                    className="mt-3"
                     extraHeader={
                         <p>
                             Global settings apply to all organizations and users. Settings for a user or organization

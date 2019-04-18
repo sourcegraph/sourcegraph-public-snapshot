@@ -110,7 +110,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -132,6 +132,11 @@ exports[`HoverOverlay actions and hover present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
@@ -232,7 +237,7 @@ exports[`HoverOverlay actions present 1`] = `
           "title": "Some title",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-some-title"
+      className="hover-overlay__action e2e-tooltip-some-title"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -254,6 +259,11 @@ exports[`HoverOverlay actions present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
@@ -293,7 +303,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -315,6 +325,11 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
@@ -392,7 +407,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -414,6 +429,11 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>

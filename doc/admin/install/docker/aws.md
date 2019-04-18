@@ -8,6 +8,8 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 
 ## Deploy to EC2
 
+> NOTE: While these instructions recommend opening up port `443`, additional work is required to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration).
+
 ### Option A: use the AWS wizard
 
 - Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
@@ -34,7 +36,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   - usermod -a -G docker ec2-user
 
   # Install and run Sourcegraph. Restart the container upon subsequent reboots
-  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.2.0' ]
+  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 2633:2633 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.2.2' ]
   ```
 
 - Select **Next: ...** until you get to the **Configure Security Group** page, then add the default **HTTP** rule (port range "80", source "0.0.0.0/0, ::/0")
@@ -60,7 +62,7 @@ To update to the most recent version of Sourcegraph (X.Y.Z), SSH into your insta
 ```shell
 docker ps # get the $CONTAINER_ID of the running sourcegraph/server container
 docker rm -f $CONTAINER_ID
-docker run docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:X.Y.Z
+docker run docker run -d --publish 80:7080 --publish 443:7080 --publish 2633:2633 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:X.Y.Z
 ```
 
 ---

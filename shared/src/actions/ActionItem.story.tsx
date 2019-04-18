@@ -3,6 +3,7 @@ import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { setLinkComponent } from '../components/Link'
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemComponentProps } from './ActionItem'
 
 setLinkComponent(({ to, children, ...props }) => (
@@ -31,6 +32,7 @@ const { add } = storiesOf('ActionItem', module)
 add('noop action', () => (
     <ActionItem
         action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' } }}
+        telemetryService={NOOP_TELEMETRY_SERVICE}
         variant="actionItem"
         location={LOCATION}
         extensionsController={EXTENSIONS_CONTROLLER}
@@ -41,6 +43,7 @@ add('noop action', () => (
 add('command action', () => (
     <ActionItem
         action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+        telemetryService={NOOP_TELEMETRY_SERVICE}
         disabledDuringExecution={true}
         showLoadingSpinnerDuringExecution={true}
         showInlineError={true}
@@ -59,6 +62,7 @@ add('link action', () => (
             commandArguments: ['javascript:alert("link clicked")'],
             actionItem: { label: 'Hello' },
         }}
+        telemetryService={NOOP_TELEMETRY_SERVICE}
         variant="actionItem"
         onDidExecute={onDidExecute}
         location={LOCATION}
@@ -77,6 +81,7 @@ add('executing', () => {
     return (
         <ActionItemExecuting
             action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
             showInlineError={true}
@@ -99,6 +104,7 @@ add(
         return (
             <ActionItemWithError
                 action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 disabledDuringExecution={true}
                 showLoadingSpinnerDuringExecution={true}
                 showInlineError={true}

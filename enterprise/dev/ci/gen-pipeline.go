@@ -37,15 +37,19 @@ func main() {
 	if commit == "" {
 		commit = "1234567890123456789012345678901234567890" // for testing
 	}
-	taggedRelease := true // true if this is a semver tagged release
+	taggedRelease := true // true if this is a tagged release
 	now := time.Now()
-	if !strings.HasPrefix(version, "v") {
+	if strings.HasPrefix(branch, "docker-images-debug/") {
+		// A branch like "docker-images-debug/foobar" will produce Docker images
+		// tagged as "debug-foobar-$COMMIT".
+		version = fmt.Sprintf("debug-%s-%s", strings.TrimPrefix(branch, "docker-images-debug/"), commit)
+	} else if strings.HasPrefix(version, "v") {
+		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
+		version = strings.TrimPrefix(version, "v")
+	} else {
 		taggedRelease = false
 		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, now.Format("2006-01-02"), commit)
-	} else {
-		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
-		version = strings.TrimPrefix(version, "v")
 	}
 	releaseBranch := regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch)
 

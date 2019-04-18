@@ -1,7 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { EMPTY_MODEL, Model } from '../model'
-import { applyContextUpdate, Context, getComputedContextProperty } from './context'
+import { applyContextUpdate, Context, getComputedContextProperty, PartialCodeEditor } from './context'
 
 describe('applyContextUpdate', () => {
     test('merges properties', () =>
@@ -23,114 +22,111 @@ describe('getComputedContextProperty', () => {
             },
             subjects: [],
         }
-        expect(getComputedContextProperty(EMPTY_MODEL, settings, {}, 'config.a')).toBe(1)
-        expect(getComputedContextProperty(EMPTY_MODEL, settings, {}, 'config.a.b')).toBe(2)
-        expect(getComputedContextProperty(EMPTY_MODEL, settings, {}, 'config.c.d')).toBe(3)
-        expect(getComputedContextProperty(EMPTY_MODEL, settings, {}, 'config.x')).toBe(null)
+        expect(getComputedContextProperty([], settings, {}, 'config.a')).toBe(1)
+        expect(getComputedContextProperty([], settings, {}, 'config.a.b')).toBe(2)
+        expect(getComputedContextProperty([], settings, {}, 'config.c.d')).toBe(3)
+        expect(getComputedContextProperty([], settings, {}, 'config.x')).toBe(null)
     })
 
-    describe('model with component', () => {
-        const model: Model = {
-            ...EMPTY_MODEL,
-            visibleViewComponents: [
-                {
-                    type: 'textEditor',
-                    item: {
-                        uri: 'file:///inactive',
-                        languageId: 'inactive',
-                        text: 'inactive',
-                    },
-                    selections: [
-                        {
-                            start: { line: 11, character: 22 },
-                            end: { line: 33, character: 44 },
-                            anchor: { line: 11, character: 22 },
-                            active: { line: 33, character: 44 },
-                            isReversed: false,
-                        },
-                    ],
-                    isActive: false,
+    describe('with code editors', () => {
+        const editors: PartialCodeEditor[] = [
+            {
+                type: 'CodeEditor',
+                resource: 'file:///inactive',
+                model: {
+                    uri: 'file:///inactive',
+                    languageId: 'inactive',
                 },
-                {
-                    type: 'textEditor',
-                    item: {
-                        uri: 'file:///a/b.c',
-                        languageId: 'l',
-                        text: 't',
+                selections: [
+                    {
+                        start: { line: 11, character: 22 },
+                        end: { line: 33, character: 44 },
+                        anchor: { line: 11, character: 22 },
+                        active: { line: 33, character: 44 },
+                        isReversed: false,
                     },
-                    selections: [
-                        {
-                            start: { line: 1, character: 2 },
-                            end: { line: 3, character: 4 },
-                            anchor: { line: 1, character: 2 },
-                            active: { line: 3, character: 4 },
-                            isReversed: false,
-                        },
-                    ],
-                    isActive: true,
+                ],
+                isActive: false,
+            },
+            {
+                type: 'CodeEditor',
+                resource: 'file:///a/b.c',
+                model: {
+                    uri: 'file:///a/b.c',
+                    languageId: 'l',
                 },
-            ],
-        }
+                selections: [
+                    {
+                        start: { line: 1, character: 2 },
+                        end: { line: 3, character: 4 },
+                        anchor: { line: 1, character: 2 },
+                        active: { line: 3, character: 4 },
+                        isReversed: false,
+                    },
+                ],
+                isActive: true,
+            },
+        ]
 
         describe('resource', () => {
             test('provides resource.uri', () =>
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.uri')).toBe(
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'resource.uri')).toBe(
                     'file:///a/b.c'
                 ))
             test('provides resource.basename', () =>
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.basename')).toBe('b.c'))
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'resource.basename')).toBe(
+                    'b.c'
+                ))
             test('provides resource.dirname', () =>
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.dirname')).toBe(
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'resource.dirname')).toBe(
                     'file:///a'
                 ))
             test('provides resource.extname', () =>
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.extname')).toBe('.c'))
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'resource.extname')).toBe('.c'))
             test('provides resource.language', () =>
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.language')).toBe('l'))
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'resource.language')).toBe('l'))
             test('provides resource.type', () =>
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'resource.type')).toBe(
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'resource.type')).toBe(
                     'textDocument'
                 ))
 
-            test('returns null when the model has no component', () =>
-                expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'resource.uri')).toBe(null))
+            test('returns null when there are no code editors', () =>
+                expect(getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, {}, 'resource.uri')).toBe(null))
         })
 
         describe('component', () => {
             test('provides component.type', () =>
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(
-                    'textEditor'
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(
+                    'CodeEditor'
                 ))
 
-            test('returns null when the model has no component', () =>
-                expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(
-                    null
-                ))
+            test('returns null when there are no code editors', () =>
+                expect(getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(null))
 
-            function assertSelection(model: Model, expr: string, expected: Selection): void {
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, expr)).toEqual(expected)
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start`)).toEqual(
+            function assertSelection(editors: PartialCodeEditor[], expr: string, expected: Selection): void {
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, expr)).toEqual(expected)
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start`)).toEqual(
                     expected.start
                 )
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end`)).toEqual(
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end`)).toEqual(
                     expected.end
                 )
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start.line`)).toBe(
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start.line`)).toBe(
                     expected.start.line
                 )
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start.character`)).toBe(
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start.character`)).toBe(
                     expected.start.character
                 )
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end.line`)).toBe(
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end.line`)).toBe(
                     expected.end.line
                 )
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end.character`)).toBe(
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end.character`)).toBe(
                     expected.end.character
                 )
             }
 
             test('provides primary selection', () =>
-                assertSelection(model, 'component.selection', {
+                assertSelection(editors, 'component.selection', {
                     start: { line: 1, character: 2 },
                     end: { line: 3, character: 4 },
                     anchor: { line: 1, character: 2 },
@@ -139,66 +135,70 @@ describe('getComputedContextProperty', () => {
                 }))
 
             test('provides selections', () =>
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selections')).toEqual([
-                    {
-                        start: { line: 1, character: 2 },
-                        end: { line: 3, character: 4 },
-                        anchor: { line: 1, character: 2 },
-                        active: { line: 3, character: 4 },
-                        isReversed: false,
-                    },
-                ]))
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selections')).toEqual(
+                    [
+                        {
+                            start: { line: 1, character: 2 },
+                            end: { line: 3, character: 4 },
+                            anchor: { line: 1, character: 2 },
+                            active: { line: 3, character: 4 },
+                            isReversed: false,
+                        },
+                    ]
+                ))
 
-            function assertNoSelection(model: Model): void {
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection')).toBe(null)
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start')).toBe(
-                    null
-                )
-                expect(getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end')).toBe(
+            function assertNoSelection(editors: PartialCodeEditor[]): void {
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selection')).toBe(
                     null
                 )
                 expect(
-                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start.line')
+                    getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start')
+                ).toBe(null)
+                expect(getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end')).toBe(
+                    null
+                )
+                expect(
+                    getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start.line')
                 ).toBe(null)
                 expect(
-                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start.character')
+                    getComputedContextProperty(
+                        editors,
+                        EMPTY_SETTINGS_CASCADE,
+                        {},
+                        'component.selection.start.character'
+                    )
                 ).toBe(null)
                 expect(
-                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end.line')
+                    getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end.line')
                 ).toBe(null)
                 expect(
-                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end.character')
+                    getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end.character')
                 ).toBe(null)
             }
 
             test('returns null when there is no selection', () => {
-                assertNoSelection({
-                    ...EMPTY_MODEL,
-                    visibleViewComponents: [
-                        {
-                            type: 'textEditor',
-                            item: {
-                                uri: 'file:///a/b.c',
-                                languageId: 'l',
-                                text: 't',
-                            },
-                            selections: [],
-                            isActive: true,
+                assertNoSelection([
+                    {
+                        type: 'CodeEditor' as const,
+                        resource: 'file:///a/b.c',
+                        model: {
+                            uri: 'file:///a/b.c',
+                            languageId: 'l',
+                            text: 't',
                         },
-                    ],
-                })
+                        selections: [],
+                        isActive: true,
+                    },
+                ])
             })
 
             test('returns null when there is no component', () => {
-                assertNoSelection({
-                    ...EMPTY_MODEL,
-                    visibleViewComponents: [],
-                })
+                assertNoSelection([])
             })
 
             test('returns undefined for out-of-bounds selection', () =>
                 expect(
-                    getComputedContextProperty(model, EMPTY_SETTINGS_CASCADE, {}, 'get(component.selections, 1)')
+                    getComputedContextProperty(editors, EMPTY_SETTINGS_CASCADE, {}, 'get(component.selections, 1)')
                 ).toBe(undefined))
         })
     })
@@ -206,7 +206,7 @@ describe('getComputedContextProperty', () => {
     describe('panel', () => {
         test('provides panel.activeView.id', () =>
             expect(
-                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id', {
+                getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id', {
                     type: 'panelView',
                     id: 'x',
                     hasLocations: true,
@@ -215,7 +215,7 @@ describe('getComputedContextProperty', () => {
 
         test('provides panel.activeView.hasLocations', () =>
             expect(
-                getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.hasLocations', {
+                getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.hasLocations', {
                     type: 'panelView',
                     id: 'x',
                     hasLocations: true,
@@ -223,13 +223,11 @@ describe('getComputedContextProperty', () => {
             ).toBe(true))
 
         test('returns null for panel.activeView.id when there is no panel', () =>
-            expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id')).toBe(
-                null
-            ))
+            expect(getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id')).toBe(null))
     })
 
     test('falls back to the context entries', () => {
-        expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, { x: 1 }, 'x')).toBe(1)
-        expect(getComputedContextProperty(EMPTY_MODEL, EMPTY_SETTINGS_CASCADE, {}, 'y')).toBe(undefined)
+        expect(getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, { x: 1 }, 'x')).toBe(1)
+        expect(getComputedContextProperty([], EMPTY_SETTINGS_CASCADE, {}, 'y')).toBe(undefined)
     })
 })

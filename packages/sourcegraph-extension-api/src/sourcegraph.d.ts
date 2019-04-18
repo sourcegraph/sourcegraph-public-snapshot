@@ -326,6 +326,55 @@ declare module 'sourcegraph' {
          * additional access to the code host API. In the future, this limitation may be removed.
          */
         readonly text: string | undefined
+
+        /**
+         * Convert the position to a zero-based offset.
+         *
+         * The position will be adjusted using {@link TextDocument#validatePosition}.
+         *
+         * @param position A position.
+         * @return A valid zero-based offset.
+         * @throws if {@link TextDocument#text} is undefined.
+         */
+        offsetAt(position: Position): number
+
+        /**
+         * Convert a zero-based offset to a position.
+         *
+         * @param offset A zero-based offset.
+         * @return A valid {@link Position}.
+         * @throws if {@link TextDocument#text} is undefined.
+         */
+        positionAt(offset: number): Position
+
+        /**
+         * Ensure a position is contained in the range of this document. If not, adjust it so that
+         * it is.
+         *
+         * @param position A position.
+         * @return The given position or a new, adjusted position.
+         * @throws if {@link TextDocument#text} is undefined.
+         */
+        validatePosition(position: Position): Position
+
+        /**
+         * Ensure a range is completely contained in this document.
+         *
+         * @param range A range.
+         * @return The given range or a new, adjusted range.
+         * @throws if {@link TextDocument#text} is undefined.
+         */
+        validateRange(range: Range): Range
+
+        /**
+         * Get the range of the word at the given position.
+         *
+         * The position will be adjusted using {@link TextDocument#validatePosition}.
+         *
+         * @param position A position.
+         * @return A range spanning a word, or `undefined`.
+         */
+        getWordRangeAtPosition(position: Position): Range | undefined
     }
 
     /**
@@ -569,7 +618,7 @@ declare module 'sourcegraph' {
      */
     export interface CodeEditor {
         /** The type tag for this kind of {@link ViewComponent}. */
-        type: 'CodeEditor'
+        readonly type: 'CodeEditor'
 
         /**
          * The text document that is open in this editor. The document remains the same for the entire lifetime of
@@ -958,6 +1007,62 @@ declare module 'sourcegraph' {
         provideLocations(document: TextDocument, position: Position): ProviderResult<Location[]>
     }
 
+    /**
+     * A completion item is a suggestion to complete text that the user has typed.
+     *
+     * @see {@link CompletionItemProvider#provideCompletionItems}
+     */
+    export interface CompletionItem {
+        /**
+         * The label of this completion item, which is rendered prominently. If no
+         * {@link CompletionItem#insertText} is specified, the label is the text inserted when the
+         * user selects this completion.
+         */
+        label: string
+
+        /**
+         * The description of this completion item, which is rendered less prominently but still
+         * alongside the {@link CompletionItem#label}.
+         */
+        description?: string
+
+        /**
+         * A string to insert in a document when the user selects this completion. When not set, the
+         * {@link CompletionItem#label} is used.
+         */
+        insertText?: string
+    }
+
+    /**
+     * A collection of [completion items](#CompletionItem) to be presented in the editor.
+     */
+    export interface CompletionList {
+        /**
+         * The list of completions.
+         */
+        items: CompletionItem[]
+    }
+
+    /**
+     * A completion item provider provides suggestions to insert or apply at the cursor as the user
+     * is typing.
+     *
+     * Providers are queried for completions as the user types in any document matching the document
+     * selector specified at registration time.
+     */
+    export interface CompletionItemProvider {
+        /**
+         * Provide completion items for the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         *
+         * @return An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
+         * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
+    }
+
     export namespace languages {
         /**
          * Registers a hover provider, which returns a formatted hover message (intended for display in a tooltip)
@@ -1024,6 +1129,22 @@ declare module 'sourcegraph' {
             selector: DocumentSelector,
             provider: LocationProvider
         ): Unsubscribable
+
+        /**
+         * Registers a completion item provider.
+         *
+         * Multiple providers can be registered with overlapping document selectors. In that case,
+         * providers are queried in parallel and the results are merged. A failing provider will not
+         * cause the whole operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider applies to.
+         * @param provider A completion item provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerCompletionItemProvider(
+            selector: DocumentSelector,
+            provider: CompletionItemProvider
+        ): Unsubscribable
     }
 
     /**
@@ -1086,6 +1207,65 @@ declare module 'sourcegraph' {
          * @throws If no command exists wih the given command identifier, an error is thrown.
          */
         export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>
+    }
+
+    /**
+     * A description of the information available at a URL.
+     */
+    export interface LinkPreview {
+        /**
+         * The content of this link preview, which is shown next to the link.
+         */
+        content?: MarkupContent
+
+        /**
+         * The hover content of this link preview, which is shown when the cursor hovers the link.
+         *
+         * @todo Add support for Markdown. Currently only plain text is supported.
+         */
+        hover?: Pick<MarkupContent, 'value'> & { kind: MarkupKind.PlainText }
+    }
+
+    /**
+     * Called to obtain a preview of the information available at a URL.
+     */
+    export interface LinkPreviewProvider {
+        /**
+         * Provides a preview of the information available at the URL of a link in a document.
+         *
+         * @todo Add a `context` parameter so that the provider knows what document contains the
+         * link (so that it can handle links in code files differently from rendered Markdown
+         * documents, for example).
+         *
+         * @param url The URL of the link to preview.
+         */
+        provideLinkPreview(url: URL): ProviderResult<LinkPreview>
+    }
+
+    /**
+     * Extensions can customize how content is rendered.
+     */
+    export namespace content {
+        /**
+         * EXPERIMENTAL. This API is subject to change without notice and has no compatibility
+         * guarantees.
+         *
+         * Registers a provider for link previews ({@link LinkPreviewProvider}) for all URLs in a
+         * document matching the {@link urlMatchPattern}. A link preview is a description of the
+         * information available at a URL.
+         *
+         * @todo Support a more powerful syntax for URL match patterns, such as Chrome's
+         * (https://developer.chrome.com/extensions/match_patterns).
+         *
+         * @param urlMatchPattern A pattern that matches URLs for which the provider is called to
+         * obtain a preview. Currently it matches all URLs that start with the match pattern (i.e.,
+         * string prefix matches). No wildcards are supported.
+         * @param provider The link preview provider.
+         */
+        export function registerLinkPreviewProvider(
+            urlMatchPattern: string,
+            provider: LinkPreviewProvider
+        ): Unsubscribable
     }
 
     export interface ContextValues {
