@@ -271,6 +271,7 @@ func githubRepoToRepo(
 	urn := svc.URN()
 	return &Repo{
 		Name:         string(githubRepositoryToRepoPath(conn, ghrepo)),
+		URI:          fmt.Sprintf("%s/%s", conn.originalHostname, ghrepo.NameWithOwner),
 		ExternalRepo: *github.ExternalRepoSpec(ghrepo, *conn.baseURL),
 		Description:  ghrepo.Description,
 		Fork:         ghrepo.IsFork,
@@ -333,6 +334,7 @@ func gitlabProjectToRepo(
 	urn := svc.URN()
 	return &Repo{
 		Name:         string(gitlabProjectToRepoPath(conn, proj)),
+		URI:          fmt.Sprintf("%s/%s", conn.baseURL.Hostname(), proj.PathWithNamespace),
 		ExternalRepo: *gitlab.ExternalRepoSpec(proj, *conn.baseURL),
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
@@ -396,6 +398,7 @@ func bitbucketserverRepoToRepo(
 	urn := svc.URN()
 	return &Repo{
 		Name:         string(info.Name),
+		URI:          bitbucketServerRepoURI(conn.config, repo),
 		ExternalRepo: *info.ExternalRepo,
 		Description:  info.Description,
 		Fork:         info.Fork,
@@ -409,6 +412,24 @@ func bitbucketserverRepoToRepo(
 		},
 		Metadata: repo,
 	}
+}
+
+func bitbucketServerRepoURI(config *schema.BitbucketServerConnection, repo *bitbucketserver.Repo) string {
+	host, err := url.Parse(config.Url)
+	if err != nil {
+		// This should never happen
+		panic(fmt.Sprintf("malformed bitbucket config, invalid URL: url=%q error=%s", config.Url, err))
+	}
+	host = NormalizeBaseURL(host)
+
+	// TODO(keegancsmith) Is a UNKNOWN the correct value for an unknown
+	// project.
+	project := "UNKNOWN"
+	if repo.Project != nil {
+		project = repo.Project.Key
+	}
+
+	return fmt.Sprintf("%s/%s/%s", host.Hostname(), project, repo.Slug)
 }
 
 // A GitoliteSource yields repositories from a single Gitolite connection configured
@@ -759,6 +780,7 @@ func otherRepoFromCloneURL(urn string, u *url.URL) *Repo {
 
 	return &Repo{
 		Name: repoName,
+		URI:  repoName,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
 			ServiceType: "other",

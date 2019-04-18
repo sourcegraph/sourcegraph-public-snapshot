@@ -544,10 +544,14 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 type Repo struct {
 	// The internal Sourcegraph repo ID.
 	ID uint32
-	// Name is the name for this repository (e.g., "github.com/user/repo").
+	// Name is the name for this repository (e.g., "github.com/user/repo"). It
+	// is the same as URI, unless the user configures a non-default
+	// repositoryPathPattern.
 	//
 	// Previously, this was called RepoURI.
 	Name string
+	// URI is the FQDN for this repository (e.g., "github.com/user/repo").
+	URI string
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.
