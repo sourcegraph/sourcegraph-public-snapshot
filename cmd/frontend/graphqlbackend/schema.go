@@ -311,7 +311,7 @@ type Mutation {
         userOrOrg: String!
         orgID: Int
         userID: Int
-    ): EmptyResponse!
+    ): EmptyResponse
 }
 
 # A new external service.

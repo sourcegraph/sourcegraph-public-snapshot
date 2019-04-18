@@ -138,7 +138,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
-            values: { query, description, subject, showOnHomepage, notify, notifySlack, ownerKind, userID, orgID },
+            values: { query, description, subject, showOnHomepage, notify, notifySlack, userID, orgID },
             isSubmitting,
             error,
         } = this.state
