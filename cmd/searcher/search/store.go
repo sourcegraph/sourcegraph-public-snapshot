@@ -7,7 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"path/filepath"
@@ -125,12 +125,9 @@ func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 	}
 
 	largeFilePatterns := conf.Get().SearchLargeFiles
-	lfpBytes, err := json.Marshal(largeFilePatterns)
-	if err != nil {
-		return "", errors.Errorf("error marshalling large file patterns: %v", err)
-	}
+
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(string(repo.Name) + " " + string(commit) + " " + string(lfpBytes)))
+	h := sha256.Sum256([]byte(fmt.Sprintf("%q %q %q", repo.Name, commit, largeFilePatterns)))
 	key := hex.EncodeToString(h[:])
 	span.LogKV("key", key)
 
@@ -146,7 +143,7 @@ func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 		// since we're just going to close it again immediately.
 		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
 		f, err := s.cache.Open(bgctx, key, func(ctx context.Context) (io.ReadCloser, error) {
-			return s.fetch(ctx, repo, commit)
+			return s.fetch(ctx, repo, commit, largeFilePatterns)
 		})
 		var path string
 		if f != nil {
@@ -173,7 +170,7 @@ func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
-func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (rc io.ReadCloser, err error) {
+func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, largeFilePatterns []string) (rc io.ReadCloser, err error) {
 	fetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
@@ -234,7 +231,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		defer r.Close()
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
-		err := copySearchable(tr, zw)
+		err := copySearchable(tr, zw, largeFilePatterns)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
@@ -248,7 +245,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 // copySearchable copies searchable files from tr to zw. A searchable file is
 // any file that is a candidate for being searched (under size limit and
 // non-binary).
-func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
+func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -287,7 +284,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 
 		// We do not search the content of large files unless they are
 		// whitelisted.
-		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, conf.Get().SearchLargeFiles) {
+		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, largeFilePatterns) {
 			continue
 		}
 
