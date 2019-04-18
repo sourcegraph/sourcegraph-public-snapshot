@@ -38,38 +38,28 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
 }
 
 /**
- * Checks if split diff is enabled in a given toolbar.
- *
- * @param toolbar A PR or commit view toolbar element
- */
-const isSplitDiffEnabledInToolbar = (toolbar: HTMLElement): boolean => {
-    // Quick toggle matching those used on commit pages and by Refined GitHub
-    const quickToggle = toolbar.querySelector('a[href$="?diff=split"]')
-    if (quickToggle) {
-        return quickToggle.classList.contains('selected')
-    }
-    // Switcher used on PR pages
-    const splitRadioButton = toolbar.querySelector<HTMLInputElement>('input[type="radio"][name="diff"][value="split"]')
-    if (!splitRadioButton) {
-        throw new Error('Expected split view toggle in toolbar')
-    }
-    return splitRadioButton.checked
-}
-
-/**
  * Returns if the current view shows diffs with split (vs. unified) view.
+ *
+ * @param element, either an element contained in a code view or the code view itself
  */
-export function isDomSplitDiff(): boolean {
-    const { isDelta, isPullRequest } = parseURL()
+export function isDomSplitDiff(element: HTMLElement): boolean {
+    const { isDelta } = parseURL()
     if (!isDelta) {
         return false
     }
-    const toolbarSelector = isPullRequest ? '.pr-review-tools' : '#toc'
-    const toolbar = document.querySelector<HTMLElement>(toolbarSelector)
-    if (!toolbar) {
-        throw new Error(`Could not find out if split diff is enabled, expected toolbar ${toolbarSelector} to exist`)
+    const codeView = element.classList.contains('file') ? element : element.closest('.file')
+    if (!codeView) {
+        throw new Error('Could not resolve code view element')
     }
-    return isSplitDiffEnabledInToolbar(toolbar)
+    if (codeView.classList.contains('js-comment-container')) {
+        // Commented snippet in PR discussion
+        return true
+    }
+    const codeViewTable = codeView.querySelector('table')
+    if (!codeViewTable) {
+        throw new Error('Could not find code view table')
+    }
+    return codeViewTable.classList.contains('js-file-diff-split') || codeViewTable.classList.contains('file-diff-split')
 }
 
 /**

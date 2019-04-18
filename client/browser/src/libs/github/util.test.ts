@@ -39,14 +39,14 @@ describe('util', () => {
                                         `${__dirname}/__fixtures__/${version}/${view}/${extension}/split/page.html`,
                                         'utf-8'
                                     )
-                                    expect(isDomSplitDiff()).toBe(true)
+                                    expect(isDomSplitDiff(document.querySelector('.file') as HTMLElement)).toBe(true)
                                 })
                                 it('should return false for unified view', async () => {
                                     document.body.innerHTML = await readFile(
                                         `${__dirname}/__fixtures__/${version}/${view}/${extension}/unified/page.html`,
                                         'utf-8'
                                     )
-                                    expect(isDomSplitDiff()).toBe(false)
+                                    expect(isDomSplitDiff(document.querySelector('.file') as HTMLElement)).toBe(false)
                                 })
                             })
                         }

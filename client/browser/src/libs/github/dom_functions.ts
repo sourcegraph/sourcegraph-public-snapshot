@@ -11,7 +11,7 @@ const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     if (td.classList.contains('blob-code-deletion')) {
         return 'base'
     }
-    if (isDomSplitDiff()) {
+    if (isDomSplitDiff(codeElement)) {
         // If there are more cells on the right, this is the base, otherwise the head
         return td.nextElementSibling ? 'base' : 'head'
     }
@@ -24,11 +24,12 @@ const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
  * depending on whether the diff is in unified or split view.
  * Prefers head.
  */
-const getLineNumberElementIndex = (part: DiffPart): number => {
-    if (isDomSplitDiff()) {
-        return part === 'base' ? 0 : 2
+const getLineNumberElementIndex = (part: DiffPart, isSplitDiff: boolean): number => {
+    if (part === 'base') {
+        // base line number is always the first child
+        return 0
     }
-    return part === 'base' ? 0 : 1
+    return isSplitDiff ? 2 : 1
 }
 
 /**
@@ -79,7 +80,8 @@ export const diffDomFunctions: DOMFunctions = {
         return codeCell && getBlobCodeInner(codeCell)
     },
     getCodeElementFromLineNumber: (codeView, line, part) => {
-        const nthChild = getLineNumberElementIndex(part!) + 1 // nth-child() is 1-indexed
+        const isSplitDiff = isDomSplitDiff(codeView)
+        const nthChild = getLineNumberElementIndex(part!, isSplitDiff) + 1 // nth-child() is 1-indexed
         const lineNumberCell = codeView.querySelector<HTMLTableCellElement>(
             `td:nth-child(${nthChild})[data-line-number="${line}"]`
         )
@@ -87,7 +89,7 @@ export const diffDomFunctions: DOMFunctions = {
             return null
         }
         let codeCell: HTMLTableCellElement
-        if (isDomSplitDiff()) {
+        if (isSplitDiff) {
             // In split diff view, the code cell is next to the line number cell
             codeCell = lineNumberCell.nextElementSibling as HTMLTableCellElement
         } else {
