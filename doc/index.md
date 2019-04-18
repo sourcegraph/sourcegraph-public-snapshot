@@ -27,6 +27,14 @@ Access the server on port `7080`, then the below screencast will show you how to
 
 Once Sourcegraph has been configured, head to the [site administration documentation](admin/index.md) for next steps.
 
+If you run docker on an OS like RHEL/Fedora/CentOS with enabling SELinux, sVirt doesn't allow the docker process
+to access ~/.sourcegraph/config and ~/.sourcegraph/data. In that case, you will see following message:
+<pre class="pre-wrap"><code>Failed to setup nginx:failed to generate nginx configuration to /etc/sourcegraph: open /etc/sourcegraph/nginx.conf: permission denied</code></pre>
+In that case, run following commands first:
+
+<pre class="pre-wrap"><code>mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data
+chcon -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data</code></pre>
+
 ## Upgrading Sourcegraph
 
 All you need to do to upgrade Sourcegraph is to restart your Docker server with a new image tag.
