@@ -152,7 +152,11 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        const singleClickJ2D = Boolean(this.props.settingsCascade.final && !isErrorLike(this.props.settingsCascade.final) && this.props.settingsCascade.final.singleClickJ2D === true)
+        const singleClickJ2D = Boolean(
+            this.props.settingsCascade.final &&
+                !isErrorLike(this.props.settingsCascade.final) &&
+                this.props.settingsCascade.final.singleClickJ2D === true
+        )
 
         const hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
@@ -211,14 +215,14 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         }
         this.subscriptions.add(
             hoverifier.hoverStateUpdates.subscribe(update => {
-                if (singleClickJ2D && this.state.token !== update.token) {
-                    if (this.state.token) {
-                        this.state.token.style.cursor = 'auto'
-                        this.state.token.removeEventListener('click', j2d)
+                if (singleClickJ2D && this.state.hoveredTokenElement !== update.hoveredTokenElement) {
+                    if (this.state.hoveredTokenElement) {
+                        this.state.hoveredTokenElement.style.cursor = 'auto'
+                        this.state.hoveredTokenElement.removeEventListener('click', j2d)
                     }
-                    if (update.token) {
-                        update.token.style.cursor = 'pointer'
-                        update.token.addEventListener('click', j2d)
+                    if (update.hoveredTokenElement) {
+                        update.hoveredTokenElement.style.cursor = 'pointer'
+                        update.hoveredTokenElement.addEventListener('click', j2d)
                     }
                 }
                 this.setState(update)
