@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -94,5 +95,11 @@ func TestRepos_Add(t *testing.T) {
 	}
 	if !calledUpsert {
 		t.Error("!calledUpsert")
+	}
+}
+
+func init() {
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 }

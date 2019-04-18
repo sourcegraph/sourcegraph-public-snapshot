@@ -63,25 +63,29 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	defer done()
 
 	repo, err := db.Repos.GetByName(ctx, name)
-	if err != nil && envvar.SourcegraphDotComMode() {
+	if err == nil {
+		return repo, nil
+	}
+
+	if envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
 		if err := s.AddGitHubDotComRepository(ctx, name); err != nil {
 			return nil, err
 		}
 		return db.Repos.GetByName(ctx, name)
-	} else if err != nil {
-		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
-			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
-				Scheme:   "https",
-				Host:     "sourcegraph.com",
-				Path:     string(name),
-				RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
-			}).String()}
-		}
-		return nil, err
 	}
 
-	return repo, nil
+	if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
+		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
+			Scheme:   "https",
+			Host:     "sourcegraph.com",
+			Path:     string(name),
+			RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
+		}).String()}
+	}
+
+
+	return nil, err
 }
 
 // AddGitHubDotComRepository adds the repository with the given name. The name is mapped to a repository by consulting the
