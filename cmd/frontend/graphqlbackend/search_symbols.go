@@ -26,10 +26,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// searchSymbolResult is a type that holds the data needed to create a symbol
-// resolver. Each field is a parameter for toSymbolResolver. This type is used
-// to prevent search code from being tangled up with other parts of the
-// graphql.
+// searchSymbolResult is a result from symbol search.
 type searchSymbolResult struct {
 	symbol  protocol.Symbol
 	baseURI *gituri.URI
