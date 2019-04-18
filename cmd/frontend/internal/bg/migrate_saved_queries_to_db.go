@@ -59,21 +59,29 @@ func MigrateAllSavedQueriesFromSettingsToDatabase(ctx context.Context) {
 
 func InsertSavedQueryIntoDB(ctx context.Context, s *api.Settings, sq *SavedQueryField) {
 	for _, query := range sq.SavedQueries {
+		// Add case for global settings. It should make a site admin user the owner of that saved search.
 		if s.Subject.User != nil {
-			_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "user", s.AuthorUserID)
+			_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "user", *s.Subject.User)
 			if err != nil {
-				log15.Error(`Warning: unable to migrate saved query into database.`, err.Error())
+				log15.Error(`Warning: unable to migrate user saved query into database.`, err.Error())
 			}
 		} else if s.Subject.Org != nil {
-			_, err := dbconn.Global.ExecContext(ctx, "SELECT org_id FROM settings WHERE id=$1", s.ID)
+			_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, org_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "org", *s.Subject.Org)
 			if err != nil {
-				log15.Error(`Warning: unable to migrate saved query into database.`, err.Error())
+				log15.Error(`Warning: unable to migrate org saved query into database.`, err.Error())
 			}
-			_, err = dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, org_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "org", s.AuthorUserID)
+		} else if s.Subject.Site || s.Subject.Default {
+			var siteAdminID *int32
+			err := dbconn.Global.QueryRowContext(ctx, "SELECT id FROM users WHERE site_admin=true LIMIT 1").Scan(&siteAdminID)
 			if err != nil {
-				log15.Error(`Warning: unable to migrate saved query into database.`, err.Error())
+				log15.Error(`Warning: unable to migrate saved query into database. No site admin ID found.`, err.Error())
+			}
+
+			// AuthorUserID is the UserID of the person who last wrote to the settings.
+			_, err = dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, org_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "user", *siteAdminID)
+			if err != nil {
+				log15.Error(`Warning: unable to migrate global saved query into database.`, err.Error())
 			}
 		}
 	}
-
 }
