@@ -31,7 +31,7 @@ Once Sourcegraph has been configured, head to the [site administration documenta
 
 All you need to do to upgrade Sourcegraph is to restart your Docker server with a new image tag.
 
-We actively maintain the two most recent [monthly releases of Sourcegraph](dev/releases.md) and support upgrading from the two previous releases.
+We actively maintain the two most recent [monthly releases of Sourcegraph](dev/releases.md) and we support upgrading from the two previous monthly releases.
 
 For example, if you are running Sourcegraph 3.1, then you can upgrade directly to 3.2 and 3.3. If you want to upgrade to 3.4, then you first need to upgrade to 3.3 before you can upgrade to 3.4.
 
