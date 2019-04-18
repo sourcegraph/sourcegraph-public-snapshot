@@ -28,12 +28,13 @@ const SiteSchemaJSON = `{
       "group": "Search"
     },
     "search.largeFiles": {
-      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size.",
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
       "type": "array",
       "items": {
         "type": "string"
       },
-      "group": "Search"
+      "group": "Search",
+      "examples": [["go.sum", "package-lock.json", "*.thrift"]]
     },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
