@@ -53,7 +53,7 @@ export function isDomSplitDiff(element: HTMLElement): boolean {
     }
     if (codeView.classList.contains('js-comment-container')) {
         // Commented snippet in PR discussion
-        return true
+        return false
     }
     const codeViewTable = codeView.querySelector('table')
     if (!codeViewTable) {

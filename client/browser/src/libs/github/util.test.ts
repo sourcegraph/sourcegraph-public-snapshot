@@ -20,27 +20,38 @@ describe('util', () => {
                     {
                         view: 'pull-request',
                         url: 'https://github.com/sourcegraph/sourcegraph/pull/2672/files',
+                        hasSplitView: true,
                     },
                     {
                         view: 'commit',
                         url:
                             'https://github.com/sourcegraph/sourcegraph/commit/2c74f329fd03008fa0b446cd5e53234715dae3dc',
+                        hasSplitView: true,
+                    },
+                    {
+                        view: 'pull-request-discussion',
+                        url: 'https://github.com/sourcegraph/sourcegraph/pull/2672/',
+                        hasSplitView: false,
                     },
                 ]
-                for (const { view, url } of views) {
+                for (const { view, url, hasSplitView } of views) {
                     describe(`${startCase(view)} page`, () => {
                         beforeEach(() => {
                             jsdom.reconfigure({ url })
                         })
                         for (const extension of ['vanilla', 'refined-github']) {
                             describe(startCase(extension), () => {
-                                it('should return true for split view', async () => {
-                                    document.body.innerHTML = await readFile(
-                                        `${__dirname}/__fixtures__/${version}/${view}/${extension}/split/page.html`,
-                                        'utf-8'
-                                    )
-                                    expect(isDomSplitDiff(document.querySelector('.file') as HTMLElement)).toBe(true)
-                                })
+                                if (hasSplitView) {
+                                    it('should return true for split view', async () => {
+                                        document.body.innerHTML = await readFile(
+                                            `${__dirname}/__fixtures__/${version}/${view}/${extension}/split/page.html`,
+                                            'utf-8'
+                                        )
+                                        expect(isDomSplitDiff(document.querySelector('.file') as HTMLElement)).toBe(
+                                            true
+                                        )
+                                    })
+                                }
                                 it('should return false for unified view', async () => {
                                     document.body.innerHTML = await readFile(
                                         `${__dirname}/__fixtures__/${version}/${view}/${extension}/unified/page.html`,
