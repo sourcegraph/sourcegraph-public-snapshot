@@ -62,9 +62,11 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 }
 
 // GetByName returns the repository with the given name from the database, or an
-// error. If the repo doesn't exist in the DB, then errcode.IsNotFound will
-// return true on the error returned. It does not attempt to look up or update
-// the repository on any external service (such as its code host).
+// error.
+//
+// Name is the name for this repository (e.g., "github.com/user/repo"). It is
+// the same as URI, unless the user configures a non-default
+// repositoryPathPattern.
 func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, name)
@@ -77,6 +79,22 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, 
 
 	if len(repos) == 0 {
 		return nil, &repoNotFoundErr{Name: name}
+	}
+	return repos[0], nil
+}
+
+// GetByURI returns the repository with the given URI from the database or nil
+// if it does not exist.
+//
+// URI is the FQDN for this repository (e.g., "github.com/user/repo").
+func (s *repos) GetByURI(ctx context.Context, uri string) (*types.Repo, error) {
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("lower(uri)=%s LIMIT 1", strings.ToLower(uri)))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(repos) == 0 {
+		return nil, nil
 	}
 	return repos[0], nil
 }

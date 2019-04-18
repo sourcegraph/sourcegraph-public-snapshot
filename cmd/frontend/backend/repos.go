@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -84,6 +85,10 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		}).String()}
 	}
 
+	if repo, _ := db.Repos.GetByURI(ctx, string(name)); repo != nil {
+		u := globals.ExternalURL.ResolveReference(&url.URL{Path: string(repo.Name)})
+		return nil, ErrRepoSeeOther{RedirectURL: u.String()}
+	}
 
 	return nil, err
 }
