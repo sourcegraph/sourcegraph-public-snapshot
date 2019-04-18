@@ -635,6 +635,10 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Name, modified = n.Name, true
 	}
 
+	if r.URI != n.URI {
+		r.URI, modified = n.URI, true
+	}
+
 	if r.Description != n.Description {
 		r.Description, modified = n.Description, true
 	}
