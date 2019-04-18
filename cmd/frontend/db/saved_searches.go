@@ -42,7 +42,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 }
 
 func (s *savedSearches) Create(ctx context.Context, description string, query string, notify bool, notifySlack bool, ownerKind string, userID *int32, orgID *int32) (err error) {
-	tr, ctx := trace.New(ctx, "db.SavedSearches.ListAll", "")
+	tr, ctx := trace.New(ctx, "db.SavedSearches.Create", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -56,7 +56,7 @@ func (s *savedSearches) Create(ctx context.Context, description string, query st
 }
 
 func (s *savedSearches) Update(ctx context.Context, id string, description string, query string, notify bool, notifySlack bool, ownerKind string, userID *int32, orgID *int32) (err error) {
-	tr, ctx := trace.New(ctx, "db.SavedSearches.ListAll", "")
+	tr, ctx := trace.New(ctx, "db.SavedSearches.Update", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -79,26 +79,15 @@ func (s *savedSearches) Update(ctx context.Context, id string, description strin
 	return nil
 }
 
-// func (s *savedSearches) Delete(ctx context.Context, id string, description string, query string, notify bool, notifySlack bool, ownerKind string, userID *int32, orgID *int32) (err error) {
-// 	tr, ctx := trace.New(ctx, "db.SavedSearches.ListAll", "")
-// 	defer func() {
-// 		tr.SetError(err)
-// 		tr.Finish()
-// 	}()
-// 	fieldUpdates := []*sqlf.Query{
-// 		sqlf.Sprintf("updated_at=now()"),
-// 		sqlf.Sprintf("description=%s", description),
-// 		sqlf.Sprintf("query=%s", query),
-// 		sqlf.Sprintf("notify_owner=%t", notify),
-// 		sqlf.Sprintf("notify_slack=%t", notifySlack),
-// 		sqlf.Sprintf("owner_kind=%s", strings.ToLower(ownerKind)),
-// 		sqlf.Sprintf("user_id=%v", userID),
-// 		sqlf.Sprintf("org_id=%v", orgID),
-// 	}
-// 	updateQuery := sqlf.Sprintf(`UPDATE saved_searches SET %s WHERE ID=%v`, sqlf.Join(fieldUpdates, ", "), id)
-// 	_, err = dbconn.Global.ExecContext(ctx, updateQuery.Query(sqlf.PostgresBindVar), updateQuery.Args()...)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+func (s *savedSearches) Delete(ctx context.Context, id string) (err error) {
+	tr, ctx := trace.New(ctx, "db.SavedSearches.Delete", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	_, err = dbconn.Global.ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

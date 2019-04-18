@@ -38,3 +38,13 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	}
 	return &EmptyResponse{}, nil
 }
+
+func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
+	ID string
+}) (*EmptyResponse, error) {
+	err := db.SavedSearches.Delete(ctx, args.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}

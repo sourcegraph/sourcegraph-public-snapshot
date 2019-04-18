@@ -324,6 +324,11 @@ type Mutation {
         orgID: Int
         userID: Int
     ): EmptyResponse
+    # Deletes a saved search
+    deleteSavedSearch(
+        # The database ID of the saved search
+        id: String!
+    ): EmptyResponse
 }
 
 # A new external service.

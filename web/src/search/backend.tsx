@@ -374,6 +374,22 @@ export function updateSavedSearch(
     )
 }
 
+export function deleteSavedSearch(id: string): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DeleteSavedSearch($id: String!) {
+                deleteSavedSearch(id: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(() => undefined)
+    )
+}
+
 export function updateSavedQuery(
     subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
     settingsLastID: number | null,

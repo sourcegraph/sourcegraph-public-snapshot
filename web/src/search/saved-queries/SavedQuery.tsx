@@ -9,7 +9,7 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { getLastIDForSubject } from '../../settings/configuration'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { deleteSavedQuery } from '../backend'
+import { createSavedSearch, deleteSavedSearch } from '../backend'
 import { SavedQueryRow } from './SavedQueryRow'
 import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
 interface Props extends SettingsCascadeProps, ThemeProps {
@@ -48,14 +48,14 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                 .pipe(
                     withLatestFrom(propsChanges),
                     switchMap(([, props]) =>
-                        createSavedQuery(
-                            props.savedQuery.subject,
-                            getLastIDForSubject(props.settingsCascade, props.savedQuery.subject.id),
-                            duplicate(props.savedQuery.description),
+                        createSavedSearch(
+                            props.savedQuery.description,
                             props.savedQuery.query,
-                            props.savedQuery.showOnHomepage,
                             props.savedQuery.notify,
-                            props.savedQuery.notifySlack
+                            props.savedQuery.notifySlack,
+                            props.savedQuery.ownerKind,
+                            props.savedQuery.userID,
+                            props.savedQuery.orgID
                         )
                     ),
                     mapTo(void 0)
@@ -79,13 +79,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             this.deleteRequested
                 .pipe(
                     withLatestFrom(propsChanges),
-                    switchMap(([, props]) =>
-                        deleteSavedQuery(
-                            props.savedQuery.subject,
-                            getLastIDForSubject(props.settingsCascade, props.savedQuery.subject.id),
-                            props.savedQuery.id
-                        )
-                    ),
+                    switchMap(([, props]) => deleteSavedSearch(props.savedQuery.key)),
                     mapTo(void 0)
                 )
                 .subscribe(
