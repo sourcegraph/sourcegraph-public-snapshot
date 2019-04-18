@@ -170,6 +170,10 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (o *OrgResolver) DatabaseID(ctx context.Context) int32 {
+	return o.org.ID
+}
+
 func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string

@@ -34,12 +34,14 @@ export function refreshAuthenticatedUser(): Observable<never> {
                     nodes {
                         id
                         name
+                        databaseID
                     }
                 }
                 session {
                     canSignOut
                 }
                 viewerCanAdminister
+                databaseID
             }
         }
     `).pipe(

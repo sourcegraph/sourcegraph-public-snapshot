@@ -1,11 +1,12 @@
 import { Observable } from 'rxjs'
 import { catchError, map, mergeMap, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { OwnerKind } from './saved-queries/SavedQueryForm'
 
 export function search(
     query: string,
@@ -269,60 +270,51 @@ export function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
     )
 }
 
-export function createSavedQuery(
-    subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
-    settingsLastID: number | null,
+export function createSavedSearch(
     description: string,
     query: string,
-    showOnHomepage: boolean,
     notify: boolean,
     notifySlack: boolean,
-    disableSubscriptionNotifications?: boolean
-): Observable<GQL.ISavedQuery> {
+    userOrOrg: string,
+    userId: number | null,
+    orgId: number | null
+): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation CreateSavedQuery(
-                $subject: ID!
-                $lastID: Int
+            mutation CreateSavedSearch(
                 $description: String!
                 $query: String!
-                $showOnHomepage: Boolean
-                $notify: Boolean
-                $notifySlack: Boolean
-                $disableSubscriptionNotifications: Boolean
+                $notifyOwner: Boolean!
+                $notifySlack: Boolean!
+                $userOrOrg: String!
+                $userID: Int
+                $orgID: Int
             ) {
-                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                    createSavedQuery(
-                        description: $description
-                        query: $query
-                        showOnHomepage: $showOnHomepage
-                        notify: $notify
-                        notifySlack: $notifySlack
-                        disableSubscriptionNotifications: $disableSubscriptionNotifications
-                    ) {
-                        ...SavedQueryFields
-                    }
+                createSavedSearch(
+                    description: $description
+                    query: $query
+                    notifyOwner: $notifyOwner
+                    notifySlack: $notifySlack
+                    userOrOrg: $userOrOrg
+                    userID: $userID
+                    orgID: $orgID
+                ) {
+                    alwaysNil
                 }
             }
-            ${savedQueryFragment}
         `,
         {
             description,
             query,
-            showOnHomepage,
-            notify,
+            notifyOwner: notify,
             notifySlack,
-            disableSubscriptionNotifications: disableSubscriptionNotifications || false,
-            subject: subject.id,
-            lastID: settingsLastID,
+            userOrOrg,
+            userID: userId,
+            orgID: orgId,
         }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.settingsMutation || !data.settingsMutation.createSavedQuery) {
-                throw createAggregateError(errors)
-            }
-            return data.settingsMutation.createSavedQuery
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 

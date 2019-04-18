@@ -302,6 +302,16 @@ type Mutation {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomMutation!
+    # Creates a saved search.
+    createSavedSearch(
+        description: String!
+        query: String!
+        notifyOwner: Boolean!
+        notifySlack: Boolean!
+        userOrOrg: String!
+        orgID: Int
+        userID: Int
+    ): EmptyResponse!
 }
 
 # A new external service.
@@ -2333,7 +2343,10 @@ type Org implements Node & SettingsSubject {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
-    # A list of extensions published by this organization in the extension registry.
+    # The unique numeric ID for the organization.
+    #
+    # FOR INTERNAL USE ONLY
+    databaseID: Int!
 }
 
 # The result of Mutation.inviteUserToOrganization.

@@ -16,6 +16,14 @@ export interface SavedQueryFields {
     showOnHomepage: boolean
     notify: boolean
     notifySlack: boolean
+    ownerKind: string
+    userID: number | null
+    orgID: number | null
+}
+
+export enum OwnerKind {
+    User = 'User',
+    Org = 'Org',
 }
 
 interface Props extends SettingsCascadeProps {
@@ -41,10 +49,9 @@ interface State {
 
 export class SavedQueryForm extends React.Component<Props, State> {
     private handleDescriptionChange = this.createInputChangeHandler('description')
-    private handleSubjectChange = this.createInputChangeHandler('subject')
     private handleShowOnHomeChange = this.createInputChangeHandler('showOnHomepage')
     private handleNotifyChange = this.createInputChangeHandler('notify')
-    private handleNotifySlackChange = this.createInputChangeHandler('notifySlack')
+    private handleNotifySlackChange = this.createInputChangeHandler('notifySlack') // This needs to update the subject to correspond to the org that is selected now.
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -62,6 +69,9 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 showOnHomepage: !!(defaultValues && defaultValues.showOnHomepage),
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
+                ownerKind: (defaultValues && defaultValues.ownerKind) || '',
+                userID: null,
+                orgID: null,
             },
             subjectOptions: [],
             isSubmitting: false,
@@ -128,8 +138,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
-            values: { query, description, subject, showOnHomepage, notify, notifySlack },
-            subjectOptions,
+            values: { query, description, subject, showOnHomepage, notify, notifySlack, ownerKind, userID, orgID },
             isSubmitting,
             error,
         } = this.state
@@ -175,22 +184,34 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 </div>
                 <div className="form-group">
                     <label>Save location</label>
+                    <div>User</div>
                     <div className="saved-query-form__save-location">
-                        {subjectOptions
-                            .filter(
-                                (subjectOption: SettingsSubject): subjectOption is GQL.IOrg | GQL.IUser =>
-                                    subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
-                            )
-                            .map((subjectOption, i) => (
+                        {this.props.authenticatedUser && (
+                            <label className="saved-query-form__save-location-options">
+                                <input
+                                    className="saved-query-form__save-location-input"
+                                    onChange={this.userOwnerChangeHandler(this.props.authenticatedUser.databaseID)}
+                                    type="radio"
+                                    value={this.props.authenticatedUser.username}
+                                    checked={this.props.authenticatedUser.databaseID === userID}
+                                />
+                                {this.props.authenticatedUser.username}
+                            </label>
+                        )}
+                    </div>
+                    <div>Organizations</div>
+                    <div className="saved-query-form__save-location">
+                        {this.props.authenticatedUser &&
+                            this.props.authenticatedUser.organizations.nodes.map((org, i) => (
                                 <label className="saved-query-form__save-location-options" key={i}>
                                     <input
                                         className="saved-query-form__save-location-input"
-                                        onChange={this.handleSubjectChange}
+                                        onChange={this.orgOwnerChangeHandler(org.databaseID)}
                                         type="radio"
-                                        value={subjectOption.id}
-                                        checked={subject === subjectOption.id}
-                                    />{' '}
-                                    {settingsSubjectLabel(subjectOption)}
+                                        value={org.name}
+                                        checked={org.databaseID === orgID}
+                                    />
+                                    {org.name}
                                 </label>
                             ))}
                     </div>
@@ -367,11 +388,36 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private createInputChangeHandler(key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> {
         return event => {
             const { value, checked, type } = event.currentTarget
-
             this.setState(state => ({
                 values: {
                     ...state.values,
                     [key]: type === 'checkbox' ? checked : value,
+                },
+            }))
+        }
+    }
+
+    private orgOwnerChangeHandler(id: number): React.FormEventHandler<HTMLInputElement> {
+        return event => {
+            this.setState(state => ({
+                values: {
+                    ...state.values,
+                    ownerKind: 'Org' as OwnerKind,
+                    orgID: id,
+                    userID: null,
+                },
+            }))
+        }
+    }
+
+    private userOwnerChangeHandler(id: number): React.FormEventHandler<HTMLInputElement> {
+        return event => {
+            this.setState(state => ({
+                values: {
+                    ...state.values,
+                    ownerKind: 'User' as OwnerKind,
+                    userID: id,
+                    orgID: null,
                 },
             }))
         }
