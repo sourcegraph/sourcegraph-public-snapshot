@@ -284,6 +284,7 @@ const listReposQueryFmtstr = `
 SELECT
   id,
   name,
+  uri,
   description,
   language,
   created_at,
@@ -453,6 +454,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	type record struct {
 		ID                  uint32          `json:"id"`
 		Name                string          `json:"name"`
+		URI                 string          `json:"uri"`
 		Description         string          `json:"description"`
 		Language            string          `json:"language"`
 		CreatedAt           time.Time       `json:"created_at"`
@@ -483,6 +485,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		records = append(records, record{
 			ID:                  r.ID,
 			Name:                r.Name,
+			URI:                 r.URI,
 			Description:         r.Description,
 			Language:            r.Language,
 			CreatedAt:           r.CreatedAt.UTC(),
@@ -526,6 +529,7 @@ WITH batch AS (
   AS (
       id                    integer,
       name                  citext,
+      uri                   citext,
       description           text,
       language              text,
       created_at            timestamptz,
@@ -549,6 +553,7 @@ updated AS (
   UPDATE repo
   SET
     name                  = batch.name,
+    uri                   = batch.uri,
     description           = batch.description,
     language              = batch.language,
     created_at            = COALESCE(batch.created_at, repo.created_at),
@@ -569,6 +574,7 @@ updated AS (
 SELECT
   updated.id,
   updated.name,
+  updated.uri,
   updated.description,
   updated.language,
   updated.created_at,
@@ -598,6 +604,7 @@ var insertReposQuery = batchReposQueryFmtstr + `,
 inserted AS (
   INSERT INTO repo (
     name,
+    uri,
     description,
     language,
     created_at,
@@ -614,6 +621,7 @@ inserted AS (
   )
   SELECT
     name,
+    uri,
     description,
     language,
     created_at,
@@ -633,6 +641,7 @@ inserted AS (
 SELECT
   inserted.id,
   inserted.name,
+  inserted.uri,
   inserted.description,
   inserted.language,
   inserted.created_at,
@@ -728,6 +737,7 @@ func scanRepo(r *Repo, s scanner) error {
 	err := s.Scan(
 		&r.ID,
 		&r.Name,
+		&r.URI,
 		&r.Description,
 		&r.Language,
 		&r.CreatedAt,
