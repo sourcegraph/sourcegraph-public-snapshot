@@ -96,7 +96,7 @@ type ConfigSavedQuery struct {
 	ShowOnHomepage bool   `json:"showOnHomepage"`
 	Notify         bool   `json:"notify,omitempty"`
 	NotifySlack    bool   `json:"notifySlack,omitempty"`
-	UserOrOrg      string
+	OwnerKind      string
 	UserID         *int32
 	OrgID          *int32
 }

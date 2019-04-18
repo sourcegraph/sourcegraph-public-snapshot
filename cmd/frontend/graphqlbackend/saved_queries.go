@@ -105,7 +105,7 @@ func toSavedQueryResolver(index int, entry api.ConfigSavedQuery) *savedQueryReso
 		showOnHomepage: entry.ShowOnHomepage,
 		notify:         entry.Notify,
 		notifySlack:    entry.NotifySlack,
-		ownerKind:      entry.UserOrOrg,
+		ownerKind:      entry.OwnerKind,
 		userID:         entry.UserID,
 		orgID:          entry.OrgID,
 	}

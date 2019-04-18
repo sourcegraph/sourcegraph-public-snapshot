@@ -17,14 +17,9 @@ export interface SavedQueryFields {
     showOnHomepage: boolean
     notify: boolean
     notifySlack: boolean
-    ownerKind: string
+    ownerKind: GQL.SavedQueryOwnerKind
     userID: number | null
     orgID: number | null
-}
-
-export enum OwnerKind {
-    User = 'User',
-    Org = 'Org',
 }
 
 interface Props extends SettingsCascadeProps {
@@ -71,7 +66,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 showOnHomepage: !!(defaultValues && defaultValues.showOnHomepage),
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
-                ownerKind: (defaultValues && defaultValues.ownerKind) || '',
+                ownerKind: (defaultValues && defaultValues.ownerKind) || ('USER' as GQL.SavedQueryOwnerKind.USER),
                 userID: (defaultValues && defaultValues.userID) || null,
                 orgID: (defaultValues && defaultValues.orgID) || null,
             },
@@ -404,7 +399,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    ownerKind: 'Org' as OwnerKind,
+                    ownerKind: 'ORG' as GQL.SavedQueryOwnerKind.ORG,
                     orgID: id,
                     userID: null,
                 },
@@ -417,7 +412,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    ownerKind: 'User' as OwnerKind,
+                    ownerKind: 'USER' as GQL.SavedQueryOwnerKind.USER,
                     userID: id,
                     orgID: null,
                 },
