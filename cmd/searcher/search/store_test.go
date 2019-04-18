@@ -115,12 +115,12 @@ func TestIngoreSizeMax(t *testing.T) {
 		// Fail
 		{"baz.foo.bar", false},
 		{"bar_baz", false},
-		{"bar.foo", false},
+		{"baz.baz", false},
 	}
 
 	for _, test := range tests {
 		if got, want := ignoreSizeMax(test.name, patterns), test.ignored; got != want {
-			t.Errorf("got %v want %v", got, want)
+			t.Errorf("case %s got %v want %v", test.name, got, want)
 		}
 	}
 }
