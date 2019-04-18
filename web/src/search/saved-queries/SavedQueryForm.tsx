@@ -1,6 +1,5 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-
 import { from, fromEvent, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'

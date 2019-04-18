@@ -318,6 +318,19 @@ Referenced by:
 
 ```
 
+# Table "public.query_runner_state"
+```
+      Column      |           Type           | Modifiers 
+------------------+--------------------------+-----------
+ query            | text                     | not null
+ last_executed    | timestamp with time zone | not null
+ latest_result    | timestamp with time zone | not null
+ exec_duration_ns | bigint                   | not null
+Indexes:
+    "saved_queries_query_unique" UNIQUE, btree (query)
+
+```
+
 # Table "public.recent_searches"
 ```
    Column   |            Type             |                          Modifiers                           
@@ -421,19 +434,6 @@ Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 Triggers:
     trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW EXECUTE PROCEDURE set_repo_name()
-
-```
-
-# Table "public.saved_queries"
-```
-      Column      |           Type           | Modifiers 
-------------------+--------------------------+-----------
- query            | text                     | not null
- last_executed    | timestamp with time zone | not null
- latest_result    | timestamp with time zone | not null
- exec_duration_ns | bigint                   | not null
-Indexes:
-    "saved_queries_query_unique" UNIQUE, btree (query)
 
 ```
 

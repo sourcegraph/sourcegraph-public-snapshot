@@ -6,7 +6,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { OwnerKind } from './saved-queries/SavedQueryForm'
 
 export function search(
     query: string,

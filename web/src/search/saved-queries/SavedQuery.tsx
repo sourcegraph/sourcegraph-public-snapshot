@@ -6,7 +6,6 @@ import { Subject, Subscription } from 'rxjs'
 import { mapTo, startWith, switchMap, withLatestFrom } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { getLastIDForSubject } from '../../settings/configuration'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createSavedSearch, deleteSavedSearch } from '../backend'
@@ -186,15 +185,4 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             eventLogger.log('SavedQueryDeletedCanceled')
         }
     }
-}
-
-function duplicate(s: string): string {
-    const m = s.match(/ \(copy(?: (\d+))?\)$/)
-    if (m && m[1]) {
-        return `${s.slice(0, m.index)} (copy ${parseInt(m[1], 10) + 1})`
-    }
-    if (m) {
-        return `${s.slice(0, m.index)} (copy 2)`
-    }
-    return `${s} (copy)`
 }
