@@ -180,6 +180,12 @@ func TestSources_ListRepos(t *testing.T) {
 				}),
 			},
 			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					Host: "ssh://git@127.0.0.1:2222",
+				}),
+			},
+			{
 				Kind: "OTHER",
 				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
 					Url: "https://github.com",
@@ -507,6 +513,7 @@ func newClientFactory(t testing.TB, name string) (httpcli.Factory, func(testing.
 	rec := newRecorder(t, cassete, *update)
 	mw := httpcli.NewMiddleware(
 		githubProxyRedirectMiddleware,
+		gitserverRedirectMiddleware,
 	)
 	return httpcli.NewFactory(mw, newRecorderOpt(t, rec)),
 		func(t testing.TB) { save(t, rec) }
@@ -517,6 +524,17 @@ func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
 		if req.URL.Hostname() == "github-proxy" {
 			req.URL.Host = "api.github.com"
 			req.URL.Scheme = "https"
+		}
+		return cli.Do(req)
+	})
+}
+
+func gitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
+	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Hostname() == "gitserver" {
+			// Start local git server first
+			req.URL.Host = "127.0.0.1:3178"
+			req.URL.Scheme = "http"
 		}
 		return cli.Do(req)
 	})
