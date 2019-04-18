@@ -152,10 +152,10 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        const singleClickJ2D = Boolean(
+        const singleClickGoToDefinition = Boolean(
             this.props.settingsCascade.final &&
                 !isErrorLike(this.props.settingsCascade.final) &&
-                this.props.settingsCascade.final.singleClickJ2D === true
+                this.props.settingsCascade.final.singleClickGoToDefinition === true
         )
 
         const hoverifier = createHoverifier<
@@ -174,7 +174,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             ),
             getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             getActions: context => getHoverActions(this.props, context),
-            pinningEnabled: !singleClickJ2D,
+            pinningEnabled: !singleClickGoToDefinition,
         })
         this.subscriptions.add(hoverifier)
 
@@ -204,25 +204,25 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 dom: domFunctions,
             })
         )
-        const j2d = (ev: MouseEvent) => {
-            const j2daction =
+        const goToDefinition = (ev: MouseEvent) => {
+            const goToDefinitionAction =
                 this.state.actionsOrError instanceof Array &&
-                this.state.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
-            if (j2daction) {
-                this.props.history.push(j2daction.action.commandArguments![0])
+                this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
+            if (goToDefinitionAction) {
+                this.props.history.push(goToDefinitionAction.action.commandArguments![0])
                 ev.stopPropagation()
             }
         }
         this.subscriptions.add(
             hoverifier.hoverStateUpdates.subscribe(update => {
-                if (singleClickJ2D && this.state.hoveredTokenElement !== update.hoveredTokenElement) {
+                if (singleClickGoToDefinition && this.state.hoveredTokenElement !== update.hoveredTokenElement) {
                     if (this.state.hoveredTokenElement) {
                         this.state.hoveredTokenElement.style.cursor = 'auto'
-                        this.state.hoveredTokenElement.removeEventListener('click', j2d)
+                        this.state.hoveredTokenElement.removeEventListener('click', goToDefinition)
                     }
                     if (update.hoveredTokenElement) {
                         update.hoveredTokenElement.style.cursor = 'pointer'
-                        update.hoveredTokenElement.addEventListener('click', j2d)
+                        update.hoveredTokenElement.addEventListener('click', goToDefinition)
                     }
                 }
                 this.setState(update)
