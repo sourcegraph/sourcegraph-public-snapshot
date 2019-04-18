@@ -411,6 +411,65 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:                   "https://github.com",
+					Token:                 os.Getenv("GITHUB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{nameWithOwner}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"tsenart/vegeta"},
+				}),
+			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:                   "https://gitlab.com",
+					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
+					ProjectQuery:          []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+					},
+				}),
+			},
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:                   "http://127.0.0.1:7990",
+					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"org/baz"},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "repositoryPathPattern determines the repo name",
+			svcs: svcs,
+			assert: func(t testing.TB, rs Repos) {
+				t.Helper()
+
+				have := rs.Names()
+				sort.Strings(have)
+
+				want := []string{
+					"127.0.0.1/a/b/c/ORG/baz",
+					"github.com/a/b/c/tsenart/vegeta",
+					"gitlab.com/a/b/c/gnachman/iterm2",
+				}
+
+				if !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
