@@ -90,10 +90,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
         props
             .fetchCurrentTabStatus()
-            .then(currentTabStatus => {
-                console.log(currentTabStatus)
-                this.setState(state => ({ ...state, currentTabStatus }))
-            })
+            .then(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
             .catch(err => {
                 console.log('Error fetching current tab status', err)
             })
