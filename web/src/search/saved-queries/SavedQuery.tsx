@@ -9,7 +9,7 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { getLastIDForSubject } from '../../settings/configuration'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createSavedQuery, deleteSavedQuery } from '../backend'
+import { deleteSavedQuery } from '../backend'
 import { SavedQueryRow } from './SavedQueryRow'
 import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
 interface Props extends SettingsCascadeProps, ThemeProps {

@@ -226,9 +226,9 @@ func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	for _, s := range settings {
 		var spec api.SavedQueryIDSpec
 		if s.Config.UserOrOrg == "user" {
-			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.ID}
+			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
 		} else if s.Config.UserOrOrg == "org" {
-			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.ID}
+			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
 		}
 
 		queries = append(queries, api.SavedQuerySpecAndConfig{

@@ -10,6 +10,7 @@ import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 
 export interface SavedQueryFields {
+    key: string
     description: string
     query: string
     subject: GQL.ID
@@ -63,6 +64,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         this.state = {
             values: {
+                key: (defaultValues && defaultValues.key) || '',
                 query: (defaultValues && defaultValues.query) || '',
                 description: (defaultValues && defaultValues.description) || '',
                 subject: (defaultValues && defaultValues.subject) || '',
@@ -70,8 +72,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
                 ownerKind: (defaultValues && defaultValues.ownerKind) || '',
-                userID: null,
-                orgID: null,
+                userID: (defaultValues && defaultValues.userID) || null,
+                orgID: (defaultValues && defaultValues.orgID) || null,
             },
             subjectOptions: [],
             isSubmitting: false,

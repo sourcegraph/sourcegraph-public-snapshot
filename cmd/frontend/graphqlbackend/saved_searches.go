@@ -21,3 +21,20 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	}
 	return &EmptyResponse{}, nil
 }
+
+func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
+	ID          string
+	Description string
+	Query       string
+	NotifyOwner bool
+	NotifySlack bool
+	UserOrOrg   string
+	OrgID       *int32
+	UserID      *int32
+}) (*EmptyResponse, error) {
+	err := db.SavedSearches.Update(ctx, args.ID, args.Description, args.Query, args.NotifyOwner, args.NotifySlack, args.UserOrOrg, args.UserID, args.OrgID)
+	if err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}

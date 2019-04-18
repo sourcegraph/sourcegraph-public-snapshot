@@ -245,10 +245,14 @@ export function fetchReposByQuery(query: string): Observable<{ name: string; url
 const savedQueryFragment = gql`
     fragment SavedQueryFields on SavedQuery {
         id
+        key
         description
         notify
         notifySlack
         query
+        ownerKind
+        userID
+        orgID
     }
 `
 
@@ -304,6 +308,58 @@ export function createSavedSearch(
             }
         `,
         {
+            description,
+            query,
+            notifyOwner: notify,
+            notifySlack,
+            userOrOrg,
+            userID: userId,
+            orgID: orgId,
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(() => undefined)
+    )
+}
+
+export function updateSavedSearch(
+    id: string,
+    description: string,
+    query: string,
+    notify: boolean,
+    notifySlack: boolean,
+    userOrOrg: string,
+    userId: number | null,
+    orgId: number | null
+): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation UpdateSavedSearch(
+                $id: String!
+                $description: String!
+                $query: String!
+                $notifyOwner: Boolean!
+                $notifySlack: Boolean!
+                $userOrOrg: String!
+                $userID: Int
+                $orgID: Int
+            ) {
+                updateSavedSearch(
+                    id: $id
+                    description: $description
+                    query: $query
+                    notifyOwner: $notifyOwner
+                    notifySlack: $notifySlack
+                    userOrOrg: $userOrOrg
+                    userID: $userID
+                    orgID: $orgID
+                ) {
+                    alwaysNil
+                }
+            }
+        `,
+        {
+            id,
             description,
             query,
             notifyOwner: notify,

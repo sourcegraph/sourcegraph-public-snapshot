@@ -90,7 +90,6 @@ type SavedQueryIDSpec struct {
 // ConfigSavedQuery is the JSON shape of a saved query entry in the JSON configuration
 // (i.e., an entry in the {"search.savedQueries": [...]} array).
 type ConfigSavedQuery struct {
-	ID             string `json:"id,omitempty"`
 	Key            string `json:"key,omitempty"`
 	Description    string `json:"description"`
 	Query          string `json:"query"`

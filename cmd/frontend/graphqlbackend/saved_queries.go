@@ -22,6 +22,8 @@ type savedQueryResolver struct {
 	description                         string
 	query                               string
 	showOnHomepage, notify, notifySlack bool
+	ownerKind                           string
+	userID, orgID                       *int32
 }
 
 func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, error) {
@@ -79,11 +81,8 @@ func (r savedQueryResolver) NotifySlack() bool {
 // DEPRECATED
 func (r savedQueryResolver) Subject() *settingsSubject { return nil }
 
-func (r savedQueryResolver) Key() *string {
-	if r.key == "" {
-		return nil
-	}
-	return &r.key
+func (r savedQueryResolver) Key() string {
+	return r.key
 }
 
 // DEPRECATED
@@ -92,6 +91,10 @@ func (r savedQueryResolver) Index() int32 { return int32(r.index) }
 func (r savedQueryResolver) Description() string { return r.description }
 
 func (r savedQueryResolver) Query() string { return r.query }
+
+func (r savedQueryResolver) OwnerKind() string { return r.ownerKind }
+func (r savedQueryResolver) UserID() *int32    { return r.userID }
+func (r savedQueryResolver) OrgID() *int32     { return r.orgID }
 
 func toSavedQueryResolver(index int, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
@@ -102,6 +105,9 @@ func toSavedQueryResolver(index int, entry api.ConfigSavedQuery) *savedQueryReso
 		showOnHomepage: entry.ShowOnHomepage,
 		notify:         entry.Notify,
 		notifySlack:    entry.NotifySlack,
+		ownerKind:      entry.UserOrOrg,
+		userID:         entry.UserID,
+		orgID:          entry.OrgID,
 	}
 }
 

@@ -319,6 +319,18 @@ type Mutation {
         orgID: Int
         userID: Int
     ): EmptyResponse
+    # Updates a saved search
+    updateSavedSearch(
+        # The database ID of the saved search
+        id: String!
+        description: String!
+        query: String!
+        notifyOwner: Boolean!
+        notifySlack: Boolean!
+        userOrOrg: String!
+        orgID: Int
+        userID: Int
+    ): EmptyResponse
 }
 
 # A new external service.
@@ -962,7 +974,7 @@ type SavedQuery {
     subject: SettingsSubject!
     # The unique key of this saved query (unique only among all other saved
     # queries of the same subject).
-    key: String
+    key: String!
     # DEPRECATED: this will be removed in a future release.
     #
     # The 0-indexed index of this saved query in the subject's settings.
@@ -977,6 +989,12 @@ type SavedQuery {
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
+    # Whether the owner of this saved search is a user or organization.
+    ownerKind: String!
+    # The user ID of the owner if the owner is a user.
+    userID: Int
+    # The organization ID of the owner if the owner is an org.
+    orgID: Int
 }
 
 # A search query description.
