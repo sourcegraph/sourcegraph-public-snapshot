@@ -27,6 +27,14 @@ Access the server on port `7080`, then the below screencast will show you how to
 
 Once Sourcegraph has been configured, head to the [site administration documentation](admin/index.md) for next steps.
 
+## Upgrading Sourcegraph
+
+All you need to do to upgrade Sourcegraph is to restart your Docker server with a new image tag.
+
+We actively maintain the two most recent [monthly releases of Sourcegraph](dev/releases.md) and support upgrading from the two previous releases.
+
+For example, if you are running Sourcegraph 3.1, then you can upgrade directly to 3.2 and 3.3. If you want to upgrade to 3.4, then you first need to upgrade to 3.3 before you can upgrade to 3.4.
+
 ## Documentation
 
 Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph). Need help? Use the [issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
