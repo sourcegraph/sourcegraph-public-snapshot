@@ -3,10 +3,6 @@ import { isDomSplitDiff } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     const td = codeElement.closest('td')!
-    if (isDomSplitDiff()) {
-        // If there are more cells on the right, this is the base, otherwise the head
-        return td.nextElementSibling ? 'base' : 'head'
-    }
 
     if (td.classList.contains('blob-code-addition')) {
         return 'head'
@@ -14,6 +10,10 @@ const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
 
     if (td.classList.contains('blob-code-deletion')) {
         return 'base'
+    }
+    if (isDomSplitDiff()) {
+        // If there are more cells on the right, this is the base, otherwise the head
+        return td.nextElementSibling ? 'base' : 'head'
     }
 
     return 'head'
