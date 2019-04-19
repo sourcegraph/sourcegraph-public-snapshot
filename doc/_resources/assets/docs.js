@@ -8,6 +8,12 @@ window.sgdocs = (() => {
 
   return {
     init: breadcrumbs => {
+      if (document.readyState === 'loading') {
+        return window.addEventListener('DOMContentLoaded', e => {
+          window.sgdocs.init(breadcrumbs=breadcrumbs)
+        })
+      }
+
       BREADCRUMBS_DATA = breadcrumbs ? breadcrumbs : []
       BREADCRUMBS = document.querySelector('#breadcrumbs')
       BREADCRUMBS_MOBILE = document.querySelector('#breadcrumbs-mobile')
