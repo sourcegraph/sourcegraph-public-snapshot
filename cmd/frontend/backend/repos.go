@@ -31,6 +31,8 @@ import (
 type ErrRepoSeeOther struct {
 	// RedirectURL is the base URL for the repository at an external location.
 	RedirectURL string
+	// TODO(keegan) new error type rather
+	Name api.RepoName
 }
 
 func (e ErrRepoSeeOther) Error() string {
@@ -68,6 +70,14 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return repo, nil
 	}
 
+	if repo, _ := db.Repos.GetByURI(ctx, string(name)); repo != nil {
+		u := globals.ExternalURL.ResolveReference(&url.URL{Path: string(repo.Name)})
+		return nil, ErrRepoSeeOther{
+			RedirectURL: u.String(),
+			Name:        repo.Name,
+		}
+	}
+
 	if envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
 		if err := s.AddGitHubDotComRepository(ctx, name); err != nil {
@@ -83,11 +93,6 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 			Path:     string(name),
 			RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
 		}).String()}
-	}
-
-	if repo, _ := db.Repos.GetByURI(ctx, string(name)); repo != nil {
-		u := globals.ExternalURL.ResolveReference(&url.URL{Path: string(repo.Name)})
-		return nil, ErrRepoSeeOther{RedirectURL: u.String()}
 	}
 
 	return nil, err

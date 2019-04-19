@@ -139,6 +139,14 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				return nil, nil
 			}
 			if e, ok := err.(backend.ErrRepoSeeOther); ok {
+				if e.Name != "" {
+					err = handlerutil.RedirectToNewRepoName(w, r, e.Name)
+					if err != nil {
+						return nil, errors.Wrap(err, "when sending renamed repository redirect response")
+					}
+
+					return nil, nil
+				}
 				// Repo does not exist here, redirect to the recommended location.
 				u, err := url.Parse(e.RedirectURL)
 				if err != nil {
