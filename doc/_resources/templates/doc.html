@@ -10,7 +10,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
         {{if (or (not .Content) .ContentVersion)}}
         <meta name="robots" content="noindex">{{end}}
-        <script src="{{asset "docs.js"}}"></script>
     </head>
     <body{{with .Content}}{{if eq (len .Breadcrumbs ) 0}} id="home" {{end}}{{if gt (len .Breadcrumbs ) 1}} data-path="{{.Path}}" {{end}}{{end}} class="theme theme-light">
         <div class="global-navbar">
@@ -574,11 +573,8 @@
         </div>
 
         {{with .Content}}
-        <script>
-            window.addEventListener('DOMContentLoaded', (e) => {
-                window.sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});
-            });
-        </script>
+        <script src="{{asset "docs.js"}}"></script>
+        <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
         {{ end }}
 
         <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>
