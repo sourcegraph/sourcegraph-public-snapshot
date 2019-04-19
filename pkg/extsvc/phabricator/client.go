@@ -1,65 +1,58 @@
-// phabricator is a package to interact with a Phabricator instance and its Conduit API.
+// Package phabricator is a package to interact with a Phabricator instance and its Conduit API.
 package phabricator
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/url"
+	"context"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/uber/gonduit"
+	"github.com/uber/gonduit/core"
 )
 
+// A Client provides high level methods to a Phabricator Conduit API.
 type Client struct {
-	url   string
-	token string
+	conn *gonduit.Conn
 }
 
-func NewClient(url, token string) *Client {
-	return &Client{
-		url:   url,
-		token: token,
-	}
-}
+// NewClient returns an authenticated Client, using the given URL and
+// token. If provided, cli will be used to perform the underlying HTTP requests.
+func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Client, error) {
+	conn, err := gonduit.DialContext(ctx, url, &core.ClientOptions{
+		APIToken: token,
+		Client:   cli,
+	})
 
-func (c *Client) post(path string, payload url.Values, target interface{}) error {
-	payload.Add("api.token", c.token)
-
-	res, err := http.PostForm(c.buildURL(path), payload)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer func() { _ = res.Body.Close() }()
 
-	return json.NewDecoder(res.Body).Decode(&target)
+	return &Client{conn: conn}, conn.ConnectContext(ctx)
 }
 
-func (c *Client) buildURL(path string) string {
-	return fmt.Sprintf("%s/api/%s", c.url, path)
+type getRawDiffRequest struct {
+	DiffID int `json:"diffID"`
 }
 
-type getRawDiffResult struct {
+type getRawDiffResponse struct {
 	Diff         *string `json:"result"`
 	ErrorCode    *string `json:"error_code"`
 	ErrorMessage *string `json:"error_info"`
 }
 
-func (c *Client) GetRawDiff(diffID int) (string, error) {
-	payload := url.Values{}
-	payload.Add("diffID", strconv.Itoa(diffID))
+func (c *Client) GetRawDiff(ctx context.Context, diffID int) (string, error) {
+	req := getRawDiffRequest{DiffID: diffID}
 
-	var res getRawDiffResult
-
-	path := "differential.getrawdiff"
-	err := c.post(path, payload, &res)
+	var res getRawDiffResponse
+	err := c.conn.CallContext(ctx, "differential.getrawdiff", &req, &res)
 	if err != nil {
 		return "", err
 	}
 
 	if res.ErrorMessage != nil {
-		return "", fmt.Errorf("phabricator error: %s %s", *res.ErrorCode, *res.ErrorMessage)
+		return "", errors.Errorf("phabricator error: %s %s", *res.ErrorCode, *res.ErrorMessage)
 	}
 
 	if res.Diff == nil {
@@ -78,7 +71,11 @@ type DiffInfo struct {
 	Date        time.Time `json:"omitempty"`
 }
 
-type getDiffInfoResult struct {
+type getDiffInfoRequest struct {
+	IDs []int `json:"ids"`
+}
+
+type getDiffInfoResponse struct {
 	// Infos is a map of string(diffID) -> DiffInfo
 	// See this page for more information https://phabricator.sgdev.org/conduit/method/differential.querydiffs/
 	Infos        *map[string]DiffInfo `json:"result"`
@@ -86,15 +83,11 @@ type getDiffInfoResult struct {
 	ErrorMessage *string              `json:"error_info"`
 }
 
-func (c *Client) GetDiffInfo(diffID int) (*DiffInfo, error) {
-	payload := url.Values{}
+func (c *Client) GetDiffInfo(ctx context.Context, diffID int) (*DiffInfo, error) {
+	req := getDiffInfoRequest{IDs: []int{diffID}}
 
-	payload.Add("ids[0]", strconv.Itoa(diffID))
-
-	var res getDiffInfoResult
-
-	path := "differential.querydiffs"
-	err := c.post(path, payload, &res)
+	var res getDiffInfoResponse
+	err := c.conn.CallContext(ctx, "differential.querydiffs", &req, &res)
 	if err != nil {
 		return nil, err
 	}
