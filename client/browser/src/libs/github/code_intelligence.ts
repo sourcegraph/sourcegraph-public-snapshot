@@ -24,9 +24,10 @@ import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 
 /**
- * Creates the mount element for the CodeViewToolbar.
+ * Creates the mount element for the CodeViewToolbar on code views containing
+ * a `.file-actions` element.
  */
-export function createCodeViewToolbarMount(codeView: HTMLElement): HTMLElement {
+export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElement {
     const className = 'sourcegraph-app-annotator'
     const existingMount = codeView.querySelector('.' + className) as HTMLElement
     if (existingMount) {
@@ -69,7 +70,7 @@ const toolbarButtonProps = {
 
 const diffCodeView: CodeViewSpec = {
     dom: diffDomFunctions,
-    getToolbarMount: createCodeViewToolbarMount,
+    getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
 }
@@ -81,7 +82,7 @@ const diffConversationCodeView: CodeViewSpec = {
 
 const singleFileCodeView: CodeViewSpec = {
     dom: singleFileDOMFunctions,
-    getToolbarMount: createCodeViewToolbarMount,
+    getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
 }
@@ -136,7 +137,7 @@ const commentSnippetCodeViewResolver = toCodeViewResolver('.js-comment-body', {
     toolbarButtonProps,
 })
 
-const getSingleFileToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
+export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
     repositoryContent: HTMLElement
 ): HTMLElement => {
     const className = 'sourcegraph-app-annotator'
@@ -177,7 +178,7 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
         return {
             element: repositoryContent as HTMLElement,
             dom: singleFileDOMFunctions,
-            getToolbarMount: getSingleFileToolbarMount,
+            getToolbarMount: createFileLineContainerToolbarMount,
             resolveFileInfo,
             toolbarButtonProps,
         }
