@@ -8,47 +8,42 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/metrics"
-	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/time/rate"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var requestCounter = metrics.NewRequestCounter("bitbucket", "Total number of requests sent to the Bitbucket API.")
 
-// WithRequestCounter wraps the given transport with a request counter metric.
-func WithRequestCounter(transport http.RoundTripper) http.RoundTripper {
-	return requestCounter.Transport(transport, func(u *url.URL) string {
-		// API to URL mapping looks like this:
-		//
-		// 	Repo -> rest/api/1.0/profile/recent/repos%s
-		// 	Repos -> rest/api/1.0/projects/%s/repos/%s
-		// 	RecentRepos -> rest/api/1.0/repos%s
-		//
-		// We guess the category based on the fourth path component ("profile", "projects", "repos%s").
-		var category string
-		if parts := strings.SplitN(u.Path, "/", 3); len(parts) >= 4 {
-			category = parts[3]
-		}
-		switch {
-		case category == "profile":
-			return "Repo"
-		case category == "projects":
-			return "Repos"
-		case strings.HasPrefix(category, "repos"):
-			return "RecentRepos"
-		default:
-			// don't return category directly as that could introduce too much dimensionality
-			return "unknown"
-		}
-	})
-}
+// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
+// not have a concept of rate limiting in HTTP response headers).
+//
+// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
+//
+// The limits chosen here are based on the following logic: Bitbucket Cloud restricts
+// "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
+// and they restrict "List a user or team's repositories" requests (which are roughly equal
+// to our repository lookup requests) to 1,000/hr. We peform a list repositories request
+// for every 100 repositories on Bitbucket every 1m by default, so for someone with 20,000
+// Bitbucket repositories we need 20,000/100 requests per minute (1200/hr) + overhead for
+// repository lookup requests by users. So we use a generous 7,200/hr here until we hear
+// from someone that these values do not work well for them.
+const (
+	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
+	RateLimitMaxBurstRequests  = 500
+)
 
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
+	// HTTP Client used to communicate with the API
+	httpClient httpcli.Doer
+
 	// URL is the base URL of Bitbucket Server.
 	URL *url.URL
 
@@ -61,15 +56,27 @@ type Client struct {
 	// version 5.4 and older). If both Token and Username/Password are specified, Token is used.
 	Username, Password string
 
-	// HTTPClient is the client used to access Bitbucket Server. To enabled
-	// tracing, ensure the transport includes nethttp.Transport.
-	//
-	// To enable metrics, always wrap the Transport using WithRequestCounter.
-	HTTPClient *http.Client
-
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
 	RateLimit *rate.Limiter
+}
+
+// NewClient returns a new Bitbucket Server API client at url. If a nil
+// httpClient is provided, http.DefaultClient will be used. To use API methods
+// which require authentication, set the Token or Username/Password fields of
+// the returned client.
+func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	httpClient = requestCounter.Doer(httpClient, categorize)
+
+	return &Client{
+		httpClient: httpClient,
+		URL:        url,
+		RateLimit:  rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests),
+	}
 }
 
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
@@ -83,8 +90,24 @@ func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, 
 	return &resp, err
 }
 
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {
-	u := fmt.Sprintf("rest/api/1.0/repos%s", pageToken.Query())
+func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries ...string) ([]*Repo, *PageToken, error) {
+	qry := make(url.Values)
+	for k, vs := range pageToken.Values() {
+		qry[k] = append(qry[k], vs...)
+	}
+
+	for _, q := range searchQueries {
+		sq, err := url.ParseQuery(q)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for k, vs := range sq {
+			qry[k] = append(qry[k], vs...)
+		}
+	}
+
+	u := fmt.Sprintf("rest/api/1.0/repos?%s", qry.Encode())
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, nil, err
@@ -97,6 +120,7 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken) ([]*Repo, *Pag
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return resp.Values, resp.PageToken, nil
 }
 
@@ -133,13 +157,23 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
+
+	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
 		return err
 	}
-	resp, err := ctxhttp.Do(ctx, c.HTTPClient, req)
+
+	if d := time.Since(startWait); d > 200*time.Millisecond {
+		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+	}
+
+	resp, err := c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -147,6 +181,32 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	return json.NewDecoder(resp.Body).Decode(result)
+}
+
+// categorize returns a category for an API URL. Used by metrics.
+func categorize(u *url.URL) string {
+	// API to URL mapping looks like this:
+	//
+	// 	Repo -> rest/api/1.0/profile/recent/repos%s
+	// 	Repos -> rest/api/1.0/projects/%s/repos/%s
+	// 	RecentRepos -> rest/api/1.0/repos%s
+	//
+	// We guess the category based on the fourth path component ("profile", "projects", "repos%s").
+	var category string
+	if parts := strings.SplitN(u.Path, "/", 3); len(parts) >= 4 {
+		category = parts[3]
+	}
+	switch {
+	case category == "profile":
+		return "Repo"
+	case category == "projects":
+		return "Repos"
+	case strings.HasPrefix(category, "repos"):
+		return "RecentRepos"
+	default:
+		// don't return category directly as that could introduce too much dimensionality
+		return "unknown"
+	}
 }
 
 type PageToken struct {
@@ -168,6 +228,14 @@ func (t *PageToken) Query() string {
 	if t == nil {
 		return ""
 	}
+	v := t.Values()
+	if len(v) == 0 {
+		return ""
+	}
+	return "?" + v.Encode()
+}
+
+func (t *PageToken) Values() url.Values {
 	v := url.Values{}
 	if t.NextPageStart != 0 {
 		v.Set("start", strconv.Itoa(t.NextPageStart))
@@ -175,10 +243,7 @@ func (t *PageToken) Query() string {
 	if t.Limit != 0 {
 		v.Set("limit", strconv.Itoa(t.Limit))
 	}
-	if len(v) == 0 {
-		return ""
-	}
-	return "?" + v.Encode()
+	return v
 }
 
 type Repo struct {
@@ -219,6 +284,15 @@ type Project struct {
 			Href string `json:"href"`
 		} `json:"self"`
 	} `json:"links"`
+}
+
+// IsNotFound reports whether err is a Bitbucket Server API not found error.
+func IsNotFound(err error) bool {
+	switch e := errors.Cause(err).(type) {
+	case *httpError:
+		return e.NotFound()
+	}
+	return false
 }
 
 type httpError struct {

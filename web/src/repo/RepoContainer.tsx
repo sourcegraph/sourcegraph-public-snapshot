@@ -5,7 +5,6 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
-import { WorkspaceRootWithMetadata } from '../../../shared/src/api/client/model'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -17,6 +16,7 @@ import { HeroPage } from '../components/HeroPage'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { ThemeProps } from '../theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { parseBrowserRepoURL, ParsedRepoRev, parseRepoRev } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError, ResolvedRev } from './backend'
@@ -40,6 +40,7 @@ export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         SettingsCascadeProps,
         PlatformContextProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
@@ -151,33 +152,25 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             this.revResolves
                 .pipe(
                     map(resolvedRevOrError => {
-                        let roots: WorkspaceRootWithMetadata[] | null = null
-                        if (resolvedRevOrError && !isErrorLike(resolvedRevOrError)) {
-                            roots = [
-                                {
-                                    uri: makeRepoURI({
-                                        repoName: this.state.repoName,
-                                        rev: resolvedRevOrError.commitID,
-                                    }),
-                                    inputRevision: this.state.rev || '',
-                                },
-                            ]
-                        }
-                        this.props.extensionsController.services.model.model.next({
-                            ...this.props.extensionsController.services.model.model.value,
-                            roots,
-                        })
+                        this.props.extensionsController.services.workspace.roots.next(
+                            resolvedRevOrError && !isErrorLike(resolvedRevOrError)
+                                ? [
+                                      {
+                                          uri: makeRepoURI({
+                                              repoName: this.state.repoName,
+                                              rev: resolvedRevOrError.commitID,
+                                          }),
+                                          inputRevision: this.state.rev || '',
+                                      },
+                                  ]
+                                : []
+                        )
                     })
                 )
                 .subscribe()
         )
         // Clear the Sourcegraph extensions model's roots when navigating away.
-        this.subscriptions.add(() =>
-            this.props.extensionsController.services.model.model.next({
-                ...this.props.extensionsController.services.model.model.value,
-                roots: null,
-            })
-        )
+        this.subscriptions.add(() => this.props.extensionsController.services.workspace.roots.next([]))
     }
 
     public componentWillReceiveProps(props: RepoContainerProps): void {
@@ -224,6 +217,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repo: this.state.repoOrError,
             authenticatedUser: this.props.authenticatedUser,
             isLightTheme: this.props.isLightTheme,
+            telemetryService: this.props.telemetryService,
             repoMatchURL,
             settingsCascade: this.props.settingsCascade,
             platformContext: this.props.platformContext,
@@ -238,15 +232,12 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         return (
             <div className="repo-container w-100 d-flex flex-column">
                 <RepoHeader
+                    {...this.props}
                     actionButtons={this.props.repoHeaderActionButtons}
                     rev={this.state.rev}
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
-                    platformContext={this.props.platformContext}
-                    extensionsController={this.props.extensionsController}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
-                    location={this.props.location}
-                    history={this.props.history}
                 />
                 <RepoHeaderContributionPortal
                     position="right"

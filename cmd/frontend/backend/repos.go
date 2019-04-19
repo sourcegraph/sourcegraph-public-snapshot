@@ -13,11 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -70,7 +70,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		}
 		return db.Repos.GetByName(ctx, name)
 	} else if err != nil {
-		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
+		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
 			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 				Scheme:   "https",
 				Host:     "sourcegraph.com",

@@ -1,5 +1,7 @@
 import { isInPage, isPhabricator } from '../../context'
 import { parseURL } from '../../libs/github/util'
+import { isPrivateRepository } from '../util/context'
+
 // TODO: Make a code host agnostic parseURL so we don't reach into an application directory from the shared directory.
 // Let's do this when we make code hosts an interface. Require a `parseURL: () => ParsedRepoURI`
 /**
@@ -11,6 +13,7 @@ import { parseURL } from '../../libs/github/util'
 export interface RequestContext {
     repoKey: string
     isRepoSpecific: boolean
+    privateRepository?: boolean
     /**
      * Requests can provide a blacklist of urls that we don't ever want to try for that given request.
      */
@@ -30,7 +33,8 @@ const defaultContext: RequestContext = {
  */
 export function getContext(ctx: Partial<RequestContext> = {}): RequestContext {
     if (isInPage || isPhabricator) {
-        return { ...defaultContext, ...ctx }
+        // Phabricator repositories are always considered private
+        return { ...defaultContext, ...ctx, privateRepository: true }
     }
 
     const repoKey = ctx.repoKey
@@ -40,6 +44,10 @@ export function getContext(ctx: Partial<RequestContext> = {}): RequestContext {
     if (!repoKey && out.isRepoSpecific) {
         const { repoName } = parseURL()
         out.repoKey = repoName
+    }
+
+    if (out.privateRepository === undefined) {
+        out.privateRepository = isPrivateRepository()
     }
 
     return out

@@ -4,7 +4,6 @@ import { filter, map, switchMap } from 'rxjs/operators'
 import { GitHubBlobUrl } from '.'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
-import { ensureRevisionsAreCloned } from '../code_intelligence/util/file_info'
 import { getCommitIDFromPermalink } from './scrape'
 import { getDeltaFileName, getDiffResolvedRev, getGitHubState, parseURL } from './util'
 
@@ -24,7 +23,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
             return { ...rest, codeView, headFilePath, baseFilePath }
         }),
         map(data => {
-            const diffResolvedRev = getDiffResolvedRev()
+            const diffResolvedRev = getDiffResolvedRev(codeView)
             if (!diffResolvedRev) {
                 throw new Error('cannot determine delta info')
             }
@@ -80,13 +79,12 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
 
     try {
         const commitID = getCommitIDFromPermalink()
-
         return of({
             repoName,
             filePath,
             commitID,
             rev: rev || commitID,
-        }).pipe(ensureRevisionsAreCloned)
+        })
     } catch (error) {
         return throwError(error)
     }

@@ -69,24 +69,6 @@ func (c *client) Get() *Unified {
 	return c.store.LastValid()
 }
 
-// GetTODO denotes code that may or may not be using configuration correctly.
-// The code may need to be updated to use conf.Watch, or it may already be e.g.
-// invoked only in response to a user action (in which case it does not need to
-// use conf.Watch). See Get documentation for more details.
-//
-// GetTODO is a wrapper around client.GetTODO.
-func GetTODO() *Unified {
-	return defaultClient.GetTODO()
-}
-
-// GetTODO denotes code that may or may not be using configuration correctly.
-// The code may need to be updated to use conf.Watch, or it may already be e.g.
-// invoked only in response to a user action (in which case it does not need to
-// use conf.Watch). See Get documentation for more details.
-func (c *client) GetTODO() *Unified {
-	return c.Get()
-}
-
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.

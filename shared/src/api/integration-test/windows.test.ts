@@ -1,7 +1,8 @@
 import { from } from 'rxjs'
-import { map, take, toArray } from 'rxjs/operators'
-import { ViewComponent, Window } from 'sourcegraph'
-import { MessageType } from '../client/services/notifications'
+import { distinctUntilChanged, filter, map, switchMap, take, toArray } from 'rxjs/operators'
+import { NotificationType, ViewComponent, Window } from 'sourcegraph'
+import { isDefined } from '../../util/types'
+import { TextModel } from '../client/services/modelService'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
@@ -9,69 +10,56 @@ describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {
         test('returns the active window', async () => {
             const { extensionAPI } = await integrationTestContext()
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
-                type: 'CodeEditor' as 'CodeEditor',
+            const viewComponent: Pick<ViewComponent, 'type'> & {
+                document: TextModel
+            } = {
+                type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
             assertToJSON(extensionAPI.app.activeWindow, {
                 visibleViewComponents: [viewComponent],
                 activeViewComponent: viewComponent,
-            } as Window)
+            })
         })
     })
 
     describe('app.activeWindowChanges', () => {
         test('reflects changes to the active window', async () => {
-            const { extensionAPI, model } = await integrationTestContext(undefined, {
+            const {
+                services: { editor: editorService, model: modelService },
+                extensionAPI,
+            } = await integrationTestContext(undefined, {
                 roots: [],
-                visibleViewComponents: [],
+                editors: [],
             })
-            model.next({
-                ...model.value,
-                visibleViewComponents: [
-                    {
-                        type: 'textEditor',
-                        item: { uri: 'foo', languageId: 'l1', text: 't1' },
-                        selections: [],
-                        isActive: true,
-                    },
-                ],
+            modelService.addModel({
+                uri: 'u',
+                languageId: 'l',
+                text: 't',
             })
-            model.next({
-                ...model.value,
-                visibleViewComponents: [],
-            })
-            model.next({
-                ...model.value,
-                visibleViewComponents: [
-                    {
-                        type: 'textEditor',
-                        item: { uri: 'bar', languageId: 'l2', text: 't2' },
-                        selections: [],
-                        isActive: true,
-                    },
-                ],
+            editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
             })
             const values = await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
-                    take(4),
+                    take(1),
                     toArray()
                 )
                 .toPromise()
-            assertToJSON(values.map(w => w && w.activeViewComponent && w.activeViewComponent.document.uri), [
-                null,
-                'foo',
-                null,
-                'bar',
-            ])
+            assertToJSON(values.map(w => !!w), [true])
         })
     })
 
     describe('app.windows', () => {
         test('lists windows', async () => {
             const { extensionAPI } = await integrationTestContext()
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
-                type: 'CodeEditor' as 'CodeEditor',
+            const viewComponent: Pick<ViewComponent, 'type'> & {
+                document: TextModel
+            } = {
+                type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
             }
             assertToJSON(extensionAPI.app.windows, [
@@ -83,25 +71,31 @@ describe('Windows (integration)', () => {
         })
 
         test('adds new text documents', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+            const {
+                services: { editor: editorService, model: modelService },
+                extensionAPI,
+            } = await integrationTestContext(undefined, { editors: [], roots: [] })
 
-            model.next({
-                ...model.value,
-                visibleViewComponents: [
-                    {
-                        type: 'textEditor',
-                        item: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                        selections: [],
-                        isActive: true,
-                    },
-                ],
+            modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
+            editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'file:///f2',
+                selections: [],
+                isActive: true,
             })
             await from(extensionAPI.app.activeWindowChanges)
-                .pipe(take(2))
+                .pipe(
+                    filter(isDefined),
+                    switchMap(w => w.activeViewComponentChanges),
+                    filter(isDefined),
+                    take(1)
+                )
                 .toPromise()
 
-            const viewComponent: Pick<ViewComponent, 'type' | 'document'> = {
-                type: 'CodeEditor' as 'CodeEditor',
+            const viewComponent: Pick<ViewComponent, 'type'> & {
+                document: TextModel
+            } = {
+                type: 'CodeEditor' as const,
                 document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
             }
             assertToJSON(extensionAPI.app.windows, [
@@ -115,73 +109,110 @@ describe('Windows (integration)', () => {
 
     describe('Window', () => {
         test('Window#visibleViewComponents', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+            const {
+                services: { editor: editorService, model: modelService },
+                extensionAPI,
+            } = await integrationTestContext()
 
-            model.next({
-                ...model.value,
-                visibleViewComponents: [
-                    {
-                        type: 'textEditor',
-                        item: {
-                            uri: 'file:///inactive',
-                            languageId: 'inactive',
-                            text: 'inactive',
-                        },
-                        selections: [],
-                        isActive: false,
-                    },
-                    ...(model.value.visibleViewComponents || []),
-                ],
+            modelService.addModel({
+                uri: 'file:///inactive',
+                languageId: 'inactive',
+                text: 'inactive',
+            })
+            editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'file:///inactive',
+                selections: [],
+                isActive: false,
             })
             await from(extensionAPI.app.activeWindowChanges)
-                .pipe(take(2))
+                .pipe(
+                    filter(isDefined),
+                    switchMap(w => w.activeViewComponentChanges),
+                    filter(isDefined),
+                    take(3)
+                )
                 .toPromise()
 
             assertToJSON(extensionAPI.app.windows[0].visibleViewComponents, [
                 {
-                    type: 'CodeEditor' as 'CodeEditor',
-                    document: { uri: 'file:///inactive', languageId: 'inactive', text: 'inactive' },
+                    type: 'CodeEditor' as const,
+                    document: { uri: 'file:///f', languageId: 'l', text: 't' },
                 },
                 {
-                    type: 'CodeEditor' as 'CodeEditor',
-                    document: { uri: 'file:///f', languageId: 'l', text: 't' },
+                    type: 'CodeEditor' as const,
+                    document: { uri: 'file:///inactive', languageId: 'inactive', text: 'inactive' },
                 },
             ] as ViewComponent[])
         })
 
-        test('Window#activeViewComponent', async () => {
-            const { model, extensionAPI } = await integrationTestContext()
+        describe('Window#activeViewComponent', () => {
+            test('ignores inactive components', async () => {
+                const {
+                    services: { editor: editorService, model: modelService },
+                    extensionAPI,
+                } = await integrationTestContext()
 
-            model.next({
-                ...model.value,
-                visibleViewComponents: [
-                    {
-                        type: 'textEditor',
-                        item: {
-                            uri: 'file:///inactive',
-                            languageId: 'inactive',
-                            text: 'inactive',
-                        },
-                        selections: [],
-                        isActive: false,
-                    },
-                    ...(model.value.visibleViewComponents || []),
-                ],
+                modelService.addModel({
+                    uri: 'file:///inactive',
+                    languageId: 'inactive',
+                    text: 'inactive',
+                })
+                editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'file:///inactive',
+                    selections: [],
+                    isActive: false,
+                })
+
+                assertToJSON(extensionAPI.app.windows[0].activeViewComponent, {
+                    type: 'CodeEditor' as const,
+                    document: { uri: 'file:///f', languageId: 'l', text: 't' },
+                })
             })
-            await extensionAPI.internal.sync()
+        })
 
-            assertToJSON(extensionAPI.app.windows[0].activeViewComponent, {
-                type: 'CodeEditor' as 'CodeEditor',
-                document: { uri: 'file:///f', languageId: 'l', text: 't' },
-            } as ViewComponent)
+        describe('Window#activeViewComponentChanges', () => {
+            test('reflects changes to the active window', async () => {
+                const {
+                    services: { editor: editorService, model: modelService },
+                    extensionAPI,
+                } = await integrationTestContext(undefined, {
+                    roots: [],
+                    editors: [],
+                })
+                modelService.addModel({ uri: 'foo', languageId: 'l1', text: 't1' })
+                modelService.addModel({ uri: 'bar', languageId: 'l2', text: 't2' })
+                editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'foo',
+                    selections: [],
+                    isActive: true,
+                })
+                editorService.removeAllEditors()
+                editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'bar',
+                    selections: [],
+                    isActive: true,
+                })
+                const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
+                    .pipe(
+                        distinctUntilChanged(),
+                        take(4),
+                        toArray()
+                    )
+                    .toPromise()
+                assertToJSON(values.map(c => (c ? c.document.uri : null)), [null, 'foo', null, 'bar'])
+            })
         })
 
         test('Window#showNotification', async () => {
             const { extensionAPI, services } = await integrationTestContext()
             const values = collectSubscribableValues(services.notifications.showMessages)
-            extensionAPI.app.activeWindow!.showNotification('a') // tslint:disable-line deprecation
+            extensionAPI.app.activeWindow!.showNotification('a', NotificationType.Info) // tslint:disable-line deprecation
             await extensionAPI.internal.sync()
-            expect(values).toEqual([{ message: 'a', type: MessageType.Info }] as typeof values)
+            expect(values).toEqual([{ message: 'a', type: NotificationType.Info }] as typeof values)
         })
 
         test('Window#showMessage', async () => {
@@ -191,7 +222,7 @@ describe('Windows (integration)', () => {
                 services.notifications.showMessageRequests.pipe(map(({ message, type }) => ({ message, type })))
             )
             expect(await extensionAPI.app.activeWindow!.showMessage('a')).toBe(undefined)
-            expect(values).toEqual([{ message: 'a', type: MessageType.Info }] as typeof values)
+            expect(values).toEqual([{ message: 'a', type: NotificationType.Info }] as typeof values)
         })
 
         test('Window#showInputBox', async () => {

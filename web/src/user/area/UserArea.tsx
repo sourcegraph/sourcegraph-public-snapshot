@@ -6,6 +6,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -16,8 +17,8 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
-import { UserAccountAreaRoute } from '../account/UserAccountArea'
-import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
+import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
@@ -60,7 +61,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
     )
 
 const NotFoundPage = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
@@ -69,11 +70,12 @@ interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
         PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps {
+        ThemeProps,
+        ActivationProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
 
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
@@ -93,8 +95,8 @@ interface UserAreaState {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ThemeProps {
-    /** The extension registry area main URL. */
+export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ThemeProps, ActivationProps {
+    /** The user area main URL. */
     url: string
 
     /**
@@ -112,8 +114,8 @@ export interface UserAreaRouteContext extends PlatformContextProps, SettingsCasc
      * user is Bob.
      */
     authenticatedUser: GQL.IUser | null
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
 }
 
 /**
@@ -141,7 +143,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
                         return fetchUser({ username }).pipe(
                             catchError(error => [error]),
-                            map(c => ({ userOrError: c } as PartialStateUpdate)),
+                            map((c): PartialStateUpdate => ({ userOrError: c })),
 
                             // Don't clear old user data while we reload, to avoid unmounting all components during
                             // loading.
@@ -183,8 +185,9 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
-            userAccountAreaRoutes: this.props.userAccountAreaRoutes,
-            userAccountSideBarItems: this.props.userAccountSideBarItems,
+            activation: this.props.activation,
+            userSettingsAreaRoutes: this.props.userSettingsAreaRoutes,
+            userSettingsSideBarItems: this.props.userSettingsSideBarItems,
         }
         return (
             <div className="user-area area--vertical">

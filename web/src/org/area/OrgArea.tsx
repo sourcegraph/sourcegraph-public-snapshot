@@ -3,7 +3,7 @@ import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
@@ -14,10 +14,8 @@ import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { SettingsArea } from '../../settings/SettingsArea'
-import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { ThemeProps } from '../../theme'
-import { OrgAccountArea } from '../account/OrgAccountArea'
+import { OrgSettingsArea } from '../settings/OrgSettingsArea'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
@@ -118,7 +116,7 @@ export class OrgArea extends React.Component<Props> {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
                         return queryOrganization({ name }).pipe(
                             catchError(error => [error]),
-                            map(c => ({ orgOrError: c } as PartialStateUpdate)),
+                            map((c): PartialStateUpdate => ({ orgOrError: c })),
 
                             // Don't clear old org data while we reload, to avoid unmounting all components during
                             // loading.
@@ -194,45 +192,24 @@ export class OrgArea extends React.Component<Props> {
                                     <Route
                                         path={`${this.props.match.url}/settings`}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={true}
                                         // tslint:disable-next-line:jsx-no-lambda
                                         render={routeComponentProps => (
-                                            <SettingsArea
+                                            <OrgSettingsArea
                                                 {...routeComponentProps}
                                                 {...transferProps}
-                                                subject={transferProps.org}
                                                 isLightTheme={this.props.isLightTheme}
-                                                extraHeader={
-                                                    <>
-                                                        {transferProps.authenticatedUser &&
-                                                            transferProps.org.viewerCanAdminister &&
-                                                            !transferProps.org.viewerIsMember && (
-                                                                <SiteAdminAlert className="sidebar__alert">
-                                                                    Viewing settings for{' '}
-                                                                    <strong>{transferProps.org.name}</strong>
-                                                                </SiteAdminAlert>
-                                                            )}
-                                                        <p>
-                                                            Organization settings apply to all members. User settings
-                                                            override organization settings.
-                                                        </p>
-                                                    </>
-                                                }
                                             />
                                         )}
                                     />
+
+                                    {/* Redirect from previous /users/:username/account -> /users/:username/settings/profile. */}
                                     <Route
                                         path={`${this.props.match.url}/account`}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <OrgAccountArea
-                                                {...routeComponentProps}
-                                                {...transferProps}
-                                                isLightTheme={this.props.isLightTheme}
-                                            />
-                                        )}
+                                        render={() => <Redirect to={`${this.props.match.url}/settings/profile`} />}
                                     />
+
                                     <Route key="hardcoded-key" component={NotFoundPage} />
                                 </Switch>
                             </React.Suspense>

@@ -5,7 +5,7 @@ import { StorageChange, StorageItems } from './types'
 
 export { StorageItems, defaultStorageItems } from './types'
 
-export interface Storage {
+interface Storage {
     getManaged: (callback: (items: StorageItems) => void) => void
     getManagedItem: (key: keyof StorageItems, callback: (items: StorageItems) => void) => void
     getSync: (callback: (items: StorageItems) => void) => void

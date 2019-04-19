@@ -31,8 +31,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
         const instance = Tooltip.INSTANCE
         if (instance) {
             instance.setState(prevState => {
-                const subject =
-                    prevState.lastEventTarget && instance.getSubject(prevState.lastEventTarget as HTMLElement)
+                const subject = prevState.lastEventTarget && instance.getSubject(prevState.lastEventTarget)
                 return {
                     subject,
                     content: subject ? instance.getContent(subject) : undefined,
@@ -124,5 +123,21 @@ export class Tooltip extends React.PureComponent<Props, State> {
             return undefined
         }
         return subject.getAttribute(Tooltip.SUBJECT_ATTRIBUTE) || undefined
+    }
+}
+
+/**
+ * Sets or removes a plain-text tooltip on the HTML element using the native style for Sourcegraph
+ * web app.
+ *
+ * @param element The HTML element whose tooltip to set or remove.
+ * @param tooltip The tooltip plain-text content (to add the tooltip) or `null` (to remove the
+ * tooltip).
+ */
+export function setElementTooltip(element: HTMLElement, tooltip: string | null): void {
+    if (tooltip) {
+        element.setAttribute('data-tooltip', tooltip)
+    } else {
+        element.removeAttribute('data-tooltip')
     }
 }

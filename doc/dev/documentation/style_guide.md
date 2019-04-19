@@ -4,7 +4,7 @@
 
 The documentation style guide defines the markup structure used in Sourcegraph documentation. Check the [documentation guidelines](index.md) for general development instructions.
 
-See the [Sourcegraph style guide](https://github.com/sourcegraph/about/blob/master/STYLEGUIDE.md) for general information.
+See the [Sourcegraph style guide](../style_guide.md) for general information.
 
 For help adhering to the guidelines, see [Linting](index.md#linting).
 
@@ -12,7 +12,7 @@ For help adhering to the guidelines, see [Linting](index.md#linting).
 
 - [Directory structure](index.md#location-and-naming-documents): place the docs in the correct location.
 - [Documentation files](index.md#documentation-files): name the files accordingly.
-- [Markdown](../../user/markdown.md): use the Sourcegraph-flavored Markdown in the documentation.
+<!-- - [Markdown](../../user/markdown.md): TODO(ryan): Fix in 3.3 once it has content. -->
 
 - Don't use capital letters, spaces, or special characters in file names, branch names, directory names, headings, or in anything that generates a path or URL fragment.
 - Don't create `README.md` files in docs. Name them `index.md` instead.
@@ -20,7 +20,7 @@ For help adhering to the guidelines, see [Linting](index.md#linting).
 ## Text
 
 - Split up long lines (wrap text), this makes it much easier to review and edit. Only double line
-  breaks are shown as a full line break in [Sourcegraph markdown](../../user/markdown.md). 80-100
+breaks are shown as a full line Sourcegraph markdown 80-100. <!-- TODO(ryan): Link to ../../user/markdown.md once it has content. Fix in 3.3 -->
   characters is a good line length.
 - Make sure that the documentation is added in the correct
   [directory](index.md#documentation-directory-structure) and that there's a link to it somewhere
@@ -119,6 +119,7 @@ To indicate the steps of navigation through the UI:
 - Compress gifs with <https://ezgif.com/optimize> or similar tool.
 - Images should be used (only when necessary) to _illustrate_ the description of a process, not to _replace_ it.
 - Max image size: 100KB (GIFs included).
+  - For larger assets, upload them to the `sourcegraph-assets` Google Cloud Storage bucket instead with `gsutil cp -a public-read local/path/to/myasset.png gs://sourcegraph-assets/` (and refer to it as `https://storage.googleapis.com/sourcegraph-assets/myasset.png`).
 
 Inside the document:
 

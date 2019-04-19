@@ -92,6 +92,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                                         className="btn btn-secondary btn-sm site-admin-configuration-page__action"
                                         // tslint:disable-next-line:jsx-no-lambda
                                         onClick={() => this.runAction(id, this.configEditor)}
+                                        type="button"
                                     >
                                         {label}
                                     </button>

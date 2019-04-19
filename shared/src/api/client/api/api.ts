@@ -1,6 +1,7 @@
 import { ClientCodeEditorAPI } from './codeEditor'
 import { ClientCommandsAPI } from './commands'
 import { ClientConfigurationAPI } from './configuration'
+import { ClientContentAPI } from './content'
 import { ClientContextAPI } from './context'
 import { ClientLanguageFeaturesAPI } from './languageFeatures'
 import { ClientSearchAPI } from './search'
@@ -21,4 +22,5 @@ export interface ClientAPI {
     windows: ClientWindowsAPI
     codeEditor: ClientCodeEditorAPI
     views: ClientViewsAPI
+    content: ClientContentAPI
 }

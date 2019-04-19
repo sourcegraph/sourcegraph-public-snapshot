@@ -1,11 +1,9 @@
-import { Observable, of } from 'rxjs'
-import { Subscription } from 'rxjs'
+import { Observable, of, Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { ContributableMenu, Contributions } from '../../protocol'
+import { ContributableMenu, Contributions, EvaluatedContributions } from '../../protocol'
 import { Context, ContributionScope } from '../context/context'
 import { EMPTY_COMPUTED_CONTEXT } from '../context/expr/evaluator'
-import { EMPTY_MODEL, Model } from '../model'
 import {
     contextFilter,
     ContributionRegistry,
@@ -14,6 +12,8 @@ import {
     filterContributions,
     mergeContributions,
 } from './contribution'
+import { CodeEditor } from './editorService'
+import { createTestEditorService } from './editorService.test'
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -33,7 +33,7 @@ const FIXTURE_CONTRIBUTIONS_2: Contributions = {
     },
 }
 
-const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
+const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
     actions: [
         { id: '1.a', command: 'c', title: '1.A' },
         { id: '1.b', command: 'c', title: '1.B' },
@@ -50,13 +50,18 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
 describe('ContributionRegistry', () => {
     test('is initially empty', () => {
         expect(
-            new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({})).entries.value
+            new ContributionRegistry(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+                .entries.value
         ).toEqual([])
     })
 
     test('registers and unregisters contributions', () => {
         const subscriptions = new Subscription()
-        const registry = new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+        const registry = new ContributionRegistry(
+            createTestEditorService(of([])),
+            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of({})
+        )
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
         const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
 
@@ -74,7 +79,11 @@ describe('ContributionRegistry', () => {
     })
 
     test('replaces contributions', () => {
-        const registry = new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+        const registry = new ContributionRegistry(
+            createTestEditorService(of([])),
+            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of({})
+        )
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
         const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
 
@@ -93,13 +102,13 @@ describe('ContributionRegistry', () => {
 
     describe('contributions observable', () => {
         test('emits stream of results of registrations', () => {
-            const registry = new class extends ContributionRegistry {
+            const registry = new (class extends ContributionRegistry {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
-                ): Observable<Contributions> {
+                ): Observable<EvaluatedContributions> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
-            }(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributionsFromEntries(
@@ -117,13 +126,13 @@ describe('ContributionRegistry', () => {
         })
 
         test('supports registration of an observable', () => {
-            const registry = new class extends ContributionRegistry {
+            const registry = new (class extends ContributionRegistry {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
-                ): Observable<Contributions> {
+                ): Observable<EvaluatedContributions> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
-            }(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributionsFromEntries(
@@ -147,13 +156,15 @@ describe('ContributionRegistry', () => {
 
         test('emits when context changes and filters on context', () => {
             scheduler().run(({ cold, expectObservable }) => {
-                const registry = new class extends ContributionRegistry {
+                const registry = new (class extends ContributionRegistry {
                     public constructor() {
                         super(
-                            cold<Model>('-a-b-|', {
-                                a: EMPTY_MODEL,
-                                b: EMPTY_MODEL,
-                            }),
+                            {
+                                editors: cold<readonly CodeEditor[]>('-a-b-|', {
+                                    a: [],
+                                    b: [],
+                                }),
+                            },
                             {
                                 data: cold<SettingsCascadeOrError>('-a-b-|', {
                                     a: EMPTY_SETTINGS_CASCADE,
@@ -166,10 +177,10 @@ describe('ContributionRegistry', () => {
 
                     public getContributionsFromEntries(
                         entries: Observable<ContributionsEntry[]>
-                    ): Observable<Contributions> {
+                    ): Observable<EvaluatedContributions> {
                         return super.getContributionsFromEntries(entries, undefined)
                     }
-                }()
+                })()
                 expectObservable(
                     registry.getContributionsFromEntries(
                         of([
@@ -187,10 +198,14 @@ describe('ContributionRegistry', () => {
 
         test('continues after error thrown during evaluation', () => {
             scheduler().run(({ cold, expectObservable }) => {
-                const registry = new class extends ContributionRegistry {
+                const registry = new (class extends ContributionRegistry {
                     public constructor() {
                         super(
-                            cold<Model>('a', { a: EMPTY_MODEL }),
+                            {
+                                editors: cold<readonly CodeEditor[]>('a', {
+                                    a: [],
+                                }),
+                            },
                             { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
                             cold<Context>('a', {})
                         )
@@ -199,10 +214,10 @@ describe('ContributionRegistry', () => {
                     public getContributionsFromEntries(
                         entries: Observable<ContributionsEntry[]>,
                         scope?: ContributionScope
-                    ): Observable<Contributions> {
+                    ): Observable<EvaluatedContributions> {
                         return super.getContributionsFromEntries(entries, scope, undefined, () => void 0 /* noop log */)
                     }
-                }()
+                })()
                 expectObservable(
                     registry.getContributionsFromEntries(
                         of([
@@ -224,8 +239,37 @@ describe('ContributionRegistry', () => {
 })
 
 describe('mergeContributions', () => {
+    const FIXTURE_CONTRIBUTIONS_1: EvaluatedContributions = {
+        actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
+            [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
+        },
+    }
+
+    const FIXTURE_CONTRIBUTIONS_2: EvaluatedContributions = {
+        actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
+            [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
+        },
+    }
+    const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
+        actions: [
+            { id: '1.a', command: 'c', title: '1.A' },
+            { id: '1.b', command: 'c', title: '1.B' },
+            { id: '2.a', command: 'c', title: '2.A' },
+            { id: '2.b', command: 'c', title: '2.B' },
+        ],
+        menus: {
+            [ContributableMenu.CommandPalette]: [{ action: '1.a' }, { action: '2.a' }],
+            [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
+            [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
+        },
+    }
+
     test('handles an empty array', () => expect(mergeContributions([])).toEqual({}))
-    test('handles an single item', () =>
+    test('handles a single item', () =>
         expect(mergeContributions([FIXTURE_CONTRIBUTIONS_1])).toEqual(FIXTURE_CONTRIBUTIONS_1))
     test('handles multiple items', () =>
         expect(
@@ -407,6 +451,13 @@ describe('evaluateContributions', () => {
     test('throws an error if an error occurs during evaluation', () => {
         const input: Contributions = { actions: [{ id: 'a', command: 'c', title: 'a' }] }
         expect(() => evaluateContributions(FIXTURE_CONTEXT, input, TEST_THROW_EVALUATOR)).toThrow()
+    })
+
+    test('evaluates `actionItem.pressed` if present', () => {
+        const input: Contributions = { actions: [{ id: 'a', command: 'c', title: 'a', actionItem: { pressed: 'a' } }] }
+        expect(evaluateContributions(FIXTURE_CONTEXT, input)).toEqual({
+            actions: [{ id: 'a', command: 'c', title: 'a', actionItem: { pressed: true } }],
+        })
     })
 })
 // tslint:enable:no-invalid-template-strings

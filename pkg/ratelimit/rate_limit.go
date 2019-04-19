@@ -31,6 +31,12 @@ func (c *Monitor) Get() (remaining int, reset time.Duration, known bool) {
 	return c.remaining, time.Until(c.reset), true
 }
 
+// TODO(keegancsmith) Update RecommendedWaitForBackgroundOp to work with other
+// rate limits. Such as:
+//
+// - GitHub search 30req/m
+// - GitLab.com 600 req/h
+
 // RecommendedWaitForBackgroundOp returns the recommended wait time before performing a periodic
 // background operation with the given rate limit cost. It takes the rate limit information from the last API
 // request into account.

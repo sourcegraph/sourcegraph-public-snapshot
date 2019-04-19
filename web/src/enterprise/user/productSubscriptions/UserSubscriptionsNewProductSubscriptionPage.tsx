@@ -18,8 +18,8 @@ import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductS
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**
-     * The user who will own the new subscrption when created, or null when there is no authenticated user and this
-     * page is accessed at /user/subscriptions/new.
+     * The user who will own the new subscription when created, or null when there is no
+     * authenticated user and this page is accessed at /subscriptions/new.
      */
     user: GQL.IUser | null
 }
@@ -37,9 +37,9 @@ interface State {
 /**
  * Displays a form and payment flow to purchase a product subscription.
  *
- * This page is visible to both authenticated and unauthenticated users. Unauthenticated users may view it at
- * /user/subscriptions/new and are allowed to price out a subscription, but they must sign in to buy the
- * subscription.
+ * This page is visible to both authenticated and unauthenticated users. Unauthenticated users may
+ * view it at /subscriptions/new and are allowed to price out a subscription, but they must sign in
+ * to buy the subscription.
  */
 export class UserSubscriptionsNewProductSubscriptionPage extends React.Component<Props, State> {
     public state: State = { creationOrError: null }

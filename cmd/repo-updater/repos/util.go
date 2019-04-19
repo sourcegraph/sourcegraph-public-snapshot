@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 
 	"github.com/gregjones/httpcache"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -35,26 +36,54 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
+// NewHTTPClientFactory returns an httpcli.Factory with common
+// options and middleware pre-set.
+func NewHTTPClientFactory() httpcli.Factory {
+	return httpcli.NewFactory(
+		// TODO(tsenart): Use middle for Prometheus instrumentation later.
+		httpcli.NewMiddleware(
+			httpcli.ContextErrorMiddleware,
+		),
+		httpcli.TracedTransportOpt,
+		httpcli.NewCachedTransportOpt(httputil.Cache, true),
+	)
+}
+
+// cachedRoundTripper wraps another http.RoundTripper with caching.
+func cachedRoundTripper(rt http.RoundTripper) http.RoundTripper {
+	return &httpcache.Transport{
+		Transport:           &nethttp.Transport{RoundTripper: rt},
+		Cache:               httputil.Cache,
+		MarkCachedResponses: true, // so we avoid using cached rate limit info
+	}
+}
+
+// newCertPool returns an x509.CertPool with the given certificates added to it.
+func newCertPool(certs ...string) (*x509.CertPool, error) {
+	pool := x509.NewCertPool()
+	for _, cert := range certs {
+		if ok := pool.AppendCertsFromPEM([]byte(cert)); !ok {
+			return nil, errors.New("invalid certificate")
+		}
+	}
+	return pool, nil
+}
+
 // cachedTransportWithCertTrusted returns an http.Transport that trusts the
 // provided PEM cert, or http.DefaultTransport if it is empty. The transport
 // is also using our redis backed cache.
 func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
 	transport := http.DefaultTransport
 	if cert != "" {
-		certPool := x509.NewCertPool()
-		if ok := certPool.AppendCertsFromPEM([]byte(cert)); !ok {
-			return nil, errors.New("invalid certificate value")
+		pool, err := newCertPool(cert)
+		if err != nil {
+			return nil, err
 		}
 		transport = &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: certPool},
+			TLSClientConfig: &tls.Config{RootCAs: pool},
 		}
 	}
-
-	return &httpcache.Transport{
-		Transport:           &nethttp.Transport{RoundTripper: transport},
-		Cache:               httputil.Cache,
-		MarkCachedResponses: true, // so we avoid using cached rate limit info
-	}, nil
+	return cachedRoundTripper(transport), nil
 }
 
 // A repoCreateOrUpdateRequest is a RepoCreateOrUpdateRequest, from the API,
@@ -70,8 +99,6 @@ type repoCreateOrUpdateRequest struct {
 // a given source.
 func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
 	c := conf.Get()
-	newList := make(sourceRepoList)
-	newScheduler := newSchedulerEnabled(c)
 	newMap := make(sourceRepoMap)
 
 	do := func(op repoCreateOrUpdateRequest) {
@@ -91,10 +118,9 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 			return
 		}
 
-		if !newScheduler {
-			newList[string(createdRepo.Name)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
-		} else if !c.DisableAutoGitUpdates {
+		if !c.DisableAutoGitUpdates {
 			newMap[createdRepo.Name] = &configuredRepo2{
+				ID:      uint32(createdRepo.ID),
 				Name:    createdRepo.Name,
 				URL:     op.URL,
 				Enabled: createdRepo.Enabled,
@@ -106,9 +132,7 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 		do(repo)
 	}
 
-	if !newScheduler {
-		repos.updateSource(source, newList)
-	} else if !c.DisableAutoGitUpdates {
+	if !c.DisableAutoGitUpdates {
 		Scheduler.updateSource(source, newMap)
 	}
 }

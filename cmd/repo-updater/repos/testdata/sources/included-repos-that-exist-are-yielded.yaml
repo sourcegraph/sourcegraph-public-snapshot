@@ -1,0 +1,392 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/Org/repos/foO
+    method: GET
+  response:
+    body: '{"slug":"foo","id":1,"name":"foo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/foo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/foo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/foo/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Mon, 01 Apr 2019 15:50:34 GMT
+      Pragma:
+      - no-cache
+      Set-Cookie:
+      - BITBUCKETSESSIONID=4D9B1303C3AD44BEEB1BE4502963EBE8; Path=/; HttpOnly
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@OEF9HRx950x3026x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 4030hd
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/org/repos/baz
+    method: GET
+  response:
+    body: '{"slug":"baz","id":3,"name":"baz","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/baz.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/baz.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/baz/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Mon, 01 Apr 2019 15:50:34 GMT
+      Pragma:
+      - no-cache
+      Set-Cookie:
+      - BITBUCKETSESSIONID=478D30DE0058D3AD93B5969493434E66; Path=/; HttpOnly
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@OEF9HRx950x3027x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - tcagoq
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/ORG/repos/bar
+    method: GET
+  response:
+    body: '{"slug":"bar","id":2,"name":"bar","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/bar.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/bar.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/bar/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Mon, 01 Apr 2019 15:50:34 GMT
+      Pragma:
+      - no-cache
+      Set-Cookie:
+      - BITBUCKETSESSIONID=2024C9C1F607712054F8CE617D328CEA; Path=/; HttpOnly
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@OEF9HRx950x3028x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 1dc6pdt
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/gnachman%2Fiterm2-missing
+    method: GET
+  response:
+    body: '{"message":"404 Project Not Found"}'
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Length:
+      - "35"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 01 Apr 2019 15:50:34 GMT
+      Server:
+      - nginx
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - eNhuxc0kc6
+      X-Runtime:
+      - "0.022145"
+    status: 404 Not Found
+    code: 404
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/13083
+    method: GET
+  response:
+    body: '{"id":13083,"description":"GitLab Community Edition (CE) is an open source
+      end-to-end software development platform with built-in version control, issue
+      tracking, code review, CI/CD, and more. Self-host GitLab CE on your own servers,
+      in a container, or on a cloud provider.","name":"GitLab Community Edition","name_with_namespace":"GitLab.org
+      / GitLab Community Edition","path":"gitlab-ce","path_with_namespace":"gitlab-org/gitlab-ce","created_at":"2013-09-26T06:02:36.000Z","default_branch":"master","tag_list":[],"ssh_url_to_repo":"git@gitlab.com:gitlab-org/gitlab-ce.git","http_url_to_repo":"https://gitlab.com/gitlab-org/gitlab-ce.git","web_url":"https://gitlab.com/gitlab-org/gitlab-ce","readme_url":"https://gitlab.com/gitlab-org/gitlab-ce/blob/master/README.md","avatar_url":"https://assets.gitlab-static.net/uploads/-/system/project/avatar/13083/logo-extra-whitespace.png","star_count":5744,"forks_count":5195,"last_activity_at":"2019-04-01T15:30:13.184Z","namespace":{"id":9970,"name":"GitLab.org","path":"gitlab-org","kind":"group","full_path":"gitlab-org","parent_id":null}}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Content-Length:
+      - "1085"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 01 Apr 2019 15:50:34 GMT
+      Etag:
+      - W/"3a6f0be0b9e3a291cd672967fbdeb35d"
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - krbEUfjLiF3
+      X-Runtime:
+      - "0.055232"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/Sourcegraph
+    method: GET
+  response:
+    body: '{"id":41288708,"node_id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","full_name":"sourcegraph/sourcegraph","private":false,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/sourcegraph","description":"Code
+      search and navigation tool (self-hosted)","fork":false,"url":"https://api.github.com/repos/sourcegraph/sourcegraph","forks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/forks","keys_url":"https://api.github.com/repos/sourcegraph/sourcegraph/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/sourcegraph/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/teams","hooks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/events","assignees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/tags","blobs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/sourcegraph/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/sourcegraph/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscription","commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/sourcegraph/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/sourcegraph/merges","archive_url":"https://api.github.com/repos/sourcegraph/sourcegraph/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/sourcegraph/downloads","issues_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/sourcegraph/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/sourcegraph/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/sourcegraph/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/sourcegraph/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/sourcegraph/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/deployments","created_at":"2015-08-24T07:27:28Z","updated_at":"2019-04-01T14:29:05Z","pushed_at":"2019-04-01T15:40:21Z","git_url":"git://github.com/sourcegraph/sourcegraph.git","ssh_url":"git@github.com:sourcegraph/sourcegraph.git","clone_url":"https://github.com/sourcegraph/sourcegraph.git","svn_url":"https://github.com/sourcegraph/sourcegraph","homepage":"https://sourcegraph.com","size":293685,"stargazers_count":1886,"watchers_count":1886,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":124,"mirror_url":null,"archived":false,"open_issues_count":700,"license":{"key":"other","name":"Other","spdx_id":"NOASSERTION","url":null,"node_id":"MDc6TGljZW5zZTA="},"forks":124,"open_issues":700,"watchers":1886,"default_branch":"master","organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"network_count":124,"subscribers_count":39}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Cache-Control:
+      - public, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 01 Apr 2019 15:50:34 GMT
+      Etag:
+      - W/"2e3105d0380293b0ead26d11b9701af2"
+      Last-Modified:
+      - Mon, 01 Apr 2019 14:29:05 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json
+      X-Github-Request-Id:
+      - BAAC:20EE:51F8A6:D54A3C:5CA2334A
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/gnachman%2Fiterm2
+    method: GET
+  response:
+    body: '{"id":252461,"description":"Issues site for iTerm2","name":"iterm2","name_with_namespace":"George
+      Nachman / iterm2","path":"iterm2","path_with_namespace":"gnachman/iterm2","created_at":"2015-04-29T03:24:21.000Z","default_branch":"master","tag_list":[],"ssh_url_to_repo":"git@gitlab.com:gnachman/iterm2.git","http_url_to_repo":"https://gitlab.com/gnachman/iterm2.git","web_url":"https://gitlab.com/gnachman/iterm2","readme_url":"https://gitlab.com/gnachman/iterm2/blob/master/README.md","avatar_url":"https://assets.gitlab-static.net/uploads/-/system/project/avatar/252461/icon_256x256_2x.png","star_count":644,"forks_count":39,"last_activity_at":"2019-04-01T14:51:17.948Z","namespace":{"id":63972,"name":"gnachman","path":"gnachman","kind":"user","full_path":"gnachman","parent_id":null}}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Content-Length:
+      - "788"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 01 Apr 2019 15:50:34 GMT
+      Etag:
+      - W/"4111e857103c5bd6cb82ef57fa39d84e"
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - IilmgnWKpw9
+      X-Runtime:
+      - "0.084913"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/tsenart/Vegeta
+    method: GET
+  response:
+    body: '{"id":12080551,"node_id":"MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==","name":"vegeta","full_name":"tsenart/vegeta","private":false,"owner":{"login":"tsenart","id":67471,"node_id":"MDQ6VXNlcjY3NDcx","avatar_url":"https://avatars2.githubusercontent.com/u/67471?v=4","gravatar_id":"","url":"https://api.github.com/users/tsenart","html_url":"https://github.com/tsenart","followers_url":"https://api.github.com/users/tsenart/followers","following_url":"https://api.github.com/users/tsenart/following{/other_user}","gists_url":"https://api.github.com/users/tsenart/gists{/gist_id}","starred_url":"https://api.github.com/users/tsenart/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tsenart/subscriptions","organizations_url":"https://api.github.com/users/tsenart/orgs","repos_url":"https://api.github.com/users/tsenart/repos","events_url":"https://api.github.com/users/tsenart/events{/privacy}","received_events_url":"https://api.github.com/users/tsenart/received_events","type":"User","site_admin":false},"html_url":"https://github.com/tsenart/vegeta","description":"HTTP
+      load testing tool and library. It''s over 9000!","fork":false,"url":"https://api.github.com/repos/tsenart/vegeta","forks_url":"https://api.github.com/repos/tsenart/vegeta/forks","keys_url":"https://api.github.com/repos/tsenart/vegeta/keys{/key_id}","collaborators_url":"https://api.github.com/repos/tsenart/vegeta/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/tsenart/vegeta/teams","hooks_url":"https://api.github.com/repos/tsenart/vegeta/hooks","issue_events_url":"https://api.github.com/repos/tsenart/vegeta/issues/events{/number}","events_url":"https://api.github.com/repos/tsenart/vegeta/events","assignees_url":"https://api.github.com/repos/tsenart/vegeta/assignees{/user}","branches_url":"https://api.github.com/repos/tsenart/vegeta/branches{/branch}","tags_url":"https://api.github.com/repos/tsenart/vegeta/tags","blobs_url":"https://api.github.com/repos/tsenart/vegeta/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/tsenart/vegeta/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/tsenart/vegeta/git/refs{/sha}","trees_url":"https://api.github.com/repos/tsenart/vegeta/git/trees{/sha}","statuses_url":"https://api.github.com/repos/tsenart/vegeta/statuses/{sha}","languages_url":"https://api.github.com/repos/tsenart/vegeta/languages","stargazers_url":"https://api.github.com/repos/tsenart/vegeta/stargazers","contributors_url":"https://api.github.com/repos/tsenart/vegeta/contributors","subscribers_url":"https://api.github.com/repos/tsenart/vegeta/subscribers","subscription_url":"https://api.github.com/repos/tsenart/vegeta/subscription","commits_url":"https://api.github.com/repos/tsenart/vegeta/commits{/sha}","git_commits_url":"https://api.github.com/repos/tsenart/vegeta/git/commits{/sha}","comments_url":"https://api.github.com/repos/tsenart/vegeta/comments{/number}","issue_comment_url":"https://api.github.com/repos/tsenart/vegeta/issues/comments{/number}","contents_url":"https://api.github.com/repos/tsenart/vegeta/contents/{+path}","compare_url":"https://api.github.com/repos/tsenart/vegeta/compare/{base}...{head}","merges_url":"https://api.github.com/repos/tsenart/vegeta/merges","archive_url":"https://api.github.com/repos/tsenart/vegeta/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/tsenart/vegeta/downloads","issues_url":"https://api.github.com/repos/tsenart/vegeta/issues{/number}","pulls_url":"https://api.github.com/repos/tsenart/vegeta/pulls{/number}","milestones_url":"https://api.github.com/repos/tsenart/vegeta/milestones{/number}","notifications_url":"https://api.github.com/repos/tsenart/vegeta/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/tsenart/vegeta/labels{/name}","releases_url":"https://api.github.com/repos/tsenart/vegeta/releases{/id}","deployments_url":"https://api.github.com/repos/tsenart/vegeta/deployments","created_at":"2013-08-13T11:45:21Z","updated_at":"2019-04-01T14:41:05Z","pushed_at":"2019-03-28T14:36:15Z","git_url":"git://github.com/tsenart/vegeta.git","ssh_url":"git@github.com:tsenart/vegeta.git","clone_url":"https://github.com/tsenart/vegeta.git","svn_url":"https://github.com/tsenart/vegeta","homepage":"http://godoc.org/github.com/tsenart/vegeta/lib","size":1725,"stargazers_count":11050,"watchers_count":11050,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":689,"mirror_url":null,"archived":false,"open_issues_count":18,"license":{"key":"mit","name":"MIT
+      License","spdx_id":"MIT","url":"https://api.github.com/licenses/mit","node_id":"MDc6TGljZW5zZTEz"},"forks":689,"open_issues":18,"watchers":11050,"default_branch":"master","network_count":689,"subscribers_count":286}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Cache-Control:
+      - public, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 01 Apr 2019 15:50:35 GMT
+      Etag:
+      - W/"7ea8b357d6d7973b23edaf8d8437c04e"
+      Last-Modified:
+      - Mon, 01 Apr 2019 14:41:05 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json
+      X-Github-Request-Id:
+      - BAAC:20EE:51F8B5:D54A61:5CA2334A
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/tsenart/vegeta-missing
+    method: GET
+  response:
+    body: '{"message":"Not Found","documentation_url":"https://developer.github.com/v3/repos/#get"}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 01 Apr 2019 15:50:35 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 404 Not Found
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json
+      X-Github-Request-Id:
+      - BAAC:20EE:51F8C0:D54A7C:5CA2334B
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 404 Not Found
+    code: 404
+    duration: ""

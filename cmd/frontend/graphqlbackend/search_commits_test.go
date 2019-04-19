@@ -20,7 +20,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
 
 	var calledVCSRawLogDiffSearch bool
-	gitSignatureWithDate := git.Signature{Date: time.Now().AddDate(0, 0, -1)}
+	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
 	git.Mocks.RawLogDiffSearch = func(opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error) {
 		calledVCSRawLogDiffSearch = true
 		if want := "p"; opt.Query.Pattern != want {

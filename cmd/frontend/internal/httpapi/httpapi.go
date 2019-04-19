@@ -72,8 +72,6 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
 	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
 	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
-	m.Get(apirouter.ReposInventory).Handler(trace.TraceRoute(handler(serveReposInventory)))
-	m.Get(apirouter.ReposInventoryUncached).Handler(trace.TraceRoute(handler(serveReposInventoryUncached)))
 	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(serveReposList)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.TraceRoute(handler(serveReposListEnabled)))
 	m.Get(apirouter.ReposGetByName).Handler(trace.TraceRoute(handler(serveReposGetByName)))
@@ -90,13 +88,12 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GitServerAddrs).Handler(trace.TraceRoute(handler(serveGitServerAddrs)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.TraceRoute(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
-	m.Get(apirouter.GitInfoRefs).Handler(trace.TraceRoute(handler(serveGitInfoRefs)))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))
-	m.Get(apirouter.GitUploadPack).Handler(trace.TraceRoute(handler(serveGitUploadPack)))
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
+	m.Get(apirouter.SearchConfiguration).Handler(trace.TraceRoute(handler(serveSearchConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

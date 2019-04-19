@@ -9,9 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -21,6 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -29,7 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"golang.org/x/net/context/ctxhttp"
@@ -83,7 +82,9 @@ func updateGitServerAddrList() {
 		// ask the frontend for this information. This is generally the code
 		// path that all non-frontend services take.
 		ctx := context.Background()
-		api.WaitForFrontend(ctx)
+		if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
+			log15.Error("failed to wait for frontend", "error", err)
+		}
 
 		fetchAddrsOnce := func() {
 			for {
@@ -370,10 +371,18 @@ func (c *Client) ping(ctx context.Context, addr string) error {
 }
 
 // ListGitolite lists Gitolite repositories.
-func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) ([]string, error) {
+func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
-	return doListOne(ctx, "?gitolite="+url.QueryEscape(gitoliteHost), c.addrForKey(ctx, gitoliteHost))
+
+	resp, err := ctxhttp.Get(ctx, nil, "http://"+c.addrForKey(ctx, gitoliteHost)+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&list)
+	return list, err
 }
 
 // ListCloned lists all cloned repositories
@@ -401,10 +410,10 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 	return repos, err
 }
 
-// GetGitolitePhabricatorMetadata returns Phabricator metadata for a
-// Gitolite repository fetched via a user-provided command.
-func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repo string) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	u := "http://" + c.addrForKey(ctx, gitoliteHost) + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(repo)
+// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
+// a user-provided command.
+func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
+	u := "http://" + c.addrForKey(ctx, gitoliteHost) + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(string(repoName))
 	resp, err := ctxhttp.Get(ctx, nil, u)
 	if err != nil {
 		return nil, err
@@ -416,7 +425,7 @@ func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHos
 	return &metadata, err
 }
 
-func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, error) {
+func doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
 	resp, err := ctxhttp.Get(ctx, nil, "http://"+addr+"/list"+urlSuffix)
 	if err != nil {
 		return nil, err
@@ -476,6 +485,9 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return err
+	}
+	if r.StatusCode != http.StatusOK {
+		return fmt.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
 	}
 
 	// Try unmarshaling new response format (?v=2) first.
@@ -539,26 +551,81 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 	return cloned, nil
 }
 
-// RepoInfo retrieves information about the repository on gitserver.
+// RepoInfo retrieves information about one or more repositories on gitserver.
 //
-// The repository not existing is not an error; in that case, RepoInfoResponse.Cloned will be false
-// and the error will be nil.
-func (c *Client) RepoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfoResponse, error) {
-	req := &protocol.RepoInfoRequest{
-		Repo: repo,
-	}
-	resp, err := c.httpPost(ctx, repo, "repo", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d", resp.StatusCode)}
+// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
+// will be false and the error will be nil.
+//
+// If multiple errors occurred, an incomplete result is returned along with a
+// *multierror.Error.
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+	numPossibleShards := len(c.Addrs(ctx))
+	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+
+	for _, r := range repos {
+		addr := c.addrForRepo(ctx, r)
+		shard := shards[addr]
+
+		if shard == nil {
+			shard = new(protocol.RepoInfoRequest)
+			shards[addr] = shard
+		}
+
+		shard.Repos = append(shard.Repos, r)
 	}
 
-	var info *protocol.RepoInfoResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
+	type op struct {
+		req *protocol.RepoInfoRequest
+		res *protocol.RepoInfoResponse
+		err error
+	}
+
+	ch := make(chan op, len(shards))
+	for _, req := range shards {
+		go func(o op) {
+			var resp *http.Response
+			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repos", o.req)
+			if o.err != nil {
+				ch <- o
+				return
+			}
+
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				o.err = &url.Error{
+					URL: resp.Request.URL.String(),
+					Op:  "RepoInfo",
+					Err: errors.Errorf("RepoInfo: http status %d", resp.StatusCode),
+				}
+				ch <- o
+				return // we never get an error status code AND result
+			}
+
+			o.res = new(protocol.RepoInfoResponse)
+			o.err = json.NewDecoder(resp.Body).Decode(o.res)
+			ch <- o
+		}(op{req: req})
+	}
+
+	err := new(multierror.Error)
+	res := protocol.RepoInfoResponse{
+		Results: make(map[api.RepoName]*protocol.RepoInfo),
+	}
+
+	for i := 0; i < cap(ch); i++ {
+		o := <-ch
+
+		if o.err != nil {
+			err = multierror.Append(err, o.err)
+			continue
+		}
+
+		for repo, info := range o.res.Results {
+			res.Results[repo] = info
+		}
+	}
+
+	return &res, err.ErrorOrNil()
 }
 
 // Remove removes the repository clone from gitserver.
@@ -579,6 +646,8 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	return nil
 }
 
+// httpPost performs a POST request to a gitserver, sharding based on the given
+// repo name (the repo name is otherwise not used).
 func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {
@@ -605,39 +674,21 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string,
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
-		span.LogKV("event", "Waiting on HTTP limiter")
 		c.HTTPLimiter.Acquire()
 		defer c.HTTPLimiter.Release()
 		span.LogKV("event", "Acquired HTTP limiter")
 	}
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("Gitserver Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
+
 	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }
-
-func (c *Client) UploadPack(repoName api.RepoName, w http.ResponseWriter, r *http.Request) {
-	repoName = protocol.NormalizeRepo(repoName)
-	addr := c.addrForRepo(r.Context(), repoName)
-
-	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(string(repoName)))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	(&httputil.ReverseProxy{
-		Director: func(r *http.Request) {
-			r.URL = u
-		},
-		ErrorLog: uploadPackErrorLog,
-	}).ServeHTTP(w, r)
-}
-
-var uploadPackErrorLog = log.New(env.DebugOut, "git upload-pack proxy: ", log.LstdFlags)
 
 func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)

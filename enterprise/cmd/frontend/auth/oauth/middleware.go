@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -74,7 +75,7 @@ func NewOAuthFlowHandler(serviceType string) http.Handler {
 }
 
 func getExactlyOneOAuthProvider() *Provider {
-	ps := auth.Providers()
+	ps := providers.Providers()
 	if len(ps) != 1 {
 		return nil
 	}

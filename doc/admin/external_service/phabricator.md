@@ -54,6 +54,17 @@ For production usage, we recommend installing the Sourcegraph Phabricator extens
 
 See the [phabricator-extension](https://github.com/sourcegraph/phabricator-extension) repository for installation instructions and configuration settings.
 
+The Sourcegraph instance's site admin must [update the `corsOrigin` site config property](../config/site_config.md) to allow the Phabricator extension to communicate with the Sourcegraph instance. For example:
+
+```json
+{
+  // ...
+  "corsOrigin":
+    "https://my-phabricator.example.com"
+  // ...
+}
+```
+
 ## Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/phabricator.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/phabricator) to see rendered content.</div>

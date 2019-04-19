@@ -1,10 +1,10 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { from, Observable } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
-import { Model, modelToTextDocumentPositionParams } from '../model'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
+import { CodeEditor } from './editorService'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
@@ -43,19 +43,18 @@ export class TextDocumentLocationProviderRegistry<
      * This can be used, for example, to selectively show a "Find references" button if there are
      * any reference providers registered.
      *
-     * @param model The current model.
+     * @param editors The code editors in {@link EditorService}.
      */
-    public hasProvidersForActiveTextDocument(model: Pick<Model, 'visibleViewComponents'>): Observable<boolean> {
+    public hasProvidersForActiveTextDocument(editors: readonly CodeEditor[]): Observable<boolean> {
         return this.entries.pipe(
             map(entries => {
-                const params = modelToTextDocumentPositionParams(model)
-                if (!params) {
+                const activeEditor = editors.find(({ isActive }) => isActive)
+                if (!activeEditor) {
                     return false
                 }
-
                 return (
                     entries.filter(({ registrationOptions }) =>
-                        match(registrationOptions.documentSelector, params.textDocument)
+                        match(registrationOptions.documentSelector, activeEditor.model)
                     ).length > 0
                 )
             })
@@ -98,14 +97,18 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
 
     /**
      * Gets locations from the provider with the given ID (i.e., the `id` parameter to
-     * {@link sourcegraph.languageFeatures.registerLocationProvider}).
+     * {@link sourcegraph.languageFeatures.registerLocationProvider}). Returns an observable that,
+     * initially and upon the provider changing, emits an observable of the provider's location
+     * results.
+     *
+     * Using a higher-order observable here lets the caller display a loading indicator when the
+     * inner observable has not yet completed. The outer observable never completes because
+     * providers may be registered and unregistered at any time.
      *
      * @param id The provider ID.
      */
-    public getLocations(id: string, params: TextDocumentPositionParams): Observable<Location[] | null> {
-        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params).pipe(
-            switchMap(locations => locations)
-        )
+    public getLocations(id: string, params: TextDocumentPositionParams): Observable<Observable<Location[] | null>> {
+        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params)
     }
 }
 

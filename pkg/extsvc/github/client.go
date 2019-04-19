@@ -19,10 +19,10 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -60,7 +60,7 @@ type Client struct {
 	defaultToken string
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
-	httpClient *http.Client
+	httpClient httpcli.Doer
 
 	// repoCache is a map of rcache.Cache instances keyed by auth token.
 	repoCache   map[string]*rcache.Cache
@@ -78,14 +78,16 @@ type Client struct {
 	RateLimit *ratelimit.Monitor
 }
 
-type githubAPIError struct {
+// APIError is an error type returned by Client when the GitHub API responds with
+// an error.
+type APIError struct {
 	URL              string
 	Code             int
 	Message          string
 	DocumentationURL string `json:"documentation_url"`
 }
 
-func (e *githubAPIError) Error() string {
+func (e *APIError) Error() string {
 	return fmt.Sprintf("request to %s returned status %d: %s", e.URL, e.Code, e.Message)
 }
 
@@ -128,15 +130,16 @@ func NewRepoCache(apiURL *url.URL, token string, keyPrefix string, cacheTTL time
 // NewClient creates a new GitHub API client with an optional default personal access token.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
-func NewClient(apiURL *url.URL, defaultToken string, transport http.RoundTripper) *Client {
+func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
-		transport = disabledTransport{}
+		cli = disabledClient{}
 	}
-	if transport == nil {
-		transport = http.DefaultTransport
+	if cli == nil {
+		cli = http.DefaultClient
 	}
-	transport = requestCounter.Transport(transport, func(u *url.URL) string {
+
+	cli = requestCounter.Doer(cli, func(u *url.URL) string {
 		// The first component of the Path mostly maps to the type of API
 		// request we are making. See `curl https://api.github.com` for the
 		// exact mapping
@@ -151,7 +154,7 @@ func NewClient(apiURL *url.URL, defaultToken string, transport http.RoundTripper
 		apiURL:       apiURL,
 		githubDotCom: urlIsGitHubDotCom(apiURL),
 		defaultToken: defaultToken,
-		httpClient:   &http.Client{Transport: transport},
+		httpClient:   cli,
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
 		repoCache:    map[string]*rcache.Cache{},
 	}
@@ -206,14 +209,15 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 		span.Finish()
 	}()
 
-	resp, err = ctxhttp.Do(ctx, c.httpClient, req)
+	resp, err = c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
+
 	defer resp.Body.Close()
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
-		var err githubAPIError
+		var err APIError
 		if decErr := json.NewDecoder(resp.Body).Decode(&err); decErr != nil {
 			log15.Warn("Failed to decode error response from github API", "error", decErr)
 		}
@@ -294,7 +298,7 @@ func unmarshal(data []byte, v interface{}) error {
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
-	if e, ok := errors.Cause(err).(*githubAPIError); ok {
+	if e, ok := errors.Cause(err).(*APIError); ok {
 		return e.Code
 	}
 	return 0
@@ -327,7 +331,7 @@ func IsNotFound(err error) bool {
 // IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
 // limit was exceeded.
 func IsRateLimitExceeded(err error) bool {
-	if e, ok := errors.Cause(err).(*githubAPIError); ok {
+	if e, ok := errors.Cause(err).(*APIError); ok {
 		return strings.Contains(e.Message, "API rate limit exceeded") || strings.Contains(e.DocumentationURL, "#rate-limiting")
 	}
 
@@ -363,9 +367,9 @@ func (e graphqlErrors) Error() string {
 	return fmt.Sprintf("error in GraphQL response: %s", e[0].Message)
 }
 
-type disabledTransport struct{}
+type disabledClient struct{}
 
-func (t disabledTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
 	return nil, errors.New("http: github communication disabled")
 }
 

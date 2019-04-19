@@ -12,6 +12,7 @@ import (
 	"github.com/dghubble/gologin/github"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -93,7 +94,7 @@ func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
 	return oauth.SessionData{
-		ID: auth.ProviderConfigID{
+		ID: providers.ConfigID{
 			ID:   s.ServiceID(),
 			Type: s.ServiceType(),
 		},

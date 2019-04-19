@@ -1,0 +1,416 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActivationDropdown render 0/2 completed 1`] = `
+<div
+  className="activation-dropdown-button--hidden nav-link p-0 btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    <div
+      style={
+        Object {
+          "position": "relative",
+        }
+      }
+    />
+    Setup
+    <div
+      style={
+        Object {
+          "position": "relative",
+        }
+      }
+    />
+    <span
+      className="activation-dropdown-button__progress-bar-container"
+    >
+      <svg
+        className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+        style={Object {}}
+        viewBox="0 0 100 100"
+      >
+        <path
+          className="CircularProgressbar-trail"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={Object {}}
+        />
+        <path
+          className="CircularProgressbar-path"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={
+            Object {
+              "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+              "strokeDashoffset": "NaNpx",
+            }
+          }
+        />
+      </svg>
+    </span>
+  </a>
+  <div
+    aria-hidden={true}
+    className="activation-dropdown dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <div
+      className="activation-dropdown-background"
+    />
+    <div
+      className="activation-dropdown-header"
+    >
+      <h3
+        className="activation-dropdown-header__title"
+      >
+        Get started with Sourcegraph
+      </h3>
+      <p
+        className="activation-dropdown-header__copy"
+      >
+        Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
+      </p>
+    </div>
+    <div
+      className="activation-dropdown-item dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        data-tooltip="detail1"
+        onClick={[Function]}
+      >
+        <span
+          className="activation-item__link"
+        >
+          <div
+            className="activation-item"
+          >
+            title1
+             
+            <svg
+              className="mdi-icon icon-inline activation-item__checkbox--todo"
+              fill="currentColor"
+              height={24}
+              viewBox="0 0 24 24"
+              width={24}
+            >
+              <path
+                d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+              />
+            </svg>
+          </div>
+        </span>
+      </div>
+    </div>
+    <div
+      className="activation-dropdown-item dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        data-tooltip="detail2"
+        onClick={[Function]}
+      >
+        <a
+          className="activation-item__link"
+          to="/some/url"
+        >
+          <div
+            className="activation-item"
+          >
+            title2
+             
+            <svg
+              className="mdi-icon icon-inline activation-item__checkbox--todo"
+              fill="currentColor"
+              height={24}
+              viewBox="0 0 24 24"
+              width={24}
+            >
+              <path
+                d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+              />
+            </svg>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ActivationDropdown render 1/2 completed 1`] = `
+<div
+  className="activation-dropdown-button--hidden nav-link p-0 btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    <div
+      style={
+        Object {
+          "position": "relative",
+        }
+      }
+    />
+    Setup
+    <div
+      style={
+        Object {
+          "position": "relative",
+        }
+      }
+    />
+    <span
+      className="activation-dropdown-button__progress-bar-container"
+    >
+      <svg
+        className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+        style={Object {}}
+        viewBox="0 0 100 100"
+      >
+        <path
+          className="CircularProgressbar-trail"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={Object {}}
+        />
+        <path
+          className="CircularProgressbar-path"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={
+            Object {
+              "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+              "strokeDashoffset": "0px",
+            }
+          }
+        />
+      </svg>
+    </span>
+  </a>
+  <div
+    aria-hidden={true}
+    className="activation-dropdown dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <div
+      className="activation-dropdown-background"
+    />
+    <div
+      className="activation-dropdown-header"
+    >
+      <h3
+        className="activation-dropdown-header__title"
+      >
+        Get started with Sourcegraph
+      </h3>
+      <p
+        className="activation-dropdown-header__copy"
+      >
+        Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
+      </p>
+    </div>
+    <div
+      className="activation-dropdown-item dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        data-tooltip="detail1"
+        onClick={[Function]}
+      >
+        <span
+          className="activation-item__link"
+        >
+          <div
+            className="activation-item"
+          >
+            title1
+             
+            <svg
+              className="mdi-icon icon-inline activation-item__checkbox--done"
+              fill="currentColor"
+              height={24}
+              viewBox="0 0 24 24"
+              width={24}
+            >
+              <path
+                d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
+              />
+            </svg>
+          </div>
+        </span>
+      </div>
+    </div>
+    <div
+      className="activation-dropdown-item dropdown-item"
+      onClick={[Function]}
+    >
+      <div
+        data-tooltip="detail2"
+        onClick={[Function]}
+      >
+        <a
+          className="activation-item__link"
+          to="/some/url"
+        >
+          <div
+            className="activation-item"
+          >
+            title2
+             
+            <svg
+              className="mdi-icon icon-inline activation-item__checkbox--todo"
+              fill="currentColor"
+              height={24}
+              viewBox="0 0 24 24"
+              width={24}
+            >
+              <path
+                d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
+              />
+            </svg>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ActivationDropdown render loading 1`] = `
+<div
+  className="activation-dropdown-button--hidden nav-link p-0 btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className=" activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    <div
+      style={
+        Object {
+          "position": "relative",
+        }
+      }
+    />
+    Setup
+    <div
+      style={
+        Object {
+          "position": "relative",
+        }
+      }
+    />
+    <span
+      className="activation-dropdown-button__progress-bar-container"
+    >
+      <svg
+        className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+        style={Object {}}
+        viewBox="0 0 100 100"
+      >
+        <path
+          className="CircularProgressbar-trail"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={Object {}}
+        />
+        <path
+          className="CircularProgressbar-path"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fillOpacity={0}
+          strokeWidth={12}
+          style={
+            Object {
+              "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+              "strokeDashoffset": "276.46015351590177px",
+            }
+          }
+        />
+      </svg>
+    </span>
+  </a>
+  <div
+    aria-hidden={true}
+    className="activation-dropdown dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <div
+      className="activation-dropdown-background"
+    />
+    <div
+      className="activation-dropdown-header"
+    >
+      <h3
+        className="activation-dropdown-header__title"
+      >
+        Get started with Sourcegraph
+      </h3>
+      <p
+        className="activation-dropdown-header__copy"
+      >
+        Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
+      </p>
+    </div>
+    <div
+      className="activation-dropdown-button__loader"
+    >
+      <div
+        className="loading-spinner icon-inline"
+      />
+    </div>
+  </div>
+</div>
+`;

@@ -24,6 +24,7 @@ Welcome to Sourcegraph! As a developer, you can use Sourcegraph to get help whil
   - Cross-repository jump-to-definition and find-references
   - Supports [Go](https://sourcegraph.com/extensions/sourcegraph/go), [TypeScript](https://sourcegraph.com/extensions/sourcegraph/typescript), [Python](https://sourcegraph.com/extensions/sourcegraph/python) - check the [extension registry](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) for more
 - [GraphQL API](../api/graphql/index.md)
+- [Repository badges](repository/badges.md)
 
 All features:
 

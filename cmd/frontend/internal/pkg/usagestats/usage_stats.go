@@ -6,13 +6,14 @@
 package usagestats
 
 import (
-	"fmt"
+	"context"
 	"math/rand"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -21,25 +22,12 @@ import (
 var (
 	gcOnce sync.Once // ensures we only have 1 redis gc goroutine
 
-	keyPrefix = "user_activity:"
-	pool      = redispool.Store
+	pool = redispool.Store
 
 	timeNow = time.Now
-
-	searchOccurred   = false
-	findRefsOccurred = false
 )
 
 const (
-	fPageViews                     = "pageviews"
-	fLastActive                    = "lastactive"
-	fSearchQueries                 = "searchqueries"
-	fCodeIntelActions              = "codeintelactions"
-	fLastActiveCodeHostIntegration = "lastactivecodehostintegration"
-
-	fSearchOccurred   = "searchoccurred"
-	fFindRefsOccurred = "findrefsoccurred"
-
 	defaultDays   = 14
 	defaultWeeks  = 10
 	defaultMonths = 3
@@ -59,7 +47,7 @@ func GetByUserID(userID int32) (*types.UserUsageStatistics, error) {
 	key := keyPrefix + userIDStr
 
 	c := pool.Get()
-	values, err := redis.Values(c.Do("HMGET", key, fPageViews, fSearchQueries, fLastActive, fCodeIntelActions, fLastActiveCodeHostIntegration))
+	values, err := redis.Values(c.Do("HMGET", key, fPageViews, fSearchQueries, fLastActive, fCodeIntelActions, fFindRefsActions, fLastActiveCodeHostIntegration))
 	c.Close()
 	if err != nil && err != redis.ErrNil {
 		return nil, err
@@ -69,7 +57,7 @@ func GetByUserID(userID int32) (*types.UserUsageStatistics, error) {
 	a := &types.UserUsageStatistics{
 		UserID: userID,
 	}
-	_, err = redis.Scan(values, &a.PageViews, &a.SearchQueries, &lastActiveStr, &a.CodeIntelligenceActions, &lastActiveCodeHostStr)
+	_, err = redis.Scan(values, &a.PageViews, &a.SearchQueries, &lastActiveStr, &a.CodeIntelligenceActions, &a.FindReferencesActions, &lastActiveCodeHostStr)
 	if err != nil && err != redis.ErrNil {
 		return nil, err
 	}
@@ -114,17 +102,6 @@ type ActiveUsers struct {
 	Registered       []string
 	Anonymous        []string
 	UsedIntegrations []string
-}
-
-func minIntOrZero(a, b int) int {
-	min := b
-	if a < b {
-		min = a
-	}
-	if min < 0 {
-		return 0
-	}
-	return min
 }
 
 // GetSiteUsageStatistics returns the current site's SiteActivity.
@@ -274,10 +251,18 @@ func uniques(dayStart time.Time, period *UsageDuration) (*ActiveUsers, error) {
 
 // uniquesCount calculates the number of unique users starting at 00:00:00 on a given UTC date over a
 // period of time (years, months, and days).
-func uniquesCount(dayStart time.Time, period *UsageDuration) (*types.SiteActivityPeriod, error) {
+func uniquesCount(dayStart time.Time, period *UsageDuration, calcStages bool) (*types.SiteActivityPeriod, error) {
 	userIDs, err := uniques(dayStart, period)
 	if err != nil {
 		return nil, err
+	}
+
+	var stages *types.Stages
+	if calcStages {
+		stages, err = stageUniques(dayStart, period, userIDs.Registered)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &types.SiteActivityPeriod{
@@ -286,6 +271,7 @@ func uniquesCount(dayStart time.Time, period *UsageDuration) (*types.SiteActivit
 		RegisteredUserCount:  int32(len(userIDs.Registered)),
 		AnonymousUserCount:   int32(len(userIDs.Anonymous)),
 		IntegrationUserCount: int32(len(userIDs.UsedIntegrations)),
+		Stages:               stages,
 	}, nil
 }
 
@@ -294,7 +280,7 @@ func daus(dayPeriods int) ([]*types.SiteActivityPeriod, error) {
 	var daus []*types.SiteActivityPeriod
 	now := timeNow().UTC()
 	for daysAgo := 0; daysAgo < dayPeriods; daysAgo++ {
-		uniques, err := uniquesCount(now.AddDate(0, 0, -daysAgo), &UsageDuration{Days: 1})
+		uniques, err := uniquesCount(now.AddDate(0, 0, -daysAgo), &UsageDuration{Days: 1}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -314,7 +300,7 @@ func waus(weekPeriods int) ([]*types.SiteActivityPeriod, error) {
 
 	for w := 0; w < weekPeriods; w++ {
 		weekStartDate := startOfWeek(w)
-		uniques, err := uniquesCount(weekStartDate, &UsageDuration{Days: 7})
+		uniques, err := uniquesCount(weekStartDate, &UsageDuration{Days: 7}, w == 0)
 		if err != nil {
 			return nil, err
 		}
@@ -335,7 +321,7 @@ func maus(monthPeriods int) ([]*types.SiteActivityPeriod, error) {
 
 	for m := 0; m < monthPeriods; m++ {
 		monthStartDate := startOfMonth(m)
-		uniques, err := uniquesCount(monthStartDate, &UsageDuration{Months: 1})
+		uniques, err := uniquesCount(monthStartDate, &UsageDuration{Months: 1}, m == 0)
 		if err != nil {
 			return nil, err
 		}
@@ -350,171 +336,163 @@ func ListUsersThisMonth() (*ActiveUsers, error) {
 	return uniques(monthStartDate, &UsageDuration{Months: 1})
 }
 
-// logPageView increments a user's pageview count.
-func logPageView(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
+var MockStageUniques func(dayStart time.Time, period *UsageDuration, registeredActives []string) (*types.Stages, error)
 
-	return c.Send("HINCRBY", key, fPageViews, 1)
-}
-
-// logSearchQuery increments a user's search query count.
-func logSearchQuery(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
-
-	return c.Send("HINCRBY", key, fSearchQueries, 1)
-}
-
-// logCodeIntel increments a user's code intelligence usage count.
-func logCodeIntelAction(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
-
-	return c.Send("HINCRBY", key, fCodeIntelActions, 1)
-}
-
-// logCodeHostIntegrationUsage logs the last time a user was active on a code host integration
-func logCodeHostIntegrationUsage(userID int32) error {
-	key := keyPrefix + strconv.Itoa(int(userID))
-	c := pool.Get()
-	defer c.Close()
-
-	now := timeNow().UTC()
-	return c.Send("HSET", key, fLastActiveCodeHostIntegration, now.Format(time.RFC3339))
-}
-
-func logSearchOccurred() error {
-	if searchOccurred {
-		return nil
+func stageUniques(dayStart time.Time, period *UsageDuration, registeredActives []string) (*types.Stages, error) {
+	if MockStageUniques != nil {
+		return MockStageUniques(dayStart, period, registeredActives)
 	}
-	key := keyPrefix + fSearchOccurred
-	c := pool.Get()
-	defer c.Close()
-	searchOccurred = true
-	return c.Send("SET", key, "true")
-}
 
-func logFindRefsOccurred() error {
-	if findRefsOccurred {
-		return nil
+	ctx := context.Background()
+
+	var (
+		manageUserIDs    = map[string]bool{}
+		planUserIDs      map[string]bool // none currently
+		codeUserIDs      map[string]bool
+		reviewUserIDs    map[string]bool
+		verifyUserIDs    map[string]bool
+		packageUserIDs   map[string]bool // none currently
+		deployUserIDs    map[string]bool // none currently
+		configureUserIDs map[string]bool // none currently
+		monitorUserIDs   map[string]bool
+		secureUserIDs    map[string]bool // none currently
+		automateUserIDs  map[string]bool // none currently
+	)
+
+	dayStart = time.Date(dayStart.Year(), dayStart.Month(), dayStart.Day(), 0, 0, 0, 0, time.UTC)
+	dayEnd := dayStart.AddDate(0, period.Months, period.Days)
+
+	var activeUserIDs []int32
+	for _, userID := range registeredActives {
+		userIDInt, err := strconv.Atoi(userID)
+		if err != nil {
+			return nil, err
+		}
+		activeUserIDs = append(activeUserIDs, int32(userIDInt))
 	}
-	key := keyPrefix + fFindRefsOccurred
-	c := pool.Get()
-	defer c.Close()
-	findRefsOccurred = true
-	return c.Send("SET", key, "true")
-}
 
-// LogActivity logs any user activity (page view, integration usage, etc) to their "last active" time, and
-// adds their unique ID to the set of active users
-func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event string) error {
-	// Setup our GC of active key goroutine
-	gcOnce.Do(func() {
-		go gc()
-	})
+	//// MANAGE ////
+	// 1) any activity from a site admin
+	// 2) any usage of an API access token
 
-	c := pool.Get()
-	defer c.Close()
-
-	uniqueID := userCookieID
-
-	// If the user is authenticated, set uniqueID to their user ID, and store their "last active time" in the
-	// appropriate user ID-keyed cache.
-	if isAuthenticated {
-		userIDStr := strconv.Itoa(int(userID))
-		uniqueID = userIDStr
-		key := keyPrefix + uniqueID
-
-		// Set the user's last active time
-		now := timeNow().UTC()
-		if err := c.Send("HSET", key, fLastActive, now.Format(time.RFC3339)); err != nil {
-			return err
+	// Loop through all active registered users, see if any are admins
+	users, err := db.Users.List(ctx, &db.UsersListOptions{UserIDs: activeUserIDs})
+	if err != nil {
+		return nil, err
+	}
+	for _, user := range users {
+		if user.SiteAdmin {
+			manageUserIDs[strconv.Itoa(int(user.ID))] = true
 		}
 	}
-
-	if uniqueID == "" {
-		log15.Warn("usagestats.LogActivity: no user ID provided")
-		return nil
+	// Loop through all access tokens used in the past week
+	tokens, err := db.AccessTokens.List(ctx, db.AccessTokensListOptions{LastUsedAfter: &dayStart, LastUsedBefore: &dayEnd})
+	if err != nil {
+		return nil, err
+	}
+	for _, token := range tokens {
+		manageUserIDs[strconv.Itoa(int(token.CreatorUserID))] = true
 	}
 
-	// Regardless of authenicatation status, add the user's unique ID to the set of active users.
-	if err := c.Send("SADD", usersActiveKeyFromDaysAgo(0), uniqueID); err != nil {
-		return err
+	//// PLAN ////
+	// none currently
+
+	//// CODE ////
+	// 1) any searches
+	// 2) any file, repo, tree views
+	// 3) TODO(Dan): any code host integration usage (other than for code review)
+
+	// Loop through all active user IDs, see if any executed searches in the window
+	codeUserIDs, err = usersSince(registeredActives, dayStart, keyFromStage("STAGECODE"))
+	if err != nil {
+		return nil, err
 	}
 
-	// Regardless of authentication status,
-	switch event {
-	case "SEARCHQUERY":
-		if err := logSearchOccurred(); err != nil {
-			return err
+	//// REVIEW ////
+	// 1) TODO(Dan): code host integration usage for code review
+
+	reviewUserIDs, err = usersSince(registeredActives, dayStart, keyFromStage("STAGEREVIEW"))
+	if err != nil {
+		return nil, err
+	}
+
+	//// VERIFY ////
+	// 1) receiving a saved search notification (email)
+	// 2) TODO(Dan): receiving a saved search notification (slack)
+	// 3) clicking a saved search notification (email or slack)
+	// 4) TODO(Dan): having a saved search defined in your user or org settings
+	verifyUserIDs, err = usersSince(registeredActives, dayStart, keyFromStage("STAGEVERIFY"))
+	if err != nil {
+		return nil, err
+	}
+
+	//// PACKAGE ////
+	// none currently
+
+	//// DEPLOY ////
+	// none currently
+
+	//// CONFIGURE ////
+	// none currently
+
+	//// MONITOR ////
+	// 1) running a diff search
+	// 2) TODO(Dan): monitoring extension enabled (e.g. LightStep, Sentry, Datadog)
+	monitorUserIDs, err = usersSince(registeredActives, dayStart, keyFromStage("STAGEMONITOR"))
+	if err != nil {
+		return nil, err
+	}
+
+	//// SECURE ////
+	// none currently
+
+	//// AUTOMATE ////
+	// none currently
+
+	return &types.Stages{
+		Manage:    int32(len(keys(manageUserIDs))),
+		Plan:      int32(len(keys(planUserIDs))),
+		Code:      int32(len(keys(codeUserIDs))),
+		Review:    int32(len(keys(reviewUserIDs))),
+		Verify:    int32(len(keys(verifyUserIDs))),
+		Package:   int32(len(keys(packageUserIDs))),
+		Deploy:    int32(len(keys(deployUserIDs))),
+		Configure: int32(len(keys(configureUserIDs))),
+		Monitor:   int32(len(keys(monitorUserIDs))),
+		Secure:    int32(len(keys(secureUserIDs))),
+		Automate:  int32(len(keys(automateUserIDs))),
+	}, nil
+}
+
+func usersSince(userList []string, dayStart time.Time, userField string) (map[string]bool, error) {
+	c := pool.Get()
+	defer c.Close()
+
+	var userIDs = map[string]bool{}
+	for _, uid := range userList {
+		userKey := keyPrefix + uid
+		err := c.Send("HGET", userKey, userField)
+		if err != nil && err != redis.ErrNil {
+			return nil, err
 		}
-	case "CODEINTELREFS", "CODEINTELINTEGRATIONREFS":
-		if err := logFindRefsOccurred(); err != nil {
-			return err
+	}
+	c.Flush()
+	for _, uid := range userList {
+		lastEvent, err := redis.String(c.Receive())
+		if err != nil && err != redis.ErrNil {
+			return nil, err
+		}
+		if lastEvent != "" {
+			t, err := time.Parse(time.RFC3339, lastEvent)
+			if err != nil {
+				return nil, err
+			}
+			if t.After(dayStart) || t.Equal(dayStart) {
+				userIDs[uid] = true
+			}
 		}
 	}
-
-	// If the user isn't authenticated, return at this point and don't record user-level properties.
-	if !isAuthenticated {
-		return nil
-	}
-
-	switch event {
-	case "SEARCHQUERY":
-		return logSearchQuery(userID)
-	case "PAGEVIEW":
-		return logPageView(userID)
-	case "CODEINTEL", "CODEINTELREFS":
-		return logCodeIntelAction(userID)
-	case "CODEINTELINTEGRATION", "CODEINTELINTEGRATIONREFS":
-		if err := logCodeHostIntegrationUsage(userID); err != nil {
-			return err
-		}
-		return logCodeIntelAction(userID)
-	}
-	return fmt.Errorf("unknown user event %s", event)
-}
-
-func usersActiveKeyFromDate(date time.Time) string {
-	return keyPrefix + ":usersactive:" + time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Format("2006-01-02")
-}
-
-func usersActiveKeyFromDaysAgo(daysAgo int) string {
-	now := timeNow().UTC()
-	return usersActiveKeyFromDate(now.AddDate(0, 0, -daysAgo))
-}
-
-func startOfWeek(weeksAgo int) time.Time {
-	if weeksAgo > 0 {
-		return startOfWeek(0).AddDate(0, 0, -7*weeksAgo)
-	}
-
-	// If weeksAgo == 0, start at timeNow(), and loop back by day until we hit a Sunday
-	now := timeNow().UTC()
-	date := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	for date.Weekday() != time.Sunday {
-		date = date.AddDate(0, 0, -1)
-	}
-	return date
-}
-
-func startOfMonth(monthsAgo int) time.Time {
-	now := timeNow().UTC()
-	return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -monthsAgo, 0)
-}
-
-func keys(m map[string]bool) []string {
-	keys := make([]string, len(m))
-	i := 0
-	for k := range m {
-		keys[i] = k
-		i++
-	}
-	return keys
+	return userIDs, nil
 }
 
 // gc expires active user sets after the max of daysOfHistory, weeksOfHistory, and monthsOfHistory have passed.

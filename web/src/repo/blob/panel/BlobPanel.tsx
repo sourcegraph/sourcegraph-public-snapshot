@@ -2,8 +2,8 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { from, Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
-import { modelToTextDocumentPositionParams } from '../../../../../shared/src/api/client/model'
+import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/editorService'
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
@@ -12,6 +12,7 @@ import {
     ViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/view'
 import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
+import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -30,7 +31,8 @@ interface Props
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        ActivationProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
@@ -44,6 +46,12 @@ export type BlobPanelTabID = 'info' | 'def' | 'references' | 'discussions' | 'im
 /** The subject (what the contextual information refers to). */
 interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec> {
     repoID: string
+
+    /**
+     * Include the full URI fragment here because it represents the state of panels, and we want
+     * panels to be re-rendered when this state changes.
+     */
+    hash: string
 }
 
 function toSubject(props: Props): PanelSubject {
@@ -57,6 +65,7 @@ function toSubject(props: Props): PanelSubject {
         mode: props.mode,
         position:
             parsedHash.line !== undefined ? { line: parsedHash.line, character: parsedHash.character || 0 } : undefined,
+        hash: props.location.hash,
     }
 }
 
@@ -86,27 +95,46 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.model.model).pipe(
-                map(model => {
-                    if (!registry.hasProvidersForActiveTextDocument(model)) {
-                        return null
-                    }
-                    const params: TextDocumentPositionParams | null = modelToTextDocumentPositionParams(model)
-                    if (!params) {
-                        return null
-                    }
-                    return {
-                        title,
-                        content: '',
-                        priority,
+            provider: from(this.props.extensionsController.services.editor.editors).pipe(
+                switchMap(editors =>
+                    registry.hasProvidersForActiveTextDocument(editors).pipe(
+                        map(hasProviders => {
+                            if (!hasProviders) {
+                                return null
+                            }
+                            const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(editors)
+                            if (!params) {
+                                return null
+                            }
+                            return {
+                                title,
+                                content: '',
+                                priority,
 
-                        // This disable directive is necessary because TypeScript is not yet smart
-                        // enough to know that (typeof params & typeof extraParams) is P.
-                        //
-                        // tslint:disable-next-line:no-object-literal-type-assertion
-                        locationProvider: registry.getLocations({ ...params, ...extraParams } as P),
-                    }
-                })
+                                // This disable directive is necessary because TypeScript is not yet smart
+                                // enough to know that (typeof params & typeof extraParams) is P.
+                                //
+                                // tslint:disable-next-line:no-object-literal-type-assertion
+                                locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
+                                    map(locationsObservable =>
+                                        locationsObservable.pipe(
+                                            tap(locations => {
+                                                if (
+                                                    this.props.activation &&
+                                                    id === 'references' &&
+                                                    locations &&
+                                                    locations.length > 0
+                                                ) {
+                                                    this.props.activation.update({ FoundReferences: true })
+                                                }
+                                            })
+                                        )
+                                    )
+                                ),
+                            }
+                        })
+                    )
+                )
             ),
         })
 
@@ -127,18 +155,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                         {
                             context: { includeDeclaration: false },
                         }
-                    ),
-                    entryForViewProviderRegistration(
-                        'impl',
-                        'Implementation',
-                        160,
-                        this.props.extensionsController.services.textDocumentImplementation
-                    ),
-                    entryForViewProviderRegistration(
-                        'typedef',
-                        'Type definition',
-                        150,
-                        this.props.extensionsController.services.textDocumentTypeDefinition
                     ),
 
                     {
@@ -185,7 +201,8 @@ export class BlobPanel extends React.PureComponent<Props> {
                                                   filePath={subject.filePath}
                                                   history={this.props.history}
                                                   location={this.props.location}
-                                                  authenticatedUser={this.props.authenticatedUser}
+                                                  compact={true}
+                                                  extensionsController={this.props.extensionsController}
                                               />
                                           ),
                                       }

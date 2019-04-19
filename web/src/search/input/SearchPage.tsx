@@ -1,10 +1,12 @@
 import * as H from 'history'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
+import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
+import { Notices } from '../../global/Notices'
 import { Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -15,10 +17,11 @@ import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
 
-interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps {
+interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, ActivationProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean
 }
 
 interface State {
@@ -56,18 +59,25 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        let logoUrl =
+            `${window.context.assetsRoot}/img/sourcegraph` +
+            (this.props.isLightTheme ? '-light' : '') +
+            '-head-logo.svg'
+        const { branding } = window.context
+        if (branding) {
+            if (this.props.isLightTheme) {
+                if (branding.light && branding.light.logo) {
+                    logoUrl = branding.light.logo
+                }
+            } else if (branding.dark && branding.dark.logo) {
+                logoUrl = branding.dark.logo
+            }
+        }
         const hasScopes = this.getScopes().length > 0
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
-                <img
-                    className="search-page__logo"
-                    src={
-                        `${window.context.assetsRoot}/img/sourcegraph` +
-                        (this.props.isLightTheme ? '-light' : '') +
-                        '-head-logo.svg'
-                    }
-                />
+                <img className="search-page__logo" src={logoUrl} />
                 <Form className="search search-page__container" onSubmit={this.onSubmit}>
                     <div className="search-page__input-container">
                         <QueryInput
@@ -77,7 +87,7 @@ export class SearchPage extends React.Component<Props, State> {
                             autoFocus={'cursor-at-end'}
                             hasGlobalQueryBehavior={true}
                         />
-                        <SearchButton />
+                        <SearchButton activation={this.props.activation} />
                     </div>
                     {hasScopes ? (
                         <>
@@ -88,6 +98,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     query={this.state.userQuery}
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
+                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
                             <QueryBuilder
@@ -108,10 +119,12 @@ export class SearchPage extends React.Component<Props, State> {
                                     query={this.state.userQuery}
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
+                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
                         </>
                     )}
+                    <Notices className="my-3" location="home" settingsCascade={this.props.settingsCascade} />
                 </Form>
             </div>
         )

@@ -1,11 +1,15 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { Observable } from 'rxjs'
+import { ActivationProps } from '../../shared/src/components/activation/Activation'
+import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
 import { ResizablePanel } from '../../shared/src/panel/Panel'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
+import { ErrorLike } from '../../shared/src/util/errors'
 import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GlobalContributions } from './contributions'
@@ -27,10 +31,11 @@ import { parseSearchURLQuery } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreferenceProps, ThemeProps } from './theme'
-import { UserAccountAreaRoute } from './user/account/UserAccountArea'
-import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
+import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
@@ -40,7 +45,9 @@ export interface LayoutProps
         ExtensionsControllerProps,
         KeybindingsProps,
         ThemeProps,
-        ThemePreferenceProps {
+        EventLoggerProps,
+        ThemePreferenceProps,
+        ActivationProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
@@ -51,8 +58,8 @@ export interface LayoutProps
     siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     routes: ReadonlyArray<LayoutRouteProps>
@@ -65,8 +72,18 @@ export interface LayoutProps
      */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
+    telemetryService: EventLogger
+
+    // Search
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    searchRequest: (
+        query: string,
+        { extensionsController }: ExtensionsControllerProps<'services'>
+    ) => Observable<GQL.ISearchResults | ErrorLike>
+
+    isSourcegraphDotCom: boolean
 
     children?: never
 }

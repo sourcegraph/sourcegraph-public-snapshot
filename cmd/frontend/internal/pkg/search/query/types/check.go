@@ -123,6 +123,7 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 	case StringType:
 		dst.String = &valueString
 	case RegexpType:
+		valueString = autoFix(valueString)
 		p, err := regexp.Compile(valueString)
 		if err != nil {
 			return err
@@ -138,6 +139,17 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 		return errors.New("no type for literal")
 	}
 	return nil
+}
+
+var leftParenRx = regexp.MustCompile(`([^\\]|^)\($`)
+var squareBraceRx = regexp.MustCompile(`([^\\]|^)\[$`)
+
+// autoFix escapes various patterns that are very likely not meant to be
+// treated as regular expressions.
+func autoFix(pat string) string {
+	pat = leftParenRx.ReplaceAllString(pat, `$1\(`)
+	pat = squareBraceRx.ReplaceAllString(pat, `$1\[`)
+	return pat
 }
 
 // unquoteString is like strings.Unquote except that it supports single-quoted

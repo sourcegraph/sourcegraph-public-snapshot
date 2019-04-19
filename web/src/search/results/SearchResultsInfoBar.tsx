@@ -10,7 +10,7 @@ import * as React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { ServerBanner } from '../../marketing/ServerBanner'
-import { showDotComMarketing } from '../../util/features'
+import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 
 interface SearchResultsInfoBarProps {
     /** The currently authenticated user or null */
@@ -24,10 +24,13 @@ interface SearchResultsInfoBarProps {
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
 
+    showDotComMarketing: boolean
     // Saved queries
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
+
+    displayPerformanceWarning: boolean
 }
 
 /**
@@ -35,7 +38,7 @@ interface SearchResultsInfoBarProps {
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => (
-    <div className="search-results-info-bar">
+    <div className="search-results-info-bar" data-testid="results-info-bar">
         {(props.results.timedout.length > 0 ||
             props.results.cloning.length > 0 ||
             props.results.results.length > 0 ||
@@ -103,7 +106,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <div className="search-results-info-bar__row-right">
                     {/* Expand all feature */}
                     {props.results.results.length > 0 && (
-                        <button onClick={props.onExpandAllResultsToggle} className="btn btn-link">
+                        <button
+                            onClick={props.onExpandAllResultsToggle}
+                            className="btn btn-link"
+                            data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                        >
                             {props.allExpanded ? (
                                 <>
                                     <ArrowCollapseVerticalIcon className="icon-inline" /> Collapse all
@@ -132,6 +139,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 </div>
             </small>
         )}
-        {!props.results.alert && showDotComMarketing && <ServerBanner />}
+        {!props.results.alert && props.showDotComMarketing && <ServerBanner />}
+        {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
     </div>
 )

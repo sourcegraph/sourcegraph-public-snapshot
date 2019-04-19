@@ -1,4 +1,4 @@
-# GitHub
+# GitHub external service
 
 Site admins can sync Git repositories hosted on [GitHub.com](https://github.com) and [GitHub Enterprise](https://enterprise.github.com) with Sourcegraph so that users can search and navigate the repositories.
 
@@ -17,15 +17,22 @@ To set this up, add GitHub as an external service to Sourcegraph:
 - GitHub.com
 - GitHub Enterprise v2.10 and newer
 
-## Repository syncing
+## Selecting repositories for code search
 
-By default, Sourcegraph syncs all repositories that are affiliated with the user whose token you provide.
+There are three fields for configuring which repositories are mirrored/synchronized:
 
-If you want to synchronize public repositories from GitHub.com, the repositories need to be explicitly enumerated in the [`repos`](github.md#configuration) field of the GitHub external service configuration.
+- [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
+- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires GitHub advanced search queries to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
+- [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, and `repositoryQuery` fields.
 
-If you don't want to use an access token from your personal GitHub user account, generate a token for a [machine user](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users) affiliated with the organizations whose repositories you wish to make available.
+## GitHub API token and access
 
-### GitHub.com rate limits
+The GitHub service requires a `token` in order to access their API. There are two different types of tokens you can supply:
+
+- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of acccess to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add  an entry to the `exclude` array, or you can use a machine user token.
+- **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
+
+## GitHub.com rate limits
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
 
@@ -44,3 +51,25 @@ To configure GitHub as an authentication provider (which will enable sign-in via
 GitHub external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
+
+## Troubleshooting
+
+### RepositoryQuery returns first 1000 results only
+
+GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To workaround this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
+
+```jsonx
+{
+  // ...
+  "repositoryQuery": [
+    "org:Microsoft fork:no created:>=2019",
+    "org:Microsoft fork:no created:2018",
+    "org:Microsoft fork:no created:2016..2017",
+    "org:Microsoft fork:no created:<2016"
+  ]
+}
+```
+
+If splitting by creation date does not work, try another field. See [GitHub advanced search query](https://github.com/search/advanced) for other fields you can try.
+
+See [Handle GitHub repositoryQuery that has more than 1000 results](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.

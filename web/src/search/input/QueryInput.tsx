@@ -198,12 +198,12 @@ export class QueryInput extends React.Component<Props, State> {
                         switchMap(event => {
                             event.preventDefault()
                             // Use selection as query
-                            const selection = window.getSelection().toString()
-                            if (selection) {
+                            const selection = window.getSelection()
+                            if (selection && selection.toString() !== '') {
                                 return new Observable<void>(observer =>
                                     this.setState(
                                         {
-                                            // query: selection, TODO(sqs): add back this behavior
+                                            // query: selection.toString(), TODO(sqs): add back this behavior
                                             suggestions: [],
                                             selectedSuggestion: -1,
                                         },
@@ -281,7 +281,7 @@ export class QueryInput extends React.Component<Props, State> {
         return (
             <div className="query-input2">
                 <input
-                    className="form-control query-input2__input rounded-left"
+                    className="form-control query-input2__input rounded-left e2e-query-input"
                     value={this.props.value}
                     autoFocus={this.props.autoFocus === true}
                     onChange={this.onInputChange}
@@ -292,6 +292,8 @@ export class QueryInput extends React.Component<Props, State> {
                     autoCapitalize="off"
                     placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
                     ref={ref => (this.inputElement = ref!)}
+                    name="query"
+                    autoComplete="off"
                 />
                 {showSuggestions && (
                     <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>

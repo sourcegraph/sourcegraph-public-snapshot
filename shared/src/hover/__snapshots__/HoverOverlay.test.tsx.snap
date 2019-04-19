@@ -110,7 +110,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      className="hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -132,29 +132,18 @@ exports[`HoverOverlay actions and hover present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
 </div>
 `;
 
-exports[`HoverOverlay actions and hover undefined 1`] = `
-<div
-  className="hover-overlay card "
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hover-overlay__contents"
-  />
-</div>
-`;
+exports[`HoverOverlay actions and hover undefined 1`] = `null`;
 
 exports[`HoverOverlay actions empty 1`] = `
 <div
@@ -174,23 +163,7 @@ exports[`HoverOverlay actions empty 1`] = `
 </div>
 `;
 
-exports[`HoverOverlay actions error 1`] = `
-<div
-  className="hover-overlay card "
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hover-overlay__contents"
-  />
-</div>
-`;
+exports[`HoverOverlay actions error 1`] = `null`;
 
 exports[`HoverOverlay actions error, hover present 1`] = `
 <div
@@ -261,9 +234,10 @@ exports[`HoverOverlay actions present 1`] = `
         Object {
           "command": "c",
           "id": "a",
+          "title": "Some title",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      className="hover-overlay__action e2e-tooltip-some-title"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -285,6 +259,11 @@ exports[`HoverOverlay actions present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
@@ -324,7 +303,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      className="hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -346,29 +325,18 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>
 </div>
 `;
 
-exports[`HoverOverlay hover empty 1`] = `
-<div
-  className="hover-overlay card "
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hover-overlay__contents"
-  />
-</div>
-`;
+exports[`HoverOverlay hover empty 1`] = `null`;
 
 exports[`HoverOverlay hover error 1`] = `
 <div
@@ -439,7 +407,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
           "id": "a",
         }
       }
-      className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
+      className="hover-overlay__action e2e-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -461,6 +429,11 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       }
       showInlineError={true}
       showLoadingSpinnerDuringExecution={true}
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
       variant="actionItem"
     />
   </div>

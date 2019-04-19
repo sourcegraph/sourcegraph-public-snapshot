@@ -98,6 +98,10 @@
                   "label": {
                     "description": "The text label for this item.",
                     "type": "string"
+                  },
+                  "pressed": {
+                    "description": "An expression that, if given, should evaluate to a boolean value specifying whether the action item should be rendered as a pressed button.",
+                    "type": "string"
                   }
                 },
                 "type": "object"

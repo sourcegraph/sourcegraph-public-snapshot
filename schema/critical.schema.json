@@ -125,7 +125,12 @@
       "group": "Authentication"
     },
     "auth.disableUsernameChanges": {
-      "description": "Prevent users from changing their username after account creation.",
+      "description": "WARNING: This option has been removed in favor of `auth.enableUsernameChanges`. As of 3.3, it has no effect, and as of 3.4, it will be removed entirely.",
+      "type": "boolean",
+      "default": false
+    },
+    "auth.enableUsernameChanges": {
+      "description": "Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.",
       "type": "boolean",
       "default": false
     },

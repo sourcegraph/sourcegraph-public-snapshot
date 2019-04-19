@@ -16,8 +16,13 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
+echo "--- go build"
 for pkg in github.com/sourcegraph/sourcegraph/cmd/frontend; do
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
-docker build -f cmd/frontend/Dockerfile -t $IMAGE $OUTPUT
+echo "--- docker build $IMAGE"
+docker build -f cmd/frontend/Dockerfile -t $IMAGE $OUTPUT \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION

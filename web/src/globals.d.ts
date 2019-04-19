@@ -21,6 +21,8 @@ interface ImmutableUser {
     readonly UID: number
 }
 
+type DeployType = 'cluster' | 'docker-container' | 'dev'
+
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
@@ -95,10 +97,9 @@ interface SourcegraphContext {
     needServerRestart: boolean
 
     /**
-     * Whether the site is a Sourcegraph cluster deployment (e.g., to Kubernetes, not just
-     * sourcegraph/server in a single Docker container).
+     * The kind of deployment.
      */
-    isClusterDeployment: boolean
+    deployType: DeployType
 
     /** Whether signup is allowed on the site. */
     allowSignup: boolean
@@ -110,8 +111,23 @@ interface SourcegraphContext {
         authenticationURL?: string
     }[]
 
-    /** Whether the new update scheduler is enabled */
-    updateScheduler2Enabled: boolean
+    /** Custom branding for the homepage and search icon. */
+    branding?: {
+        /** The URL of the favicon to be used for your instance */
+        favicon?: string
+
+        /** Override style for light themes */
+        light?: BrandAssets
+        /** Override style for dark themes */
+        dark?: BrandAssets
+    }
+}
+
+interface BrandAssets {
+    /** The URL to the logo used on the homepage */
+    logo?: string
+    /** The URL to the symbol used as the search icon */
+    symbol?: string
 }
 
 /**

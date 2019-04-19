@@ -1,6 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { merge } from 'lodash'
+import H from 'history'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -10,14 +10,14 @@ import { RepoLink } from '../../components/RepoLink'
 import { Resizable } from '../../components/Resizable'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { SettingsCascadeProps } from '../../settings/settings'
-import { ErrorLike, isErrorLike } from '../../util/errors'
-import { asError } from '../../util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { parseRepoURI } from '../../util/url'
 import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 
 export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
+    location: H.Location
     /**
      * The higher-order observable that emits the locations.
      */
@@ -75,16 +75,10 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         locationProviderResults.pipe(
                             switchMap(locations =>
                                 locations.pipe(
+                                    map(result => ({ results: result || [], loading: true })),
                                     catchError((error): [ErrorLike] => [asError(error)]),
-                                    map(result => ({
-                                        locationsOrError: isErrorLike(result)
-                                            ? result
-                                            : { results: result || [], loading: true },
-                                    })),
-                                    startWith<Pick<State, 'locationsOrError'>>({
-                                        locationsOrError: { loading: true },
-                                    }),
-                                    tap(({ locationsOrError }) => {
+                                    startWith<State['locationsOrError']>({ results: undefined, loading: true }),
+                                    tap(locationsOrError => {
                                         this.props.extensionsController.services.context.data.next({
                                             ...this.props.extensionsController.services.context.data.value,
                                             'panel.locations.hasResults':
@@ -94,14 +88,19 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                 locationsOrError.results.length > 0,
                                         })
                                     }),
-                                    endWith({ locationsOrError: { loading: false } })
+                                    endWith<State['locationsOrError']>({ loading: false })
                                 )
                             )
                         )
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(old => merge({}, old, stateUpdate)),
+                    locationsOrError =>
+                        this.setState(old => ({
+                            locationsOrError: isErrorLike(locationsOrError)
+                                ? locationsOrError
+                                : { ...old.locationsOrError, ...locationsOrError },
+                        })),
                     error => console.error(error)
                 )
         )
@@ -243,11 +242,13 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     )}
                 <FileLocations
                     className="hierarchical-locations-view__content"
+                    location={this.props.location}
                     locations={of(visibleLocations)}
                     onSelect={this.props.onSelectLocation}
                     icon={RepositoryIcon}
                     isLightTheme={this.props.isLightTheme}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                    settingsCascade={this.props.settingsCascade}
                 />
             </div>
         )

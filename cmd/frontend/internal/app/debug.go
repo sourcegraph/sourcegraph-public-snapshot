@@ -34,7 +34,11 @@ func addDebugHandlers(r *mux.Router) {
 
 	index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, svc := range debugserver.Services {
-			fmt.Fprintf(w, `<a href="%s/">%s</a><br>`, svc.Name, svc.Name)
+			path := "/"
+			if svc.DefaultPath != "" {
+				path = svc.DefaultPath
+			}
+			fmt.Fprintf(w, `<a href="%s%s">%s</a><br>`, svc.Name, path, svc.Name)
 		}
 		fmt.Fprintf(w, `<a href="headers">headers</a><br>`)
 

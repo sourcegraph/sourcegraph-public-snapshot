@@ -5,7 +5,8 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -40,7 +41,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                     <div>{this.props.node.displayName}</div>
                     <div>
                         <Link
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-secondary btn-sm e2e-edit-external-service-button"
                             to={`/site-admin/external-services/${this.props.node.id}`}
                             data-tooltip="External service settings"
                         >
@@ -79,7 +80,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                 () => {
                     // Refresh site flags so that global site alerts
                     // reflect the latest configuration.
-                    refreshSiteFlags().subscribe(undefined, err => console.error(err))
+                    refreshSiteFlags().subscribe({ error: err => console.error(err) })
 
                     this.setState({ loading: false })
                     if (this.props.onDidUpdate) {
@@ -111,7 +112,8 @@ function deleteExternalService(externalService: GQL.ID): Observable<void> {
     )
 }
 
-interface Props extends RouteComponentProps<{}> {}
+interface Props extends RouteComponentProps<{}>, ActivationProps {}
+
 class FilteredExternalServiceConnection extends FilteredConnection<
     GQL.IExternalService,
     Pick<ExternalServiceNodeProps, 'onDidUpdate'>
@@ -127,6 +129,43 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
         eventLogger.logViewEvent('SiteAdminExternalServices')
     }
 
+    private completeConnectedCodeHostActivation = (externalServices: GQL.IExternalServiceConnection) => {
+        if (this.props.activation && externalServices.totalCount > 0) {
+            this.props.activation.update({ ConnectedCodeHost: true })
+        }
+    }
+
+    private queryExternalServices = (args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> =>
+        queryGraphQL(
+            gql`
+                query ExternalServices($first: Int) {
+                    externalServices(first: $first) {
+                        nodes {
+                            id
+                            kind
+                            displayName
+                            config
+                        }
+                        totalCount
+                        pageInfo {
+                            hasNextPage
+                        }
+                    }
+                }
+            `,
+            {
+                first: args.first,
+            }
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.externalServices || errors) {
+                    throw createAggregateError(errors)
+                }
+                return data.externalServices
+            }),
+            tap(externalServices => this.completeConnectedCodeHostActivation(externalServices))
+        )
+
     public render(): JSX.Element | null {
         const nodeProps: Pick<ExternalServiceNodeProps, 'onDidUpdate'> = {
             onDidUpdate: this.onDidUpdateExternalServices,
@@ -139,7 +178,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
                     <h2 className="mb-0">External services</h2>
                     <Link
                         className="btn btn-primary e2e-goto-add-external-service-page"
-                        to="/site-admin/external-services/add"
+                        to="/site-admin/external-services/new"
                     >
                         <AddIcon className="icon-inline" /> Add external service
                     </Link>
@@ -151,7 +190,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
                     className="list-group list-group-flush mt-3"
                     noun="external service"
                     pluralNoun="external services"
-                    queryConnection={queryExternalServices}
+                    queryConnection={this.queryExternalServices}
                     nodeComponent={ExternalServiceNode}
                     nodeComponentProps={nodeProps}
                     hideSearch={true}
@@ -165,35 +204,4 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
     }
 
     private onDidUpdateExternalServices = () => this.updates.next()
-}
-
-function queryExternalServices(args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> {
-    return queryGraphQL(
-        gql`
-            query ExternalServices($first: Int) {
-                externalServices(first: $first) {
-                    nodes {
-                        id
-                        kind
-                        displayName
-                        config
-                    }
-                    totalCount
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
-            }
-        `,
-        {
-            first: args.first,
-        }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.externalServices
-        })
-    )
 }

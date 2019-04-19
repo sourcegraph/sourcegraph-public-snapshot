@@ -27,6 +27,15 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Search"
     },
+    "search.largeFiles": {
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "group": "Search",
+      "examples": [["go.sum", "package-lock.json", "*.thrift"]]
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -37,22 +46,15 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
-        },
-        "updateScheduler2": {
-          "description": "Enables a new update scheduler algorithm",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
         }
       },
       "group": "Experimental",
       "hide": true
     },
     "corsOrigin": {
-      "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
+      "description": "Only required when using the Phabricator integration for Sourcegraph (https://docs.sourcegraph.com/integration/phabricator). This value is the space-separated list of allowed origins for cross-origin HTTP requests to Sourcegraph. Usually it contains the base URL for your Phabricator instance.\n\nPreviously, this value was also used for the GitHub, GitLab, etc., integrations. It is no longer necessary for those. You may remove this setting if you are not using the Phabricator integration.",
       "type": "string",
-      "default": "github.com",
-      "examples": ["github.com github-enterprise.example.com gitlab.com"],
+      "examples": ["https://my-phabricator.example.com"],
       "group": "Security"
     },
     "disableAutoGitUpdates": {
@@ -113,9 +115,9 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "maxReposToSearch": {
-      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
+      "description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
-      "default": 500,
+      "default": -1,
       "group": "Search"
     },
     "parentSourcegraph": {
@@ -152,6 +154,24 @@ const SiteSchemaJSON = `{
         { "allow": "none" }
       ],
       "group": "Security"
+    },
+    "branding": {
+      "description": "Customize Sourcegraph homepage logo and search icon.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "light": {
+          "$ref": "#/definitions/BrandAssets"
+        },
+        "dark": {
+          "$ref": "#/definitions/BrandAssets"
+        },
+        "favicon": {
+          "description": "The URL of the favicon to be used for your instance. We recommend using the following file format: ICO",
+          "type": "string",
+          "format": "uri"
+        }
+      }
     },
     "email.smtp": {
       "title": "SMTPServerConfig",
@@ -292,6 +312,23 @@ const SiteSchemaJSON = `{
       },
       "group": "Experimental",
       "hide": true
+    }
+  },
+  "definitions": {
+    "BrandAssets": {
+      "type": "object",
+      "properties": {
+        "logo": {
+          "description": "The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG",
+          "type": "string",
+          "format": "uri"
+        },
+        "symbol": {
+          "description": "The URL to the symbol used as the search icon. Recommended size: 24x24px. We recommend using the following file formats: SVG, PNG, ICO",
+          "type": "string",
+          "format": "uri"
+        }
+      }
     }
   }
 }

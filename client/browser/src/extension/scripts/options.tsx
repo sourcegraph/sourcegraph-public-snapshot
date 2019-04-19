@@ -7,9 +7,10 @@ import { render } from 'react-dom'
 import { noop, Subscription } from 'rxjs'
 import storage from '../../browser/storage'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
+import { OptionsMenuProps } from '../../libs/options/Menu'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { initSentry } from '../../libs/sentry'
-import { fetchCurrentUser, fetchSite } from '../../shared/backend/server'
+import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -17,7 +18,10 @@ assertEnv('OPTIONS')
 
 initSentry('options')
 
-type State = Pick<FeatureFlags, 'allowErrorReporting'> & { sourcegraphURL: string | null }
+type State = Pick<
+    FeatureFlags,
+    'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion'
+> & { sourcegraphURL: string | null }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(k => key === k)
@@ -31,16 +35,38 @@ const toggleFeatureFlag = (key: string) => {
     }
 }
 
+const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStatus']> => {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+    if (tabs.length > 1) {
+        throw new Error('Querying for the currently active tab returned more than one result')
+    }
+    const { url } = tabs[0]
+    if (!url) {
+        throw new Error('Currently active tab has no URL')
+    }
+    const { host, protocol } = new URL(url)
+    const hasPermissions = await browser.permissions.contains({
+        origins: [`${protocol}//${host}/*`],
+    })
+    return { host, protocol, hasPermissions }
+}
 class Options extends React.Component<{}, State> {
-    public state: State = { sourcegraphURL: null, allowErrorReporting: false }
+    public state: State = {
+        sourcegraphURL: null,
+        allowErrorReporting: false,
+        experimentalLinkPreviews: false,
+        experimentalTextFieldCompletion: false,
+    }
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            storage.observeSync('featureFlags').subscribe(({ allowErrorReporting }) => {
-                this.setState({ allowErrorReporting })
-            })
+            storage
+                .observeSync('featureFlags')
+                .subscribe(({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion }) => {
+                    this.setState({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion })
+                })
         )
 
         this.subscriptions.add(
@@ -63,14 +89,26 @@ class Options extends React.Component<{}, State> {
             sourcegraphURL: this.state.sourcegraphURL,
 
             ensureValidSite: fetchSite,
-            fetchCurrentUser,
+            fetchCurrentTabStatus,
+            hasPermissions: url =>
+                browser.permissions.contains({
+                    origins: [`${url}/*`],
+                }),
+            requestPermissions: url =>
+                browser.permissions.request({
+                    origins: [`${url}/*`],
+                }),
 
             setSourcegraphURL: (url: string) => {
                 storage.setSync({ sourcegraphURL: url })
             },
 
             toggleFeatureFlag,
-            featureFlags: [{ key: 'allowErrorReporting', value: this.state.allowErrorReporting }],
+            featureFlags: [
+                { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
+                { key: 'experimentalLinkPreviews', value: this.state.experimentalLinkPreviews },
+                { key: 'experimentalTextFieldCompletion', value: this.state.experimentalTextFieldCompletion },
+            ],
         }
 
         return <OptionsContainer {...props} />

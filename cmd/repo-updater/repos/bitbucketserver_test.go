@@ -3,7 +3,6 @@ package repos
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -15,10 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var update = flag.Bool("update", false, "update golden files")
-
 func TestBitbucketServerRepoInfo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("test-fixtures", "bitbucketserver-repos.json"))
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +52,7 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			golden := filepath.Join("test-fixtures", "bitbucketserver-repos-"+name+".golden")
+			golden := filepath.Join("testdata", "bitbucketserver-repos-"+name+".golden")
 			if *update {
 				err := ioutil.WriteFile(golden, actual, 0644)
 				if err != nil {
@@ -93,8 +90,8 @@ func diff(b1, b2 []byte) (string, error) {
 	defer os.Remove(f2.Name())
 	defer f2.Close()
 
-	f1.Write(b1)
-	f2.Write(b2)
+	_, _ = f1.Write(b1)
+	_, _ = f2.Write(b2)
 
 	data, err := exec.Command("diff", "-u", f1.Name(), f2.Name()).CombinedOutput()
 	if len(data) > 0 {

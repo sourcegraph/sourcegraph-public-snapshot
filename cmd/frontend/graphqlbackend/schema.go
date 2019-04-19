@@ -648,7 +648,7 @@ type Query {
     ): Repository
     # Lists all external services.
     externalServices(
-        # Returns the first n repositories from the list.
+        # Returns the first n external services from the list.
         first: Int
     ): ExternalServiceConnection!
     # List all repositories.
@@ -781,10 +781,24 @@ type Query {
     ): SurveyResponseConnection!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
+    # Queries which are for internal use only.
+    #
+    # FOR INTERNAL USE ONLY.
+    internal: InternalQuery!
     # Queries that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
+}
+
+# Queries which are for internal use only.
+type InternalQuery {
+    # Indicates that there are repositories which are managed via enable/disable state.
+    # This field will disappear in 3.4. See https://github.com/sourcegraph/sourcegraph/issues/2025
+    #
+    # Only site admins can query this field.
+    # FOR INTERNAL USE ONLY.
+    allowEnableDisable: Boolean!
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
@@ -950,6 +964,8 @@ type SavedQuery {
     description: String!
     # The query.
     query: String!
+    # DEPRECATED: Sourcegraph no longer shows saved searches on the homepage. This resolver will be removed in a future release.
+    #
     # Whether or not to show on the homepage.
     showOnHomepage: Boolean!
     # Whether or not to notify.
@@ -1130,6 +1146,11 @@ type Repository implements Node & GenericSearchResultInterface {
     # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
     # Phabricator, etc.).
     externalRepository: ExternalRepository
+    # Lists all external services which yield this repository.
+    externalServices(
+        # Returns the first n external services from the list.
+        first: Int
+    ): ExternalServiceConnection!
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
     # Information about the text search index for this repository, or null if text search indexing
@@ -1464,6 +1485,8 @@ type Symbol {
     url: String!
     # The canonical URL to this symbol (using an immutable revision specifier).
     canonicalURL: String!
+    # Whether or not the symbol is local to the file it's defined in.
+    fileLocal: Boolean!
 }
 
 # A location inside a resource (in a repository at a specific commit).
@@ -1724,6 +1747,9 @@ type GitCommit implements Node {
         first: Int
         # Return symbols matching the query.
         query: String
+        # A list of regular expressions, all of which must match all
+        # file paths returned in the list.
+        includePatterns: [String!]
     ): SymbolConnection!
 }
 
@@ -2686,6 +2712,9 @@ type Site implements SettingsSubject {
     updateCheck: UpdateCheck!
     # Whether the site needs to be configured to add repositories.
     needsRepositoryConfiguration: Boolean!
+    # Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
+    # Only applies if the site does not have a valid license.
+    freeUsersExceeded: Boolean!
     # Whether the site has zero access-enabled repositories.
     noRepositoriesEnabled: Boolean!
     # Alerts to display to the viewer.
@@ -2850,6 +2879,8 @@ type UserUsageStatistics {
     pageViews: Int!
     # The number of code intelligence actions that the user has performed.
     codeIntelligenceActions: Int!
+    # The number of find-refs actions that the user has performed.
+    findReferencesActions: Int!
     # The last time the user was active (any action, any platform).
     lastActiveTime: String
     # The last time the user was active on a code host integration.
@@ -2864,6 +2895,19 @@ enum UserEvent {
     CODEINTELREFS
     CODEINTELINTEGRATION
     CODEINTELINTEGRATIONREFS
+
+    # Product stages
+    STAGEMANAGE
+    STAGEPLAN
+    STAGECODE
+    STAGEREVIEW
+    STAGEVERIFY
+    STAGEPACKAGE
+    STAGEDEPLOY
+    STAGECONFIGURE
+    STAGEMONITOR
+    STAGESECURE
+    STAGEAUTOMATE
 }
 
 # A period of time in which a set of users have been active.
@@ -2905,6 +2949,34 @@ type SiteUsagePeriod {
     # The count of registered users that have been active on a code host integration.
     # Excludes anonymous users.
     integrationUserCount: Int!
+    # The user count of Sourcegraph products at each stage of the software development lifecycle.
+    stages: SiteUsageStages
+}
+
+# Aggregate site usage of features by software development lifecycle stage.
+type SiteUsageStages {
+    # The number of users using management stage features.
+    manage: Int!
+    # The number of users using planning stage features.
+    plan: Int!
+    # The number of users using coding stage features.
+    code: Int!
+    # The number of users using review stage features.
+    review: Int!
+    # The number of users using verification stage features.
+    verify: Int!
+    # The number of users using packaging stage features.
+    package: Int!
+    # The number of users using deployment stage features.
+    deploy: Int!
+    # The number of users using configuration stage features.
+    configure: Int!
+    # The number of users using monitoring stage features.
+    monitor: Int!
+    # The number of users using security stage features.
+    secure: Int!
+    # The number of users using automation stage features.
+    automate: Int!
 }
 
 # A deployment configuration.
@@ -2964,6 +3036,9 @@ type ProductSubscriptionStatus {
     # The number of users allowed. If there is a license, this is equal to ProductLicenseInfo.userCount. Otherwise,
     # it is the user limit for instances without a license, or null if there is no limit.
     maximumAllowedUserCount: Int
+    # The number of free users allowed on a site without a license before a warning is shown to all users, or null
+    # if a valid license is in use.
+    noLicenseWarningUserCount: Int
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
 }

@@ -14,10 +14,17 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     {
         // Allow unauthenticated viewers to view the "new subscription" page to price out a subscription (instead
         // of just dumping them on a sign-in page).
-        path: '/user/subscriptions/new',
+        path: '/subscriptions/new',
         exact: true,
         render: props => <NewProductSubscriptionPageOrRedirectUser {...props} />,
     },
+    {
+        // Redirect from old /user/subscriptions/new -> /subscriptions/new.
+        path: '/user/subscriptions/new',
+        exact: true,
+        render: () => <Redirect to="/subscriptions/new" />,
+    },
+
     {
         path: '/start',
         render: () => <Redirect to="/welcome" />,

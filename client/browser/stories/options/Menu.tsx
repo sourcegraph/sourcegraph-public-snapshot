@@ -19,7 +19,7 @@ storiesOf('Options - OptionsMenu', module)
                 onSettingsClick={action('Settings clicked')}
                 featureFlags={[]}
                 isSettingsOpen={false}
-                toggleFeatureFlag={action('Feture flag toggled')}
+                toggleFeatureFlag={action('Feature flag toggled')}
             />
         </div>
     ))
@@ -33,7 +33,7 @@ storiesOf('Options - OptionsMenu', module)
                 onURLSubmit={action('New Sourcegraph URL submitted')}
                 onSettingsClick={action('Settings clicked')}
                 isSettingsOpen={true}
-                toggleFeatureFlag={action('Feture flag toggled')}
+                toggleFeatureFlag={action('Feature flag toggled')}
             />
         </div>
     ))

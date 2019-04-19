@@ -32,16 +32,6 @@ export function saveScreenshotsUponFailuresAndClosePage(
                     .catch()
                     .then(() => takeScreenshot(getPage(), repoRootDir, screenshotDir, result.fullName))
             }
-
-            if (result.status !== 'disabled') {
-                // Always close page when done with screenshot.
-                promise = promise.catch().then(async () => {
-                    const page = getPage()
-                    if (page && !page.isClosed()) {
-                        await page.close()
-                    }
-                })
-            }
         },
     })
 }

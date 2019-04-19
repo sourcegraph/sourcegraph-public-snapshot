@@ -321,13 +321,13 @@ func (c *awsCodeCommitConnection) authenticatedRemoteURL(repo *awscodecommit.Rep
 
 func makeHMAC(key []byte, data []byte) []byte {
 	hash := hmac.New(sha256.New, key)
-	hash.Write(data)
+	_, _ = hash.Write(data)
 	return hash.Sum(nil)
 }
 
 func makeSHA256(data []byte) []byte {
 	hash := sha256.New()
-	hash.Write(data)
+	_, _ = hash.Write(data)
 	return hash.Sum(nil)
 }
 

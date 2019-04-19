@@ -4,7 +4,7 @@ import * as React from 'react'
 import Popover, { PopoverProps } from 'reactstrap/lib/Popover'
 import { LinkOrSpan } from './LinkOrSpan'
 
-interface Props {
+interface PopoverButtonProps {
     /**
      * An additional class name to set on the root element.
      */
@@ -45,7 +45,7 @@ interface Props {
     open?: boolean
 }
 
-interface State {
+interface PopoverButtonState {
     /** Whether the popover is open. */
     open: boolean
 }
@@ -53,13 +53,13 @@ interface State {
 /**
  * A button that toggles the visibility of a popover.
  */
-export class PopoverButton extends React.PureComponent<Props, State> {
-    public state: State = { open: false }
+export class PopoverButton extends React.PureComponent<PopoverButtonProps, PopoverButtonState> {
+    public state: PopoverButtonState = { open: false }
 
     private rootRef: HTMLElement | null = null
     private popoverRef: HTMLElement | null = null
 
-    public componentWillReceiveProps(props: Props): void {
+    public componentWillReceiveProps(props: PopoverButtonProps): void {
         if (props.hideOnChange !== this.props.hideOnChange) {
             this.hide()
         }
@@ -81,6 +81,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         const popoverAnchor = this.rootRef && (
             <Popover
                 placement={this.props.placement || 'auto-start'}
+                hideArrow={true}
                 isOpen={isOpen}
                 toggle={this.toggleVisibility}
                 target={this.rootRef}

@@ -1,11 +1,15 @@
 .overview-list {
     list-style-type: none;
     padding: 0;
-    margin: -0.75rem -0.5rem;
+    margin: 0 -0.5rem;
 }
-
+a.overview-item {
+    color: $color-text;
+    .overview-item__header {
+        color: $color-text;
+    }
+}
 .overview-item {
-    padding: 0.5rem;
     margin: 0.75rem 0.5rem;
 
     display: flex;
@@ -13,9 +17,13 @@
     justify-content: space-between;
     align-items: center;
 
+    overflow: hidden;
+
     border: 1px solid #2b3750;
     border-radius: 0.125rem;
     position: relative;
+
+    transition: all 250ms ease;
 
     .icon-click-area {
         margin: 0;
@@ -33,10 +41,11 @@
     &__toggle-icon {
         cursor: pointer;
     }
-
     &__header {
+        padding: 0.5rem 0.5rem 0.5rem 1rem;
         font-size: 20px;
         white-space: nowrap;
+        text-decoration: none;
         &-link {
             color: $color-text;
             display: flex;
@@ -51,6 +60,7 @@
         }
     }
     &__actions {
+        padding-right: 1rem;
         padding-left: 0.75rem;
         margin: -0.25rem;
         display: flex;
@@ -66,49 +76,28 @@
     &__children {
         width: 100%;
     }
-
-    &__block {
-        .overview-item__header {
-            color: $color-text;
-        }
-        &:hover {
-            text-decoration: none;
-            .overview-item__header {
-                text-decoration: underline;
-                color: $color-text;
-            }
-        }
-
-        a {
-            .overview-item__header {
-                color: $color-text;
-            }
-
-            &:hover {
-                text-decoration: none;
-                .overview-item__header {
-                    text-decoration: underline;
-                }
-            }
-        }
+    &:not(.list):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px 2px rgba(13, 108, 255, 0.125);
     }
 }
 
 .theme-light {
     .overview-item {
         border-color: $color-light-border;
+        &:not(.list):hover {
+            box-shadow: 0 6px 10px 0 rgba(7, 61, 144, 0.05);
+        }
         &__header {
             &-link {
                 color: $color-light-text-1;
             }
         }
-        &__block {
-            .overview-item__header {
-                color: $color-light-text-1;
-            }
-            &:hover {
-                color: $color-light-text-1;
-            }
+    }
+    a.overview-item {
+        color: $color-light-text-1;
+        .overview-item__header {
+            color: $color-light-text-1;
         }
     }
 }

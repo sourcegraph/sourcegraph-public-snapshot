@@ -9,11 +9,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"sourcegraph.com/sourcegraph/go-diff/diff"
 )
 
 // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
@@ -50,7 +50,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 			return nil, err
 		}
 
-		commit, err := git.GetCommit(ctx, repo, commitID)
+		commit, err := git.GetCommit(ctx, repo, nil, commitID)
 		if err != nil {
 			return nil, err
 		}

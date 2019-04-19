@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { getExtensionVersionSync } from '../../browser/runtime'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
 import { OptionsMenu, OptionsMenuProps } from './Menu'
@@ -9,18 +8,20 @@ import { ConnectionErrors } from './ServerURLForm'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
-
     ensureValidSite: (url: string) => Observable<any>
-    fetchCurrentUser: (useToken: boolean) => Observable<GQL.IUser | undefined>
-
+    fetchCurrentTabStatus: () => Promise<OptionsMenuProps['currentTabStatus']>
+    hasPermissions: (url: string) => Promise<boolean>
+    requestPermissions: (url: string) => void
     setSourcegraphURL: (url: string) => void
-
     toggleFeatureFlag: (key: string) => void
     featureFlags: { key: string; value: boolean }[]
 }
 
 interface OptionsContainerState
-    extends Pick<OptionsMenuProps, 'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen'> {}
+    extends Pick<
+        OptionsMenuProps,
+        'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen' | 'urlHasPermissions' | 'currentTabStatus'
+    > {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
     private version = getExtensionVersionSync()
@@ -35,6 +36,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         this.state = {
             status: 'connecting',
             sourcegraphURL: props.sourcegraphURL,
+            urlHasPermissions: false,
             connectionError: undefined,
             isSettingsOpen: false,
         }
@@ -64,7 +66,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         )
 
         this.subscriptions.add(
-            fetchingSite.subscribe(res => {
+            fetchingSite.subscribe(async res => {
                 let url = ''
 
                 if (isErrorLike(res)) {
@@ -79,9 +81,19 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                     url = res
                 }
 
+                const urlHasPermissions = await props.hasPermissions(url)
+                this.setState({ urlHasPermissions })
+
                 props.setSourcegraphURL(url)
             })
         )
+
+        props
+            .fetchCurrentTabStatus()
+            .then(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
+            .catch(err => {
+                console.log('Error fetching current tab status', err)
+            })
     }
 
     public componentDidMount(): void {
@@ -105,6 +117,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 toggleFeatureFlag={this.props.toggleFeatureFlag}
                 featureFlags={this.props.featureFlags}
                 onSettingsClick={this.handleSettingsClick}
+                requestPermissions={this.props.requestPermissions}
             />
         )
     }

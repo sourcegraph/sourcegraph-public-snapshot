@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -60,10 +60,10 @@ type JSContext struct {
 	ShowOnboarding bool    `json:"showOnboarding"`
 	EmailEnabled   bool    `json:"emailEnabled"`
 
-	Critical            schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
-	LikelyDockerOnMac   bool                         `json:"likelyDockerOnMac"`
-	NeedServerRestart   bool                         `json:"needServerRestart"`
-	IsClusterDeployment bool                         `json:"isClusterDeployment"`
+	Critical          schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
+	LikelyDockerOnMac bool                         `json:"likelyDockerOnMac"`
+	NeedServerRestart bool                         `json:"needServerRestart"`
+	DeployType        string                       `json:"deployType"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
@@ -77,7 +77,7 @@ type JSContext struct {
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
-	UpdateScheduler2Enabled bool `json:"updateScheduler2Enabled"`
+	Branding *schema.Branding `json:"branding"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -114,7 +114,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	// Auth providers
 	var authProviders []authProviderInfo
-	for _, p := range auth.Providers() {
+	for _, p := range providers.Providers() {
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
@@ -150,12 +150,12 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),
 
-		ShowOnboarding:      showOnboarding,
-		EmailEnabled:        conf.CanSendEmail(),
-		Critical:            publicCriticalConfiguration(),
-		LikelyDockerOnMac:   likelyDockerOnMac(),
-		NeedServerRestart:   globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
-		IsClusterDeployment: conf.IsDeployTypeCluster(conf.DeployType()),
+		ShowOnboarding:    showOnboarding,
+		EmailEnabled:      conf.CanSendEmail(),
+		Critical:          publicCriticalConfiguration(),
+		LikelyDockerOnMac: likelyDockerOnMac(),
+		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
+		DeployType:        conf.DeployType(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
@@ -171,7 +171,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		AuthProviders: authProviders,
 
-		UpdateScheduler2Enabled: conf.UpdateScheduler2Enabled(),
+		Branding: conf.Branding(),
 	}
 }
 

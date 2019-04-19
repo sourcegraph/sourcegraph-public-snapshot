@@ -507,12 +507,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             .pipe(
                                 catchError(error => [asError(error)]),
                                 map(
-                                    c =>
-                                        ({
-                                            connectionOrError: c,
-                                            connectionQuery: query,
-                                            loading: false,
-                                        } as PartialStateUpdate)
+                                    (c): PartialStateUpdate => ({
+                                        connectionOrError: c,
+                                        connectionQuery: query,
+                                        loading: false,
+                                    })
                                 ),
                                 publishReplay<PartialStateUpdate>(),
                                 refCount()
@@ -627,7 +626,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
-            <div className={`e2e-filtered-connection ${compactnessClass} ${this.props.className || ''}`}>
+            <div
+                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${this.props.className ||
+                    ''}`}
+            >
                 {(!this.props.hideSearch || this.props.filters) && (
                     <Form className="filtered-connection__form" onSubmit={this.onSubmit}>
                         {!this.props.hideSearch && (
@@ -689,7 +691,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     />
                 )}
                 {this.state.loading && (
-                    <span className="e2e-filtered-connection__loader">
+                    <span className="filtered-connection__loader e2e-filtered-connection__loader">
                         <LoadingSpinner className="icon-inline" />
                     </span>
                 )}

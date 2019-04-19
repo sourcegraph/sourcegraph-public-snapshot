@@ -9,17 +9,104 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+## Changed
+
+### Removed
+
+### Fixed
+
+## 3.3.0
+
+### Added
+
+- In search queries, treat `foo(` as `foo\(` and `bar[` as `bar\[` rather than failing with an error message.
+- Enterprise admins can now customize the appearance of the homepage and search icon.
+- A new settings property `notices` allows showing custom informational messages on the homepage and at the top of each page. The `motd` property is deprecated and its value is automatically migrated to the new `notices` property.
+- The new `gitlab.exclude` setting in [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) allows you to exclude specific repositories matched by `gitlab.projectQuery` and `gitlab.projects` (so that they won't be synced).
+- The new `gitlab.projects` setting in [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) allows you to select specific repositories to be synced.
+- The new `bitbucketserver.exclude` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to exclude specific repositories matched by `bitbucketserver.repositoryQuery` and `bitbucketserver.repos` (so that they won't be synced).
+- The new `bitbucketserver.repos` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to select specific repositories to be synced.
+- The new required `bitbucketserver.repositoryQuery` setting in [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to use Bitbucket API repository search queries to select repos to be synced. Existing configurations will be migrate to have it set to `["?visibility=public", "?visibility=private"]` which is equivalent to the previous implicit behaviour that this setting supersedes.
+- "Quick configure" buttons for common actions have been added to the config editor for all external services.
+- "Quick configure" buttons for common actions have been added to the management console.
+- Site-admins now receive an alert every day for the seven days before their license key expires.
+- The user menu (in global nav) now lists the user's organizations.
+- All users on an instance now see a non-dismissable alert when when there's no license key in use and the limit of free user accounts is exceeded.
+- All users will see a dismissible warning about limited search performance and accuracy on when using the sourcegraph/server Docker image with more than 100 repositories enabled.
+
+### Changed
+
+- Indexed searches that time out more consistently report a timeout instead of erroneously saying "No results."
+- The symbols sidebar now only shows symbols defined in the current file or directory.
+- The dynamic filters on search results pages will now display `lang:` instead of `file:` filters for language/file-extension filter suggestions.
+- The default `github.repositoryQuery` of a [GitHub external service configuration](https://docs.sourcegraph.com/admin/external_service/github#configuration) has been changed to `["none"]`. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["affiliated", "public"]`).
+- The default `gitlab.projectQuery` of a [GitLab external service configuration](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) has been changed to `["none"]`. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["?membership=true"]`).
+- The default value of `maxReposToSearch` is now unlimited (was 500).
+- The default `github.repositoryQuery` of a [GitHub external service configuration](https://docs.sourcegraph.com/admin/external_service/github#configuration) has been changed to `["none"]` and is now a required field. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["affiliated", "public"]`).
+- The default `gitlab.projectQuery` of a [GitLab external service configuration](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) has been changed to `["none"]` and is now a required field. Existing configurations that had this field unset will be migrated to have the previous default explicitly set (`["?membership=true"]`).
+- The `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) is now **required**. This field is necessary to authenticate with the Bitbucket Server API with either `password` or `token`.
+- The settings and account pages for users and organizations are now combined into a single tab.
+
+### Removed
+
+- Removed the option to show saved searches on the Sourcegraph homepage.
+
+### Fixed
+
+- Fixed an issue where the site-admin repositories page `Cloning`, `Not Cloned`, `Needs Index` tabs were very slow on instances with thousands of repositories.
+- Fixed an issue where failing to syntax highlight a single file would take down the entire syntax highlighting service.
+
+## 3.2.2
+
+### Changed
+
+- When using an external Zoekt instance (specified via the `ZOEKT_HOST` environment variable), sourcegraph/server no longer spins up a redundant internal Zoekt instance.
+
+## 3.2.1
+
+### Fixed
+
+- Jaeger tracing, once enabled, can now be configured via standard [environment variables](https://github.com/jaegertracing/jaeger-client-go/blob/v2.14.0/README.md#environment-variables).
+- Fixed an issue where some search and zoekt errors would not be logged.
+
+## 3.2.0
+
+### Added
+
 - Sourcegraph can now automatically use the system's theme.
   To enable, open the user menu in the top right and make sure the theme dropdown is set to "System".
   This is currently supported on macOS Mojave with Safari Technology Preview 68 and later.
+- The `github.exclude` setting was added to the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) to allow excluding repositories yielded by `github.repos` or `github.repositoryQuery` from being synced.
 
 ### Changed
 
 - Symbols search is much faster now. After the initial indexing, you can expect code intelligence to be nearly instant no matter the size of your repository.
+- Massively reduced the number of code host API requests Sourcegraph performs, which caused rate limiting issues such as slow search result loading to appear.
+- The [`corsOrigin`](https://docs.sourcegraph.com/admin/config/site_config) site config property is no longer needed for integration with GitHub, GitLab, etc., via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension). Only the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension) requires it.
 
 ### Fixed
 
+- Fixed a bug where adding a search scope that adds a `repogroup` filter would cause invalid queries if `repogroup:sample` was already part of the query.
+- An issue where errors during displaying search results would not be displayed.
+
 ### Removed
+
+- The `"updateScheduler2"` experiment is now the default and it's no longer possible to configure.
+
+## 3.1.2
+
+### Added
+
+- The `search.contextLines` setting was added to allow configuration of the number of lines of context to be displayed around search results.
+
+### Changed
+
+- Massively reduced the number of code host API requests Sourcegraph performs, which caused rate limiting issues such as slow search result loading to appear.
+- Improved logging in various situations where Sourcegraph would potentially hit code host API rate limits.
+
+### Fixed
+
+- Fixed an issue where search results loading slowly would display a `Cannot read property "lastChild" of undefined` error.
 
 ## 3.1.1
 
@@ -129,7 +216,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migrat
 - The **Info** panel was removed. The information it presented can be viewed in the hover.
 - The top-level `repos.list` site configuration was removed in favour of each code-host's equivalent options,
   now configured via the new _External Services UI_ available at `/site-admin/external-services`. Equivalent options in code hosts configuration:
-  - Github via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
+  - GitHub via [`github.repos`](https://docs.sourcegraph.com/admin/site_config/all#repos-array)
   - Gitlab via [`gitlab.projectQuery`](https://docs.sourcegraph.com/admin/site_config/all#projectquery-array)
   - Phabricator via [`phabricator.repos`](https://docs.sourcegraph.com/admin/site_config/all#phabricator-array)
   - [Other external services](https://docs.sourcegraph.com/admin/repo/add_from_other_external_services)
@@ -781,7 +868,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migrat
 
 ### Phabricator Integration Changes
 
-We now display a "View on Phabricator" link rather than a "View on other code host" link if you are using Phabricator and hosting on Github or another code host with a UI. Commit links also will point to Phabricator.
+We now display a "View on Phabricator" link rather than a "View on other code host" link if you are using Phabricator and hosting on GitHub or another code host with a UI. Commit links also will point to Phabricator.
 
 ### Improvements to SAML authentication
 

@@ -5,6 +5,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -16,6 +17,7 @@ import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
 import { ThemeProps } from '../theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
@@ -30,7 +32,9 @@ export interface RepoRevContainerContext
         SettingsCascadeProps,
         ExtensionsControllerProps,
         PlatformContextProps,
-        ThemeProps {
+        ThemeProps,
+        EventLoggerProps,
+        ActivationProps {
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
@@ -45,8 +49,10 @@ interface RepoRevContainerProps
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
+        EventLoggerProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        ActivationProps {
     routes: ReadonlyArray<RepoRevContainerRoute>
     repo: GQL.IRepository
     rev: string
@@ -192,6 +198,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
             isLightTheme: this.props.isLightTheme,
+            telemetryService: this.props.telemetryService,
+            activation: this.props.activation,
             repo: this.props.repo,
             repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,
             resolvedRev: this.props.resolvedRevOrError,

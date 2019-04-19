@@ -16,6 +16,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
@@ -134,8 +135,8 @@ func TestMiddleware(t *testing.T) {
 		},
 	}
 	defer func() { mockGetProviderValue = nil }()
-	auth.MockProviders = []auth.Provider{mockGetProviderValue}
-	defer func() { auth.MockProviders = nil }()
+	providers.MockProviders = []providers.Provider{mockGetProviderValue}
+	defer func() { providers.MockProviders = nil }()
 
 	oidcIDServer, emailPtr := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
 	defer oidcIDServer.Close()
@@ -313,8 +314,8 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 		},
 	}
 	defer func() { mockGetProviderValue = nil }()
-	auth.MockProviders = []auth.Provider{mockGetProviderValue}
-	defer func() { auth.MockProviders = nil }()
+	providers.MockProviders = []providers.Provider{mockGetProviderValue}
+	defer func() { providers.MockProviders = nil }()
 
 	oidcIDServer, _ := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
 	defer oidcIDServer.Close()

@@ -1,5 +1,8 @@
+// CSS for components shared with the webapp
+
 @import '../../../shared/src/actions/ActionItem';
 @import '../../../shared/src/commandPalette/CommandList';
+@import '../../../shared/src/components/completion/CompletionWidget.scss';
 @import '../../../shared/src/components/PopoverButton';
 @import '../../../shared/src/components/Toggle';
 @import '../../../shared/src/extensions/ExtensionStatus';
@@ -80,44 +83,12 @@ $body-color-dark: #f2f4f8;
     --extension-card-bg: #{lighten($color-light-bg-2, 2.5%)};
     --dropdown-border-color: #{$color-light-border};
 }
-.popover {
-    max-width: unset !important;
-}
-.nav-link {
-    box-shadow: none !important;
-    color: var(--body-color);
-    display: flex;
-    align-items: center;
-    padding: 0.3rem 0.5rem;
-    .icon-inline {
-        margin-right: 4px;
-    }
-}
 .toggle--off::-webkit-slider-runnable-track {
     color: #eee;
 }
 .toggle--off::-webkit-slider-thumb {
     background-color: black;
     opacity: 0.2;
-}
-// Formats an icon so that it appears inline in the text
-// with height matching the text
-.icon-inline {
-    // SVGs already include padding to account for text baseline,
-    // so align with the bottom of the text
-    vertical-align: bottom;
-    display: inline-flex;
-    align-items: center;
-}
-.nav img.icon-inline {
-    // TODO find a better way to scale icons that is not proportional to the font size
-    // 14px font size -> 20px icon size
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    width: (20em / 14);
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    height: (20em / 14);
-    // Match color of the text
-    fill: currentColor;
 }
 
 .configured-extensions-list {

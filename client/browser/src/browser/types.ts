@@ -1,8 +1,8 @@
-export interface RepoLocations {
+interface RepoLocations {
     [key: string]: string
 }
 
-export interface PhabricatorMapping {
+interface PhabricatorMapping {
     callsign: string
     path: string
 }
@@ -11,13 +11,6 @@ export interface PhabricatorMapping {
  * The feature flags available.
  */
 export interface FeatureFlags {
-    /**
-     * Whether or not to render [Mermaid](https://mermaidjs.github.io/) graphs
-     * in markdown files viewed on GitHub.
-     *
-     * @duration permanent
-     */
-    renderMermaidGraphsEnabled: boolean
     /**
      * Whether or not to use the new inject method for code intelligence.
      *
@@ -37,13 +30,24 @@ export interface FeatureFlags {
      * @duration permanent
      */
     allowErrorReporting: boolean
+
+    /**
+     * Support link previews from extensions in content views (such as GitHub issues).
+     */
+    experimentalLinkPreviews: boolean
+
+    /**
+     * Support completion in text fields (such as on GitHub issues).
+     */
+    experimentalTextFieldCompletion: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
     newInject: false,
-    renderMermaidGraphsEnabled: true,
     inlineSymbolSearchEnabled: true,
     allowErrorReporting: false,
+    experimentalLinkPreviews: false,
+    experimentalTextFieldCompletion: false,
 }
 
 // TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by

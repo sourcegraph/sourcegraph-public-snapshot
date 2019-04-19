@@ -1,8 +1,10 @@
 import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { ReplaySubject, Unsubscribable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { isEqual, omit } from 'lodash'
+import { combineLatest, from, of, ReplaySubject, Unsubscribable } from 'rxjs'
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'
-import { ContributableViewContainer, TextDocumentPositionParams } from '../../protocol'
+import { ContributableViewContainer } from '../../protocol'
+import { EditorService, getActiveCodeEditorPosition } from '../services/editorService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { PanelViewWithComponent, ViewProviderRegistry } from '../services/view'
 
@@ -24,7 +26,8 @@ export class ClientViews implements ClientViewsAPI {
 
     constructor(
         private viewRegistry: ViewProviderRegistry,
-        private textDocumentLocations: TextDocumentLocationProviderIDRegistry
+        private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
+        private editorService: EditorService
     ) {}
 
     public $registerPanelViewProvider(provider: { id: string }): PanelUpdater {
@@ -33,19 +36,40 @@ export class ClientViews implements ClientViewsAPI {
         const panelView = new ReplaySubject<PanelViewData>(1)
         const registryUnsubscribable = this.viewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
-            panelView.pipe(
-                map(
-                    ({ title, content, priority, component }) =>
-                        ({
-                            title,
-                            content,
-                            priority,
-                            locationProvider: component
-                                ? (params: TextDocumentPositionParams) =>
-                                      this.textDocumentLocations.getLocations(component.locationProvider, params)
-                                : undefined,
-                        } as PanelViewWithComponent)
+            combineLatest(
+                panelView.pipe(
+                    map(data => omit(data, 'component')),
+                    distinctUntilChanged((x, y) => isEqual(x, y))
+                ),
+                panelView.pipe(
+                    map(({ component }) => component),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    map(component => {
+                        if (!component) {
+                            return undefined
+                        }
+
+                        return from(this.editorService.editors).pipe(
+                            switchMap(editors => {
+                                const params = getActiveCodeEditorPosition(editors)
+                                if (!params) {
+                                    return of(of(null))
+                                }
+                                return this.textDocumentLocations.getLocations(component.locationProvider, params)
+                            })
+                        )
+                    })
                 )
+            ).pipe(
+                map(([{ title, content, priority }, locationProvider]) => {
+                    const panelView: PanelViewWithComponent = {
+                        title,
+                        content,
+                        priority,
+                        locationProvider,
+                    }
+                    return panelView
+                })
             )
         )
         return proxyValue({

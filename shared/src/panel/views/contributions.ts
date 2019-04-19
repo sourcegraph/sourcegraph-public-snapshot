@@ -4,10 +4,6 @@ import { ExtensionsControllerProps } from '../../extensions/controller'
 export function registerPanelToolbarContributions({
     extensionsController,
 }: ExtensionsControllerProps<'services'>): Unsubscribable {
-    const isLocationsPanelView = ['def', 'references', 'impl', 'typedef']
-        .map(id => `(panel.activeView.id == "${id}")`) // must be explicit about operator precedence
-        .join(' || ')
-
     return extensionsController.services.contribution.registerContributions({
         contributions: {
             actions: [
@@ -31,7 +27,7 @@ export function registerPanelToolbarContributions({
                 'panel/toolbar': [
                     {
                         action: 'panel.locations.groupByFile',
-                        when: `panel.locations.hasResults && (${isLocationsPanelView})`,
+                        when: `panel.locations.hasResults && panel.activeView.hasLocations`,
                     },
                 ],
             },

@@ -14,11 +14,11 @@
     "release:ff": "./scripts/release-ff.sh",
     "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o app/gqlschema.d.ts",
     "lint": "yarn run tslint && yarn run stylelint",
-    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json 'src/**/*.ts?(x)'",
+    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json './**/*.ts?(x)'",
     "stylelint": "stylelint 'app/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "test": "jest --testPathIgnorePatterns e2e",
-    "test-e2e": "cross-env OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ jest --coverage=false e2e",
+    "test-e2e": "jest --coverage=false e2e",
     "storybook": "start-storybook -s ./src/extension/assets -c ./config/storybook -p 6006",
     "build-storybook": "build-storybook -c ./config/storybook"
   },

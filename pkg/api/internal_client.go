@@ -11,12 +11,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
@@ -28,20 +26,9 @@ type internalClient struct {
 
 var InternalClient = &internalClient{URL: "http://" + frontendInternal}
 
-// WaitForFrontend should be called by services that intend to wait for the
-// frontend to start. It uses a 5s timeout with the given context, and logs an
-// error if it fails.
-func WaitForFrontend(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	if err := InternalClient.RetryPingUntilAvailable(ctx); err != nil {
-		log15.Warn("frontend not available at startup (will periodically try to reconnect)", "err", err)
-	}
-}
-
-// RetryPingUntilAvailable retries a noop request to the internal API until it is able to reach
-// the endpoint, indicating that the endpoint is available.
-func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
+// WaitForFrontend retries a noop request to the internal API until it is able to reach
+// the endpoint, indicating that the frontend is available.
+func (c *internalClient) WaitForFrontend(ctx context.Context) error {
 	ping := func(ctx context.Context) error {
 		resp, err := ctxhttp.Get(ctx, nil, c.URL+"/.internal/ping")
 		if err != nil {
@@ -91,12 +78,11 @@ type SavedQueryIDSpec struct {
 // ConfigSavedQuery is the JSON shape of a saved query entry in the JSON configuration
 // (i.e., an entry in the {"search.savedQueries": [...]} array).
 type ConfigSavedQuery struct {
-	Key            string `json:"key,omitempty"`
-	Description    string `json:"description"`
-	Query          string `json:"query"`
-	ShowOnHomepage bool   `json:"showOnHomepage"`
-	Notify         bool   `json:"notify,omitempty"`
-	NotifySlack    bool   `json:"notifySlack,omitempty"`
+	Key         string `json:"key,omitempty"`
+	Description string `json:"description"`
+	Query       string `json:"query"`
+	Notify      bool   `json:"notify,omitempty"`
+	NotifySlack bool   `json:"notifySlack,omitempty"`
 }
 
 func (sq ConfigSavedQuery) Equals(other ConfigSavedQuery) bool {
@@ -295,24 +281,6 @@ func (c *internalClient) ReposGetByName(ctx context.Context, repoName RepoName) 
 		return nil, err
 	}
 	return &repo, nil
-}
-
-func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
-	var inv inventory.Inventory
-	err := c.postInternal(ctx, "repos/inventory-uncached", ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID}, &inv)
-	if err != nil {
-		return nil, err
-	}
-	return &inv, nil
-}
-
-func (c *internalClient) ReposGetInventory(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
-	var inv inventory.Inventory
-	err := c.postInternal(ctx, "repos/inventory", ReposGetInventoryRequest{Repo: repo, CommitID: commitID}, &inv)
-	if err != nil {
-		return nil, err
-	}
-	return &inv, nil
 }
 
 func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoName, callsign, url string) error {

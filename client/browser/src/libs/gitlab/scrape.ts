@@ -12,7 +12,7 @@ export enum GitLabPageKind {
 /**
  * General information that can be found on any GitLab page that we care about. (i.e. has code)
  */
-export interface GitLabInfo {
+interface GitLabInfo {
     pageKind: GitLabPageKind
 
     owner: string
@@ -24,7 +24,7 @@ export interface GitLabInfo {
 /**
  * Information about single file pages.
  */
-export interface GitLabFileInfo extends Pick<GitLabInfo, 'repoName'> {
+interface GitLabFileInfo extends Pick<GitLabInfo, 'repoName'> {
     filePath: string
     rev: string
 }
@@ -157,7 +157,7 @@ export function getHeadCommitIDFromCodeView(codeView: HTMLElement): FileInfo['co
         throw buildFileError('no-commit-sha')
     }
 
-    const commitAnchor = commitSHA.closest('a')! as HTMLAnchorElement
+    const commitAnchor = commitSHA.closest('a')!
     const revMatch = new URL(commitAnchor.href).pathname.match(/blob\/(.*?)\//)
     if (!revMatch) {
         throw new Error('Unable to determine head revision from code view')

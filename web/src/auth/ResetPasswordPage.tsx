@@ -224,7 +224,7 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
             if (searchParams.has('code') || searchParams.has('userID')) {
                 const code = searchParams.get('code')
                 const userID = parseInt(searchParams.get('userID') || '', 10)
-                if (code && typeof userID === 'number' && !isNaN(userID)) {
+                if (code && !isNaN(userID)) {
                     body = <ResetPasswordCodeForm code={code} userID={userID} />
                 } else {
                     body = <div className="alert alert-danger">The password reset link you followed is invalid.</div>

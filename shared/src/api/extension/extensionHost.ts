@@ -3,9 +3,11 @@ import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
+import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
+import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
@@ -138,6 +140,7 @@ function createExtensionAPI(
     const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
+    const content = new ExtContent(proxy.content)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -152,7 +155,14 @@ function createExtensionAPI(
     }
 
     // Expose the extension API to extensions
-    const extensionAPI: typeof sourcegraph = {
+    const extensionAPI: typeof sourcegraph & {
+        // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
+        // noops with a log message), to avoid completely breaking extensions that use them.
+        languages: {
+            registerTypeDefinitionProvider: any
+            registerImplementationProvider: any
+        }
+    } = {
         URI: URL,
         Position,
         Range,
@@ -167,11 +177,11 @@ function createExtensionAPI(
             PlainText: 'plaintext' as sourcegraph.MarkupKind.PlainText,
             Markdown: 'markdown' as sourcegraph.MarkupKind.Markdown,
         },
-
+        NotificationType,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
-                return windows.getActive()
+                return windows.activeWindow
             },
             get windows(): sourcegraph.Window[] {
                 return windows.getAll()
@@ -207,15 +217,20 @@ function createExtensionAPI(
                 provider: sourcegraph.DefinitionProvider
             ) => languageFeatures.registerDefinitionProvider(selector, provider),
 
-            registerTypeDefinitionProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.TypeDefinitionProvider
-            ) => languageFeatures.registerTypeDefinitionProvider(selector, provider),
-
-            registerImplementationProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.ImplementationProvider
-            ) => languageFeatures.registerImplementationProvider(selector, provider),
+            // These were removed, but keep them here so that calls from old extensions do not throw
+            // an exception and completely break.
+            registerTypeDefinitionProvider: () => {
+                console.warn(
+                    'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
+                )
+                return { unsubscribe: () => void 0 }
+            },
+            registerImplementationProvider: () => {
+                console.warn(
+                    'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
+                )
+                return { unsubscribe: () => void 0 }
+            },
 
             registerReferenceProvider: (
                 selector: sourcegraph.DocumentSelector,
@@ -227,6 +242,11 @@ function createExtensionAPI(
                 selector: sourcegraph.DocumentSelector,
                 provider: sourcegraph.LocationProvider
             ) => languageFeatures.registerLocationProvider(id, selector, provider),
+
+            registerCompletionItemProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.CompletionItemProvider
+            ) => languageFeatures.registerCompletionItemProvider(selector, provider),
         },
 
         search: {
@@ -239,6 +259,11 @@ function createExtensionAPI(
                 commands.registerCommand({ command, callback }),
 
             executeCommand: (command: string, ...args: any[]) => commands.executeCommand(command, args),
+        },
+
+        content: {
+            registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
+                content.registerLinkPreviewProvider(urlMatchPattern, provider),
         },
 
         internal: {

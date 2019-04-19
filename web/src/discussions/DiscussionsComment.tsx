@@ -8,22 +8,21 @@ import SecurityLockIcon from 'mdi-react/SecurityLockIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
+import { WithLinkPreviews } from '../../../shared/src/components/linkPreviews/WithLinkPreviews'
 import { Markdown } from '../../../shared/src/components/Markdown'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError } from '../../../shared/src/util/errors'
+import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'
 import { Timestamp } from '../components/time/Timestamp'
+import { setElementTooltip } from '../components/tooltip/Tooltip'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     comment: GQL.IDiscussionComment
     threadID: GQL.ID
     location: H.Location
-
-    /**
-     * Whether or not the user is a site administrator.
-     */
-    isSiteAdmin: boolean
 
     /**
      * When specified, a report icon will be displayed inline and this function
@@ -62,7 +61,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
-        const { location, comment, isSiteAdmin, onReport, onClearReports, onDelete } = this.props
+        const { location, comment, onReport, onClearReports, onDelete } = this.props
         const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.id
 
         // TODO(slimsag:discussions): ASAP: markdown links, headings, etc lead to #
@@ -109,7 +108,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                 <FlagVariantIcon className="icon-inline" />
                             </button>
                         )}
-                        {isSiteAdmin && (
+                        {(comment.canClearReports || comment.reports.length > 0 || comment.canDelete) && (
                             <span className="discussions-comment__admin">
                                 <SecurityLockIcon className="icon-inline icon-sm" data-tooltip="Admin area" />
                                 {comment.reports.length > 0 && (
@@ -145,7 +144,14 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                     </span>
                 </div>
                 <div className="discussions-comment__content">
-                    <Markdown dangerousInnerHTML={comment.html} />
+                    <WithLinkPreviews
+                        dangerousInnerHTML={comment.html}
+                        extensionsController={this.props.extensionsController}
+                        setElementTooltip={setElementTooltip}
+                        linkPreviewContentClass={LINK_PREVIEW_CLASS}
+                    >
+                        {props => <Markdown {...props} />}
+                    </WithLinkPreviews>
                 </div>
             </div>
         )
@@ -156,8 +162,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
             return
         }
         eventLogger.log('ShareCommentButtonClicked')
-        event.preventDefault()
-        copy(this.props.comment.inlineURL!) // ! because this method is only called when inlineURL exists
+        copy(window.context.externalURL + this.props.comment.inlineURL!) // ! because this method is only called when inlineURL exists
         this.setState({ copiedLink: true })
         setTimeout(() => {
             this.setState({ copiedLink: false })

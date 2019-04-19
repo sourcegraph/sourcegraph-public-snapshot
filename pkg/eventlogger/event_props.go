@@ -1,6 +1,8 @@
 package eventlogger
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // Payload represents context about a user event to be tracked
 type Payload struct {
@@ -50,4 +52,11 @@ type Event struct {
 type Context struct {
 	EventLabel string          `json:"event_label"`
 	Backend    json.RawMessage `json:"backend,omitempty"`
+}
+
+// TelemetryRequest represents a request to log telemetry.
+type TelemetryRequest struct {
+	UserID     int32
+	EventLabel string
+	Payload    *Payload
 }

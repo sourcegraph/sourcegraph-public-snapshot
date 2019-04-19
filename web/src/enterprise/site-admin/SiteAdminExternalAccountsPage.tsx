@@ -14,7 +14,7 @@ import {
     externalAccountFragment,
     ExternalAccountNode,
     ExternalAccountNodeProps,
-} from '../user/account/ExternalAccountNode'
+} from '../user/settings/ExternalAccountNode'
 
 interface Props extends RouteComponentProps<{}> {}
 

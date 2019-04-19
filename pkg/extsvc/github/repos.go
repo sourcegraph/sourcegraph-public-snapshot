@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
@@ -334,13 +334,13 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	return repos, nil
 }
 
-// ListViewerRepositories lists GitHub repositories affiliated with the viewer
-// (the currently authenticated user). page is the page of results to
-// return. Pages are 1-indexed (so the first call should be for page 1).
-func (c *Client) ListViewerRepositories(ctx context.Context, token string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+// ListUserRepositories lists GitHub repositories affiliated with the client
+// token. page is the page of results to return. Pages are 1-indexed (so the
+// first call should be for page 1).
+func (c *Client) ListUserRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	var restRepos []restRepository
 	path := fmt.Sprintf("user/repos?sort=pushed&page=%d&per_page=100", page)
-	if err := c.requestGet(ctx, token, path, &restRepos); err != nil {
+	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
 		return nil, false, 1, err
 	}
 	repos = make([]*Repository, 0, len(restRepos))
@@ -348,7 +348,7 @@ func (c *Client) ListViewerRepositories(ctx context.Context, token string, page 
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	// 🚨 SECURITY: must forward token here to ensure caching by token
-	c.addRepositoriesToCache(token, repos)
+	c.addRepositoriesToCache("", repos)
 	return repos, len(repos) > 0, 1, nil
 }
 
@@ -358,23 +358,36 @@ type restSearchResponse struct {
 	Items             []restRepository `json:"items"`
 }
 
-func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+// RepositoryListPage is a page of repositories returned from the GitHub Search API.
+type RepositoryListPage struct {
+	TotalCount  int
+	Repos       []*Repository
+	HasNextPage bool
+}
+
+func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
 	urlValues := url.Values{
-		"q":    []string{searchString},
-		"page": []string{strconv.Itoa(page)},
+		"q":        []string{searchString},
+		"page":     []string{strconv.Itoa(page)},
+		"per_page": []string{"100"},
 	}
 	path := "search/repositories?" + urlValues.Encode()
 	var response restSearchResponse
 	if err := c.requestGet(ctx, "", path, &response); err != nil {
-		return nil, false, 1, err
+		return RepositoryListPage{}, err
 	}
 	if response.IncompleteResults {
-		log15.Error("GitHub repository search returned incomplete results, some repositories may have been skipped", "searchString", searchString, "page", page, "total repository count", response.TotalCount)
+		return RepositoryListPage{}, errors.Errorf("github repository search returned incomplete results. This is an ephemeral error: query=%q page=%d total=%d", searchString, page, response.TotalCount)
 	}
-	repos = make([]*Repository, 0, len(response.Items))
+	repos := make([]*Repository, 0, len(response.Items))
 	for _, restRepo := range response.Items {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	c.addRepositoriesToCache("", repos)
-	return repos, len(repos) > 0, 1, nil
+
+	return RepositoryListPage{
+		TotalCount:  response.TotalCount,
+		Repos:       repos,
+		HasNextPage: page*100 < response.TotalCount,
+	}, nil
 }

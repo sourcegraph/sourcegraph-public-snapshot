@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -49,7 +50,7 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return Mocks.Repos.Get(ctx, id)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d LIMIT 1", id))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("id=%d LIMIT 1", id))
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, 
 		return Mocks.Repos.GetByName(ctx, name)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE name=%s LIMIT 1", name))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", name))
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +100,14 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	return count, nil
 }
 
+const getRepoByQueryFmtstr = `
+SELECT id, name, description, language, enabled, created_at,
+  updated_at, external_id, external_service_type, external_service_id
+FROM repo
+WHERE deleted_at IS NULL AND %s`
+
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	q := sqlf.Sprintf("SELECT id, name, description, language, enabled, created_at, updated_at, external_id, external_service_type, external_service_id FROM repo %s", querySuffix)
+	q := sqlf.Sprintf(getRepoByQueryFmtstr, querySuffix)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -244,7 +251,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	}
 
 	// fetch matching repos
-	fetchSQL := sqlf.Sprintf("WHERE %s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
 	rawRepos, err := s.getBySQL(ctx, fetchSQL)
 	if err != nil {
@@ -258,7 +265,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // indexed-search). We special case just returning enabled names so that we
 // read much less data into memory.
 func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
-	q := sqlf.Sprintf("SELECT name FROM repo WHERE enabled = true")
+	q := sqlf.Sprintf("SELECT name FROM repo WHERE enabled = true AND deleted_at IS NULL")
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -311,7 +318,9 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 }
 
 func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
-	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	conds = []*sqlf.Query{
+		sqlf.Sprintf("deleted_at IS NULL"),
+	}
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
 	}
@@ -555,7 +564,7 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 		}
 	}
 
-	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
+	q := sqlf.Sprintf("UPDATE repo SET deleted_at = NOW() WHERE id=%d", repo)
 	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
@@ -586,13 +595,54 @@ func (s *repos) UpdateRepositoryMetadata(ctx context.Context, name api.RepoName,
 	return err
 }
 
-const upsertSQL = `WITH UPSERT AS (
-	UPDATE repo SET name=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7, archived=$9 WHERE name=$1 RETURNING name
+const upsertSQL = `
+WITH upsert AS (
+  UPDATE repo
+  SET
+    name                  = $1,
+    description           = $2,
+    fork                  = $3,
+    enabled               = $4,
+    external_id           = NULLIF(BTRIM($5), ''),
+    external_service_type = NULLIF(BTRIM($6), ''),
+    external_service_id   = NULLIF(BTRIM($7), ''),
+    archived              = $9
+  WHERE name = $1 OR (
+    external_id IS NOT NULL
+    AND external_service_type IS NOT NULL
+    AND external_service_id IS NOT NULL
+    AND NULLIF(BTRIM($5), '') IS NOT NULL
+    AND NULLIF(BTRIM($6), '') IS NOT NULL
+    AND NULLIF(BTRIM($7), '') IS NOT NULL
+    AND external_id = NULLIF(BTRIM($5), '')
+    AND external_service_type = NULLIF(BTRIM($6), '')
+    AND external_service_id = NULLIF(BTRIM($7), '')
+  )
+  RETURNING repo.name
 )
-INSERT INTO repo(name, description, fork, language, enabled, external_id, external_service_type, external_service_id, archived) (
-	SELECT $1 AS name, $2 AS description, $3 AS fork, $8 as language, $4 AS enabled,
-	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id, $9 AS archived
-	WHERE $1 NOT IN (SELECT name FROM upsert)
+
+INSERT INTO repo (
+  name,
+  description,
+  fork,
+  language,
+  enabled,
+  external_id,
+  external_service_type,
+  external_service_id,
+  archived
+) (
+  SELECT
+    $1 AS name,
+    $2 AS description,
+    $3 AS fork,
+    $8 AS language,
+    $4 AS enabled,
+    NULLIF(BTRIM($5), '') AS external_id,
+    NULLIF(BTRIM($6), '') AS external_service_type,
+    NULLIF(BTRIM($7), '') AS external_service_id,
+    $9 AS archived
+  WHERE NOT EXISTS (SELECT 1 FROM upsert)
 )`
 
 // Upsert updates the repository if it already exists (keyed on name) and
@@ -633,8 +683,38 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err = dbconn.Global.ExecContext(ctx, upsertSQL, op.Name, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
+	_, err = dbconn.Global.ExecContext(
+		ctx,
+		upsertSQL,
+		op.Name,
+		op.Description,
+		op.Fork,
+		enabled,
+		spec.id,
+		spec.serviceType,
+		spec.serviceID,
+		language,
+		op.Archived,
+	)
+
 	return err
+}
+
+// AllowEnableDisable returns true iff there are any repositories that are not
+// managed by the new syncer.
+//
+// TODO(keegan) This should be removed in 3.4.
+// https://github.com/sourcegraph/sourcegraph/issues/2025
+func (s *repos) AllowEnableDisable(ctx context.Context) (bool, error) {
+	err := dbconn.Global.QueryRowContext(ctx, `SELECT 1 FROM repo WHERE sources = '{}' AND deleted_at IS NULL LIMIT 1`).Scan(new(int))
+	switch {
+	case err == nil:
+		return true, nil
+	case err == sql.ErrNoRows:
+		return false, nil
+	default:
+		return false, err
+	}
 }
 
 // dbExternalRepoSpec is convenience type for inserting or selecting *api.ExternalRepoSpec database data.

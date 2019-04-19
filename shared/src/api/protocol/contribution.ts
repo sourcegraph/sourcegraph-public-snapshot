@@ -21,6 +21,25 @@ export interface Contributions {
 }
 
 /**
+ * An extension's contributions, with all template strings interpolated,
+ * and all expressions replaced by their evaluated value.
+ */
+export interface EvaluatedContributions extends Pick<Contributions, Exclude<keyof Contributions, 'actions'>> {
+    /** Actions contributed by the extension */
+    actions?: EvaluatedActionContribution[]
+}
+
+/**
+ * An action contribution, with all template strings interpolated,
+ * and all expressions replaced by their evaluated value.
+ */
+export interface EvaluatedActionContribution
+    extends Pick<ActionContribution, Exclude<keyof ActionContribution, 'actionItem'>> {
+    /** A specification of how to display this action as a button on a toolbar. */
+    actionItem?: EvaluatedActionItem
+}
+
+/**
  * An action contribution describes a command that can be invoked, along with a title, description, icon, etc.
  */
 export interface ActionContribution {
@@ -136,9 +155,12 @@ export interface ActionContributionClientCommandUpdateConfiguration extends Acti
 }
 
 /**
- * A description of how to display an {@link ActionContribution} on a toolbar. This value is set on the
- * {@link ActionContribution#actionItem} interface field (it always is directly associated with an
- * {@link ActionContribution}).
+ * A description of how to display an {@link ActionContribution} on a toolbar,
+ * with all template properties interpolated, and all expression properties replaced
+ * by their evaluated value.
+ *
+ * This value is set on the {@link ActionContribution#actionItem} interface field
+ * (it always is directly associated with an {@link ActionContribution}).
  *
  * It is necessary because an action's ({@link ActionContribution}'s) fields are intended for display in a command
  * palette or list, not in a button. The {@link ActionContribution} fields usually have long, descriptive text
@@ -157,7 +179,7 @@ export interface ActionContributionClientCommandUpdateConfiguration extends Acti
  * duplicate code to combine them. Also, some clients may not be able to display buttons and need to display the
  * more verbose command form of an action, which is possible when they are combined.
  */
-export interface ActionItem {
+export interface EvaluatedActionItem {
     /** The text label for this item. */
     label?: string
 
@@ -186,7 +208,14 @@ export interface ActionItem {
      * to users needing the textual description.
      */
     iconDescription?: string
+
+    /**
+     * Whether the action item should be rendered as a pressed button.
+     */
+    pressed?: boolean
 }
+
+export type ActionItem = { [K in keyof EvaluatedActionItem]: string }
 
 export enum ContributableMenu {
     /** The global command palette. */

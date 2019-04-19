@@ -234,6 +234,7 @@ hr {
 @import './extensions/extension/ExtensionArea';
 @import './global/GlobalAlerts';
 @import './global/GlobalDebug';
+@import './global/Notices';
 @import './search/input/ScopePage';
 @import './search/input/SearchPage';
 @import './search/results/SearchResults';
@@ -251,7 +252,9 @@ hr {
 @import './repo/Repository';
 @import './repo/RepoContainer';
 @import './repo/settings/RepoSettingsArea';
+@import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';
+@import './components/ExternalServiceCard';
 @import './components/FilteredConnection';
 @import './components/SaveToolbar';
 @import './components/DecoratedTextLines';
@@ -263,7 +266,7 @@ hr {
 @import './components/RadioButtons';
 @import './components/Select';
 @import './components/tooltip/Tooltip';
-@import './user/account/UserAccountArea';
+@import './user/settings/UserSettingsArea';
 @import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
 @import './user/area/UserArea';
@@ -281,4 +284,3 @@ hr {
 @import './extensions/shared';
 @import './integrations/explore/IntegrationsExploreSection';
 @import './repo/explore/RepositoriesExploreSection';
-@import './discussions/explore/DiscussionsExploreSection';

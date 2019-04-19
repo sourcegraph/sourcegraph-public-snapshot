@@ -10,7 +10,7 @@ const GitHubSchemaJSON = `{
   "description": "Configuration for a connection to GitHub or GitHub Enterprise.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "token"],
+  "required": ["url", "token", "repositoryQuery"],
   "properties": {
     "url": {
       "description": "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
@@ -30,25 +30,58 @@ const GitHubSchemaJSON = `{
       "default": "http"
     },
     "token": {
-      "description": "A GitHub personal access token with repo and org scope.",
+      "description": "A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?scopes=repo&description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). The \"repo\" scope is required to mirror private repositories. If using only public repositories, you can create the token with no scopes.",
       "type": "string",
       "minLength": 1
     },
     "certificate": {
-      "description": "TLS certificate of a GitHub Enterprise instance. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
+      "description": "TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
       "type": "string",
-      "pattern": "^-----BEGIN CERTIFICATE-----\n"
+      "pattern": "^-----BEGIN CERTIFICATE-----\n",
+      "examples": ["-----BEGIN CERTIFICATE-----\n..."]
     },
     "repos": {
       "description": "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",
       "type": "array",
-      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" }
+      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" },
+      "examples": [["owner/name"], ["kubernetes/kubernetes", "golang/go", "facebook/react"]]
+    },
+    "exclude": {
+      "description": "A list of repositories to never mirror from this GitHub instance. Takes precedence over \"repos\" and \"repositoryQuery\" configuration.\n\nSupports excluding by name ({\"name\": \"owner/name\"}) or by ID ({\"id\": \"MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==\"}).\n\nNote: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: \"curl https://api.github.com/repos/vuejs/vue | jq .node_id\"",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedGitHubRepo",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a GitHub repository (\"owner/name\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          },
+          "id": {
+            "description": "The node ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring. Use this to exclude the repository, even if renamed. Note: This is the GraphQL ID, not the GitHub database ID. eg: \"curl https://api.github.com/repos/vuejs/vue | jq .node_id\"",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "examples": [
+        [{ "name": "owner/name" }, { "id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==" }],
+        [{ "name": "vuejs/vue" }, { "name": "php/php-src" }]
+      ]
     },
     "repositoryQuery": {
       "description": "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:\n\n- ` + "`" + `public` + "`" + ` mirrors all public repositories for GitHub Enterprise and is the equivalent of ` + "`" + `none` + "`" + ` for GitHub\n\n- ` + "`" + `affiliated` + "`" + ` mirrors all repositories affiliated with the configured token's user:\n\t- Private repositories with read access\n\t- Public repositories owned by the user or their orgs\n\t- Public repositories with write access\n\n- ` + "`" + `none` + "`" + ` mirrors no repositories (except those specified in the ` + "`" + `repos` + "`" + ` configuration property or added manually)\n\n- All other values are executed as a GitHub advanced repository search as described at https://github.com/search/advanced. Example: to sync all repositories from the \"sourcegraph\" organization including forks the query would be \"org:sourcegraph fork:true\".\n\nIf multiple values are provided, their results are unioned.\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
       "type": "array",
-      "items": { "type": "string" },
-      "default": ["public", "affiliated"]
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": ["none"],
+      "minItems": 1
     },
     "repositoryPathPattern": {
       "description": "The pattern used to generate the corresponding Sourcegraph repository name for a GitHub or GitHub Enterprise repository. In the pattern, the variable \"{host}\" is replaced with the GitHub host (such as github.example.com), and \"{nameWithOwner}\" is replaced with the GitHub repository's \"owner/path\" (such as \"myorg/myrepo\").\n\nFor example, if your GitHub Enterprise URL is https://github.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"{host}/{nameWithOwner}\" would mean that a GitHub repository at https://github.example.com/myorg/myrepo is available on Sourcegraph at https://src.example.com/github.example.com/myorg/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
@@ -56,7 +89,7 @@ const GitHubSchemaJSON = `{
       "default": "{host}/{nameWithOwner}"
     },
     "initialRepositoryEnablement": {
-      "description": "Defines whether repositories from this GitHub instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitHub repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitHub); site admins can still disable them explicitly, and they'll remain disabled.",
+      "description": "Deprecated and ignored field which will be removed entirely in the next release. GitHub repositories can no longer be enabled or disabled explicitly. Configure repositories to be mirrored via \"repos\", \"exclude\" and \"repositoryQuery\" instead.",
       "type": "boolean"
     },
     "authorization": {
@@ -65,7 +98,7 @@ const GitHubSchemaJSON = `{
       "type": "object",
       "properties": {
         "ttl": {
-          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
+          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
           "type": "string",
           "default": "3h"
         }

@@ -10,7 +10,10 @@ import (
 
 type RepoUpdateSchedulerInfoArgs struct {
 	// RepoName is the repository name to look up.
+	// XXX(tsenart): Depreacted. Remove after lookup by ID is rolled out.
 	RepoName api.RepoName
+	// The ID of the repo to lookup the schedule for.
+	ID uint32
 }
 
 type RepoUpdateSchedulerInfoResult struct {
@@ -29,6 +32,31 @@ type RepoQueueState struct {
 	Index    int
 	Total    int
 	Updating bool
+}
+
+// RepoExternalServicesRequest is a request for the external services
+// associated with a repository.
+type RepoExternalServicesRequest struct {
+	// ID of the repository being queried.
+	ID uint32
+}
+
+// RepoExternalServicesResponse is returned in response to an
+// RepoExternalServicesRequest.
+type RepoExternalServicesResponse struct {
+	ExternalServices []api.ExternalService
+}
+
+// ExcludeRepoRequest is a request to exclude a single repo from
+// being mirrored from any external service of its kind.
+type ExcludeRepoRequest struct {
+	// ID of the repository to be excluded.
+	ID uint32
+}
+
+// ExcludeRepoResponse is returned in response to an ExcludeRepoRequest.
+type ExcludeRepoResponse struct {
+	ExternalServices []api.ExternalService
 }
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.
@@ -70,6 +98,9 @@ func (r *RepoLookupResult) String() string {
 	}
 	if r.ErrorUnauthorized {
 		parts = append(parts, "unauthorized")
+	}
+	if r.ErrorTemporarilyUnavailable {
+		parts = append(parts, "tempunavailable")
 	}
 	return fmt.Sprintf("RepoLookupResult{%s}", strings.Join(parts, " "))
 }
@@ -121,6 +152,16 @@ type RepoUpdateRequest struct {
 	URL string `json:"url"`
 }
 
+// RepoUpdateResponse is a response type to a RepoUpdateRequest.
+type RepoUpdateResponse struct {
+	// ID of the repo that got an update request.
+	ID uint32 `json:"id"`
+	// Name of the repo that got an update request.
+	Name string `json:"name"`
+	// URL of the repo that got an update request.
+	URL string `json:"url"`
+}
+
 // ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
 //
 // The FrontendAPI is one of the issuers of this request. It does so when creating or
@@ -128,4 +169,10 @@ type RepoUpdateRequest struct {
 // run to see their repos being synced.
 type ExternalServiceSyncRequest struct {
 	ExternalService api.ExternalService
+}
+
+// ExternalServiceSyncResult is a result type of an external service's sync request.
+type ExternalServiceSyncResult struct {
+	ExternalService api.ExternalService
+	Error           error
 }

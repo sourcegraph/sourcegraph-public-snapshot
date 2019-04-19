@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -50,9 +49,6 @@ func Test_providersFromConfig(t *testing.T) {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{SudoOp: op}
 	}
-
-	db.Mocks = db.MockStores{}
-	defer func() { db.Mocks = db.MockStores{} }()
 
 	tests := []struct {
 		description                  string
@@ -255,7 +251,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Could not parse time duration \"invalid\"."},
+			expSeriousProblems:           []string{"authorization.ttl: time: invalid duration invalid"},
 		},
 		{
 			description: "external auth provider",
@@ -288,7 +284,7 @@ func Test_providersFromConfig(t *testing.T) {
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
 						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						AuthnConfigID: auth.ProviderConfigID{
+						AuthnConfigID: providers.ConfigID{
 							Type: "saml",
 							ID:   "okta",
 						},
@@ -333,31 +329,8 @@ func Test_providersFromConfig(t *testing.T) {
 	for _, test := range tests {
 		t.Logf("Test %q", test.description)
 
-		gitlabs := test.gitlabConnections
-		db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-
-			if reflect.DeepEqual(opt.Kinds, []string{"GITLAB"}) {
-				externalServices := make([]*types.ExternalService, 0, len(gitlabs))
-				for _, gl := range gitlabs {
-					config, err := json.Marshal(gl)
-					if err != nil {
-						return nil, err
-					}
-					externalServices = append(externalServices, &types.ExternalService{
-						ID:          2,
-						Kind:        "GITLAB",
-						DisplayName: "Test GitLab",
-						Config:      string(config),
-						CreatedAt:   time.Now(),
-						UpdatedAt:   time.Now(),
-					})
-				}
-				return externalServices, nil
-			}
-			return nil, nil
-		}
-
-		allowAccessByDefault, authzProviders, seriousProblems, _ := providersFromConfig(context.Background(), &test.cfg)
+		store := fakeStore{gitlabs: test.gitlabConnections}
+		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(context.Background(), &test.cfg, &store)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
@@ -384,4 +357,17 @@ func asJSON(t *testing.T, v interface{}) string {
 		t.Fatal(err)
 	}
 	return string(b)
+}
+
+type fakeStore struct {
+	gitlabs []*schema.GitLabConnection
+	githubs []*schema.GitHubConnection
+}
+
+func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error) {
+	return s.githubs, nil
+}
+
+func (s fakeStore) ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error) {
+	return s.gitlabs, nil
 }

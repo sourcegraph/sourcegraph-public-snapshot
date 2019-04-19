@@ -3,23 +3,25 @@ package repos
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -50,7 +52,7 @@ func SyncBitbucketServerConnections(ctx context.Context) {
 
 		var conns []*bitbucketServerConnection
 		for _, c := range config {
-			conn, err := newBitbucketServerConnection(c)
+			conn, err := newBitbucketServerConnection(c, nil)
 			if err != nil {
 				log15.Error("Error processing configured Bitbucket Server connection. Skipping it.", "url", c.Url, "error", err)
 				continue
@@ -147,7 +149,7 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	return &protocol.RepoInfo{
 		Name: repoName,
 		ExternalRepo: &api.ExternalRepoSpec{
-			ID:          project + "/" + repo.Slug,
+			ID:          strconv.Itoa(repo.ID),
 			ServiceType: bitbucketserver.ServiceType,
 			ServiceID:   host.String(),
 		},
@@ -224,7 +226,7 @@ var bitbucketServerWorker = &worker{
 					reservationTime := time.Now()
 					r := c.client.RateLimit.ReserveN(reservationTime, rateLimitReservationSize)
 					if !r.OK() {
-						log15.Error("Bitbucket worker cannot reserve requests. Is the maximum burst size lower than the reservation size?", "reservation_size", rateLimitReservationSize, "max_burst_size", rateLimitMaxBurstRequests)
+						log15.Error("Bitbucket worker cannot reserve requests. Is the maximum burst size lower than the reservation size?", "reservation_size", rateLimitReservationSize, "max_burst_size", bitbucketserver.RateLimitMaxBurstRequests)
 					}
 					delay := r.Delay()
 					// Since we're not actually planning to use the reservation, cancel it now.
@@ -256,18 +258,22 @@ func RunBitbucketServerRepositorySyncWorker(ctx context.Context) {
 
 // updateBitbucketServerRepos ensures that all provided repositories exist in the repository table.
 func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnection) {
+	repos, err := conn.listAllRepos(ctx)
+	if err != nil {
+		log15.Error("failed to list some bitbucketserver repos", "error", err.Error())
+	}
+
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
+
 	sourceID := conn.config.Token
 	if sourceID == "" {
 		sourceID = conn.config.Username
 	}
-	go createEnableUpdateRepos(ctx, fmt.Sprintf("bitbucket:%s", sourceID), repoChan)
-	for r := range conn.listAllRepos(ctx) {
-		if r.State != "AVAILABLE" {
-			continue
-		}
 
+	go createEnableUpdateRepos(ctx, fmt.Sprintf("bitbucket:%s", sourceID), repoChan)
+
+	for _, r := range repos {
 		ri := bitbucketServerRepoInfo(conn.config, r)
 		if ri.VCS.URL == "" {
 			continue
@@ -286,103 +292,169 @@ func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnec
 	}
 }
 
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
-// not have a concept of rate limiting in HTTP response headers).
+// rateLimitReservationSize is the minimum number of requests (tokens in the bucket)
+// that must be available for us to perform work without waiting first.
 //
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// The limits chosen here are based on the following logic: Bitbucket Cloud restricts
-// "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
-// and they restrict "List a user or team's repositories" requests (which are roughly equal
-// to our repository lookup requests) to 1,000/hr. We peform a list repositories request
-// for every 100 repositories on Bitbucket every 1m by default, so for someone with 20,000
-// Bitbucket repositories we need 20,000/100 requests per minute (1200/hr) + overhead for
-// repository lookup requests by users. So we use a generous 7,200/hr here until we hear
-// from someone that these values do not work well for them.
-const (
-	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
-	rateLimitMaxBurstRequests  = 500
+// We choose this number because each reservation lets us list 100
+// repositories, so having at least 250 lets us list 20,000 repositories and
+// still have 50 API requests left-over to serve users.
+const rateLimitReservationSize = 250
 
-	// rateLimitReservationSize is the minimum number of requests (tokens in the bucket)
-	// that must be available for us to perform work without waiting first.
-	//
-	// We choose this number because each reservation lets us list 100 repositories, so
-	// having at least 250 lets us list 20,000 repositories and still have 50 API requests
-	// left-over to serve users.
-	rateLimitReservationSize = 250
-)
-
-func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bitbucketServerConnection, error) {
+func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf httpcli.Factory) (*bitbucketServerConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
 	baseURL = NormalizeBaseURL(baseURL)
 
-	transport, err := cachedTransportWithCertTrusted(config.Certificate)
+	if cf == nil {
+		cf = NewHTTPClientFactory()
+	}
+
+	var opts []httpcli.Opt
+	if config.Certificate != "" {
+		pool, err := newCertPool(config.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+	}
+
+	cli, err := cf.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
 
+	exclude := make(map[string]bool, len(config.Exclude))
+	for _, r := range config.Exclude {
+		if r.Name != "" {
+			exclude[strings.ToLower(r.Name)] = true
+		}
+
+		if r.Id != 0 {
+			exclude[strconv.Itoa(r.Id)] = true
+		}
+	}
+
+	client := bitbucketserver.NewClient(baseURL, cli)
+	client.Token = config.Token
+	client.Username = config.Username
+	client.Password = config.Password
+
 	return &bitbucketServerConnection{
-		config: config,
-		client: &bitbucketserver.Client{
-			URL:      baseURL,
-			Token:    config.Token,
-			Username: config.Username,
-			Password: config.Password,
-			HTTPClient: &http.Client{
-				Transport: bitbucketserver.WithRequestCounter(transport),
-			},
-			RateLimit: rate.NewLimiter(rateLimitRequestsPerSecond, rateLimitMaxBurstRequests),
-		},
+		config:  config,
+		exclude: exclude,
+		client:  client,
 	}, nil
 }
 
 type bitbucketServerConnection struct {
-	config *schema.BitbucketServerConnection
-	client *bitbucketserver.Client
+	config  *schema.BitbucketServerConnection
+	exclude map[string]bool
+	client  *bitbucketserver.Client
 }
 
-func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) <-chan *bitbucketserver.Repo {
-	perPage := 100
-	ch := make(chan *bitbucketserver.Repo, perPage)
-	go func() {
-		defer close(ch)
+func (c *bitbucketServerConnection) excludes(r *bitbucketserver.Repo) bool {
+	name := r.Slug
+	if r.Project != nil {
+		name = r.Project.Key + "/" + name
+	}
+	return r.State == "AVAILABLE" &&
+		c.exclude[strings.ToLower(name)] ||
+		c.exclude[strconv.Itoa(r.ID)] ||
+		(c.config.ExcludePersonalRepositories && r.IsPersonalRepository())
+}
 
-		// First we list one page of recent repos, so that we clone them first
-		repos, _, err := c.client.RecentRepos(ctx, &bitbucketserver.PageToken{Limit: perPage})
-		if err != nil {
-			log15.Warn("failed to list recent repos for Bitbucket Server", "url", c.client.URL, "error", err)
-		}
-		recent := map[int]bool{}
-		for _, r := range repos {
-			if c.config.ExcludePersonalRepositories && r.IsPersonalRepository() {
+func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbucketserver.Repo, error) {
+	type batch struct {
+		repos []*bitbucketserver.Repo
+		err   error
+	}
+
+	ch := make(chan batch)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		repos := make([]*bitbucketserver.Repo, 0, len(c.config.Repos))
+		errs := new(multierror.Error)
+
+		for _, name := range c.config.Repos {
+			ps := strings.SplitN(name, "/", 2)
+			if len(ps) != 2 {
+				errs = multierror.Append(errs,
+					errors.Errorf("bitbucketserver.repos: name=%q", name))
 				continue
 			}
-			recent[r.ID] = true
-			ch <- r
-		}
 
-		// Then we list all repos, taking care not to repeat repos we have
-		// already sent via recent.
-		page := &bitbucketserver.PageToken{Limit: perPage}
-		for page.HasMore() {
-			repos, page, err = c.client.Repos(ctx, page)
+			projectKey, repoSlug := ps[0], ps[1]
+			repo, err := c.client.Repo(ctx, projectKey, repoSlug)
 			if err != nil {
-				log15.Error("failed when listing Bitbucket Server repos", "url", c.client.URL, "error", err)
-				return
-			}
-			for _, r := range repos {
-				if c.config.ExcludePersonalRepositories && r.IsPersonalRepository() {
+				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+				// 404 errors on external service config validation.
+				if bitbucketserver.IsNotFound(err) {
+					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", name, "err", err)
 					continue
 				}
-				if !recent[r.ID] {
-					ch <- r
-				}
+				errs = multierror.Append(errs,
+					errors.Wrapf(err, "bitbucketserver.repos: name: %q", name))
+			} else {
+				repos = append(repos, repo)
 			}
 		}
+
+		ch <- batch{repos: repos, err: errs.ErrorOrNil()}
 	}()
 
-	return ch
+	for _, q := range c.config.RepositoryQuery {
+		if q == "none" {
+			continue
+		}
+
+		wg.Add(1)
+		go func(q string) {
+			defer wg.Done()
+
+			page := &bitbucketserver.PageToken{Limit: 100}
+			for page.HasMore() {
+				var err error
+				var repos []*bitbucketserver.Repo
+
+				if repos, page, err = c.client.Repos(ctx, page, q); err != nil {
+					ch <- batch{err: errors.Wrapf(err, "bibucketserver.repositoryQuery: item=%q, page=%+v", q, page)}
+					break
+				}
+
+				ch <- batch{repos: repos}
+			}
+		}(q)
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	seen := make(map[int]bool)
+	errs := new(multierror.Error)
+	var repos []*bitbucketserver.Repo
+
+	for r := range ch {
+		if r.err != nil {
+			errs = multierror.Append(errs, r.err)
+		}
+
+		for _, repo := range r.repos {
+			if !seen[repo.ID] && !c.excludes(repo) {
+				repos = append(repos, repo)
+				seen[repo.ID] = true
+			}
+		}
+
+	}
+
+	return repos, errs.ErrorOrNil()
 }

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { map } from 'rxjs/operators'
 
-import { memoizeObservable } from '../../shared/util/memoize'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { GitLabDiffInfo } from './scrape'
 
 /**
@@ -65,10 +65,16 @@ interface CommitResponse {
 /**
  * Get the base commit ID for a commit.
  */
-export const getBaseCommitIDForCommit: (
-    { owner, projectName, commitID }: Pick<GetBaseCommitIDInput, 'owner' | 'projectName'> & { commitID: string }
-) => Observable<string> = memoizeObservable(({ owner, projectName, commitID }) =>
-    get<CommitResponse>(buildURL(owner, projectName, `/repository/commits/${commitID}`)).pipe(
-        map(({ parent_ids }) => first(parent_ids)!) // ! because it'll always have a parent if we are looking at the commit page.
-    )
+export const getBaseCommitIDForCommit: ({
+    owner,
+    projectName,
+    commitID,
+}: Pick<GetBaseCommitIDInput, 'owner' | 'projectName'> & { commitID: string }) => Observable<
+    string
+> = memoizeObservable(
+    ({ owner, projectName, commitID }) =>
+        get<CommitResponse>(buildURL(owner, projectName, `/repository/commits/${commitID}`)).pipe(
+            map(({ parent_ids }) => first(parent_ids)!) // ! because it'll always have a parent if we are looking at the commit page.
+        ),
+    ({ owner, projectName, commitID }) => `${owner}:${projectName}:${commitID}`
 )

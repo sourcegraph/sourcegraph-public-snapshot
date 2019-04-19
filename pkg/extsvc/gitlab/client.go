@@ -15,10 +15,10 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 var requestCounter = metrics.NewRequestCounter("gitlab", "Total number of requests sent to the GitLab API.")
@@ -31,7 +31,7 @@ type ClientProvider struct {
 	baseURL *url.URL
 
 	// httpClient is the underlying the HTTP client to use
-	httpClient *http.Client
+	httpClient httpcli.Doer
 
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
@@ -44,11 +44,11 @@ type CommonOp struct {
 	NoCache bool
 }
 
-func NewClientProvider(baseURL *url.URL, transport http.RoundTripper) *ClientProvider {
-	if transport == nil {
-		transport = http.DefaultTransport
+func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+	if cli == nil {
+		cli = http.DefaultClient
 	}
-	transport = requestCounter.Transport(transport, func(u *url.URL) string {
+	cli = requestCounter.Doer(cli, func(u *url.URL) string {
 		// The 3rd component of the Path (/api/v4/XYZ) mostly maps to the type of API
 		// request we are making.
 		var category string
@@ -60,7 +60,7 @@ func NewClientProvider(baseURL *url.URL, transport http.RoundTripper) *ClientPro
 
 	return &ClientProvider{
 		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		httpClient:    &http.Client{Transport: transport},
+		httpClient:    cli,
 		gitlabClients: make(map[string]*Client),
 		RateLimit:     &ratelimit.Monitor{},
 	}
@@ -128,7 +128,7 @@ func (p *ClientProvider) getClient(op getClientOp) *Client {
 // values for those fields WILL share a cache.
 type Client struct {
 	baseURL             *url.URL
-	httpClient          *http.Client
+	httpClient          httpcli.Doer
 	projCache           *rcache.Cache
 	PersonalAccessToken string // a personal access token to authenticate requests, if set
 	OAuthToken          string // an OAuth bearer token, if set
@@ -142,7 +142,7 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient *http.Client, rateLimit *ratelimit.Monitor) *Client {
+func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient httpcli.Doer, rateLimit *ratelimit.Monitor) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(baseURL) && op.personalAccessToken == "" && op.oauthToken == "" {
@@ -196,7 +196,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		span.Finish()
 	}()
 
-	resp, err = ctxhttp.Do(ctx, c.httpClient, req)
+	resp, err = c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}

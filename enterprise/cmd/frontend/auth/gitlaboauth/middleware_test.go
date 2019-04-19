@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -39,8 +39,8 @@ func TestMiddleware(t *testing.T) {
 
 	mockGitLabCom := newMockProvider(t, "gitlab-com-client", "gitlab-com-secret", "https://gitlab.com/")
 	mockPrivateGitLab := newMockProvider(t, "gitlab-private-instsance-client", "github-private-instance-secret", "https://mycompany.com/")
-	auth.MockProviders = []auth.Provider{mockGitLabCom.Provider}
-	defer func() { auth.MockProviders = nil }()
+	providers.MockProviders = []providers.Provider{mockGitLabCom.Provider}
+	defer func() { providers.MockProviders = nil }()
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -89,7 +89,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	// Add 2 GitLab auth providers
-	auth.MockProviders = []auth.Provider{mockPrivateGitLab.Provider, mockGitLabCom.Provider}
+	providers.MockProviders = []providers.Provider{mockPrivateGitLab.Provider, mockGitLabCom.Provider}
 
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false)

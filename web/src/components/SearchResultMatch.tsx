@@ -1,7 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { decode } from 'he'
-import { isEqual } from 'lodash'
-import { range } from 'lodash'
+import { escapeRegExp, isEqual, range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
@@ -48,7 +47,6 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
 
     public constructor(props: SearchResultMatchProps) {
         super(props)
-
         // Render the match body as markdown, and syntax highlight the response if it's a code block.
         // This is a lot of network requests right now, but once extensions can run on the backend we can
         // run results through the renderer and syntax highlighter without network requests.
@@ -67,7 +65,9 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
                             // Extract the text content of the result.
-                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText
+                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText.trim()
+                            // Match the code content and any trailing newlines if any.
+                            const codeContentAndAnyNewLines = new RegExp(escapeRegExp(codeContent) + '\\n*')
                             if (codeContent) {
                                 return highlightCode({
                                     code: codeContent,
@@ -77,7 +77,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                 }).pipe(
                                     switchMap(highlightedStr => {
                                         const highlightedMarkdown = decode(markdownHTML).replace(
-                                            codeContent,
+                                            codeContentAndAnyNewLines,
                                             highlightedStr
                                         )
                                         return of(highlightedMarkdown)

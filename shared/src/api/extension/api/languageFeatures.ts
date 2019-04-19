@@ -2,14 +2,13 @@ import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
 import {
+    CompletionItemProvider,
     DefinitionProvider,
     DocumentSelector,
     HoverProvider,
-    ImplementationProvider,
     Location,
     LocationProvider,
     ReferenceProvider,
-    TypeDefinitionProvider,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
@@ -46,41 +45,6 @@ export class ExtLanguageFeatures {
         return syncSubscription(this.proxy.$registerDefinitionProvider(selector, providerFunction))
     }
 
-    public registerTypeDefinitionProvider(
-        selector: DocumentSelector,
-        provider: TypeDefinitionProvider
-    ): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientLanguageFeaturesAPI['$registerTypeDefinitionProvider']>[1]
-        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
-            toProxyableSubscribable(
-                provider.provideTypeDefinition(await this.documents.getSync(textDocument.uri), toPosition(position)),
-                toLocations
-            )
-        )
-        return syncSubscription(this.proxy.$registerTypeDefinitionProvider(selector, providerFunction))
-    }
-
-    public registerImplementationProvider(
-        selector: DocumentSelector,
-        provider: ImplementationProvider
-    ): Unsubscribable {
-        return syncSubscription(
-            this.proxy.$registerImplementationProvider(
-                selector,
-                proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
-                    toProxyableSubscribable(
-                        provider.provideImplementation(
-                            await this.documents.getSync(textDocument.uri),
-                            toPosition(position)
-                        ),
-                        toLocations
-                    )
-                )
-            )
-        )
-    }
-
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
         const providerFunction: ProxyInput<
             Parameters<ClientLanguageFeaturesAPI['$registerReferenceProvider']>[1]
@@ -111,6 +75,21 @@ export class ExtLanguageFeatures {
             )
         )
         return syncSubscription(this.proxy.$registerLocationProvider(idStr, selector, proxyValue(providerFunction)))
+    }
+
+    public registerCompletionItemProvider(
+        selector: DocumentSelector,
+        provider: CompletionItemProvider
+    ): Unsubscribable {
+        const providerFunction: ProxyInput<
+            Parameters<ClientLanguageFeaturesAPI['$registerCompletionItemProvider']>[1]
+        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
+            toProxyableSubscribable(
+                provider.provideCompletionItems(await this.documents.getSync(textDocument.uri), toPosition(position)),
+                items => items
+            )
+        )
+        return syncSubscription(this.proxy.$registerCompletionItemProvider(selector, providerFunction))
     }
 }
 

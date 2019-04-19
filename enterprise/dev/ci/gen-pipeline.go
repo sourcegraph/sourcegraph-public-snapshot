@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -32,18 +33,23 @@ func main() {
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	version := os.Getenv("BUILDKITE_TAG")
-	taggedRelease := true // true if this is a semver tagged release
-	if !strings.HasPrefix(version, "v") {
-		taggedRelease = false
-		commit := os.Getenv("BUILDKITE_COMMIT")
-		if commit == "" {
-			commit = "1234567890123456789012345678901234567890" // for testing
-		}
-		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
-		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
-	} else {
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	if commit == "" {
+		commit = "1234567890123456789012345678901234567890" // for testing
+	}
+	taggedRelease := true // true if this is a tagged release
+	now := time.Now()
+	if strings.HasPrefix(branch, "docker-images-debug/") {
+		// A branch like "docker-images-debug/foobar" will produce Docker images
+		// tagged as "debug-foobar-$COMMIT".
+		version = fmt.Sprintf("debug-%s-%s", strings.TrimPrefix(branch, "docker-images-debug/"), commit)
+	} else if strings.HasPrefix(version, "v") {
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		version = strings.TrimPrefix(version, "v")
+	} else {
+		taggedRelease = false
+		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
+		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, now.Format("2006-01-02"), commit)
 	}
 	releaseBranch := regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch)
 
@@ -54,9 +60,57 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("COMMIT_SHA", commit),
+		bk.Env("DATE", now.Format(time.RFC3339)),
 	)
 
+	if os.Getenv("MUST_INCLUDE_COMMIT") != "" {
+		output, err := exec.Command("git", "merge-base", "--is-ancestor", os.Getenv("MUST_INCLUDE_COMMIT"), "HEAD").CombinedOutput()
+		if err != nil {
+			fmt.Printf("This branch %s at commit %s does not include commit %s.\n", branch, commit, os.Getenv("MUST_INCLUDE_COMMIT"))
+			fmt.Println("Rebase onto the latest master to get the latest CI fixes.")
+			fmt.Println(string(output))
+			panic(err)
+		}
+	}
+
+	isPR := !isBextReleaseBranch &&
+		!releaseBranch &&
+		!taggedRelease &&
+		branch != "master" &&
+		!strings.HasPrefix(branch, "master-dry-run/") &&
+		!strings.HasPrefix(branch, "docker-images-patch/")
+	if isPR {
+		output, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
+		if err != nil {
+			panic(err)
+		}
+
+		onlyDocsChange := true
+		for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+			if !strings.HasPrefix(line, "doc") && line != "CHANGELOG.md" {
+				onlyDocsChange = false
+				break
+			}
+		}
+
+		if onlyDocsChange {
+			pipeline.AddStep(":memo:",
+				bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
+				bk.Cmd("./dev/check/docsite.sh"))
+			return
+		}
+	}
+
 	if !isBextReleaseBranch {
+		pipeline.AddStep(":docker:",
+			bk.Cmd("pushd enterprise"),
+			bk.Cmd("./cmd/server/pre-build.sh"),
+			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+			bk.Env("VERSION", version),
+			bk.Cmd("./cmd/server/build.sh"),
+			bk.Cmd("popd"))
+
 		pipeline.AddStep(":white_check_mark:",
 			bk.Cmd("./dev/check/all.sh"))
 	}
@@ -64,26 +118,36 @@ func main() {
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
 
-	pipeline.AddStep(":ie:",
+	// Browser extension build
+	pipeline.AddStep(":webpack::chrome:",
 		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
 	if !isBextReleaseBranch {
-		pipeline.AddStep(":webpack:",
+		// Webapp build
+		pipeline.AddStep(":webpack::globe_with_meridians:",
 			bk.Cmd("dev/ci/yarn-build.sh web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "0"))
 
-		pipeline.AddStep(":webpack: :moneybag:",
+		// Webapp enterprise build
+		pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
 			bk.Cmd("dev/ci/yarn-build.sh web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"))
 
-		pipeline.AddStep(":typescript:",
+		// Webapp tests
+		pipeline.AddStep(":jest::globe_with_meridians:",
 			bk.Cmd("dev/ci/yarn-test.sh web"),
 			bk.ArtifactPaths("web/coverage/coverage-final.json"))
 	}
 
-	pipeline.AddStep(":typescript:",
+	// Browser extension tests
+	pipeline.AddStep(":jest::chrome:",
+		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+		bk.ArtifactPaths("client/browser/coverage/coverage-final.json"))
+
+	// Shared tests
+	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
@@ -93,7 +157,7 @@ func main() {
 
 		pipeline.AddStep(":go:",
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
-			bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+			bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
 			bk.ArtifactPaths("coverage.txt"))
 
 		pipeline.AddStep(":go:",
@@ -104,18 +168,22 @@ func main() {
 		pipeline.AddStep(":docker:",
 			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
 			bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+	}
 
+	pipeline.AddWait()
+
+	if !isBextReleaseBranch {
 		pipeline.AddStep(":chromium:",
-			bk.Cmd(fmt.Sprintf(`echo "Building server..."`)),
-			bk.Cmd("pushd enterprise"),
-			bk.Cmd("./cmd/server/pre-build.sh"),
+			// Avoid crashing the sourcegraph/server containers. See
+			// https://github.com/sourcegraph/sourcegraph/issues/2657
+			bk.ConcurrencyGroup("e2e"),
+			bk.Concurrency(1),
+
 			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
 			bk.Env("VERSION", version),
-			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Cmd("./dev/ci/e2e.sh"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
 	}
 
 	pipeline.AddWait()
@@ -193,41 +261,17 @@ func main() {
 	}
 
 	addBrowserExtensionReleaseSteps := func() {
-		// // Run e2e tests
-		// pipeline.AddStep(":chromium:",
-		// 	bk.Env("FORCE_COLOR", "1"),
-		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		// 	bk.Env("DISPLAY", ":99"),
-		// 	bk.Cmd("Xvfb :99 &"),
-		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		// 	bk.Cmd("pushd client/browser"),
-		// 	bk.Cmd("yarn -s run build"),
-		// 	bk.Cmd("yarn -s run test:ci"),
-		// 	bk.Cmd("yarn -s run test:e2e-ci --retries 5"),
-		// 	bk.Cmd("popd"),
-		// 	bk.ArtifactPaths("./puppeteer/*.png"),
-		// )
+		// Run e2e tests
+		pipeline.AddStep(":chromium:",
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd client/browser"),
+			bk.Cmd("yarn -s run build"),
+			bk.Cmd("yarn -s run test-e2e"),
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		// pipeline.AddWait()
-
-		// // Run e2e tests with extensions enabled
-		// //
-		// // TODO: Remove this step when extensions are enabled by default
-		// pipeline.AddStep(":chromium:",
-		// 	bk.Env("FORCE_COLOR", "1"),
-		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		// 	bk.Env("DISPLAY", ":99"),
-		// 	bk.Cmd("Xvfb :99 &"),
-		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		// 	bk.Cmd("pushd client/browser"),
-		// 	bk.Cmd("USE_EXTENSIONS=true yarn -s run build"),
-		// 	bk.Cmd("yarn -s run test:ci"),
-		// 	bk.Cmd("yarn -s run test:e2e-ci --retries 5"),
-		// 	bk.Cmd("popd"),
-		// 	bk.ArtifactPaths("./puppeteer/*.png"),
-		// )
-
-		// pipeline.AddWait()
+		pipeline.AddWait()
 
 		// Release to the Chrome Webstore
 		pipeline.AddStep(":chrome:",
@@ -294,4 +338,8 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 		pipeline.AddWait()
 	}
+
+	// Clean up to help avoid running out of disk.
+	pipeline.AddStep(":sparkles:",
+		bk.Cmd("docker image rm -f sourcegraph/server:"+version+"_candidate"))
 }

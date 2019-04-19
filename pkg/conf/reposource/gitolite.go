@@ -28,9 +28,14 @@ func (c Gitolite) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, er
 	return GitoliteRepoName(c.Prefix, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
 }
 
-func GitoliteRepoName(prefix, path string) api.RepoName {
+// GitoliteRepoName returns the Sourcegraph name for a repository given the Gitolite prefix (defined
+// in the Gitolite external service config) and the Gitolite repository name. This is normally just
+// the prefix concatenated with the Gitolite name. Gitolite permits the "@" character, but
+// Sourcegraph does not, so "@" characters are rewritten to be "-".
+func GitoliteRepoName(prefix, gitoliteName string) api.RepoName {
+	gitoliteNameWithNoIllegalChars := strings.Replace(gitoliteName, "@", "-", -1)
 	return api.RepoName(strings.NewReplacer(
 		"{prefix}", prefix,
-		"{path}", path,
-	).Replace("{prefix}{path}"))
+		"{gitoliteName}", gitoliteNameWithNoIllegalChars,
+	).Replace("{prefix}{gitoliteName}"))
 }

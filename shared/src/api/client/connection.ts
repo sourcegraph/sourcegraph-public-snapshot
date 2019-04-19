@@ -1,8 +1,7 @@
 import * as comlink from '@sourcegraph/comlink'
-import { isEqual } from 'lodash'
 import { from, Subject, Subscription } from 'rxjs'
-import { concatMap, distinctUntilChanged, map } from 'rxjs/operators'
-import { ContextValues, Progress, ProgressOptions, TextDocument, Unsubscribable } from 'sourcegraph'
+import { concatMap } from 'rxjs/operators'
+import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
@@ -10,6 +9,7 @@ import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
 import { ClientCommands } from './api/commands'
 import { ClientConfiguration } from './api/configuration'
+import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
@@ -22,8 +22,8 @@ import { Services } from './services'
 import {
     MessageActionItem,
     ShowInputParams,
-    ShowMessageParams,
     ShowMessageRequestParams,
+    ShowNotificationParams,
 } from './services/notifications'
 
 export interface ExtensionHostClientConnection {
@@ -72,42 +72,20 @@ export async function createExtensionHostClientConnection(
     )
     subscription.add(clientContext)
 
-    // Sync visible views and text documents to the extension host
-    let visibleTextDocuments: TextDocument[] = []
+    // Sync models and editors to the extension host
     subscription.add(
-        from(services.model.model)
-            .pipe(
-                map(({ visibleViewComponents }) => visibleViewComponents),
-                distinctUntilChanged(),
-                concatMap(async viewComponents => {
-                    // Important: Make sure documents were synced before syncing windows, as windows reference them
-                    const nextVisibleTextDocuments = viewComponents ? viewComponents.map(v => v.item) : []
-                    if (!isEqual(visibleTextDocuments, nextVisibleTextDocuments)) {
-                        visibleTextDocuments = nextVisibleTextDocuments
-                        await proxy.documents.$acceptDocumentData(nextVisibleTextDocuments)
-                    }
-                    await proxy.windows.$acceptWindowData(
-                        viewComponents
-                            ? [
-                                  {
-                                      visibleViewComponents: viewComponents.map(viewComponent => ({
-                                          item: {
-                                              uri: viewComponent.item.uri,
-                                          },
-                                          selections: viewComponent.selections,
-                                          isActive: viewComponent.isActive,
-                                      })),
-                                  },
-                              ]
-                            : []
-                    )
-                })
-            )
+        from(services.model.models)
+            .pipe(concatMap(models => proxy.documents.$acceptDocumentData(models)))
+            .subscribe()
+    )
+    subscription.add(
+        from(services.editor.editors)
+            .pipe(concatMap(editors => proxy.windows.$acceptWindowData({ editors })))
             .subscribe()
     )
 
     const clientWindows = new ClientWindows(
-        (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
+        (params: ShowNotificationParams) => services.notifications.showMessages.next({ ...params }),
         (params: ShowMessageRequestParams) =>
             new Promise<MessageActionItem | null>(resolve => {
                 services.notifications.showMessageRequests.next({ ...params, resolve })
@@ -123,7 +101,7 @@ export async function createExtensionHostClientConnection(
         }
     )
 
-    const clientViews = new ClientViews(services.views, services.textDocumentLocations)
+    const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.editor)
 
     const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
     subscription.add(clientCodeEditor)
@@ -131,23 +109,16 @@ export async function createExtensionHostClientConnection(
     const clientLanguageFeatures = new ClientLanguageFeatures(
         services.textDocumentHover,
         services.textDocumentDefinition,
-        services.textDocumentTypeDefinition,
-        services.textDocumentImplementation,
         services.textDocumentReferences,
-        services.textDocumentLocations
+        services.textDocumentLocations,
+        services.completionItems
     )
     const clientSearch = new ClientSearch(services.queryTransformer)
     const clientCommands = new ClientCommands(services.commands)
-    subscription.add(
-        new ClientRoots(
-            proxy.roots,
-            from(services.model.model).pipe(
-                map(({ roots }) => roots),
-                distinctUntilChanged()
-            )
-        )
-    )
+    subscription.add(new ClientRoots(proxy.roots, services.workspace))
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
+
+    const clientContent = createClientContent(services.linkPreviews)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
@@ -159,6 +130,7 @@ export async function createExtensionHostClientConnection(
         windows: clientWindows,
         codeEditor: clientCodeEditor,
         views: clientViews,
+        content: clientContent,
     }
     comlink.expose(clientAPI, endpoints.expose)
 

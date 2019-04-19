@@ -1,22 +1,27 @@
 import * as React from 'react'
 import { OpenInSourcegraphProps } from '../repo'
 import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
-import { Button } from './Button'
+import { SourcegraphIconButton } from './Button'
 
-export interface Props {
+interface Props {
     openProps: OpenInSourcegraphProps
-    style?: React.CSSProperties
-    iconStyle?: React.CSSProperties
     className?: string
+    iconClassName?: string
     ariaLabel?: string
     onClick?: (e: any) => void
-    label: string
 }
 
 export class OpenOnSourcegraph extends React.Component<Props, {}> {
     public render(): JSX.Element {
         const url = this.getOpenInSourcegraphUrl(this.props.openProps)
-        return <Button {...this.props} className={`open-on-sourcegraph ${this.props.className}`} url={url} />
+        return (
+            <SourcegraphIconButton
+                {...this.props}
+                iconClassName={this.props.iconClassName}
+                className={`open-on-sourcegraph ${this.props.className}`}
+                url={url}
+            />
+        )
     }
 
     private getOpenInSourcegraphUrl(props: OpenInSourcegraphProps): string {

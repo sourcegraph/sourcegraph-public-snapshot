@@ -28,28 +28,9 @@ export interface AggregateError extends Error {
  */
 export const createAggregateError = (errors: ErrorLike[] = []): AggregateError =>
     Object.assign(new Error(errors.map(e => e.message).join('\n')), {
-        name: 'AggregateError' as 'AggregateError',
+        name: 'AggregateError' as const,
         errors: errors.map(asError),
     })
-
-/**
- * Improves error messages in case of ajax errors
- */
-export const normalizeAjaxError = (err: any): void => {
-    if (!err) {
-        return
-    }
-    if (typeof err.status === 'number') {
-        if (err.status === 0) {
-            err.message = 'Unable to reach server. Check your network connection and try again in a moment.'
-        } else {
-            err.message = `Unexpected HTTP error: ${err.status}`
-            if (err.xhr && err.xhr.statusText) {
-                err.message += ` ${err.xhr.statusText}`
-            }
-        }
-    }
-}
 
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
 export class CloneInProgressError extends Error {
@@ -72,14 +53,6 @@ export class RevNotFoundError extends Error {
     public readonly code = EREVNOTFOUND
     constructor(rev?: string) {
         super(`rev ${rev} not found`)
-    }
-}
-
-export const ERNOSOURCEGRAPHURL = 'ERNOSOURCEGRAPHURL'
-export class NoSourcegraphURLError extends Error {
-    public readonly code = ERNOSOURCEGRAPHURL
-    constructor() {
-        super(`no sourcegraph urls are configured`)
     }
 }
 

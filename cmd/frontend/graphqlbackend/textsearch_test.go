@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -216,4 +217,111 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
 	}
 	return r
+}
+
+// fakeSearcher is a zoekt.Searcher that returns a predefined search result.
+type fakeSearcher struct {
+	result *zoekt.SearchResult
+
+	// Default all unimplemented zoekt.Searcher methods to panic.
+	zoekt.Searcher
+}
+
+func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	return ss.result, nil
+}
+
+func Test_zoektSearchHEAD(t *testing.T) {
+	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
+	defer cancel()
+	type args struct {
+		ctx             context.Context
+		query           *search.PatternInfo
+		repos           []*search.RepositoryRevisions
+		useFullDeadline bool
+		searcher        zoekt.Searcher
+		opts            zoekt.SearchOptions
+		since           func(time.Time) time.Duration
+	}
+	tests := []struct {
+		name              string
+		args              args
+		wantFm            []*fileMatchResolver
+		wantLimitHit      bool
+		wantReposLimitHit map[string]struct{}
+		wantErr           bool
+	}{
+		{
+			name: "returns no error if search completed with no matches before timeout",
+			args: args{
+				ctx:   context.Background(),
+				query: &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos: []*search.RepositoryRevisions{
+					{Repo: &types.Repo{}},
+				},
+				useFullDeadline: false,
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
+				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
+			},
+			wantFm:            nil,
+			wantLimitHit:      false,
+			wantReposLimitHit: nil,
+			wantErr:           false,
+		},
+		{
+			name: "returns error if max wall time is exceeded but no matches have been found yet",
+			args: args{
+				ctx:   context.Background(),
+				query: &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos: []*search.RepositoryRevisions{
+					{Repo: &types.Repo{}},
+				},
+				useFullDeadline: false,
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
+				since:           func(time.Time) time.Duration { return time.Second },
+			},
+			wantFm:            nil,
+			wantLimitHit:      false,
+			wantReposLimitHit: nil,
+			wantErr:           true,
+		},
+		{
+			name: "returns error if context timeout already passed",
+			args: args{
+				ctx:   zeroTimeoutCtx,
+				query: &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos: []*search.RepositoryRevisions{
+					{Repo: &types.Repo{}},
+				},
+				useFullDeadline: true,
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{},
+				since:           func(time.Time) time.Duration { return 0 },
+			},
+			wantFm:            nil,
+			wantLimitHit:      false,
+			wantReposLimitHit: nil,
+			wantErr:           true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotFm, tt.wantFm) {
+				t.Errorf("zoektSearchHEAD() gotFm = %v, want %v", gotFm, tt.wantFm)
+			}
+			if gotLimitHit != tt.wantLimitHit {
+				t.Errorf("zoektSearchHEAD() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
+			}
+			if !reflect.DeepEqual(gotReposLimitHit, tt.wantReposLimitHit) {
+				t.Errorf("zoektSearchHEAD() gotReposLimitHit = %v, want %v", gotReposLimitHit, tt.wantReposLimitHit)
+			}
+		})
+	}
 }

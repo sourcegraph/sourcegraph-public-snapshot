@@ -20,4 +20,7 @@ for pkg in github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend; do
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
-docker build -f enterprise/cmd/frontend/Dockerfile -t $IMAGE $OUTPUT
+docker build -f enterprise/cmd/frontend/Dockerfile -t $IMAGE $OUTPUT \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION

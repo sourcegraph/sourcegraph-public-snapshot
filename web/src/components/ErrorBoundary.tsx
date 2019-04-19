@@ -82,7 +82,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                                 contact your site admin or Sourcegraph support.
                             </p>
                             <p>
-                                <code>{this.state.error.message}</code>
+                                <code className="text-wrap">{this.state.error.message}</code>
                             </p>
                         </div>
                     }

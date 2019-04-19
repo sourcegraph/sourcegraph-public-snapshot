@@ -1,10 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Redirect } from 'react-router'
 import { combineLatest, Subject, Subscription, throwError } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, repeatWhen, startWith, switchMap, tap } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError } from '../../../../../shared/src/util/errors'
 import { addCommentToThread, fetchDiscussionThreadAndComments, updateComment } from '../../../discussions/backend'
@@ -14,7 +16,7 @@ import { formatHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     threadID: GQL.ID
     commentID?: GQL.ID
     repoID: GQL.ID
@@ -22,7 +24,6 @@ interface Props {
     filePath: string
     history: H.History
     location: H.Location
-    authenticatedUser: GQL.IUser | null
 }
 
 interface State {
@@ -81,13 +82,13 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         // TODO(slimsag:discussions): future: test error state + cleanup CSS
 
         const { error, loading, thread } = this.state
-        const { location, commentID, authenticatedUser } = this.props
+        const { location, commentID } = this.props
 
         // If the thread is loaded, ensure that the URL hash is updated to
         // reflect the line that the discussion was created on.
         if (thread) {
             const desiredHash = this.urlHashWithLine(thread, commentID)
-            if (desiredHash !== location.hash) {
+            if (!hashesEqual(desiredHash, location.hash)) {
                 const discussionURL = location.pathname + location.search + desiredHash
                 return <Redirect to={discussionURL} />
             }
@@ -110,10 +111,10 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                                 key={node.id}
                                 {...this.props}
                                 comment={node}
-                                isSiteAdmin={!!authenticatedUser && authenticatedUser.siteAdmin}
                                 onReport={this.onCommentReport}
                                 onClearReports={this.onCommentClearReports}
                                 onDelete={this.onCommentDelete}
+                                extensionsController={this.props.extensionsController}
                             />
                         ))}
                         <DiscussionsInput
@@ -145,9 +146,14 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         return thread.target.__typename === 'DiscussionThreadTargetRepo' && thread.target.selection !== null
             ? formatHash(
                   {
-                      line: thread.target.selection.startLine,
+                      line: thread.target.selection.startLine + 1,
                       character: thread.target.selection.startCharacter,
-                      endLine: thread.target.selection.endLine,
+                      endLine:
+                          // The 0th character means the selection ended at the end of the previous
+                          // line.
+                          (thread.target.selection.endCharacter === 0
+                              ? thread.target.selection.endLine - 1
+                              : thread.target.selection.endLine) + 1,
                       endCharacter: thread.target.selection.endCharacter,
                   },
                   hash
@@ -160,7 +166,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         return addCommentToThread(this.props.threadID, contents).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => undefined),
-            catchError(e => throwError('Error creating comment: ' + asError(e).message))
+            catchError(e => throwError(new Error('Error creating comment: ' + asError(e).message)))
         )
     }
 
@@ -177,8 +183,28 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         )
 
     private onCommentDelete = (comment: GQL.IDiscussionComment) =>
+        // TODO: Support deleting the whole thread, and/or fix this when it is deleting the 1st comment
+        // in a thread. See https://github.com/sourcegraph/sourcegraph/issues/429.
         updateComment({ commentID: comment.id, delete: true }).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => undefined)
         )
+}
+
+/**
+ * @returns Whether the 2 URI fragments contain the same keys and values (assuming they contain a
+ * `#` then HTML-form-encoded keys and values like `a=b&c=d`).
+ */
+function hashesEqual(a: string, b: string): boolean {
+    if (a.startsWith('#')) {
+        a = a.slice(1)
+    }
+    if (b.startsWith('#')) {
+        b = b.slice(1)
+    }
+    const canonicalize = (hash: string): string[] =>
+        Array.from(new URLSearchParams(hash).entries())
+            .map(([key, value]) => `${key}=${value}`)
+            .sort()
+    return isEqual(canonicalize(a), canonicalize(b))
 }

@@ -7,18 +7,6 @@ import { TextDocumentPositionParams } from '../../../../../shared/src/api/protoc
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { AbsoluteRepoFilePosition, FileSpec, RepoSpec, ResolvedRevSpec } from '../../../../../shared/src/util/url'
 
-export interface LSPRequest {
-    method: string
-    params: any
-}
-
-/** LSP proxy error code for unsupported modes */
-export const EMODENOTFOUND = -32000
-
-export function isEmptyHover(hover: HoverMerged | null): boolean {
-    return !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
-}
-
 interface SimpleProviderFns {
     getHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
     fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Location | Location[] | null>
@@ -31,7 +19,7 @@ export const toTextDocumentIdentifier = (pos: RepoSpec & ResolvedRevSpec & FileS
 const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocumentPositionParams => ({
     textDocument: toTextDocumentIdentifier(pos),
     position: {
-        character: pos.position.character! - 1,
+        character: pos.position.character - 1,
         line: pos.position.line - 1,
     },
 })

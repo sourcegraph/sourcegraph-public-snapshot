@@ -47,7 +47,14 @@
 <body>
 	{{.Injected.BodyTop}}
 	<div id="root"></div>
-	<noscript>You need to enable JavaScript to run this app.</noscript>
+	<noscript>
+		<p>Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.</p>
+
+		<br>
+		<br>
+		<br>
+		You need to enable JavaScript to run this app.
+	</noscript>
 	<script src="{{.AssetURL}}/scripts/app.bundle.js?{{version "scripts/app.bundle.js"}}"></script>
 	{{.Injected.BodyBottom}}
 </body>

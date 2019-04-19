@@ -1,7 +1,10 @@
 @import './actions/ActionItem';
 @import './commandPalette/CommandList';
+@import './components/completion/CompletionWidget';
 @import './components/CodeExcerpt';
-@import './components/FileMatch';
+@import './components/activation/ActivationDropdown';
+@import './components/activation/ActivationChecklist';
+@import './components/FileMatchChildren';
 @import './components/Markdown';
 @import './components/PopoverButton';
 @import './components/Resizable';

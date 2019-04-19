@@ -2,6 +2,7 @@
 
 - [Add repositories from a code host](../external_service/index.md) (GitHub, GitLab, Bitbucket Server, AWS CodeCommit, Phabricator, or Gitolite)
 - [Add repositories by Git clone URLs](../external_service/other.md)
+- [Add Perforce repositories](perforce.md)
 - [Add repositories from the local disk](add_from_local_disk.md)
 
 ## Troubleshooting

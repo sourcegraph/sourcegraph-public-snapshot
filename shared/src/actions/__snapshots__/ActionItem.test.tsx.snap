@@ -3,48 +3,54 @@
 exports[`ActionItem actionItem variant 1`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
 </a>
 `;
 
 exports[`ActionItem non-actionItem variant 1`] = `
 <a
   aria-label="d"
-  className="action-item    "
+  className="action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
+</a>
+`;
+
+exports[`ActionItem non-pressed actionItem 1`] = `
+<a
+  aria-pressed={false}
+  className="action-item action-item--variant-action-item "
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  role="button"
+  tabIndex={0}
+>
+  b
 </a>
 `;
 
@@ -57,152 +63,141 @@ exports[`ActionItem noop command 1`] = `
     className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
 </span>
 `;
 
+exports[`ActionItem pressed toggle actionItem 1`] = `
+<a
+  aria-pressed={true}
+  className="action-item action-item--variant-action-item action-item--pressed "
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  role="button"
+  tabIndex={0}
+>
+  b
+</a>
+`;
+
 exports[`ActionItem render as link for "open" command 1`] = `
 <a
-  className="action-item    "
+  className="action-item "
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
   to="https://example.com"
 >
-  <div
-    className="action-item__content"
-  >
-     
-    
-    t
-  </div>
+  
+  t
 </a>
 `;
 
 exports[`ActionItem run command 1`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item disabled"
+  className="action-item action-item--variant-action-item disabled"
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
 </a>
 `;
 
 exports[`ActionItem run command 2`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
 </a>
 `;
 
 exports[`ActionItem run command with error 1`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
 </a>
 `;
 
 exports[`ActionItem run command with error with showInlineError 1`] = `
 <a
   aria-label="Error: x"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="Error: x"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
 </a>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <a
   aria-label="d"
-  className="action-item  action-item--loading action-item--variant-action-item disabled"
+  className="action-item action-item--loading action-item--variant-action-item disabled"
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
   <div
     className="action-item__loader"
   >
     <div
-      className="loading-spinner icon-inline"
+      className="loading-spinner "
     />
   </div>
 </a>
@@ -211,43 +206,35 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <img
-      className="icon-inline"
-      src="u"
-    />
-     
-    g: 
-    t
-  </div>
+  <img
+    className="icon-inline"
+    src="u"
+  />
+   
+  g: 
+  t
 </a>
 `;
 
 exports[`ActionItem title element 1`] = `
 <a
   aria-label="d"
-  className="action-item   action-item--variant-action-item "
+  className="action-item action-item--variant-action-item "
   data-tooltip="d"
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
 >
-  <div
-    className="action-item__content"
-  >
-    <span>
-      t2
-    </span>
-  </div>
+  <span>
+    t2
+  </span>
 </a>
 `;

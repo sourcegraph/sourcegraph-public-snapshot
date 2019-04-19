@@ -37,10 +37,13 @@ const RepoContainer = React.lazy(async () => ({ default: (await import('./repo/R
 const ScopePage = React.lazy(async () => ({ default: (await import('./search/input/ScopePage')).ScopePage }))
 const SiteInitPage = React.lazy(async () => ({ default: (await import('./site-admin/SiteInitPage')).SiteInitPage }))
 const RedirectToUserPage = React.lazy(async () => ({
-    default: (await import('./user/account/RedirectToUserPage')).RedirectToUserPage,
+    default: (await import('./user/settings/RedirectToUserPage')).RedirectToUserPage,
 }))
 const RedirectToUserSettings = React.lazy(async () => ({
-    default: (await import('./user/account/RedirectToUserSettings')).RedirectToUserSettings,
+    default: (await import('./user/settings/RedirectToUserSettings')).RedirectToUserSettings,
+}))
+const SnippetsPage = React.lazy(async () => ({
+    default: (await import('./snippets/SnippetsPage')).SnippetsPage,
 }))
 
 export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
@@ -84,7 +87,11 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/search',
         render: (props: any) =>
-            parseSearchURLQuery(props.location.search) ? <SearchResults {...props} /> : <SearchPage {...props} />,
+            parseSearchURLQuery(props.location.search) ? (
+                <SearchResults {...props} deployType={window.context.deployType} />
+            ) : (
+                <SearchPage {...props} />
+            ),
         exact: true,
     },
     {
@@ -125,7 +132,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/search',
-        render: props => <SearchResults {...props} />,
+        render: props => <SearchResults {...props} deployType={window.context.deployType} />,
         exact: true,
     },
     {
@@ -197,6 +204,10 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
             window.location.reload()
             return null
         },
+    },
+    {
+        path: '/snippets',
+        render: props => <SnippetsPage {...props} />,
     },
     repoRevRoute,
 ]

@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
@@ -6,9 +7,12 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Subject } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
+import { catchError } from 'rxjs/operators'
+import { Activation, ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -18,6 +22,7 @@ import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import {
+    fetchAllowEnableDisable,
     fetchAllRepositoriesAndPollIfAnyCloning,
     setAllRepositoriesEnabled,
     setRepositoryEnabled,
@@ -25,8 +30,15 @@ import {
     updateMirrorRepository,
 } from './backend'
 
-interface RepositoryNodeProps {
+interface RepositoryNodeProps extends ActivationProps {
     node: GQL.IRepository
+    /**
+     * If true the enable/disable state and actions are shown.
+     *
+     * This field will disappear in 3.4 (always false). See
+     * https://github.com/sourcegraph/sourcegraph/issues/2025.
+     */
+    showEnabled: boolean
     onDidUpdate?: () => void
 }
 
@@ -42,27 +54,33 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
 
     public render(): JSX.Element | null {
         return (
-            <li className="repository-node list-group-item py-2">
+            <li
+                className="repository-node list-group-item py-2"
+                data-e2e-repository={this.props.node.name}
+                data-e2e-enabled={this.props.node.enabled}
+                data-e2e-cloned={this.props.node.mirrorInfo.cloned}
+            >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <RepoLink repoName={this.props.node.name} to={this.props.node.url} />
-                        {this.props.node.enabled ? (
-                            <small
-                                data-tooltip="Access to this repository is enabled. All users can view and search it."
-                                className="ml-2 text-success"
-                            >
-                                <CheckIcon className="icon-inline" />
-                                Enabled
-                            </small>
-                        ) : (
-                            <small
-                                data-tooltip="Access to this repository is disabled. Enable access to it to allow users to view and search it."
-                                className="ml-2 text-danger"
-                            >
-                                <CloseIcon className="icon-inline" />
-                                Disabled
-                            </small>
-                        )}
+                        {this.props.showEnabled &&
+                            (this.props.node.enabled ? (
+                                <small
+                                    data-tooltip="Access to this repository is enabled. All users can view and search it."
+                                    className="ml-2 text-success"
+                                >
+                                    <CheckIcon className="icon-inline" />
+                                    Enabled
+                                </small>
+                            ) : (
+                                <small
+                                    data-tooltip="Access to this repository is disabled. Enable access to it to allow users to view and search it."
+                                    className="ml-2 text-danger"
+                                >
+                                    <CloseIcon className="icon-inline" />
+                                    Disabled
+                                </small>
+                            ))}
                         {this.props.node.mirrorInfo.cloneInProgress && (
                             <small className="ml-2 text-success">
                                 <LoadingSpinner className="icon-inline" /> Cloning
@@ -89,25 +107,26 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                                 <SettingsIcon className="icon-inline" /> Settings
                             </Link>
                         }{' '}
-                        {this.props.node.enabled ? (
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={this.disableRepository}
-                                disabled={this.state.loading}
-                                data-tooltip="Disable access to the repository. Users will be unable to view and search it."
-                            >
-                                Disable
-                            </button>
-                        ) : (
-                            <button
-                                className="btn btn-success btn-sm"
-                                onClick={this.enableRepository}
-                                disabled={this.state.loading}
-                                data-tooltip="Enable access to the repository. Users will be able to view and search it."
-                            >
-                                Enable
-                            </button>
-                        )}
+                        {this.props.showEnabled &&
+                            (this.props.node.enabled ? (
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={this.disableRepository}
+                                    disabled={this.state.loading}
+                                    data-tooltip="Disable access to the repository. Users will be unable to view and search it."
+                                >
+                                    Disable
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn btn-success btn-sm e2e-enable-repository"
+                                    onClick={this.enableRepository}
+                                    disabled={this.state.loading}
+                                    data-tooltip="Enable access to the repository. Users will be able to view and search it."
+                                >
+                                    Enable
+                                </button>
+                            ))}
                     </div>
                 </div>
                 {this.state.errorDescription && (
@@ -136,38 +155,38 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                     this.props.onDidUpdate()
                 }
                 this.setState({ loading: false })
+                activate(this.props.activation)
             },
             err => this.setState({ loading: false, errorDescription: err.message })
         )
     }
 }
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<any>, ActivationProps {}
 
-class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
+interface State {
+    /**
+     * Field indicating if we should show enable/disable actions and filters.
+     * 'loading' while fetching the value or ErrorLike if fetching fails.
+     */
+    showEnabledOrError: 'loading' | boolean | ErrorLike
+}
+
+class FilteredRepositoryConnection extends FilteredConnection<
+    GQL.IRepository,
+    Pick<RepositoryNodeProps, 'showEnabled' | 'onDidUpdate'>
+> {}
 
 /**
  * A page displaying the repositories on this site.
  */
-export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
+export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State> {
     private static FILTERS: FilteredConnectionFilter[] = [
         {
             label: 'All',
             id: 'all',
             tooltip: 'Show all repositories',
             args: { enabled: true, disabled: true },
-        },
-        {
-            label: 'Enabled',
-            id: 'enabled',
-            tooltip: 'Show access-enabled repositories only',
-            args: { enabled: true, disabled: false },
-        },
-        {
-            label: 'Disabled',
-            id: 'disabled',
-            tooltip: 'Show access-disabled repositories only',
-            args: { enabled: false, disabled: true },
         },
         {
             label: 'Cloned',
@@ -195,10 +214,36 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
         },
     ]
 
+    private static ENABLED_FILTERS: FilteredConnectionFilter[] = [
+        {
+            label: 'Enabled',
+            id: 'enabled',
+            tooltip: 'Show access-enabled repositories only',
+            args: { enabled: true, disabled: false },
+        },
+        {
+            label: 'Disabled',
+            id: 'disabled',
+            tooltip: 'Show access-disabled repositories only',
+            args: { enabled: false, disabled: true },
+        },
+    ]
+
+    private subscriptions = new Subscription()
     private repositoryUpdates = new Subject<void>()
+
+    public state: State = {
+        showEnabledOrError: 'loading',
+    }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminRepos')
+
+        this.subscriptions.add(
+            fetchAllowEnableDisable()
+                .pipe(catchError(err => [asError(err)]))
+                .subscribe(v => this.setState({ showEnabledOrError: v }))
+        )
 
         // Refresh global alert about enabling repositories when the user visits here.
         refreshSiteFlags()
@@ -207,6 +252,8 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
     }
 
     public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+
         // Remove global alert about enabling repositories when the user navigates away from here.
         refreshSiteFlags()
             .toPromise()
@@ -214,9 +261,24 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<RepositoryNodeProps, 'onDidUpdate'> = {
-            onDidUpdate: this.onDidUpdateRepository,
+        if (this.state.showEnabledOrError === 'loading') {
+            return <LoadingSpinner className="icon-inline" />
         }
+
+        if (isErrorLike(this.state.showEnabledOrError)) {
+            return <div className="alert alert-danger">{upperFirst(this.state.showEnabledOrError.message)}</div>
+        }
+
+        const nodeProps: Pick<RepositoryNodeProps, 'onDidUpdate' | 'showEnabled' | 'activation'> = {
+            onDidUpdate: this.onDidUpdateRepository,
+            activation: this.props.activation,
+            showEnabled: this.state.showEnabledOrError,
+        }
+
+        const filters = [
+            ...SiteAdminRepositoriesPage.FILTERS,
+            ...(nodeProps.showEnabled ? SiteAdminRepositoriesPage.ENABLED_FILTERS : []),
+        ]
 
         return (
             <div className="site-admin-repositories-page">
@@ -236,11 +298,11 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
                     nodeComponent={RepositoryNode}
                     nodeComponentProps={nodeProps}
                     updates={this.repositoryUpdates}
-                    filters={SiteAdminRepositoriesPage.FILTERS}
+                    filters={filters}
                     history={this.props.history}
                     location={this.props.location}
                 />
-                {!window.context.sourcegraphDotComMode && (
+                {!window.context.sourcegraphDotComMode && nodeProps.showEnabled && (
                     <div className="my-4">
                         <button className="btn btn-secondary" onClick={this.disableAllRepostiories}>
                             Disable all
@@ -279,12 +341,21 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, {}> {
             promises.push(updateAllMirrorRepositories().toPromise())
         }
         Promise.all(promises).then(
-            this.onDidUpdateRepository,
+            () => {
+                activate(this.props.activation)
+                this.onDidUpdateRepository()
+            },
             // If one (or more) repositories fail, still update the UI before re-throwing
             err => {
                 this.onDidUpdateRepository()
                 throw err
             }
         )
+    }
+}
+
+function activate(activation?: Activation): void {
+    if (activation) {
+        activation.update({ EnabledRepository: true })
     }
 }

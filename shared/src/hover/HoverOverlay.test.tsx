@@ -7,14 +7,12 @@ import renderer from 'react-test-renderer'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { MarkupKind } from 'sourcegraph'
 import { HoverMerged } from '../api/client/types/hover'
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
 const renderShallow = (element: React.ReactElement<HoverOverlayProps>): React.ReactElement<any> => {
     const renderer = createRenderer()
     renderer.render(element)
-    // Render again because the first render call only renders the <TelemetryContext.Consumer> element, whose child
-    // is a render prop that returns what we actually want.
-    renderer.render(renderer.getRenderOutput().props.children())
     return renderer.getRenderOutput()
 }
 
@@ -24,6 +22,7 @@ describe('HoverOverlay', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps: HoverOverlayProps = {
         location: history.location,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
         showCloseButton: false,
@@ -66,7 +65,12 @@ describe('HoverOverlay', () => {
 
     test('actions present', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} actionsOrError={[{ action: { id: 'a', command: 'c' } }]} />)
+            renderShallow(
+                <HoverOverlay
+                    {...commonProps}
+                    actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' } }]}
+                />
+            )
         ).toMatchSnapshot()
     })
 
@@ -187,9 +191,18 @@ describe('HoverOverlay', () => {
 
     describe('hover content rendering', () => {
         const renderMarkdownHover = (hover: HoverAttachment & HoverMerged) => {
-            const contents = castArray(
-                renderShallow(<HoverOverlay {...commonProps} hoverOrError={hover} />).props.children
-            ).find(e => e.props && e.props.className && e.props.className.includes('hover-overlay__contents'))
+            // TODO this test depends on internals of the HoverOverlay.
+            // If we want to test this rendering, it would be better to
+            // extract the markdown rendering into another small component
+            // and unit test that in isolation
+            const r = renderShallow(<HoverOverlay {...commonProps} hoverOrError={hover} />)
+            const contents = castArray(r.props.children).find(
+                element =>
+                    element &&
+                    element.props &&
+                    element.props.className &&
+                    element.props.className.includes('hover-overlay__contents')
+            )
             if (!contents) {
                 return null
             }

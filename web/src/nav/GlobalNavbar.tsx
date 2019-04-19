@@ -2,6 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -11,16 +12,18 @@ import { KeybindingsProps } from '../keybindings'
 import { parseSearchURLQuery } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
-
 interface Props
     extends SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeybindingsProps,
+        EventLoggerProps,
         ThemeProps,
-        ThemePreferenceProps {
+        ThemePreferenceProps,
+        ActivationProps {
     history: H.History
     location: H.Location
     authenticatedUser: GQL.IUser | null
@@ -84,6 +87,16 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                 : '/.assets/img/sourcegraph-head-logo.svg'
         } else {
             logoSrc = '/.assets/img/sourcegraph-mark.svg'
+            const { branding } = window.context
+            if (branding) {
+                if (this.props.isLightTheme) {
+                    if (branding.light && branding.light.symbol) {
+                        logoSrc = branding.light.symbol
+                    }
+                } else if (branding.dark && branding.dark.symbol) {
+                    logoSrc = branding.dark.symbol
+                }
+            }
         }
 
         const logo = (

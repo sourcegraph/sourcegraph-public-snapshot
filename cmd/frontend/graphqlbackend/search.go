@@ -10,11 +10,14 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
@@ -22,12 +25,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // This file contains the root resolver for search. It currently has a lot of
@@ -38,17 +40,16 @@ import (
 // should start here.
 
 func maxReposToSearch() int {
-	switch max := conf.Get().MaxReposToSearch; max {
-	case 0:
-		// Not specified OR specified as literal zero. Use our default value.
-		return 500
-	case -1:
+	switch max := conf.Get().MaxReposToSearch; {
+	case max <= 0:
 		// Default to a very large number that will not overflow if incremented.
 		return math.MaxInt32 >> 1
 	default:
 		return max
 	}
 }
+
+var nestedRx = regexp.MustCompile(`^!(hier|nested)!`)
 
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
@@ -59,10 +60,16 @@ func (r *schemaResolver) Search(args *struct {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 }, error) {
-	if strings.HasPrefix(args.Query, "!hier!") {
-		return newSearcherResolver(strings.TrimPrefix(args.Query, "!hier!"))
+	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
+	defer tr.Finish()
+	nested := nestedRx.MatchString(args.Query)
+	query2 := nestedRx.ReplaceAllString(args.Query, "")
+	tr.LogFields(otlog.Bool("nested", nested), otlog.String("query", args.Query), otlog.String("query2", query2))
+	if nested {
+		return newSearcherResolver(query2)
 	}
 
+	go addQueryToSearchesTable(args.Query)
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
@@ -71,6 +78,17 @@ func (r *schemaResolver) Search(args *struct {
 	return &searchResolver{
 		query: query,
 	}, nil
+}
+
+func addQueryToSearchesTable(q string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := db.RecentSearches.Add(ctx, q); err != nil {
+		log15.Error("adding query to searches table", "error", err)
+	}
+	if err := db.RecentSearches.DeleteExcessRows(ctx, 1e5); err != nil {
+		log15.Error("deleting excess rows from searches table", "error", err)
+	}
 }
 
 func asString(v *searchquerytypes.Value) string {
@@ -614,7 +632,7 @@ func newSearchResultResolver(result interface{}, score int) *searchSuggestionRes
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
 
 	case *symbolResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.ContainerName), label: r.symbol.Name + " " + r.symbol.ContainerName}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
 
 	default:
 		panic("never here")

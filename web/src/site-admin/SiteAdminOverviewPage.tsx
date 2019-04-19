@@ -1,16 +1,13 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import H from 'history'
 import { upperFirst } from 'lodash'
-import ChartLineIcon from 'mdi-react/ChartLineIcon'
-import CityIcon from 'mdi-react/CityIcon'
-import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { ActivationProps, percentageDone } from '../../../shared/src/components/activation/Activation'
+import { ActivationChecklist } from '../../../shared/src/components/activation/ActivationChecklist'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { numberWithCommas, pluralize } from '../../../shared/src/util/strings'
@@ -21,7 +18,8 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 
-interface Props {
+interface Props extends ActivationProps {
+    history: H.History
     overviewComponents: ReadonlyArray<React.ComponentType>
     isLightTheme: boolean
 }
@@ -100,6 +98,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        let setupPercentage = 0
+        if (this.props.activation) {
+            setupPercentage = percentageDone(this.props.activation.completed)
+        }
         return (
             <div className="site-admin-overview-page pt-3">
                 <PageTitle title="Overview - Admin" />
@@ -117,121 +119,104 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                 <OverviewList>
                     {this.state.info && (
                         <>
-                            <OverviewItem
-                                link="/explore"
-                                icon={PackageVariantIcon}
-                                actions={
-                                    <Link to="/explore" className="btn btn-secondary btn-sm">
-                                        <OpenInNewIcon className="icon-inline" /> Explore
-                                    </Link>
-                                }
-                                title="Explore"
-                                isBlock={true}
-                            />
-                            <OverviewItem
-                                link="/site-admin/repositories"
-                                icon={RepositoryIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/site-admin/external-services" className="pr-2">
-                                            Configure external services
-                                        </Link>
-                                    </>
-                                }
-                                title={`${numberWithCommas(this.state.info.repositories)} ${
-                                    this.state.info.repositories !== null
-                                        ? pluralize('repository', this.state.info.repositories, 'repositories')
-                                        : '?'
-                                }`}
-                            />
-                            <OverviewItem
-                                link="/site-admin/users"
-                                icon={UserIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/site-admin/users/new" className="pr-2">
-                                            Create user account
-                                        </Link>
-                                    </>
-                                }
-                                title={`${numberWithCommas(this.state.info.users)} ${pluralize(
-                                    'user',
-                                    this.state.info.users
-                                )}`}
-                            />
-                            <OverviewItem
-                                link="/site-admin/organizations"
-                                icon={CityIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/organizations/new" className="pr-2">
-                                            Create organization
-                                        </Link>
-                                    </>
-                                }
-                                title={`${numberWithCommas(this.state.info.orgs)} ${pluralize(
-                                    'organization',
-                                    this.state.info.orgs
-                                )}`}
-                            />
-                            <OverviewItem
-                                link="/site-admin/surveys"
-                                icon={EmoticonIcon}
-                                actions={
-                                    <Link to="/site-admin/surveys" className="btn btn-secondary btn-sm">
-                                        <OpenInNewIcon className="icon-inline" /> View all
-                                    </Link>
-                                }
-                                title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
-                                    'user survey response',
-                                    this.state.info.surveyResponses.totalCount
-                                )}`}
-                            />
-                        </>
-                    )}
-                    {this.state.stats && (
-                        <OverviewItem
-                            icon={ChartLineIcon}
-                            title={`${this.state.stats.waus[1].userCount} ${pluralize(
-                                'active user',
-                                this.state.stats.waus[1].userCount
-                            )} last week`}
-                            defaultExpanded={true}
-                        >
-                            {this.state.error && (
-                                <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
+                            {this.props.activation && this.props.activation.completed && (
+                                <OverviewItem
+                                    title={`${setupPercentage < 100 ? 'Set up Sourcegraph' : 'Status'}`}
+                                    defaultExpanded={setupPercentage < 100}
+                                    list={true}
+                                >
+                                    <div>
+                                        {this.props.activation.completed && (
+                                            <ActivationChecklist
+                                                history={this.props.history}
+                                                steps={this.props.activation.steps}
+                                                completed={this.props.activation.completed}
+                                            />
+                                        )}
+                                    </div>
+                                </OverviewItem>
                             )}
-                            {this.state.stats && (
-                                <UsageChart
-                                    {...this.props}
-                                    stats={this.state.stats}
-                                    chartID="waus"
-                                    showLegend={false}
-                                    header={
-                                        <div className="site-admin-overview-page__detail-header">
-                                            <h2>Weekly unique users</h2>
-                                            <h3>
-                                                <Link
-                                                    to="/site-admin/usage-statistics"
-                                                    className="btn btn-secondary btn-sm"
-                                                >
-                                                    <OpenInNewIcon className="icon-inline" /> View all usage statistics
-                                                </Link>
-                                            </h3>
-                                        </div>
-                                    }
+                            {this.state.info.repositories !== null && (
+                                <OverviewItem link="/explore" actions="Jump to explore page" title="Explore" />
+                            )}
+                            {this.state.info.repositories !== null && (
+                                <OverviewItem
+                                    link="/site-admin/repositories"
+                                    actions="View all repositories"
+                                    title={`${numberWithCommas(this.state.info.repositories)} ${pluralize(
+                                        'repository',
+                                        this.state.info.repositories,
+                                        'repositories'
+                                    )}`}
                                 />
                             )}
-                        </OverviewItem>
+                            {this.state.info.users > 1 && (
+                                <OverviewItem
+                                    link="/site-admin/users"
+                                    actions="View or create users"
+                                    title={`${numberWithCommas(this.state.info.users)} ${pluralize(
+                                        'user',
+                                        this.state.info.users
+                                    )}`}
+                                />
+                            )}
+                            {this.state.info.orgs > 1 && (
+                                <OverviewItem
+                                    link="/site-admin/organizations"
+                                    actions="View or create organizations"
+                                    title={`${numberWithCommas(this.state.info.orgs)} ${pluralize(
+                                        'organization',
+                                        this.state.info.orgs
+                                    )}`}
+                                />
+                            )}
+                            {this.state.info.users > 1 && (
+                                <OverviewItem
+                                    link="/site-admin/surveys"
+                                    actions="View all user surveys"
+                                    title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
+                                        'user survey response',
+                                        this.state.info.surveyResponses.totalCount
+                                    )}`}
+                                />
+                            )}
+                            {this.state.info.users > 1 && this.state.stats && (
+                                <OverviewItem
+                                    title={`${this.state.stats.waus[1].userCount} ${pluralize(
+                                        'active user',
+                                        this.state.stats.waus[1].userCount
+                                    )} last week`}
+                                    defaultExpanded={true}
+                                    list={true}
+                                >
+                                    {this.state.error && (
+                                        <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
+                                    )}
+                                    {this.state.stats && (
+                                        <UsageChart
+                                            {...this.props}
+                                            stats={this.state.stats}
+                                            chartID="waus"
+                                            showLegend={false}
+                                            header={
+                                                <div className="site-admin-overview-page__detail-header">
+                                                    <h2>Weekly unique users</h2>
+                                                    <h3>
+                                                        <Link
+                                                            to="/site-admin/usage-statistics"
+                                                            className="btn btn-secondary"
+                                                        >
+                                                            View all usage statistics{' '}
+                                                            <OpenInNewIcon className="icon-inline" />
+                                                        </Link>
+                                                    </h3>
+                                                </div>
+                                            }
+                                        />
+                                    )}
+                                </OverviewItem>
+                            )}
+                        </>
                     )}
                 </OverviewList>
             </div>

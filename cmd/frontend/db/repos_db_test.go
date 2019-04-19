@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -85,8 +86,12 @@ func TestRepos_List(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { mockAuthzFilter = nil }()
 
+	ctx := dbtesting.TestContext(t)
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	want := mustCreate(ctx, t, &types.Repo{Name: "r"})
@@ -105,8 +110,11 @@ func TestRepos_List_fork(t *testing.T) {
 		t.Skip()
 	}
 
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { mockAuthzFilter = nil }()
 	ctx := dbtesting.TestContext(t)
-
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", Fork: false})
@@ -147,8 +155,11 @@ func TestRepos_List_pagination(t *testing.T) {
 		t.Skip()
 	}
 
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { mockAuthzFilter = nil }()
 	ctx := dbtesting.TestContext(t)
-
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
@@ -195,8 +206,11 @@ func TestRepos_List_query1(t *testing.T) {
 		t.Skip()
 	}
 
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { mockAuthzFilter = nil }()
 	ctx := dbtesting.TestContext(t)
-
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
@@ -234,8 +248,11 @@ func TestRepos_List_query2(t *testing.T) {
 		t.Skip()
 	}
 
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { mockAuthzFilter = nil }()
 	ctx := dbtesting.TestContext(t)
-
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
@@ -276,8 +293,11 @@ func TestRepos_List_sort(t *testing.T) {
 		t.Skip()
 	}
 
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { mockAuthzFilter = nil }()
 	ctx := dbtesting.TestContext(t)
-
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
@@ -346,8 +366,11 @@ func TestRepos_List_patterns(t *testing.T) {
 		t.Skip()
 	}
 
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { mockAuthzFilter = nil }()
 	ctx := dbtesting.TestContext(t)
-
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
@@ -400,8 +423,11 @@ func TestRepos_List_patterns(t *testing.T) {
 // TestRepos_List_patterns tests the behavior of Repos.List when called with
 // a QueryPattern.
 func TestRepos_List_queryPattern(t *testing.T) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { mockAuthzFilter = nil }()
 	ctx := dbtesting.TestContext(t)
-
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{

@@ -2,11 +2,8 @@ package httpapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -147,59 +144,18 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	if len(req.Kinds) == 0 {
+		req.Kinds = append(req.Kinds, req.Kind)
+	}
+
 	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: []string{req.Kind},
+		Kinds: req.Kinds,
 	})
 	if err != nil {
 		return err
 	}
 	return json.NewEncoder(w).Encode(services)
-}
-
-func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
-	var req api.ReposGetInventoryUncachedRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.Get(r.Context(), req.Repo)
-	if err != nil {
-		return err
-	}
-	inv, err := backend.Repos.GetInventoryUncached(r.Context(), repo, req.CommitID)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(inv)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
-}
-
-func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
-	var req api.ReposGetInventoryRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.Get(r.Context(), req.Repo)
-	if err != nil {
-		return err
-	}
-	inv, err := backend.Repos.GetInventory(r.Context(), repo, req.CommitID)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(inv)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
 }
 
 func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
@@ -210,6 +166,25 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	err = json.NewEncoder(w).Encode(raw)
 	if err != nil {
 		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+// serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
+// not depend on frontend and therefore does not have access to `conf.Watch`.
+// Additionally, it only cares about certain search specific settings so this
+// search specific endpoint is used rather than serving the entire site settings
+// from /.internal/configuration.
+func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
+	largeFiles := conf.Get().SearchLargeFiles
+	opts := struct {
+		LargeFiles []string
+	}{
+		LargeFiles: largeFiles,
+	}
+	err := json.NewEncoder(w).Encode(opts)
+	if err != nil {
+		return errors.Wrap(err, "encode")
 	}
 	return nil
 }
@@ -258,7 +233,7 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
-	settings, err := db.Settings.ListAll(r.Context())
+	settings, err := db.Settings.ListAll(r.Context(), "")
 	if err != nil {
 		return errors.Wrap(err, "db.Settings.ListAll")
 	}
@@ -488,55 +463,6 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, src)
 	return err
-}
-
-func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
-	service := r.URL.Query().Get("service")
-	if service != "git-upload-pack" {
-		return errors.New("only support service git-upload-pack")
-	}
-
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
-	}
-
-	if !repo.Enabled {
-		return errors.Errorf("repo is not enabled: %s", repo.Name)
-	}
-
-	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Repo = gitserver.Repo{Name: repo.Name}
-	refs, err := cmd.Output(r.Context())
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-upload-pack-advertisement"))
-	w.WriteHeader(http.StatusOK)
-	w.Write(packetWrite("# service=git-upload-pack\n"))
-	w.Write([]byte("0000"))
-	w.Write(refs)
-	return nil
-}
-
-func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
-	}
-
-	gitserver.DefaultClient.UploadPack(repo.Name, w, r)
-	return nil
-}
-
-func packetWrite(str string) []byte {
-	s := strconv.FormatInt(int64(len(str)+4), 16)
-	if len(s)%4 != 0 {
-		s = strings.Repeat("0", 4-len(s)%4) + s
-	}
-	return []byte(s + str)
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {

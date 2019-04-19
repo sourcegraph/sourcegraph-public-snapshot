@@ -1,9 +1,9 @@
-export enum AppEnv {
+enum AppEnv {
     Extension,
     Page,
 }
 
-export enum ScriptEnv {
+enum ScriptEnv {
     Content,
     Background,
     Options,
@@ -38,7 +38,7 @@ function getContext(): AppContext {
 
 const ctx = getContext()
 
-export const isContent = ctx.scriptEnv === ScriptEnv.Content
+const isContent = ctx.scriptEnv === ScriptEnv.Content
 export const isBackground = ctx.scriptEnv === ScriptEnv.Background
 export const isOptions = ctx.scriptEnv === ScriptEnv.Options
 
@@ -54,5 +54,3 @@ export const isPublicCodeHost = ((): boolean => {
 })()
 
 export const isPhabricator = Boolean(document.querySelector('.phabricator-wordmark'))
-
-export default ctx

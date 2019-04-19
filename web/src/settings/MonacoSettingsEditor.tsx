@@ -208,7 +208,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     public static isStandaloneCodeEditor(
         editor: monaco.editor.ICodeEditor
     ): editor is monaco.editor.IStandaloneCodeEditor {
-        return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor
+        const editorAny = editor as any
+        return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor && editorAny.addAction
     }
 
     public static addEditorAction(
@@ -247,6 +248,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     }
                 }
                 if (!selection) {
+                    // TODO: This is buggy. See
+                    // https://github.com/sourcegraph/sourcegraph/issues/2756.
                     selection = monaco.Selection.fromPositions(
                         monacoEdits[0].range.getStartPosition(),
                         monacoEdits[monacoEdits.length - 1].range.getEndPosition()

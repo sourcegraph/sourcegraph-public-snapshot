@@ -1,65 +1,101 @@
+import * as path from 'path'
+import { createAggregateError } from '../../../../../shared/src/util/errors'
+import { DiffResolvedRevSpec } from '../../shared/repo'
 import { FileInfo } from '../code_intelligence'
 
-export interface PageInfo extends Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> {
-    project: string
+export interface BitbucketRepoInfo {
     repoSlug: string
+    project: string
 }
 
-const getFileInfoFromLink = (codeView: HTMLElement, linkSelector: string, fileInfoRegexp: RegExp) => {
-    const rawViewLink = codeView.querySelector<HTMLAnchorElement>(linkSelector)
-    if (!rawViewLink) {
-        throw new Error(`could not find raw view link for code view (${linkSelector})`)
+const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source']
+
+// TODO this needs to take repositoryPathPatterns into account!
+const bitbucketToSourcegraphRepoName = ({ repoSlug, project }: BitbucketRepoInfo): string =>
+    [window.location.hostname, project, repoSlug].join('/')
+
+/**
+ * Attempts to parse the file info from a link element contained in the given
+ * single-file code view (both source and "diff to previous" views).
+ * Depending on the configuration of the page, this can be a link to the raw file,
+ * or to the original source view, so a few different selectors are tried.
+ *
+ * The href of these links contains:
+ * - project name
+ * - repo name
+ * - file path
+ * - rev (through the query parameter `at`)
+ */
+const getFileInfoFromLinkInSingleFileView = (
+    codeView: HTMLElement
+): Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> & BitbucketRepoInfo => {
+    const errors: Error[] = []
+    for (const selector of LINK_SELECTORS) {
+        try {
+            const linkElement = codeView.querySelector<HTMLLinkElement>(selector)
+            if (!linkElement) {
+                throw new Error(`Could not find selector ${selector} in code view`)
+            }
+            const url = new URL(linkElement.href)
+            const path = url.pathname
+
+            // Looks like /projects/<project>/repos/<repo>/(browse|raw)/<file path>?at=<rev>
+            const pathMatch = path.match(/\/projects\/(.*?)\/repos\/(.*?)\/(?:browse|raw)\/(.*)$/)
+            if (!pathMatch) {
+                throw new Error(`Path of link matching selector ${selector} did not match path regex: ${path}`)
+            }
+
+            const [, project, repoSlug, filePath] = pathMatch
+
+            // Looks like 'refs/heads/<rev>'
+            const at = url.searchParams.get('at')
+            if (!at) {
+                throw new Error(`href of link matching selector ${selector} did not have 'at' search param: ${url}`)
+            }
+
+            const atMatch = at.match(/refs\/heads\/(.*?)$/)
+
+            const rev = atMatch ? atMatch[1] : at
+
+            return {
+                repoName: bitbucketToSourcegraphRepoName({ repoSlug, project }),
+                filePath,
+                rev,
+                project,
+                repoSlug,
+            }
+        } catch (err) {
+            errors.push(err)
+            continue
+        }
     }
-
-    const url = new URL(rawViewLink.href)
-
-    const host = window.location.hostname
-
-    const path = url.pathname
-
-    const pathMatch = path.match(fileInfoRegexp)
-    if (!pathMatch) {
-        throw new Error('Unable to parse file information')
-    }
-
-    const project = pathMatch[1]
-    const repoSlug = pathMatch[2]
-    const filePath = pathMatch[3]
-
-    // Looks like 'refs/heads/<rev>'
-    const at = url.searchParams.get('at')
-    if (!at) {
-        throw new Error('No `at` query param found')
-    }
-
-    const atMatch = at.match(/refs\/heads\/(.*?)$/)
-
-    const rev = atMatch ? atMatch[1] : at
-
-    return {
-        repoName: [host, project, repoSlug].join('/'),
-        filePath,
-        rev,
-        project,
-        repoSlug,
-    }
+    throw createAggregateError(errors)
 }
 
-export const getFileInfoFromCodeView = (codeView: HTMLElement): PageInfo & Pick<FileInfo, 'commitID'> => {
-    const { repoName, filePath, rev, project, repoSlug } = getFileInfoFromLink(
-        codeView,
-        'a.raw-view-link',
-        // Looks like '/projects/<project>/repos/<repo name>/raw/<file path>'
-        /\/projects\/(.*?)\/repos\/(.*?)\/raw\/(.*)$/
-    )
-
-    const commitLink = document.querySelector<HTMLElement>('a.commitid')
+/**
+ * Attempts to retrieve the commitid from a link to the commit,
+ * found on single file views (both source and "diff to previous" views) and commit pages.
+ */
+export const getCommitIDFromLink = (selector = 'a.commitid'): string => {
+    const commitLink = document.querySelector<HTMLElement>(selector)
     if (!commitLink) {
-        throw new Error('Could not find commit id link')
+        throw new Error('No element found matching a.commitid')
     }
+    const commitID = commitLink.dataset.commitid
+    if (!commitID) {
+        throw new Error('Element matching a.commitid has no data-commitid')
+    }
+    return commitID
+}
 
-    const commitID = commitLink.dataset.commitid!
-
+/**
+ * Gets the file info on a single-file source code view
+ */
+export const getFileInfoFromSingleFileSourceCodeView = (
+    codeViewElement: HTMLElement
+): BitbucketRepoInfo & Pick<FileInfo, 'repoName' | 'filePath' | 'rev' | 'commitID'> => {
+    const { repoName, filePath, rev, project, repoSlug } = getFileInfoFromLinkInSingleFileView(codeViewElement)
+    const commitID = getCommitIDFromLink()
     return {
         repoName,
         filePath,
@@ -70,98 +106,211 @@ export const getFileInfoFromCodeView = (codeView: HTMLElement): PageInfo & Pick<
     }
 }
 
-const getFileInfoFromFilePathLink = (codeView: HTMLElement) => {
-    const rawViewLink = codeView.querySelector<HTMLAnchorElement>('.breadcrumbs a.stub')
-    if (!rawViewLink) {
-        throw new Error('could not find raw view link for code view (.breadcrumbs a.stub)')
+/** The type of the change of a file in a diff */
+type ChangeType = 'MOVE' | 'RENAME' | 'MODIFY' | 'DELETE' | 'COPY' | 'ADD'
+
+/**
+ * Returns true if the active page is a compare view.
+ */
+export const isCompareView = () => !!document.querySelector('#branch-compare')
+
+/**
+ * Returns true if the active page is a commit view.
+ */
+export const isCommitsView = () => /^\/projects\/[^\/]+\/repos\/[^\/]+\/commits\/\w+$/.test(window.location.pathname)
+
+/**
+ * Returns true if the active page is a pull request view.
+ */
+export const isPullRequestView = () =>
+    /^\/projects\/[^\/]+\/repos\/[^\/]+\/pull-requests\/\d+/.test(window.location.pathname)
+
+/**
+ * Returns true if the given code view is a single file source or "diff to previous" view.
+ * These views have a toggle to toggle between "source" and "diff to previous".
+ */
+export const isSingleFileView = (codeViewElement: HTMLElement): boolean =>
+    !!codeViewElement.querySelector('.mode-toggle')
+
+/**
+ * Gets the change type indicator badge from the given diff code view.
+ * Returns `null` if there is no badge on the page (this is expected on single-file diff pages if the file was _modified_).
+ */
+const getChangeTypeElement = ({ codeViewElement }: { codeViewElement: HTMLElement }): HTMLElement | null =>
+    codeViewElement.querySelector<HTMLElement>('.change-type-lozenge')
+
+/**
+ * Reads the change type from the change type indicator badge.
+ */
+const getChangeType = ({ changeTypeElement }: { changeTypeElement: HTMLElement | null }): ChangeType => {
+    if (!changeTypeElement) {
+        return 'MODIFY'
     }
-
-    const url = new URL(rawViewLink.href)
-
-    const host = window.location.hostname
-
-    const path = url.pathname
-
-    const pathMatch = path.match(/\/projects\/(.*?)\/repos\/(.*?)\/pull-requests\/(\d*)\//)
-    if (!pathMatch) {
-        throw new Error('Unable to parse file information')
+    const className = Array.from(changeTypeElement.classList).find(c => /^change-type-[A-Z]+/.test(c))
+    if (!className) {
+        throw new Error('Could not detect change type from change type element')
     }
+    return className.replace(/^change-type-/, '') as ChangeType
+}
 
-    const project = pathMatch[1]
-    const repoSlug = pathMatch[2]
+/**
+ * Gets the base file path for a diff code view ("diff to previous" or PR) by inspecting the change type badge.
+ * Returns `undefined` if there is no base file path (if the file was _added_).
+ * Returns `filePath` if the file was _modified_.
+ *
+ * @param filePath The head file path
+ */
+const getBaseFilePathForDiffCodeView = ({
+    filePath,
+    changeType,
+    changeTypeElement,
+}: {
+    changeTypeElement: HTMLElement | null
+    changeType: ChangeType
+    filePath: string
+}): string | undefined => {
+    if (changeType === 'ADD') {
+        // This file didn't exist in the base
+        return undefined
+    }
+    if (changeType === 'MODIFY' || changeType === 'DELETE') {
+        // File path is the same
+        return filePath
+    }
+    if (changeType === 'MOVE' || changeType === 'RENAME' || changeType === 'COPY') {
+        if (!changeTypeElement) {
+            throw new Error(`Change type is ${changeType} but no change type indicator found`)
+        }
+        // Need to read previous file path from change type indicator
+        // Contains HTML content, example:
+        // <span class="deleted">.github</span>/stale.yml &rarr;<br><span class="added">test-dir</span>/stale.yml
+        const tooltip = changeTypeElement.getAttribute('original-title')
+        if (!tooltip) {
+            throw new Error('Moved change type badge did not have original-title attribute')
+        }
+        const span = document.createElement('span')
+        span.innerHTML = tooltip
+        const tooltipText = span.textContent!
+        if (changeType === 'MOVE' || changeType === 'COPY') {
+            const from = tooltipText.split('→')[0].trim()
+            if (!from) {
+                throw new Error(`Unexpected move change type badge content "${tooltipText}"`)
+            }
+            return from
+        }
+        if (changeType === 'RENAME') {
+            const renameRegexp = /Renamed from '(.+)'/
+            const match = tooltipText.match(renameRegexp)
+            if (!match) {
+                throw new Error(`Rename change type badge content did not match ${renameRegexp}: "${tooltipText}"`)
+            }
+            return path.join(path.dirname(filePath), match[1])
+        }
+    }
+    throw new Error(`Unexpected change type "${changeType}"`)
+}
 
-    const commitMatch = path.match(/\/commits\/(.*?)$/)
-
-    const commitID = commitMatch ? commitMatch[1] : undefined
-
-    let filePath = url.hash.replace(/^#/, '')
-    filePath = filePath.replace(/\?.*$/, '')
-
+/**
+ * Returns most file info from a single file "diff to previous" code view (excluding `baseCommitID`).
+ * The base commit ID needs to be resolved through the API.
+ */
+export const getFileInfoFromSingleFileDiffCodeView = (
+    codeViewElement: HTMLElement
+): BitbucketRepoInfo & Pick<FileInfo, 'repoName' | 'baseRepoName' | 'filePath' | 'baseFilePath' | 'commitID'> => {
+    const { repoName, project, repoSlug, filePath } = getFileInfoFromLinkInSingleFileView(codeViewElement)
+    const commitID = getCommitIDFromLink()
+    const changeTypeElement = getChangeTypeElement({ codeViewElement })
+    const changeType = getChangeType({ changeTypeElement })
+    const baseFilePath = getBaseFilePathForDiffCodeView({ changeTypeElement, changeType, filePath })
+    const baseRepoName = changeType !== 'ADD' ? repoName : undefined
     return {
-        repoName: [host, project, repoSlug].join('/'),
+        repoName,
+        baseRepoName,
         filePath,
+        baseFilePath,
         commitID,
         project,
         repoSlug,
     }
 }
 
-export interface PRPageInfo extends PageInfo {
-    prID?: number
-    commitID?: string // FileInfo.commitID is required but we won't always have it from the PR page DOM.
-}
-
-export const getPRInfoFromCodeView = (codeView: HTMLElement): PRPageInfo => {
-    let repoName: string
-    let filePath: string
-    let project: string
-    let repoSlug: string
-    let commitID: string | undefined
-
-    try {
-        const info = getFileInfoFromLink(
-            codeView,
-            'a.source-view-link',
-            // Looks like /projects/<project>/repos/<repo>/browse/<file path>?at=<rev>
-            /\/projects\/(.*?)\/repos\/(.*?)\/browse\/(.*)$/
-        )
-
-        repoName = info.repoName
-        filePath = info.filePath
-        project = info.project
-        repoSlug = info.repoSlug
-    } catch (e) {
-        const info = getFileInfoFromFilePathLink(codeView)
-
-        repoName = info.repoName
-        filePath = info.filePath
-        project = info.project
-        repoSlug = info.repoSlug
-        commitID = info.commitID
+/**
+ * Gets most of the file info from the DOM of a multi-file diff code view (PR, compare or commit page).
+ *
+ * The returned file info does not have the commit ID and base commit ID.
+ * Those need to be fetched from the Bitbucket API for PRs,
+ * or taken from links on the page for compare and commit pages {@link getCommitInfoFromComparePage}.
+ */
+export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
+    codeViewElement: HTMLElement
+): BitbucketRepoInfo & Pick<FileInfo, 'repoName' | 'baseRepoName' | 'filePath' | 'baseFilePath' | 'rev'> => {
+    // Get the file path from the breadcrumbs
+    const breadcrumbsElement = codeViewElement.querySelector('.breadcrumbs')
+    if (!breadcrumbsElement) {
+        throw new Error('Could not find diff code view breadcrumbs element through selector .breadcrumbs')
+    }
+    const filePath = breadcrumbsElement.textContent
+    if (!filePath) {
+        throw Error('Unexpected empty file path in breadcrumbs')
     }
 
-    const prIDMatch = window.location.pathname.match(/pull-requests\/(\d*?)\/(diff|overview|commits)/)
-
-    if (!commitID) {
-        const fromCommitLink = document.querySelector<HTMLAnchorElement>('.file-tree-header a.commitid')
-        if (fromCommitLink) {
-            commitID = fromCommitLink.dataset.commitid!
-        }
-
-        // Commit page
-        if (!commitID) {
-            const commitLink = document.querySelector<HTMLElement>('.commit-metadata-details .commitid')
-
-            commitID = commitLink ? commitLink.dataset.commitid! : undefined
-        }
+    // Get project and repo from the URL
+    const pathMatch = location.pathname.match(/\/projects\/(.*?)\/repos\/(.*?)\//)
+    if (!pathMatch) {
+        throw new Error(`Location did not match regexp`)
     }
+    const [, project, repoSlug] = pathMatch
+    const repoName = bitbucketToSourcegraphRepoName({ project, repoSlug })
+
+    // Get base file path from the change type indicator
+    const changeTypeElement = getChangeTypeElement({ codeViewElement })
+    const changeType = getChangeType({ changeTypeElement })
+    const baseFilePath = getBaseFilePathForDiffCodeView({ changeTypeElement, changeType, filePath })
+    const baseRepoName = changeType !== 'ADD' ? repoName : undefined // if the file was added, there is no base
 
     return {
-        repoName: repoName!,
-        filePath: filePath!,
-        commitID: commitID!,
-        prID: prIDMatch ? parseInt(prIDMatch[1], 10) : undefined,
-        project: project!,
-        repoSlug: repoSlug!,
+        repoName,
+        baseRepoName,
+        filePath,
+        baseFilePath,
+        project,
+        repoSlug,
+    }
+}
+
+export const getFileInfoFromCommitDiffCodeView = (
+    codeViewElement: HTMLElement
+): BitbucketRepoInfo &
+    Pick<FileInfo, 'repoName' | 'baseRepoName' | 'filePath' | 'baseFilePath' | 'rev' | 'commitID' | 'baseCommitID'> => {
+    const commitID = getCommitIDFromLink('.commit-badge-oneline .commitid')
+    const baseCommitID = getCommitIDFromLink('.commit-parents .commitid')
+
+    return {
+        ...getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeViewElement),
+        commitID,
+        baseCommitID,
+    }
+}
+
+export function getPRIDFromPathName(): number {
+    const prIDMatch = window.location.pathname.match(/pull-requests\/(\d*?)\/(diff|overview|commits)/)
+    if (!prIDMatch) {
+        throw new Error(`Could not parse PR ID from pathname: ${window.location.pathname}`)
+    }
+    return parseInt(prIDMatch[1], 10)
+}
+
+/**
+ * Gets the head and base commit ID from the comparison pickers on the compare page.
+ */
+export function getCommitInfoFromComparePage(): DiffResolvedRevSpec {
+    const headCommitElement = document.querySelector('#branch-compare .source-selector a.commitid[data-commitid]')
+    const baseCommitElement = document.querySelector('#branch-compare .target-selector a.commitid[data-commitid]')
+    if (!headCommitElement || !baseCommitElement) {
+        throw new Error('Could not resolve Bitbucket compare diff spec')
+    }
+    return {
+        headCommitID: headCommitElement.getAttribute('data-commitid')!,
+        baseCommitID: baseCommitElement.getAttribute('data-commitid')!,
     }
 }

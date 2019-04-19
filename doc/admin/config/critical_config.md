@@ -53,3 +53,17 @@ Defines an authentication provider that authenticates users by consulting an HTT
 To use this authentication method, add an element to the `auth.providers` array with the following shape:
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/critical.schema.json" jsonschemadoc:ref="#/definitions/HTTPHeaderAuthProvider">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/doc/admin/config/critical_config) to see rendered content.</div>
+
+#### Known bugs
+
+The following critical configuration options require the server to be restarted for the changes to take effect:
+
+```
+lightstepAccessToken
+lightstepProject
+auth.userOrgMap
+auth.providers
+externalURL
+update.channel
+useJaeger
+```

@@ -65,7 +65,8 @@ export class Range implements sourcegraph.Range {
     public contains(positionOrRange: sourcegraph.Position | sourcegraph.Range): boolean {
         if (positionOrRange instanceof Range) {
             return this.contains(positionOrRange._start) && this.contains(positionOrRange._end)
-        } else if (positionOrRange instanceof Position) {
+        }
+        if (positionOrRange instanceof Position) {
             if (positionOrRange.isBefore(this._start)) {
                 return false
             }
@@ -96,7 +97,8 @@ export class Range implements sourcegraph.Range {
     public union(other: sourcegraph.Range): sourcegraph.Range {
         if (this.contains(other)) {
             return this
-        } else if (other.contains(this)) {
+        }
+        if (other.contains(this)) {
             return other
         }
         const start = Position.min(other.start, this._start)
@@ -147,5 +149,9 @@ export class Range implements sourcegraph.Range {
             start: { line: this._start.line, character: this._start.character },
             end: { line: this._end.line, character: this._end.character },
         }
+    }
+
+    public static fromPlain(data: clientType.Range): Range {
+        return new Range(data.start.line, data.start.character, data.end.line, data.end.character)
     }
 }

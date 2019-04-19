@@ -15,46 +15,6 @@ export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
 }
 
 /**
- * Creates the mount element for the CodeViewToolbar.
- */
-export function createCodeViewToolbarMount(fileContainer: HTMLElement): HTMLElement {
-    const className = 'sourcegraph-app-annotator'
-    const existingMount = fileContainer.querySelector('.' + className) as HTMLElement
-    if (existingMount) {
-        return existingMount
-    }
-
-    const mountEl = document.createElement('div')
-    mountEl.style.display = 'inline-flex'
-    mountEl.style.verticalAlign = 'middle'
-    mountEl.style.alignItems = 'center'
-    mountEl.className = className
-
-    const fileActions = fileContainer.querySelector('.file-actions')
-    if (!fileActions) {
-        throw new Error(
-            "File actions not found. Make sure you aren't trying to create " +
-                "a toolbar mount for a code snippet that shouldn't have one"
-        )
-    }
-
-    const buttonGroup = fileActions.querySelector('.BtnGroup')
-    if (buttonGroup && buttonGroup.parentNode && !fileContainer.querySelector('.show-file-notes')) {
-        // blob view
-        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
-    } else {
-        // commit & pull request view
-        const note = fileContainer.querySelector('.show-file-notes')
-        if (!note || !note.parentNode) {
-            throw new Error('cannot find toolbar mount location')
-        }
-        note.parentNode.insertBefore(mountEl, note.nextSibling)
-    }
-
-    return mountEl
-}
-
-/**
  * getDeltaFileName returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
@@ -64,10 +24,9 @@ export function getDeltaFileName(container: HTMLElement): { headFilePath: string
     if (info.title) {
         // for PR conversation snippets
         return getPathNamesFromElement(info)
-    } else {
-        const link = info.querySelector('a') as HTMLElement
-        return getPathNamesFromElement(link)
     }
+    const link = info.querySelector('a') as HTMLElement
+    return getPathNamesFromElement(link)
 }
 
 function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | null } {
@@ -79,46 +38,44 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
 }
 
 /**
- * isDomSplitDiff returns if the current view shows diffs with split (vs. unified) view.
+ * Checks if split diff is enabled in a given toolbar.
+ *
+ * @param toolbar A PR or commit view toolbar element
+ */
+const isSplitDiffEnabledInToolbar = (toolbar: HTMLElement): boolean => {
+    // Quick toggle matching those used on commit pages and by Refined GitHub
+    const quickToggle = toolbar.querySelector('a[href$="?diff=split"]')
+    if (quickToggle) {
+        return quickToggle.classList.contains('selected')
+    }
+    // Switcher used on PR pages
+    const splitRadioButton = toolbar.querySelector<HTMLInputElement>('input[type="radio"][name="diff"][value="split"]')
+    if (!splitRadioButton) {
+        throw new Error('Expected split view toggle in toolbar')
+    }
+    return splitRadioButton.checked
+}
+
+/**
+ * Returns if the current view shows diffs with split (vs. unified) view.
  */
 export function isDomSplitDiff(): boolean {
     const { isDelta, isPullRequest } = parseURL()
     if (!isDelta) {
         return false
     }
-
-    if (isPullRequest) {
-        const headerBar = document.getElementsByClassName('float-right pr-review-tools')
-        if (!headerBar || headerBar.length !== 1) {
-            return false
-        }
-
-        const diffToggles = headerBar[0].getElementsByClassName('BtnGroup')
-        const disabledToggle = diffToggles[0].getElementsByTagName('A')[0] as HTMLAnchorElement
-        return (
-            (disabledToggle && !disabledToggle.href.includes('diff=split')) ||
-            !!document.querySelector('.file-diff-split')
-        )
-    } else {
-        // delta for a commit view
-        const headerBar = document.getElementsByClassName('details-collapse table-of-contents js-details-container')
-        if (!headerBar || headerBar.length !== 1) {
-            return false
-        }
-
-        const diffToggles = headerBar[0].getElementsByClassName('BtnGroup float-right')
-        const selectedToggle = diffToggles[0].querySelector('.selected') as HTMLAnchorElement
-        return (
-            (selectedToggle && selectedToggle.href.includes('diff=split')) ||
-            !!document.querySelector('.file-diff-split')
-        )
+    const toolbarSelector = isPullRequest ? '.pr-review-tools' : '#toc'
+    const toolbar = document.querySelector<HTMLElement>(toolbarSelector)
+    if (!toolbar) {
+        throw new Error(`Could not find out if split diff is enabled, expected toolbar ${toolbarSelector} to exist`)
     }
+    return isSplitDiffEnabledInToolbar(toolbar)
 }
 
 /**
  * getDiffResolvedRev returns the base and head revision SHA, or null for non-diff views.
  */
-export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
+export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec | null {
     const { isDelta, isCommit, isPullRequest, isCompare } = parseURL()
     if (!isDelta) {
         return null
@@ -129,6 +86,7 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
     const fetchContainers = document.getElementsByClassName(
         'js-socket-channel js-updatable-content js-pull-refresh-on-pjax'
     )
+    const isCommentedSnippet = codeView.classList.contains('js-comment-container')
     if (isPullRequest) {
         if (fetchContainers && fetchContainers.length === 1) {
             // tslint:disable-next-line
@@ -154,6 +112,11 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
                         headCommitID = v
                     }
                 }
+            }
+        } else if (isCommentedSnippet) {
+            const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
+            if (resolvedDiffSpec) {
+                return resolvedDiffSpec
             }
         } else {
             // Last-ditch: look for inline comment form input which has base/head on it.
@@ -187,23 +150,47 @@ export function getDiffResolvedRev(): DiffResolvedRevSpec | null {
     }
 
     if (baseCommitID === '' || headCommitID === '') {
-        return getDiffResolvedRevFromPageSource(document.documentElement!.innerHTML)
+        return getDiffResolvedRevFromPageSource(document.documentElement.innerHTML, isPullRequest!)
     }
     return { baseCommitID, headCommitID }
 }
 
+// ".../files/(BASE..)?HEAD#diff-DIFF"
+// https://github.com/sourcegraph/codeintellify/pull/77/files/e8ffee0c59e951d29bcc7cff7d58caff1c5c97c2..ce472adbfc6ac8ccf1bf7afbe71f18505ca994ec#diff-8a128e9e8a5a8bb9767f5f5392391217
+// https://github.com/lguychard/sourcegraph-configurable-references/pull/1/files/fa32ce95d666d73cf4cb3e13b547993374eb158d#diff-45327f86d4438556066de133327f4ca2
+const COMMENTED_SNIPPET_DIFF_REGEX = /\/files\/((\w+)\.\.)?(\w+)#diff-\w+$/
+
+function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolvedRevSpec | null {
+    // For commented snippets, try to get the HEAD commit ID from the file header,
+    // as it will always be the most accurate (for example in the case of outdated snippets).
+    const linkToFile: HTMLLinkElement | null = codeView.querySelector('.file-header a')
+    if (!linkToFile) {
+        return null
+    }
+    const match = linkToFile.href.match(COMMENTED_SNIPPET_DIFF_REGEX)
+    if (!match) {
+        return null
+    }
+    const headCommitID = match[3]
+    // The file header may not contain the base commit ID, so we get it from the page source.
+    const resolvedRevFromPageSource = getDiffResolvedRevFromPageSource(document.documentElement.innerHTML, true)
+    return headCommitID && resolvedRevFromPageSource
+        ? {
+              ...resolvedRevFromPageSource,
+              headCommitID,
+          }
+        : null
+}
+
 function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
-    const branchElements = document.querySelectorAll('.commitish-suggester span.js-select-button') as NodeListOf<
-        HTMLSpanElement
-    >
+    const branchElements = document.querySelectorAll<HTMLElement>('.commitish-suggester .select-menu-button span')
     if (branchElements && branchElements.length === 2) {
         return { baseCommitID: branchElements[0].innerText, headCommitID: branchElements[1].innerText }
     }
     return undefined
 }
 
-function getDiffResolvedRevFromPageSource(pageSource: string): DiffResolvedRevSpec | null {
-    const { isPullRequest } = parseURL()
+function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boolean): DiffResolvedRevSpec | null {
     if (!isPullRequest) {
         return null
     }
@@ -312,7 +299,7 @@ function getBranchName(): string | null {
         return null
     }
     // otherwise, the branch name is fully rendered in the button
-    return (innerButtonEls[0] as HTMLElement).innerText as string
+    return (innerButtonEls[0] as HTMLElement).innerText
 }
 
 function getRevOrBranch(revAndPath: string): string | null {

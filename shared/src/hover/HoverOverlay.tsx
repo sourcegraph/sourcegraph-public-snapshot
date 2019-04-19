@@ -1,16 +1,17 @@
 import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 import { castArray, isEqual } from 'lodash'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { MarkupContent } from 'sourcegraph'
-import { ActionItem, ActionItemComponentProps, ActionItemProps } from '../actions/ActionItem'
+import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
-import { TelemetryContext } from '../telemetry/telemetryContext'
-import { TelemetryService } from '../telemetry/telemetryService'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { isErrorLike } from '../util/errors'
 import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
+import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
 
@@ -23,14 +24,22 @@ export type HoverContext = RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
 
 export type HoverData = HoverMerged
 
-export interface HoverOverlayProps
-    extends GenericHoverOverlayProps<HoverContext, HoverData, ActionItemProps>,
-        ActionItemComponentProps {
-    /** A ref callback to get the root overlay element. Use this to calculate the position. */
-    hoverRef?: React.Ref<HTMLDivElement>
-
+export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
+    closeButtonClassName?: string
+
+    actionItemClassName?: string
+    actionItemPressedClassName?: string
+}
+
+export interface HoverOverlayProps
+    extends GenericHoverOverlayProps<HoverContext, HoverData, ActionItemAction>,
+        ActionItemComponentProps,
+        HoverOverlayClassProps,
+        TelemetryProps {
+    /** A ref callback to get the root overlay element. Use this to calculate the position. */
+    hoverRef?: React.Ref<HTMLDivElement>
 
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
@@ -45,7 +54,7 @@ const isEmptyHover = ({
     ((!hoverOrError || hoverOrError === LOADING || isErrorLike(hoverOrError)) &&
         (!actionsOrError || actionsOrError === LOADING || isErrorLike(actionsOrError)))
 
-class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemetryService: TelemetryService }> {
+export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
     public componentDidMount(): void {
         this.logTelemetryEvent()
     }
@@ -70,11 +79,13 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
             showCloseButton,
             actionsOrError,
             className = '',
-            extensionsController,
-            platformContext,
-            location,
+            actionItemClassName,
+            actionItemPressedClassName,
         } = this.props
 
+        if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
+            return null
+        }
         return (
             <div
                 className={`hover-overlay card ${className}`}
@@ -96,7 +107,7 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
             >
                 {showCloseButton && (
                     <button
-                        className="hover-overlay__close-button btn btn-icon"
+                        className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
                         onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
                     >
                         <CloseIcon className="icon-inline" />
@@ -168,15 +179,21 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
                             {actionsOrError.map((action, i) => (
                                 <ActionItem
                                     key={i}
-                                    className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
                                     {...action}
+                                    className={classNames(
+                                        'hover-overlay__action',
+                                        actionItemClassName,
+                                        `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                    )}
+                                    pressedClassName={actionItemPressedClassName}
                                     variant="actionItem"
                                     disabledDuringExecution={true}
                                     showLoadingSpinnerDuringExecution={true}
                                     showInlineError={true}
-                                    extensionsController={extensionsController}
-                                    platformContext={platformContext}
-                                    location={location}
+                                    platformContext={this.props.platformContext}
+                                    telemetryService={this.props.telemetryService}
+                                    extensionsController={this.props.extensionsController}
+                                    location={this.props.location}
                                 />
                             ))}
                         </div>
@@ -189,9 +206,3 @@ class BaseHoverOverlay extends React.PureComponent<HoverOverlayProps & { telemet
         this.props.telemetryService.log('hover')
     }
 }
-
-export const HoverOverlay = React.forwardRef<BaseHoverOverlay, HoverOverlayProps>((props, ref) => (
-    <TelemetryContext.Consumer>
-        {telemetryService => <BaseHoverOverlay {...props} telemetryService={telemetryService} ref={ref} />}
-    </TelemetryContext.Consumer>
-))

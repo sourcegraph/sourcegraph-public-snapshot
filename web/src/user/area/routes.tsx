@@ -1,17 +1,14 @@
 import React from 'react'
-import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { Redirect } from 'react-router'
+
 import { UserAreaRoute } from './UserArea'
 
 const UserOverviewPage = React.lazy(async () => ({
     default: (await import('./UserOverviewPage')).UserOverviewPage,
 }))
 
-const SettingsArea = React.lazy(async () => ({
-    default: (await import('../../settings/SettingsArea')).SettingsArea,
-}))
-
-const UserAccountArea = React.lazy(async () => ({
-    default: (await import('../account/UserAccountArea')).UserAccountArea,
+const UserSettingsArea = React.lazy(async () => ({
+    default: (await import('../settings/UserSettingsArea')).UserSettingsArea,
 }))
 
 export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
@@ -23,36 +20,20 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
     },
     {
         path: '/settings',
-        exact: true,
         // tslint:disable-next-line:jsx-no-lambda
         render: props => (
-            <SettingsArea
+            <UserSettingsArea
                 {...props}
-                subject={props.user}
+                routes={props.userSettingsAreaRoutes}
+                sideBarItems={props.userSettingsSideBarItems}
                 isLightTheme={props.isLightTheme}
-                extraHeader={
-                    <>
-                        {props.authenticatedUser && props.user.id !== props.authenticatedUser.id && (
-                            <SiteAdminAlert className="sidebar__alert">
-                                Viewing settings for <strong>{props.user.username}</strong>
-                            </SiteAdminAlert>
-                        )}
-                        <p>User settings override global and organization settings.</p>
-                    </>
-                }
             />
         ),
     },
+
+    // Redirect from previous /users/:username/account -> /users/:username/settings/profile.
     {
         path: '/account',
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => (
-            <UserAccountArea
-                {...props}
-                routes={props.userAccountAreaRoutes}
-                sideBarItems={props.userAccountSideBarItems}
-                isLightTheme={props.isLightTheme}
-            />
-        ),
+        render: props => <Redirect to={`${props.url}/settings/profile`} />,
     },
 ]

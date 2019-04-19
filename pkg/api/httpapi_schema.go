@@ -36,21 +36,11 @@ type RepoCreateOrUpdateRequest struct {
 	Archived bool `json:"archived"`
 }
 
-type ReposGetInventoryUncachedRequest struct {
-	Repo RepoID
-	CommitID
-}
-
 type ReposUpdateMetadataRequest struct {
 	RepoName    `json:"repo"`
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
 	Archived    bool   `json:"Archived"`
-}
-
-type ReposGetInventoryRequest struct {
-	Repo RepoID
-	CommitID
 }
 
 type PhabricatorRepoCreateRequest struct {
@@ -64,5 +54,8 @@ type ExternalServiceConfigsRequest struct {
 }
 
 type ExternalServicesListRequest struct {
-	Kind string `json:"kind"`
+	// NOTE(tsenart): We must keep this field in addition to the
+	// Kinds field until after we roll-out this change, for backwards compatibility.
+	Kind  string   `json:"kind"`
+	Kinds []string `json:"kinds"`
 }

@@ -85,7 +85,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
             .range(barColors)
         const xAxis = axisBottom(x)
 
-        const svg = select(this.svgRef!)
+        const svg = select(this.svgRef)
         svg.selectAll('*').remove()
 
         const barWidth = width / columns - 2
@@ -139,7 +139,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
         barHolder
             .append<AxisContainerElement>('g')
             .classed('axis', true)
-            .attr('transform', 'translate(0,' + height + ')')
+            .attr('transform', `translate(0, ${height})`)
             .call(xAxis)
             .selectAll('.tick text')
             .call(wrapLabel, barWidth)

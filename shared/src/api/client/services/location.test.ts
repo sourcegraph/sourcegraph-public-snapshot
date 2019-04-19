@@ -1,6 +1,7 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
+import { Selection } from '../../extension/types/selection'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 import {
     getLocationsFromProviders,
@@ -39,7 +40,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                         a: [{ provider: () => of(null), registrationOptions: { documentSelector: ['*'] } }],
                     })
                 )
-                expectObservable(registry.hasProvidersForActiveTextDocument({ visibleViewComponents: [] })).toBe('a', {
+                expectObservable(registry.hasProvidersForActiveTextDocument([])).toBe('a', {
                     a: false,
                 })
             })
@@ -53,18 +54,18 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     })
                 )
                 expectObservable(
-                    registry.hasProvidersForActiveTextDocument({
-                        visibleViewComponents: [
-                            {
-                                isActive: true,
-                                type: 'textEditor',
-                                selections: [],
-                                item: { uri: 'u', languageId: 'l', text: 't' },
-                            },
-                        ],
-                    })
+                    registry.hasProvidersForActiveTextDocument([
+                        {
+                            isActive: true,
+                            editorId: 'editor#0',
+                            type: 'CodeEditor' as const,
+                            selections: [new Selection(1, 2, 3, 4).toPlain()],
+                            resource: 'u',
+                            model: { uri: 'u', languageId: 'l', text: 't' },
+                        },
+                    ])
                 ).toBe('a', {
-                    a: false,
+                    a: true,
                 })
             })
         })
@@ -77,16 +78,16 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     })
                 )
                 expectObservable(
-                    registry.hasProvidersForActiveTextDocument({
-                        visibleViewComponents: [
-                            {
-                                isActive: true,
-                                type: 'textEditor',
-                                selections: [],
-                                item: { uri: 'u', languageId: 'l', text: 't' },
-                            },
-                        ],
-                    })
+                    registry.hasProvidersForActiveTextDocument([
+                        {
+                            isActive: true,
+                            editorId: 'editor#0',
+                            type: 'CodeEditor' as const,
+                            selections: [new Selection(1, 2, 3, 4).toPlain()],
+                            resource: 'u',
+                            model: { uri: 'u', languageId: 'l', text: 't' },
+                        },
+                    ])
                 ).toBe('a', {
                     a: false,
                 })
@@ -143,7 +144,7 @@ describe('getLocationsFromProviders', () => {
             expectObservable(
                 getLocationsFromProviders(
                     cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                        a: [() => of([FIXTURE_LOCATION]), () => throwError('x')],
+                        a: [() => of([FIXTURE_LOCATION]), () => throwError(new Error('x'))],
                     }),
                     FIXTURE.TextDocumentPositionParams,
                     false

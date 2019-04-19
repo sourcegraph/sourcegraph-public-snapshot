@@ -91,6 +91,7 @@ type UserUsageStatistics struct {
 	PageViews                   int32
 	SearchQueries               int32
 	CodeIntelligenceActions     int32
+	FindReferencesActions       int32
 	LastActiveTime              *time.Time
 	LastCodeHostIntegrationTime *time.Time
 }
@@ -107,6 +108,21 @@ type SiteActivityPeriod struct {
 	RegisteredUserCount  int32
 	AnonymousUserCount   int32
 	IntegrationUserCount int32
+	Stages               *Stages
+}
+
+type Stages struct {
+	Manage    int32 `json:"mng"`
+	Plan      int32 `json:"plan"`
+	Code      int32 `json:"code"`
+	Review    int32 `json:"rev"`
+	Verify    int32 `json:"ver"`
+	Package   int32 `json:"pkg"`
+	Deploy    int32 `json:"depl"`
+	Configure int32 `json:"conf"`
+	Monitor   int32 `json:"mtr"`
+	Secure    int32 `json:"sec"`
+	Automate  int32 `json:"auto"`
 }
 
 type SurveyResponse struct {

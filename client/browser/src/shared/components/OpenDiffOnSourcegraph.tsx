@@ -5,19 +5,17 @@ import { IFileDiffConnection } from '../../../../../shared/src/graphql/schema'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
-import { Button } from './Button'
+import { SourcegraphIconButton } from './Button'
 
-export interface Props {
+interface Props {
     openProps: OpenDiffInSourcegraphProps
-    style?: React.CSSProperties
-    iconStyle?: React.CSSProperties
     className?: string
+    iconClassName?: string
     ariaLabel?: string
     onClick?: (e: React.MouseEvent<HTMLElement>) => void
-    label: string
 }
 
-export interface State {
+interface State {
     fileDiff: IFileDiffConnection | undefined
 }
 
@@ -62,9 +60,21 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
         )
         this.componentUpdates.next(this.props)
     }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): JSX.Element {
         const url = this.getOpenInSourcegraphUrl(this.props.openProps)
-        return <Button {...this.props} className={`open-on-sourcegraph ${this.props.className}`} url={url} />
+        return (
+            <SourcegraphIconButton
+                {...this.props}
+                className={`open-on-sourcegraph ${this.props.className}`}
+                iconClassName={this.props.iconClassName}
+                url={url}
+            />
+        )
     }
 
     private getOpenInSourcegraphUrl(props: OpenDiffInSourcegraphProps): string {

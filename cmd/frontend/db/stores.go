@@ -2,7 +2,7 @@ package db
 
 var (
 	AccessTokens              = &accessTokens{}
-	ExternalServices          = &externalServices{}
+	ExternalServices          = &ExternalServicesStore{}
 	DiscussionThreads         = &discussionThreads{}
 	DiscussionComments        = &discussionComments{}
 	DiscussionMailReplyTokens = &discussionMailReplyTokens{}
@@ -11,6 +11,7 @@ var (
 	SavedQueries              = &savedQueries{}
 	Orgs                      = &orgs{}
 	OrgMembers                = &orgMembers{}
+	RecentSearches            = &recentSearches{}
 	Settings                  = &settings{}
 	Users                     = &users{}
 	UserEmails                = &userEmails{}

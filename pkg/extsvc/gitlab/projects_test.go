@@ -19,7 +19,7 @@ type mockHTTPResponseBody struct {
 	responseBody string
 }
 
-func (s *mockHTTPResponseBody) RoundTrip(req *http.Request) (*http.Response, error) {
+func (s *mockHTTPResponseBody) Do(req *http.Request) (*http.Response, error) {
 	s.count++
 	return &http.Response{
 		Request:    req,
@@ -32,7 +32,7 @@ type mockHTTPEmptyResponse struct {
 	statusCode int
 }
 
-func (s mockHTTPEmptyResponse) RoundTrip(req *http.Request) (*http.Response, error) {
+func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Request:    req,
 		StatusCode: s.statusCode,
@@ -64,7 +64,7 @@ func TestClient_GetProject(t *testing.T) {
 }
 `}
 	c := newTestClient(t)
-	c.httpClient.Transport = &mock
+	c.httpClient = &mock
 
 	want := Project{
 		ProjectCommon: ProjectCommon{
@@ -128,7 +128,7 @@ func TestClient_GetProject(t *testing.T) {
 func TestClient_GetProject_nonexistent(t *testing.T) {
 	mock := mockHTTPEmptyResponse{http.StatusNotFound}
 	c := newTestClient(t)
-	c.httpClient.Transport = &mock
+	c.httpClient = &mock
 
 	proj, err := c.GetProject(context.Background(), GetProjectOp{PathWithNamespace: "doesnt/exist"})
 	if !IsNotFound(err) {

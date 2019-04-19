@@ -52,6 +52,7 @@ export class DiscussionsPage extends React.PureComponent<Props, State> {
                         noun="discussion"
                         pluralNoun="discussions"
                         defaultFirst={6}
+                        compact={false}
                     />
                 </div>
             </div>

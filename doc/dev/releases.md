@@ -11,6 +11,7 @@ The goal of our release process is to make releases boring, regular, and eventua
 We release Sourcegraph **by** 10am PT on the 20th day of each month.
 
 "Release" means:
+
 - The Docker images are available for download.
 - The blog post is published.
 - The release is documented on docs.sourcegraph.com.
@@ -42,7 +43,7 @@ On rare occasions we may decide to increase the major version number (e.g. 2.13 
 
 What is the process we follow to release?
 
-### Release captains
+### Release captain
 
 The release captain is _responsible_ for managing the release process and ensuring that the release happens on time. The release captain may _delegate_ work to other teammates, but such delegation does not absolve the release captain of their responsibility to ensure that delegated work gets done.
 
@@ -55,10 +56,10 @@ No later than 5 _working days_ before the release day the release captain create
 | 3.0 | @nicksnyder | 2019-02-07 (Wednesday) |
 | 3.1 | @nicksnyder | 2019-02-20 (Wednesday) |
 | 3.2 | @nicksnyder | 2019-03-20 (Wednesday) |
-| 3.3 | @beyang | 2019-04-20 (Saturday) |
-| 3.4 | @ggilmore | 2019-05-20 (Monday) |
-| 3.5 | @keegancsmith | 2019-06-20 (Thursday) |
-| 3.6 | @slimsag | 2019-07-20 (Saturday) |
+| 3.3 | @slimsag | 2019-04-20 (Saturday) |
+| 3.4 | @beyang | 2019-05-20 (Monday) |
+| 3.5 | @ggilmore | 2019-06-20 (Thursday) |
+| 3.6 | @keegancsmith | 2019-07-20 (Saturday) |
 | 3.7 | @ijsnow | 2019-08-20 (Tuesday) |
 | 3.8 | @tsenart | 2019-09-20 (Friday) |
 | 3.9 | @lguychard | 2019-10-20 (Sunday) |
@@ -66,10 +67,11 @@ No later than 5 _working days_ before the release day the release captain create
 | 3.11 | @chrismwendt | 2019-12-20 (Saturday) |
 | 3.12 | @vanesa | 2020-01-20 (Monday, MLK) |
 | 3.13 | @felixfbecker | 2020-02-20 (Thursday) |
+| 3.14 | @ijt | 2020-03-20 (Friday) |
 
 Release captains may trade rotations with each other by updating this schedule.
 
-If a release captain is unexpectedly unavailable and did not arrange a replacement, the captain from the previous release becomes the release captain for the current release.
+If a release captain is unexpectedly unavailable and did not arrange a replacement, the release captain's manager is responsible for identifying a new release captain.
 
 ### Release branches
 

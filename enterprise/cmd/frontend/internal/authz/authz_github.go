@@ -6,24 +6,17 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	permgh "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func githubProviders(ctx context.Context) (
+func githubProviders(ctx context.Context, githubs []*schema.GitHubConnection) (
 	authzProviders []authz.Provider,
 	seriousProblems []string,
 	warnings []string,
 ) {
-	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
-	if err != nil {
-		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitHub external service configs: %s", err))
-		return
-	}
-
 	for _, g := range githubs {
-		p, err := githubProvider(g)
+		p, err := githubProvider(g.Authorization, g.Url, g.Token)
 		if err != nil {
 			seriousProblems = append(seriousProblems, err.Error())
 			continue
@@ -35,20 +28,27 @@ func githubProviders(ctx context.Context) (
 	return authzProviders, seriousProblems, warnings
 }
 
-func githubProvider(g *schema.GitHubConnection) (authz.Provider, error) {
-	if g.Authorization == nil {
+func githubProvider(a *schema.GitHubAuthorization, instanceURL, token string) (authz.Provider, error) {
+	if a == nil {
 		return nil, nil
 	}
 
-	ghURL, err := url.Parse(g.Url)
+	ghURL, err := url.Parse(instanceURL)
 	if err != nil {
-		return nil, fmt.Errorf("Could not parse URL for GitHub instance %q: %s", g.Url, err)
+		return nil, fmt.Errorf("Could not parse URL for GitHub instance %q: %s", instanceURL, err)
 	}
 
-	ttl, err := parseTTL(g.Authorization.Ttl)
+	ttl, err := parseTTL(a.Ttl)
 	if err != nil {
 		return nil, err
 	}
 
-	return permgh.NewProvider(ghURL, g.Token, ttl, nil), nil
+	return permgh.NewProvider(ghURL, token, ttl, nil), nil
+}
+
+// ValidateGitHubAuthz validates the authorization fields of the given GitHub external
+// service config.
+func ValidateGitHubAuthz(cfg *schema.GitHubConnection) error {
+	_, err := githubProvider(cfg.Authorization, cfg.Url, cfg.Token)
+	return err
 }

@@ -1,6 +1,7 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
@@ -22,7 +23,7 @@ const NotSiteAdminPage: React.ComponentType<{}> = () => (
     <HeroPage icon={MapSearchIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
-export interface SiteAdminAreaRouteContext extends PlatformContextProps, SettingsCascadeProps {
+export interface SiteAdminAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ActivationProps {
     site: Pick<GQL.ISite, '__typename' | 'id'>
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
@@ -33,7 +34,11 @@ export interface SiteAdminAreaRouteContext extends PlatformContextProps, Setting
 
 export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
 
-interface SiteAdminAreaProps extends RouteComponentProps<{}>, PlatformContextProps, SettingsCascadeProps {
+interface SiteAdminAreaProps
+    extends RouteComponentProps<{}>,
+        PlatformContextProps,
+        SettingsCascadeProps,
+        ActivationProps {
     routes: ReadonlyArray<SiteAdminAreaRoute>
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: ReadonlyArray<React.ComponentType>
@@ -57,7 +62,8 @@ export const SiteAdminArea = withAuthenticatedUser(
                 platformContext: this.props.platformContext,
                 settingsCascade: this.props.settingsCascade,
                 isLightTheme: this.props.isLightTheme,
-                site: { __typename: 'Site' as 'Site', id: window.context.siteGQLID },
+                activation: this.props.activation,
+                site: { __typename: 'Site' as const, id: window.context.siteGQLID },
                 overviewComponents: this.props.overviewComponents,
             }
 

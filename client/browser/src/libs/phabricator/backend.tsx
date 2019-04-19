@@ -1,12 +1,12 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import storage from '../../browser/storage'
 import { isExtension } from '../../context'
 import { getContext } from '../../shared/backend/context'
 import { mutateGraphQL } from '../../shared/backend/graphql'
 import { resolveRepo } from '../../shared/repo/backend'
 import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../../shared/util/context'
-import { memoizeObservable } from '../../shared/util/memoize'
 import { normalizeRepoName } from './util'
 
 interface PhabEntity {
@@ -102,13 +102,13 @@ interface ConduitDiffDetailsResponse {
 }
 
 function createConduitRequestForm(): FormData {
-    const searchForm = document.querySelector('.phabricator-search-menu form') as any
+    const searchForm = document.querySelector('.phabricator-search-menu form')
     if (!searchForm) {
         throw new Error('cannot create conduit request form')
     }
     const form = new FormData()
-    form.set('__csrf__', searchForm.querySelector('input[name=__csrf__]')!.value)
-    form.set('__form__', searchForm.querySelector('input[name=__form__]')!.value)
+    form.set('__csrf__', searchForm.querySelector<HTMLInputElement>('input[name=__csrf__]')!.value)
+    form.set('__form__', searchForm.querySelector<HTMLInputElement>('input[name=__form__]')!.value)
     return form
 }
 
@@ -223,32 +223,30 @@ interface ConduitDifferentialQueryResponse {
     error_info?: string
     result: {
         [index: string]: {
-            // arrays
-            repositoryPHID: string
+            repositoryPHID: string | null
         }
     }
 }
 
-function getRepoPHIDForDifferentialID(differentialID: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const form = createConduitRequestForm()
-        form.set('params[ids]', `[${differentialID}]`)
-
-        fetch(window.location.origin + '/api/differential.query', {
-            method: 'POST',
-            body: form,
-            credentials: 'include',
-            headers: new Headers({ Accept: 'application/json' }),
-        })
-            .then(resp => resp.json())
-            .then((res: ConduitDifferentialQueryResponse) => {
-                if (res.error_code) {
-                    reject(new Error(`error ${res.error_code}: ${res.error_info}`))
-                }
-                resolve(res.result['0'].repositoryPHID)
-            })
-            .catch(reject)
+async function getRepoPHIDForDifferentialID(differentialID: number): Promise<string> {
+    const form = createConduitRequestForm()
+    form.set('params[ids]', `[${differentialID}]`)
+    const response = await fetch(window.location.origin + '/api/differential.query', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        headers: new Headers({ Accept: 'application/json' }),
     })
+    const responseJSON: ConduitDifferentialQueryResponse = await response.json()
+    if (responseJSON.error_code) {
+        throw new Error(`error ${responseJSON.error_code}: ${responseJSON.error_info}`)
+    }
+    const phid = responseJSON.result['0'].repositoryPHID
+    if (!phid) {
+        // This happens for diffs that were created without an associated repository
+        throw new Error(`no repositoryPHID for diff ${differentialID}`)
+    }
+    return phid
 }
 
 interface CreatePhabricatorRepoOptions {
@@ -316,9 +314,8 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
                             repoName: details.repoName,
                             phabricatorURL: window.location.origin,
                         }).subscribe(() => resolve(details))
-                    } else {
-                        return reject(new Error('could not parse repo details'))
                     }
+                    return reject(new Error('could not parse repo details'))
                 })
             })
             .catch(reject)
@@ -394,17 +391,17 @@ function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetail
                             .subscribe(() => {
                                 resolve(details)
                             })
-                    } else {
-                        return reject(new Error('could not parse repo details'))
                     }
+                    return reject(new Error('could not parse repo details'))
                 })
             })
             .catch(reject)
     })
 }
 
-export function getRepoDetailsFromDifferentialID(differentialID: number): Promise<PhabricatorRepoDetails> {
-    return getRepoPHIDForDifferentialID(differentialID).then(getRepoDetailsFromRepoPHID)
+export async function getRepoDetailsFromDifferentialID(differentialID: number): Promise<PhabricatorRepoDetails> {
+    const repositoryPHID = await getRepoPHIDForDifferentialID(differentialID)
+    return await getRepoDetailsFromRepoPHID(repositoryPHID)
 }
 
 function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<PhabricatorRepoDetails | null> {
@@ -423,29 +420,28 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
                 }
                 return resolve(convertToDetails(repo))
             })
-        } else {
-            // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
-            // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
-            // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
-            // in the browser extension options menu.
-            type Mappings = { callsign: string; path: string }[]
-            const mappingsString = window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS')
-            const callsignMappings = mappingsString
-                ? (JSON.parse(mappingsString) as Mappings)
-                : window.PHABRICATOR_CALLSIGN_MAPPINGS || []
-            const details = convertToDetails(repo)
-            if (callsignMappings) {
-                for (const mapping of callsignMappings) {
-                    if (mapping.callsign === repo.fields.callsign) {
-                        return resolve({
-                            callsign: repo.fields.callsign,
-                            repoName: mapping.path,
-                        })
-                    }
+        }
+        // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
+        // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
+        // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
+        // in the browser extension options menu.
+        type Mappings = { callsign: string; path: string }[]
+        const mappingsString = window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS')
+        const callsignMappings = mappingsString
+            ? (JSON.parse(mappingsString) as Mappings)
+            : window.PHABRICATOR_CALLSIGN_MAPPINGS || []
+        const details = convertToDetails(repo)
+        if (callsignMappings) {
+            for (const mapping of callsignMappings) {
+                if (mapping.callsign === repo.fields.callsign) {
+                    return resolve({
+                        callsign: repo.fields.callsign,
+                        repoName: mapping.path,
+                    })
                 }
             }
-            return resolve(details)
         }
+        return resolve(details)
     })
 }
 

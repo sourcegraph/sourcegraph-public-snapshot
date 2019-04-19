@@ -1,11 +1,11 @@
-import { isDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { first } from 'lodash'
 import { Observable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { filter, map } from 'rxjs/operators'
-
-import { memoizeObservable } from '../../shared/util/memoize'
-import { PRPageInfo } from './scrape'
+import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
+import { isDefined } from '../../../../../shared/src/util/types'
+import { DiffResolvedRevSpec } from '../../shared/repo'
+import { BitbucketRepoInfo } from './scrape'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1
@@ -39,17 +39,12 @@ interface PRResponse {
     toRef: Ref
 }
 
-interface GetCommitsForPRInput extends Pick<PRPageInfo, 'project' | 'repoSlug'> {
-    /** Required here. */
-    prID: number
-}
-
 /**
  * Get the base commit ID for a merge request.
  */
 export const getCommitsForPR: (
-    info: GetCommitsForPRInput
-) => Observable<{ baseCommitID: string; headCommitID: string }> = memoizeObservable(
+    info: BitbucketRepoInfo & { prID: number }
+) => Observable<DiffResolvedRevSpec> = memoizeObservable(
     ({ project, repoSlug, prID }) =>
         get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
             map(({ fromRef, toRef }) => ({ baseCommitID: toRef.latestCommit, headCommitID: fromRef.latestCommit }))
@@ -57,7 +52,7 @@ export const getCommitsForPR: (
     ({ prID }) => prID.toString()
 )
 
-interface GetBaseCommitInput extends Pick<PRPageInfo, 'project' | 'repoSlug'> {
+interface GetBaseCommitInput extends BitbucketRepoInfo {
     commitID: string
 }
 
@@ -76,5 +71,6 @@ export const getBaseCommit: (info: GetBaseCommitInput) => Observable<string> = m
             map(({ parents }) => first(parents)),
             filter(isDefined),
             map(({ id }) => id)
-        )
+        ),
+    ({ project, repoSlug, commitID }) => `${project}:${repoSlug}:${commitID}`
 )

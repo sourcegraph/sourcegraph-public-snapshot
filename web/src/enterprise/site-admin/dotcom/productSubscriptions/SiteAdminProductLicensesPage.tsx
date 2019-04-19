@@ -100,10 +100,10 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
                   })
               )
             : of({
-                  __typename: 'ProductLicenseConnection' as 'ProductLicenseConnection',
+                  __typename: 'ProductLicenseConnection' as const,
                   nodes: [],
                   totalCount: 0,
-                  pageInfo: { __typename: 'PageInfo' as 'PageInfo', hasNextPage: false },
+                  pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false },
               })
 
     private onDidUpdateProductLicense = () => this.updates.next()

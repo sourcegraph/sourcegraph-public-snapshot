@@ -14,6 +14,7 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -34,7 +35,7 @@ import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { ThemeProps } from '../theme'
-import { eventLogger } from '../tracking/eventLogger'
+import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
@@ -120,7 +121,13 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps, ThemeProps {
+interface Props
+    extends SettingsCascadeProps,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps,
+        EventLoggerProps,
+        ActivationProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
@@ -279,7 +286,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         autoFocus={true}
                                         placeholder=""
                                     />
-                                    <SearchButton />
+                                    <SearchButton activation={this.props.activation} />
                                 </Form>
                             </section>
                             <TreeEntriesSection
@@ -297,6 +304,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         pluralNoun="discussions in this tree"
                                         defaultFirst={2}
                                         hideSearch={true}
+                                        compact={false}
                                     />
                                 </div>
                             )}

@@ -18,3 +18,16 @@ All site configuration options and their default values are shown below.
 > NOTE: Not finding the option you're looking for? It may be a [critical configuration](critical_config.md) option, which means it must be set in the [management console](../management_console.md).
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/site.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/config/site_config) to see rendered content.</div>
+
+#### Known bugs
+
+The following site configuration options require the server to be restarted for the changes to take effect:
+
+```
+auth.accessTokens
+auth.sessionExpiry
+git.cloneURLToRepositoryName
+searchScopes
+extensions
+disablePublicRepoRedirects
+```

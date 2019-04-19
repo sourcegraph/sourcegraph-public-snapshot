@@ -82,15 +82,29 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 
 // BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
 type BitbucketServerConnection struct {
-	Certificate                 string `json:"certificate,omitempty"`
-	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
-	GitURLType                  string `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
-	Password                    string `json:"password,omitempty"`
-	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
-	Token                       string `json:"token,omitempty"`
-	Url                         string `json:"url"`
-	Username                    string `json:"username,omitempty"`
+	Certificate                 string                         `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
+	ExcludePersonalRepositories bool                           `json:"excludePersonalRepositories,omitempty"`
+	GitURLType                  string                         `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                           `json:"initialRepositoryEnablement,omitempty"`
+	Password                    string                         `json:"password,omitempty"`
+	Repos                       []string                       `json:"repos,omitempty"`
+	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string                       `json:"repositoryQuery"`
+	Token                       string                         `json:"token,omitempty"`
+	Url                         string                         `json:"url"`
+	Username                    string                         `json:"username"`
+}
+type BrandAssets struct {
+	Logo   string `json:"logo,omitempty"`
+	Symbol string `json:"symbol,omitempty"`
+}
+
+// Branding description: Customize Sourcegraph homepage logo and search icon.
+type Branding struct {
+	Dark    *BrandAssets `json:"dark,omitempty"`
+	Favicon string       `json:"favicon,omitempty"`
+	Light   *BrandAssets `json:"light,omitempty"`
 }
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
@@ -108,6 +122,7 @@ type CloneURLToRepositoryName struct {
 // CriticalConfiguration description: Critical configuration for a Sourcegraph site.
 type CriticalConfiguration struct {
 	AuthDisableUsernameChanges bool                `json:"auth.disableUsernameChanges,omitempty"`
+	AuthEnableUsernameChanges  bool                `json:"auth.enableUsernameChanges,omitempty"`
 	AuthProviders              []AuthProviders     `json:"auth.providers,omitempty"`
 	AuthPublic                 bool                `json:"auth.public,omitempty"`
 	AuthSessionExpiry          string              `json:"auth.sessionExpiry,omitempty"`
@@ -130,11 +145,22 @@ type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
 }
+type ExcludedBitbucketServerRepo struct {
+	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+type ExcludedGitHubRepo struct {
+	Id   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+type ExcludedGitLabProject struct {
+	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	Discussions      string `json:"discussions,omitempty"`
-	UpdateScheduler2 string `json:"updateScheduler2,omitempty"`
+	Discussions string `json:"discussions,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -167,15 +193,16 @@ type GitHubAuthorization struct {
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
 type GitHubConnection struct {
-	Authorization               *GitHubAuthorization `json:"authorization,omitempty"`
-	Certificate                 string               `json:"certificate,omitempty"`
-	GitURLType                  string               `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool                 `json:"initialRepositoryEnablement,omitempty"`
-	Repos                       []string             `json:"repos,omitempty"`
-	RepositoryPathPattern       string               `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string             `json:"repositoryQuery,omitempty"`
-	Token                       string               `json:"token"`
-	Url                         string               `json:"url"`
+	Authorization               *GitHubAuthorization  `json:"authorization,omitempty"`
+	Certificate                 string                `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedGitHubRepo `json:"exclude,omitempty"`
+	GitURLType                  string                `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                  `json:"initialRepositoryEnablement,omitempty"`
+	Repos                       []string              `json:"repos,omitempty"`
+	RepositoryPathPattern       string                `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string              `json:"repositoryQuery"`
+	Token                       string                `json:"token"`
+	Url                         string                `json:"url"`
 }
 
 // GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".
@@ -195,14 +222,20 @@ type GitLabAuthorization struct {
 
 // GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
 type GitLabConnection struct {
-	Authorization               *GitLabAuthorization `json:"authorization,omitempty"`
-	Certificate                 string               `json:"certificate,omitempty"`
-	GitURLType                  string               `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool                 `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string             `json:"projectQuery,omitempty"`
-	RepositoryPathPattern       string               `json:"repositoryPathPattern,omitempty"`
-	Token                       string               `json:"token"`
-	Url                         string               `json:"url"`
+	Authorization               *GitLabAuthorization     `json:"authorization,omitempty"`
+	Certificate                 string                   `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedGitLabProject `json:"exclude,omitempty"`
+	GitURLType                  string                   `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                     `json:"initialRepositoryEnablement,omitempty"`
+	ProjectQuery                []string                 `json:"projectQuery"`
+	Projects                    []*GitLabProject         `json:"projects,omitempty"`
+	RepositoryPathPattern       string                   `json:"repositoryPathPattern,omitempty"`
+	Token                       string                   `json:"token"`
+	Url                         string                   `json:"url"`
+}
+type GitLabProject struct {
+	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -269,6 +302,11 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
+}
+type Notice struct {
+	Dismissible bool   `json:"dismissible,omitempty"`
+	Location    string `json:"location"`
+	Message     string `json:"message"`
 }
 type OAuthIdentity struct {
 	Type string `json:"type"`
@@ -363,7 +401,9 @@ type Sentry struct {
 type Settings struct {
 	Extensions             map[string]bool           `json:"extensions,omitempty"`
 	Motd                   []string                  `json:"motd,omitempty"`
+	Notices                []*Notice                 `json:"notices,omitempty"`
 	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
+	SearchContextLines     int                       `json:"search.contextLines,omitempty"`
 	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
 	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
@@ -372,6 +412,7 @@ type Settings struct {
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
+	Branding                          *Branding                   `json:"branding,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
@@ -391,6 +432,7 @@ type SiteConfiguration struct {
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
+	SearchLargeFiles                  []string                    `json:"search.largeFiles,omitempty"`
 }
 
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.

@@ -9,7 +9,7 @@ export function contains(url: string): Promise<boolean> {
 export function request(urls: string[]): Promise<boolean> {
     return new Promise((resolve, reject) => {
         if (chrome && chrome.permissions) {
-            urls = urls.map(url => url + '/')
+            urls = urls.map(url => url + '/*')
             chrome.permissions.request(
                 {
                     origins: [...urls],
