@@ -6,32 +6,19 @@ import {
     Hoverifier,
     HoverState,
 } from '@sourcegraph/codeintellify'
-import { Selection } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
-import { isEqual, uniqBy } from 'lodash'
+import { uniqBy } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
-import {
-    animationFrameScheduler,
-    EMPTY,
-    from,
-    fromEvent,
-    Observable,
-    of,
-    Subject,
-    Subscription,
-    Unsubscribable,
-} from 'rxjs'
+import { animationFrameScheduler, EMPTY, from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import {
     catchError,
     concatAll,
     concatMap,
-    distinctUntilChanged,
     filter,
     map,
     mergeMap,
     observeOn,
-    startWith,
     switchMap,
     withLatestFrom,
 } from 'rxjs/operators'
@@ -53,8 +40,6 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/tele
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../../shared/src/util/types'
 import {
     FileSpec,
-    lprToSelectionsZeroIndexed,
-    parseHash,
     PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
@@ -178,9 +163,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     urlToFile?: (
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
-
-    /** Returns a stream representing the selections in the current code view */
-    selectionsChanges?: () => Observable<Selection[]>
 
     /**
      * CSS classes for the command palette to customize styling
@@ -444,16 +426,6 @@ export function handleCodeHost({
         )
     }
 
-    // A stream of selections for the current code view. By default, selections
-    // are parsed from the location hash, but the codeHost can provide an alternative implementation.
-    const selectionsChanges: Observable<Selection[]> = codeHost.selectionsChanges
-        ? codeHost.selectionsChanges()
-        : fromEvent(window, 'hashchange').pipe(
-              map(() => lprToSelectionsZeroIndexed(parseHash(window.location.hash))),
-              distinctUntilChanged(isEqual),
-              startWith([])
-          )
-
     /** A stream of added or removed code views */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
@@ -489,20 +461,8 @@ export function handleCodeHost({
     /** Map from code view element to the state associated with it (to be updated or removed) */
     const codeViewStates = new Map<Element, CodeViewState>()
 
-    // Update code editors as selections change
     subscriptions.add(
-        selectionsChanges.subscribe(selections => {
-            for (const { editors } of codeViewStates.values()) {
-                for (const editor of editors) {
-                    // TODO(sqs): only set for the single relevant editor
-                    extensionsController.services.editor.setSelections(editor, selections)
-                }
-            }
-        })
-    )
-
-    subscriptions.add(
-        codeViews.pipe(withLatestFrom(selectionsChanges)).subscribe(([codeViewEvent, selections]) => {
+        codeViews.subscribe(codeViewEvent => {
             console.log(`Code view ${codeViewEvent.type}`)
 
             // Handle added or removed view component, workspace root and subscriptions
@@ -518,15 +478,26 @@ export function handleCodeHost({
                 const editorData: CodeEditorData = {
                     type: 'CodeEditor' as const,
                     resource: uri,
-                    selections,
+                    selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
                     isActive: true,
                 }
+                const editorId = extensionsController.services.editor.addEditor(editorData)
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
-                    editors: [extensionsController.services.editor.addEditor(editorData)],
+                    editors: [editorId],
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
                 }
                 codeViewStates.set(element, codeViewState)
+
+                if (codeViewEvent.observeSelections) {
+                    codeViewState.subscriptions.add(
+                        // This nested subscription is necessary, it is managed correctly through `codeViewState.subscriptions`
+                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
+                            extensionsController.services.editor.setSelections(editorId, selections)
+                        })
+                    )
+                }
 
                 // When codeView is a diff (and not an added file), add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {

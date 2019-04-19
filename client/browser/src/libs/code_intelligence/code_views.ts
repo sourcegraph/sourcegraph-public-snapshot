@@ -1,4 +1,5 @@
 import { DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
@@ -36,6 +37,14 @@ export interface CodeViewSpec extends Pick<CodeView, Exclude<keyof CodeView, 'el
     adjustPosition?: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
     /** Props for styling the buttons in the `CodeViewToolbar`. */
     toolbarButtonProps?: ButtonProps
+    /**
+     * Gets the current selections for a code view.
+     */
+    getSelections?: (codeViewElement: HTMLElement) => Selection[]
+    /**
+     * Returns a stream of selections changes for a code view.
+     */
+    observeSelections?: (codeViewElement: HTMLElement) => Observable<Selection[]>
 }
 
 /**

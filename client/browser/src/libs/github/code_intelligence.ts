@@ -14,6 +14,7 @@ import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
 import { CodeView, CodeViewSpec, toCodeViewResolver } from '../code_intelligence/code_views'
+import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
 import { markdownBodyViewResolver } from './content_views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
@@ -85,6 +86,8 @@ const singleFileCodeView: CodeViewSpec = {
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
+    getSelections: getSelectionsFromHash,
+    observeSelections: observeSelectionsFromHash,
 }
 
 /**
@@ -177,10 +180,8 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
         }
         return {
             element: repositoryContent as HTMLElement,
-            dom: singleFileDOMFunctions,
+            ...singleFileCodeView,
             getToolbarMount: createFileLineContainerToolbarMount,
-            resolveFileInfo,
-            toolbarButtonProps,
         }
     },
 }
