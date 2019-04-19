@@ -54,6 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where the site-admin repositories page `Cloning`, `Not Cloned`, `Needs Index` tabs were very slow on instances with thousands of repositories.
+- Fixed an issue where failing to syntax highlight a single file would take down the entire syntax highlighting service.
 
 ## 3.2.2
 
