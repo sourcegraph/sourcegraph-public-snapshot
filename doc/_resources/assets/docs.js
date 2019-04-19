@@ -10,7 +10,7 @@ window.sgdocs = (() => {
     init: breadcrumbs => {
       if (document.readyState === 'loading') {
         return window.addEventListener('DOMContentLoaded', e => {
-          window.sgdocs.init(breadcrumbs=breadcrumbs)
+          window.sgdocs.init((breadcrumbs = breadcrumbs))
         })
       }
 
