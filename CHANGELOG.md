@@ -19,6 +19,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.2.4
+
+### Fixed
+
+- Fixed bundling of the Phabricator integration assets in the Sourcegraph docker image.
+
 ## 3.2.2
 
 ### Changed
