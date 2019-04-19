@@ -311,7 +311,7 @@ type Mutation {
         ownerKind: SavedQueryOwnerKind!
         orgID: Int
         userID: Int
-    ): EmptyResponse
+    ): SavedQuery!
     # Updates a saved search
     updateSavedSearch(
         # The database ID of the saved search
@@ -323,7 +323,7 @@ type Mutation {
         ownerKind: SavedQueryOwnerKind!
         orgID: Int
         userID: Int
-    ): EmptyResponse
+    ): SavedQuery!
     # Deletes a saved search
     deleteSavedSearch(
         # The database ID of the saved search
@@ -976,6 +976,7 @@ type SearchAlert {
     proposedQueries: [SearchQueryDescription!]
 }
 
+# All possible types of saved query owners.
 enum SavedQueryOwnerKind {
     USER
     ORG

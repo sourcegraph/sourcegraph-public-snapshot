@@ -14,12 +14,23 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	OwnerKind   string
 	OrgID       *int32
 	UserID      *int32
-}) (*EmptyResponse, error) {
-	err := db.SavedSearches.Create(ctx, args.Description, args.Query, args.NotifyOwner, args.NotifySlack, args.OwnerKind, args.UserID, args.OrgID)
+}) (*savedQueryResolver, error) {
+	configSavedQuery, err := db.SavedSearches.Create(ctx, args.Description, args.Query, args.NotifyOwner, args.NotifySlack, args.OwnerKind, args.UserID, args.OrgID)
 	if err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, nil
+
+	sq := &savedQueryResolver{
+		key:         configSavedQuery.Key,
+		description: configSavedQuery.Description,
+		query:       configSavedQuery.Query,
+		notify:      configSavedQuery.Notify,
+		notifySlack: configSavedQuery.NotifySlack,
+		ownerKind:   configSavedQuery.OwnerKind,
+		userID:      configSavedQuery.UserID,
+		orgID:       configSavedQuery.OrgID,
+	}
+	return sq, nil
 }
 
 func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
@@ -31,12 +42,22 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	OwnerKind   string
 	OrgID       *int32
 	UserID      *int32
-}) (*EmptyResponse, error) {
-	err := db.SavedSearches.Update(ctx, args.ID, args.Description, args.Query, args.NotifyOwner, args.NotifySlack, args.OwnerKind, args.UserID, args.OrgID)
+}) (*savedQueryResolver, error) {
+	configSavedQuery, err := db.SavedSearches.Update(ctx, args.ID, args.Description, args.Query, args.NotifyOwner, args.NotifySlack, args.OwnerKind, args.UserID, args.OrgID)
 	if err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, nil
+	sq := &savedQueryResolver{
+		key:         configSavedQuery.Key,
+		description: configSavedQuery.Description,
+		query:       configSavedQuery.Query,
+		notify:      configSavedQuery.Notify,
+		notifySlack: configSavedQuery.NotifySlack,
+		ownerKind:   configSavedQuery.OwnerKind,
+		userID:      configSavedQuery.UserID,
+		orgID:       configSavedQuery.OrgID,
+	}
+	return sq, nil
 }
 
 func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {

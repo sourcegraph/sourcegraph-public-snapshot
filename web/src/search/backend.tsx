@@ -302,9 +302,10 @@ export function createSavedSearch(
                     userID: $userID
                     orgID: $orgID
                 ) {
-                    alwaysNil
+                    ...SavedQueryFields
                 }
             }
+            ${savedQueryFragment}
         `,
         {
             description,
@@ -353,9 +354,10 @@ export function updateSavedSearch(
                     userID: $userID
                     orgID: $orgID
                 ) {
-                    alwaysNil
+                    ...SavedQueryFields
                 }
             }
+            ${savedQueryFragment}
         `,
         {
             id,
