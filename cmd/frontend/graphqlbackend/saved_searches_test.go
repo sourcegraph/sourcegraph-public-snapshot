@@ -14,14 +14,14 @@ func TestSavedSearches(t *testing.T) {
 	defer resetMocks()
 	key := int32(1)
 	db.Mocks.SavedSearches.ListAll = func(ctx context.Context) ([]api.SavedQuerySpecAndConfig, error) {
-		return []api.SavedQuerySpecAndConfig{api.SavedQuerySpecAndConfig{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &key}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &key, OrgID: nil}}}, nil
+		return []api.SavedQuerySpecAndConfig{{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &key}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &key, OrgID: nil}}}, nil
 	}
 
 	savedQueries, err := (&schemaResolver{}).SavedQueries(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []*savedQueryResolver{&savedQueryResolver{
+	want := []*savedQueryResolver{{
 		key:         "1",
 		description: "test query",
 		query:       "test type:diff",
