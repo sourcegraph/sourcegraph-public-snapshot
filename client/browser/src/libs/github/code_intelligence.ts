@@ -13,7 +13,7 @@ import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
-import { CodeViewSpec, CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { CodeView, CodeViewSpec, toCodeViewResolver } from '../code_intelligence/code_views'
 import { ViewResolver } from '../code_intelligence/views'
 import { markdownBodyViewResolver } from './content_views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
@@ -67,25 +67,23 @@ const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
 }
 
-const diffCodeView: CodeViewSpecResolver = {
+const diffCodeView: CodeViewSpec = {
     dom: diffDomFunctions,
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
-    isDiff: true,
 }
 
-const diffConversationCodeView: CodeViewSpecResolver = {
+const diffConversationCodeView: CodeViewSpec = {
     ...diffCodeView,
     getToolbarMount: undefined,
 }
 
-const singleFileCodeView: CodeViewSpecResolver = {
+const singleFileCodeView: CodeViewSpec = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
-    isDiff: false,
 }
 
 /**
@@ -124,23 +122,19 @@ const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec &
         })
     )
 
-const searchResultCodeView: CodeViewSpec = {
-    selector: '.code-list-item',
+const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
     dom: searchCodeSnippetDOMFunctions,
     adjustPosition: adjustPositionForSnippet,
     resolveFileInfo: resolveSnippetFileInfo,
     toolbarButtonProps,
-    isDiff: false,
-}
+})
 
-const commentSnippetCodeView: CodeViewSpec = {
-    selector: '.js-comment-body',
+const commentSnippetCodeViewResolver = toCodeViewResolver('.js-comment-body', {
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveSnippetFileInfo,
     adjustPosition: adjustPositionForSnippet,
     toolbarButtonProps,
-    isDiff: false,
-}
+})
 
 /**
  * The modern single file blob view.
@@ -151,8 +145,7 @@ const commentSnippetCodeView: CodeViewSpec = {
  * unit test like other toolbar mount getters.
  * Change this after https://github.com/sourcegraph/sourcegraph/issues/3271 is fixed.
  */
-export const fileLineContainerCodeView = {
-    selector: '.js-file-line-container',
+export const fileLineContainerCodeViewResolver = toCodeViewResolver('.js-file-line-container', {
     dom: singleFileDOMFunctions,
     getToolbarMount: (fileLineContainer: HTMLElement): HTMLElement => {
         const codeViewParent = fileLineContainer.closest('.repository-content')
@@ -179,12 +172,11 @@ export const fileLineContainerCodeView = {
     },
     resolveFileInfo,
     toolbarButtonProps,
-    isDiff: false,
-}
+})
 
-const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
+const genericCodeViewResolver: ViewResolver<CodeView> = {
     selector: '.file',
-    resolveView: (elem: HTMLElement): CodeViewSpecResolver | null => {
+    resolveView: (elem: HTMLElement): CodeView | null => {
         if (elem.querySelector('article.markdown-body')) {
             // This code view is rendered markdown, we shouldn't add code intelligence
             return null
@@ -201,14 +193,14 @@ const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
             files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
         if (isSingleCodeFile) {
-            return singleFileCodeView
+            return { element: elem, ...singleFileCodeView }
         }
 
         if (elem.closest('.discussion-item-body')) {
-            return diffConversationCodeView
+            return { element: elem, ...diffConversationCodeView }
         }
 
-        return diffCodeView
+        return { element: elem, ...diffCodeView }
     },
 }
 
@@ -257,8 +249,12 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
 
 export const githubCodeHost: CodeHost = {
     name: 'github',
-    codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
-    codeViewSpecResolver,
+    codeViewResolvers: [
+        genericCodeViewResolver,
+        fileLineContainerResolver,
+        searchResultCodeViewResolver,
+        commentSnippetCodeViewResolver,
+    ],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
     getContext: parseURL,

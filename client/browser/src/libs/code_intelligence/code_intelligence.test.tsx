@@ -16,6 +16,7 @@ import { Controller } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
+import { toCodeViewResolver } from './code_views'
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
@@ -90,6 +91,7 @@ describe('code_intelligence', () => {
                     codeHost: {
                         name: 'test',
                         check: () => true,
+                        codeViewResolvers: [],
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
@@ -113,6 +115,7 @@ describe('code_intelligence', () => {
                         name: 'test',
                         check: () => true,
                         getCommandPaletteMount: () => commandPaletteMount,
+                        codeViewResolvers: [],
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
@@ -131,6 +134,7 @@ describe('code_intelligence', () => {
                     codeHost: {
                         name: 'test',
                         check: () => true,
+                        codeViewResolvers: [],
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
@@ -160,9 +164,8 @@ describe('code_intelligence', () => {
                     codeHost: {
                         name: 'test',
                         check: () => true,
-                        codeViewSpecs: [
-                            {
-                                selector: `#code`,
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
                                 dom: {
                                     getCodeElementFromTarget: jest.fn(),
                                     getCodeElementFromLineNumber: jest.fn(),
@@ -170,7 +173,7 @@ describe('code_intelligence', () => {
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
                                 getToolbarMount: () => toolbarMount,
-                            },
+                            }),
                         ],
                         selectionsChanges: () => of([]),
                     },
@@ -224,16 +227,15 @@ describe('code_intelligence', () => {
                     codeHost: {
                         name: 'test',
                         check: () => true,
-                        codeViewSpecs: [
-                            {
-                                selector: `#code`,
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
                                 dom: {
                                     getCodeElementFromTarget: jest.fn(),
                                     getCodeElementFromLineNumber: () => line,
                                     getLineNumberFromCodeElement: jest.fn(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
-                            },
+                            }),
                         ],
                         selectionsChanges: () => of([]),
                     },
