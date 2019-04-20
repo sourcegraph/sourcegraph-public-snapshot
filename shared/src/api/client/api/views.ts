@@ -1,4 +1,4 @@
-import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyValue, proxy, proxyMarker } from '@sourcegraph/comlink'
 import { isEqual, omit } from 'lodash'
 import { combineLatest, from, of, ReplaySubject, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
@@ -22,7 +22,7 @@ export interface ClientViewsAPI extends ProxyValue {
 
 /** @internal */
 export class ClientViews implements ClientViewsAPI {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     constructor(
         private viewRegistry: ViewProviderRegistry,
@@ -72,7 +72,7 @@ export class ClientViews implements ClientViewsAPI {
                 })
             )
         )
-        return proxyValue({
+        return proxy({
             update: (data: PanelViewData) => {
                 panelView.next(data)
             },

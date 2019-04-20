@@ -1,4 +1,4 @@
-import { ProxyResult, proxyValue } from '@sourcegraph/comlink'
+import { ProxyResult, proxy } from '@sourcegraph/comlink'
 import { Unsubscribable } from 'rxjs'
 import { ClientCommandsAPI } from '../../client/api/commands'
 import { syncSubscription } from '../../util'
@@ -22,6 +22,6 @@ export class ExtCommands {
     }
 
     public registerCommand(entry: CommandEntry): Unsubscribable {
-        return syncSubscription(this.proxy.$registerCommand(entry.command, proxyValue(entry.callback)))
+        return syncSubscription(this.proxy.$registerCommand(entry.command, proxy(entry.callback)))
     }
 }

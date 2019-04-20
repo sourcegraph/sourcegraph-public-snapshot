@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyResult, ProxyValue, proxy, proxyMarker } from '@sourcegraph/comlink'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
@@ -50,7 +50,7 @@ export interface ClientLanguageFeaturesAPI extends ProxyValue {
 
 /** @internal */
 export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     constructor(
         private hoverRegistry: FeatureProviderRegistry<
@@ -72,7 +72,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
             ((params: TextDocumentPositionParams) => ProxySubscribable<Hover | null | undefined>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue {
-        return proxyValue(
+        return proxy(
             this.hoverRegistry.registerProvider({ documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
             )
@@ -85,7 +85,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
             ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue {
-        return proxyValue(
+        return proxy(
             this.definitionRegistry.registerProvider({ documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
             )
@@ -98,7 +98,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
             ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue {
-        return proxyValue(
+        return proxy(
             this.referencesRegistry.registerProvider({ documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
             )
@@ -112,7 +112,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
             ((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue {
-        return proxyValue(
+        return proxy(
             this.locationRegistry.registerProvider({ id, documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
             )
@@ -125,7 +125,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
             ((params: TextDocumentPositionParams) => ProxySubscribable<CompletionList | null | undefined>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue {
-        return proxyValue(
+        return proxy(
             this.completionItemsRegistry.registerProvider({ documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
             )

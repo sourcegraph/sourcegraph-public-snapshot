@@ -1,4 +1,4 @@
-import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
+import * as comlink from '@sourcegraph/comlink'
 import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import { createExtensionHost as createInPageExtensionHost } from '../../../../shared/src/api/extension/worker'
@@ -46,13 +46,19 @@ export function createExtensionHost(): Observable<EndpointPair> {
  * transfering MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
  *
  */
-function endpointFromPort(port: chrome.runtime.Port): MessagePort {
-    const listeners = new Map<(event: MessageEvent) => any, (message: object, port: chrome.runtime.Port) => void>()
-    return MessageChannelAdapter.wrap({
-        send(data): void {
+function endpointFromPort(
+    port: chrome.runtime.Port
+): Pick<MessagePort, 'postMessage' | 'addEventListener' | 'removeEventListener'> {
+    const listeners = new Map<
+        EventListenerOrEventListenerObject,
+        (message: object, port: chrome.runtime.Port) => void
+    >()
+    return comlink.wrap({
+        postMessage(data): void {
+            console.log('QQQQQQQQ1111111')
             port.postMessage(data)
         },
-        addEventListener(event, messageListener): void {
+        addEventListener(event: 'message', messageListener: EventListenerOrEventListenerObject): void {
             if (event !== 'message') {
                 return
             }
@@ -67,12 +73,14 @@ function endpointFromPort(port: chrome.runtime.Port): MessagePort {
                 // to reduce the amount of garbage created. There are no callers that depend on
                 // other MessageEvent properties; they would be set to their default values anyway,
                 // so losing the properties is not a big problem.
+                const handler = 'handleEvent' in messageListener ? messageListener.handleEvent : messageListener
+                console.log('DATA', data)
                 messageListener.call(this, { data } as any)
             }
             listeners.set(messageListener, chromePortListener)
             port.onMessage.addListener(chromePortListener)
         },
-        removeEventListener(event, messageListener): void {
+        removeEventListener(event: 'message', messageListener: EventListenerOrEventListenerObject): void {
             if (event !== 'message') {
                 return
             }

@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyResult, ProxyValue, proxyMarker } from '@sourcegraph/comlink'
 import { BehaviorSubject, PartialObserver, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'
@@ -44,7 +44,7 @@ export interface ExtConfigurationAPI<C> extends ProxyValue {
  * @template C - The configuration schema.
  */
 export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C>, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     /**
      * The settings data observable, assigned when the initial data is received from the client. Extensions should

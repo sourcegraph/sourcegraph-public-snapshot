@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyResult, ProxyValue, proxyMarker } from '@sourcegraph/comlink'
 import { sortBy } from 'lodash'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
@@ -132,7 +132,7 @@ export interface ExtWindowsAPI extends ProxyValue {
  * @todo Support more than 1 window.
  */
 export class ExtWindows implements ExtWindowsAPI, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     public activeWindow: ExtWindow | undefined
 

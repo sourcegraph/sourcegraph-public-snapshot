@@ -1,7 +1,7 @@
 import 'message-port-polyfill'
 
 import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
-import { filter, first, switchMap, take } from 'rxjs/operators'
+import { filter, first, switchMap, take, tap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { isDefined } from '../../util/types'
@@ -69,8 +69,8 @@ export async function integrationTestContext(
 }> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
-    const clientAPIChannel = new MessageChannel()
-    const extensionHostAPIChannel = new MessageChannel()
+    const clientAPIChannel = createMessageChannel()
+    const extensionHostAPIChannel = createMessageChannel()
     const extensionHostEndpoints: EndpointPair = {
         proxy: clientAPIChannel.port2,
         expose: extensionHostAPIChannel.port2,
@@ -98,9 +98,14 @@ export async function integrationTestContext(
 
     // Wait for initModel to be initialized
     await Promise.all([
-        from(extensionAPI.workspace.openedTextDocuments)
-            .pipe(take(initModel.editors.length))
-            .toPromise(),
+        // TODO!(sqs) seems to be synchronous
+        //
+        // from(extensionAPI.workspace.openedTextDocuments)
+        //     .pipe(
+        //         tap(() => console.log('QQQQQQQQQQQ')),
+        //         take(initModel.editors.length)
+        //     )
+        //     .toPromise(),
         from(extensionAPI.app.activeWindowChanges)
             .pipe(
                 first(isDefined),
@@ -136,4 +141,108 @@ export function collectSubscribableValues<T>(subscribable: sourcegraph.Subscriba
     const values: T[] = []
     subscribable.subscribe(value => values.push(value))
     return values
+}
+
+class AsyncMessagePort extends MessagePort implements MessagePort {
+    public get onmessage(): ((this: MessagePort, ev: MessageEvent) => any) | null {
+        throw new Error('not implemented')
+    }
+
+    public set onmessage(callback: ((this: MessagePort, ev: MessageEvent) => any) | null) {
+        // throw new Error('not implemented')
+    }
+
+    public get onmessageerror(): ((this: MessagePort, ev: MessageEvent) => any) | null {
+        throw new Error('not implemented')
+    }
+
+    public set onmessageerror(callback: ((this: MessagePort, ev: MessageEvent) => any) | null) {
+        // throw new Error('not implemented')
+    }
+
+    private isStarted = false
+    private isClosed = false
+    private messageListeners: EventListenerOrEventListenerObject[] = []
+
+    public close(): void {
+        this.isClosed = true
+        this.messageListeners = []
+    }
+
+    public start(): void {
+        this.isStarted = true
+    }
+
+    public postMessage(message: any, transfer?: Transferable[]): void {
+        if (!this.isStarted) {
+            throw new Error('MessagePort is not started')
+        }
+        if (this.isClosed) {
+            throw new Error('MessagePort is closed')
+        }
+        this.dispatchEvent(new MessageEvent('message', { data: message }))
+    }
+
+    public dispatchEvent(event: Event): boolean {
+        if (event.type !== 'message') {
+            throw new Error('not implemented')
+        }
+        for (const listener of this.messageListeners) {
+            const handler = 'handleEvent' in listener ? listener.handleEvent.bind(this) : listener
+            setTimeout(() => handler(event), 0)
+        }
+        return true
+    }
+
+    public addEventListener<K extends keyof MessagePortEventMap>(
+        type: K,
+        listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any,
+        options?: boolean | AddEventListenerOptions
+    ): void
+    public addEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions
+    ): void
+    public addEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions
+    ): void {
+        if (type !== 'message') {
+            throw new Error('not implemented')
+        }
+        this.messageListeners.push(listener)
+    }
+
+    public removeEventListener<K extends keyof MessagePortEventMap>(
+        type: K,
+        listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any,
+        options?: boolean | EventListenerOptions
+    ): void
+    public removeEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | EventListenerOptions
+    ): void
+    public removeEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | EventListenerOptions
+    ): void {
+        if (type !== 'message') {
+            throw new Error('not implemented')
+        }
+        const index = this.messageListeners.indexOf(listener)
+        if (index !== -1) {
+            this.messageListeners.splice(index, 1)
+        }
+    }
+}
+
+function createMessageChannel(): MessageChannel {
+    // return new MessageChannel()
+    const port1 = new AsyncMessagePort()
+    const port2 = new AsyncMessagePort()
+    return { port1, port2 }
 }
