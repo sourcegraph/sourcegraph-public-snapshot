@@ -1,7 +1,7 @@
 // The actual styles for this component are set in CompletionWidgetClassProps.
 .completion-widget {
     position: relative;
-    z-index: 99999999;
+    z-index: 99999999; // should be higher than anything else on any code host
 
     // Applies to .completion-widget-dropdown.
     > * {
