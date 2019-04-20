@@ -21,18 +21,15 @@ import { ExtensionsControllerProps } from '../../extensions/controller'
 import { asError, ErrorLike } from '../../util/errors'
 import { throttleTimeWindow } from '../../util/rxjs/throttleTimeWindow'
 import { getWordAtText } from '../../util/wordHelpers'
-import { CompletionWidget, CompletionWidgetClassProps } from './CompletionWidget'
+import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
 
-interface Props extends ExtensionsControllerProps, CompletionWidgetClassProps {
+export interface EditorCompletionWidgetProps
+    extends ExtensionsControllerProps,
+        Pick<CompletionWidgetProps, Exclude<keyof CompletionWidgetProps, 'completionListOrError' | 'onSelectItem'>> {
     /**
      * The ID of the editor to show a completion widget for.
      */
     editorId: string
-
-    /**
-     * The textarea element where the widget is shown.
-     */
-    textArea: HTMLTextAreaElement
 }
 
 const LOADING: 'loading' = 'loading'
@@ -40,7 +37,7 @@ const LOADING: 'loading' = 'loading'
 /**
  * Shows a completion widget with a list of completion items from extensions for a given editor.
  */
-export const EditorCompletionWidget: React.FunctionComponent<Props> = ({
+export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWidgetProps> = ({
     extensionsController: {
         services: { editor: editorService, model: modelService, completionItems: completionItemsService },
     },
