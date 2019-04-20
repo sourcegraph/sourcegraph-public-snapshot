@@ -64,8 +64,6 @@ export function handleTextFields(
                     textFieldEvent
                 )
             )
-
-            textFieldEvent.element.classList.add('sg-mounted')
         } else if (textFieldEvent.type === 'removed') {
             const textFieldState = textFieldStates.get(textFieldEvent.element)
             if (textFieldState) {
