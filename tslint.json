@@ -1,5 +1,5 @@
 {
-  "extends": ["@sourcegraph/tslint-config"],
+  "extends": ["@sourcegraph/tslint-config", "tslint-react-hooks"],
   "linterOptions": { "exclude": ["node_modules/**"] },
   "rules": {
     "await-promise": false,
@@ -21,6 +21,7 @@
         "^select$",
         "Use the Select component in src/components/Select.tsx instead of the native HTML select element for proper cross-browser styling"
       ]
-    ]
+    ],
+    "react-hooks-nesting": "error"
   }
 }
