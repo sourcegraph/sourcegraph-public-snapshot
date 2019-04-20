@@ -4,14 +4,31 @@ import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
+import { MessageEventLike, MessagePortLike } from '../util/messagePort'
 import { FileSpec, PositionSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+
+/**
+ * Compatible with {@link module:@sourcegraph/comlink.Endpoint} but synthesizable.
+ */
+export interface EndpointLike extends Pick<Endpoint, 'postMessage'> {
+    addEventListener(
+        type: 'message',
+        listener: (ev: MessageEventLike) => any,
+        options?: boolean | AddEventListenerOptions
+    ): void
+    removeEventListener(
+        type: 'message',
+        listener: (ev: MessageEventLike) => any,
+        options?: boolean | AddEventListenerOptions
+    ): void
+}
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
-    proxy: Endpoint & Pick<MessagePort, 'start'>
+    proxy: EndpointLike & Pick<MessagePortLike, 'start'>
 
     /** The endpoint to expose the API of this thread to */
-    expose: Endpoint & Pick<MessagePort, 'start'>
+    expose: EndpointLike & Pick<MessagePortLike, 'start'>
 }
 export const isEndpointPair = (val: any): val is EndpointPair =>
     typeof val === 'object' && val !== null && isEndpoint(val.proxy) && isEndpoint(val.expose)

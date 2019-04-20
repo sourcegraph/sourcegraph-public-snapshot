@@ -2,12 +2,13 @@
 // prettier-ignore
 import '../../config/polyfill'
 
-import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
 import { fromEventPattern, noop, Observable } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
 import DPT from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
+import { EndpointLike } from '../../../../../shared/src/platform/context'
+import { MessagePortLike } from '../../../../../shared/src/util/messagePort'
 import * as browserAction from '../../browser/browserAction'
 import * as omnibox from '../../browser/omnibox'
 import * as permissions from '../../browser/permissions'
@@ -438,7 +439,7 @@ endpointPairs.subscribe(({ proxy, expose }) => {
     const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
     const connectPortAndEndpoint = (
         port: chrome.runtime.Port,
-        endpoint: Endpoint & Pick<MessagePort, 'start'>
+        endpoint: EndpointLike & Pick<MessagePortLike, 'start'>
     ): void => {
         endpoint.start()
         port.onMessage.addListener(message => {

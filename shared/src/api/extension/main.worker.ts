@@ -4,12 +4,13 @@ import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapt
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { EndpointPair, isEndpointPair } from '../../platform/context'
+import { MessagePortLike } from '../../util/messagePort'
 import { startExtensionHost } from './extensionHost'
 
 export interface InitMessage {
     endpoints: {
-        proxy: MessagePort
-        expose: MessagePort
+        proxy: MessagePortLike
+        expose: MessagePortLike
     }
     /**
      * Whether the endpoints should be wrapped with a comlink {@link MessageChannelAdapter}.
@@ -22,7 +23,7 @@ export interface InitMessage {
 
 const isInitMessage = (value: any): value is InitMessage => value.endpoints && isEndpointPair(value.endpoints)
 
-const wrapMessagePort = (port: MessagePort) =>
+const wrapMessagePort = (port: MessagePortLike) =>
     MessageChannelAdapter.wrap({
         send: data => port.postMessage(data),
         addEventListener: (event, listener) => port.addEventListener(event, listener),

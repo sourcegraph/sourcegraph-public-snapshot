@@ -2,7 +2,8 @@ import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapt
 import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import { createExtensionHost as createInPageExtensionHost } from '../../../../shared/src/api/extension/worker'
-import { EndpointPair } from '../../../../shared/src/platform/context'
+import { EndpointLike, EndpointPair } from '../../../../shared/src/platform/context'
+import { MessageEventLike, MessagePortLike } from '../../../../shared/src/util/messagePort'
 import { isInPage } from '../context'
 
 /**
@@ -46,7 +47,7 @@ export function createExtensionHost(): Observable<EndpointPair> {
  * transfering MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
  *
  */
-function endpointFromPort(port: chrome.runtime.Port): MessagePort {
+function endpointFromPort(port: chrome.runtime.Port): EndpointLike & MessagePortLike {
     const listeners = new Map<(event: MessageEvent) => any, (message: object, port: chrome.runtime.Port) => void>()
     return MessageChannelAdapter.wrap({
         send(data): void {
@@ -63,11 +64,9 @@ function endpointFromPort(port: chrome.runtime.Port): MessagePort {
                 // https://github.com/sourcegraph/sourcegraph/issues/3433#issuecomment-483561297 and
                 // watch that issue for a (possibly better) fix.
                 //
-                // HACK: Use a simple object here instead of `new MessageEvent('message', { data })`
-                // to reduce the amount of garbage created. There are no callers that depend on
-                // other MessageEvent properties; they would be set to their default values anyway,
-                // so losing the properties is not a big problem.
-                messageListener.call(this, { data } as any)
+                // Use a simple object here instead of `new MessageEvent('message', { data })` to
+                // reduce the amount of garbage created.
+                messageListener.call(this, { data })
             }
             listeners.set(messageListener, chromePortListener)
             port.onMessage.addListener(chromePortListener)
