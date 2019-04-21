@@ -120,10 +120,6 @@ export function handleContentViews(
                         )
                     }
                 }
-
-                if (contentViewEvent.type === 'added') {
-                    contentViewEvent.element.classList.add('sg-mounted')
-                }
             })
         )
         .subscribe()

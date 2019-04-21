@@ -98,7 +98,6 @@ describe('text_fields', () => {
                     type: 'CodeEditor',
                 },
             ] as CodeEditor[])
-            expect(textFieldElement.classList.contains('sg-mounted')).toBe(true)
 
             // Remove text field.
             textFieldElement.remove()

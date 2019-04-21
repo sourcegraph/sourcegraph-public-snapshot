@@ -82,7 +82,6 @@ describe('content_views', () => {
             // Add content view.
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
             await wait.pipe(first()).toPromise()
-            expect(element.classList.contains('sg-mounted')).toBe(true)
             expect(element.innerHTML).toBe(
                 '0 <a href="#foo" data-tooltip="foo">foo</a><span class="sg-link-preview-content" data-tooltip="foo"><strong>foo</strong> x</span> 1 <a href="#bar">bar</a> 2 <a href="#qux" data-tooltip="qux">qux</a><span class="sg-link-preview-content" data-tooltip="qux"><strong>qux</strong> x</span> 3'
             )
@@ -90,7 +89,6 @@ describe('content_views', () => {
             // Mutate content view.
             element.innerHTML = '4 <a href=#zip>zip</a> 5'
             await Promise.all([unsubscribed.pipe(first()).toPromise(), wait.pipe(first()).toPromise()])
-            expect(element.classList.contains('sg-mounted')).toBe(true)
             expect(element.innerHTML).toBe(
                 '4 <a href="#zip" data-tooltip="zip">zip</a><span class="sg-link-preview-content" data-tooltip="zip"><strong>zip</strong> x</span> 5'
             )
@@ -131,7 +129,6 @@ describe('content_views', () => {
             )
 
             await wait
-            expect(element.classList.contains('sg-mounted')).toBe(true)
             expect(element.innerHTML).toBe(originalInnerHTML)
 
             fooLinkPreviewValues.next({
