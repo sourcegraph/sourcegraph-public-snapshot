@@ -1,8 +1,8 @@
 import '../../api/integration-test/messagePortPolyfill' // TODO!(sqs): move this
 
 import * as comlink from '@sourcegraph/comlink'
-import { from, Observable, Subscribable } from 'rxjs'
-import { first, toArray } from 'rxjs/operators'
+import { concat, merge, Observable, of, Subject } from 'rxjs'
+import { catchError, delay, first, mergeMap, switchMap, take, tap, toArray } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { proxySubscribable, ProxySubscribable } from '../../api/extension/api/common'
 import { createBarrier } from '../../api/integration-test/testHelpers'
@@ -11,7 +11,7 @@ import { StringMessagePort, wrapStringMessagePort } from './stringMessageChannel
 /////////////////////
 //
 /////////
-jest.setTimeout(400)
+jest.setTimeout(1000)
 
 type HandlerFunction = (data: string) => void
 
@@ -228,23 +228,48 @@ describe('wrapStringMessagePort', () => {
     })
 
     describe('proxied Observables', () => {
-        test('unsubscribes', async () => {
-            const gotUnsubscribed = createBarrier()
-            const observable = new Observable<string>(sub => {
-                sub.next('a')
-                sub.complete()
-                return () => gotUnsubscribed.done()
+        test.only('unsubscribes', async () => {
+            let unsubscribed = 0
+            let subscribed = 0
+            const observable = new Observable<number>(sub => {
+                sub.next(subscribed++)
+                console.log('SUB', subscribed)
+                return () => {
+                    unsubscribed++
+                    console.log('UNSUB', unsubscribed)
+                }
             })
 
             const wrapper = createWrappedStringMessageChannel()
 
             comlink.expose(comlink.proxy(() => proxySubscribable(observable)), wrapper.port1)
 
-            const getObservable = comlink.wrap<() => ProxySubscribable<string>>(wrapper.port2)
-            const remoteObservable = wrapRemoteObservable<string>(getObservable())
+            const remoteGetObservable = comlink.wrap<() => ProxySubscribable<number>>(wrapper.port2)
+            const getObservable = () => wrapRemoteObservable<number>(remoteGetObservable())
 
-            expect(await remoteObservable.pipe(toArray()).toPromise()).toEqual(['a'])
-            await gotUnsubscribed.wait
+            let subjectNextCalled = false
+            const subject = new Subject<number>()
+            expect(
+                await merge(of(1), subject)
+                    .pipe(
+                        switchMap(() =>
+                            getObservable().pipe(
+                                tap(() => {
+                                    if (!subjectNextCalled) {
+                                        subjectNextCalled = true
+                                        setTimeout(() => subject.next(2))
+                                    }
+                                }),
+                                first()
+                            )
+                        ),
+                        take(2),
+                        toArray()
+                    )
+                    .toPromise()
+            ).toEqual([0, 1])
+            expect(subscribed).toBe(2)
+            expect(unsubscribed).toBe(2)
         })
     })
 })
