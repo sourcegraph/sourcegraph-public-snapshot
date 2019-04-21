@@ -1,4 +1,5 @@
 import '../../polyfills'
+import '../../util/comlink'
 
 import * as comlink from '@sourcegraph/comlink'
 import { fromEvent } from 'rxjs'
@@ -49,7 +50,6 @@ async function extensionHostMain(): Promise<void> {
         const event = await fromEvent<MessageEvent>(self, 'message')
             .pipe(take(1))
             .toPromise()
-        console.log('INIT', event.data)
         if (!isInitMessage(event.data)) {
             throw new Error('First message event in extension host worker was not a well-formed InitMessage')
         }

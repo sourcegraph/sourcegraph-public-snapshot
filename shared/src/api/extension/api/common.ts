@@ -1,3 +1,5 @@
+import '../../../util/comlink'
+
 import { proxy, proxyMarker, ProxyResult, ProxyValue, UnproxyOrClone } from '@sourcegraph/comlink'
 import { from, isObservable, Observable, Observer, of } from 'rxjs'
 import { map } from 'rxjs/operators'

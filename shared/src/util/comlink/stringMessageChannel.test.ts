@@ -1,5 +1,10 @@
 import '../../api/integration-test/messagePortPolyfill' // TODO!(sqs): move this
 
+import * as comlink from '@sourcegraph/comlink'
+import { from, Observable, Subscribable } from 'rxjs'
+import { first, toArray } from 'rxjs/operators'
+import { wrapRemoteObservable } from '../../api/client/api/common'
+import { proxySubscribable, ProxySubscribable } from '../../api/extension/api/common'
 import { createBarrier } from '../../api/integration-test/testHelpers'
 import { StringMessagePort, wrapStringMessagePort } from './stringMessageChannel'
 
@@ -219,6 +224,27 @@ describe('wrapStringMessagePort', () => {
                     resolve()
                 })
             })
+        })
+    })
+
+    describe('proxied Observables', () => {
+        test('unsubscribes', async () => {
+            const gotUnsubscribed = createBarrier()
+            const observable = new Observable<string>(sub => {
+                sub.next('a')
+                sub.complete()
+                return () => gotUnsubscribed.done()
+            })
+
+            const wrapper = createWrappedStringMessageChannel()
+
+            comlink.expose(comlink.proxy(() => proxySubscribable(observable)), wrapper.port1)
+
+            const getObservable = comlink.wrap<() => ProxySubscribable<string>>(wrapper.port2)
+            const remoteObservable = wrapRemoteObservable<string>(getObservable())
+
+            expect(await remoteObservable.pipe(toArray()).toPromise()).toEqual(['a'])
+            await gotUnsubscribed.wait
         })
     })
 })
