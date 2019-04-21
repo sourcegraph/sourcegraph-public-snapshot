@@ -115,6 +115,10 @@ func ContextErrorMiddleware(cli Doer) Doer {
 // transport.
 func NewCertPoolOpt(pool *x509.CertPool) Opt {
 	return func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
+
 		tr, ok := cli.Transport.(*http.Transport)
 		if !ok {
 			return errors.New("httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport")

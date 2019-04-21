@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed an issue where the http.Client.Transport would not be initialized when using custom Certificate Authority or self signed certificate.
+
 ## 3.3.0
 
 ### Added
