@@ -9,16 +9,18 @@ import { Subscribable, Unsubscribable } from 'sourcegraph'
  */
 export const syncSubscription = (
     subscriptionPromise: Promise<ProxiedObject<Unsubscribable & ProxyValue>>
-): Subscription =>
+): Subscription => {
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
-    new Subscription(() => {
+    const sub = new Subscription()
+    sub.add(() => {
         // tslint:disable-next-line: no-floating-promises
         subscriptionPromise.then(proxySubscription => {
             // tslint:disable-next-line: no-floating-promises
             proxySubscription.unsubscribe()
         })
     })
-
+    return sub
+}
 /**
  * Runs f and returns a resolved promise with its value or a rejected promise with its exception,
  * regardless of whether it returns a promise or not.

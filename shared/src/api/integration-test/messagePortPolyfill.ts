@@ -20,7 +20,8 @@ export class AsyncMessagePort implements MessagePort {
         if (!this.otherPort) {
             return
         }
-        setTimeout(() => this.otherPort.dispatchEvent({ data: message }))
+        this.otherPort.dispatchEvent({ data: message })
+        // setTimeout(() => this.otherPort.dispatchEvent({ data: message }))
     }
 
     public addEventListener(type, listener) {
