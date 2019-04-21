@@ -2,7 +2,7 @@ import '../../api/integration-test/messagePortPolyfill' // TODO!(sqs): move this
 
 import * as comlink from '@sourcegraph/comlink'
 import { Observable, of } from 'rxjs'
-import { delay, first, switchMap, take, toArray } from 'rxjs/operators'
+import { delay, first, switchMap, take, tap, toArray } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { proxySubscribable, ProxySubscribable } from '../../api/extension/api/common'
 import { createBarrier } from '../../api/integration-test/testHelpers'
@@ -250,11 +250,19 @@ describe('wrapStringMessagePort', () => {
             const remoteGetObservable = comlink.wrap<() => ProxySubscribable<number>>(wrapper.port2)
             const getObservable = () => wrapRemoteObservable<number>(remoteGetObservable())
 
+            expect(wrapper.port1ListenerCount).toBe(1)
+            expect(wrapper.port2ListenerCount).toBe(1)
+
             expect(
                 await of(1)
                     .pipe(
                         switchMap(() => getObservable()),
                         take(1),
+                        tap(() => {
+                            // TODO!(sqs): why 3? not 2?
+                            expect(wrapper.port1ListenerCount).toBe(3)
+                            expect(wrapper.port2ListenerCount).toBe(3)
+                        })
                         toArray()
                     )
                     .toPromise()
@@ -262,6 +270,9 @@ describe('wrapStringMessagePort', () => {
             await gotUnsubscribed.wait
             expect(unsubscribed).toBe(1)
             expect(subscribed).toBe(1)
+
+            expect(wrapper.port1ListenerCount).toBe(1)
+            expect(wrapper.port2ListenerCount).toBe(1)
         })
     })
 })
