@@ -1,4 +1,4 @@
-import { proxyMarker, ProxyResult } from '@sourcegraph/comlink'
+import { proxy, proxyMarker, ProxyResult } from '@sourcegraph/comlink'
 import { noop } from 'lodash'
 import { from, Observable, observable, Subscription } from 'rxjs'
 import { finalize, first, mergeMap, switchMap } from 'rxjs/operators'
@@ -20,52 +20,6 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
         mergeMap(
             proxySubscribable =>
                 // tslint:disable-next-line: no-object-literal-type-assertion
-                ({
-                    // Needed for Rx type check
-                    [observable](): Subscribable<T> {
-                        return this
-                    },
-                    subscribe(...args: any[]): Subscription {
-                        // Always subscribe with an object because the other side
-                        // is unable to tell if a Proxy is a function or an observer object
-                        // (they always appear as functions)
-                        let proxyObserver: Parameters<(typeof proxySubscribable)['subscribe']>[0]
-                        if (typeof args[0] === 'function') {
-                            proxyObserver = {
-                                [proxyMarker]: true,
-                                next: args[0] || noop,
-                                error: args[1] ? err => args[1](convertError(err)) : noop,
-                                complete:
-                                    (() => {
-                                        console.log('Q9999999999')
-                                        args[2]()
-                                    }) ||
-                                    (() => {
-                                        console.log('Q3333333333444')
-                                    }),
-                            }
-                        } else {
-                            const partialObserver = args[0] || {}
-                            proxyObserver = {
-                                [proxyMarker]: true,
-                                next: partialObserver.next
-                                    ? val => {
-                                          partialObserver.next(val)
-                                      }
-                                    : noop,
-                                error: partialObserver.error ? err => partialObserver.error(convertError(err)) : noop,
-                                complete: partialObserver.complete
-                                    ? () => {
-                                          console.log('Q3333333333')
-                                          partialObserver.complete()
-                                      }
-                                    : () => {
-                                          console.log('Q3333333333')
-                                      },
-                            }
-                        }
-                        return syncSubscription(proxySubscribable.subscribe(proxyObserver))
-                    },
-                } as Subscribable<T>)
+                new Observable<T>(sub => syncSubscription(proxySubscribable.subscribe(proxy(sub))))
         )
     )
