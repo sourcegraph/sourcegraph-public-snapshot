@@ -90,41 +90,41 @@ describe('wrapStringMessagePort', () => {
 
         test('MessagePort one-way', done => {
             interface Data {
-                transferredChannel: MessagePort
+                transferredPort: MessagePort
             }
 
             const { port1, port2 } = createWrappedStringMessageChannel()
 
             port2.addEventListener('message', event => {
-                const { transferredChannel }: Data = event.data
-                transferredChannel.addEventListener('message', ({ data }) => {
+                const { transferredPort }: Data = event.data
+                transferredPort.addEventListener('message', ({ data }) => {
                     expect(data).toBe('a')
                     done()
                 })
             })
 
             const transferChannel = new MessageChannel()
-            port1.postMessage({ transferredChannel: transferChannel.port1 }, [transferChannel.port1])
+            port1.postMessage({ transferredPort: transferChannel.port1 }, [transferChannel.port1])
             transferChannel.port2.postMessage('a')
         })
 
         test('MessagePort roundtrip', done => {
             interface Data {
-                transferredChannel: MessagePort
+                transferredPort: MessagePort
             }
 
             const { port1, port2 } = createWrappedStringMessageChannel()
 
             port2.addEventListener('message', event => {
-                const { transferredChannel }: Data = event.data
-                transferredChannel.addEventListener('message', ({ data }) => {
+                const { transferredPort }: Data = event.data
+                transferredPort.addEventListener('message', ({ data }) => {
                     expect(data).toBe('a')
-                    transferredChannel.postMessage('z')
+                    transferredPort.postMessage('z')
                 })
             })
 
             const transferChannel = new MessageChannel()
-            port1.postMessage({ transferredChannel: transferChannel.port1 }, [transferChannel.port1])
+            port1.postMessage({ transferredPort: transferChannel.port1 }, [transferChannel.port1])
             transferChannel.port2.postMessage('a')
             transferChannel.port2.addEventListener('message', ({ data }) => {
                 expect(data).toBe('z')
@@ -133,57 +133,92 @@ describe('wrapStringMessagePort', () => {
         })
     })
 
-    test('garbage-collects listeners', async () => {
-        interface Data {
-            abc: MessagePort
-        }
+    describe('garbage-collects listeners', () => {
+        test('when the original holder closes the MessagePort', async () => {
+            interface Data {
+                transferredPort: MessagePort
+            }
 
-        const wrapper = createWrappedStringMessageChannel()
-        expect(wrapper.port1ListenerCount).toBe(1)
-        expect(wrapper.port2ListenerCount).toBe(1)
+            const wrapper = createWrappedStringMessageChannel()
+            expect(wrapper.port1ListenerCount).toBe(1)
+            expect(wrapper.port2ListenerCount).toBe(1)
 
-        const gotMessage = createBarrier()
+            const gotMessagePort = createBarrier()
+            const gotMessage = createBarrier()
 
-        let receivedMessage = false
-        wrapper.port2.addEventListener('message', event => {
-            const data: Data = event.data
-            data.abc.addEventListener('message', ({ data }) => {
-                expect(data).toBe('a')
-                receivedMessage = true
+            wrapper.port2.addEventListener('message', event => {
+                const { transferredPort }: Data = event.data
+                transferredPort.addEventListener('message', ({ data }) => {
+                    expect(data).toBe('a')
+                    gotMessage.done()
+                })
+                gotMessagePort.done()
             })
-            gotMessage.done()
+            expect(wrapper.port1ListenerCount).toBe(1)
+            expect(wrapper.port2ListenerCount).toBe(1)
+
+            const transferChannel = new MessageChannel()
+            wrapper.port1.postMessage({ transferredPort: transferChannel.port1 }, [transferChannel.port1])
+            await gotMessagePort.wait
+            expect(wrapper.port1ListenerCount).toBe(2)
+            expect(wrapper.port2ListenerCount).toBe(2)
+            // Both underlying ports have an additional listener now. The one that received the
+            // MessagePort now has a listener for the multiplexed port. The one that sent the
+            // MessagePort has a listener for the multiplexed port for when the MessagePort's transferee
+            // uses it to send a message back.
+
+            transferChannel.port2.postMessage('a')
+            expect(wrapper.port1ListenerCount).toBe(2)
+            expect(wrapper.port2ListenerCount).toBe(2)
+            await gotMessage.wait
+
+            transferChannel.port1.close()
+            transferChannel.port2.close()
+            expect(wrapper.port1ListenerCount).toBe(1)
+            expect(wrapper.port2ListenerCount).toBe(1)
         })
-        expect(wrapper.port1ListenerCount).toBe(1)
-        expect(wrapper.port2ListenerCount).toBe(1)
 
-        const transferChannel = new MessageChannel()
-        wrapper.port1.postMessage({ abc: transferChannel.port1 }, [transferChannel.port1])
-        await gotMessage.wait
-        expect(wrapper.port1ListenerCount).toBe(2)
-        expect(wrapper.port2ListenerCount).toBe(2)
-        // Both underlying ports have an additional listener now. The one that received the
-        // MessagePort now has a listener for the multiplexed port. The one that sent the
-        // MessagePort has a listener for the multiplexed port for when the MessagePort's transferee
-        // uses it to send a message back.
+        test('when the recipient closes the MessagePort', async () => {
+            interface Data {
+                transferredPort: MessagePort
+            }
 
-        transferChannel.port2.postMessage('a')
-        expect(wrapper.port1ListenerCount).toBe(2)
-        expect(wrapper.port2ListenerCount).toBe(2)
+            const wrapper = createWrappedStringMessageChannel()
+            expect(wrapper.port1ListenerCount).toBe(1)
+            expect(wrapper.port2ListenerCount).toBe(1)
 
-        transferChannel.port1.close()
-        transferChannel.port2.close()
-        expect(wrapper.port1ListenerCount).toBe(1)
-        expect(wrapper.port2ListenerCount).toBe(1)
+            const gotMessagePort = createBarrier()
+            const gotMessage = createBarrier()
 
-        expect(receivedMessage).toBeTruthy()
-    })
+            wrapper.port2.addEventListener('message', event => {
+                const { transferredPort }: Data = event.data
+                transferredPort.addEventListener('message', ({ data }) => {
+                    expect(data).toBe('a')
+                    gotMessage.done()
+                    transferredPort.close()
+                })
+                gotMessagePort.done()
+            })
+            expect(wrapper.port1ListenerCount).toBe(1)
+            expect(wrapper.port2ListenerCount).toBe(1)
 
-    test('asdf', () => {
-        const mc = new MessageChannel()
-        mc.port2.onmessageerror = ev => {
-            console.error('ERROR', ev)
-        }
-        mc.port1.close()
-        expect(1).toBe(2)
+            const transferChannel = new MessageChannel()
+            wrapper.port1.postMessage({ transferredPort: transferChannel.port1 }, [transferChannel.port1])
+            await gotMessagePort.wait
+            expect(wrapper.port1ListenerCount).toBe(2)
+            expect(wrapper.port2ListenerCount).toBe(2)
+
+            transferChannel.port2.postMessage('a')
+            await gotMessage.wait
+
+            // Run after `transferredPort.close()` has propagated.
+            await new Promise(resolve => {
+                setTimeout(() => {
+                    expect(wrapper.port1ListenerCount).toBe(1)
+                    expect(wrapper.port2ListenerCount).toBe(1)
+                    resolve()
+                })
+            })
+        })
     })
 })

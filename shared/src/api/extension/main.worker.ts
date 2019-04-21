@@ -26,8 +26,8 @@ const isInitMessage = (value: any): value is InitMessage => value.endpoints && i
 const wrapMessagePort = (port: MessagePort) =>
     wrapStringMessagePort({
         send: data => port.postMessage(data),
-        addListener: (event, listener) => port.addEventListener(event, listener),
-        removeListener: (event, listener) => port.removeEventListener(event, listener),
+        addListener: listener => port.addEventListener('message', ({ data }) => listener(data)),
+        removeListener: listener => port.removeEventListener('message', ({ data }) => listener(data)),
     })
 
 const wrapEndpoints = ({ proxy, expose }: InitMessage['endpoints']): EndpointPair => {

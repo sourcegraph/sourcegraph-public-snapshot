@@ -52,46 +52,19 @@ let els = 0
 function endpointFromPort(
     port: chrome.runtime.Port
 ): Pick<MessagePort, 'postMessage' | 'addEventListener' | 'removeEventListener'> {
-    const listeners = new Map<
-        EventListenerOrEventListenerObject,
-        (message: object, port: chrome.runtime.Port) => void
-    >()
+    const listeners = new Map<(data: string) => void, (message: object, port: chrome.runtime.Port) => void>()
     return wrapStringMessagePort({
         send(data): void {
             port.postMessage(data)
         },
-        addEventListener(event: 'message', messageListener: EventListenerOrEventListenerObject): void {
-            if (event !== 'message') {
-                return
-            }
-
+        addListener(messageListener: (data: any) => void): void {
             els++
             console.log('Event listeners:', els)
 
-            const chromePortListener = (data: object) => {
-                // This callback is called *very* often (e.g., ~900 times per keystroke in a
-                // monitored textarea). Avoid creating unneeded objects here because GC
-                // significantly hurts perf. See
-                // https://github.com/sourcegraph/sourcegraph/issues/3433#issuecomment-483561297 and
-                // watch that issue for a (possibly better) fix.
-                //
-                // HACK: Use a simple object here instead of `new MessageEvent('message', { data })`
-                // to reduce the amount of garbage created. There are no callers that depend on
-                // other MessageEvent properties; they would be set to their default values anyway,
-                // so losing the properties is not a big problem.
-                const handler =
-                    'handleEvent' in messageListener
-                        ? messageListener.handleEvent.bind(messageListener)
-                        : messageListener
-                handler.call(this, { data } as any /* new MessageEvent('message', { data }) */)
-            }
-            listeners.set(messageListener, chromePortListener)
-            port.onMessage.addListener(chromePortListener)
+            listeners.set(messageListener, messageListener)
+            port.onMessage.addListener(messageListener)
         },
-        removeEventListener(event: 'message', messageListener: EventListenerOrEventListenerObject): void {
-            if (event !== 'message') {
-                return
-            }
+        removeListener(messageListener: (data: string) => void): void {
             const chromePortListener = listeners.get(messageListener)
             if (!chromePortListener) {
                 console.error('chromePortListener not found!')

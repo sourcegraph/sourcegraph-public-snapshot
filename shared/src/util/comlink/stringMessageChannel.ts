@@ -1,3 +1,5 @@
+import { Unsubscribable } from 'rxjs'
+
 export interface StringMessagePort {
     send(data: string): void
     addListener(listener: (data: string) => void): void
@@ -8,6 +10,7 @@ interface Message {
     id: string
     msg: any
     messageChannels: string[][]
+    close?: true
 }
 
 // smc is the Chrome port that lets the client communicate with the ext host.
@@ -22,7 +25,7 @@ export function wrapStringMessagePort(smc: StringMessagePort, id: string | null 
     return port1
 }
 
-function hookupSMC(internalPort: MessagePort, smc: StringMessagePort, id: string | null = null): void {
+function hookupSMC(internalPort: MessagePort, smc: StringMessagePort, id: string | null = null): Unsubscribable {
     // Intercept messages sent from the client to the exthost before they are sent to the exthost.
     // For all MessageChannels recursively in the message, replace them with a sentinel indicating
     // that their value is a new virtual channel.
@@ -32,36 +35,52 @@ function hookupSMC(internalPort: MessagePort, smc: StringMessagePort, id: string
         for (const messageChannel of messageChannels) {
             const id = generateUID()
             const channel: MessagePort = replaceProperty(msg, messageChannel, id)
+            const subscription = hookupSMC(channel, smc, id)
             const origClose = channel.close.bind(channel)
             channel.close = () => {
+                smc.send(JSON.stringify({ id, close: true }))
                 origClose()
-                console.log('CLOSED!!!!!')
+                subscription.unsubscribe()
             }
-            hookupSMC(channel, smc, id)
         }
         const payload = JSON.stringify({ id, msg, messageChannels })
         smc.send(payload)
     }
 
     // Intercept messages sent from the exthost to the client before they are received by the client. For all messageChannels mentioned in the data,
-    smc.addListener(
-        (dataStr): void => {
-            const data: Message = JSON.parse(dataStr)
-            if (id && id !== data.id) {
-                return
-            }
-            if (!id && data.id) {
-                return
-            }
-            const mcs = data.messageChannels.map(messageChannel => {
-                const id = messageChannel.reduce((obj, key) => obj[key], data.msg)
-                const port = wrapStringMessagePort(smc, id) // create a sub-channel
-                replaceProperty(data.msg, messageChannel, port)
-                return port
-            })
-            internalPort.postMessage(data.msg, mcs)
+    const listener = (dataStr: string): void => {
+        const data: Message = JSON.parse(dataStr)
+        if (id && id !== data.id) {
+            return
         }
-    )
+        if (!id && data.id) {
+            return
+        }
+
+        if (id && data.close) {
+            smc.removeListener(listener)
+            return
+        }
+
+        const mcs = data.messageChannels.map(messageChannel => {
+            const id = messageChannel.reduce((obj, key) => obj[key], data.msg)
+            const port = wrapStringMessagePort(smc, id) // create a sub-channel
+
+            const origClose = port.close.bind(port)
+            port.close = () => {
+                smc.send(JSON.stringify({ id, close: true }))
+                origClose()
+                smc.removeListener(listener)
+            }
+
+            replaceProperty(data.msg, messageChannel, port)
+            return port
+        })
+        internalPort.postMessage(data.msg, mcs)
+    }
+    smc.addListener(listener)
+
+    return { unsubscribe: () => smc.removeListener(listener) }
 }
 
 function replaceProperty(obj: any, path: string[], newVal: any): any {
