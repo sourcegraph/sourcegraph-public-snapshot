@@ -22,8 +22,7 @@ type iGitoliteClient interface {
 	ListRepos(ctx context.Context, host string) ([]*gitolite.Repo, error)
 }
 
-// listRepos iterates through all Gitolite configs and, for each, lists the repos for the Gitolite
-// host.
+// listRepos lists the repos of a Gitolite server reachable at the address in gitoliteHost
 func (g gitoliteFetcher) listRepos(ctx context.Context, gitoliteHost string, w http.ResponseWriter) {
 	var (
 		repos = []*gitolite.Repo{}
