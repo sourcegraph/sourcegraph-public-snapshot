@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxy, proxyMarker, UnproxyOrClone } from '@sourcegraph/comlink'
+import { proxy, proxyMarker, ProxyResult, ProxyValue, UnproxyOrClone } from '@sourcegraph/comlink'
 import { from, isObservable, Observable, Observer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'
@@ -59,5 +59,14 @@ export function toProxyableSubscribable<T, R>(
     } else {
         observable = of(mapFunc(result))
     }
-    return proxySubscribable(observable)
+    return proxySubscribable(
+        new Observable(sub => {
+            const u = observable.subscribe(sub)
+            // console.count('SUBSCRIBE!+1')
+            return () => {
+                u.unsubscribe()
+                // console.count('UNSUBSCRIBE!-1')
+            }
+        })
+    )
 }

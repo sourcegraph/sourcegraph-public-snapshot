@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import { createExtensionHost as createInPageExtensionHost } from '../../../../shared/src/api/extension/worker'
 import { EndpointPair } from '../../../../shared/src/platform/context'
-import { wrapSMC } from '../../../../shared/src/util/comlink'
+import { wrapSMC } from '../../../../shared/src/util/comlink/stringMessageChannel'
 import { isInPage } from '../context'
 
 /**
@@ -38,6 +38,8 @@ export function createExtensionHost(): Observable<EndpointPair> {
     })
 }
 
+let els = 0
+
 /**
  * Partially wraps a chrome.runtime.Port and returns a MessagePort created using
  * comlink's {@link MessageChannelAdapter}, so that the Port can be used
@@ -62,6 +64,10 @@ function endpointFromPort(
             if (event !== 'message') {
                 return
             }
+
+            els++
+            console.log('Event listeners:', els)
+
             const chromePortListener = (data: object) => {
                 // This callback is called *very* often (e.g., ~900 times per keystroke in a
                 // monitored textarea). Avoid creating unneeded objects here because GC
@@ -77,7 +83,7 @@ function endpointFromPort(
                     'handleEvent' in messageListener
                         ? messageListener.handleEvent.bind(messageListener)
                         : messageListener
-                handler.call(this, new MessageEvent('message', { data }))
+                handler.call(this, { data } as any /* new MessageEvent('message', { data }) */)
             }
             listeners.set(messageListener, chromePortListener)
             port.onMessage.addListener(chromePortListener)
@@ -88,8 +94,13 @@ function endpointFromPort(
             }
             const chromePortListener = listeners.get(messageListener)
             if (!chromePortListener) {
+                console.error('chromePortListener not found!')
                 return
             }
+
+            els--
+            console.log('(removed) Event listeners:', els)
+
             port.onMessage.removeListener(chromePortListener)
         },
     })

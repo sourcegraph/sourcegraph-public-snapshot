@@ -1,4 +1,4 @@
-import { ProxyInput, ProxyResult, proxy } from '@sourcegraph/comlink'
+import { proxy, ProxyInput, ProxyResult } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
 import {
@@ -82,12 +82,13 @@ export class ExtLanguageFeatures {
     ): Unsubscribable {
         const providerFunction: ProxyInput<
             Parameters<ClientLanguageFeaturesAPI['$registerCompletionItemProvider']>[1]
-        > = proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
-            toProxyableSubscribable(
+        > = proxy(async ({ textDocument, position }: TextDocumentPositionParams) => {
+            console.count('provideCompletionItems')
+            return toProxyableSubscribable(
                 provider.provideCompletionItems(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 items => items
             )
-        )
+        })
         return syncSubscription(this.proxy.$registerCompletionItemProvider(selector, providerFunction))
     }
 }

@@ -1,4 +1,4 @@
-import { ProxyInput, ProxyResult, proxy } from '@sourcegraph/comlink'
+import { proxy, ProxyInput, ProxyResult } from '@sourcegraph/comlink'
 import { Unsubscribable } from 'rxjs'
 import { LinkPreviewProvider } from 'sourcegraph'
 import { ClientContentAPI } from '../../client/api/content'

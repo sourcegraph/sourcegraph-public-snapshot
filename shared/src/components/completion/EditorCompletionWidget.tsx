@@ -54,7 +54,7 @@ export const EditorCompletionWidget: React.FunctionComponent<Props> = ({
     useEffect(() => {
         const subscription = from(editorService.editors)
             .pipe(
-                debounceTime(0), // Debounce multiple synchronous changes so we only handle them once.
+                // debounceTime(0), // Debounce multiple synchronous changes so we only handle them once.
                 // These throttles are tweaked for maximum perceived responsiveness. They can
                 // probably be made even more responsive (more lenient throttling) when
                 // https://github.com/sourcegraph/sourcegraph/issues/3433 is fixed.
@@ -62,8 +62,8 @@ export const EditorCompletionWidget: React.FunctionComponent<Props> = ({
                 // It is OK to drop intermediate events because the events themselves aren't used,
                 // only the resulting state. And throttleTimeWindow always emits the trailing event,
                 // so we never skip an update.
-                throttleTime(100, undefined, { leading: true, trailing: true }),
-                throttleTimeWindow(500, 2),
+                // throttleTime(100, undefined, { leading: true, trailing: true }),
+                // throttleTimeWindow(500, 2),
                 map(editors => findEditor(editors, editorId)),
                 distinctUntilChanged((a, b) => isEqual(a.selections, b.selections) && a.model.text === b.model.text),
                 switchMap(editor => {

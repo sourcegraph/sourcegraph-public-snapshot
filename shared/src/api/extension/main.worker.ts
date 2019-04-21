@@ -4,7 +4,7 @@ import * as comlink from '@sourcegraph/comlink'
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { EndpointPair, isEndpointPair } from '../../platform/context'
-import { wrapSMC } from '../../util/comlink'
+import { wrapSMC } from '../../util/comlink/stringMessageChannel'
 import { startExtensionHost } from './extensionHost'
 
 export interface InitMessage {
@@ -49,6 +49,7 @@ async function extensionHostMain(): Promise<void> {
         const event = await fromEvent<MessageEvent>(self, 'message')
             .pipe(take(1))
             .toPromise()
+        console.log('INIT', event.data)
         if (!isInitMessage(event.data)) {
             throw new Error('First message event in extension host worker was not a well-formed InitMessage')
         }
