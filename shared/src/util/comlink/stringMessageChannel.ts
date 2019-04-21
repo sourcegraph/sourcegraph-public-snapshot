@@ -1,5 +1,7 @@
-export interface StringMessageChannel extends Pick<EventTarget, 'addEventListener' | 'removeEventListener'> {
+export interface StringMessagePort {
     send(data: string): void
+    addListener(listener: (data: string) => void): void
+    removeListener(listener: (data: string) => void): void
 }
 
 interface Message {
@@ -14,13 +16,13 @@ interface Message {
 //
 // Port2 sends to the client and receives from the client, so port2.onmessage = from client,
 // port2.postMessage = to client.
-export function wrapSMC(smc: StringMessageChannel, id: string | null = null): MessagePort {
+export function wrapStringMessagePort(smc: StringMessagePort, id: string | null = null): MessagePort {
     const { port1, port2 } = new MessageChannel()
     hookupSMC(port2, smc, id)
     return port1
 }
 
-function hookupSMC(internalPort: MessagePort, smc: StringMessageChannel, id: string | null = null): void {
+function hookupSMC(internalPort: MessagePort, smc: StringMessagePort, id: string | null = null): void {
     // Intercept messages sent from the client to the exthost before they are sent to the exthost.
     // For all MessageChannels recursively in the message, replace them with a sentinel indicating
     // that their value is a new virtual channel.
@@ -37,15 +39,9 @@ function hookupSMC(internalPort: MessagePort, smc: StringMessageChannel, id: str
     }
 
     // Intercept messages sent from the exthost to the client before they are received by the client. For all messageChannels mentioned in the data,
-    smc.addEventListener(
-        'message',
-        (event: Event): void => {
-            let data = {} as Message
-            try {
-                data = JSON.parse((event as MessageEvent).data) as Message
-            } catch (e) {
-                return
-            }
+    smc.addListener(
+        (dataStr): void => {
+            const data: Message = JSON.parse(dataStr)
             if (id && id !== data.id) {
                 return
             }
@@ -54,7 +50,7 @@ function hookupSMC(internalPort: MessagePort, smc: StringMessageChannel, id: str
             }
             const mcs = data.messageChannels.map(messageChannel => {
                 const id = messageChannel.reduce((obj, key) => obj[key], data.msg)
-                const port = wrapSMC(smc, id) // create a sub-channel
+                const port = wrapStringMessagePort(smc, id) // create a sub-channel
                 replaceProperty(data.msg, messageChannel, port)
                 return port
             })

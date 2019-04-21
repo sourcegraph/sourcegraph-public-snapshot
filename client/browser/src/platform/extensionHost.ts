@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import { createExtensionHost as createInPageExtensionHost } from '../../../../shared/src/api/extension/worker'
 import { EndpointPair } from '../../../../shared/src/platform/context'
-import { wrapSMC } from '../../../../shared/src/util/comlink/stringMessageChannel'
+import { wrapStringMessagePort } from '../../../../shared/src/util/comlink/stringMessageChannel'
 import { isInPage } from '../context'
 
 /**
@@ -56,7 +56,7 @@ function endpointFromPort(
         EventListenerOrEventListenerObject,
         (message: object, port: chrome.runtime.Port) => void
     >()
-    return wrapSMC({
+    return wrapStringMessagePort({
         send(data): void {
             port.postMessage(data)
         },
