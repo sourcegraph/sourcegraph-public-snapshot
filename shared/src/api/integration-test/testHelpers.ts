@@ -1,6 +1,5 @@
 import './messagePortPolyfill'
 
-import { proxyMarker } from '@sourcegraph/comlink'
 import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
 import { filter, first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
@@ -12,7 +11,6 @@ import { Services } from '../client/services'
 import { CodeEditor } from '../client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
-import { AsyncMessageChannel } from './messagePortPolyfill'
 
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
@@ -71,8 +69,8 @@ export async function integrationTestContext(
 }> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
-    const clientAPIChannel = createMessageChannel()
-    const extensionHostAPIChannel = createMessageChannel()
+    const clientAPIChannel = new MessageChannel()
+    const extensionHostAPIChannel = new MessageChannel()
     const extensionHostEndpoints: EndpointPair = {
         proxy: clientAPIChannel.port2,
         expose: extensionHostAPIChannel.port2,
@@ -143,148 +141,4 @@ export function collectSubscribableValues<T>(subscribable: sourcegraph.Subscriba
     const values: T[] = []
     subscribable.subscribe(value => values.push(value))
     return values
-}
-
-class AsyncMessagePort extends MessagePort implements MessagePort {
-    public readonly [proxyMarker] = true
-
-    public get onmessage(): ((this: MessagePort, ev: MessageEvent) => any) | null {
-        return this.singleMessageListener || null
-    }
-
-    public set onmessage(callback: ((this: MessagePort, ev: MessageEvent) => any) | null) {
-        this.singleMessageListener = callback || undefined
-    }
-
-    public get onmessageerror(): ((this: MessagePort, ev: MessageEvent) => any) | null {
-        return this.singleMessageErrorListener || null
-    }
-
-    public set onmessageerror(callback: ((this: MessagePort, ev: MessageEvent) => any) | null) {
-        this.singleMessageErrorListener = callback || undefined
-    }
-
-    private isStarted = false
-    private isClosed = false
-    private singleMessageListener: ((this: MessagePort, ev: MessageEvent) => any) | undefined
-    private singleMessageErrorListener: ((this: MessagePort, ev: MessageEvent) => any) | undefined
-    private messageListeners: EventListenerOrEventListenerObject[] = []
-
-    public close(): void {
-        this.isClosed = true
-        this.messageListeners = []
-    }
-
-    public start(): void {
-        this.isStarted = true
-    }
-
-    public postMessage(message: any, transfer?: Transferable[]): void {
-        if (!this.isStarted) {
-            throw new Error('MessagePort is not started')
-        }
-        if (this.isClosed) {
-            throw new Error('MessagePort is closed')
-        }
-        this.dispatchEvent(new MessageEvent('message', { data: message }))
-    }
-
-    public dispatchEvent(event: Event): boolean {
-        if (event.type !== 'message') {
-            throw new Error('not implemented')
-        }
-        for (const listener of [this.singleMessageListener, ...this.messageListeners].filter(v => !!v)) {
-            if (!listener) {
-                continue
-            }
-            // tslint:disable-next-line: no-unbound-method
-            const handler = ('handleEvent' in listener ? listener.handleEvent : listener).bind(this as MessagePort)
-            setTimeout(() => handler(event as MessageEvent), 0)
-        }
-        return true
-    }
-
-    public addEventListener<K extends keyof MessagePortEventMap>(
-        type: K,
-        listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any,
-        options?: boolean | AddEventListenerOptions
-    ): void
-    public addEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions
-    ): void
-    public addEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions
-    ): void {
-        if (type !== 'message') {
-            throw new Error('not implemented')
-        }
-        this.messageListeners.push(listener)
-    }
-
-    public removeEventListener<K extends keyof MessagePortEventMap>(
-        type: K,
-        listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any,
-        options?: boolean | EventListenerOptions
-    ): void
-    public removeEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | EventListenerOptions
-    ): void
-    public removeEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | EventListenerOptions
-    ): void {
-        if (type !== 'message') {
-            throw new Error('not implemented')
-        }
-        const index = this.messageListeners.indexOf(listener)
-        if (index !== -1) {
-            this.messageListeners.splice(index, 1)
-        }
-    }
-}
-
-class AsyncMessagePortA extends MessagePort {
-    public postMessage(message: any, transfer?: Transferable[]): void {
-        console.log('X33333333333')
-        setTimeout(() => super.postMessage(message, transfer))
-    }
-}
-
-function createMessageChannel(): MessageChannel {
-    return new AsyncMessageChannel()
-    // const mc = new MessageChannel()
-    // const postMessage1 = mc.port1.postMessage.bind(mc.port1)
-    // mc.port1.postMessage = (message: any, transfer?: Transferable[]) => {
-    //     console.log('port1 postMessage')
-    //     setTimeout(() => postMessage1(message, transfer), 50)
-    // }
-    // const postMessage2 = mc.port2.postMessage.bind(mc.port2)
-    // mc.port2.postMessage = (message: any, transfer?: Transferable[]) => {
-    //     console.log('port2 postMessage')
-    //     setTimeout(() => postMessage2(message, transfer), 50)
-    // }
-    // return mc
-    // const port1 = new MessagePort()
-    // const port2 = new MessagePort()
-    // return { port1, port2 }
-    //
-    // return new MessageChannel()
-    // const port1 = new AsyncMessagePortA()
-    // const port2 = new AsyncMessagePortA()
-    // port1.onmessage = event => {
-    //     console.log('port1 onmessage', event.data)
-    //     port2.postMessage(event.data)
-    // }
-    // port2.onmessage = event => {
-    //     console.log('port2 onmessage', event.data)
-    //     port1.postMessage(event.data)
-    // }
-    // return { port1, port2 }
 }

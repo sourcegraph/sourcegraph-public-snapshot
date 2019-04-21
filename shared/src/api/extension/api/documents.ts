@@ -63,9 +63,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
             const doc = new ExtDocument(model)
             this.documents.set(model.uri, doc)
             if (isNew) {
-                console.log('ISNEW', doc)
                 this.openedTextDocuments.next(doc)
-                console.log('ISNEW done')
             }
         }
     }

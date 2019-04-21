@@ -75,14 +75,7 @@ export async function createExtensionHostClientConnection(
     // Sync models and editors to the extension host
     subscription.add(
         from(services.model.models)
-            .pipe(
-                concatMap(models => {
-                    console.log('Client: $acceptDocumentData', models)
-                    const vv = proxy.documents.$acceptDocumentData(models)
-                    console.log('Client: $acceptDocumentData result', vv)
-                    return vv
-                })
-            )
+            .pipe(concatMap(models => proxy.documents.$acceptDocumentData(models)))
             .subscribe()
     )
     subscription.add(

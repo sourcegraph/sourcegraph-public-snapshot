@@ -1,8 +1,8 @@
 import { NEVER } from 'rxjs'
-import { first } from 'rxjs/operators'
+import { first, skip, toArray } from 'rxjs/operators'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { ContributableViewContainer } from '../protocol'
-import { collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { integrationTestContext } from './testHelpers'
 
 describe('Views (integration)', () => {
     describe('app.createPanelView', () => {
@@ -12,11 +12,15 @@ describe('Views (integration)', () => {
             panelView.title = 't'
             panelView.content = 'c'
             panelView.priority = 3
-            await extensionAPI.internal.sync()
 
-            const values = collectSubscribableValues(
-                services.views.getViews(ContributableViewContainer.Panel).pipe(first())
-            )
+            const values = await services.views
+                .getViews(ContributableViewContainer.Panel)
+                .pipe(
+                    skip(1),
+                    first(),
+                    toArray()
+                )
+                .toPromise()
             assertToJSON(values, [
                 [
                     {
@@ -43,11 +47,15 @@ describe('Views (integration)', () => {
             panelView.content = 'c'
             panelView.priority = 3
             panelView.component = { locationProvider: LOCATION_PROVIDER_ID }
-            await extensionAPI.internal.sync()
 
-            const values = collectSubscribableValues(
-                services.views.getViews(ContributableViewContainer.Panel).pipe(first())
-            )
+            const values = await services.views
+                .getViews(ContributableViewContainer.Panel)
+                .pipe(
+                    skip(1),
+                    first(),
+                    toArray()
+                )
+                .toPromise()
             assertToJSON(values.map(v => v.map(v => ({ ...v, locationProvider: 'value not checked' }))), [
                 [
                     {

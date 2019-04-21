@@ -54,11 +54,10 @@ describe('content (integration)', () => {
         extensionAPI.content.registerLinkPreviewProvider('http://example.com', {
             provideLinkPreview: () => ({ content: { value: 'zip', kind: sourcegraph.MarkupKind.PlainText } }),
         })
-        await extensionAPI.internal.sync()
         expect(
             await services.linkPreviews
                 .provideLinkPreview('http://example.com/foo')
-                .pipe(take(1))
+                .pipe(take(3))
                 .toPromise()
         ).toEqual({
             content: [
