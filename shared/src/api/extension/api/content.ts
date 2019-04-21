@@ -1,4 +1,4 @@
-import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
+import { ProxyInput, ProxyResult, proxy } from '@sourcegraph/comlink'
 import { Unsubscribable } from 'rxjs'
 import { LinkPreviewProvider } from 'sourcegraph'
 import { ClientContentAPI } from '../../client/api/content'
@@ -10,10 +10,9 @@ export class ExtContent {
     constructor(private proxy: ProxyResult<ClientContentAPI>) {}
 
     public registerLinkPreviewProvider(urlMatchPattern: string, provider: LinkPreviewProvider): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientContentAPI['$registerLinkPreviewProvider']>[1]
-        > = proxyValue(async (url: string) =>
-            toProxyableSubscribable(provider.provideLinkPreview(new URL(url)), preview => preview)
+        const providerFunction: ProxyInput<Parameters<ClientContentAPI['$registerLinkPreviewProvider']>[1]> = proxy(
+            async (url: string) =>
+                toProxyableSubscribable(provider.provideLinkPreview(new URL(url)), preview => preview)
         )
         return syncSubscription(this.proxy.$registerLinkPreviewProvider(urlMatchPattern, providerFunction))
     }

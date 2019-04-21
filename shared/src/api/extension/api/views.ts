@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyResult, ProxyValue, proxyMarker } from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
 
@@ -60,7 +60,7 @@ class ExtPanelView implements sourcegraph.PanelView {
 
 /** @internal */
 export class ExtViews implements ProxyValue {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     constructor(private proxy: ProxyResult<ClientViewsAPI>) {}
 

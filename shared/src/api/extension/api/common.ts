@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol, UnproxyOrClone } from '@sourcegraph/comlink'
+import { ProxyResult, ProxyValue, proxy, proxyMarker, UnproxyOrClone } from '@sourcegraph/comlink'
 import { from, isObservable, Observable, Observer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'
@@ -18,9 +18,9 @@ export interface ProxySubscribable<T> extends ProxyValue {
  * @param subscribable A normal Subscribable (from this thread)
  */
 export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
-    [proxyValueSymbol]: true,
+    [proxyMarker]: true,
     subscribe(observer): Unsubscribable & ProxyValue {
-        return proxyValue(
+        return proxy(
             // Don't pass the proxy to Rx directly because it will try to
             // access Symbol properties that cannot be proxied
             subscribable.subscribe({

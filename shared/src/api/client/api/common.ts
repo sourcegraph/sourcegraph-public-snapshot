@@ -1,4 +1,4 @@
-import { ProxyResult, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyResult, proxyMarker } from '@sourcegraph/comlink'
 import { noop } from 'lodash'
 import { from, Observable, observable, Subscription } from 'rxjs'
 import { mergeMap } from 'rxjs/operators'
@@ -32,7 +32,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                         let proxyObserver: Parameters<(typeof proxySubscribable)['subscribe']>[0]
                         if (typeof args[0] === 'function') {
                             proxyObserver = {
-                                [proxyValueSymbol]: true,
+                                [proxyMarker]: true,
                                 next: args[0] || noop,
                                 error: args[1] ? err => args[1](convertError(err)) : noop,
                                 complete: args[2] || noop,
@@ -40,7 +40,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                         } else {
                             const partialObserver = args[0] || {}
                             proxyObserver = {
-                                [proxyValueSymbol]: true,
+                                [proxyMarker]: true,
                                 next: partialObserver.next ? val => partialObserver.next(val) : noop,
                                 error: partialObserver.error ? err => partialObserver.error(convertError(err)) : noop,
                                 complete: partialObserver.complete ? () => partialObserver.complete() : noop,

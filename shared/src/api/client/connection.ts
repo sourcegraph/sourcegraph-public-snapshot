@@ -61,7 +61,7 @@ export async function createExtensionHostClientConnection(
     // MAIN THREAD
 
     /** Proxy to the exposed extension host API */
-    const initializeExtensionHost = comlink.proxy<ExtensionHostAPIFactory>(endpoints.proxy)
+    const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
     const proxy = await initializeExtensionHost(initData)
 
     const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
@@ -75,7 +75,14 @@ export async function createExtensionHostClientConnection(
     // Sync models and editors to the extension host
     subscription.add(
         from(services.model.models)
-            .pipe(concatMap(models => proxy.documents.$acceptDocumentData(models)))
+            .pipe(
+                concatMap(models => {
+                    console.log('Client: $acceptDocumentData', models)
+                    const vv = proxy.documents.$acceptDocumentData(models)
+                    console.log('Client: $acceptDocumentData result', vv)
+                    return vv
+                })
+            )
             .subscribe()
     )
     subscription.add(

@@ -1,4 +1,4 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyValue, proxyMarker } from '@sourcegraph/comlink'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { flatten, values } from 'lodash'
 import { BehaviorSubject, Observable, Subscription } from 'rxjs'
@@ -19,7 +19,7 @@ interface PreviousDecorations {
 
 /** @internal */
 export class ClientCodeEditor implements ClientCodeEditorAPI {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     private subscriptions = new Subscription()
 
