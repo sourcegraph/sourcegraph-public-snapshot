@@ -1,4 +1,4 @@
-import { Endpoint } from '@sourcegraph/comlink'
+import { Endpoint, isEndpoint } from '@sourcegraph/comlink'
 import { NextObserver, Observable, Subscribable } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
@@ -15,10 +15,6 @@ export interface EndpointPair {
 }
 export const isEndpointPair = (val: any): val is EndpointPair =>
     typeof val === 'object' && val !== null && isEndpoint(val.proxy) && isEndpoint(val.expose)
-
-function isEndpoint(endpoint: any): endpoint is Endpoint {
-    return 'addEventListener' in endpoint && 'removeEventListener' in endpoint && 'start' in endpoint
-}
 
 /**
  * Platform-specific data and methods shared by multiple Sourcegraph components.

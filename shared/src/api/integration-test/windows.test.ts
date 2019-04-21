@@ -130,7 +130,7 @@ describe('Windows (integration)', () => {
                     filter(isDefined),
                     switchMap(w => w.activeViewComponentChanges),
                     filter(isDefined),
-                    take(2)
+                    take(3)
                 )
                 .toPromise()
 

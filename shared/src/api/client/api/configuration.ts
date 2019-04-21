@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { from, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { isSettingsValid } from '../../../settings/settings'
@@ -15,7 +15,7 @@ export interface ClientConfigurationAPI extends ProxyValue {
  * @template C - The configuration schema.
  */
 export class ClientConfiguration<C> implements ClientConfigurationAPI, ProxyValue {
-    public readonly [proxyMarker] = true
+    public readonly [proxyValueSymbol] = true
 
     private subscriptions = new Subscription()
 

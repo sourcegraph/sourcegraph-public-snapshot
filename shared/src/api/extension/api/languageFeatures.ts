@@ -1,4 +1,4 @@
-import { ProxyInput, ProxyResult, proxy } from '@sourcegraph/comlink'
+import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
 import {
@@ -22,12 +22,13 @@ export class ExtLanguageFeatures {
     constructor(private proxy: ProxyResult<ClientLanguageFeaturesAPI>, private documents: ExtDocuments) {}
 
     public registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable {
-        const providerFunction: ProxyInput<Parameters<ClientLanguageFeaturesAPI['$registerHoverProvider']>[1]> = proxy(
-            async ({ textDocument, position }: TextDocumentPositionParams) =>
-                toProxyableSubscribable(
-                    provider.provideHover(await this.documents.getSync(textDocument.uri), toPosition(position)),
-                    hover => (hover ? fromHover(hover) : hover)
-                )
+        const providerFunction: ProxyInput<
+            Parameters<ClientLanguageFeaturesAPI['$registerHoverProvider']>[1]
+        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
+            toProxyableSubscribable(
+                provider.provideHover(await this.documents.getSync(textDocument.uri), toPosition(position)),
+                hover => (hover ? fromHover(hover) : hover)
+            )
         )
         return syncSubscription(this.proxy.$registerHoverProvider(selector, providerFunction))
     }
@@ -35,7 +36,7 @@ export class ExtLanguageFeatures {
     public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
         const providerFunction: ProxyInput<
             Parameters<ClientLanguageFeaturesAPI['$registerDefinitionProvider']>[1]
-        > = proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
                 provider.provideDefinition(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 toLocations
@@ -47,7 +48,7 @@ export class ExtLanguageFeatures {
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
         const providerFunction: ProxyInput<
             Parameters<ClientLanguageFeaturesAPI['$registerReferenceProvider']>[1]
-        > = proxy(async ({ textDocument, position, context }: ReferenceParams) =>
+        > = proxyValue(async ({ textDocument, position, context }: ReferenceParams) =>
             toProxyableSubscribable(
                 provider.provideReferences(
                     await this.documents.getSync(textDocument.uri),
@@ -67,13 +68,13 @@ export class ExtLanguageFeatures {
     ): Unsubscribable {
         const providerFunction: ProxyInput<
             Parameters<ClientLanguageFeaturesAPI['$registerLocationProvider']>[2]
-        > = proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
                 provider.provideLocations(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 toLocations
             )
         )
-        return syncSubscription(this.proxy.$registerLocationProvider(idStr, selector, proxy(providerFunction)))
+        return syncSubscription(this.proxy.$registerLocationProvider(idStr, selector, proxyValue(providerFunction)))
     }
 
     public registerCompletionItemProvider(
@@ -82,7 +83,7 @@ export class ExtLanguageFeatures {
     ): Unsubscribable {
         const providerFunction: ProxyInput<
             Parameters<ClientLanguageFeaturesAPI['$registerCompletionItemProvider']>[1]
-        > = proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
                 provider.provideCompletionItems(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 items => items

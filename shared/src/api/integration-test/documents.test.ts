@@ -4,8 +4,6 @@ import { TextDocument } from 'sourcegraph'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
-jest.setTimeout(200)
-
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {
         test('lists text documents', async () => {
@@ -15,14 +13,12 @@ describe('Documents (integration)', () => {
             ] as TextDocument[])
         })
 
-        test.only('adds new text documents', async () => {
+        test('adds new text documents', async () => {
             const {
                 services: { model: modelService },
                 extensionAPI,
             } = await integrationTestContext()
-            console.log('addModel')
             modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
-            console.log('addModel done')
             await from(extensionAPI.workspace.openedTextDocuments)
                 .pipe(take(1))
                 .toPromise()

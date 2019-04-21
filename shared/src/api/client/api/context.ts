@@ -1,4 +1,4 @@
-import { ProxyValue, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { ContextValues, Unsubscribable } from 'sourcegraph'
 
 /** @internal */
@@ -8,7 +8,7 @@ export interface ClientContextAPI extends ProxyValue {
 
 /** @internal */
 export class ClientContext implements ClientContextAPI, Unsubscribable {
-    public readonly [proxyMarker] = true
+    public readonly [proxyValueSymbol] = true
 
     /**
      * Context keys set by this server. To ensure that context values are cleaned up, all context properties that

@@ -1,4 +1,4 @@
-import { proxyMarker, ProxyValue } from '@sourcegraph/comlink'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextModel } from '../../client/services/modelService'
@@ -11,7 +11,7 @@ export interface ExtDocumentsAPI extends ProxyValue {
 
 /** @internal */
 export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
-    public readonly [proxyMarker] = true
+    public readonly [proxyValueSymbol] = true
 
     private documents = new Map<string, ExtDocument>()
 
@@ -63,9 +63,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
             const doc = new ExtDocument(model)
             this.documents.set(model.uri, doc)
             if (isNew) {
-                console.log('ISNEW', doc)
                 this.openedTextDocuments.next(doc)
-                console.log('ISNEW done')
             }
         }
     }

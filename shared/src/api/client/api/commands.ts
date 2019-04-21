@@ -1,4 +1,4 @@
-import { ProxyValue, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Unsubscribable } from 'sourcegraph'
 import { CommandRegistry } from '../services/command'
 
@@ -10,12 +10,12 @@ export interface ClientCommandsAPI extends ProxyValue {
 
 /** @internal */
 export class ClientCommands implements ClientCommandsAPI, ProxyValue {
-    public readonly [proxyMarker] = true
+    public readonly [proxyValueSymbol] = true
 
     constructor(private registry: CommandRegistry) {}
 
     public $registerCommand(command: string, run: (...args: any) => any): Unsubscribable & ProxyValue {
-        return proxy(this.registry.registerCommand({ command, run }))
+        return proxyValue(this.registry.registerCommand({ command, run }))
     }
 
     public $executeCommand(command: string, args: any[]): Promise<any> {

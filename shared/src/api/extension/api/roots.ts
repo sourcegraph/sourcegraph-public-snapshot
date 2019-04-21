@@ -1,4 +1,4 @@
-import { ProxyValue, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
@@ -10,7 +10,7 @@ export interface ExtRootsAPI extends ProxyValue {
 
 /** @internal */
 export class ExtRoots implements ExtRootsAPI, ProxyValue {
-    public readonly [proxyMarker] = true
+    public readonly [proxyValueSymbol] = true
 
     private roots: ReadonlyArray<sourcegraph.WorkspaceRoot> = []
 
