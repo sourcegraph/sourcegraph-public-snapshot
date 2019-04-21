@@ -31,7 +31,12 @@ function hookupSMC(internalPort: MessagePort, smc: StringMessagePort, id: string
         const messageChannels = Array.from(findMessageChannels(event.data))
         for (const messageChannel of messageChannels) {
             const id = generateUID()
-            const channel = replaceProperty(msg, messageChannel, id)
+            const channel: MessagePort = replaceProperty(msg, messageChannel, id)
+            const origClose = channel.close.bind(channel)
+            channel.close = () => {
+                origClose()
+                console.log('CLOSED!!!!!')
+            }
             hookupSMC(channel, smc, id)
         }
         const payload = JSON.stringify({ id, msg, messageChannels })

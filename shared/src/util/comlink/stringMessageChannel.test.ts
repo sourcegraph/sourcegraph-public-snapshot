@@ -170,10 +170,20 @@ describe('wrapStringMessagePort', () => {
         expect(wrapper.port1ListenerCount).toBe(2)
         expect(wrapper.port2ListenerCount).toBe(2)
 
+        transferChannel.port1.close()
         transferChannel.port2.close()
         expect(wrapper.port1ListenerCount).toBe(1)
         expect(wrapper.port2ListenerCount).toBe(1)
 
         expect(receivedMessage).toBeTruthy()
+    })
+
+    test('asdf', () => {
+        const mc = new MessageChannel()
+        mc.port2.onmessageerror = ev => {
+            console.error('ERROR', ev)
+        }
+        mc.port1.close()
+        expect(1).toBe(2)
     })
 })
