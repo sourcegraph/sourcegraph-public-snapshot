@@ -35,15 +35,28 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                                 [proxyMarker]: true,
                                 next: args[0] || noop,
                                 error: args[1] ? err => args[1](convertError(err)) : noop,
-                                complete: args[2] || noop,
+                                complete:
+                                    args[2] ||
+                                    (() => {
+                                        console.log('Q3333333333444')
+                                    }),
                             }
                         } else {
                             const partialObserver = args[0] || {}
                             proxyObserver = {
                                 [proxyMarker]: true,
-                                next: partialObserver.next ? val => partialObserver.next(val) : noop,
+                                next: partialObserver.next
+                                    ? val => {
+                                          console.log('NXT', val)
+                                          partialObserver.next(val)
+                                      }
+                                    : noop,
                                 error: partialObserver.error ? err => partialObserver.error(convertError(err)) : noop,
-                                complete: partialObserver.complete ? () => partialObserver.complete() : noop,
+                                complete: partialObserver.complete
+                                    ? () => partialObserver.complete()
+                                    : () => {
+                                          console.log('Q3333333333')
+                                      },
                             }
                         }
                         return syncSubscription(proxySubscribable.subscribe(proxyObserver))

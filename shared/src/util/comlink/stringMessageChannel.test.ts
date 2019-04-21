@@ -232,7 +232,8 @@ describe('wrapStringMessagePort', () => {
             let unsubscribed = 0
             let subscribed = 0
             const observable = new Observable<number>(sub => {
-                sub.next(subscribed++)
+                subscribed++
+                sub.next(subscribed)
                 console.log('SUB', subscribed)
                 return () => {
                     unsubscribed++
@@ -246,6 +247,8 @@ describe('wrapStringMessagePort', () => {
 
             const remoteGetObservable = comlink.wrap<() => ProxySubscribable<number>>(wrapper.port2)
             const getObservable = () => wrapRemoteObservable<number>(remoteGetObservable())
+
+            const getObservableLocal = () => observable
 
             let subjectNextCalled = false
             const subject = new Subject<number>()
@@ -267,7 +270,7 @@ describe('wrapStringMessagePort', () => {
                         toArray()
                     )
                     .toPromise()
-            ).toEqual([0, 1])
+            ).toEqual([1, 2])
             await new Promise(resolve => setTimeout(resolve, 100))
             expect(subscribed).toBe(2)
             expect(unsubscribed).toBe(2)
