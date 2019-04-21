@@ -1,8 +1,8 @@
 import '../../api/integration-test/messagePortPolyfill' // TODO!(sqs): move this
 
 import * as comlink from '@sourcegraph/comlink'
-import { concat, merge, Observable, of, Subject } from 'rxjs'
-import { catchError, delay, first, mergeMap, switchMap, take, tap, toArray } from 'rxjs/operators'
+import { Observable, of } from 'rxjs'
+import { delay, switchMap, take, toArray } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { proxySubscribable, ProxySubscribable } from '../../api/extension/api/common'
 import { createBarrier } from '../../api/integration-test/testHelpers'
@@ -11,7 +11,7 @@ import { StringMessagePort, wrapStringMessagePort } from './stringMessageChannel
 /////////////////////
 //
 /////////
-jest.setTimeout(1000)
+jest.setTimeout(500)
 
 type HandlerFunction = (data: string) => void
 
@@ -231,12 +231,14 @@ describe('wrapStringMessagePort', () => {
         test.only('unsubscribes', async () => {
             let unsubscribed = 0
             let subscribed = 0
+            const gotUnsubscribed = createBarrier()
             const observable = new Observable<number>(sub => {
                 subscribed++
                 sub.next(subscribed)
                 console.log('SUB', subscribed)
                 return () => {
                     unsubscribed++
+                    gotUnsubscribed.done()
                     console.log('UNSUB', unsubscribed)
                 }
             })
@@ -247,33 +249,35 @@ describe('wrapStringMessagePort', () => {
 
             const remoteGetObservable = comlink.wrap<() => ProxySubscribable<number>>(wrapper.port2)
             const getObservable = () => wrapRemoteObservable<number>(remoteGetObservable())
-
             const getObservableLocal = () => observable
 
-            let subjectNextCalled = false
-            const subject = new Subject<number>()
+            // getObservable()
+            //     .subscribe()
+            //     .unsubscribe()
+            //
+            // const sub = getObservable().subscribe(x => {
+            //     sub.unsubscribe()
+            // })
+            //
+            // expect(
+            //     await getObservable()
+            //         .pipe(first())
+            //         .toPromise()
+            // ).toBe(1)
+            //
             expect(
-                await merge(of(1), subject)
+                await of(1)
                     .pipe(
-                        switchMap(() =>
-                            getObservable().pipe(
-                                tap(() => {
-                                    if (!subjectNextCalled) {
-                                        subjectNextCalled = true
-                                        setTimeout(() => subject.next(2))
-                                    }
-                                }),
-                                first()
-                            )
-                        ),
-                        take(2),
+                        switchMap(() => getObservable()),
+                        take(1),
                         toArray()
                     )
                     .toPromise()
-            ).toEqual([1, 2])
-            await new Promise(resolve => setTimeout(resolve, 100))
-            expect(subscribed).toBe(2)
-            expect(unsubscribed).toBe(2)
+            ).toEqual([1])
+            console.log('GOT VALUES')
+            await gotUnsubscribed.wait
+            expect(unsubscribed).toBe(1)
+            expect(subscribed).toBe(1)
         })
     })
 })

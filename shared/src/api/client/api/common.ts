@@ -1,7 +1,7 @@
 import { proxyMarker, ProxyResult } from '@sourcegraph/comlink'
 import { noop } from 'lodash'
 import { from, Observable, observable, Subscription } from 'rxjs'
-import { mergeMap } from 'rxjs/operators'
+import { finalize, first, mergeMap, switchMap } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { syncSubscription } from '../../util'
@@ -36,7 +36,10 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                                 next: args[0] || noop,
                                 error: args[1] ? err => args[1](convertError(err)) : noop,
                                 complete:
-                                    args[2] ||
+                                    (() => {
+                                        console.log('Q9999999999')
+                                        args[2]()
+                                    }) ||
                                     (() => {
                                         console.log('Q3333333333444')
                                     }),
@@ -47,13 +50,15 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                                 [proxyMarker]: true,
                                 next: partialObserver.next
                                     ? val => {
-                                          console.log('NXT', val)
                                           partialObserver.next(val)
                                       }
                                     : noop,
                                 error: partialObserver.error ? err => partialObserver.error(convertError(err)) : noop,
                                 complete: partialObserver.complete
-                                    ? () => partialObserver.complete()
+                                    ? () => {
+                                          console.log('Q3333333333')
+                                          partialObserver.complete()
+                                      }
                                     : () => {
                                           console.log('Q3333333333')
                                       },
