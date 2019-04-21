@@ -1,7 +1,7 @@
 import { proxy, proxyMarker, ProxyResult } from '@sourcegraph/comlink'
 import { noop } from 'lodash'
 import { from, Observable, observable, Subscription } from 'rxjs'
-import { finalize, first, mergeMap, switchMap } from 'rxjs/operators'
+import { finalize, first, map, mergeMap, switchMap, tap } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { syncSubscription } from '../../util'

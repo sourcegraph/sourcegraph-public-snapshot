@@ -228,7 +228,7 @@ describe('wrapStringMessagePort', () => {
     })
 
     describe('proxied Observables', () => {
-        test.skip('unsubscribes', async () => {
+        test.only('unsubscribes', async () => {
             let unsubscribed = 0
             let subscribed = 0
             const gotUnsubscribed = createBarrier()
@@ -249,22 +249,7 @@ describe('wrapStringMessagePort', () => {
 
             const remoteGetObservable = comlink.wrap<() => ProxySubscribable<number>>(wrapper.port2)
             const getObservable = () => wrapRemoteObservable<number>(remoteGetObservable())
-            const getObservableLocal = () => observable
 
-            // getObservable()
-            //     .subscribe()
-            //     .unsubscribe()
-            //
-            // const sub = getObservable().subscribe(x => {
-            //     sub.unsubscribe()
-            // })
-            //
-            // expect(
-            //     await getObservable()
-            //         .pipe(first())
-            //         .toPromise()
-            // ).toBe(1)
-            //
             expect(
                 await of(1)
                     .pipe(
@@ -274,66 +259,6 @@ describe('wrapStringMessagePort', () => {
                     )
                     .toPromise()
             ).toEqual([1])
-            console.log('GOT VALUES')
-            await gotUnsubscribed.wait
-            expect(unsubscribed).toBe(1)
-            expect(subscribed).toBe(1)
-        })
-
-        test.only('unsubscribes asdf', async () => {
-            let unsubscribed = 0
-            let subscribed = 0
-            const gotUnsubscribed = createBarrier()
-            const observable = new Observable<number>(sub => {
-                subscribed++
-                sub.next(subscribed)
-                console.log('SUB', subscribed)
-                return () => {
-                    unsubscribed++
-                    gotUnsubscribed.done()
-                    console.log('UNSUB', unsubscribed)
-                }
-            })
-
-            const wrapper = new MessageChannel()
-
-            comlink.expose(() => proxySubscribable(observable), wrapper.port1)
-
-            const remoteGetObservable = comlink.wrap<() => ProxySubscribable<number>>(wrapper.port2)
-            const getObservable = () => wrapRemoteObservable<number>(remoteGetObservable())
-            const getObservableLocal = () => observable
-
-            const sub = getObservable()
-                .pipe(first())
-                .subscribe()
-            await new Promise(resolve => setTimeout(resolve))
-            await new Promise(resolve => setTimeout(resolve))
-            sub.unsubscribe()
-
-            // getObservable()
-            //     .subscribe()
-            //     .unsubscribe()
-            //
-            // const sub = getObservable().subscribe(x => {
-            //     sub.unsubscribe()
-            // })
-            //
-            // expect(
-            //     await getObservable()
-            //         .pipe(first())
-            //         .toPromise()
-            // ).toBe(1)
-            //
-            // expect(
-            //     await of(1)
-            //         .pipe(
-            //             switchMap(() => getObservable()),
-            //             take(1),
-            //             toArray()
-            //         )
-            //         .toPromise()
-            // ).toEqual([1])
-            console.log('GOT VALUES')
             await gotUnsubscribed.wait
             expect(unsubscribed).toBe(1)
             expect(subscribed).toBe(1)
