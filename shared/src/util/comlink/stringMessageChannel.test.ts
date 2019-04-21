@@ -268,6 +268,7 @@ describe('wrapStringMessagePort', () => {
                     )
                     .toPromise()
             ).toEqual([0, 1])
+            await new Promise(resolve => setTimeout(resolve, 100))
             expect(subscribed).toBe(2)
             expect(unsubscribed).toBe(2)
         })
