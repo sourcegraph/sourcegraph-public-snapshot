@@ -3,6 +3,7 @@ import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import { createExtensionHost as createInPageExtensionHost } from '../../../../shared/src/api/extension/worker'
 import { EndpointPair } from '../../../../shared/src/platform/context'
+import { wrapSMC } from '../../../../shared/src/util/comlink'
 import { isInPage } from '../context'
 
 /**
@@ -53,9 +54,8 @@ function endpointFromPort(
         EventListenerOrEventListenerObject,
         (message: object, port: chrome.runtime.Port) => void
     >()
-    return comlink.wrap({
-        postMessage(data): void {
-            console.log('QQQQQQQQ1111111')
+    return wrapSMC({
+        send(data): void {
             port.postMessage(data)
         },
         addEventListener(event: 'message', messageListener: EventListenerOrEventListenerObject): void {
@@ -73,9 +73,11 @@ function endpointFromPort(
                 // to reduce the amount of garbage created. There are no callers that depend on
                 // other MessageEvent properties; they would be set to their default values anyway,
                 // so losing the properties is not a big problem.
-                const handler = 'handleEvent' in messageListener ? messageListener.handleEvent : messageListener
-                console.log('DATA', data)
-                messageListener.call(this, { data } as any)
+                const handler =
+                    'handleEvent' in messageListener
+                        ? messageListener.handleEvent.bind(messageListener)
+                        : messageListener
+                handler.call(this, new MessageEvent('message', { data }))
             }
             listeners.set(messageListener, chromePortListener)
             port.onMessage.addListener(chromePortListener)

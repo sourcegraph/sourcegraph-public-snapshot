@@ -4,6 +4,7 @@ import * as comlink from '@sourcegraph/comlink'
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { EndpointPair, isEndpointPair } from '../../platform/context'
+import { wrapSMC } from '../../util/comlink'
 import { startExtensionHost } from './extensionHost'
 
 export interface InitMessage {
@@ -23,13 +24,11 @@ export interface InitMessage {
 const isInitMessage = (value: any): value is InitMessage => value.endpoints && isEndpointPair(value.endpoints)
 
 const wrapMessagePort = (port: MessagePort) =>
-    comlink.proxy(
-        port /*{
+    wrapSMC({
         send: data => port.postMessage(data),
         addEventListener: (event, listener) => port.addEventListener(event, listener),
         removeEventListener: (event, listener) => port.removeEventListener(event, listener),
-    }*/
-    )
+    })
 
 const wrapEndpoints = ({ proxy, expose }: InitMessage['endpoints']): EndpointPair => {
     proxy.start()
