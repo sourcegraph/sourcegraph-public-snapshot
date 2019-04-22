@@ -32,9 +32,12 @@ func TestIntegration(t *testing.T) {
 		Isolation: sql.LevelSerializable,
 	})
 
+	lg := log15.New()
+	lg.SetHandler(log15.DiscardHandler())
+
 	store := repos.NewObservedStore(
 		dbstore,
-		log15.Root(),
+		lg,
 		repos.NewStoreMetrics(),
 		trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	)

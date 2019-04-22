@@ -23,6 +23,9 @@ import (
 func TestFakeStore(t *testing.T) {
 	t.Parallel()
 
+	lg := log15.New()
+	lg.SetHandler(log15.DiscardHandler())
+
 	for _, tc := range []struct {
 		name string
 		test func(repos.Store) func(*testing.T)
@@ -34,7 +37,7 @@ func TestFakeStore(t *testing.T) {
 	} {
 		t.Run(tc.name, tc.test(repos.NewObservedStore(
 			new(repos.FakeStore),
-			log15.Root(),
+			lg,
 			repos.NewStoreMetrics(),
 			trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		)))
