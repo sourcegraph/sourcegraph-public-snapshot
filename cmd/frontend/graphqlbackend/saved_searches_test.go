@@ -18,7 +18,7 @@ func TestSavedSearches(t *testing.T) {
 		return []api.SavedQuerySpecAndConfig{{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &key}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &key, OrgID: nil}}}, nil
 	}
 
-	savedQueries, err := (&schemaResolver{}).SavedQueries(ctx)
+	savedSearches, err := (&schemaResolver{}).SavedSearches(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,8 +32,8 @@ func TestSavedSearches(t *testing.T) {
 		userID:      &key,
 		orgID:       nil,
 	}}
-	if !reflect.DeepEqual(savedQueries, want) {
-		t.Errorf("got %v+, want %v+", savedQueries, want)
+	if !reflect.DeepEqual(savedSearches, want) {
+		t.Errorf("got %v+, want %v+", savedSearches, want)
 	}
 }
 
@@ -51,7 +51,7 @@ func TestCreateSavedSearch(t *testing.T) {
 		return &api.ConfigSavedQuery{Key: "1", Description: newSavedSearch.Description, Query: newSavedSearch.Query, Notify: newSavedSearch.Notify, NotifySlack: newSavedSearch.NotifySlack, OwnerKind: newSavedSearch.OwnerKind, UserID: newSavedSearch.UserID, OrgID: newSavedSearch.OrgID}, nil
 	}
 
-	savedQueries, err := (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
+	savedSearches, err := (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -79,8 +79,8 @@ func TestCreateSavedSearch(t *testing.T) {
 		t.Errorf("Database method db.SavedSearches.Create not called")
 	}
 
-	if !reflect.DeepEqual(savedQueries, want) {
-		t.Errorf("got %v+, want %v+", savedQueries, want)
+	if !reflect.DeepEqual(savedSearches, want) {
+		t.Errorf("got %v+, want %v+", savedSearches, want)
 	}
 }
 
@@ -96,7 +96,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 		return &api.ConfigSavedQuery{Key: "1", Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, OwnerKind: savedSearch.OwnerKind, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
 	}
 
-	savedQueries, err := (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
+	savedSearches, err := (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
 		ID          string
 		Description string
 		Query       string
@@ -125,8 +125,8 @@ func TestUpdateSavedSearch(t *testing.T) {
 		t.Errorf("Database method db.SavedSearches.Update not called")
 	}
 
-	if !reflect.DeepEqual(savedQueries, want) {
-		t.Errorf("got %v+, want %v+", savedQueries, want)
+	if !reflect.DeepEqual(savedSearches, want) {
+		t.Errorf("got %v+, want %v+", savedSearches, want)
 	}
 }
 

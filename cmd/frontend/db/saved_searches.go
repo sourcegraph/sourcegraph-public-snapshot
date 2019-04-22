@@ -31,7 +31,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	if err != nil {
 		return nil, err
 	}
-	var savedQueries []api.SavedQuerySpecAndConfig
+	var savedSearches []api.SavedQuerySpecAndConfig
 	for rows.Next() {
 		var sq api.SavedQuerySpecAndConfig
 		if err := rows.Scan(&sq.Config.Key, &sq.Config.Description, &sq.Config.Query, &sq.Config.Notify, &sq.Config.NotifySlack, &sq.Config.OwnerKind, &sq.Config.UserID, &sq.Config.OrgID, &sq.Config.SlackWebhookURL); err != nil {
@@ -43,9 +43,9 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 		} else if sq.Config.OwnerKind == "org" {
 			sq.Spec.Subject.Org = sq.Config.OrgID
 		}
-		savedQueries = append(savedQueries, sq)
+		savedSearches = append(savedSearches, sq)
 	}
-	return savedQueries, nil
+	return savedSearches, nil
 }
 
 func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (savedSearch *api.ConfigSavedQuery, err error) {

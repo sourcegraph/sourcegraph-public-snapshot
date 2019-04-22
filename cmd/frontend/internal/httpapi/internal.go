@@ -235,7 +235,7 @@ func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
 	settings, err := db.SavedSearches.ListAll(r.Context())
 	if err != nil {
-		return errors.Wrap(err, "db.Settings.ListAll")
+		return errors.Wrap(err, "db.SavedSearches.ListAll")
 	}
 
 	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
