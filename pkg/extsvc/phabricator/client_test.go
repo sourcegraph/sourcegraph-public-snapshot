@@ -2,6 +2,7 @@ package phabricator_test
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -23,6 +24,95 @@ import (
 
 var update = flag.Bool("update", false, "update testdata")
 
+func TestClient_ListRepos(t *testing.T) {
+	cli, save := newClient(t, "ListRepos")
+	defer save()
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	for _, tc := range []struct {
+		name   string
+		ctx    context.Context
+		args   phabricator.ListReposArgs
+		cursor *phabricator.Cursor
+		err    string
+	}{
+		{
+			name:   "repos-listed",
+			args:   phabricator.ListReposArgs{Cursor: &phabricator.Cursor{Limit: 5}},
+			cursor: &phabricator.Cursor{Limit: 5, After: "5", Order: "oldest"},
+		},
+		{
+			name: "pagination",
+			args: phabricator.ListReposArgs{
+				Cursor: &phabricator.Cursor{
+					Limit: 5,
+					After: "5",
+					Order: "oldest",
+				},
+			},
+			cursor: &phabricator.Cursor{
+				Limit:  5,
+				After:  "19",
+				Before: "8",
+				Order:  "oldest",
+			},
+		},
+		{
+			name: "timeout",
+			ctx:  timeout,
+			err:  "Post https://secure.phabricator.com/api/diffusion.repository.search: context deadline exceeded",
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			repos, cursor, err := cli.ListRepos(tc.ctx, tc.args)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if have, want := cursor, tc.cursor; !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
+
+			if tc.args == (phabricator.ListReposArgs{}) {
+				return
+			}
+
+			bs, err := json.MarshalIndent(repos, "", "  ")
+			if err != nil {
+				t.Fatalf("failed to marshal repos: %s", err)
+			}
+
+			path := fmt.Sprintf("testdata/golden/ListRepos-%s.json", tc.name)
+			if *update {
+				if err = ioutil.WriteFile(path, bs, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(bs), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
+			}
+		})
+	}
+}
 func TestClient_GetRawDiff(t *testing.T) {
 	cli, save := newClient(t, "GetRawDiff")
 	defer save()

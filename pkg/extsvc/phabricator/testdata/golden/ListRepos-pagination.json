@@ -1,0 +1,305 @@
+[
+  {
+    "ID": 8,
+    "PHID": "PHID-REPO-3ab84165595f401c628a",
+    "Name": "XHProf",
+    "VCS": "git",
+    "Callsign": "XPRF",
+    "Shortname": "",
+    "Status": "active",
+    "DateCreated": "2011-07-16T23:17:54+02:00",
+    "DateModified": "2017-06-13T04:58:26+02:00",
+    "ViewPolicy": "public",
+    "EditPolicy": "admin",
+    "URIs": [
+      {
+        "ID": "57",
+        "PHID": "PHID-RURI-ormw2bxgs6bikjd5bcup",
+        "Display": "https://secure.phabricator.com/diffusion/8/xhprof.git",
+        "Effective": "https://secure.phabricator.com/diffusion/8/xhprof.git",
+        "Normalized": "secure.phabricator.com/diffusion/8",
+        "Disabled": false,
+        "BuiltinProtocol": "https",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "55",
+        "PHID": "PHID-RURI-2yviuo7l3zancqwkvp42",
+        "Display": "https://secure.phabricator.com/diffusion/XPRF/xhprof.git",
+        "Effective": "https://secure.phabricator.com/diffusion/XPRF/xhprof.git",
+        "Normalized": "secure.phabricator.com/diffusion/XPRF",
+        "Disabled": false,
+        "BuiltinProtocol": "https",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "54",
+        "PHID": "PHID-RURI-mdnatvm5u5aiejk7ivuw",
+        "Display": "ssh://secure@secure.phabricator.com/diffusion/8/xhprof.git",
+        "Effective": "ssh://secure@secure.phabricator.com/diffusion/8/xhprof.git",
+        "Normalized": "secure.phabricator.com/diffusion/8",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "52",
+        "PHID": "PHID-RURI-qz2soi2a6eo2tdg54etz",
+        "Display": "ssh://secure@secure.phabricator.com/diffusion/XPRF/xhprof.git",
+        "Effective": "ssh://secure@secure.phabricator.com/diffusion/XPRF/xhprof.git",
+        "Normalized": "secure.phabricator.com/diffusion/XPRF",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "5",
+        "PHID": "PHID-RURI-qel5oxdqvfeve4orcmov",
+        "Display": "git@github.com:phacility/xhprof.git",
+        "Effective": "git@github.com:phacility/xhprof.git",
+        "Normalized": "github.com/phacility/xhprof",
+        "Disabled": false,
+        "BuiltinProtocol": "",
+        "BuiltinIdentifier": "",
+        "DateCreated": "2016-05-05T01:17:36+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      }
+    ]
+  },
+  {
+    "ID": 12,
+    "PHID": "PHID-REPO-3tqq7t2ycuuaodgn7qur",
+    "Name": "Diviner (Legacy)",
+    "VCS": "git",
+    "Callsign": "ZDOCS",
+    "Shortname": "",
+    "Status": "inactive",
+    "DateCreated": "2014-03-05T22:08:53+01:00",
+    "DateModified": "2015-06-26T00:06:34+02:00",
+    "ViewPolicy": "users",
+    "EditPolicy": "PHID-PROJ-roo7hwr5rfmf6czzlkjk",
+    "URIs": [
+      {
+        "ID": "93",
+        "PHID": "PHID-RURI-xppwbooh2tc4gxis3ugw",
+        "Display": "https://secure.phabricator.com/diffusion/12/diviner-legacy.git",
+        "Effective": "https://secure.phabricator.com/diffusion/12/diviner-legacy.git",
+        "Normalized": "secure.phabricator.com/diffusion/12",
+        "Disabled": false,
+        "BuiltinProtocol": "https",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "91",
+        "PHID": "PHID-RURI-m4ukujbv6mhptuvrgfyj",
+        "Display": "https://secure.phabricator.com/diffusion/ZDOCS/diviner-legacy.git",
+        "Effective": "https://secure.phabricator.com/diffusion/ZDOCS/diviner-legacy.git",
+        "Normalized": "secure.phabricator.com/diffusion/ZDOCS",
+        "Disabled": false,
+        "BuiltinProtocol": "https",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "90",
+        "PHID": "PHID-RURI-cmoltzi3udx6utjh6v2i",
+        "Display": "ssh://secure@secure.phabricator.com/diffusion/12/diviner-legacy.git",
+        "Effective": "ssh://secure@secure.phabricator.com/diffusion/12/diviner-legacy.git",
+        "Normalized": "secure.phabricator.com/diffusion/12",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "88",
+        "PHID": "PHID-RURI-j6xh7ix6lxkph6y67b4g",
+        "Display": "ssh://secure@secure.phabricator.com/diffusion/ZDOCS/diviner-legacy.git",
+        "Effective": "ssh://secure@secure.phabricator.com/diffusion/ZDOCS/diviner-legacy.git",
+        "Normalized": "secure.phabricator.com/diffusion/ZDOCS",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      }
+    ]
+  },
+  {
+    "ID": 17,
+    "PHID": "PHID-REPO-caj3a5mgnnpw563zlk5z",
+    "Name": "hg-test",
+    "VCS": "hg",
+    "Callsign": "HGTEST",
+    "Shortname": "",
+    "Status": "active",
+    "DateCreated": "2015-02-20T19:00:14+01:00",
+    "DateModified": "2017-06-13T05:00:59+02:00",
+    "ViewPolicy": "users",
+    "EditPolicy": "admin",
+    "URIs": [
+      {
+        "ID": "138",
+        "PHID": "PHID-RURI-rvqjvepy6imuvr7h7fke",
+        "Display": "https://secure.phabricator.com/diffusion/17/hg-test/",
+        "Effective": "https://secure.phabricator.com/diffusion/17/hg-test/",
+        "Normalized": "secure.phabricator.com/diffusion/17",
+        "Disabled": false,
+        "BuiltinProtocol": "https",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "136",
+        "PHID": "PHID-RURI-3kv2pi7xzanqorb6xmpi",
+        "Display": "https://secure.phabricator.com/diffusion/HGTEST/hg-test/",
+        "Effective": "https://secure.phabricator.com/diffusion/HGTEST/hg-test/",
+        "Normalized": "secure.phabricator.com/diffusion/HGTEST",
+        "Disabled": false,
+        "BuiltinProtocol": "https",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "135",
+        "PHID": "PHID-RURI-qxxjybb4nt2k2kepwrdz",
+        "Display": "ssh://secure@secure.phabricator.com/diffusion/17/hg-test/",
+        "Effective": "ssh://secure@secure.phabricator.com/diffusion/17/hg-test/",
+        "Normalized": "secure.phabricator.com/diffusion/17",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "133",
+        "PHID": "PHID-RURI-cb2gbqqacsz6cpmov3b2",
+        "Display": "ssh://secure@secure.phabricator.com/diffusion/HGTEST/hg-test/",
+        "Effective": "ssh://secure@secure.phabricator.com/diffusion/HGTEST/hg-test/",
+        "Normalized": "secure.phabricator.com/diffusion/HGTEST",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      }
+    ]
+  },
+  {
+    "ID": 18,
+    "PHID": "PHID-REPO-ighrt74bnkqnn7h27gns",
+    "Name": "git-test",
+    "VCS": "git",
+    "Callsign": "GITTEST",
+    "Shortname": "",
+    "Status": "active",
+    "DateCreated": "2015-02-20T19:01:13+01:00",
+    "DateModified": "2019-02-07T16:10:56+01:00",
+    "ViewPolicy": "public",
+    "EditPolicy": "admin",
+    "URIs": [
+      {
+        "ID": "147",
+        "PHID": "PHID-RURI-avpzzhpnuqrol4lcvbmq",
+        "Display": "https://secure.phabricator.com/diffusion/18/git-test.git",
+        "Effective": "https://secure.phabricator.com/diffusion/18/git-test.git",
+        "Normalized": "secure.phabricator.com/diffusion/18",
+        "Disabled": false,
+        "BuiltinProtocol": "https",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "145",
+        "PHID": "PHID-RURI-xhfvu5db3nqj5jii2kvy",
+        "Display": "https://secure.phabricator.com/diffusion/GITTEST/git-test.git",
+        "Effective": "https://secure.phabricator.com/diffusion/GITTEST/git-test.git",
+        "Normalized": "secure.phabricator.com/diffusion/GITTEST",
+        "Disabled": false,
+        "BuiltinProtocol": "https",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "144",
+        "PHID": "PHID-RURI-nwo3jzf263atlxh6ylhj",
+        "Display": "ssh://secure@secure.phabricator.com/diffusion/18/git-test.git",
+        "Effective": "ssh://secure@secure.phabricator.com/diffusion/18/git-test.git",
+        "Normalized": "secure.phabricator.com/diffusion/18",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "142",
+        "PHID": "PHID-RURI-t25jjuc5vf2f7ranumhk",
+        "Display": "ssh://secure@secure.phabricator.com/diffusion/GITTEST/git-test.git",
+        "Effective": "ssh://secure@secure.phabricator.com/diffusion/GITTEST/git-test.git",
+        "Normalized": "secure.phabricator.com/diffusion/GITTEST",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      }
+    ]
+  },
+  {
+    "ID": 19,
+    "PHID": "PHID-REPO-zwf22hz7obqovyusvyfm",
+    "Name": "svn-test",
+    "VCS": "svn",
+    "Callsign": "SVNTEST",
+    "Shortname": "",
+    "Status": "active",
+    "DateCreated": "2015-02-20T19:01:44+01:00",
+    "DateModified": "2017-06-13T05:03:16+02:00",
+    "ViewPolicy": "users",
+    "EditPolicy": "admin",
+    "URIs": [
+      {
+        "ID": "153",
+        "PHID": "PHID-RURI-ikpu6qysmaruqeiwzu2u",
+        "Display": "svn+ssh://secure@secure.phabricator.com/diffusion/19/",
+        "Effective": "svn+ssh://secure@secure.phabricator.com/diffusion/19/",
+        "Normalized": "secure.phabricator.com/diffusion/19",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "id",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      },
+      {
+        "ID": "151",
+        "PHID": "PHID-RURI-wqo6z56arr4p3fsp6dtr",
+        "Display": "svn+ssh://secure@secure.phabricator.com/diffusion/SVNTEST/",
+        "Effective": "svn+ssh://secure@secure.phabricator.com/diffusion/SVNTEST/",
+        "Normalized": "secure.phabricator.com/diffusion/SVNTEST",
+        "Disabled": false,
+        "BuiltinProtocol": "ssh",
+        "BuiltinIdentifier": "callsign",
+        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateModified": "0001-01-01T00:00:00Z"
+      }
+    ]
+  }
+]
