@@ -6,12 +6,13 @@ jest.mock('react-dom', () => ({
 }))
 
 import { uniqueId } from 'lodash'
-import { from, NEVER, of, Subscription } from 'rxjs'
-import { skip, take } from 'rxjs/operators'
+import { from, NEVER, Subject, Subscription } from 'rxjs'
+import { first, skip, take } from 'rxjs/operators'
 import { Services } from '../../../../../shared/src/api/client/services'
 import { CodeEditor } from '../../../../../shared/src/api/client/services/editorService'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../../shared/src/extensions/controller'
+import { MutationRecordLike } from '../../shared/util/dom'
 import { handleTextFields } from './text_fields'
 
 jest.mock('uuid', () => ({
@@ -46,15 +47,18 @@ describe('text_fields', () => {
             return el
         }
 
-        test('detects text fields based on selectors', async () => {
+        test('detects addition and removal of text fields', async () => {
             const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
             const textFieldElement = createTestElement()
             textFieldElement.id = 'text-field'
             textFieldElement.value = 'abc'
             textFieldElement.setSelectionRange(2, 3)
+
+            const mutations = new Subject<MutationRecordLike[]>()
+
             subscriptions.add(
                 handleTextFields(
-                    of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    mutations,
                     { extensionsController: createMockController(services) },
                     {
                         textFieldResolvers: [
@@ -63,6 +67,9 @@ describe('text_fields', () => {
                     }
                 )
             )
+
+            // Add text field.
+            mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
             const editors = await from(services.editor.editors)
                 .pipe(
                     skip(2),
@@ -91,7 +98,18 @@ describe('text_fields', () => {
                     type: 'CodeEditor',
                 },
             ] as CodeEditor[])
-            expect(textFieldElement.classList.contains('sg-mounted')).toBe(true)
+
+            // Remove text field.
+            textFieldElement.remove()
+            mutations.next([{ addedNodes: [], removedNodes: [textFieldElement] }])
+            expect(
+                await from(services.editor.editors)
+                    .pipe(
+                        skip(1),
+                        first()
+                    )
+                    .toPromise()
+            ).toEqual([])
         })
     })
 })

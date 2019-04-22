@@ -92,6 +92,7 @@ export function handleContentViews(
                     let contentViewState = contentViewStates.get(contentViewEvent.element)
                     if (!contentViewState) {
                         contentViewState = { subscriptions: new Subscription() }
+                        contentViewStates.set(contentViewEvent.element, contentViewState)
                     }
 
                     // Add link preview content.
@@ -118,10 +119,6 @@ export function handleContentViews(
                                 })
                         )
                     }
-                }
-
-                if (contentViewEvent.type === 'added') {
-                    contentViewEvent.element.classList.add('sg-mounted')
                 }
             })
         )

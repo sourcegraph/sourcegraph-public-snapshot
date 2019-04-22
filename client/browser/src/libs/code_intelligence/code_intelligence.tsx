@@ -146,15 +146,17 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * The list of types of code views to try to annotate.
      *
-     * The set of code views tracked on a page is the union of all code views found using `codeViewSpecs` and `codeViewResolver`.
+     * The set of code views tracked on a page is the union of all code views found using
+     * `codeViewSpecs` and `codeViewSpecResolver`.
      */
     codeViewSpecs?: CodeViewSpec[]
 
     /**
-     * Resolve `CodeView`s from the DOM. This is useful when each code view type
-     * doesn't have a distinct selector.
+     * Resolve `CodeView`s from the DOM. This is useful when each code view type doesn't have a
+     * distinct selector.
      *
-     * The set of code views tracked on a page is the union of all code views found using `codeViewSpecs` and `codeViewResolver`.
+     * The set of code views tracked on a page is the union of all code views found using
+     * `codeViewSpecs` and `codeViewSpecResolver`.
      */
     codeViewSpecResolver?: ViewResolver<CodeViewSpecResolver>
 
