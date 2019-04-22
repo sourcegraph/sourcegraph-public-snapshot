@@ -22,7 +22,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	}
 
 	sq := &savedQueryResolver{
-		key:         configSavedQuery.Key,
+		id:          configSavedQuery.Key,
 		description: configSavedQuery.Description,
 		query:       configSavedQuery.Query,
 		notify:      configSavedQuery.Notify,
@@ -49,7 +49,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, err
 	}
 	sq := &savedQueryResolver{
-		key:         configSavedQuery.Key,
+		id:          configSavedQuery.Key,
 		description: configSavedQuery.Description,
 		query:       configSavedQuery.Query,
 		notify:      configSavedQuery.Notify,

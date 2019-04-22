@@ -13,7 +13,7 @@ import { SavedQueryRow } from './SavedQueryRow'
 import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
 interface Props extends SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
-    savedQuery: GQL.ISavedQuery
+    savedQuery: GQL.ISavedSearch
     onDidUpdate?: () => void
     onDidDuplicate?: () => void
     onDidDelete?: () => void
@@ -34,7 +34,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
     public state: State = { isEditing: false, isSaving: false, loading: true, refreshedAt: 0, redirect: false }
 
     private componentUpdates = new Subject<Props>()
-    private refreshRequested = new Subject<GQL.ISavedQuery>()
+    private refreshRequested = new Subject<GQL.ISavedSearch>()
     private duplicateRequested = new Subject<void>()
     private deleteRequested = new Subject<void>()
     private subscriptions = new Subscription()
@@ -78,7 +78,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             this.deleteRequested
                 .pipe(
                     withLatestFrom(propsChanges),
-                    switchMap(([, props]) => deleteSavedSearch(props.savedQuery.key)),
+                    switchMap(([, props]) => deleteSavedSearch(props.savedQuery.id)),
                     mapTo(void 0)
                 )
                 .subscribe(

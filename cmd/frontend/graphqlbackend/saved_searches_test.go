@@ -23,7 +23,7 @@ func TestSavedSearches(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []*savedQueryResolver{{
-		key:         "1",
+		id:          "1",
 		description: "test query",
 		query:       "test type:diff",
 		notify:      true,
@@ -65,7 +65,7 @@ func TestCreateSavedSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := &savedQueryResolver{
-		key:         "1",
+		id:          "1",
 		description: "test query",
 		query:       "test type:diff",
 		notify:      true,
@@ -111,7 +111,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 	}
 
 	want := &savedQueryResolver{
-		key:         "1",
+		id:          "1",
 		description: "updated query description",
 		query:       "test type:diff",
 		notify:      true,

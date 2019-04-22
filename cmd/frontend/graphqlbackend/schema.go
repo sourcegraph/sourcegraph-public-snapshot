@@ -252,7 +252,7 @@ type Mutation {
     # Only subscribers to this saved search may perform this action.
     sendSavedSearchTestNotification(
         # ID of the saved search.
-        id: ID!
+        id: String!
     ): EmptyResponse
     # All mutations that update settings (global, organization, and user settings) are under this field.
     #
@@ -308,10 +308,10 @@ type Mutation {
         query: String!
         notifyOwner: Boolean!
         notifySlack: Boolean!
-        ownerKind: SavedQueryOwnerKind!
+        ownerKind: SavedSearchOwnerKind!
         orgID: Int
         userID: Int
-    ): SavedQuery!
+    ): SavedSearch!
     # Updates a saved search
     updateSavedSearch(
         # The database ID of the saved search
@@ -320,10 +320,10 @@ type Mutation {
         query: String!
         notifyOwner: Boolean!
         notifySlack: Boolean!
-        ownerKind: SavedQueryOwnerKind!
+        ownerKind: SavedSearchOwnerKind!
         orgID: Int
         userID: Int
-    ): SavedQuery!
+    ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(
         # The database ID of the saved search
@@ -543,26 +543,6 @@ type SettingsMutation {
         # entire previous settings value will be overwritten by this new value.
         contents: String!
     ): UpdateSettingsPayload
-    # Create a saved query.
-    createSavedQuery(
-        description: String!
-        query: String!
-        showOnHomepage: Boolean = false
-        notify: Boolean = false
-        notifySlack: Boolean = false
-        disableSubscriptionNotifications: Boolean = false
-    ): SavedQuery!
-    # Update the saved query with the given ID in settings.
-    updateSavedQuery(
-        id: ID!
-        description: String
-        query: String
-        showOnHomepage: Boolean = false
-        notify: Boolean = false
-        notifySlack: Boolean = false
-    ): SavedQuery!
-    # Delete the saved query with the given ID in the settings.
-    deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
 }
 
 # An edit to a JSON property in a settings JSON object. The JSON property to edit can be nested.
@@ -795,8 +775,8 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
-    # All saved queries configured for the current user, merged from all configurations.
-    savedQueries: [SavedQuery!]!
+    # All saved searches configured for the current user, merged from all configurations.
+    savedSearches: [SavedSearch!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
     # The current site.
@@ -977,40 +957,26 @@ type SearchAlert {
 }
 
 # All possible types of saved query owners.
-enum SavedQueryOwnerKind {
+enum SavedSearchOwnerKind {
     USER
     ORG
 }
 
 # A saved search query, defined in settings.
-type SavedQuery {
-    # The unique ID of the saved query.
-    id: ID!
-    # DEPRECATED: this will be removed in a future release.
-    #
-    # The subject whose settings this saved query was defined in.
-    subject: SettingsSubject!
+type SavedSearch {
     # The unique key of this saved query (unique only among all other saved
     # queries of the same subject).
-    key: String!
-    # DEPRECATED: this will be removed in a future release.
-    #
-    # The 0-indexed index of this saved query in the subject's settings.
-    index: Int!
+    id: String!
     # The description.
     description: String!
     # The query.
     query: String!
-    # DEPRECATED: Sourcegraph no longer shows saved searches on the homepage. This resolver will be removed in a future release.
-    #
-    # Whether or not to show on the homepage.
-    showOnHomepage: Boolean!
     # Whether or not to notify.
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
     # Whether the owner of this saved search is a user or organization.
-    ownerKind: SavedQueryOwnerKind!
+    ownerKind: SavedSearchOwnerKind!
     # The user ID of the owner if the owner is a user.
     userID: Int
     # The organization ID of the owner if the owner is an org.

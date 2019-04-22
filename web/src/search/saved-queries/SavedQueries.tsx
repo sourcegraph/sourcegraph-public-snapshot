@@ -27,7 +27,7 @@ interface Props extends SettingsCascadeProps, ThemeProps {
 }
 
 interface State {
-    savedQueries: GQL.ISavedQuery[]
+    savedQueries: GQL.ISavedSearch[]
 
     /**
      * Whether the saved query creation form is visible.

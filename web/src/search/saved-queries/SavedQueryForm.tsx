@@ -10,13 +10,13 @@ import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 
 export interface SavedQueryFields {
-    key: string
+    id: string
     description: string
     query: string
     subject: GQL.ID
     notify: boolean
     notifySlack: boolean
-    ownerKind: GQL.SavedQueryOwnerKind
+    ownerKind: GQL.SavedSearchOwnerKind
     userID: number | null
     orgID: number | null
     slackWebhookURL: string | null
@@ -57,13 +57,13 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         this.state = {
             values: {
-                key: (defaultValues && defaultValues.key) || '',
+                id: (defaultValues && defaultValues.id) || '',
                 query: (defaultValues && defaultValues.query) || '',
                 description: (defaultValues && defaultValues.description) || '',
                 subject: (defaultValues && defaultValues.subject) || '',
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
-                ownerKind: (defaultValues && defaultValues.ownerKind) || ('USER' as GQL.SavedQueryOwnerKind.USER),
+                ownerKind: (defaultValues && defaultValues.ownerKind) || ('USER' as GQL.SavedSearchOwnerKind.USER),
                 userID: (defaultValues && defaultValues.userID) || null,
                 orgID: (defaultValues && defaultValues.orgID) || null,
                 slackWebhookURL: (defaultValues && defaultValues.slackWebhookURL) || null,
@@ -363,7 +363,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    ownerKind: 'ORG' as GQL.SavedQueryOwnerKind.ORG,
+                    ownerKind: 'ORG' as GQL.SavedSearchOwnerKind.ORG,
                     orgID: id,
                     userID: null,
                 },
@@ -376,7 +376,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    ownerKind: 'USER' as GQL.SavedQueryOwnerKind.USER,
+                    ownerKind: 'USER' as GQL.SavedSearchOwnerKind.USER,
                     userID: id,
                     orgID: null,
                 },

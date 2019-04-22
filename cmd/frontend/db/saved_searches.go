@@ -48,6 +48,13 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	return savedQueries, nil
 }
 
+func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (savedSearch *api.ConfigSavedQuery, err error) {
+	if err := dbconn.Global.QueryRowContext(ctx, `SELECT id, description, query, notify_owner, notify_slack, owner_kind, user_id, org_id FROM saved_searches WHERE id=$1`, id).Scan(&savedSearch.Key, &savedSearch.Description, &savedSearch.Query, &savedSearch.Notify, &savedSearch.NotifySlack, &savedSearch.OwnerKind, &savedSearch.UserID, &savedSearch.OrgID); err != nil {
+		return nil, err
+	}
+	return savedSearch, err
+}
+
 func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *api.ConfigSavedQuery, err error) {
 	if Mocks.SavedSearches.Create != nil {
 		return Mocks.SavedSearches.Create(ctx, newSavedSearch)

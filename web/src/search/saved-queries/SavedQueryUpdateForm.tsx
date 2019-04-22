@@ -8,7 +8,7 @@ import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
 interface Props extends SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
-    savedQuery: GQL.ISavedQuery
+    savedQuery: GQL.ISavedSearch
     onDidUpdate: () => void
     onDidCancel: () => void
 }
@@ -17,7 +17,7 @@ export const SavedQueryUpdateForm: React.FunctionComponent<Props> = props => (
     <SavedQueryForm
         authenticatedUser={props.authenticatedUser}
         defaultValues={{
-            key: props.savedQuery.key,
+            id: props.savedQuery.id,
             description: props.savedQuery.description,
             query: props.savedQuery.query,
             notify: props.savedQuery.notify,
@@ -41,7 +41,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
     // If the subject changed, we need to create it on the new subject and
     // delete it on the old subject.
     return updateSavedSearch(
-        fields.key,
+        fields.id,
         fields.description,
         fields.query,
         fields.notify,
