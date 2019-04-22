@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -44,16 +45,10 @@ func TestCreateSavedSearch(t *testing.T) {
 	createSavedSearchCalled := false
 
 	db.Mocks.SavedSearches.Create = func(ctx context.Context,
-		description,
-		query string,
-		notifyOwner,
-		notifySlack bool,
-		ownerKind string,
-		userID,
-		orgID *int32,
+		newSavedSearch *types.SavedSearch,
 	) (*api.ConfigSavedQuery, error) {
 		createSavedSearchCalled = true
-		return &api.ConfigSavedQuery{Key: "1", Description: description, Query: query, Notify: notifyOwner, NotifySlack: notifySlack, OwnerKind: ownerKind, UserID: userID, OrgID: orgID}, nil
+		return &api.ConfigSavedQuery{Key: "1", Description: newSavedSearch.Description, Query: newSavedSearch.Query, Notify: newSavedSearch.Notify, NotifySlack: newSavedSearch.NotifySlack, OwnerKind: newSavedSearch.OwnerKind, UserID: newSavedSearch.UserID, OrgID: newSavedSearch.OrgID}, nil
 	}
 
 	savedQueries, err := (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
@@ -96,15 +91,9 @@ func TestUpdateSavedSearch(t *testing.T) {
 	key := int32(1)
 	updateSavedSearchCalled := false
 
-	db.Mocks.SavedSearches.Update = func(ctx context.Context, id, description,
-		query string,
-		notifyOwner,
-		notifySlack bool,
-		ownerKind string,
-		userID,
-		orgID *int32) (*api.ConfigSavedQuery, error) {
+	db.Mocks.SavedSearches.Update = func(ctx context.Context, savedSearch *types.SavedSearch) (*api.ConfigSavedQuery, error) {
 		updateSavedSearchCalled = true
-		return &api.ConfigSavedQuery{Key: "1", Description: description, Query: query, Notify: notifyOwner, NotifySlack: notifySlack, OwnerKind: ownerKind, UserID: userID, OrgID: orgID}, nil
+		return &api.ConfigSavedQuery{Key: "1", Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, OwnerKind: savedSearch.OwnerKind, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
 	}
 
 	savedQueries, err := (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
