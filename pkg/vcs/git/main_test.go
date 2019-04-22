@@ -24,9 +24,9 @@ func TestMain(m *testing.M) {
 	srv := &http.Server{Handler: (&server.Server{}).Handler()}
 	go srv.Serve(l)
 
-	gitserver.DefaultClient = &gitserver.Client{Addrs: func(ctx context.Context) []string {
+	gitserver.DefaultClient.Addrs = func(ctx context.Context) []string {
 		return []string{l.Addr().String()}
-	}}
+	}
 
 	os.Exit(m.Run())
 }
