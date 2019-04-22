@@ -57,20 +57,27 @@
         <div class="docs-content">
             <div class="nav-sticky-wrapper page-nav-wrapper column large-2 medium-3 mobile-show">
                 <!-- Mobile breadcrumb nav -->
-                {{with .Content}}
-
                 <nav id="breadcrumbs-mobile" class="breadcrumbs large-hidden medium-hidden">
                     <input type="button" class="content-nav-mobile-state large-hidden medium-hidden" />
                     <span class="content-nav-mobile-button"></span>
                     <span class="breadcrumb-links">
-                        {{if eq (len .Breadcrumbs ) 0}}<a href="#">Home</a>{{end}}
-                        {{range .Breadcrumbs}}
-                        <a href="{{.URL}}" {{if .IsActive}} class="active" {{end}}>{{.Label}}</a>
-                        {{if not .IsActive}}/{{end}}
-                        {{end}} &nbsp;
+                {{with .Content}}
+                    {{if eq (len .Breadcrumbs ) 0}}<a href="#">Home</a>{{end}}
+                    {{range .Breadcrumbs}}
+                    <a href="{{.URL}}" {{if .IsActive}} class="active" {{end}}>{{.Label}}</a>
+                    {{if not .IsActive}}/{{end}}
+                    {{end}} &nbsp;
+                {{else}}
+                    {{if .ContentVersionNotFoundError}}
+                    Version not found
+                {{else if .ContentPageNotFoundError}}
+                    Page not found
+                {{else}}
+                    Error
+                {{end}}
+                {{end}}
                     </span>
                 </nav>
-                {{end}}
                 <div id="content-nav" class="content-nav">
                     <form class="search-form form-inline mobile-search large-hidden medium-hidden">
                         <input name="search" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
@@ -221,7 +228,6 @@
                                 <li><a href="/integration/lightstep">LightStep integration with Sourcegraph</a></li>
                                 <li><a href="/integration/phabricator">Phabricator integration with Sourcegraph</a></li>
                                 <li><a href="/integration/browser_extension">Sourcegraph browser extension</a></li>
-                                <li><a href="/integration/UBC Sourcegraph Agenda">UBC Sourcegraph Agenda</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -396,19 +402,25 @@
                 </nav>
                 <div class="markdown-body">{{markdown .}}</div>
                 {{else}}
+                <nav id="breadcrumbs" class="breadcrumbs small-hidden">
+                    <input type="button" class="content-nav-mobile-state large-hidden medium-hidden">
+                    <span class="content-nav-mobile-button"></span>
+                </nav>
+                <div class="markdown-body">
                     {{/* If no content is found: */}}
                     {{if .ContentVersionNotFoundError}}
-                    {{/* If content version is not found */}}
-                    <h1>Version not found</h1>
-                    <p>The version <code>{{.ContentVersion}}</code> was not found.</p>
-
+                        {{/* If content version is not found */}}
+                        <h1>Version not found</h1>
+                        <p>The version <code>{{.ContentVersion}}</code> was not found.</p>
                     {{else if .ContentPageNotFoundError}}
                         {{/* Page not found */}}
                         <h1>Page not found</h1>
                         <p>The page <code>{{.ContentPagePath}}</code> was not found.</p>
-                        {{else}}error
-                            {{end}}
-                            {{end}}
+                    {{else}}
+                        error
+                    {{end}}
+                {{end}}
+                </div>
             </section>
             {{with .Content}}
             <div class="nav-sticky-wrapper column large-3 medium-hidden small-hidden">
@@ -422,131 +434,61 @@
         <div class="footer-container column large-12">
             <div class="footer__block">
                 <footer>
-                    <div class="footer-content-container">
+                    <div class="container">
                         <div class="row">
-                            <div class="col-sm-4 col-m-4 col-lg-4 item logo__section">
-                                <img class="footer__logo" src="https://d33wubrfki0l68.cloudfront.net/3ec402edbb475d12a54b840445834e4943985e74/c29e2/sourcegraph/logo--light.svg">
+                            <div class="col-sm-4 col-m-4 col-lg-4 item logo__section"><img class="footer__logo" src="https://d33wubrfki0l68.cloudfront.net/3ec402edbb475d12a54b840445834e4943985e74/c29e2/sourcegraph/logo--light.svg">
                                 <div class="footer__contact">
                                     <p><a class="mail__contect" href="mailto:hi@sourcegraph.com" target="_blank">hi@sourcegraph.com</a></p>
                                     <p class="addr__contact">142 Minna St, 2nd Floor<br>San Francisco CA, 94105</p>
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-12 col-m-2 col-lg-2 item footer__extend community">
-                                <h3>
-                                    Community
-                                </h3>
-                                <input type="checkbox">
+                                <h3>Community</h3><input type="checkbox">
                                 <ul>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/blog">Blog
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://github.com/sourcegraph" target="_blank">GitHub
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://www.linkedin.com/company/4803356/" target="_blank">LinkedIn
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://twitter.com/srcgraph" target="_blank">Twitter
-                                        </a>
-                                    </li>
+                                    <li><a href="https://github.com/sourcegraph" target="_blank">GitHub</a></li>
+                                    <li><a href="https://about.sourcegraph.com/blog">Blog</a></li>
+                                    <li><a href="https://twitter.com/srcgraph" target="_blank">Twitter</a></li>
+                                    <li><a href="https://www.linkedin.com/company/4803356/" target="_blank">LinkedIn</a></li>
                                 </ul>
-                                <div class="close--icon">
-                                    <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z">
-                                        </path>
-                                    </svg>
-                                </div>
+                                <div class="close--icon"><svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                    </svg></div>
                             </div>
                             <div class="col-xs-12 col-sm-12 col-m-2 col-lg-2 item footer__extend company">
-                                <h3>Company
-                                </h3>
-                                <input type="checkbox">
+                                <h3>Company</h3><input type="checkbox">
                                 <ul>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/plan">Master plan
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/about">About
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/contact">Contact
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/jobs">Careers
-                                        </a>
-                                    </li>
+                                    <li><a href="https://about.sourcegraph.com/plan">Master plan</a></li>
+                                    <li><a href="https://about.sourcegraph.com/about">About</a></li>
+                                    <li><a href="https://about.sourcegraph.com/contact">Contact</a></li>
+                                    <li><a href="https://about.sourcegraph.com/jobs">Careers</a></li>
                                 </ul>
-                                <div class="close--icon">
-                                    <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z">
-                                        </path>
-                                    </svg>
-                                </div>
+                                <div class="close--icon"><svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                    </svg></div>
                             </div>
                             <div class="col-xs-12 col-sm-12 col-m-2 col-lg-2 item footer__extend features">
-                                <h3>Features
-                                </h3>
-                                <input type="checkbox">
+                                <h3>Features</h3><input type="checkbox">
                                 <ul>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/user/search">Code search
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/extensions">Code intelligence &amp;
-                                            extensions
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/admin/install/cluster">Cluster
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/integration">Integrations
-                                        </a>
-                                    </li>
+                                    <li><a href="/user/search">Code search</a></li>
+                                    <li><a href="/extensions">Code intelligence &amp; extensions</a></li>
+                                    <li><a href="/integration">Integrations</a></li>
+                                    <li><a href="https://about.sourcegraph.com/pricing">Enterprise</a></li>
                                 </ul>
-                                <div class="close--icon">
-                                    <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z">
-                                        </path>
-                                    </svg>
-                                </div>
+                                <div class="close--icon"><svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                    </svg></div>
                             </div>
                             <div class="col-xs-12 col-sm-12 col-m-2 col-lg-2 item footer__extend resources">
-                                <h3>Resources</h3>
-                                <input type="checkbox">
+                                <h3>Resources</h3><input type="checkbox">
                                 <ul>
-                                    <li>
-                                        <a href="/">Documentation
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md">Changelog
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/pricing">Pricing
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://about.sourcegraph.com/security">Security
-                                        </a>
-                                    </li>
+                                    <li><a href="">Documentation</a></li>
+                                    <li><a href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md">Changelog</a></li>
+                                    <li><a href="https://about.sourcegraph.com/pricing">Pricing</a></li>
+                                    <li><a href="https://about.sourcegraph.com/security">Security</a></li>
                                 </ul>
-                                <div class="close--icon">
-                                    <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
-                                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z">
-                                        </path>
-                                    </svg>
-                                </div>
+                                <div class="close--icon"><svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
+                                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                                    </svg></div>
                             </div>
                         </div>
                         <div class="small__contact">
@@ -558,23 +500,19 @@
                     </div>
                     <div class="container">
                         <div class="row">
-                            <div class="col-lg-12 copyright__container item">
-                                <span>
+                            <div class="col-lg-12 copyright__container item"><span>
                                     <p class="copyright">Copyright © 2019 Sourcegraph, Inc.</p>
-                                </span>
-                                <span class="https://about.sourcegraph.com/terms">
-                                    <a href="https://about.sourcegraph.com/terms">Terms</a>
-                                </span>
-                            </div>
+                                </span><span class="terms"><a href="https://about.sourcegraph.com/terms">Terms</a><a href="https://about.sourcegraph.com/privacy">Privacy</a></span></div>
                         </div>
                     </div>
                 </footer>
             </div>
         </div>
-
-        {{with .Content}}
         <script src="{{asset "docs.js"}}"></script>
+        {{with .Content}}
         <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
+        {{else}}
+        <script>sgdocs.init(breadcrumbs=null);</script>
         {{ end }}
 
         <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>

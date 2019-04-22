@@ -193,7 +193,7 @@ body {
     left: 0;
     right: 0;
     background-color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: saturate(240%) blur(14px);
+    -webkit-backdrop-filter: saturate(240%) blur(14px);
     backdrop-filter: saturate(240%) blur(14px);
 }
 @media screen and (max-width: 768px) {
@@ -440,7 +440,7 @@ a:active .current-branch {
 
 /* Content (Left Hand) Nav */
 .content-nav {
-    position: sticky;
+    position: -webkit-sticky;
     position: sticky;
     overflow-y: scroll;
     overflow-x: hidden;
@@ -546,7 +546,7 @@ li.content-nav-no-hover:hover {
 }
 .content-nav-section-subsection a {
     font-size: 14px;
-    font-weight: 400;
+    font-weight: 600;
     color: #2c3850;
 }
 .content-nav-section:last-of-type {
@@ -604,7 +604,7 @@ li.content-nav-no-hover:hover {
 /* Page (Right Hand) Nav */
 
 .page-nav {
-    position: sticky;
+    position: -webkit-sticky;
     position: sticky;
     top: 45px;
     padding-left: 14px;
@@ -711,12 +711,13 @@ li.content-nav-no-hover:hover {
         z-index: 9999;
         margin-top: 0;
         vertical-align: middle;
+        position: -webkit-sticky;
         position: sticky;
         top: 12px;
         margin-top: 70px;
         margin-bottom: 16px;
         background-color: rgba(255, 255, 255, 0.85);
-        backdrop-filter: saturate(240%) blur(12px);
+        -webkit-backdrop-filter: saturate(240%) blur(12px);
         backdrop-filter: saturate(240%) blur(12px);
         padding: 1rem 1rem;
         border-radius: 6px;
@@ -765,6 +766,7 @@ li.content-nav-no-hover:hover {
     }
     .content-nav.mobile-show {
         display: block;
+        position: -webkit-sticky;
         position: sticky;
         background-color: #ffffff;
         top: 78px;
@@ -1001,7 +1003,7 @@ li.content-nav-no-hover:hover {
 
 .footer__block h3 {
     text-transform: uppercase;
-    font-weight: 400;
+    font-weight: 600;
     font-size: 1rem;
     letter-spacing: 0.1rem;
 }

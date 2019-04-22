@@ -44,8 +44,7 @@ window.sgdocs = (() => {
   function versionSelectorInit() {
     function outsideVersionSelectorListener(event) {
       if (!event.target.closest('#version-selector')) {
-        VERSION_OPTIONS.classList.toggle('show')
-        hideMenu
+        hideMenu()
       }
     }
 
