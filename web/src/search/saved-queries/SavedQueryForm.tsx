@@ -19,6 +19,7 @@ export interface SavedQueryFields {
     ownerKind: GQL.SavedQueryOwnerKind
     userID: number | null
     orgID: number | null
+    slackWebhookURL: string | null
 }
 
 interface Props extends SettingsCascadeProps {
@@ -39,7 +40,6 @@ interface State {
     isFocused: boolean
     error?: any
     sawUnsupportedNotifyQueryWarning: boolean
-    slackWebhooks: Map<GQL.ID, string | null> // subject GraphQL ID -> slack webhook
 }
 
 export class SavedQueryForm extends React.Component<Props, State> {
@@ -66,12 +66,12 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 ownerKind: (defaultValues && defaultValues.ownerKind) || ('USER' as GQL.SavedQueryOwnerKind.USER),
                 userID: (defaultValues && defaultValues.userID) || null,
                 orgID: (defaultValues && defaultValues.orgID) || null,
+                slackWebhookURL: (defaultValues && defaultValues.slackWebhookURL) || null,
             },
             subjectOptions: [],
             isSubmitting: false,
             isFocused: false,
             sawUnsupportedNotifyQueryWarning: false,
-            slackWebhooks: new Map<GQL.ID, string | null>(),
         }
     }
 
@@ -92,23 +92,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             subject: state.values.subject || (subject && subject.subject.id) || '',
                         },
                     }))
-
-                    settingsCascade.subjects.map(subject => {
-                        if (subject.settings) {
-                            let slackWebhookURL: string | null
-                            try {
-                                const settings = subject.settings
-                                if (settings && settings['notifications.slack']) {
-                                    slackWebhookURL = settings['notifications.slack'].webhookURL
-                                }
-                            } catch (e) {
-                                slackWebhookURL = null
-                            }
-                            this.setState(state => ({
-                                slackWebhooks: state.slackWebhooks.set(subject.subject.id, slackWebhookURL),
-                            }))
-                        }
-                    })
                 })
         )
 
@@ -250,7 +233,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             : 'Contact your server admin for more information.'}
                     </div>
                 )}
-                {notifySlack && this.isSubjectMissingSlackWebhook() && (
+                {notifySlack && this.isSavedSearchMissingSlackWebhook() && (
                     <div className="alert alert-warning mb-2">
                         <strong>Required:</strong>{' '}
                         <Link target="_blank" to={this.getConfigureSlackURL()}>
@@ -284,13 +267,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
         return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
     }
 
-    private isSubjectMissingSlackWebhook = () => {
-        const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
-        if (!chosen) {
-            return false
-        }
-        return !this.state.slackWebhooks.get(chosen.id)
-    }
+    private isSavedSearchMissingSlackWebhook = () =>
+        !this.state.values.slackWebhookURL || this.state.values.slackWebhookURL === ''
 
     private getConfigureSlackURL = () => {
         const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)

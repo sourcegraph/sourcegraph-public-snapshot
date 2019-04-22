@@ -24,6 +24,7 @@ type savedQueryResolver struct {
 	showOnHomepage, notify, notifySlack bool
 	ownerKind                           string
 	userID, orgID                       *int32
+	slackWebhookURL                     *string
 }
 
 func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, error) {
@@ -92,21 +93,23 @@ func (r savedQueryResolver) Description() string { return r.description }
 
 func (r savedQueryResolver) Query() string { return r.query }
 
-func (r savedQueryResolver) OwnerKind() string { return r.ownerKind }
-func (r savedQueryResolver) UserID() *int32    { return r.userID }
-func (r savedQueryResolver) OrgID() *int32     { return r.orgID }
+func (r savedQueryResolver) OwnerKind() string        { return r.ownerKind }
+func (r savedQueryResolver) UserID() *int32           { return r.userID }
+func (r savedQueryResolver) OrgID() *int32            { return r.orgID }
+func (r savedQueryResolver) SlackWebhookURL() *string { return r.slackWebhookURL }
 
 func toSavedQueryResolver(index int, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
-		key:         entry.Key,
-		index:       index,
-		description: entry.Description,
-		query:       entry.Query,
-		notify:      entry.Notify,
-		notifySlack: entry.NotifySlack,
-		ownerKind:   entry.OwnerKind,
-		userID:      entry.UserID,
-		orgID:       entry.OrgID,
+		key:             entry.Key,
+		index:           index,
+		description:     entry.Description,
+		query:           entry.Query,
+		notify:          entry.Notify,
+		notifySlack:     entry.NotifySlack,
+		ownerKind:       entry.OwnerKind,
+		userID:          entry.UserID,
+		orgID:           entry.OrgID,
+		slackWebhookURL: entry.SlackWebhookURL,
 	}
 }
 

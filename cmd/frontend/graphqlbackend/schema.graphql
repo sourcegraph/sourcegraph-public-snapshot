@@ -1022,6 +1022,8 @@ type SavedQuery {
     userID: Int
     # The organization ID of the owner if the owner is an org.
     orgID: Int
+    # The Slack webhook URL associated with this saved search, if any.
+    slackWebhookURL: String
 }
 
 # A search query description.

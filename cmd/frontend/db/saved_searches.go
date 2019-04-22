@@ -26,7 +26,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 		tr.Finish()
 	}()
 
-	q := sqlf.Sprintf(`SELECT id, description, query, notify_owner, notify_slack, owner_kind, user_id, org_id FROM saved_searches`)
+	q := sqlf.Sprintf(`SELECT id, description, query, notify_owner, notify_slack, owner_kind, user_id, org_id, slack_webhook_url FROM saved_searches`)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar))
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	var savedQueries []api.SavedQuerySpecAndConfig
 	for rows.Next() {
 		var sq api.SavedQuerySpecAndConfig
-		if err := rows.Scan(&sq.Config.Key, &sq.Config.Description, &sq.Config.Query, &sq.Config.Notify, &sq.Config.NotifySlack, &sq.Config.OwnerKind, &sq.Config.UserID, &sq.Config.OrgID); err != nil {
+		if err := rows.Scan(&sq.Config.Key, &sq.Config.Description, &sq.Config.Query, &sq.Config.Notify, &sq.Config.NotifySlack, &sq.Config.OwnerKind, &sq.Config.UserID, &sq.Config.OrgID, &sq.Config.SlackWebhookURL); err != nil {
 			return nil, err
 		}
 		sq.Spec.Key = sq.Config.Key

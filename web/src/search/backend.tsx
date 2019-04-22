@@ -252,6 +252,7 @@ const savedQueryFragment = gql`
         ownerKind
         userID
         orgID
+        slackWebhookURL
     }
 `
 

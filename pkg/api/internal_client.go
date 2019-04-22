@@ -78,14 +78,15 @@ type SavedQueryIDSpec struct {
 // ConfigSavedQuery is the JSON shape of a saved query entry in the JSON configuration
 // (i.e., an entry in the {"search.savedQueries": [...]} array).
 type ConfigSavedQuery struct {
-	Key         string `json:"key,omitempty"`
-	Description string `json:"description"`
-	Query       string `json:"query"`
-	Notify      bool   `json:"notify,omitempty"`
-	NotifySlack bool   `json:"notifySlack,omitempty"`
-	OwnerKind   string
-	UserID      *int32
-	OrgID       *int32
+	Key             string `json:"key,omitempty"`
+	Description     string `json:"description"`
+	Query           string `json:"query"`
+	Notify          bool   `json:"notify,omitempty"`
+	NotifySlack     bool   `json:"notifySlack,omitempty"`
+	OwnerKind       string
+	UserID          *int32
+	OrgID           *int32
+	SlackWebhookURL *string
 }
 
 func (sq ConfigSavedQuery) Equals(other ConfigSavedQuery) bool {

@@ -25,6 +25,7 @@ export const SavedQueryUpdateForm: React.FunctionComponent<Props> = props => (
             ownerKind: props.savedQuery.ownerKind,
             userID: props.savedQuery.userID,
             orgID: props.savedQuery.orgID,
+            slackWebhookURL: props.savedQuery.slackWebhookURL,
         }}
         onDidCommit={props.onDidUpdate}
         onDidCancel={props.onDidCancel}
