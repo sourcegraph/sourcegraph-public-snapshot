@@ -195,7 +195,7 @@ func serveTestNotification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := slackNotify(context.Background(), recipient,
-			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(query.Config.Query, utmSourceSlack), query.Config.Description)); err != nil {
+			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(query.Config.Query, utmSourceSlack), query.Config.Description), query.Config.SlackWebhookURL); err != nil {
 			writeError(w, fmt.Errorf("error sending email notifications to %s: %s", recipient.spec, err))
 			return
 		}
