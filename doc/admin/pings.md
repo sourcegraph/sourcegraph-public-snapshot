@@ -15,3 +15,4 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 - Total count of existing user accounts
 - Aggregate counts of current daily, weekly, and monthly users
 - Aggregate counts of current users using code host integrations
+- Aggregate counts of current users by product feature (site management, code search and navigation, code review, saved searches, diff searches)

@@ -144,7 +144,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     hoverOverlayClassProps?: HoverOverlayClassProps
 
     /**
-     * Resolve `CodeView`s from the DOM.
+     * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
 

@@ -180,6 +180,12 @@ func TestSources_ListRepos(t *testing.T) {
 				}),
 			},
 			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					Host: "ssh://git@127.0.0.1:2222",
+				}),
+			},
+			{
 				Kind: "OTHER",
 				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
 					Url: "https://github.com",
@@ -411,13 +417,75 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:                   "https://github.com",
+					Token:                 os.Getenv("GITHUB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{nameWithOwner}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"tsenart/vegeta"},
+				}),
+			},
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:                   "https://gitlab.com",
+					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
+					ProjectQuery:          []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+					},
+				}),
+			},
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:                   "http://127.0.0.1:7990",
+					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"org/baz"},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "repositoryPathPattern determines the repo name",
+			svcs: svcs,
+			assert: func(t testing.TB, rs Repos) {
+				t.Helper()
+
+				have := rs.Names()
+				sort.Strings(have)
+
+				want := []string{
+					"127.0.0.1/a/b/c/ORG/baz",
+					"github.com/a/b/c/tsenart/vegeta",
+					"gitlab.com/a/b/c/gnachman/iterm2",
+				}
+
+				if !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			obs := ObservedSource(log15.Root(), NewSourceMetrics())
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			obs := ObservedSource(lg, NewSourceMetrics())
 			srcs, err := NewSourcer(cf, obs)(tc.svcs...)
 			if err != nil {
 				t.Fatal(err)
@@ -445,6 +513,7 @@ func newClientFactory(t testing.TB, name string) (httpcli.Factory, func(testing.
 	rec := newRecorder(t, cassete, *update)
 	mw := httpcli.NewMiddleware(
 		githubProxyRedirectMiddleware,
+		gitserverRedirectMiddleware,
 	)
 	return httpcli.NewFactory(mw, newRecorderOpt(t, rec)),
 		func(t testing.TB) { save(t, rec) }
@@ -455,6 +524,17 @@ func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
 		if req.URL.Hostname() == "github-proxy" {
 			req.URL.Host = "api.github.com"
 			req.URL.Scheme = "https"
+		}
+		return cli.Do(req)
+	})
+}
+
+func gitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
+	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Hostname() == "gitserver" {
+			// Start local git server first
+			req.URL.Host = "127.0.0.1:3178"
+			req.URL.Scheme = "http"
 		}
 		return cli.Do(req)
 	})
