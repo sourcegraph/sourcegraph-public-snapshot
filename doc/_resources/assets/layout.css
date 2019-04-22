@@ -781,10 +781,20 @@ li.content-nav-no-hover:hover {
     .page-nav-wrapper {
         z-index: 99;
         display: block;
-        height: 100%;
+        /**
+         * height: 100%;
+         * FIXME
+         *
+         * Disabled because when the height is 100%, it also covers the
+         * content section, so while the content remains visible, it is
+         * unable to be interacted width.
+         *
+         * Setting the height to 125px is sufficient for the breadcrumb
+         * nav to still work.
+         */
+        height: 125px;
         width: auto;
         position: absolute;
-        /* top: 132px; */
         left: 1rem;
         right: 1rem;
     }
