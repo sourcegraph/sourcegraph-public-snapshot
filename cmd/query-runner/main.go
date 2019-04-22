@@ -103,7 +103,6 @@ func (e *executorT) run(ctx context.Context) error {
 	// (impossible for new results to exist).
 	var oldList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig
 	for {
-		// allSavedQueries := allSavedQueries.get()
 		allSavedQueries, err := api.InternalClient.SavedQueriesListAll(context.Background())
 		if err != nil {
 			log15.Error("executor: error fetching saved queries list (trying again in 5s", "error", err)

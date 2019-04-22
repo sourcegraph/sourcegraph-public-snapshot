@@ -2,7 +2,10 @@ package db
 
 import (
 	"context"
+	"errors"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -45,9 +48,13 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	return savedQueries, nil
 }
 
-func (s *savedSearches) Create(ctx context.Context, description string, query string, notify bool, notifySlack bool, ownerKind string, userID *int32, orgID *int32) (savedQuery *api.ConfigSavedQuery, err error) {
+func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *api.ConfigSavedQuery, err error) {
 	if Mocks.SavedSearches.Create != nil {
-		return Mocks.SavedSearches.Create(ctx, description, query, notify, notifySlack, ownerKind, userID, orgID)
+		return Mocks.SavedSearches.Create(ctx, newSavedSearch)
+	}
+
+	if newSavedSearch.ID != "" {
+		return nil, errors.New("newSavedSearch.ID must be empty string")
 	}
 
 	tr, ctx := trace.New(ctx, "db.SavedSearches.Create", "")
@@ -57,24 +64,24 @@ func (s *savedSearches) Create(ctx context.Context, description string, query st
 	}()
 
 	savedQuery = &api.ConfigSavedQuery{
-		Description: description,
-		Query:       query,
-		Notify:      notify,
-		NotifySlack: notifySlack,
-		OwnerKind:   ownerKind,
-		UserID:      userID,
-		OrgID:       orgID,
+		Description: newSavedSearch.Description,
+		Query:       newSavedSearch.Query,
+		Notify:      newSavedSearch.Notify,
+		NotifySlack: newSavedSearch.NotifySlack,
+		OwnerKind:   newSavedSearch.OwnerKind,
+		UserID:      newSavedSearch.UserID,
+		OrgID:       newSavedSearch.OrgID,
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx, `INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id, org_id) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`, description, query, notify, notifySlack, strings.ToLower(ownerKind), userID, orgID).Scan(&savedQuery.Key); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, `INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id, org_id) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`, newSavedSearch.Description, newSavedSearch.Query, newSavedSearch.Notify, newSavedSearch.NotifySlack, strings.ToLower(newSavedSearch.OwnerKind), newSavedSearch.UserID, newSavedSearch.OrgID).Scan(&savedQuery.Key); err != nil {
 		return nil, err
 	}
 	return savedQuery, nil
 }
 
-func (s *savedSearches) Update(ctx context.Context, id string, description string, query string, notify bool, notifySlack bool, ownerKind string, userID *int32, orgID *int32) (savedQuery *api.ConfigSavedQuery, err error) {
+func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *api.ConfigSavedQuery, err error) {
 	if Mocks.SavedSearches.Update != nil {
-		return Mocks.SavedSearches.Update(ctx, id, description, query, notify, notifySlack, ownerKind, userID, orgID)
+		return Mocks.SavedSearches.Update(ctx, savedSearch)
 	}
 
 	tr, ctx := trace.New(ctx, "db.SavedSearches.Update", "")
@@ -84,27 +91,27 @@ func (s *savedSearches) Update(ctx context.Context, id string, description strin
 	}()
 
 	savedQuery = &api.ConfigSavedQuery{
-		Description: description,
-		Query:       query,
-		Notify:      notify,
-		NotifySlack: notifySlack,
-		OwnerKind:   ownerKind,
-		UserID:      userID,
-		OrgID:       orgID,
+		Description: savedSearch.Description,
+		Query:       savedSearch.Query,
+		Notify:      savedSearch.Notify,
+		NotifySlack: savedSearch.NotifySlack,
+		OwnerKind:   savedSearch.OwnerKind,
+		UserID:      savedSearch.UserID,
+		OrgID:       savedSearch.OrgID,
 	}
 
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"),
-		sqlf.Sprintf("description=%s", description),
-		sqlf.Sprintf("query=%s", query),
-		sqlf.Sprintf("notify_owner=%t", notify),
-		sqlf.Sprintf("notify_slack=%t", notifySlack),
-		sqlf.Sprintf("owner_kind=%s", strings.ToLower(ownerKind)),
-		sqlf.Sprintf("user_id=%v", userID),
-		sqlf.Sprintf("org_id=%v", orgID),
+		sqlf.Sprintf("description=%s", savedSearch.Description),
+		sqlf.Sprintf("query=%s", savedSearch.Query),
+		sqlf.Sprintf("notify_owner=%t", savedSearch.Notify),
+		sqlf.Sprintf("notify_slack=%t", savedSearch.NotifySlack),
+		sqlf.Sprintf("owner_kind=%s", strings.ToLower(savedSearch.OwnerKind)),
+		sqlf.Sprintf("user_id=%v", savedSearch.UserID),
+		sqlf.Sprintf("org_id=%v", savedSearch.OrgID),
 	}
 
-	updateQuery := sqlf.Sprintf(`UPDATE saved_searches SET %s WHERE ID=%v RETURNING id`, sqlf.Join(fieldUpdates, ", "), id)
+	updateQuery := sqlf.Sprintf(`UPDATE saved_searches SET %s WHERE ID=%v RETURNING id`, sqlf.Join(fieldUpdates, ", "), savedSearch.ID)
 	if err := dbconn.Global.QueryRowContext(ctx, updateQuery.Query(sqlf.PostgresBindVar), updateQuery.Args()...).Scan(&savedQuery.Key); err != nil {
 		return nil, err
 	}

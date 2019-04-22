@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS "saved_searches" (
     "notify_slack" boolean,
     "owner_kind" user_or_org NOT NULL,
     "user_id" integer REFERENCES users (id),
-    "org_id" integer REFERENCES orgs (id)
+    "org_id" integer REFERENCES orgs (id),
+    "slack_webhook_url" text
 );
 
 
