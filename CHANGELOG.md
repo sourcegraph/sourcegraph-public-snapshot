@@ -15,6 +15,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+## 3.3.1
+
+### Fixed
+
 - Fixed a bug that prevented external service configurations specifying client certificates from working (#3523)
 
 ## 3.3.0
