@@ -451,7 +451,7 @@ a:active .current-branch {
     max-height: calc(100vh - 70px);
     top: 70px;
     padding-top: 4px;
-    /* overflow-scrolling: touch; */
+    overflow-scrolling: touch;
 }
 
 .content-nav-section {
