@@ -4,9 +4,9 @@
     <head>
         <title>{{with .Content}}{{.Doc.Title}}
             {{else}}Error{{end}} - Sourcegraph docs</title>
-        <link rel="stylesheet" href="{{asset "sourcegraph.css"}}?7" />
-        <link rel="stylesheet" href="{{asset "layout.css"}}?7" />
-        <link rel="stylesheet" href="{{asset "content.css"}}?4" />
+        <link rel="stylesheet" href="{{asset "sourcegraph.css"}}?8" />
+        <link rel="stylesheet" href="{{asset "layout.css"}}?8" />
+        <link rel="stylesheet" href="{{asset "content.css"}}?5" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
         {{if (or (not .Content) .ContentVersion)}}
         <meta name="robots" content="noindex">{{end}}
@@ -109,7 +109,6 @@
                                 <li><a href="/user/themes">Color themes</a></li>
                                 <li><a href="/user/organizations">Organizations</a></li>
                                 <li><a href="/user/repository">Repositories</a></li>
-                                <li><a href="/user/dotgo-eu-2019">Sourcegraph @ dotGo EU 2019</a></li>
                                 <li><a href="/user/tour">Sourcegraph tour</a></li>
                                 <li><a href="/user/markdown">Sourcegraph-flavored Markdown</a></li>
                                 <li><a href="/user/usage_statistics">Usage statistics</a></li>
@@ -508,7 +507,7 @@
                 </footer>
             </div>
         </div>
-        <script src="{{asset "docs.js"}}"></script>
+        <script src="{{asset "docs.js"}}?1"></script>
         {{with .Content}}
         <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
         {{else}}
