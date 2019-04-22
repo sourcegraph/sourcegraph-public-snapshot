@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/uber/gonduit"
 	"github.com/uber/gonduit/core"
+	"github.com/uber/gonduit/requests"
 )
 
 // A Client provides high level methods to a Phabricator Conduit API.
@@ -29,37 +30,23 @@ func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Clien
 		return nil, err
 	}
 
-	return &Client{conn: conn}, conn.ConnectContext(ctx)
+	return &Client{conn: conn}, nil
 }
 
 type getRawDiffRequest struct {
+	requests.Request
 	DiffID int `json:"diffID"`
 }
 
-type getRawDiffResponse struct {
-	Diff         *string `json:"result"`
-	ErrorCode    *string `json:"error_code"`
-	ErrorMessage *string `json:"error_info"`
-}
-
-func (c *Client) GetRawDiff(ctx context.Context, diffID int) (string, error) {
+func (c *Client) GetRawDiff(ctx context.Context, diffID int) (diff string, err error) {
 	req := getRawDiffRequest{DiffID: diffID}
 
-	var res getRawDiffResponse
-	err := c.conn.CallContext(ctx, "differential.getrawdiff", &req, &res)
+	err = c.conn.CallContext(ctx, "differential.getrawdiff", &req, &diff)
 	if err != nil {
 		return "", err
 	}
 
-	if res.ErrorMessage != nil {
-		return "", errors.Errorf("phabricator error: %s %s", *res.ErrorCode, *res.ErrorMessage)
-	}
-
-	if res.Diff == nil {
-		return "", errors.New("phabricator differential.getrawdiff is null")
-	}
-
-	return *res.Diff, nil
+	return diff, nil
 }
 
 // DiffInfo contains information for a diff such as the author

@@ -22,7 +22,7 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 
 	filters = append(filters, func(i *cassette.Interaction) error {
 		delete(i.Request.Headers, "Authorization")
-		delete(i.Request.Headers, "Set-Cookie")
+		delete(i.Response.Headers, "Set-Cookie")
 		return nil
 	})
 
