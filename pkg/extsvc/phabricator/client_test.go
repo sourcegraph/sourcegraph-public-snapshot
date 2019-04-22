@@ -7,12 +7,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -64,7 +66,7 @@ func TestClient_GetRawDiff(t *testing.T) {
 				return
 			}
 
-			path := "testdata/golden/get-raw-diff-" + strconv.Itoa(tc.id)
+			path := "testdata/golden/GetRawDiff-" + strconv.Itoa(tc.id)
 			if *update {
 				if err = ioutil.WriteFile(path, []byte(diff), 0640); err != nil {
 					t.Fatalf("failed to update golden file %q: %s", path, err)
@@ -80,6 +82,59 @@ func TestClient_GetRawDiff(t *testing.T) {
 				dmp := diffmatchpatch.New()
 				diffs := dmp.DiffMain(have, want, false)
 				t.Error(dmp.DiffPrettyText(diffs))
+			}
+		})
+	}
+}
+
+func TestClient_GetDiffInfo(t *testing.T) {
+	cli, save := newClient(t, "GetDiffInfo")
+	defer save()
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	for _, tc := range []struct {
+		name string
+		ctx  context.Context
+		id   int
+		info *phabricator.DiffInfo
+		err  string
+	}{{
+		name: "diff not found",
+		id:   0xdeadbeef,
+		err:  "phabricator error: no diff info found for diff 3735928559",
+	}, {
+		name: "diff info found",
+		id:   20455,
+		info: &phabricator.DiffInfo{
+			AuthorName:  "epriestley",
+			AuthorEmail: "git@epriestley.com",
+			DateCreated: "1395874084",
+			Date:        time.Unix(1395874084, 0),
+		},
+	}, {
+		name: "timeout",
+		ctx:  timeout,
+		err:  "Post https://secure.phabricator.com/api/differential.querydiffs: context deadline exceeded",
+	}} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			info, err := cli.GetDiffInfo(tc.ctx, tc.id)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if have, want := info, tc.info; !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
 			}
 		})
 	}

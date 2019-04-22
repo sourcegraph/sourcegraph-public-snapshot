@@ -33,14 +33,13 @@ func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Clien
 	return &Client{conn: conn}, nil
 }
 
-type getRawDiffRequest struct {
-	requests.Request
-	DiffID int `json:"diffID"`
-}
-
 func (c *Client) GetRawDiff(ctx context.Context, diffID int) (diff string, err error) {
-	req := getRawDiffRequest{DiffID: diffID}
+	type request struct {
+		requests.Request
+		DiffID int `json:"diffID"`
+	}
 
+	req := request{DiffID: diffID}
 	err = c.conn.CallContext(ctx, "differential.getrawdiff", &req, &diff)
 	if err != nil {
 		return "", err
@@ -58,36 +57,21 @@ type DiffInfo struct {
 	Date        time.Time `json:"omitempty"`
 }
 
-type getDiffInfoRequest struct {
-	IDs []int `json:"ids"`
-}
-
-type getDiffInfoResponse struct {
-	// Infos is a map of string(diffID) -> DiffInfo
-	// See this page for more information https://phabricator.sgdev.org/conduit/method/differential.querydiffs/
-	Infos        *map[string]DiffInfo `json:"result"`
-	ErrorCode    *string              `json:"error_code"`
-	ErrorMessage *string              `json:"error_info"`
-}
-
 func (c *Client) GetDiffInfo(ctx context.Context, diffID int) (*DiffInfo, error) {
-	req := getDiffInfoRequest{IDs: []int{diffID}}
+	type request struct {
+		requests.Request
+		IDs []int `json:"ids"`
+	}
 
-	var res getDiffInfoResponse
+	req := request{IDs: []int{diffID}}
+
+	var res map[string]*DiffInfo
 	err := c.conn.CallContext(ctx, "differential.querydiffs", &req, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	if res.ErrorMessage != nil {
-		return nil, errors.Errorf("phabricator error: %s %s", *res.ErrorCode, *res.ErrorMessage)
-	}
-
-	if res.Infos == nil {
-		return nil, errors.Errorf("phabricator error: no result for diff %d", diffID)
-	}
-
-	info, ok := (*res.Infos)[strconv.Itoa(diffID)]
+	info, ok := res[strconv.Itoa(diffID)]
 	if !ok {
 		return nil, errors.Errorf("phabricator error: no diff info found for diff %d", diffID)
 	}
@@ -99,11 +83,11 @@ func (c *Client) GetDiffInfo(ctx context.Context, diffID int) (*DiffInfo, error)
 
 	info.Date = *date
 
-	return &info, nil
+	return info, nil
 }
 
 func ParseDate(secStr string) (*time.Time, error) {
-	seconds, err := strconv.ParseInt("1524682853", 10, 64)
+	seconds, err := strconv.ParseInt(secStr, 10, 64)
 	if err != nil {
 		return nil, errors.Wrap(err, "phabricator: could not parse date")
 	}
