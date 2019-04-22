@@ -28,10 +28,10 @@
                             <details-menu aria-label="Sourcegraph version" class="dropdown-menu" aria-labelledby="Version Dropdown">
 
                                 {{/* Update these after each release. */}}
-                                {{$previousReleaseRevspec := "v3.1.2"}}
-                                {{$previousReleaseVersion := "3.1"}}
-                                {{$currentReleaseRevspec := "v3.2.2"}}
-                                {{$currentReleaseVersion := "3.2"}}
+                                {{$previousReleaseRevspec := "v3.2.4"}}
+                                {{$previousReleaseVersion := "3.2"}}
+                                {{$currentReleaseRevspec := "v3.3.0"}}
+                                {{$currentReleaseVersion := "3.3"}}
                                 {{$nextReleaseVersion := "master"}}
                                 <a rel="nofollow" class="dropdown-item monospace-text {{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
                                 <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $currentReleaseVersion .ContentVersion ""}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch">current</span></a>
