@@ -1,7 +1,6 @@
 import * as comlink from '@sourcegraph/comlink'
-import { from, Observable } from 'rxjs'
-import { first, take } from 'rxjs/operators'
-import { ProxySubscribable } from '../../extension/api/common'
+import { Observable, Subscribable } from 'rxjs'
+import { first } from 'rxjs/operators'
 import { createBarrier } from '../../integration-test/testHelpers'
 import { wrapRemoteObservable } from './common'
 
@@ -30,7 +29,7 @@ describe('wrapRemoteObservable', () => {
             const wrapper = new MessageChannel()
             comlink.expose(() => observable, wrapper.port1)
 
-            const remoteGetObservable = comlink.wrap<() => ProxySubscribable<number>>(wrapper.port2)
+            const remoteGetObservable = comlink.wrap<() => Subscribable<number>>(wrapper.port2)
             const getObservable = () => wrapRemoteObservable<number>(remoteGetObservable())
 
             const sub = getObservable()

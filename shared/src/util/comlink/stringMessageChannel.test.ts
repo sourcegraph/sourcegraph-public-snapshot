@@ -259,10 +259,11 @@ describe('wrapStringMessagePort', () => {
                         switchMap(() => getObservable()),
                         take(1),
                         tap(() => {
-                            // TODO!(sqs): why 3? not 2?
+                            // Expect 3 listeners because we started with 1, then the Observable
+                            // value and subscription each add 1.
                             expect(wrapper.port1ListenerCount).toBe(3)
                             expect(wrapper.port2ListenerCount).toBe(3)
-                        })
+                        }),
                         toArray()
                     )
                     .toPromise()
