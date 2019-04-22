@@ -22,10 +22,10 @@ import { enterpriseRoutes } from './routes'
 import { enterpriseSiteAdminOverviewComponents } from './site-admin/overviewComponents'
 import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
 import { enterpriseSiteAdminSidebarGroups } from './site-admin/sidebaritems'
-import { enterpriseUserAccountAreaRoutes } from './user/account/routes'
-import { enterpriseUserAccountSideBarItems } from './user/account/sidebaritems'
 import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
 import { enterpriseUserAreaRoutes } from './user/routes'
+import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
+import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
 
 window.addEventListener('DOMContentLoaded', () => {
     render(
@@ -40,8 +40,8 @@ window.addEventListener('DOMContentLoaded', () => {
             siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
             userAreaHeaderNavItems={enterpriseUserAreaHeaderNavItems}
             userAreaRoutes={enterpriseUserAreaRoutes}
-            userAccountSideBarItems={enterpriseUserAccountSideBarItems}
-            userAccountAreaRoutes={enterpriseUserAccountAreaRoutes}
+            userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
+            userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
             repoRevContainerRoutes={enterpriseRepoRevContainerRoutes}
             repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
             routes={enterpriseRoutes}

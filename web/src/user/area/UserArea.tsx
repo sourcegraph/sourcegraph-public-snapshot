@@ -17,8 +17,8 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
-import { UserAccountAreaRoute } from '../account/UserAccountArea'
-import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
+import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
@@ -61,7 +61,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
     )
 
 const NotFoundPage = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
@@ -74,8 +74,8 @@ interface UserAreaProps
         ActivationProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
 
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
@@ -96,7 +96,7 @@ interface UserAreaState {
  * Properties passed to all page components in the user area.
  */
 export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ThemeProps, ActivationProps {
-    /** The extension registry area main URL. */
+    /** The user area main URL. */
     url: string
 
     /**
@@ -114,8 +114,8 @@ export interface UserAreaRouteContext extends PlatformContextProps, SettingsCasc
      * user is Bob.
      */
     authenticatedUser: GQL.IUser | null
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
 }
 
 /**
@@ -186,8 +186,8 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             activation: this.props.activation,
-            userAccountAreaRoutes: this.props.userAccountAreaRoutes,
-            userAccountSideBarItems: this.props.userAccountSideBarItems,
+            userSettingsAreaRoutes: this.props.userSettingsAreaRoutes,
+            userSettingsSideBarItems: this.props.userSettingsSideBarItems,
         }
         return (
             <div className="user-area area--vertical">

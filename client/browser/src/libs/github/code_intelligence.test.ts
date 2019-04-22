@@ -13,10 +13,12 @@ describe('github/code_intelligence', () => {
                             for (const view of ['split', 'unified']) {
                                 describe(`${startCase(view)} view`, () => {
                                     const directory = `${__dirname}/__fixtures__/${version}/${page}/${extension}/${view}`
-                                    describe('githubCodeHost', () => {
-                                        const fixturePath = `${directory}/page.html`
-                                        testCodeHostMountGetters(githubCodeHost, fixturePath)
-                                    })
+                                    const fixturePath = `${directory}/page.html`
+                                    if (existsSync(fixturePath)) {
+                                        describe('githubCodeHost', () => {
+                                            testCodeHostMountGetters(githubCodeHost, fixturePath)
+                                        })
+                                    }
                                     const codeViewFixturePath = `${directory}/code-view.html`
                                     if (existsSync(codeViewFixturePath)) {
                                         describe('createCodeViewToolbarMount()', () => {

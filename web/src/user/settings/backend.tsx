@@ -3,58 +3,115 @@ import { map } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../backend/graphql'
+import { mutateGraphQL } from '../../backend/graphql'
+import { eventLogger } from '../../tracking/eventLogger'
 
-const settingsCascadeFragment = gql`
-    fragment SettingsCascadeFields on SettingsCascade {
-        subjects {
-            __typename
-            ... on Org {
-                id
-                name
-                displayName
-            }
-            ... on User {
-                id
-                username
-                displayName
-            }
-            ... on Site {
-                id
-                siteID
-            }
-            latestSettings {
-                id
-                contents
-            }
-            settingsURL
-            viewerCanAdminister
-        }
-        final
-    }
-`
+interface UpdateUserOptions {
+    username: string | null
+    /** The user's display name */
+    displayName: string | null
+    /** The user's avatar URL */
+    avatarURL: string | null
+}
 
 /**
- * Fetches the viewer's settings from the server. Callers should use settingsRefreshes#next instead of calling
- * this function, to ensure that the result is propagated consistently throughout the app instead of only being
- * returned to the caller.
- *
- * @return Observable that emits the settings
+ * Sends a GraphQL mutation to update a user's profile
  */
-export function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
-    return queryGraphQL(gql`
-        query ViewerSettings {
-            viewerSettings {
-                ...SettingsCascadeFields
+export function updateUser(user: GQL.ID, args: UpdateUserOptions): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation updateUser($user: ID!, $username: String, $displayName: String, $avatarURL: String) {
+                updateUser(user: $user, username: $username, displayName: $displayName, avatarURL: $avatarURL) {
+                    alwaysNil
+                }
             }
-        }
-        ${settingsCascadeFragment}
-    `).pipe(
+        `,
+        { ...args, user }
+    ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.viewerSettings) {
+            if (!data || !data.updateUser) {
+                eventLogger.log('UpdateUserFailed')
                 throw createAggregateError(errors)
             }
-            return data.viewerSettings
+            eventLogger.log('UserProfileUpdated')
         })
     )
+}
+
+export function updatePassword(args: { oldPassword: string; newPassword: string }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation updatePassword($oldPassword: String!, $newPassword: String!) {
+                updatePassword(oldPassword: $oldPassword, newPassword: $newPassword) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.updatePassword) {
+                eventLogger.log('UpdatePasswordFailed')
+                throw createAggregateError(errors)
+            }
+            eventLogger.log('PasswordUpdated')
+        })
+    )
+}
+
+/**
+ * Set the verification state for a user email address.
+ *
+ * @param user the user's GraphQL ID
+ * @param email the email address to edit
+ * @param verified the new verification state for the user email
+ */
+export function setUserEmailVerified(user: GQL.ID, email: string, verified: boolean): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+                setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+                    alwaysNil
+                }
+            }
+        `,
+        { user, email, verified }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+        })
+    )
+}
+
+/**
+ * Log a user action (used to allow site admins on a Sourcegraph instance
+ * to see a count of unique users on a daily, weekly, and monthly basis).
+ *
+ * Not used at all for public/sourcegraph.com usage.
+ */
+export function logUserEvent(event: GQL.UserEvent): void {
+    if (window.context && window.context.sourcegraphDotComMode) {
+        return
+    }
+    mutateGraphQL(
+        gql`
+            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
+                logUserEvent(event: $event, userCookieID: $userCookieID) {
+                    alwaysNil
+                }
+            }
+        `,
+        { event, userCookieID: eventLogger.getAnonUserID() }
+    )
+        .pipe(
+            map(({ data, errors }) => {
+                if (!data || (errors && errors.length > 0)) {
+                    throw createAggregateError(errors)
+                }
+                return
+            })
+        )
+        .subscribe()
 }

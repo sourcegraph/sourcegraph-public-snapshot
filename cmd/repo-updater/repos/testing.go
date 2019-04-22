@@ -46,6 +46,11 @@ func (s FakeSource) ListRepos(context.Context) ([]*Repo, error) {
 	return repos, s.err
 }
 
+// ExternalServices returns a singleton slice containing the external service.
+func (s FakeSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
 // FakeStore is a fake implementation of Store to be used in tests.
 type FakeStore struct {
 	ListExternalServicesError   error // error to be returned in ListExternalServices

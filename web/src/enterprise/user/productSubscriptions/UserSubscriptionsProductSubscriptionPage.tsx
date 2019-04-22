@@ -99,85 +99,80 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                         Error: {this.state.productSubscriptionOrError.message}
                     </div>
                 ) : (
-                    <div className="row">
-                        <div className="col-md-9">
-                            <h2>Subscription {this.state.productSubscriptionOrError.name}</h2>
-                            {(this.state.productSubscriptionOrError.invoiceItem ||
-                                (this.state.productSubscriptionOrError.activeLicense &&
-                                    this.state.productSubscriptionOrError.activeLicense.info)) && (
-                                <UserProductSubscriptionStatus
-                                    subscriptionName={this.state.productSubscriptionOrError.name}
-                                    productNameWithBrand={
-                                        this.state.productSubscriptionOrError.activeLicense &&
-                                        this.state.productSubscriptionOrError.activeLicense.info
-                                            ? this.state.productSubscriptionOrError.activeLicense.info
-                                                  .productNameWithBrand
-                                            : this.state.productSubscriptionOrError.invoiceItem!.plan.nameWithBrand
-                                    }
-                                    userCount={
-                                        this.state.productSubscriptionOrError.activeLicense &&
-                                        this.state.productSubscriptionOrError.activeLicense.info
-                                            ? this.state.productSubscriptionOrError.activeLicense.info.userCount
-                                            : this.state.productSubscriptionOrError.invoiceItem!.userCount
-                                    }
-                                    expiresAt={
-                                        this.state.productSubscriptionOrError.activeLicense &&
-                                        this.state.productSubscriptionOrError.activeLicense.info
-                                            ? this.state.productSubscriptionOrError.activeLicense.info.expiresAt
-                                            : this.state.productSubscriptionOrError.invoiceItem!.expiresAt
-                                    }
-                                    licenseKey={
-                                        this.state.productSubscriptionOrError.activeLicense &&
-                                        this.state.productSubscriptionOrError.activeLicense.licenseKey
-                                    }
-                                />
-                            )}
-                            <div className="card mt-3">
-                                <div className="card-header">Billing</div>
-                                {this.state.productSubscriptionOrError.invoiceItem ? (
-                                    <>
-                                        <ProductSubscriptionBilling
-                                            productSubscription={this.state.productSubscriptionOrError}
-                                        />
-                                        <div className="card-footer">
-                                            <a
-                                                href={mailtoSales({
-                                                    subject: `Change payment method for subscription ${
-                                                        this.state.productSubscriptionOrError.name
-                                                    }`,
-                                                })}
-                                            >
-                                                Contact sales
-                                            </a>{' '}
-                                            to change your payment method.
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="card-body">
-                                        <span className="text-muted ">
-                                            No billing information is associated with this subscription.{' '}
-                                            <a
-                                                href={mailtoSales({
-                                                    subject: `Billing for subscription ${
-                                                        this.state.productSubscriptionOrError.name
-                                                    }`,
-                                                })}
-                                            >
-                                                Contact sales
-                                            </a>{' '}
-                                            for help.
-                                        </span>
+                    <>
+                        <h2>Subscription {this.state.productSubscriptionOrError.name}</h2>
+                        {(this.state.productSubscriptionOrError.invoiceItem ||
+                            (this.state.productSubscriptionOrError.activeLicense &&
+                                this.state.productSubscriptionOrError.activeLicense.info)) && (
+                            <UserProductSubscriptionStatus
+                                subscriptionName={this.state.productSubscriptionOrError.name}
+                                productNameWithBrand={
+                                    this.state.productSubscriptionOrError.activeLicense &&
+                                    this.state.productSubscriptionOrError.activeLicense.info
+                                        ? this.state.productSubscriptionOrError.activeLicense.info.productNameWithBrand
+                                        : this.state.productSubscriptionOrError.invoiceItem!.plan.nameWithBrand
+                                }
+                                userCount={
+                                    this.state.productSubscriptionOrError.activeLicense &&
+                                    this.state.productSubscriptionOrError.activeLicense.info
+                                        ? this.state.productSubscriptionOrError.activeLicense.info.userCount
+                                        : this.state.productSubscriptionOrError.invoiceItem!.userCount
+                                }
+                                expiresAt={
+                                    this.state.productSubscriptionOrError.activeLicense &&
+                                    this.state.productSubscriptionOrError.activeLicense.info
+                                        ? this.state.productSubscriptionOrError.activeLicense.info.expiresAt
+                                        : this.state.productSubscriptionOrError.invoiceItem!.expiresAt
+                                }
+                                licenseKey={
+                                    this.state.productSubscriptionOrError.activeLicense &&
+                                    this.state.productSubscriptionOrError.activeLicense.licenseKey
+                                }
+                            />
+                        )}
+                        <div className="card mt-3">
+                            <div className="card-header">Billing</div>
+                            {this.state.productSubscriptionOrError.invoiceItem ? (
+                                <>
+                                    <ProductSubscriptionBilling
+                                        productSubscription={this.state.productSubscriptionOrError}
+                                    />
+                                    <div className="card-footer">
+                                        <a
+                                            href={mailtoSales({
+                                                subject: `Change payment method for subscription ${
+                                                    this.state.productSubscriptionOrError.name
+                                                }`,
+                                            })}
+                                        >
+                                            Contact sales
+                                        </a>{' '}
+                                        to change your payment method.
                                     </div>
-                                )}
-                            </div>
-                            <div className="card mt-3">
-                                <div className="card-header">History</div>
-                                <ProductSubscriptionHistory
-                                    productSubscription={this.state.productSubscriptionOrError}
-                                />
-                            </div>
+                                </>
+                            ) : (
+                                <div className="card-body">
+                                    <span className="text-muted ">
+                                        No billing information is associated with this subscription.{' '}
+                                        <a
+                                            href={mailtoSales({
+                                                subject: `Billing for subscription ${
+                                                    this.state.productSubscriptionOrError.name
+                                                }`,
+                                            })}
+                                        >
+                                            Contact sales
+                                        </a>{' '}
+                                        for help.
+                                    </span>
+                                </div>
+                            )}
                         </div>
-                    </div>
+                        <div className="card mt-3">
+                            <div className="card-header">History</div>
+                            <ProductSubscriptionHistory productSubscription={this.state.productSubscriptionOrError} />
+                        </div>
+                    </>
                 )}
             </div>
         )

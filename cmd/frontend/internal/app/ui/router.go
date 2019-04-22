@@ -65,6 +65,8 @@ const (
 	routeHelp           = "help"
 	routeExplore        = "explore"
 	routeWelcome        = "welcome"
+	routeSnippets       = "snippets"
+	routeSubscriptions  = "subscriptions"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -138,6 +140,8 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
 	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
 	r.PathPrefix("/explore").Methods("GET").Name(routeExplore)
+	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
+	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -213,6 +217,8 @@ func initRouter() {
 	router.Get(routeExtensions).Handler(handler(serveBasicPageString("Extensions - Sourcegraph")))
 	router.Get(routeExplore).Handler(handler(serveBasicPageString("Explore - Sourcegraph")))
 	router.Get(routeHelp).HandlerFunc(serveHelp)
+	router.Get(routeSnippets).Handler(handler(serveBasicPageString("Snippets - Sourcegraph")))
+	router.Get(routeSubscriptions).Handler(handler(serveBasicPageString("Subscriptions - Sourcegraph")))
 
 	router.Get(routeUserSettings).Handler(handler(serveBasicPageString("User settings - Sourcegraph")))
 	router.Get(routeUserRedirect).Handler(handler(serveBasicPageString("User - Sourcegraph")))

@@ -2,8 +2,8 @@ import { of, Subject } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { MutationRecordLike } from '../../shared/util/dom'
-import { CodeViewSpecWithOutSelector, FileInfo } from './code_intelligence'
-import { trackCodeViews } from './code_views'
+import { FileInfo } from './code_intelligence'
+import { CodeViewSpecResolver, trackCodeViews } from './code_views'
 
 describe('code_views', () => {
     beforeEach(() => {
@@ -15,7 +15,7 @@ describe('code_views', () => {
             filePath: '/bar.ts',
             commitID: '1',
         }
-        const codeViewSpec: CodeViewSpecWithOutSelector = {
+        const codeViewSpec: CodeViewSpecResolver = {
             dom: {
                 getCodeElementFromTarget: () => null,
                 getCodeElementFromLineNumber: () => null,
@@ -43,7 +43,7 @@ describe('code_views', () => {
             element.className = 'test-code-view'
             document.body.append(element)
             const selector = '.test-code-view'
-            const codeViewSpecResolver = { selector, resolveCodeViewSpec: sinon.spy(() => codeViewSpec) }
+            const codeViewSpecResolver = { selector, resolveView: sinon.spy(() => codeViewSpec) }
             const detected = await of([{ addedNodes: [document.body], removedNodes: [] }])
                 .pipe(
                     trackCodeViews({ codeViewSpecResolver }),
@@ -51,8 +51,8 @@ describe('code_views', () => {
                 )
                 .toPromise()
             expect(detected).toEqual([{ ...codeViewSpec, element, type: 'added' }])
-            sinon.assert.calledOnce(codeViewSpecResolver.resolveCodeViewSpec)
-            sinon.assert.calledWith(codeViewSpecResolver.resolveCodeViewSpec, element)
+            sinon.assert.calledOnce(codeViewSpecResolver.resolveView)
+            sinon.assert.calledWith(codeViewSpecResolver.resolveView, element)
         })
         it('should detect an added code view if it is the added element itself', async () => {
             const element = document.createElement('div')

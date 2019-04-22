@@ -206,7 +206,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                 <div className="form-group mt-3">
                                     <Link
                                         to={`/sign-up?returnTo=${encodeURIComponent(
-                                            `/user/subscriptions/new${productSubscriptionInputForLocationHash(
+                                            `/subscriptions/new${productSubscriptionInputForLocationHash(
                                                 productSubscriptionInput
                                             )}`
                                         )}`}

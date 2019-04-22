@@ -47,6 +47,7 @@ export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps {
 }
 
 interface Props extends SettingsAreaPageCommonProps, RouteComponentProps<{}> {
+    className?: string
     extraHeader?: JSX.Element
 }
 
@@ -144,7 +145,7 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         return (
-            <div className="mt-3">
+            <div className={`h-100 d-flex flex-column ${this.props.className || ''}`}>
                 <h2>{term} settings</h2>
                 {this.props.extraHeader}
                 <Switch>

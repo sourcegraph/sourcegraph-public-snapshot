@@ -40,6 +40,7 @@ const (
 	ReposListEnabled       = "internal.repos.list-enabled"
 	ReposUpdateMetadata    = "internal.repos.update-metadata"
 	Configuration          = "internal.configuration"
+	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
 	ExternalServicesList   = "internal.external-services.list"
 )
@@ -104,6 +105,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
+	base.Path("/search/configuration").Methods("GET").Name(SearchConfiguration)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)

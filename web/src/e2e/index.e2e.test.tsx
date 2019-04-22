@@ -191,6 +191,7 @@ describe('e2e test suite', function(this: any): void {
             method: 'keyboard',
         })
         await page.click('.e2e-add-external-service-button')
+        await page.waitForNavigation()
 
         if (ensureRepos) {
             // Wait for repositories to sync.

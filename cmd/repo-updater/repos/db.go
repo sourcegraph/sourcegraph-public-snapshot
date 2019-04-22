@@ -6,7 +6,6 @@ import (
 	"database/sql/driver"
 	"net/url"
 	"os"
-	"os/user"
 	"strconv"
 	"time"
 
@@ -32,60 +31,6 @@ type Tx interface {
 // A TxBeginner captures BeginTx method of a sql.DB
 type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
-}
-
-// NewDSN returns a default DSN overriden with PGXXX environment variables.
-func NewDSN() *url.URL {
-	u := DefaultDSN()
-	UpdateDSNFromEnv(u)
-	return u
-}
-
-// DefaultDSN returns the default DSN used by repo updater.
-func DefaultDSN() *url.URL {
-	username := "postgres"
-
-	user, err := user.Current()
-	if err == nil {
-		username = user.Username
-	}
-
-	return &url.URL{
-		Scheme:   "postgres",
-		User:     url.User(username),
-		Host:     "127.0.0.1:5432",
-		Path:     "/sourcegraph",
-		RawQuery: "sslmode=false",
-	}
-}
-
-// UpdateDSNFromEnv updates dsn based on PGXXX environment variables.
-func UpdateDSNFromEnv(dsn *url.URL) {
-	if host := os.Getenv("PGHOST"); host != "" {
-		dsn.Host = host
-	}
-
-	if port := os.Getenv("PGPORT"); port != "" {
-		dsn.Host += ":" + port
-	}
-
-	if user := os.Getenv("PGUSER"); user != "" {
-		if password := os.Getenv("PGPASSWORD"); password != "" {
-			dsn.User = url.UserPassword(user, password)
-		} else {
-			dsn.User = url.User(user)
-		}
-	}
-
-	if db := os.Getenv("PGDATABASE"); db != "" {
-		dsn.Path = db
-	}
-
-	if sslmode := os.Getenv("PGSSLMODE"); sslmode != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
-		dsn.RawQuery = qry.Encode()
-	}
 }
 
 // NewDB returns a new *sql.DB from the given dsn (data source name).

@@ -1,0 +1,139 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/org/repos/baz
+    method: GET
+  response:
+    body: '{"slug":"baz","id":3,"name":"baz","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/baz.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/baz.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/baz/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 18 Apr 2019 12:11:59 GMT
+      Pragma:
+      - no-cache
+      Set-Cookie:
+      - BITBUCKETSESSIONID=18E875BE7EB20F86E16B77E9446A86A4; Path=/; HttpOnly
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@WENS5Ax731x12x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 4cbglg
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/tsenart/vegeta
+    method: GET
+  response:
+    body: '{"id":12080551,"node_id":"MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==","name":"vegeta","full_name":"tsenart/vegeta","private":false,"owner":{"login":"tsenart","id":67471,"node_id":"MDQ6VXNlcjY3NDcx","avatar_url":"https://avatars2.githubusercontent.com/u/67471?v=4","gravatar_id":"","url":"https://api.github.com/users/tsenart","html_url":"https://github.com/tsenart","followers_url":"https://api.github.com/users/tsenart/followers","following_url":"https://api.github.com/users/tsenart/following{/other_user}","gists_url":"https://api.github.com/users/tsenart/gists{/gist_id}","starred_url":"https://api.github.com/users/tsenart/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tsenart/subscriptions","organizations_url":"https://api.github.com/users/tsenart/orgs","repos_url":"https://api.github.com/users/tsenart/repos","events_url":"https://api.github.com/users/tsenart/events{/privacy}","received_events_url":"https://api.github.com/users/tsenart/received_events","type":"User","site_admin":false},"html_url":"https://github.com/tsenart/vegeta","description":"HTTP
+      load testing tool and library. It''s over 9000!","fork":false,"url":"https://api.github.com/repos/tsenart/vegeta","forks_url":"https://api.github.com/repos/tsenart/vegeta/forks","keys_url":"https://api.github.com/repos/tsenart/vegeta/keys{/key_id}","collaborators_url":"https://api.github.com/repos/tsenart/vegeta/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/tsenart/vegeta/teams","hooks_url":"https://api.github.com/repos/tsenart/vegeta/hooks","issue_events_url":"https://api.github.com/repos/tsenart/vegeta/issues/events{/number}","events_url":"https://api.github.com/repos/tsenart/vegeta/events","assignees_url":"https://api.github.com/repos/tsenart/vegeta/assignees{/user}","branches_url":"https://api.github.com/repos/tsenart/vegeta/branches{/branch}","tags_url":"https://api.github.com/repos/tsenart/vegeta/tags","blobs_url":"https://api.github.com/repos/tsenart/vegeta/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/tsenart/vegeta/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/tsenart/vegeta/git/refs{/sha}","trees_url":"https://api.github.com/repos/tsenart/vegeta/git/trees{/sha}","statuses_url":"https://api.github.com/repos/tsenart/vegeta/statuses/{sha}","languages_url":"https://api.github.com/repos/tsenart/vegeta/languages","stargazers_url":"https://api.github.com/repos/tsenart/vegeta/stargazers","contributors_url":"https://api.github.com/repos/tsenart/vegeta/contributors","subscribers_url":"https://api.github.com/repos/tsenart/vegeta/subscribers","subscription_url":"https://api.github.com/repos/tsenart/vegeta/subscription","commits_url":"https://api.github.com/repos/tsenart/vegeta/commits{/sha}","git_commits_url":"https://api.github.com/repos/tsenart/vegeta/git/commits{/sha}","comments_url":"https://api.github.com/repos/tsenart/vegeta/comments{/number}","issue_comment_url":"https://api.github.com/repos/tsenart/vegeta/issues/comments{/number}","contents_url":"https://api.github.com/repos/tsenart/vegeta/contents/{+path}","compare_url":"https://api.github.com/repos/tsenart/vegeta/compare/{base}...{head}","merges_url":"https://api.github.com/repos/tsenart/vegeta/merges","archive_url":"https://api.github.com/repos/tsenart/vegeta/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/tsenart/vegeta/downloads","issues_url":"https://api.github.com/repos/tsenart/vegeta/issues{/number}","pulls_url":"https://api.github.com/repos/tsenart/vegeta/pulls{/number}","milestones_url":"https://api.github.com/repos/tsenart/vegeta/milestones{/number}","notifications_url":"https://api.github.com/repos/tsenart/vegeta/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/tsenart/vegeta/labels{/name}","releases_url":"https://api.github.com/repos/tsenart/vegeta/releases{/id}","deployments_url":"https://api.github.com/repos/tsenart/vegeta/deployments","created_at":"2013-08-13T11:45:21Z","updated_at":"2019-04-18T08:33:24Z","pushed_at":"2019-04-15T15:48:08Z","git_url":"git://github.com/tsenart/vegeta.git","ssh_url":"git@github.com:tsenart/vegeta.git","clone_url":"https://github.com/tsenart/vegeta.git","svn_url":"https://github.com/tsenart/vegeta","homepage":"http://godoc.org/github.com/tsenart/vegeta/lib","size":1587,"stargazers_count":11222,"watchers_count":11222,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":701,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":21,"license":{"key":"mit","name":"MIT
+      License","spdx_id":"MIT","url":"https://api.github.com/licenses/mit","node_id":"MDc6TGljZW5zZTEz"},"forks":701,"open_issues":21,"watchers":11222,"default_branch":"master","network_count":701,"subscribers_count":288}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Cache-Control:
+      - public, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 18 Apr 2019 12:11:59 GMT
+      Etag:
+      - W/"99fe230264be3c97c0a1570209ccb489"
+      Last-Modified:
+      - Thu, 18 Apr 2019 08:33:24 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json
+      X-Github-Request-Id:
+      - E53A:4344:10BE038:2409802:5CB8698F
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/gnachman%2Fiterm2
+    method: GET
+  response:
+    body: '{"id":252461,"description":"Issues site for iTerm2","name":"iterm2","name_with_namespace":"George
+      Nachman / iterm2","path":"iterm2","path_with_namespace":"gnachman/iterm2","created_at":"2015-04-29T03:24:21.000Z","default_branch":"master","tag_list":[],"ssh_url_to_repo":"git@gitlab.com:gnachman/iterm2.git","http_url_to_repo":"https://gitlab.com/gnachman/iterm2.git","web_url":"https://gitlab.com/gnachman/iterm2","readme_url":"https://gitlab.com/gnachman/iterm2/blob/master/README.md","avatar_url":"https://assets.gitlab-static.net/uploads/-/system/project/avatar/252461/icon_256x256_2x.png","star_count":648,"forks_count":40,"last_activity_at":"2019-04-18T06:29:28.529Z","namespace":{"id":63972,"name":"gnachman","path":"gnachman","kind":"user","full_path":"gnachman","parent_id":null}}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Content-Length:
+      - "788"
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 18 Apr 2019 12:11:59 GMT
+      Etag:
+      - W/"c64f121b7ad26a8b1a7fc1d76456dd2f"
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - 5KzeJx2a5Z4
+      X-Runtime:
+      - "0.075811"
+    status: 200 OK
+    code: 200
+    duration: ""

@@ -35,6 +35,7 @@ describe('SearchResults', () => {
         extensionsController,
         isSourcegraphDotCom: false,
         telemetryService: { log: noop, logViewEvent: noop },
+        deployType: 'dev',
     }
 
     it('calls the search request once', () => {

@@ -49,12 +49,16 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
         return (
             <div className="user-subscriptions-product-subscriptions-page">
                 <PageTitle title="Subscriptions" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Subscriptions</h2>
                     <Link to={`${this.props.match.path}/new`} className="btn btn-primary">
                         New subscription
                     </Link>
                 </div>
+                <p>
+                    A subscription gives you a license key to run a self-hosted Sourcegraph instance. See{' '}
+                    <a href="https://about.sourcegraph.com/pricing">Sourcegraph pricing</a> for more information.
+                </p>
                 <FilteredProductSubscriptionConnection
                     className="mt-3"
                     listComponent="table"

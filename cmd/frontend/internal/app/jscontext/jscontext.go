@@ -60,10 +60,10 @@ type JSContext struct {
 	ShowOnboarding bool    `json:"showOnboarding"`
 	EmailEnabled   bool    `json:"emailEnabled"`
 
-	Critical            schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
-	LikelyDockerOnMac   bool                         `json:"likelyDockerOnMac"`
-	NeedServerRestart   bool                         `json:"needServerRestart"`
-	IsClusterDeployment bool                         `json:"isClusterDeployment"`
+	Critical          schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
+	LikelyDockerOnMac bool                         `json:"likelyDockerOnMac"`
+	NeedServerRestart bool                         `json:"needServerRestart"`
+	DeployType        string                       `json:"deployType"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
@@ -150,12 +150,12 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),
 
-		ShowOnboarding:      showOnboarding,
-		EmailEnabled:        conf.CanSendEmail(),
-		Critical:            publicCriticalConfiguration(),
-		LikelyDockerOnMac:   likelyDockerOnMac(),
-		NeedServerRestart:   globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
-		IsClusterDeployment: conf.IsDeployTypeCluster(conf.DeployType()),
+		ShowOnboarding:    showOnboarding,
+		EmailEnabled:      conf.CanSendEmail(),
+		Critical:          publicCriticalConfiguration(),
+		LikelyDockerOnMac: likelyDockerOnMac(),
+		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
+		DeployType:        conf.DeployType(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 

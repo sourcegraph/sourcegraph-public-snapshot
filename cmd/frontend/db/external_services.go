@@ -1,29 +1,25 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strings"
-	"sync"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/legacyconf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // An ExternalServicesStore stores external services and their configuration.
@@ -100,7 +96,16 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		return errors.Wrap(err, "failed to validate config against schema")
 	}
 
-	errs := new(multierror.Error)
+	errs := &multierror.Error{
+		ErrorFormat: func(errs []error) string {
+			// Markdown bullet list of error messages.
+			var buf bytes.Buffer
+			for _, err := range errs {
+				fmt.Fprintf(&buf, "- %s\n", err)
+			}
+			return buf.String()
+		},
+	}
 	for _, err := range res.Errors() {
 		errs = multierror.Append(errs, errors.New(err.String()))
 	}
@@ -415,122 +420,7 @@ func (c *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context
 	return connections, nil
 }
 
-// migrateOnce ensures that the migration is only attempted
-// once per frontend instance (to avoid unnecessary queries).
-var migrateOnce sync.Once
-
-// migrateJsonConfigToExternalServices performs a one time migration to populate
-// the new external_services database table with relevant entries in the site config.
-// It is idempotent.
-//
-// This migration can be deleted as soon as (whichever happens first):
-//   - All customers have updated to 3.0 or newer.
-//   - 3 months after 3.0 is released.
-func (c *ExternalServicesStore) migrateJsonConfigToExternalServices(ctx context.Context) {
-	migrateOnce.Do(func() {
-		// Run in a transaction because we are racing with other frontend replicas.
-		err := dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
-			now := time.Now()
-
-			// Attempt to insert a fake config into the DB with id 0.
-			// This will fail if the migration has already run.
-			if _, err := tx.ExecContext(
-				ctx,
-				"INSERT INTO external_services(id, kind, display_name, config, created_at, updated_at, deleted_at) VALUES($1, $2, $3, $4, $5, $6, $7)",
-				0, "migration", "", "{}", now, now, now,
-			); err != nil {
-				return err
-			}
-
-			migrate := func(config interface{}, name string) error {
-				// Marshaling and unmarshaling is a lazy way to get around
-				// Go's lack of covariance for slice types.
-				buf, err := json.Marshal(config)
-				if err != nil {
-					return err
-				}
-				var configs []interface{}
-				if err := json.Unmarshal(buf, &configs); err != nil {
-					return nil
-				}
-
-				for i, config := range configs {
-					jsonConfig, err := json.MarshalIndent(config, "", "  ")
-					if err != nil {
-						return err
-					}
-
-					kind := strings.ToUpper(name)
-					displayName := fmt.Sprintf("Migrated %s %d", name, i+1)
-					if _, err := tx.ExecContext(
-						ctx,
-						"INSERT INTO external_services(kind, display_name, config, created_at, updated_at) VALUES($1, $2, $3, $4, $5)",
-						kind, displayName, string(jsonConfig), now, now,
-					); err != nil {
-						return err
-					}
-				}
-				return nil
-			}
-
-			var legacyConfig struct {
-				AwsCodeCommit   []*schema.AWSCodeCommitConnection   `json:"awsCodeCommit"`
-				BitbucketServer []*schema.BitbucketServerConnection `json:"bitbucketServer"`
-				Github          []*schema.GitHubConnection          `json:"github"`
-				Gitlab          []*schema.GitLabConnection          `json:"gitlab"`
-				Gitolite        []*schema.GitoliteConnection        `json:"gitolite"`
-				Phabricator     []*schema.PhabricatorConnection     `json:"phabricator"`
-			}
-			raw := legacyconf.Raw()
-			if strings.TrimSpace(raw) == "" {
-				// Nothing to migrate
-				return nil
-			}
-			if err := jsonc.Unmarshal(raw, &legacyConfig); err != nil {
-				return err
-			}
-			if err := migrate(legacyConfig.AwsCodeCommit, "AWSCodeCommit"); err != nil {
-				return err
-			}
-
-			if err := migrate(legacyConfig.BitbucketServer, "BitbucketServer"); err != nil {
-				return err
-			}
-
-			if err := migrate(legacyConfig.Github, "GitHub"); err != nil {
-				return err
-			}
-
-			if err := migrate(legacyConfig.Gitlab, "GitLab"); err != nil {
-				return err
-			}
-
-			if err := migrate(legacyConfig.Gitolite, "Gitolite"); err != nil {
-				return err
-			}
-
-			if err := migrate(legacyConfig.Phabricator, "Phabricator"); err != nil {
-				return err
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			if pqErr, ok := err.(*pq.Error); ok {
-				if pqErr.Constraint == "external_services_pkey" {
-					// This is expected when multiple frontend attempt to migrate concurrently.
-					// Only one will win.
-					return
-				}
-			}
-			log15.Error("migrate transaction failed", "err", err)
-		}
-	})
-}
-
 func (c *ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
-	c.migrateJsonConfigToExternalServices(ctx)
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at
 		FROM external_services

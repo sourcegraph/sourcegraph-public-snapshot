@@ -19,6 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -29,31 +30,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-var DefaultClient = &Client{
-	Addrs: func(ctx context.Context) []string {
-		updateGitServerAddrList()
-		return gitserverAddrList.Load().([]string)
-	},
-	HTTPClient: &http.Client{
-		// nethttp.Transport will propagate opentracing spans
-		Transport: &nethttp.Transport{
-			RoundTripper: &http.Transport{
-				// Default is 2, but we can send many concurrent requests
-				MaxIdleConnsPerHost: 500,
-			},
+var DefaultClient = NewClient(&http.Client{
+	// nethttp.Transport will propagate opentracing spans
+	Transport: &nethttp.Transport{
+		RoundTripper: &http.Transport{
+			// Default is 2, but we can send many concurrent requests
+			MaxIdleConnsPerHost: 500,
 		},
 	},
-	HTTPLimiter: parallel.NewRun(500),
-	// Use the binary name for UserAgent. This should effectively identify
-	// which service is making the request (excluding requests proxied via the
-	// frontend internal API)
-	UserAgent: filepath.Base(os.Args[0]),
+})
+
+// NewClient returns a new gitserver.Client instantiated with default arguments
+// and httpcli.Doer.
+func NewClient(cli httpcli.Doer) *Client {
+	return &Client{
+		Addrs: func(ctx context.Context) []string {
+			updateGitServerAddrList()
+			return gitserverAddrList.Load().([]string)
+		},
+		HTTPClient:  cli,
+		HTTPLimiter: parallel.NewRun(500),
+		// Use the binary name for UserAgent. This should effectively identify
+		// which service is making the request (excluding requests proxied via the
+		// frontend internal API)
+		UserAgent: filepath.Base(os.Args[0]),
+	}
 }
 
 func init() {
@@ -110,7 +117,7 @@ func updateGitServerAddrList() {
 // Client is a gitserver client.
 type Client struct {
 	// HTTP client to use
-	HTTPClient *http.Client
+	HTTPClient httpcli.Doer
 
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
@@ -358,14 +365,21 @@ func (c *Client) pingAll(ctx context.Context) []error {
 }
 
 func (c *Client) ping(ctx context.Context, addr string) error {
-	resp, err := ctxhttp.Get(ctx, c.HTTPClient, "http://"+addr+"/ping")
+	req, err := http.NewRequest("GET", "http://"+addr+"/ping", nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
 	}
+
 	return nil
 }
 
@@ -373,8 +387,13 @@ func (c *Client) ping(ctx context.Context, addr string) error {
 func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
+	addr := c.addrForKey(ctx, gitoliteHost)
+	req, err := http.NewRequest("GET", "http://"+addr+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost), nil)
+	if err != nil {
+		return nil, err
+	}
 
-	resp, err := ctxhttp.Get(ctx, nil, "http://"+c.addrForKey(ctx, gitoliteHost)+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost))
+	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +415,7 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 		wg.Add(1)
 		go func(addr string) {
 			defer wg.Done()
-			r, e := doListOne(ctx, "?cloned", addr)
+			r, e := c.doListOne(ctx, "?cloned", addr)
 			mu.Lock()
 			if e != nil {
 				err = e
@@ -412,8 +431,16 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 // GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
 // a user-provided command.
 func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	u := "http://" + c.addrForKey(ctx, gitoliteHost) + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(string(repoName))
-	resp, err := ctxhttp.Get(ctx, nil, u)
+	u := "http://" + c.addrForKey(ctx, gitoliteHost) +
+		"/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) +
+		"&repo=" + url.QueryEscape(string(repoName))
+
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -424,8 +451,13 @@ func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHos
 	return &metadata, err
 }
 
-func doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
-	resp, err := ctxhttp.Get(ctx, nil, "http://"+addr+"/list"+urlSuffix)
+func (c *Client) doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
+	req, err := http.NewRequest("GET", "http://"+addr+"/list"+urlSuffix, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -550,26 +582,81 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 	return cloned, nil
 }
 
-// RepoInfo retrieves information about the repository on gitserver.
+// RepoInfo retrieves information about one or more repositories on gitserver.
 //
-// The repository not existing is not an error; in that case, RepoInfoResponse.Cloned will be false
-// and the error will be nil.
-func (c *Client) RepoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfoResponse, error) {
-	req := &protocol.RepoInfoRequest{
-		Repo: repo,
-	}
-	resp, err := c.httpPost(ctx, repo, "repo", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d", resp.StatusCode)}
+// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
+// will be false and the error will be nil.
+//
+// If multiple errors occurred, an incomplete result is returned along with a
+// *multierror.Error.
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+	numPossibleShards := len(c.Addrs(ctx))
+	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+
+	for _, r := range repos {
+		addr := c.addrForRepo(ctx, r)
+		shard := shards[addr]
+
+		if shard == nil {
+			shard = new(protocol.RepoInfoRequest)
+			shards[addr] = shard
+		}
+
+		shard.Repos = append(shard.Repos, r)
 	}
 
-	var info *protocol.RepoInfoResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
+	type op struct {
+		req *protocol.RepoInfoRequest
+		res *protocol.RepoInfoResponse
+		err error
+	}
+
+	ch := make(chan op, len(shards))
+	for _, req := range shards {
+		go func(o op) {
+			var resp *http.Response
+			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repos", o.req)
+			if o.err != nil {
+				ch <- o
+				return
+			}
+
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				o.err = &url.Error{
+					URL: resp.Request.URL.String(),
+					Op:  "RepoInfo",
+					Err: errors.Errorf("RepoInfo: http status %d", resp.StatusCode),
+				}
+				ch <- o
+				return // we never get an error status code AND result
+			}
+
+			o.res = new(protocol.RepoInfoResponse)
+			o.err = json.NewDecoder(resp.Body).Decode(o.res)
+			ch <- o
+		}(op{req: req})
+	}
+
+	err := new(multierror.Error)
+	res := protocol.RepoInfoResponse{
+		Results: make(map[api.RepoName]*protocol.RepoInfo),
+	}
+
+	for i := 0; i < cap(ch); i++ {
+		o := <-ch
+
+		if o.err != nil {
+			err = multierror.Append(err, o.err)
+			continue
+		}
+
+		for repo, info := range o.res.Results {
+			res.Results[repo] = info
+		}
+	}
+
+	return &res, err.ErrorOrNil()
 }
 
 // Remove removes the repository clone from gitserver.
@@ -590,6 +677,8 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	return nil
 }
 
+// httpPost performs a POST request to a gitserver, sharding based on the given
+// repo name (the repo name is otherwise not used).
 func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {
@@ -626,10 +715,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, method string,
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	// Do not lose the context returned by TraceRequest
-	ctx = req.Context()
-
-	return ctxhttp.Do(ctx, c.HTTPClient, req)
+	return c.HTTPClient.Do(req)
 }
 
 func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {

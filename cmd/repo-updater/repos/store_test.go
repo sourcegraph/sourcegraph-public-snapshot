@@ -10,26 +10,37 @@ import (
 	"time"
 
 	"github.com/kylelemons/godebug/pretty"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestFakeStore(t *testing.T) {
 	t.Parallel()
 
+	lg := log15.New()
+	lg.SetHandler(log15.DiscardHandler())
+
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T)
+		test func(repos.Store) func(*testing.T)
 	}{
-		{"ListExternalServices", testStoreListExternalServices(new(repos.FakeStore))},
-		{"UpsertExternalServices", testStoreUpsertExternalServices(new(repos.FakeStore))},
-		{"ListRepos", testStoreListRepos(new(repos.FakeStore))},
-		{"UpsertRepos", testStoreUpsertRepos(new(repos.FakeStore))},
+		{"ListExternalServices", testStoreListExternalServices},
+		{"UpsertExternalServices", testStoreUpsertExternalServices},
+		{"ListRepos", testStoreListRepos},
+		{"UpsertRepos", testStoreUpsertRepos},
 	} {
-		t.Run(tc.name, tc.test)
+		t.Run(tc.name, tc.test(repos.NewObservedStore(
+			new(repos.FakeStore),
+			lg,
+			repos.NewStoreMetrics(),
+			trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		)))
 	}
 }
 

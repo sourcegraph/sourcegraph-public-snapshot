@@ -1,7 +1,9 @@
+import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
 import assert from 'assert'
 import { readFile } from 'mz/fs'
 import { SetIntersection } from 'utility-types'
-import { CodeHost, CodeViewSpec, MountGetter } from './code_intelligence'
+import { CodeHost, MountGetter } from './code_intelligence'
+import { CodeViewSpec } from './code_views'
 
 const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = (typeof mountGetterKeys)[number]
@@ -104,4 +106,69 @@ export function testMountGetter(
             }
         })
     }
+}
+
+interface CodeElement {
+    getElement: () => HTMLElement
+    lineNumber: number
+    diffPart?: DiffPart
+}
+
+export interface DiffDOMFunctionsTest {
+    htmlFixturePath: string
+    getCodeView: () => HTMLElement
+    codeElements: CodeElement[]
+    url: string
+    firstCharacterIsDiffIndicator?: boolean
+}
+
+export function testDOMFunctions(
+    testSuiteName: string,
+    domFunctions: DOMFunctions,
+    { htmlFixturePath, getCodeView, codeElements, url, firstCharacterIsDiffIndicator }: DiffDOMFunctionsTest
+): void {
+    describe(testSuiteName, () => {
+        beforeAll(async () => {
+            jsdom.reconfigure({ url })
+            const content = await readFile(htmlFixturePath, 'utf-8')
+            document.body.innerHTML = content
+        })
+        describe('getCodeElementFromLineNumber()', () => {
+            for (const { getElement, diffPart, lineNumber } of codeElements) {
+                test(`diffPart: ${diffPart}`, () => {
+                    const codeView = getCodeView()
+                    const element = getElement()
+                    expect(domFunctions.getCodeElementFromLineNumber(codeView, lineNumber, diffPart)).toBe(element)
+                })
+            }
+        })
+        describe('getLineNumberFromCodeElement()', () => {
+            for (const { getElement, diffPart, lineNumber } of codeElements) {
+                test(`diffPart: ${diffPart}`, () => {
+                    const element = getElement()
+                    expect(domFunctions.getLineNumberFromCodeElement(element)).toBe(lineNumber)
+                })
+            }
+        })
+        if (domFunctions.getDiffCodePart) {
+            describe('getDiffCodePart()', () => {
+                for (const { getElement, diffPart } of codeElements) {
+                    test(`diffPart: ${diffPart}`, () => {
+                        const element = getElement()
+                        expect(domFunctions.getDiffCodePart!(element)).toBe(diffPart)
+                    })
+                }
+            })
+        }
+        if (domFunctions.isFirstCharacterDiffIndicator) {
+            describe('isFirstCharacterDiffIndicator()', () => {
+                for (const { getElement, diffPart } of codeElements) {
+                    test(`diffPart: ${diffPart}`, () => {
+                        const element = getElement()
+                        expect(domFunctions.isFirstCharacterDiffIndicator!(element)).toBe(firstCharacterIsDiffIndicator)
+                    })
+                }
+            })
+        }
+    })
 }

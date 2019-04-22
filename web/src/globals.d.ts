@@ -21,6 +21,8 @@ interface ImmutableUser {
     readonly UID: number
 }
 
+type DeployType = 'cluster' | 'docker-container' | 'dev'
+
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
@@ -95,10 +97,9 @@ interface SourcegraphContext {
     needServerRestart: boolean
 
     /**
-     * Whether the site is a Sourcegraph cluster deployment (e.g., to Kubernetes, not just
-     * sourcegraph/server in a single Docker container).
+     * The kind of deployment.
      */
-    isClusterDeployment: boolean
+    deployType: DeployType
 
     /** Whether signup is allowed on the site. */
     allowSignup: boolean

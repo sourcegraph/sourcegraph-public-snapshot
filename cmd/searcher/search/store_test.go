@@ -94,6 +94,37 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	}
 }
 
+func TestIngoreSizeMax(t *testing.T) {
+	patterns := []string{
+		"foo",
+		"foo.*",
+		"foo_*",
+		"*.foo",
+		"bar.baz",
+	}
+	tests := []struct {
+		name    string
+		ignored bool
+	}{
+		// Pass
+		{"foo", true},
+		{"foo.bar", true},
+		{"foo_bar", true},
+		{"bar.baz", true},
+		{"bar.foo", true},
+		// Fail
+		{"baz.foo.bar", false},
+		{"bar_baz", false},
+		{"baz.baz", false},
+	}
+
+	for _, test := range tests {
+		if got, want := ignoreSizeMax(test.name, patterns), test.ignored; got != want {
+			t.Errorf("case %s got %v want %v", test.name, got, want)
+		}
+	}
+}
+
 func tmpStore(t *testing.T) (*Store, func()) {
 	d, err := ioutil.TempDir("", "search_test")
 	if err != nil {

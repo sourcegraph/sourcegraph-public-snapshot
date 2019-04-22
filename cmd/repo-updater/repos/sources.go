@@ -3,15 +3,21 @@ package repos
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
+	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -26,7 +32,9 @@ type Sourcer func(...*ExternalService) (Sources, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // Deleted external services are ignored.
-func NewSourcer(cf httpcli.Factory) Sourcer {
+//
+// The provided decorator functions will be applied to each Source.
+func NewSourcer(cf httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
 		errs := new(multierror.Error)
@@ -34,11 +42,19 @@ func NewSourcer(cf httpcli.Factory) Sourcer {
 		for _, svc := range svcs {
 			if svc.IsDeleted() {
 				continue
-			} else if src, err := NewSource(svc, cf); err != nil {
-				errs = multierror.Append(errs, err)
-			} else {
-				srcs = append(srcs, src)
 			}
+
+			src, err := NewSource(svc, cf)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+
+			for _, dec := range decs {
+				src = dec(src)
+			}
+
+			srcs = append(srcs, src)
 		}
 
 		if !includesGitHubDotComSource(srcs) {
@@ -63,6 +79,8 @@ func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
 		return NewGitLabSource(svc, cf)
 	case "bitbucketserver":
 		return NewBitbucketServerSource(svc, cf)
+	case "gitolite":
+		return NewGitoliteSource(svc, cf)
 	case "other":
 		return NewOtherSource(svc)
 	default:
@@ -71,10 +89,12 @@ func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
 }
 
 func includesGitHubDotComSource(srcs []Source) bool {
-	for _, src := range srcs {
-		if gs, ok := src.(*GithubSource); !ok {
+	for _, svc := range Sources(srcs).ExternalServices() {
+		if !strings.EqualFold(svc.Kind, "GITHUB") {
 			continue
-		} else if u, err := url.Parse(gs.conn.config.Url); err != nil {
+		} else if cfg, err := svc.Configuration(); err != nil {
+			continue
+		} else if u, err := url.Parse(cfg.(*schema.GitHubConnection).Url); err != nil {
 			continue
 		} else if strings.HasSuffix(u.Hostname(), "github.com") {
 			return true
@@ -83,11 +103,16 @@ func includesGitHubDotComSource(srcs []Source) bool {
 	return false
 }
 
+// sourceTimeout is the default timeout to use on Source.ListRepos
+const sourceTimeout = 10 * time.Minute
+
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
-	// TODO(keegancsmith) document contract of ListRepos + contract tests
+	// ListRepos returns all the repos a source yields.
 	ListRepos(context.Context) ([]*Repo, error)
+	// ExternalServices returns the ExternalServices for the Source.
+	ExternalServices() ExternalServices
 }
 
 // Sources is a list of Sources that implements the Source interface.
@@ -135,12 +160,7 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 func (srcs Sources) ExternalServices() ExternalServices {
 	es := make(ExternalServices, 0, len(srcs))
 	for _, src := range srcs {
-		switch s := src.(type) {
-		case *GithubSource:
-			es = append(es, s.svc)
-		case *FakeSource:
-			es = append(es, s.svc)
-		}
+		es = append(es, src.ExternalServices()...)
 	}
 	return es
 }
@@ -189,6 +209,11 @@ func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) 
 		repos = append(repos, githubRepoToRepo(s.svc, r, s.conn))
 	}
 	return repos, err
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s GithubSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
 }
 
 func githubRepoToRepo(
@@ -248,6 +273,11 @@ func (s GitLabSource) ListRepos(ctx context.Context) (repos []*Repo, err error) 
 	return repos, err
 }
 
+// ExternalServices returns a singleton slice containing the external service.
+func (s GitLabSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
 func gitlabProjectToRepo(
 	svc *ExternalService,
 	proj *gitlab.Project,
@@ -305,6 +335,11 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context) (repos []*Repo, er
 	return repos, err
 }
 
+// ExternalServices returns a singleton slice containing the external service.
+func (s BitbucketServerSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
 func bitbucketserverRepoToRepo(
 	svc *ExternalService,
 	repo *bitbucketserver.Repo,
@@ -323,6 +358,98 @@ func bitbucketserverRepoToRepo(
 			urn: {
 				ID:       urn,
 				CloneURL: info.VCS.URL,
+			},
+		},
+		Metadata: repo,
+	}
+}
+
+// A GitoliteSource yields repositories from a single Gitolite connection configured
+// in Sourcegraph via the external services configuration.
+type GitoliteSource struct {
+	svc  *ExternalService
+	conn *schema.GitoliteConnection
+	// We ask gitserver to talk to gitolite because it holds the ssh keys
+	// required for authentication.
+	cli       *gitserver.Client
+	blacklist *regexp.Regexp
+}
+
+// NewGitoliteSource returns a new GitoliteSource from the given external service.
+func NewGitoliteSource(svc *ExternalService, cf httpcli.Factory) (*GitoliteSource, error) {
+	var c schema.GitoliteConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
+	}
+
+	hc, err := cf.NewClient(func(c *http.Client) error {
+		if tr, ok := c.Transport.(*http.Transport); ok {
+			tr.MaxIdleConnsPerHost = 500
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var blacklist *regexp.Regexp
+	if c.Blacklist != "" {
+		if blacklist, err = regexp.Compile(c.Blacklist); err != nil {
+			return nil, err
+		}
+	}
+
+	return &GitoliteSource{
+		svc:       svc,
+		conn:      &c,
+		cli:       gitserver.NewClient(hc),
+		blacklist: blacklist,
+	}, nil
+}
+
+// ListRepos returns all Gitolite repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s *GitoliteSource) ListRepos(ctx context.Context) ([]*Repo, error) {
+	all, err := s.cli.ListGitolite(ctx, s.conn.Host)
+	if err != nil {
+		return nil, err
+	}
+
+	repos := make([]*Repo, 0, len(all))
+	for _, r := range all {
+		if repo := gitoliteRepoToRepo(s.svc, r, s.conn); !s.exclude(repo) {
+			repos = append(repos, repo)
+		}
+	}
+
+	return repos, nil
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s GitoliteSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
+func (s GitoliteSource) exclude(r *Repo) bool {
+	return strings.ContainsAny(r.Name, "\\^$|()[]*?{},") ||
+		(s.blacklist != nil && s.blacklist.MatchString(r.Name))
+}
+
+func gitoliteRepoToRepo(
+	svc *ExternalService,
+	repo *gitolite.Repo,
+	conn *schema.GitoliteConnection,
+) *Repo {
+	urn := svc.URN()
+	return &Repo{
+		Name:         string(reposource.GitoliteRepoName(conn.Prefix, repo.Name)),
+		ExternalRepo: *gitolite.ExternalRepoSpec(repo, gitolite.ServiceID(conn.Host)),
+		Enabled:      true,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: repo.URL,
 			},
 		},
 		Metadata: repo,
@@ -360,6 +487,11 @@ func (s OtherSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 	}
 
 	return repos, nil
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s OtherSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
 }
 
 func (s OtherSource) cloneURLs() ([]*url.URL, error) {

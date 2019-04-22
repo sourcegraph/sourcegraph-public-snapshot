@@ -1,0 +1,19 @@
+// The actual styles for this component are set in CompletionWidgetClassProps.
+.completion-widget {
+    position: relative;
+    z-index: 99999999;
+
+    // Applies to .completion-widget-dropdown.
+    > * {
+        position: absolute;
+        top: 0;
+        left: 0;
+        min-width: 12rem;
+        max-width: 34rem;
+
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        max-height: 254.01px; // 7 items tall on Sourcegraph (approximate)
+
+        overflow-y: auto;
+    }
+}
