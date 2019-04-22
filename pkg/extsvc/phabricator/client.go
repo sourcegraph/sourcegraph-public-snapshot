@@ -33,6 +33,7 @@ func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Clien
 	return &Client{conn: conn}, nil
 }
 
+// GetRawDiff retrieves the raw diff of the diff with the given id.
 func (c *Client) GetRawDiff(ctx context.Context, diffID int) (diff string, err error) {
 	type request struct {
 		requests.Request
@@ -57,6 +58,7 @@ type DiffInfo struct {
 	Date        time.Time `json:"omitempty"`
 }
 
+// GetDiffInfo retrieves the DiffInfo of the diff with the given id.
 func (c *Client) GetDiffInfo(ctx context.Context, diffID int) (*DiffInfo, error) {
 	type request struct {
 		requests.Request
@@ -86,6 +88,7 @@ func (c *Client) GetDiffInfo(ctx context.Context, diffID int) (*DiffInfo, error)
 	return info, nil
 }
 
+// ParseDate parses the given unix timestamp into a time.Time pointer.
 func ParseDate(secStr string) (*time.Time, error) {
 	seconds, err := strconv.ParseInt(secStr, 10, 64)
 	if err != nil {
