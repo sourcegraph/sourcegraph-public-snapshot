@@ -126,7 +126,8 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) {
 
 }
 
-// InsertSlackWebhookURLIntoSavedSearchesTable
+// InsertSlackWebhookURLIntoSavedSearchesTable inserts an existing Slack webhook URL into the slack_webhook_url column of the
+// saved_searches table.
 func InsertSlackWebhookURLIntoSavedSearchesTable(ctx context.Context, location string, id *int32, webhookURL string) {
 	if location == "org" {
 		_, err := dbconn.Global.ExecContext(ctx, "UPDATE saved_searches SET slack_webhook_url=$1 WHERE org_id=$2 AND owner_kind=$3", webhookURL, *id, "org")
