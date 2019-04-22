@@ -24,7 +24,7 @@ TODO(ryan): Replace with updated screencast
 </p>
 -->
 
-Once Sourcegraph has been configured, head to the [site administration documentation](admin/index.md) for next steps.
+Once Sourcegraph has been configured, head to the [site administration documentation](../../../admin/index.md) for next steps.
 
 ## Cloud installation guides
 
