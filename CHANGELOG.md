@@ -46,6 +46,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed a bug that prevented external service configurations specifying client certificates from working (#3523)
 - Fixed an issue where the http.Client.Transport would not be initialized when using custom Certificate Authority or self signed certificate.
+- Fixed a bug that prevented external service configurations specifying client certificates from working (#3523)
 
 ## 3.3.0
 
