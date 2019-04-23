@@ -130,11 +130,17 @@ Owners: [We're hiring](https://github.com/sourcegraph/careers/blob/master/job-de
 
 Owners: [We're hiring](https://github.com/sourcegraph/careers/blob/master/job-descriptions/software-engineer.md)! 🙋
 
-This section is only for extension API, authoring and registry improvements for [Sourcegraph extensions](../../extensions/index.md). Features that will be *provided by* extensions are listed in the other sections.
+The Sourcegraph extension API allows developers to enhance their code review workflow with custom data. We're working to make the extension API and extension registry even more powerful and useful.
 
 - [Integration testing support for Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/733)
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
+
+## Editors
+
+[Sourcegraph integrates with many editors](https://docs.sourcegraph.com/integration/editor). We want to make it super fast to get the answer you need on Sourcegraph when you're in your editor, without switching to your browser and losing focus. We're focused on solving problems for you that local editor search and navigation can't answer.
+
+- [Add support for Sourcegraph extensions to existing editor integrations](https://github.com/sourcegraph/sourcegraph/issues/978).
 
 ---
 
