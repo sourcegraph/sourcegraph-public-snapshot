@@ -63,7 +63,7 @@ Other tips:
 			log.Println(usage)
 			os.Exit(2)
 		}
-		log.Fatal("srcsearch: %v", err)
+		log.Fatalf("srcsearch: %v", err)
 	}
 }
 
