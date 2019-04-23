@@ -203,6 +203,8 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
                 base[key] = customEntry(base[key], add[key])
             } else if (isPlainObject(base[key]) && isPlainObject(add[key])) {
                 merge(base[key], add[key], customEntry)
+            } else if (Array.isArray(base[key])) {
+                base[key] = [...base[key], ...add[key]]
             } else {
                 base[key] = add[key]
             }
