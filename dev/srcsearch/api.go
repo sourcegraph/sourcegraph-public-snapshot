@@ -3,143 +3,17 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"flag"
 	"fmt"
+	"github.com/mattn/go-isatty"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
-
-	"github.com/kballard/go-shellquote"
-	"github.com/mattn/go-isatty"
 )
-
-func init() {
-	usage := `
-Exit codes:
-
-  0: Success
-  1: General failures (connection issues, invalid HTTP response, etc.)
-  2: GraphQL error response
-
-Examples:
-
-  Run queries (identical behavior):
-
-    	$ echo 'query { currentUser { username } }' | src api
-    	$ src api -query='query { currentUser { username } }'
-
-  Specify query variables:
-
-    	$ echo '<query>' | src api 'var1=val1' 'var2=val2'
-
-  Searching for "Router" and getting result count:
-
-    	$ echo 'query($query: String!) { search(query: $query) { results { resultCount } } }' | src api 'query=Router'
-
-  Get the curl command for a query (just add '-get-curl' in the flags section):
-
-    	$ src api -get-curl -query='query { currentUser { username } }'
-`
-
-	flagSet := flag.NewFlagSet("api", flag.ExitOnError)
-	usageFunc := func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src %s':\n", flagSet.Name())
-		flagSet.PrintDefaults()
-		fmt.Println(usage)
-	}
-	var (
-		queryFlag = flagSet.String("query", "", "GraphQL query to execute, e.g. 'query { currentUser { username } }' (stdin otherwise)")
-		varsFlag  = flagSet.String("vars", "", `GraphQL query variables to include as JSON string, e.g. '{"var": "val", "var2": "val2"}'`)
-		apiFlags  = newAPIFlags(flagSet)
-	)
-
-	handler := func(args []string) error {
-		flagSet.Parse(args)
-
-		// Build the GraphQL request.
-		query := *queryFlag
-		if query == "" {
-			// Read query from stdin instead.
-			if isatty.IsTerminal(os.Stdin.Fd()) {
-				return &usageError{errors.New("expected query to be piped into 'src api' or -query flag to be specified")}
-			}
-			data, err := ioutil.ReadAll(os.Stdin)
-			if err != nil {
-				return err
-			}
-			query = string(data)
-		}
-
-		// Determine which variables to use in the request.
-		vars := map[string]interface{}{}
-		if *varsFlag != "" {
-			if err := json.Unmarshal([]byte(*varsFlag), &vars); err != nil {
-				return err
-			}
-		}
-		for _, arg := range flagSet.Args() {
-			idx := strings.Index(arg, "=")
-			if idx == -1 {
-				return &usageError{fmt.Errorf("parsing argument %q expected 'variable=value' syntax (missing equals)", arg)}
-			}
-			key := arg[:idx]
-			value := arg[idx+1:]
-			vars[key] = value
-		}
-
-		// Perform the request.
-		var result interface{}
-		return (&apiRequest{
-			query:  query,
-			vars:   vars,
-			result: &result,
-			done: func() error {
-				// Print the formatted JSON.
-				f, err := marshalIndent(result)
-				if err != nil {
-					return err
-				}
-				fmt.Println(string(f))
-				return nil
-			},
-			flags:            apiFlags,
-			dontUnpackErrors: true,
-		}).do()
-	}
-
-	// Register the command.
-	commands = append(commands, &command{
-		flagSet:   flagSet,
-		handler:   handler,
-		usageFunc: usageFunc,
-	})
-}
 
 // gqlURL returns the URL to the GraphQL endpoint for the given Sourcegraph
 // instance.
 func gqlURL(endpoint string) string {
 	return endpoint + "/.api/graphql"
-}
-
-// curlCmd returns the curl command to perform the given GraphQL query. Bash-only.
-func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (string, error) {
-	data, err := json.Marshal(map[string]interface{}{
-		"query":     query,
-		"variables": vars,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	s := fmt.Sprintf("curl \\\n")
-	if accessToken != "" {
-		s += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+accessToken))
-	}
-	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-d", string(data)))
-	s += fmt.Sprintf("   %s", shellquote.Join(gqlURL(endpoint)))
-	return s, nil
 }
 
 // apiRequest represents a GraphQL API request.
@@ -148,7 +22,6 @@ type apiRequest struct {
 	vars   map[string]interface{} // the GraphQL query variables
 	result interface{}            // where to store the result
 	done   func() error           // a function to invoke for handling the response. If nil, flags like -get-curl are ignored.
-	flags  *apiFlags              // the API flags previously created via newAPIFlags
 
 	// If true, errors will not be unpacked.
 	//
@@ -171,19 +44,7 @@ type apiRequest struct {
 // the request is finished a.done is invoked to handle the response (which is
 // stored in a.result).
 func (a *apiRequest) do() error {
-	if a.done != nil {
-		// Handle the get-curl flag now.
-		if *a.flags.getCurl {
-			curl, err := curlCmd(cfg.Endpoint, cfg.AccessToken, a.query, a.vars)
-			if err != nil {
-				return err
-			}
-			fmt.Println(curl)
-			return nil
-		}
-	} else {
-		a.done = func() error { return nil }
-	}
+	a.done = func() error { return nil }
 
 	// Create the JSON object.
 	var buf bytes.Buffer
@@ -267,14 +128,6 @@ func (a *apiRequest) do() error {
 // API requests. e.g. the ability to turn any CLI command into a curl command.
 type apiFlags struct {
 	getCurl *bool
-}
-
-// newAPIFlags creates the API flags. It should be invoked once at flag setup
-// time.
-func newAPIFlags(flagSet *flag.FlagSet) *apiFlags {
-	return &apiFlags{
-		getCurl: flagSet.Bool("get-curl", false, "Print the curl command for executing this query and exit (WARNING: includes printing your access token!)"),
-	}
 }
 
 // jsonCopy is a cheaty method of copying an already-decoded JSON (src)

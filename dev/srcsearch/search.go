@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"html"
-	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -14,91 +13,20 @@ import (
 	"strings"
 	"time"
 
-	isatty "github.com/mattn/go-isatty"
 	"jaytaylor.com/html2text"
 )
 
 var dateRegex = regexp.MustCompile("(\\w{4}-\\w{2}-\\w{2})")
 
-func init() {
-	usage := `
-Examples:
+func search(args []string) error {
+	jsonFlag := flag.Bool("json", false, "Whether or not to output results as JSON")
+	flag.Parse()
+	if flag.NArg() != 1 {
+		return &usageError{errors.New("expected exactly one argument: the search query")}
+	}
+	queryString := flag.Arg(0)
 
-  Perform a search and get results:
-
-    	$ src search 'repogroup:sample error'
-
-  Perform a search and get results as JSON:
-
-    	$ src search -json 'repogroup:sample error'
-
-Other tips:
-
-  Make 'type:diff' searches have colored diffs by installing https://colordiff.org
-    - Ubuntu/Debian: $ sudo apt-get install colordiff
-    - Mac OS:        $ brew install colordiff
-    - Windows:       $ npm install -g colordiff
-
-  Disable color output by setting NO_COLOR=t (see https://no-color.org).
-
-  Force color output on (not on by default when piped to other programs) by setting COLOR=t
-
-  Query syntax: https://about.sourcegraph.com/docs/search/query-syntax/
-`
-
-	flagSet := flag.NewFlagSet("search", flag.ExitOnError)
-	var (
-		jsonFlag        = flagSet.Bool("json", false, "Whether or not to output results as JSON")
-		explainJSONFlag = flagSet.Bool("explain-json", false, "Explain the JSON output schema and exit.")
-		apiFlags        = newAPIFlags(flagSet)
-		lessFlag        = flagSet.Bool("less", true, "Pipe output to 'less -R' (only if stdout is terminal, and not json flag)")
-	)
-
-	handler := func(args []string) error {
-		flagSet.Parse(args)
-
-		if *explainJSONFlag {
-			fmt.Println(searchJSONExplanation)
-			return nil
-		}
-
-		if flagSet.NArg() != 1 {
-			return &usageError{errors.New("expected exactly one argument: the search query")}
-		}
-		queryString := flagSet.Arg(0)
-
-		// For pagination, pipe our own output to 'less -R'
-		if *lessFlag && !*jsonFlag && isatty.IsTerminal(os.Stdout.Fd()) {
-			cmdPath, err := os.Executable()
-			if err != nil {
-				return err
-			}
-
-			srcCmd := exec.Command(cmdPath, append([]string{"search"}, args...)...)
-
-			// Because we do not want the default "no color when piping" behavior to take place.
-			srcCmd.Env = envSetDefault(os.Environ(), "COLOR", "t")
-
-			srcStderr, err := srcCmd.StderrPipe()
-			if err != nil {
-				return err
-			}
-			srcStdout, err := srcCmd.StdoutPipe()
-			if err != nil {
-				return err
-			}
-			if err := srcCmd.Start(); err != nil {
-				return err
-			}
-
-			lessCmd := exec.Command("less", "-R")
-			lessCmd.Stdin = io.MultiReader(srcStdout, srcStderr)
-			lessCmd.Stderr = os.Stderr
-			lessCmd.Stdout = os.Stdout
-			return lessCmd.Run()
-		}
-
-		query := `fragment FileMatchFields on FileMatch {
+	query := `fragment FileMatchFields on FileMatch {
 				repository {
 					name
 					url
@@ -215,62 +143,49 @@ Other tips:
 		  }
 		`
 
-		var result struct {
-			Site struct {
-				BuildVersion string
-			}
-			Search struct {
-				Results searchResults
-			}
+	var result struct {
+		Site struct {
+			BuildVersion string
 		}
+		Search struct {
+			Results searchResults
+		}
+	}
 
-		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"query": nullString(queryString),
-			},
-			result: &result,
-			done: func() error {
-				improved := searchResultsImproved{
-					SourcegraphEndpoint: cfg.Endpoint,
-					Query:               queryString,
-					Site:                result.Site,
-					searchResults:       result.Search.Results,
-				}
+	return (&apiRequest{
+		query: query,
+		vars: map[string]interface{}{
+			"query": nullString(queryString),
+		},
+		result: &result,
+		done: func() error {
+			improved := searchResultsImproved{
+				SourcegraphEndpoint: cfg.Endpoint,
+				Query:               queryString,
+				Site:                result.Site,
+				searchResults:       result.Search.Results,
+			}
 
-				if *jsonFlag {
-					// Print the formatted JSON.
-					f, err := marshalIndent(improved)
-					if err != nil {
-						return err
-					}
-					fmt.Println(string(f))
-					return nil
-				}
-
-				tmpl, err := parseTemplate(searchResultsTemplate)
+			if *jsonFlag {
+				// Print the formatted JSON.
+				f, err := marshalIndent(improved)
 				if err != nil {
 					return err
 				}
-				if err := execTemplate(tmpl, improved); err != nil {
-					return err
-				}
+				fmt.Println(string(f))
 				return nil
-			},
-			flags: apiFlags,
-		}).do()
-	}
+			}
 
-	// Register the command.
-	commands = append(commands, &command{
-		flagSet: flagSet,
-		handler: handler,
-		usageFunc: func() {
-			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src %s':\n", flagSet.Name())
-			flagSet.PrintDefaults()
-			fmt.Println(usage)
+			tmpl, err := parseTemplate(searchResultsTemplate)
+			if err != nil {
+				return err
+			}
+			if err := execTemplate(tmpl, improved); err != nil {
+				return err
+			}
+			return nil
 		},
-	})
+	}).do()
 }
 
 // searchResults represents the data we get back from the GraphQL search request.
@@ -627,28 +542,3 @@ const searchResultsTemplate = `{{- /* ignore this line for template formatting s
 	{{- end -}}
 `
 
-const searchJSONExplanation = `Explanation of 'src search -json' output:
-
-'src search -json' outputs the exact same results that are retrieved from
-Sourcegraph's GraphQL API (see https://about.sourcegraph.com/docs/features/api/)
-
-At a high-level there are three result types:
-
-- 'FileMatch': the type of result you get without any 'type:' modifiers.
-- 'CommitSearchResult': the type of result you get with a 'type:commit' or
-  'type:diff' modifier.
-- 'Repository': the type of result you get with a 'type:repo' modifier.
-
-All three of these result types have different fields available. They can be
-differentiated by using the '__typename' field.
-
-The link below shows the GraphQL query that this program internally
-executes when querying for search results. On this page, you can hover over
-any field in the GraphQL panel on the left to get documentation about the field
-itself.
-
-If you have any questions, feedback, or suggestions, please contact us
-(support@sourcegraph.com) or file an issue! :)
-
-https://sourcegraph.com/api/console#%7B%22query%22%3A%22fragment%20FileMatchFields%20on%20FileMatch%20%7B%5Cn%20%20repository%20%7B%5Cn%20%20%20%20name%5Cn%20%20%20%20url%5Cn%20%20%7D%5Cn%20%20file%20%7B%5Cn%20%20%20%20name%5Cn%20%20%20%20path%5Cn%20%20%20%20url%5Cn%20%20%20%20commit%20%7B%5Cn%20%20%20%20%20%20oid%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%20%20lineMatches%20%7B%5Cn%20%20%20%20preview%5Cn%20%20%20%20lineNumber%5Cn%20%20%20%20offsetAndLengths%5Cn%20%20%20%20limitHit%5Cn%20%20%7D%5Cn%7D%5Cn%5Cnfragment%20CommitSearchResultFields%20on%20CommitSearchResult%20%7B%5Cn%20%20messagePreview%20%7B%5Cn%20%20%20%20value%5Cn%20%20%20%20highlights%20%7B%5Cn%20%20%20%20%20%20line%5Cn%20%20%20%20%20%20character%5Cn%20%20%20%20%20%20length%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%20%20diffPreview%20%7B%5Cn%20%20%20%20value%5Cn%20%20%20%20highlights%20%7B%5Cn%20%20%20%20%20%20line%5Cn%20%20%20%20%20%20character%5Cn%20%20%20%20%20%20length%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%20%20commit%20%7B%5Cn%20%20%20%20repository%20%7B%5Cn%20%20%20%20%20%20name%5Cn%20%20%20%20%7D%5Cn%20%20%20%20oid%5Cn%20%20%20%20url%5Cn%20%20%20%20subject%5Cn%20%20%20%20author%20%7B%5Cn%20%20%20%20%20%20date%5Cn%20%20%20%20%20%20person%20%7B%5Cn%20%20%20%20%20%20%20%20displayName%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%5Cn%5Cnfragment%20RepositoryFields%20on%20Repository%20%7B%5Cn%20%20name%5Cn%20%20url%5Cn%20%20externalURLs%20%7B%5Cn%20%20%20%20serviceType%5Cn%20%20%20%20url%5Cn%20%20%7D%5Cn%7D%5Cn%5Cnquery%20(%24query%3A%20String!)%20%7B%5Cn%20%20search(query%3A%20%24query)%20%7B%5Cn%20%20%20%20results%20%7B%5Cn%20%20%20%20%20%20results%20%7B%5Cn%20%20%20%20%20%20%20%20__typename%5Cn%20%20%20%20%20%20%20%20...%20on%20FileMatch%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20...FileMatchFields%5Cn%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%20%20...%20on%20CommitSearchResult%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20...CommitSearchResultFields%5Cn%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%20%20...%20on%20Repository%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20...RepositoryFields%5Cn%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20limitHit%5Cn%20%20%20%20%20%20cloning%20%7B%5Cn%20%20%20%20%20%20%20%20name%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20missing%20%7B%5Cn%20%20%20%20%20%20%20%20name%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20timedout%20%7B%5Cn%20%20%20%20%20%20%20%20name%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20resultCount%5Cn%20%20%20%20%20%20elapsedMilliseconds%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%5Cn%22%2C%22variables%22%3A%22%7B%5Cn%20%20%5C%22query%5C%22%3A%20%5C%22repogroup%3Asample%20error%5C%22%5Cn%7D%22%7D
-`

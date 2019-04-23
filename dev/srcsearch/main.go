@@ -11,7 +11,16 @@ import (
 	"strings"
 )
 
-const usageText = `srcsearch runs a search against a Sourcegraph instance.
+var (
+	configPath = flag.String("config", "", "")
+	endpoint   = flag.String("endpoint", "", "")
+)
+
+// commands contains all registered subcommands.
+var commands commander
+
+func main() {
+	usage := `srcsearch runs a search against a Sourcegraph instance.
 
 Usage:
 
@@ -22,22 +31,41 @@ The options are:
 	-config=$HOME/src-config.json    specifies a file containing {"accessToken": "<secret>", "endpoint": "https://sourcegraph.com"}
 	-endpoint=                       specifies the endpoint to use e.g. "https://sourcegraph.com" (overrides -config, if any)
 
+Examples:
+
+  Perform a search and get results:
+
+        $ srcsearch 'repogroup:sample error'
+
+  Perform a search and get results as JSON:
+
+        $ srcsearch -json 'repogroup:sample error'
+
+Other tips:
+
+  Make 'type:diff' searches have colored diffs by installing https://colordiff.org
+    - Ubuntu/Debian: $ sudo apt-get install colordiff
+    - Mac OS:        $ brew install colordiff
+    - Windows:       $ npm install -g colordiff
+
+  Disable color output by setting NO_COLOR=t (see https://no-color.org).
+
+  Force color output on (not on by default when piped to other programs) by setting COLOR=t
+
+  Query syntax: https://about.sourcegraph.com/docs/search/query-syntax/
 `
 
-var (
-	configPath = flag.String("config", "", "")
-	endpoint   = flag.String("endpoint", "", "")
-)
-
-// commands contains all registered subcommands.
-var commands commander
-
-func main() {
 	// Configure logging.
 	log.SetFlags(0)
 	log.SetPrefix("")
-
-	commands.run(flag.CommandLine, "srcsearch", usageText, os.Args[1:])
+	if err := search(os.Args[1:]); err != nil {
+		if _, ok := err.(*usageError); ok {
+			log.Println(err)
+			log.Println(usage)
+			os.Exit(2)
+		}
+		log.Fatal("srcsearch: %v", err)
+	}
 }
 
 var cfg *config
