@@ -17,6 +17,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/docker v0.7.3-0.20190108045446-77df18c24acf
+	github.com/dustin/go-humanize v1.0.0
 	github.com/emersion/go-imap v1.0.0-beta.1
 	github.com/emersion/go-sasl v0.0.0-20161116183048-7e096a0a6197 // indirect
 	github.com/ericchiang/k8s v1.2.0
@@ -72,6 +73,7 @@ require (
 	github.com/k0kubun/pp v2.3.0+incompatible
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/karrick/tparse v2.4.2+incompatible
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/keegancsmith/rpc v1.1.0
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
@@ -83,11 +85,14 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/lightstep/lightstep-tracer-go v0.15.6
 	github.com/mattn/go-colorable v0.1.0 // indirect
+	github.com/mattn/go-isatty v0.0.4
+	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/mattn/goreman v0.2.1
 	github.com/mcuadros/go-version v0.0.0-20180611085657-6d5863ca60fa
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
+	github.com/olekukonko/tablewriter v0.0.1 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190324214902-3020fec0e66b
@@ -123,6 +128,7 @@ require (
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
+	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea
@@ -152,6 +158,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.8.0
 	gopkg.in/yaml.v2 v2.2.2
+	jaytaylor.com/html2text v0.0.0-20190408195923-01ec452cbe43
 	sourcegraph.com/sqs/pbtypes v1.0.0 // indirect
 )
 

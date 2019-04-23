@@ -1,0 +1,266 @@
+{
+  "SourcegraphEndpoint": "https://sourcegraph.com",
+  "Query": "repogroup:sample error file:stream.go",
+  "Results": [
+    {
+      "__typename": "FileMatch",
+      "file": {
+        "commit": {
+          "oid": "a3d86c792f0f5a0c0c2c4ed9157125e914cb5534"
+        },
+        "name": "stream.go",
+        "path": "stream.go",
+        "url": "/github.com/sourcegraph/jsonrpc2/-/blob/stream.go"
+      },
+      "lineMatches": [
+        {
+          "limitHit": false,
+          "lineNumber": 16,
+          "offsetAndLengths": [
+            [
+              30,
+              5
+            ]
+          ],
+          "preview": "\tWriteObject(obj interface{}) error"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 20,
+          "offsetAndLengths": [
+            [
+              27,
+              5
+            ]
+          ],
+          "preview": "\tReadObject(v interface{}) error"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 51,
+          "offsetAndLengths": [
+            [
+              60,
+              5
+            ]
+          ],
+          "preview": "func (t *bufferedObjectStream) WriteObject(obj interface{}) error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 61,
+          "offsetAndLengths": [
+            [
+              57,
+              5
+            ]
+          ],
+          "preview": "func (t *bufferedObjectStream) ReadObject(v interface{}) error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 66,
+          "offsetAndLengths": [
+            [
+              39,
+              5
+            ]
+          ],
+          "preview": "func (t *bufferedObjectStream) Close() error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 74,
+          "offsetAndLengths": [
+            [
+              48,
+              5
+            ]
+          ],
+          "preview": "\tWriteObject(stream io.Writer, obj interface{}) error"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 78,
+          "offsetAndLengths": [
+            [
+              49,
+              5
+            ]
+          ],
+          "preview": "\tReadObject(stream *bufio.Reader, v interface{}) error"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 86,
+          "offsetAndLengths": [
+            [
+              72,
+              5
+            ]
+          ],
+          "preview": "func (VarintObjectCodec) WriteObject(stream io.Writer, obj interface{}) error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 103,
+          "offsetAndLengths": [
+            [
+              73,
+              5
+            ]
+          ],
+          "preview": "func (VarintObjectCodec) ReadObject(stream *bufio.Reader, v interface{}) error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 117,
+          "offsetAndLengths": [
+            [
+              72,
+              5
+            ]
+          ],
+          "preview": "func (VSCodeObjectCodec) WriteObject(stream io.Writer, obj interface{}) error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 132,
+          "offsetAndLengths": [
+            [
+              73,
+              5
+            ]
+          ],
+          "preview": "func (VSCodeObjectCodec) ReadObject(stream *bufio.Reader, v interface{}) error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 144,
+          "offsetAndLengths": [
+            [
+              14,
+              5
+            ]
+          ],
+          "preview": "\t\t\treturn fmt.Errorf(`jsonrpc2: line endings must be \\r\\n`)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 152,
+          "offsetAndLengths": [
+            [
+              11,
+              5
+            ]
+          ],
+          "preview": "\t\t\tvar err error"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 160,
+          "offsetAndLengths": [
+            [
+              13,
+              5
+            ]
+          ],
+          "preview": "\t\treturn fmt.Errorf(\"jsonrpc2: no Content-Length header found\")"
+        }
+      ],
+      "repository": {
+        "name": "github.com/sourcegraph/jsonrpc2",
+        "url": "/github.com/sourcegraph/jsonrpc2"
+      }
+    },
+    {
+      "__typename": "FileMatch",
+      "file": {
+        "commit": {
+          "oid": "a3d86c792f0f5a0c0c2c4ed9157125e914cb5534"
+        },
+        "name": "stream.go",
+        "path": "websocket/stream.go",
+        "url": "/github.com/sourcegraph/jsonrpc2/-/blob/websocket/stream.go"
+      },
+      "lineMatches": [
+        {
+          "limitHit": false,
+          "lineNumber": 23,
+          "offsetAndLengths": [
+            [
+              51,
+              5
+            ]
+          ],
+          "preview": "func (t ObjectStream) WriteObject(obj interface{}) error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 28,
+          "offsetAndLengths": [
+            [
+              48,
+              5
+            ]
+          ],
+          "preview": "func (t ObjectStream) ReadObject(v interface{}) error {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 30,
+          "offsetAndLengths": [
+            [
+              34,
+              5
+            ]
+          ],
+          "preview": "\tif e, ok := err.(*websocket.CloseError); ok {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 31,
+          "offsetAndLengths": [
+            [
+              79,
+              5
+            ]
+          ],
+          "preview": "\t\tif e.Code == websocket.CloseAbnormalClosure \u0026\u0026 e.Text == io.ErrUnexpectedEOF.Error() {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 33,
+          "offsetAndLengths": [
+            [
+              22,
+              5
+            ]
+          ],
+          "preview": "\t\t\t// unwrapping this error."
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 41,
+          "offsetAndLengths": [
+            [
+              30,
+              5
+            ]
+          ],
+          "preview": "func (t ObjectStream) Close() error {"
+        }
+      ],
+      "repository": {
+        "name": "github.com/sourcegraph/jsonrpc2",
+        "url": "/github.com/sourcegraph/jsonrpc2"
+      }
+    }
+  ],
+  "LimitHit": false,
+  "Cloning": [],
+  "Missing": [],
+  "Timedout": [],
+  "ResultCount": 20,
+  "ElapsedMilliseconds": 18
+}

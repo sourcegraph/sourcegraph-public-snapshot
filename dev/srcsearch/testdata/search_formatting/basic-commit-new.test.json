@@ -1,0 +1,177 @@
+{
+  "SourcegraphEndpoint": "https://sourcegraph.com",
+  "Query": "repogroup:sample type:commit error max:3 repo:^github\\.com/golang/oauth2$ ",
+  "Site": { "BuildVersion": "aaaaa_2018-12-12_aaaaa" },
+  "Results": [
+    {
+      "__typename": "CommitSearchResult",
+      "messagePreview": {
+        "value": "oauth2: fix error message typo\n\nPKSC1 is not a thing, but PKCS1 is, and the parse function above the\nerror is for PKCS1.\n\nChange-Id: I163bb158070da462caa034a19a89ce654acc7a5d\nReviewed-on: https://go-review.googlesource.com/c/146178\nReviewed-by: Brad Fitzpatrick <bradfitz@golang.org>",
+        "highlights": [
+          {
+            "line": 1,
+            "character": 12,
+            "length": 5
+          },
+          {
+            "line": 4,
+            "character": 0,
+            "length": 5
+          }
+        ]
+      },
+      "diffPreview": null,
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/oauth2\" rel=\"nofollow\">golang/oauth2</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83\" rel=\"nofollow\">Travis Bischel</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83\" rel=\"nofollow\">oauth2: fix error message typo</a></p>\n"
+      },
+      "url": "/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83",
+      "matches": [
+        {
+          "url": "/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83",
+          "body": {
+            "html": "<pre><code>oauth2: fix error message typo\n\nPKSC1 is not a thing, but PKCS1 is, and the parse function above the\nerror is for PKCS1.\n\nChange-Id: I163bb158070da462caa034a19a89ce654acc7a5d\nReviewed-on: https://go-review.googlesource.com/c/146178\nReviewed-by: Brad Fitzpatrick &lt;bradfitz@golang.org&gt;\n</code></pre>\n",
+            "text": "```COMMIT_EDITMSG\noauth2: fix error message typo\n\nPKSC1 is not a thing, but PKCS1 is, and the parse function above the\nerror is for PKCS1.\n\nChange-Id: I163bb158070da462caa034a19a89ce654acc7a5d\nReviewed-on: https://go-review.googlesource.com/c/146178\nReviewed-by: Brad Fitzpatrick <bradfitz@golang.org>\n```"
+          },
+          "highlights": [
+            {
+              "character": 12,
+              "line": 1,
+              "length": 5
+            },
+            {
+              "character": 0,
+              "line": 4,
+              "length": 5
+            }
+          ]
+        }
+      ],
+      "commit": {
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "oid": "8527f56f71077909d6ead7facfe18fbf05ebdf83",
+        "url": "/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83",
+        "subject": "oauth2: fix error message typo",
+        "author": {
+          "date": "2018-10-31T01:45:12Z",
+          "person": {
+            "displayName": "Travis Bischel"
+          }
+        }
+      }
+    },
+    {
+      "__typename": "CommitSearchResult",
+      "messagePreview": {
+        "value": "oauth2: close request body if errors occur before base RoundTripper is invoked\n\nFixes golang/oauth#269\n\nChange-Id: I25eb3273a0868a999a2e98961ae5e4040e44ad7a\nReviewed-on: https://go-review.googlesource.com/114956\nReviewed-by: Brad Fitzpatrick <bradfitz@golang.org>",
+        "highlights": [
+          {
+            "line": 1,
+            "character": 30,
+            "length": 5
+          }
+        ]
+      },
+      "diffPreview": null,
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/oauth2\" rel=\"nofollow\">golang/oauth2</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29\" rel=\"nofollow\">Tim Cooper</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29\" rel=\"nofollow\">oauth2: close request body if errors occur before base RoundTripper is invoked</a></p>\n"
+      },
+      "url": "/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29",
+      "matches": [
+        {
+          "url": "/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29",
+          "body": {
+            "html": "<pre><code>oauth2: close request body if errors occur before base RoundTripper is invoked\n\nFixes golang/oauth#269\n\nChange-Id: I25eb3273a0868a999a2e98961ae5e4040e44ad7a\nReviewed-on: https://go-review.googlesource.com/114956\nReviewed-by: Brad Fitzpatrick &lt;bradfitz@golang.org&gt;\n</code></pre>\n",
+            "text": "```COMMIT_EDITMSG\noauth2: close request body if errors occur before base RoundTripper is invoked\n\nFixes golang/oauth#269\n\nChange-Id: I25eb3273a0868a999a2e98961ae5e4040e44ad7a\nReviewed-on: https://go-review.googlesource.com/114956\nReviewed-by: Brad Fitzpatrick <bradfitz@golang.org>\n```"
+          },
+          "highlights": [
+            {
+              "character": 30,
+              "line": 1,
+              "length": 5
+            }
+          ]
+        }
+      ],
+      "commit": {
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "oid": "30b72dfc067246f4fa261c8890160b889fdd4b29",
+        "url": "/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29",
+        "subject": "oauth2: close request body if errors occur before base RoundTripper is invoked",
+        "author": {
+          "date": "2018-05-28T21:26:48Z",
+          "person": {
+            "displayName": "Tim Cooper"
+          }
+        }
+      }
+    },
+    {
+      "__typename": "CommitSearchResult",
+      "messagePreview": {
+        "value": "internal: remove RegisterContextClientFunc\n\nThis function added a totally unused error path, since the only call\nsite is for App Engine, which cannot produce an error.\n\nChange-Id: I86277ab4ff96e7bd140c53c5a114a338716668e3\nReviewed-on: https://go-review.googlesource.com/85935\nReviewed-by: Brad Fitzpatrick <bradfitz@golang.org>",
+        "highlights": [
+          {
+            "line": 3,
+            "character": 37,
+            "length": 5
+          },
+          {
+            "line": 4,
+            "character": 48,
+            "length": 5
+          }
+        ]
+      },
+      "diffPreview": null,
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/oauth2\" rel=\"nofollow\">golang/oauth2</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/876b1c6ee618a9f8fa31ded3b27708d44b3153af\" rel=\"nofollow\">Ross Light</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/876b1c6ee618a9f8fa31ded3b27708d44b3153af\" rel=\"nofollow\">internal: remove RegisterContextClientFunc</a></p>\n"
+      },
+      "url": "/github.com/golang/oauth2/-/commit/876b1c6ee618a9f8fa31ded3b27708d44b3153af",
+      "matches": [
+        {
+          "url": "/github.com/golang/oauth2/-/commit/876b1c6ee618a9f8fa31ded3b27708d44b3153af",
+          "body": {
+            "html": "<pre><code>internal: remove RegisterContextClientFunc\n\nThis function added a totally unused error path, since the only call\nsite is for App Engine, which cannot produce an error.\n\nChange-Id: I86277ab4ff96e7bd140c53c5a114a338716668e3\nReviewed-on: https://go-review.googlesource.com/85935\nReviewed-by: Brad Fitzpatrick &lt;bradfitz@golang.org&gt;\n</code></pre>\n",
+            "text": "```COMMIT_EDITMSG\ninternal: remove RegisterContextClientFunc\n\nThis function added a totally unused error path, since the only call\nsite is for App Engine, which cannot produce an error.\n\nChange-Id: I86277ab4ff96e7bd140c53c5a114a338716668e3\nReviewed-on: https://go-review.googlesource.com/85935\nReviewed-by: Brad Fitzpatrick <bradfitz@golang.org>\n```"
+          },
+          "highlights": [
+            {
+              "character": 37,
+              "line": 3,
+              "length": 5
+            },
+            {
+              "character": 48,
+              "line": 4,
+              "length": 5
+            }
+          ]
+        }
+      ],
+      "commit": {
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "oid": "876b1c6ee618a9f8fa31ded3b27708d44b3153af",
+        "url": "/github.com/golang/oauth2/-/commit/876b1c6ee618a9f8fa31ded3b27708d44b3153af",
+        "subject": "internal: remove RegisterContextClientFunc",
+        "author": {
+          "date": "2018-01-03T00:32:36Z",
+          "person": {
+            "displayName": "Ross Light"
+          }
+        }
+      }
+    }
+  ],
+  "LimitHit": true,
+  "Cloning": [],
+  "Missing": [],
+  "Timedout": [],
+  "ResultCount": 3,
+  "ElapsedMilliseconds": 37
+}
