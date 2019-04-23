@@ -11,29 +11,16 @@ import (
 	"strings"
 )
 
-const usageText = `src is a tool that provides access to Sourcegraph instances.
-For more information, see https://github.com/sourcegraph/src-cli
+const usageText = `srcsearch runs a search against a Sourcegraph instance.
 
 Usage:
 
-	src [options] command [command options]
+	srcsearch [options] query
 
 The options are:
 
 	-config=$HOME/src-config.json    specifies a file containing {"accessToken": "<secret>", "endpoint": "https://sourcegraph.com"}
 	-endpoint=                       specifies the endpoint to use e.g. "https://sourcegraph.com" (overrides -config, if any)
-
-The commands are:
-
-	search          search for results on Sourcegraph
-	api             interacts with the Sourcegraph GraphQL API
-	repos,repo      manages repositories
-	users,user      manages users
-	orgs,org        manages organizations
-	config          manages global, org, and user settings
-	extensions,ext  manages extensions (experimental)
-
-Use "src [command] -h" for more information about a command.
 
 `
 
@@ -50,7 +37,7 @@ func main() {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	commands.run(flag.CommandLine, "src", usageText, os.Args[1:])
+	commands.run(flag.CommandLine, "srcsearch", usageText, os.Args[1:])
 }
 
 var cfg *config
