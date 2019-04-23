@@ -50,8 +50,11 @@ initializeOmniboxInterface()
 const queryGraphQL: PlatformContext['queryGraphQL'] = (request, variables) =>
     storage.observeSync('sourcegraphURL').pipe(
         take(1),
-        switchMap(baseUrl =>
-            requestGraphQL({
+        switchMap(baseUrl => {
+            if (mightContainPrivateInfo && baseUrl === DEFAULT_SOURCEGRAPH_URL) {
+                return throwError(new PrivateRepoPublicSourcegraphComError('query'))
+            }
+            return requestGraphQL({
                 request: gql`
                     ${request}
                 `,
@@ -59,8 +62,8 @@ const queryGraphQL: PlatformContext['queryGraphQL'] = (request, variables) =>
                 baseUrl,
                 ...requestOptions,
             })
-        )
-    ) as any
+        })
+    ) as any // TODO(lguychard) remove any cast
 
 async function main(): Promise<void> {
     let { sourcegraphURL } = await storage.sync.get()
