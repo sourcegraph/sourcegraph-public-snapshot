@@ -439,18 +439,19 @@ Triggers:
 
 # Table "public.saved_searches"
 ```
-    Column    |           Type           |                          Modifiers                          
---------------+--------------------------+-------------------------------------------------------------
- id           | integer                  | not null default nextval('saved_searches_id_seq'::regclass)
- description  | text                     | not null
- query        | text                     | not null
- created_at   | timestamp with time zone | default now()
- updated_at   | timestamp with time zone | default now()
- notify_owner | boolean                  | 
- notify_slack | boolean                  | 
- owner_kind   | user_or_org              | not null
- user_id      | integer                  | 
- org_id       | integer                  | 
+      Column       |           Type           |                          Modifiers                          
+-------------------+--------------------------+-------------------------------------------------------------
+ id                | integer                  | not null default nextval('saved_searches_id_seq'::regclass)
+ description       | text                     | not null
+ query             | text                     | not null
+ created_at        | timestamp with time zone | default now()
+ updated_at        | timestamp with time zone | default now()
+ notify_owner      | boolean                  | 
+ notify_slack      | boolean                  | 
+ owner_kind        | user_or_org              | not null
+ user_id           | integer                  | 
+ org_id            | integer                  | 
+ slack_webhook_url | text                     | 
 Indexes:
     "saved_searches_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
