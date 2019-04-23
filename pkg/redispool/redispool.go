@@ -2,7 +2,9 @@
 package redispool
 
 import (
+	"errors"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -54,13 +56,16 @@ var schemeMatcher = regexp.MustCompile("^[A-Za-z][A-Za-z0-9\\+\\-\\.]*://")
 
 // redisDialer returns the appropriate Redis dial function given the raw endpoint string.
 // The string can have two formats:
-// 1) If it begins with "redis://", it is assumed to be of the format specified in
-//    https://www.iana.org/assignments/uri-schemes/prov/redis.
+// 1) If there is a HTTP scheme, it should be either be "redis://" or "rediss://" and the URL
+//    must be of the format specified in https://www.iana.org/assignments/uri-schemes/prov/redis.
 // 2) Otherwise, it is assumed to be of the format $HOSTNAME:$PORT.
 func redisDialer(rawEndpoint string) func() (redis.Conn, error) {
 	return func() (redis.Conn, error) {
 		if schemeMatcher.MatchString(rawEndpoint) { // expect "redis://"
 			return redis.DialURL(rawEndpoint)
+		}
+		if strings.Contains(rawEndpoint, "/") {
+			return nil, errors.New("Redis endpoint without scheme should not contain '/'")
 		}
 		return redis.Dial("tcp", rawEndpoint)
 	}
