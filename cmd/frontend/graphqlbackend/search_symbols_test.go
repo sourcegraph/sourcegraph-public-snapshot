@@ -13,11 +13,11 @@ import (
 func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	symbol := protocol.Symbol{
 		Name:    "test",
-		Path:    "test/path",
+		Path:    "foo/bar",
 		Line:    0,
 		Pattern: "",
 	}
-	baseURI, _ := gituri.Parse("https://github.com/foo/bar?v#f/d")
+	baseURI, _ := gituri.Parse("https://github.com/foo/bar")
 	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
 	commit := &gitCommitResolver{
 		repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
@@ -30,8 +30,8 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 		rev  string
 		want string
 	}{
-		{"", "git://repo#f/d"},
-		{"test", "git://repo?test#f/d"},
+		{"", "git://repo#foo/bar"},
+		{"test", "git://repo?test#foo/bar"},
 	}
 
 	for _, test := range tests {
