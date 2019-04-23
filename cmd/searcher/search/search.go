@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -186,24 +185,19 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	}
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
-	var zf *zipFile
-	tries := 0
-	for zf == nil {
+
+	getZf := func() (string, *zipFile, error) {
 		path, err := s.Store.prepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
 		if err != nil {
-			return nil, false, false, err
+			return "", nil, err
 		}
-		zf, err = s.Store.zipCache.get(path)
-		if err != nil {
-			if tries < 2 && err.Error() == "zip: not a valid zip file" {
-				err = os.Remove(path)
-				if err != nil {
-					return nil, false, false, err
-				}
-				continue
-			}
-			return nil, false, false, err
-		}
+		zf, err := s.Store.zipCache.get(path)
+		return path, zf, err
+	}
+
+	zf, err := getZipFileWithRetry(getZf)
+	if err != nil {
+		return nil, false, false, err
 	}
 	defer zf.Close()
 
