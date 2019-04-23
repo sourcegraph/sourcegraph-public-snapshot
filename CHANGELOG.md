@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 ### Fixed
+- Fixed a bug that prevented users from satisfying the "Find some references" onboarding step.
 
 ## 3.3.1
 
