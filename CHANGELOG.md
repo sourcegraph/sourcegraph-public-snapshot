@@ -1,5 +1,9 @@
-<!-- **NOTE:** this changelog should always be read on `master` branch. Its contents on version
-branches do not necessarily reflect the changes that have gone into that branch. -->
+<!--
+###################################### READ ME ###########################################
+### This changelog should always be read on `master` branch. Its contents on version   ###
+### branches do not necessarily reflect the changes that have gone into that branch.   ###
+##########################################################################################
+-->
 
 # Changelog
 
