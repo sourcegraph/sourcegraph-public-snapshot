@@ -127,7 +127,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	sq := &savedQueryResolver{
+	sq := &savedSearchResolver{
 		id:          configSavedQuery.Key,
 		description: configSavedQuery.Description,
 		query:       configSavedQuery.Query,
