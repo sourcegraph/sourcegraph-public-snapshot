@@ -1,17 +1,5 @@
-import { Observable } from 'rxjs'
-import {
-    GraphQLDocument,
-    GraphQLRequestOptions,
-    GraphQLResult,
-    requestGraphQL as requestGraphQLCommon,
-} from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { sourcegraphUrl } from '../util/context'
-import { getHeaders } from './headers'
-
 const options: GraphQLRequestOptions = {
     headers: getHeaders(),
-    baseUrl: sourcegraphUrl,
     requestOptions: {
         crossDomain: true,
         withCredentials: true,
@@ -26,40 +14,33 @@ const options: GraphQLRequestOptions = {
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(
-    request: GraphQLDocument,
-    variables?: any
-): Observable<GraphQLResult<T>> =>
-    requestGraphQLCommon({
-        request,
-        variables,
-        ...options,
-    })
-
-/**
- * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`
- *
- * @param query The GraphQL query
- * @param variables A key/value object with variable values
- * @return Observable That emits the result or errors if the HTTP request failed
- */
-export const queryGraphQL = (request: GraphQLDocument, variables?: any): Observable<GraphQLResult<GQL.IQuery>> =>
-    requestGraphQLCommon({
-        request,
-        variables,
-        ...options,
-    })
-
-/**
- * Does a GraphQL mutation to the Sourcegraph GraphQL API running under `/.api/graphql`
- *
- * @param mutation The GraphQL mutation
- * @param variables A key/value object with variable values
- * @return Observable That emits the result or errors if the HTTP request failed
- */
-export const mutateGraphQL = (request: GraphQLDocument, variables?: any): Observable<GraphQLResult<GQL.IMutation>> =>
-    requestGraphQLCommon({
-        request,
-        variables,
-        ...options,
-    })
+export const queryGraphQLFromBackground: PlatformContext['queryGraphQL'] = (
+    request,
+    variables,
+    mightContainPrivateInfo
+) => {
+    if (isBackground) {
+        throw new Error('Should not be called from the background page')
+    }
+    return from(
+        browser.runtime
+            .sendMessage({
+                type: 'requestGraphQL',
+                payload: {
+                    request: request[graphQLContent],
+                    variables: variables || {},
+                    mightContainPrivateInfo,
+                },
+            })
+            .then(response => {
+                if (!response || (!response.result && !response.err)) {
+                    throw new Error('Invalid requestGraphQL response received from background page')
+                }
+                const { result, err } = response
+                if (err) {
+                    throw err
+                }
+                return result
+            })
+    )
+}

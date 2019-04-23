@@ -18,7 +18,7 @@ import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { createBlobURLForBundle } from './worker'
 
-const queryGraphQL: PlatformContext['queryGraphQL'] = (request, variables, requestMightContainPrivateInfo) => {
+const queryGraphQL: PlatformContext['queryGraphQL'] = (request, variables, mightContainPrivateInfo) => {
     if (isInPage) {
         return requestGraphQL({
             request,
@@ -27,7 +27,7 @@ const queryGraphQL: PlatformContext['queryGraphQL'] = (request, variables, reque
             ...requestOptions,
         })
     }
-    return queryGraphQLFromBackground(request, variables)
+    return queryGraphQLFromBackground(request, variables, mightContainPrivateInfo)
 }
 
 /**

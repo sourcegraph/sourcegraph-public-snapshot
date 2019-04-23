@@ -5,7 +5,14 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
-import { CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError } from '../backend/errors'
+import {
+    CloneInProgressError,
+    createAggregateError,
+    ECLONEINPROGESS,
+    RepoNotFoundError,
+    RevNotFoundError,
+} from '../backend/errors'
+import { isPrivateRepository } from '../util/context'
 
 /**
  * @return Observable that emits the repo URL
@@ -27,7 +34,8 @@ export const resolveRepo = memoizeObservable(
                     }
                 }
             `,
-            { repoName }
+            { repoName },
+            isPrivateRepository()
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
@@ -68,7 +76,8 @@ export const resolveRev = memoizeObservable(
                         }
                     }
                 `,
-                { ...ctx, rev: ctx.rev || '' }
+                { ...ctx, rev: ctx.rev || '' },
+                isPrivateRepository()
             )
         ).pipe(
             map(dataOrThrowErrors),
@@ -133,31 +142,33 @@ export const fetchBlobContentLines = memoizeObservable(
                         }
                     }
                 `,
-                ctx
+                ctx,
+                isPrivateRepository()
             )
         ).pipe(
-            map(dataOrThrowErrors),
-            map(({ repository }) => {
+            map(({ data, errors }) => {
+                if (!data) {
+                    throw new Error('Invalid response')
+                }
+                if (errors) {
+                    if (errors.length === 1) {
+                        const err = errors[0]
+                        const isFileContent = err.path.join('.') === 'repository.commit.file.content'
+                        const isDNE = /does not exist/.test(err.message)
+
+                        // The error is the file DNE. Just ignore it and pass an empty array
+                        // to represent this.
+                        if (isFileContent && isDNE) {
+                            return []
+                        }
+                    }
+                    throw createAggregateError(errors)
+                }
+                const { repository } = data
                 if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {
                     return []
                 }
                 return repository.commit.file.content.split('\n')
-            }),
-            catchError(({ errors, ...rest }) => {
-                if (errors && errors.length === 1) {
-                    const err = errors[0]
-                    const isFileContent = err.path.join('.') === 'repository.commit.file.content'
-                    const isDNE = /does not exist/.test(err.message)
-
-                    // The error is the file DNE. Just ignore it and pass an empty array
-                    // to represent this.
-                    if (isFileContent && isDNE) {
-                        return []
-                    }
-                }
-
-                // Don't swallow unexpected errors.
-                throw { errors, ...rest }
             })
         ),
     makeRepoURI
