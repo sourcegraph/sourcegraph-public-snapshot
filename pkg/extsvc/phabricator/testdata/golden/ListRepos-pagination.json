@@ -7,8 +7,8 @@
     "Callsign": "XPRF",
     "Shortname": "",
     "Status": "active",
-    "DateCreated": "2011-07-16T23:17:54+02:00",
-    "DateModified": "2017-06-13T04:58:26+02:00",
+    "DateCreated": "2011-07-16T21:17:54Z",
+    "DateModified": "2017-06-13T02:58:26Z",
     "ViewPolicy": "public",
     "EditPolicy": "admin",
     "URIs": [
@@ -21,7 +21,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -33,7 +33,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -45,7 +45,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -57,7 +57,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -69,7 +69,7 @@
         "Disabled": false,
         "BuiltinProtocol": "",
         "BuiltinIdentifier": "",
-        "DateCreated": "2016-05-05T01:17:36+02:00",
+        "DateCreated": "2016-05-04T23:17:36Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]
@@ -82,8 +82,8 @@
     "Callsign": "ZDOCS",
     "Shortname": "",
     "Status": "inactive",
-    "DateCreated": "2014-03-05T22:08:53+01:00",
-    "DateModified": "2015-06-26T00:06:34+02:00",
+    "DateCreated": "2014-03-05T21:08:53Z",
+    "DateModified": "2015-06-25T22:06:34Z",
     "ViewPolicy": "users",
     "EditPolicy": "PHID-PROJ-roo7hwr5rfmf6czzlkjk",
     "URIs": [
@@ -96,7 +96,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -108,7 +108,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -120,7 +120,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -132,7 +132,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]
@@ -145,8 +145,8 @@
     "Callsign": "HGTEST",
     "Shortname": "",
     "Status": "active",
-    "DateCreated": "2015-02-20T19:00:14+01:00",
-    "DateModified": "2017-06-13T05:00:59+02:00",
+    "DateCreated": "2015-02-20T18:00:14Z",
+    "DateModified": "2017-06-13T03:00:59Z",
     "ViewPolicy": "users",
     "EditPolicy": "admin",
     "URIs": [
@@ -159,7 +159,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -171,7 +171,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -183,7 +183,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -195,7 +195,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]
@@ -208,8 +208,8 @@
     "Callsign": "GITTEST",
     "Shortname": "",
     "Status": "active",
-    "DateCreated": "2015-02-20T19:01:13+01:00",
-    "DateModified": "2019-02-07T16:10:56+01:00",
+    "DateCreated": "2015-02-20T18:01:13Z",
+    "DateModified": "2019-02-07T15:10:56Z",
     "ViewPolicy": "public",
     "EditPolicy": "admin",
     "URIs": [
@@ -222,7 +222,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -234,7 +234,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -246,7 +246,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -258,7 +258,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]
@@ -271,8 +271,8 @@
     "Callsign": "SVNTEST",
     "Shortname": "",
     "Status": "active",
-    "DateCreated": "2015-02-20T19:01:44+01:00",
-    "DateModified": "2017-06-13T05:03:16+02:00",
+    "DateCreated": "2015-02-20T18:01:44Z",
+    "DateModified": "2017-06-13T03:03:16Z",
     "ViewPolicy": "users",
     "EditPolicy": "admin",
     "URIs": [
@@ -285,7 +285,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -297,7 +297,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:45+02:00",
+        "DateCreated": "2016-05-04T23:23:45Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]

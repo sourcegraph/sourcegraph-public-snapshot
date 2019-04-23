@@ -321,6 +321,6 @@ func ParseDate(secStr string) (*time.Time, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "phabricator: could not parse date")
 	}
-	t := time.Unix(seconds, 0)
+	t := time.Unix(seconds, 0).UTC()
 	return &t, nil
 }

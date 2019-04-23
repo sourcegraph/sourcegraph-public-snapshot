@@ -7,8 +7,8 @@
     "Callsign": "JX",
     "Shortname": "",
     "Status": "active",
-    "DateCreated": "2011-02-13T03:31:57+01:00",
-    "DateModified": "2017-06-13T04:57:30+02:00",
+    "DateCreated": "2011-02-13T02:31:57Z",
+    "DateModified": "2017-06-13T02:57:30Z",
     "ViewPolicy": "public",
     "EditPolicy": "PHID-PROJ-roo7hwr5rfmf6czzlkjk",
     "URIs": [
@@ -21,7 +21,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -33,7 +33,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -45,7 +45,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -57,7 +57,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -69,7 +69,7 @@
         "Disabled": false,
         "BuiltinProtocol": "",
         "BuiltinIdentifier": "",
-        "DateCreated": "2016-05-05T01:17:36+02:00",
+        "DateCreated": "2016-05-04T23:17:36Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]
@@ -82,8 +82,8 @@
     "Callsign": "ARC",
     "Shortname": "",
     "Status": "active",
-    "DateCreated": "2011-02-13T03:50:40+01:00",
-    "DateModified": "2018-09-23T17:06:17+02:00",
+    "DateCreated": "2011-02-13T02:50:40Z",
+    "DateModified": "2018-09-23T15:06:17Z",
     "ViewPolicy": "public",
     "EditPolicy": "PHID-PROJ-roo7hwr5rfmf6czzlkjk",
     "URIs": [
@@ -96,7 +96,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -108,7 +108,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -120,7 +120,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -132,7 +132,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -144,7 +144,7 @@
         "Disabled": false,
         "BuiltinProtocol": "",
         "BuiltinIdentifier": "",
-        "DateCreated": "2018-07-24T23:38:14+02:00",
+        "DateCreated": "2018-07-24T21:38:14Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]
@@ -157,8 +157,8 @@
     "Callsign": "PHU",
     "Shortname": "libphutil",
     "Status": "active",
-    "DateCreated": "2011-02-13T03:51:03+01:00",
-    "DateModified": "2018-07-24T23:38:37+02:00",
+    "DateCreated": "2011-02-13T02:51:03Z",
+    "DateModified": "2018-07-24T21:38:37Z",
     "ViewPolicy": "public",
     "EditPolicy": "PHID-PROJ-roo7hwr5rfmf6czzlkjk",
     "URIs": [
@@ -171,7 +171,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -183,7 +183,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "shortname",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -195,7 +195,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -207,7 +207,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -219,7 +219,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "shortname",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -231,7 +231,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -243,7 +243,7 @@
         "Disabled": false,
         "BuiltinProtocol": "",
         "BuiltinIdentifier": "",
-        "DateCreated": "2018-07-24T23:38:37+02:00",
+        "DateCreated": "2018-07-24T21:38:37Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]
@@ -256,8 +256,8 @@
     "Callsign": "DIV",
     "Shortname": "",
     "Status": "inactive",
-    "DateCreated": "2011-02-13T03:51:23+01:00",
-    "DateModified": "2014-05-29T18:30:35+02:00",
+    "DateCreated": "2011-02-13T02:51:23Z",
+    "DateModified": "2014-05-29T16:30:35Z",
     "ViewPolicy": "users",
     "EditPolicy": "admin",
     "URIs": [
@@ -270,7 +270,7 @@
         "Disabled": false,
         "BuiltinProtocol": "",
         "BuiltinIdentifier": "",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -282,7 +282,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -294,7 +294,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -306,7 +306,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -318,7 +318,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]
@@ -331,8 +331,8 @@
     "Callsign": "P",
     "Shortname": "phabricator",
     "Status": "active",
-    "DateCreated": "2011-02-13T03:53:17+01:00",
-    "DateModified": "2018-07-24T23:29:10+02:00",
+    "DateCreated": "2011-02-13T02:53:17Z",
+    "DateModified": "2018-07-24T21:29:10Z",
     "ViewPolicy": "public",
     "EditPolicy": "PHID-PROJ-roo7hwr5rfmf6czzlkjk",
     "URIs": [
@@ -345,7 +345,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -357,7 +357,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "shortname",
-        "DateCreated": "2016-11-25T22:18:06+01:00",
+        "DateCreated": "2016-11-25T21:18:06Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -369,7 +369,7 @@
         "Disabled": false,
         "BuiltinProtocol": "https",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -381,7 +381,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "id",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -393,7 +393,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "shortname",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -405,7 +405,7 @@
         "Disabled": false,
         "BuiltinProtocol": "ssh",
         "BuiltinIdentifier": "callsign",
-        "DateCreated": "2016-05-05T01:23:44+02:00",
+        "DateCreated": "2016-05-04T23:23:44Z",
         "DateModified": "0001-01-01T00:00:00Z"
       },
       {
@@ -417,7 +417,7 @@
         "Disabled": false,
         "BuiltinProtocol": "",
         "BuiltinIdentifier": "",
-        "DateCreated": "2018-07-24T23:29:10+02:00",
+        "DateCreated": "2018-07-24T21:29:10Z",
         "DateModified": "0001-01-01T00:00:00Z"
       }
     ]

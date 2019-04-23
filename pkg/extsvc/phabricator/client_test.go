@@ -201,7 +201,7 @@ func TestClient_GetDiffInfo(t *testing.T) {
 			AuthorName:  "epriestley",
 			AuthorEmail: "git@epriestley.com",
 			DateCreated: "1395874084",
-			Date:        time.Unix(1395874084, 0),
+			Date:        time.Unix(1395874084, 0).UTC(),
 		},
 	}, {
 		name: "timeout",
