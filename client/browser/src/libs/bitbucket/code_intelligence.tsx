@@ -2,8 +2,8 @@ import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegrap
 import { of } from 'rxjs'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../shared/util/dom'
-import { MountGetter } from '../code_intelligence'
-import { CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { CodeHost, MountGetter } from '../code_intelligence'
+import { CodeView, CodeViewSpec } from '../code_intelligence/code_views'
 import { ViewResolver } from '../code_intelligence/views'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
@@ -79,7 +79,7 @@ const toolbarButtonProps = {
 /**
  * A code view spec for single file code view in the "source" view (not diff).
  */
-const singleFileSourceCodeView: CodeViewSpecResolver = {
+const singleFileSourceCodeView: CodeViewSpec = {
     getToolbarMount,
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveFileInfoForSingleFileSourceView,
@@ -97,7 +97,7 @@ const baseDiffCodeView = {
 /**
  * A code view spec for a single file "diff to previous" view
  */
-const singleFileDiffCodeView: CodeViewSpecResolver = {
+const singleFileDiffCodeView: CodeViewSpec = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveSingleFileDiffFileInfo,
 }
@@ -105,7 +105,7 @@ const singleFileDiffCodeView: CodeViewSpecResolver = {
 /**
  * A code view spec for pull requests
  */
-const pullRequestDiffCodeView: CodeViewSpecResolver = {
+const pullRequestDiffCodeView: CodeViewSpec = {
     ...baseDiffCodeView,
     resolveFileInfo: resolvePullRequestFileInfo,
 }
@@ -113,7 +113,7 @@ const pullRequestDiffCodeView: CodeViewSpecResolver = {
 /**
  * A code view spec for compare pages
  */
-const compareDiffCodeView: CodeViewSpecResolver = {
+const compareDiffCodeView: CodeViewSpec = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveCompareFileInfo,
 }
@@ -121,32 +121,32 @@ const compareDiffCodeView: CodeViewSpecResolver = {
 /**
  * A code view spec for commit pages
  */
-const commitDiffCodeView: CodeViewSpecResolver = {
+const commitDiffCodeView: CodeViewSpec = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveCommitViewFileInfo,
 }
 
-const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
+const codeViewResolver: ViewResolver<CodeView> = {
     selector: '.file-content',
-    resolveView: codeView => {
-        const contentView = codeView.querySelector('.content-view')
+    resolveView: element => {
+        const contentView = element.querySelector('.content-view')
         if (!contentView) {
             return null
         }
         if (isCompareView()) {
-            return compareDiffCodeView
+            return { element, ...compareDiffCodeView }
         }
         if (isCommitsView()) {
-            return commitDiffCodeView
+            return { element, ...commitDiffCodeView }
         }
-        if (isSingleFileView(codeView)) {
+        if (isSingleFileView(element)) {
             const isDiff = contentView.classList.contains('diff-view')
-            return isDiff ? singleFileDiffCodeView : singleFileSourceCodeView
+            return isDiff ? { element, ...singleFileDiffCodeView } : { element, ...singleFileSourceCodeView }
         }
         if (isPullRequestView()) {
-            return pullRequestDiffCodeView
+            return { element, ...pullRequestDiffCodeView }
         }
-        console.error('Unknown code view', codeView)
+        console.error('Unknown code view', element)
         return null
     },
 }
@@ -187,10 +187,10 @@ export const checkIsBitbucket = (): boolean =>
     !!document.querySelector('.bitbucket-header-logo') ||
     !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
 
-export const bitbucketServerCodeHost = {
+export const bitbucketServerCodeHost: CodeHost = {
     name: 'bitbucket-server',
     check: checkIsBitbucket,
-    codeViewSpecResolver,
+    codeViewResolvers: [codeViewResolver],
     getCommandPaletteMount,
     commandPaletteClassProps: {
         popoverClassName: 'searchable-selector command-palette-popover--bitbucket-server',
