@@ -297,8 +297,8 @@ export const githubCodeHost: CodeHost = {
         actionItemIconClass: 'action-item__icon--github v-align-text-bottom',
     },
     completionWidgetClassProps: {
-        widgetContainerClassName: 'suggester-container',
-        widgetClassName: 'suggester',
+        widgetClassName: 'suggester-container',
+        widgetContainerClassName: 'suggester',
         listClassName: 'suggestions',
         selectedListItemClassName: 'navigation-focus',
         listItemClassName: 'text-normal',
