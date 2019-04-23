@@ -6,13 +6,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
-func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store, cf httpcli.Factory) {
+func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
+	cf := NewHTTPClientFactory()
+
 	for {
 		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"PHABRICATOR"},
