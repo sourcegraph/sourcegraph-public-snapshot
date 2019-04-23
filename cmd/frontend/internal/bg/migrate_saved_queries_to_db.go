@@ -61,6 +61,15 @@ func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Co
 
 }
 
+func GetFirstSiteAdminID(ctx context.Context) *int32 {
+	var siteAdminID *int32
+	err := dbconn.Global.QueryRowContext(ctx, "WITH site_admins AS (SELECT id, username FROM users WHERE site_admin=true) SELECT min(id) FROM site_admins;").Scan(&siteAdminID)
+	if err != nil {
+		log15.Error(`Warning: unable to migrate saved query into database. No site admin ID found.`, err.Error())
+	}
+	return siteAdminID
+}
+
 // InsertSavedQueryIntoDB inserts an existing saved query from site settings into the saved_searches database table.
 // Global saved queries will be associated with the first site admin's profile. It will be added with `owner_kind`
 // set to "user", and with UserID set to the first site_admin's user ID.
@@ -78,14 +87,8 @@ func InsertSavedQueryIntoDB(ctx context.Context, s *api.Settings, sq *SavedQuery
 				log15.Error(`Warning: unable to migrate org saved query into database.`, err.Error())
 			}
 		} else if s.Subject.Site || s.Subject.Default {
-			var siteAdminID *int32
-			err := dbconn.Global.QueryRowContext(ctx, "SELECT id FROM users WHERE site_admin=true LIMIT 1").Scan(&siteAdminID)
-			if err != nil {
-				log15.Error(`Warning: unable to migrate saved query into database. No site admin ID found.`, err.Error())
-			}
-
-			// AuthorUserID is the UserID of the person who last wrote to the settings.
-			_, err = dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "user", *siteAdminID)
+			siteAdminID := GetFirstSiteAdminID(ctx)
+			_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "user", siteAdminID)
 			if err != nil {
 				log15.Error(`Warning: unable to migrate global saved query into database.`, err.Error())
 			}
@@ -120,6 +123,9 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) {
 			InsertSlackWebhookURLIntoSavedSearchesTable(ctx, "org", s.Subject.Org, notifsField.NotificationsSlack.WebhookURL)
 		} else if s.Subject.User != nil {
 			InsertSlackWebhookURLIntoSavedSearchesTable(ctx, "user", s.Subject.User, notifsField.NotificationsSlack.WebhookURL)
+		} else if s.Subject.Site || s.Subject.Default {
+			siteAdminID := GetFirstSiteAdminID(ctx)
+			InsertSlackWebhookURLIntoSavedSearchesTable(ctx, "user", siteAdminID, notifsField.NotificationsSlack.WebhookURL)
 		}
 
 		edits, _, err := jsonx.ComputePropertyRemoval(s.Contents, jsonx.MakePath("notifications.slack"), conf.FormatOptions)
