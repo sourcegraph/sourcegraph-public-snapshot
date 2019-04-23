@@ -49,8 +49,7 @@ func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Co
 			log15.Error(`Unable to remove saved query from settings. Please report this issue.`, err)
 		}
 
-		var lastID *int32
-		lastID = &s.ID
+		lastID := &s.ID
 		_, err = db.Settings.CreateIfUpToDate(ctx, s.Subject, lastID, s.AuthorUserID, text)
 		if err != nil {
 			log15.Error(`Unable to update settings with saved queries removed. Please report this issue.`)

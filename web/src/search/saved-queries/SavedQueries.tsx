@@ -70,7 +70,7 @@ export class SavedQueries extends React.Component<Props, State> {
                             if (a.description < b.description) {
                                 return -1
                             }
-                            if (a.description === b.description && a.index < b.index) {
+                            if (a.description === b.description && a.id < b.id) {
                                 return -1
                             }
                             return 1
