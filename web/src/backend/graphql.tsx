@@ -1,19 +1,16 @@
 import { Observable } from 'rxjs'
 import {
     GraphQLDocument,
-    GraphQLRequestOptions,
     GraphQLResult,
     requestGraphQL as requestGraphQLCommon,
 } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 
-const options: GraphQLRequestOptions = {
-    headers: {
-        ...window.context.xhrHeaders,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-    },
-}
+const getHeaders = () => ({
+    ...window.context.xhrHeaders,
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+})
 
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`
@@ -29,7 +26,7 @@ export const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(
     requestGraphQLCommon({
         request,
         variables,
-        ...options,
+        headers: getHeaders(),
     })
 
 /**
@@ -43,7 +40,7 @@ export const queryGraphQL = (request: GraphQLDocument, variables?: any): Observa
     requestGraphQLCommon({
         request,
         variables,
-        ...options,
+        headers: getHeaders(),
     })
 
 /**
@@ -57,5 +54,5 @@ export const mutateGraphQL = (request: GraphQLDocument, variables?: any): Observ
     requestGraphQLCommon({
         request,
         variables,
-        ...options,
+        headers: getHeaders(),
     })
