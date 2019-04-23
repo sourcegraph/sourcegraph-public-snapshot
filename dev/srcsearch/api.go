@@ -23,6 +23,8 @@ type apiRequest struct {
 	vars   map[string]interface{} // the GraphQL query variables
 	result interface{}            // where to store the result
 	done   func() error           // a function to invoke for handling the response. If nil, flags like -get-curl are ignored.
+	endpoint string
+	accessToken string
 
 	// If true, errors will not be unpacked.
 	//
@@ -55,12 +57,12 @@ func (a *apiRequest) do() error {
 	}
 
 	// Create the HTTP request.
-	req, err := http.NewRequest("POST", gqlURL(cfg.Endpoint), nil)
+	req, err := http.NewRequest("POST", gqlURL(a.endpoint), nil)
 	if err != nil {
 		return err
 	}
-	if cfg.AccessToken != "" {
-		req.Header.Set("Authorization", "token "+cfg.AccessToken)
+	if a.accessToken != "" {
+		req.Header.Set("Authorization", "token "+a.accessToken)
 	}
 	req.Body = ioutil.NopCloser(&buf)
 

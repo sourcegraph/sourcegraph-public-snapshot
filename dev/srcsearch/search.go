@@ -26,13 +26,6 @@ func search() error {
 	}
 	queryString := flag.Arg(0)
 
-	// Parse config.
-	var err error
-	cfg, err = readConfig()
-	if err != nil {
-		return errors.Wrap(err, "reading config")
-	}
-
 	query := `fragment FileMatchFields on FileMatch {
 				repository {
 					name
@@ -159,6 +152,12 @@ func search() error {
 		}
 	}
 
+	// Parse config.
+	cfg, err := readConfig()
+	if err != nil {
+		return errors.Wrap(err, "reading config")
+	}
+
 	return (&apiRequest{
 		query: query,
 		vars: map[string]interface{}{
@@ -192,6 +191,8 @@ func search() error {
 			}
 			return nil
 		},
+		endpoint: cfg.Endpoint,
+		accessToken: cfg.AccessToken,
 	}).do()
 }
 

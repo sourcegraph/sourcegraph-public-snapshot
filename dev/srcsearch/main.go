@@ -56,7 +56,6 @@ Other tips:
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	// Search.
 	if err := search(); err != nil {
 		if _, ok := err.(*usageError); ok {
 			log.Println(err)
@@ -66,8 +65,6 @@ Other tips:
 		log.Fatalf("srcsearch: %v", err)
 	}
 }
-
-var cfg *config
 
 // config represents the config format.
 type config struct {
