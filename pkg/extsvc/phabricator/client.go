@@ -22,6 +22,8 @@ type Client struct {
 
 // NewClient returns an authenticated Client, using the given URL and
 // token. If provided, cli will be used to perform the underlying HTTP requests.
+// This constructor needs a context because it calls the Conduit API to negotiate
+// capabilities as part of the dial process.
 func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Client, error) {
 	conn, err := gonduit.DialContext(ctx, url, &core.ClientOptions{
 		APIToken: token,
