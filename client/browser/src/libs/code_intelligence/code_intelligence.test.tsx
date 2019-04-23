@@ -7,7 +7,7 @@ jest.mock('react-dom', () => ({
 
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { from, NEVER, of, Subject, Subscription } from 'rxjs'
+import { from, NEVER, of, Subject, Subscription, BehaviorSubject } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../../shared/src/api/client/services'
 import { Range } from '../../../../../shared/src/api/extension/types/range'
@@ -17,6 +17,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { isDefined } from '../../../../../shared/src/util/types'
 import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
+import { MutationRecordLike } from 'src/shared/util/dom'
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
@@ -288,6 +289,78 @@ describe('code_intelligence', () => {
             await decorated()
             expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
             expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration 2')
+        })
+
+        test('removes a code view', async () => {
+            const { services } = await integrationTestContext(undefined, {
+                roots: [],
+                editors: [],
+            })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const fileInfo: FileInfo = {
+                repoName: 'foo',
+                filePath: '/bar.ts',
+                commitID: '1',
+            }
+            const mutations = new BehaviorSubject<MutationRecordLike[]>([
+                { addedNodes: [document.body], removedNodes: [] },
+            ])
+            subscriptions.add(
+                handleCodeHost({
+                    mutations,
+                    codeHost: {
+                        name: 'test',
+                        check: () => true,
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom: {
+                                    getCodeElementFromTarget: jest.fn(),
+                                    getCodeElementFromLineNumber: jest.fn(),
+                                    getLineNumberFromCodeElement: jest.fn(),
+                                },
+                                resolveFileInfo: codeView => of(fileInfo),
+                            }),
+                        ],
+                        selectionsChanges: () => of([]),
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    ...createMockPlatformContext(),
+                })
+            )
+            let editors = await from(services.editor.editors)
+                .pipe(
+                    skip(2),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors).toEqual([
+                {
+                    editorId: 'editor#0',
+                    isActive: true,
+                    model: {
+                        languageId: 'typescript',
+                        text: undefined,
+                        uri: 'git://foo?1#/bar.ts',
+                    },
+                    resource: 'git://foo?1#/bar.ts',
+                    selections: [],
+                    type: 'CodeEditor',
+                },
+            ])
+            expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(true)
+            // Simulate code view removal
+            mutations.next([{ addedNodes: [], removedNodes: [codeView] }])
+            // Model and editor should have been removed
+            editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors).toEqual([])
+            expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
         })
     })
 })
