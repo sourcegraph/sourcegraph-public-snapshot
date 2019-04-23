@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/mattn/go-isatty"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/mattn/go-isatty"
 )
 
 // gqlURL returns the URL to the GraphQL endpoint for the given Sourcegraph
@@ -44,8 +45,6 @@ type apiRequest struct {
 // the request is finished a.done is invoked to handle the response (which is
 // stored in a.result).
 func (a *apiRequest) do() error {
-	a.done = func() error { return nil }
-
 	// Create the JSON object.
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(map[string]interface{}{

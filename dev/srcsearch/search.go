@@ -548,4 +548,3 @@ const searchResultsTemplate = `{{- /* ignore this line for template formatting s
 		{{- end -}}
 	{{- end -}}
 `
-
