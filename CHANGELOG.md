@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed a bug where search scopes would not get merged, and only the lowest-level list of search scopes would appear.
+
 ## 3.3.1
 
 ### Fixed
