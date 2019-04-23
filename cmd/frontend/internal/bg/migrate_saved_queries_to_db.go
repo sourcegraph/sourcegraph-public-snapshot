@@ -131,8 +131,7 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) {
 			log15.Error(`Unable to apply settings with Slack webhook URL removed from settings. Please report this issue.`, err)
 		}
 
-		var lastID *int32
-		lastID = &s.ID
+		lastID := &s.ID
 		_, err = db.Settings.CreateIfUpToDate(ctx, s.Subject, lastID, s.AuthorUserID, text)
 		if err != nil {
 			log15.Error(`Unable to create new settings with Slack webhook URL removed. Please report this issue.`)
