@@ -48,11 +48,21 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	return savedSearches, nil
 }
 
-func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (savedSearch *api.ConfigSavedQuery, err error) {
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT id, description, query, notify_owner, notify_slack, owner_kind, user_id, org_id FROM saved_searches WHERE id=$1`, id).Scan(&savedSearch.Key, &savedSearch.Description, &savedSearch.Query, &savedSearch.Notify, &savedSearch.NotifySlack, &savedSearch.OwnerKind, &savedSearch.UserID, &savedSearch.OrgID); err != nil {
+func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (*api.SavedQuerySpecAndConfig, error) {
+	var savedSearch api.SavedQuerySpecAndConfig
+
+	err := dbconn.Global.QueryRowContext(ctx, `SELECT id, description, query, notify_owner, notify_slack, owner_kind, user_id, org_id, slack_webhook_url FROM saved_searches WHERE id=$1`, id).Scan(&savedSearch.Config.Key, &savedSearch.Config.Description, &savedSearch.Config.Query, &savedSearch.Config.Notify, &savedSearch.Config.NotifySlack, &savedSearch.Config.OwnerKind, &savedSearch.Config.UserID, &savedSearch.Config.OrgID, &savedSearch.Config.SlackWebhookURL)
+	savedSearch.Spec.Key = savedSearch.Config.Key
+	if savedSearch.Config.UserID != nil {
+		savedSearch.Spec.Subject = api.SettingsSubject{User: savedSearch.Config.UserID}
+	} else if savedSearch.Config.OrgID != nil {
+		savedSearch.Spec.Subject = api.SettingsSubject{Org: savedSearch.Config.OrgID}
+	}
+
+	if err != nil {
 		return nil, err
 	}
-	return savedSearch, err
+	return &savedSearch, err
 }
 
 func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *api.ConfigSavedQuery, err error) {

@@ -71,19 +71,19 @@ type SavedQueryWasDeletedArgs struct {
 // after the server has started.
 func (c *client) SavedQueryWasDeleted(ctx context.Context, spec api.SavedQueryIDSpec, disableSubscriptionNotifications bool) error {
 	return c.post(PathSavedQueryWasDeleted, &SavedQueryWasDeletedArgs{
-		Spec:                             spec,
+		Spec: spec,
 		DisableSubscriptionNotifications: disableSubscriptionNotifications,
 	})
 }
 
 type TestNotificationArgs struct {
-	Spec api.SavedQueryIDSpec
+	SavedSearch api.SavedQuerySpecAndConfig
 }
 
 // TestNotification is called to send a test notification for a saved search. Users may perform this
 // action to test that the configured notifications are working.
-func (c *client) TestNotification(ctx context.Context, spec api.SavedQueryIDSpec) error {
-	return c.post(PathTestNotification, &TestNotificationArgs{Spec: spec})
+func (c *client) TestNotification(ctx context.Context, savedSearch api.SavedQuerySpecAndConfig) error {
+	return c.post(PathTestNotification, &TestNotificationArgs{SavedSearch: savedSearch})
 }
 
 func (c *client) post(path string, data interface{}) error {

@@ -10,13 +10,13 @@ import (
 )
 
 type savedSearchResolver struct {
-	id                                  string
-	description                         string
-	query                               string
-	showOnHomepage, notify, notifySlack bool
-	ownerKind                           string
-	userID, orgID                       *int32
-	slackWebhookURL                     *string
+	id                  string
+	description         string
+	query               string
+	notify, notifySlack bool
+	ownerKind           string
+	userID, orgID       *int32
+	slackWebhookURL     *string
 }
 
 func (r savedSearchResolver) ID() string {
@@ -75,14 +75,8 @@ func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
-	var spec api.SavedQueryIDSpec
-	if savedSearch.UserID != nil {
-		spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: savedSearch.UserID}, Key: savedSearch.Key}
-	} else if savedSearch.OrgID != nil {
-		spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: savedSearch.OrgID}, Key: savedSearch.Key}
-	}
 
-	go queryrunnerapi.Client.TestNotification(context.Background(), spec)
+	go queryrunnerapi.Client.TestNotification(context.Background(), *savedSearch)
 	return &EmptyResponse{}, nil
 }
 

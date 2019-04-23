@@ -176,30 +176,23 @@ func serveTestNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := savedQueryIDSpecKey(args.Spec)
-	query, ok := allSavedQueries.allSavedQueries[key]
-	if !ok {
-		writeError(w, fmt.Errorf("no saved search found with key %q", key))
-		return
-	}
-
-	recipients, err := getNotificationRecipients(r.Context(), query.Spec, query.Config)
+	recipients, err := getNotificationRecipients(r.Context(), args.SavedSearch.Spec, args.SavedSearch.Config)
 	if err != nil {
 		writeError(w, fmt.Errorf("error computing recipients: %s", err))
 		return
 	}
 
 	for _, recipient := range recipients {
-		if err := emailNotifySubscribeUnsubscribe(r.Context(), recipient, query, notifySubscribedTemplate); err != nil {
+		if err := emailNotifySubscribeUnsubscribe(r.Context(), recipient, args.SavedSearch, notifySubscribedTemplate); err != nil {
 			writeError(w, fmt.Errorf("error sending email notifications to %s: %s", recipient.spec, err))
 			return
 		}
 		if err := slackNotify(context.Background(), recipient,
-			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(query.Config.Query, utmSourceSlack), query.Config.Description), query.Config.SlackWebhookURL); err != nil {
-			writeError(w, fmt.Errorf("error sending email notifications to %s: %s", recipient.spec, err))
+			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(args.SavedSearch.Config.Query, utmSourceSlack), args.SavedSearch.Config.Description), args.SavedSearch.Config.SlackWebhookURL); err != nil {
+			writeError(w, fmt.Errorf("error sending slack notifications to %s: %s", recipient.spec, err))
 			return
 		}
 	}
 
-	log15.Info("saved query test notification sent", "spec", args.Spec, "key", key)
+	log15.Info("saved query test notification sent", "spec", args.SavedSearch.Spec, "key", args.SavedSearch.Spec.Key)
 }
