@@ -2,6 +2,7 @@ import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/co
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import {
     FileSpec,
     PositionSpec,
@@ -86,12 +87,10 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
  * Some code snippets get leading white space trimmed. This adjusts based on
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
-const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
-    direction,
-    codeView,
-    position,
-}) =>
-    fetchBlobContentLines(position).pipe(
+const getSnippetPositionAdjuster = (
+    queryGraphQL: PlatformContext['queryGraphQL']
+): PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> => ({ direction, codeView, position }) =>
+    fetchBlobContentLines({ ...position, queryGraphQL }).pipe(
         map(lines => {
             const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
                 codeView,
@@ -120,7 +119,7 @@ const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec &
 
 const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
     dom: searchCodeSnippetDOMFunctions,
-    adjustPosition: adjustPositionForSnippet,
+    getPositionAdjuster: getSnippetPositionAdjuster,
     resolveFileInfo: resolveSnippetFileInfo,
     toolbarButtonProps,
 })
@@ -128,7 +127,7 @@ const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
 const commentSnippetCodeViewResolver = toCodeViewResolver('.js-comment-body', {
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveSnippetFileInfo,
-    adjustPosition: adjustPositionForSnippet,
+    getPositionAdjuster: getSnippetPositionAdjuster,
     toolbarButtonProps,
 })
 

@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import { from, Observable, of, throwError } from 'rxjs'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, switchMap } from 'rxjs/operators'
-import { gql, graphQLContent } from '../graphql/graphql'
+import { gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { asError, createAggregateError } from '../util/errors'
@@ -59,7 +59,7 @@ export function queryConfiguredRegistryExtensions(
                         }
                     }
                 }
-            `[graphQLContent],
+            `,
             variables,
             false
         )

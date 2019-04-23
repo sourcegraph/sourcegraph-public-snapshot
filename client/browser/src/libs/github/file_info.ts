@@ -2,12 +2,16 @@ import { isDefined, propertyIsDefined } from '@sourcegraph/codeintellify/lib/hel
 import { Observable, of, throwError, zip } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 import { GitHubBlobUrl } from '.'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 import { getCommitIDFromPermalink } from './scrape'
 import { getDeltaFileName, getDiffResolvedRev, getGitHubState, parseURL } from './util'
 
-export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
+export const resolveDiffFileInfo = (
+    codeView: HTMLElement,
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Observable<FileInfo> =>
     of(codeView).pipe(
         map(codeView => {
             const { repoName } = parseURL()
@@ -35,8 +39,12 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
             }
         }),
         switchMap(({ repoName, headRev, baseRev, ...rest }) => {
-            const resolvingHeadRev = resolveRev({ repoName, rev: headRev }).pipe(retryWhenCloneInProgressError())
-            const resolvingBaseRev = resolveRev({ repoName, rev: baseRev }).pipe(retryWhenCloneInProgressError())
+            const resolvingHeadRev = resolveRev({ repoName, rev: headRev, queryGraphQL }).pipe(
+                retryWhenCloneInProgressError()
+            )
+            const resolvingBaseRev = resolveRev({ repoName, rev: baseRev, queryGraphQL }).pipe(
+                retryWhenCloneInProgressError()
+            )
 
             return zip(resolvingHeadRev, resolvingBaseRev).pipe(
                 map(([headCommitID, baseCommitID]) => ({
@@ -90,7 +98,10 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
     }
 }
 
-export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
+export const resolveSnippetFileInfo = (
+    codeView: HTMLElement,
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Observable<FileInfo> =>
     of(codeView).pipe(
         map(codeView => {
             const anchors = codeView.getElementsByTagName('a')
@@ -115,7 +126,7 @@ export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileIn
             ...rest,
         })),
         switchMap(({ repoName, rev, ...rest }) =>
-            resolveRev({ repoName, rev }).pipe(
+            resolveRev({ repoName, rev, queryGraphQL }).pipe(
                 retryWhenCloneInProgressError(),
                 map(commitID => ({ ...rest, repoName, commitID, rev: rev || commitID }))
             )

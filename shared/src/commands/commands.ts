@@ -5,6 +5,7 @@ import { first } from 'rxjs/operators'
 import { Services } from '../api/client/services'
 import { KeyPath, SettingsEdit } from '../api/client/services/settings'
 import { ActionContributionClientCommandUpdateConfiguration } from '../api/protocol'
+import { gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
 
 /**
@@ -87,7 +88,15 @@ export function registerBuiltinClientCommands(
                 // is set to `true`. It is up to the client (e.g. browser
                 // extension) to check that parameter and prevent the request
                 // from being sent to Sourcegraph.com.
-                from(context.queryGraphQL(query, variables, true)).toPromise(),
+                from(
+                    context.queryGraphQL(
+                        gql`
+                            ${query}
+                        `,
+                        variables,
+                        true
+                    )
+                ).toPromise(),
         })
     )
 

@@ -3,6 +3,7 @@ import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, isErrorLike } from '../../shared/backend/errors'
 import { ButtonProps } from '../../shared/components/CodeViewToolbar'
@@ -33,13 +34,15 @@ export interface CodeView {
      * because some code hosts need to resolve this asynchronously. The
      * observable should only emit once.
      */
-    resolveFileInfo: (codeView: HTMLElement) => Observable<FileInfo>
+    resolveFileInfo: (codeView: HTMLElement, queryGraphQL: PlatformContext['queryGraphQL']) => Observable<FileInfo>
     /**
      * In some situations, we need to be able to adjust the position going into
      * and coming out of codeintellify. For example, Phabricator converts tabs
      * to spaces in it's DOM.
      */
-    adjustPosition?: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
+    getPositionAdjuster?: (
+        queryGraphQL: PlatformContext['queryGraphQL']
+    ) => PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
     /** Props for styling the buttons in the `CodeViewToolbar`. */
     toolbarButtonProps?: ButtonProps
     /**
@@ -74,14 +77,18 @@ export interface FileInfoWithContents extends FileInfo {
     baseHasFileContents?: boolean
 }
 
-export const fetchFileContents = (info: FileInfo): Observable<FileInfoWithContents> =>
-    ensureRevisionsAreCloned(info).pipe(
+export const fetchFileContents = (
+    info: FileInfo,
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Observable<FileInfoWithContents> =>
+    ensureRevisionsAreCloned(info, queryGraphQL).pipe(
         switchMap(info => {
             const fetchingBaseFile = info.baseCommitID
                 ? fetchBlobContentLines({
                       repoName: info.repoName,
                       filePath: info.baseFilePath || info.filePath,
                       commitID: info.baseCommitID,
+                      queryGraphQL,
                   })
                 : of(null)
 
@@ -89,6 +96,7 @@ export const fetchFileContents = (info: FileInfo): Observable<FileInfoWithConten
                 repoName: info.repoName,
                 filePath: info.filePath,
                 commitID: info.commitID,
+                queryGraphQL,
             })
             return zip(fetchingBaseFile, fetchingHeadFile).pipe(
                 map(

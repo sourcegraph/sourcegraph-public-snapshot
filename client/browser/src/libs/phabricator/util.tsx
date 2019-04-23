@@ -1,4 +1,5 @@
 import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { getRepoDetailsFromCallsign, getRepoDetailsFromDifferentialID } from './backend'
 
 const TAG_PATTERN = /r([0-9A-z]+)([0-9a-f]{40})/
@@ -133,7 +134,8 @@ function getBaseCommitIDFromRevisionPage(): string | null {
 }
 
 export async function getPhabricatorState(
-    loc: Location
+    loc: Location,
+    queryGraphQL: PlatformContext['queryGraphQL']
 ): Promise<DiffusionState | DifferentialState | RevisionState | ChangeState | null> {
     const stateUrl = loc.href.replace(loc.origin, '')
     const diffusionMatch = PHAB_DIFFUSION_REGEX.exec(stateUrl)
@@ -160,7 +162,7 @@ export async function getPhabricatorState(
             return null
         }
         match.callsign = callsign
-        const { repoName } = await getRepoDetailsFromCallsign(callsign)
+        const { repoName } = await getRepoDetailsFromCallsign(callsign, queryGraphQL)
         const commitID = getCommitIDFromPageTag()
         if (!commitID) {
             console.error('cannot determine commitIDision from page')
@@ -187,7 +189,7 @@ export async function getPhabricatorState(
         const differentialID = parseInt(match.differentialID.split('D')[1], 10)
         let diffID = match.diffID ? parseInt(match.diffID, 10) : undefined
 
-        const { callsign } = await getRepoDetailsFromDifferentialID(differentialID)
+        const { callsign } = await getRepoDetailsFromDifferentialID(differentialID, queryGraphQL)
         if (!callsign) {
             console.error(`callsign not found`)
             return null
@@ -202,7 +204,7 @@ export async function getPhabricatorState(
             console.error(`differential id not found on page.`)
             return null
         }
-        const { repoName } = await getRepoDetailsFromCallsign(callsign)
+        const { repoName } = await getRepoDetailsFromCallsign(callsign, queryGraphQL)
         let baseRev = `phabricator/base/${diffID}`
         let headRev = `phabricator/diff/${diffID}`
 
@@ -261,7 +263,7 @@ export async function getPhabricatorState(
             callsign: revisionMatch[1],
             rev: revisionMatch[2],
         }
-        const { repoName } = await getRepoDetailsFromCallsign(match.callsign)
+        const { repoName } = await getRepoDetailsFromCallsign(match.callsign, queryGraphQL)
         const headCommitID = match.rev
         const baseCommitID = getBaseCommitIDFromRevisionPage()
         if (!baseCommitID) {
@@ -296,7 +298,7 @@ export async function getPhabricatorState(
             return null
         }
         match.callsign = callsign
-        const { repoName } = await getRepoDetailsFromCallsign(callsign)
+        const { repoName } = await getRepoDetailsFromCallsign(callsign, queryGraphQL)
         const commitID = getCommitIDFromPageTag()
         if (!commitID) {
             console.error('cannot determine revision from page.')
@@ -331,13 +333,13 @@ export async function getPhabricatorState(
         }
         const diffID = parseInt(diffMatch[1], 10)
 
-        const { callsign } = await getRepoDetailsFromDifferentialID(differentialID)
+        const { callsign } = await getRepoDetailsFromDifferentialID(differentialID, queryGraphQL)
         if (!callsign) {
             console.error(`callsign not found`)
             return null
         }
 
-        const { repoName } = await getRepoDetailsFromCallsign(callsign)
+        const { repoName } = await getRepoDetailsFromCallsign(callsign, queryGraphQL)
         let baseRev = `phabricator/base/${diffID}`
         let headRev = `phabricator/diff/${diffID}`
 

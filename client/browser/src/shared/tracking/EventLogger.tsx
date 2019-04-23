@@ -1,5 +1,6 @@
 import uuid from 'uuid'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../../shared/src/telemetry/telemetryService'
 import storage from '../../browser/storage'
 import { isInPage } from '../../context'
@@ -11,7 +12,7 @@ const uidKey = 'sourcegraphAnonymousUid'
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
 
-    constructor() {
+    constructor(private queryGraphQL: PlatformContext['queryGraphQL']) {
         // Fetch user ID on initial load.
         this.getAnonUserID().then(
             () => {
@@ -69,7 +70,7 @@ export class EventLogger implements TelemetryService {
      */
     public logCodeIntelligenceEvent(event: GQL.UserEvent): void {
         this.getAnonUserID().then(
-            anonUserId => logUserEvent(event, anonUserId, sourcegraphUrl),
+            anonUserId => logUserEvent(event, anonUserId, sourcegraphUrl, this.queryGraphQL),
             () => {
                 /* noop */
             }

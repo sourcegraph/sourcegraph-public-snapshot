@@ -1,10 +1,11 @@
 import { applyEdits, parse as parseJSONC } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { Observable } from 'rxjs'
+import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { SettingsEdit } from '../../../../shared/src/api/client/services/settings'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import {
     mergeSettings,
     SettingsCascade,
@@ -15,7 +16,6 @@ import { isErrorLike } from '../../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import { observeStorageKey, storage } from '../browser/storage'
 import { isInPage } from '../context'
-import { queryGraphQL } from '../shared/backend/graphql'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
 
@@ -112,15 +112,19 @@ const configurationCascadeFragment = gql`
  *
  * TODO(sqs): This uses the DEPRECATED GraphQL Query.viewerConfiguration and ConfigurationCascade for backcompat.
  */
-export function fetchViewerSettings(): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
-    return queryGraphQL(gql`
-        query ViewerConfiguration {
-            viewerConfiguration {
-                ...ConfigurationCascadeFields
+export function fetchViewerSettings(
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
+    return from(
+        queryGraphQL<GQL.IQuery>(gql`
+            query ViewerConfiguration {
+                viewerConfiguration {
+                    ...ConfigurationCascadeFields
+                }
             }
-        }
-        ${configurationCascadeFragment}
-    `).pipe(
+            ${configurationCascadeFragment}
+        `)
+    ).pipe(
         // Suppress deprecation warnings because our use of these deprecated fields is intentional (see
         // tsdoc comment).
         //

@@ -218,7 +218,7 @@ export interface FileInfo {
 }
 
 interface CodeIntelligenceProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL'> {
+    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'queryGraphQL'> {
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
@@ -353,9 +353,10 @@ export function handleCodeHost({
 }: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
+    const { queryGraphQL } = platformContext
 
     const ensureRepoExists = (context: CodeHostContext) =>
-        resolveRev(context).pipe(
+        resolveRev({ ...context, queryGraphQL }).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
             catchError(() => [false])
@@ -427,9 +428,9 @@ export function handleCodeHost({
         trackCodeViews(codeHost),
         mergeMap(codeViewEvent => {
             if (codeViewEvent.type === 'added') {
-                return codeViewEvent.resolveFileInfo(codeViewEvent.element).pipe(
+                return codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.queryGraphQL).pipe(
                     mergeMap(fileInfo =>
-                        fetchFileContents(fileInfo).pipe(
+                        fetchFileContents(fileInfo, platformContext.queryGraphQL).pipe(
                             map(fileInfoWithContents => ({
                                 fileInfo: fileInfoWithContents,
                                 ...codeViewEvent,
@@ -462,7 +463,7 @@ export function handleCodeHost({
 
             // Handle added or removed view component, workspace root and subscriptions
             if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
-                const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
+                const { element, fileInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const uri = toURIWithPath(fileInfo)
                 const languageId = getModeFromPath(fileInfo.filePath)
                 const model = { uri, languageId, text: fileInfo.content }
@@ -577,6 +578,9 @@ export function handleCodeHost({
                             ? fileInfo.baseRev || fileInfo.baseCommitID!
                             : fileInfo.rev || fileInfo.commitID,
                 })
+                const adjustPosition = getPositionAdjuster
+                    ? getPositionAdjuster(platformContext.queryGraphQL)
+                    : undefined
                 codeViewState.subscriptions.add(
                     hoverifier.hoverify({
                         dom: domFunctions,

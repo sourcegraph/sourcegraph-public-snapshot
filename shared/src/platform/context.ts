@@ -1,7 +1,7 @@
 import { Endpoint, isEndpoint } from '@sourcegraph/comlink'
 import { NextObserver, Observable, Subscribable } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
-import { GraphQLResult } from '../graphql/graphql'
+import { GraphQLDocument, GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { FileSpec, PositionSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
@@ -60,10 +60,10 @@ export interface PlatformContext {
      * @return Observable that emits the result or an error if the HTTP request failed
      */
     queryGraphQL<R extends GQL.IQuery | GQL.IMutation>(
-        request: string,
+        request: GraphQLDocument,
         variables?: { [name: string]: any },
         mightContainPrivateInfo?: boolean
-    ): Subscribable<GraphQLResult<R>>
+    ): Observable<GraphQLResult<R>>
 
     /**
      * Forces the currently displayed tooltip, if any, to update its contents.
