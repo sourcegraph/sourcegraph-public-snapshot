@@ -10,6 +10,7 @@ import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../br
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { OptionsMenuProps } from '../../libs/options/OptionsMenu'
 import { initSentry } from '../../libs/sentry'
+import { queryGraphQLFromBackground } from '../../shared/backend/graphql'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
@@ -50,6 +51,9 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
     })
     return { host, protocol, hasPermissions }
 }
+
+const ensureValidSite = () => fetchSite(queryGraphQLFromBackground)
+
 class Options extends React.Component<{}, State> {
     public state: State = {
         sourcegraphURL: null,
@@ -92,7 +96,7 @@ class Options extends React.Component<{}, State> {
         const props: OptionsContainerProps = {
             sourcegraphURL: this.state.sourcegraphURL,
 
-            ensureValidSite: fetchSite,
+            ensureValidSite,
             fetchCurrentTabStatus,
             hasPermissions: url =>
                 browser.permissions.contains({

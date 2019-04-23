@@ -2,15 +2,16 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { sourcegraphUrl } from '../util/context'
-import { queryGraphQL } from './graphql'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 
 /**
  * @return Observable that emits the client configuration details.
  *         Errors
  */
-export const resolveClientConfiguration = (): Observable<GQL.IClientConfigurationDetails> =>
-    queryGraphQL(gql`query ClientConfiguration() {
+export const resolveClientConfiguration = (
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Observable<GQL.IClientConfigurationDetails> =>
+    queryGraphQL<GQL.IQuery>(gql`query ClientConfiguration() {
             clientConfiguration {
                 contentScriptUrls
                 parentSourcegraph {
@@ -22,8 +23,8 @@ export const resolveClientConfiguration = (): Observable<GQL.IClientConfiguratio
         map(({ clientConfiguration }) => clientConfiguration, catchError((err, caught) => caught))
     )
 
-export const fetchCurrentUser = (): Observable<GQL.IUser | undefined> =>
-    queryGraphQL(gql`query CurrentUser() {
+export const fetchCurrentUser = (queryGraphQL: PlatformContext['queryGraphQL']): Observable<GQL.IUser | undefined> =>
+    queryGraphQL<GQL.IQuery>(gql`query CurrentUser() {
             currentUser {
                 id
                 displayName
@@ -41,8 +42,8 @@ export const fetchCurrentUser = (): Observable<GQL.IUser | undefined> =>
         map(({ currentUser }) => currentUser || undefined, catchError((err, caught) => caught))
     )
 
-export const fetchSite = (url = sourcegraphUrl): Observable<GQL.ISite> =>
-    queryGraphQL(gql`query SiteProductVersion() {
+export const fetchSite = (queryGraphQL: PlatformContext['queryGraphQL']): Observable<GQL.ISite> =>
+    queryGraphQL<GQL.IQuery>(gql`query SiteProductVersion() {
             site {
                 productVersion
                 buildVersion

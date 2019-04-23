@@ -1,7 +1,7 @@
 import { from } from 'rxjs'
 import { first, map, switchMap } from 'rxjs/operators'
 import { SettingsEdit } from '../api/client/services/settings'
-import { dataOrThrowErrors, gql, graphQLContent } from '../graphql/graphql'
+import { dataOrThrowErrors, gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { isErrorLike } from '../util/errors'
@@ -104,7 +104,7 @@ function editSettings(
                         }
                     }
                 }
-            `[graphQLContent],
+            `,
             { subject, lastID, edit },
             false
         )
@@ -142,7 +142,7 @@ export function overwriteSettings(
                         }
                     }
                 }
-            `[graphQLContent],
+            `,
             { subject, lastID, contents },
             false
         )

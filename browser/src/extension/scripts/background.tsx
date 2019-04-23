@@ -47,6 +47,20 @@ const configureOmnibox = (serverUrl: string): void => {
 }
 
 initializeOmniboxInterface()
+const queryGraphQL: PlatformContext['queryGraphQL'] = (request, variables) =>
+    storage.observeSync('sourcegraphURL').pipe(
+        take(1),
+        switchMap(baseUrl =>
+            requestGraphQL({
+                request: gql`
+                    ${request}
+                `,
+                variables,
+                baseUrl,
+                ...requestOptions,
+            })
+        )
+    ) as any
 
 async function main(): Promise<void> {
     let { sourcegraphURL } = await storage.sync.get()

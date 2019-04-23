@@ -1,18 +1,25 @@
-import { Observable } from 'rxjs'
+import { from, Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
 import { CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError } from '../backend/errors'
-import { queryGraphQL } from '../backend/graphql'
 
 /**
  * @return Observable that emits the repo URL
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
 export const resolveRepo = memoizeObservable(
-    (ctx: { repoName: string }): Observable<string> =>
-        queryGraphQL(
+    ({
+        repoName,
+        queryGraphQL,
+    }: {
+        repoName: string
+        queryGraphQL: PlatformContext['queryGraphQL']
+    }): Observable<string> =>
+        queryGraphQL<GQL.IQuery>(
             gql`
                 query ResolveRepo($repoName: String!) {
                     repository(name: $repoName) {
@@ -20,12 +27,12 @@ export const resolveRepo = memoizeObservable(
                     }
                 }
             `,
-            { ...ctx }
+            { repoName }
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {
-                    throw new RepoNotFoundError(ctx.repoName)
+                    throw new RepoNotFoundError(repoName)
                 }
 
                 return repository.url
@@ -39,21 +46,30 @@ export const resolveRepo = memoizeObservable(
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
-    (ctx: { repoName: string; rev?: string }): Observable<string> =>
-        queryGraphQL(
-            gql`
-                query ResolveRev($repoName: String!, $rev: String!) {
-                    repository(name: $repoName) {
-                        mirrorInfo {
-                            cloneInProgress
-                        }
-                        commit(rev: $rev) {
-                            oid
+    ({
+        queryGraphQL,
+        ...ctx
+    }: {
+        repoName: string
+        rev?: string
+        queryGraphQL: PlatformContext['queryGraphQL']
+    }): Observable<string> =>
+        from(
+            queryGraphQL<GQL.IQuery>(
+                gql`
+                    query ResolveRev($repoName: String!, $rev: String!) {
+                        repository(name: $repoName) {
+                            mirrorInfo {
+                                cloneInProgress
+                            }
+                            commit(rev: $rev) {
+                                oid
+                            }
                         }
                     }
-                }
-            `,
-            { ...ctx, rev: ctx.rev || '' }
+                `,
+                { ...ctx, rev: ctx.rev || '' }
+            )
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
@@ -98,18 +114,28 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
  * Only emits once.
  */
 export const fetchBlobContentLines = memoizeObservable(
-    (ctx: RepoSpec & ResolvedRevSpec & FileSpec): Observable<string[]> =>
-        queryGraphQL(gql`
-            query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
-                repository(name: $repoName) {
-                    commit(rev: $commitID) {
-                        file(path: $filePath) {
-                            content
+    ({
+        queryGraphQL,
+        ...ctx
+    }: RepoSpec & ResolvedRevSpec & FileSpec & { queryGraphQL: PlatformContext['queryGraphQL'] }): Observable<
+        string[]
+    > =>
+        from(
+            queryGraphQL<GQL.IQuery>(
+                gql`
+                    query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
+                        repository(name: $repoName) {
+                            commit(rev: $commitID) {
+                                file(path: $filePath) {
+                                    content
+                                }
+                            }
                         }
                     }
-                }
-            }
-        `).pipe(
+                `,
+                ctx
+            )
+        ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {

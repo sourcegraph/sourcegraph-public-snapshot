@@ -8,13 +8,14 @@ jest.mock('react-dom', () => ({
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, from, NEVER, of, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
+import { PrivateRepoPublicSourcegraphComError } from '../shared/backend/errors'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
@@ -37,10 +38,11 @@ const createMockController = (services: Services): Controller => ({
 
 const createMockPlatformContext = (
     partialMocks?: Partial<PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'>>
-): PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'> => ({
+): PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile' | 'queryGraphQL'> => ({
     platformContext: {
         forceUpdateTooltip: jest.fn(),
         urlToFile: jest.fn(),
+        queryGraphQL: jest.fn(() => throwError(new PrivateRepoPublicSourcegraphComError(''))),
         sideloadedExtensionURL: new Subject<string | null>(),
         ...partialMocks,
     },

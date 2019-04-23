@@ -2,18 +2,22 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { RepoNotFoundError } from './errors'
-import { queryGraphQL } from './graphql'
 
 export const queryRepositoryComparisonFileDiffs = memoizeObservable(
-    (args: {
+    ({
+        queryGraphQL,
+        ...args
+    }: {
         repo: string
         base: string | null
         head: string | null
         first?: number
+        queryGraphQL: PlatformContext['queryGraphQL']
     }): Observable<GQL.IFileDiffConnection> =>
-        queryGraphQL(
+        queryGraphQL<GQL.IQuery>(
             gql`
                 query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
                     repository(name: $repo) {

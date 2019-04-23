@@ -63,7 +63,7 @@ export interface GraphQLRequestOptions {
 
 export function requestGraphQL<R extends GQL.IGraphQLResponseRoot>({
     request,
-    variables,
+    variables = {},
     headers,
     requestOptions = {},
     baseUrl = '',

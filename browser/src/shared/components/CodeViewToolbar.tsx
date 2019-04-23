@@ -31,7 +31,7 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
 }
 
 export interface CodeViewToolbarProps
-    extends PlatformContextProps<'forceUpdateTooltip'>,
+    extends PlatformContextProps<'forceUpdateTooltip' | 'queryGraphQL'>,
         ExtensionsControllerProps,
         FileInfoWithContents,
         TelemetryProps,
@@ -53,8 +53,14 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(fetchSite().subscribe(site => this.setState(() => ({ site }))))
-        this.subscriptions.add(fetchCurrentUser().subscribe(currentUser => this.setState(() => ({ currentUser }))))
+        this.subscriptions.add(
+            fetchSite(this.props.platformContext.queryGraphQL).subscribe(site => this.setState(() => ({ site })))
+        )
+        this.subscriptions.add(
+            fetchCurrentUser(this.props.platformContext.queryGraphQL).subscribe(currentUser =>
+                this.setState(() => ({ currentUser }))
+            )
+        )
     }
 
     public componentWillUnmount(): void {
@@ -77,6 +83,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
                         <OpenDiffOnSourcegraph
                             ariaLabel="View file diff on Sourcegraph"
+                            platformContext={this.props.platformContext}
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}
                             openProps={{

@@ -16,8 +16,8 @@ import {
 } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { createAggregateError } from './errors'
-import { queryGraphQL } from './graphql'
 
 interface BaseSuggestion {
     title: string
@@ -144,8 +144,8 @@ const symbolsFragment = gql`
     }
 `
 
-const fetchSuggestions = (query: string, first: number) =>
-    queryGraphQL(
+const fetchSuggestions = (query: string, first: number, queryGraphQL: PlatformContext['queryGraphQL']) =>
+    queryGraphQL<GQL.IQuery>(
         gql`
             query SearchSuggestions($query: String!, $first: Int!) {
                 search(query: $query) {
@@ -193,7 +193,7 @@ interface SuggestionInput {
     handler: (suggestion: Suggestion[]) => void
 }
 
-export const createSuggestionFetcher = (first = 5) => {
+export const createSuggestionFetcher = (first = 5, queryGraphQL: PlatformContext['queryGraphQL']) => {
     const fetcher = new Subject<SuggestionInput>()
 
     fetcher
@@ -201,7 +201,7 @@ export const createSuggestionFetcher = (first = 5) => {
             distinctUntilChanged(),
             debounceTime(200),
             switchMap(({ query, handler }) =>
-                fetchSuggestions(query, first).pipe(
+                fetchSuggestions(query, first, queryGraphQL).pipe(
                     take(first),
                     map(createSuggestion),
                     // createSuggestion will return null if we get a type we don't recognize
@@ -223,8 +223,8 @@ export const createSuggestionFetcher = (first = 5) => {
     return (input: SuggestionInput) => fetcher.next(input)
 }
 
-export const fetchSymbols = (query: string): Observable<GQL.ISymbol[]> =>
-    queryGraphQL(
+export const fetchSymbols = (query: string, queryGraphQL: PlatformContext['queryGraphQL']): Observable<GQL.ISymbol[]> =>
+    queryGraphQL<GQL.IQuery>(
         gql`
             query SearchResults($query: String!) {
                 search(query: $query) {

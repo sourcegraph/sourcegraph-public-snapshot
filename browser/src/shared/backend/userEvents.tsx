@@ -1,6 +1,7 @@
 import { gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
-import { mutateGraphQL } from './graphql'
 
 /**
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
@@ -8,12 +9,17 @@ import { mutateGraphQL } from './graphql'
  *
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  */
-export const logUserEvent = (event: string, uid: string, url: string): void => {
+export const logUserEvent = (
+    event: string,
+    uid: string,
+    url: string,
+    queryGraphQL: PlatformContext['queryGraphQL']
+): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
     if (url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
-    mutateGraphQL(
+    queryGraphQL<GQL.IMutation>(
         gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
                 logUserEvent(event: $event, userCookieID: $userCookieID) {

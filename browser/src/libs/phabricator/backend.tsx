@@ -1,10 +1,11 @@
 import { from, Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
-import { mutateGraphQL } from '../../shared/backend/graphql'
 import { resolveRepo } from '../../shared/repo/backend'
 import { sourcegraphUrl } from '../../shared/util/context'
 import { normalizeRepoName } from './util'
@@ -253,11 +254,12 @@ interface CreatePhabricatorRepoOptions {
     callsign: string
     repoName: string
     phabricatorURL: string
+    queryGraphQL: PlatformContext['queryGraphQL']
 }
 
 const createPhabricatorRepo = memoizeObservable(
-    (options: CreatePhabricatorRepoOptions): Observable<void> =>
-        mutateGraphQL(
+    ({ queryGraphQL, ...options }: CreatePhabricatorRepoOptions): Observable<void> =>
+        queryGraphQL<GQL.IMutation>(
             gql`
                 mutation addPhabricatorRepo($callsign: String!, $repoName: String!, $phabricatorURL: String!) {
                     addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) {
@@ -275,7 +277,10 @@ interface PhabricatorRepoDetails {
     repoName: string
 }
 
-export function getRepoDetailsFromCallsign(callsign: string): Promise<PhabricatorRepoDetails> {
+export function getRepoDetailsFromCallsign(
+    callsign: string,
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Promise<PhabricatorRepoDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[constraints]', JSON.stringify({ callsigns: [callsign] }))
@@ -305,6 +310,7 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
                             callsign,
                             repoName: details.repoName,
                             phabricatorURL: window.location.origin,
+                            queryGraphQL,
                         }).subscribe(() => resolve(details))
                     }
                     return reject(new Error('could not parse repo details'))
@@ -347,7 +353,10 @@ export function getSourcegraphURLFromConduit(): Promise<string> {
     })
 }
 
-function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetails> {
+function getRepoDetailsFromRepoPHID(
+    phid: string,
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Promise<PhabricatorRepoDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
         form.set('params[constraints]', JSON.stringify({ phids: [phid] }))
@@ -378,6 +387,7 @@ function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetail
                             callsign: repo.fields.callsign,
                             repoName: details.repoName,
                             phabricatorURL: window.location.origin,
+                            queryGraphQL,
                         })
                             .pipe(map(() => details))
                             .subscribe(() => {
@@ -391,9 +401,12 @@ function getRepoDetailsFromRepoPHID(phid: string): Promise<PhabricatorRepoDetail
     })
 }
 
-export async function getRepoDetailsFromDifferentialID(differentialID: number): Promise<PhabricatorRepoDetails> {
+export async function getRepoDetailsFromDifferentialID(
+    differentialID: number,
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Promise<PhabricatorRepoDetails> {
     const repositoryPHID = await getRepoPHIDForDifferentialID(differentialID)
-    return await getRepoDetailsFromRepoPHID(repositoryPHID)
+    return await getRepoDetailsFromRepoPHID(repositoryPHID, queryGraphQL)
 }
 
 async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<PhabricatorRepoDetails | null> {
@@ -461,11 +474,12 @@ interface ResolveStagingOptions {
     authorName?: string
     authorEmail?: string
     description?: string
+    queryGraphQL: PlatformContext['queryGraphQL']
 }
 
 const resolveStagingRev = memoizeObservable(
-    (options: ResolveStagingOptions): Observable<string | null> =>
-        mutateGraphQL(
+    ({ queryGraphQL, ...options }: ResolveStagingOptions): Observable<string | null> =>
+        queryGraphQL<GQL.IMutation>(
             gql`
                 mutation ResolveStagingRev(
                     $repoName: String!
@@ -608,7 +622,10 @@ interface ResolvedDiff {
     stagingRepoName?: string
 }
 
-export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> {
+export function resolveDiffRev(
+    props: ResolveDiffOpt,
+    queryGraphQL: PlatformContext['queryGraphQL']
+): Observable<ResolvedDiff> {
     // TODO: Do a proper refactor and convert all of this function call and it's deps from Promises to Observables.
     return from(
         new Promise<ResolvedDiff>((resolve, reject) => {
@@ -632,7 +649,7 @@ export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> 
                         }
                         getRawDiffFromConduit(propsWithInfo.diffID)
                             .then(patch =>
-                                resolveStagingRev({ ...conduitProps, patch }).subscribe(commitID => {
+                                resolveStagingRev({ ...conduitProps, patch, queryGraphQL }).subscribe(commitID => {
                                     if (commitID) {
                                         resolve({ commitID })
                                     }
@@ -644,7 +661,7 @@ export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> 
 
                     if (!stagingDetails.unconfigured) {
                         // Ensure the staging repo exists before resolving. Otherwise create the patch.
-                        resolveRepo({ repoName: stagingDetails.repoName }).subscribe(
+                        resolveRepo({ repoName: stagingDetails.repoName, queryGraphQL }).subscribe(
                             () =>
                                 resolve({
                                     commitID: stagingDetails.ref.commit,
@@ -653,13 +670,15 @@ export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> 
                             error => {
                                 getRawDiffFromConduit(propsWithInfo.diffID)
                                     .then(patch =>
-                                        resolveStagingRev({ ...conduitProps, patch }).subscribe(commitID => {
-                                            if (commitID) {
-                                                resolve({ commitID })
-                                                return
+                                        resolveStagingRev({ ...conduitProps, patch, queryGraphQL }).subscribe(
+                                            commitID => {
+                                                if (commitID) {
+                                                    resolve({ commitID })
+                                                    return
+                                                }
+                                                reject(new Error('unable to resolve staging object'))
                                             }
-                                            reject(new Error('unable to resolve staging object'))
-                                        })
+                                        )
                                     )
                                     .catch(() => reject(new Error('unable to fetch raw diff')))
                             }
