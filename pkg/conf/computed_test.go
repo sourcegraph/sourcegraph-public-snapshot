@@ -2,11 +2,12 @@ package conf
 
 import (
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -63,9 +64,9 @@ func TestSearchIndexEnabled(t *testing.T) {
 	}
 
 	defaults := map[string]conftypes.RawUnified{
-		"Cluster": confdefaults.Cluster,
-		"Default": confdefaults.Default,
-		"DevAndTesting": confdefaults.DevAndTesting,
+		"Cluster":         confdefaults.Cluster,
+		"Default":         confdefaults.Default,
+		"DevAndTesting":   confdefaults.DevAndTesting,
 		"DockerContainer": confdefaults.DockerContainer,
 	}
 	for dStr, d := range defaults {
