@@ -39,6 +39,8 @@ class ServerAdminWrapper {
                 eventAction === 'hover'
             ) {
                 logUserEvent(GQL.UserEvent.CODEINTEL)
+            } else if (eventAction === 'findReferences') {
+                logUserEvent(GQL.UserEvent.CODEINTELREFS)
             } else if (eventAction === 'SavedSearchEmailClicked' || eventAction === 'SavedSearchSlackClicked') {
                 logUserEvent(GQL.UserEvent.STAGEVERIFY)
             } else if (eventAction === 'DiffSearchResultsQueried') {
