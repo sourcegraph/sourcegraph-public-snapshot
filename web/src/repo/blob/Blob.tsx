@@ -213,17 +213,20 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 ev.stopPropagation()
             }
         }
+
+        let hoveredTokenElement: HTMLElement | undefined
         this.subscriptions.add(
             hoverifier.hoverStateUpdates.subscribe(update => {
-                if (singleClickGoToDefinition && this.state.hoveredTokenElement !== update.hoveredTokenElement) {
-                    if (this.state.hoveredTokenElement) {
-                        this.state.hoveredTokenElement.style.cursor = 'auto'
-                        this.state.hoveredTokenElement.removeEventListener('click', goToDefinition)
+                if (singleClickGoToDefinition && hoveredTokenElement !== update.hoveredTokenElement) {
+                    if (hoveredTokenElement) {
+                        hoveredTokenElement.style.cursor = 'auto'
+                        hoveredTokenElement.removeEventListener('click', goToDefinition)
                     }
                     if (update.hoveredTokenElement) {
                         update.hoveredTokenElement.style.cursor = 'pointer'
                         update.hoveredTokenElement.addEventListener('click', goToDefinition)
                     }
+                    hoveredTokenElement = update.hoveredTokenElement
                 }
                 this.setState(update)
             })
