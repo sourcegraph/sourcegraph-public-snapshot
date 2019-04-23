@@ -71,7 +71,7 @@ type SavedQueryWasDeletedArgs struct {
 // after the server has started.
 func (c *client) SavedQueryWasDeleted(ctx context.Context, spec api.SavedQueryIDSpec, disableSubscriptionNotifications bool) error {
 	return c.post(PathSavedQueryWasDeleted, &SavedQueryWasDeletedArgs{
-		Spec: spec,
+		Spec:                             spec,
 		DisableSubscriptionNotifications: disableSubscriptionNotifications,
 	})
 }
