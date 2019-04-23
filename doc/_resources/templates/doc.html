@@ -1,6 +1,5 @@
 {{define "root"}}
 <html>
-
     <head>
         <title>{{with .Content}}{{.Doc.Title}}
             {{else}}Error{{end}} - Sourcegraph docs</title>
@@ -30,7 +29,7 @@
                                 {{/* Update these after each release. */}}
                                 {{$previousReleaseRevspec := "v3.2.4"}}
                                 {{$previousReleaseVersion := "3.2"}}
-                                {{$currentReleaseRevspec := "v3.3.1"}}
+                                {{$currentReleaseRevspec := "v3.3.0"}}
                                 {{$currentReleaseVersion := "3.3"}}
                                 {{$nextReleaseVersion := "master"}}
                                 <a rel="nofollow" class="dropdown-item monospace-text {{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
@@ -401,25 +400,22 @@
                 </nav>
                 <div class="markdown-body">{{markdown .}}</div>
                 {{else}}
-                    <nav id="breadcrumbs" class="breadcrumbs small-hidden">
-                        <input type="button" class="content-nav-mobile-state large-hidden medium-hidden">
-                        <span class="content-nav-mobile-button"></span>
-                    </nav>
-                    <div class="markdown-body">
-                        {{/* If no content is found: */}}
-                        {{if .ContentVersionNotFoundError}}
-                        {{/* If content version is not found */}}
+                <nav id="breadcrumbs" class="breadcrumbs small-hidden">
+                    <input type="button" class="content-nav-mobile-state large-hidden medium-hidden">
+                    <span class="content-nav-mobile-button"></span>
+                </nav>
+                <div class="markdown-body">
+                    {{if .ContentVersionNotFoundError}}
                         <h1>Version not found</h1>
                         <p>The version <code>{{.ContentVersion}}</code> was not found.</p>
-                        {{else if .ContentPageNotFoundError}}
-                            {{/* Page not found */}}
-                            <h1>Page not found</h1>
-                            <p>The page <code>{{.ContentPagePath}}</code> was not found.</p>
-                            {{else}}
-                                error
-                                {{end}}
-                                {{end}}
-                    </div>
+                    {{else if .ContentPageNotFoundError}}
+                        <h1>Page not found</h1>
+                        <p>The page <code>{{.ContentPagePath}}</code> was not found.</p>
+                    {{else}}
+                        error
+                    {{end}}
+                </div>
+                {{end}}
             </section>
             {{with .Content}}
             <div class="nav-sticky-wrapper column large-3 medium-hidden small-hidden">
@@ -511,19 +507,18 @@
         {{with .Content}}
         <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
         {{else}}
-            <script>sgdocs.init(breadcrumbs = null);</script>
-            {{ end }}
+        <script>sgdocs.init(breadcrumbs = null);</script>
+        {{ end }}
 
-            <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>
-            <script>
-                window.dataLayer = window.dataLayer || [];
-                function gtag() { dataLayer.push(arguments); }
-                gtag('js', new Date());
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); }
+            gtag('js', new Date());
 
-                gtag('config', 'UA-40540747-20');
-            </script>
-            </body>
-
+            gtag('config', 'UA-40540747-20');
+        </script>
+    </body>
 </html>
 {{end}}
 
@@ -534,28 +529,28 @@
 
 {{/* Define Page (Right Hand) Nav */}}
 {{define "index"}}
-{{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
-<h3 class="page-nav-title">On this page:</h3>
-<ul>{{template "doc_nav" .}}</ul>
-{{end}}
-<a class="nav-edit-button" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">
-    Edit this page on GitHub <svg class="icon-inline small" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V12H19V19Z">
-        </path>
-    </svg>
-</a>
+    {{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
+        <h3 class="page-nav-title">On this page:</h3>
+        <ul>{{template "doc_nav" .}}</ul>
+    {{end}}
+    <a class="nav-edit-button" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">
+        Edit this page on GitHub
+        <svg class="icon-inline small" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V12H19V19Z"></path>
+        </svg>
+    </a>
 {{end}}
 
 {{/* Define Page Nav Template*/}}
-{{define "doc_nav"}}
-{{range .}}
-<li>
-    <a href="{{.URL}}">{{.Title}}</a>
-    {{with .Children}}
-    <ul>
-        {{template "doc_nav" .}}
-    </ul>
-</li>
-{{end}}
-{{end}}
+    {{define "doc_nav"}}
+        {{range .}}
+        <li>
+            <a href="{{.URL}}">{{.Title}}</a>
+            {{with .Children}}
+            <ul>
+                {{template "doc_nav" .}}
+            </ul>
+        </li>
+        {{end}}
+    {{end}}
 {{end}}
