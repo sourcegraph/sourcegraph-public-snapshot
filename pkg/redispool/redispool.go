@@ -52,7 +52,7 @@ func init() {
 	}
 }
 
-var schemeMatcher = regexp.MustCompile("^[A-Za-z][A-Za-z0-9\\+\\-\\.]*://")
+var schemeMatcher = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9\+\-\.]*://`)
 
 // redisDialer returns the appropriate Redis dial function given the raw endpoint string.
 // The string can have two formats:
