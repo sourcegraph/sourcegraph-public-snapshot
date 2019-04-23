@@ -316,6 +316,7 @@ export function initCodeIntelligence({
             ),
             getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
             getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+            pinningEnabled: true,
         }
     )
 

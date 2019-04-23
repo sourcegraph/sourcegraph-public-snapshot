@@ -152,6 +152,12 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
+        const singleClickGoToDefinition = Boolean(
+            this.props.settingsCascade.final &&
+                !isErrorLike(this.props.settingsCascade.final) &&
+                this.props.settingsCascade.final.singleClickGoToDefinition === true
+        )
+
         const hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
@@ -168,6 +174,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             ),
             getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             getActions: context => getHoverActions(this.props, context),
+            pinningEnabled: !singleClickGoToDefinition,
         })
         this.subscriptions.add(hoverifier)
 
@@ -197,8 +204,30 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 dom: domFunctions,
             })
         )
+        const goToDefinition = (ev: MouseEvent) => {
+            const goToDefinitionAction =
+                this.state.actionsOrError instanceof Array &&
+                this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
+            if (goToDefinitionAction) {
+                this.props.history.push(goToDefinitionAction.action.commandArguments![0])
+                ev.stopPropagation()
+            }
+        }
+
+        let hoveredTokenElement: HTMLElement | undefined
         this.subscriptions.add(
             hoverifier.hoverStateUpdates.subscribe(update => {
+                if (singleClickGoToDefinition && hoveredTokenElement !== update.hoveredTokenElement) {
+                    if (hoveredTokenElement) {
+                        hoveredTokenElement.style.cursor = 'auto'
+                        hoveredTokenElement.removeEventListener('click', goToDefinition)
+                    }
+                    if (update.hoveredTokenElement) {
+                        update.hoveredTokenElement.style.cursor = 'pointer'
+                        update.hoveredTokenElement.addEventListener('click', goToDefinition)
+                    }
+                    hoveredTokenElement = update.hoveredTokenElement
+                }
                 this.setState(update)
             })
         )
