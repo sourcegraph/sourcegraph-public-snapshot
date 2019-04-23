@@ -18,7 +18,7 @@ import (
 
 var dateRegex = regexp.MustCompile("(\\w{4}-\\w{2}-\\w{2})")
 
-func search(args []string) error {
+func search() error {
 	jsonFlag := flag.Bool("json", false, "Whether or not to output results as JSON")
 	flag.Parse()
 	if flag.NArg() != 1 {

@@ -60,7 +60,7 @@ Other tips:
 	log.SetPrefix("")
 
 	// Search.
-	if err := search(os.Args[1:]); err != nil {
+	if err := search(); err != nil {
 		if _, ok := err.(*usageError); ok {
 			log.Println(err)
 			log.Println(usage)
