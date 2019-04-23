@@ -16,9 +16,6 @@ var (
 	endpoint   = flag.String("endpoint", "", "")
 )
 
-// commands contains all registered subcommands.
-var commands commander
-
 func main() {
 	usage := `srcsearch runs a search against a Sourcegraph instance.
 

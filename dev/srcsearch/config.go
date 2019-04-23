@@ -2,52 +2,8 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 )
-
-var configCommands commander
-
-func init() {
-	usage := `'src config' is a tool that manages global, organization, and user settings on a Sourcegraph instance.
-
-The effective configuration is computed by shallow-merging the following settings, in order from lowest to highest precedence:
-
-- Global settings (site-wide)
-- Organization settings for the user's organizations (if any)
-- User settings
-- Client settings (when using a Sourcegraph browser or editor extension)
-
-For unauthenticated requests, the organization and user settings are empty.
-
-Usage:
-
-	src config command [command options]
-
-The commands are:
-
-	get       gets the effective (merged) configuration
-	edit      updates configuration settings
-	list      lists the partial settings (that, when merged, yield the effective configuration)
-
-Use "src config [command] -h" for more information about a command.
-`
-
-	flagSet := flag.NewFlagSet("config", flag.ExitOnError)
-	handler := func(args []string) error {
-		configCommands.run(flagSet, "src config", usage, args)
-		return nil
-	}
-
-	// Register the command.
-	commands = append(commands, &command{
-		flagSet: flagSet,
-		handler: handler,
-		usageFunc: func() {
-			fmt.Println(usage)
-		},
-	})
-}
 
 const configurationSubjectFragment = `
 fragment ConfigurationSubjectFields on ConfigurationSubject {
