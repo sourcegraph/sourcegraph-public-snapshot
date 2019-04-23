@@ -559,12 +559,11 @@ func phabricatorRepoToRepo(
 		{"ssh", "id"},
 	} {
 		if u, ok := builtin[alt.protocol+"+"+alt.identifier]; ok {
-			if cloneURL = u.Effective; alt.protocol == "https" {
-				// TODO(tsenart): Authenticate the cloneURL with the user's
-				// VCS password once we have that setting in the config. The
-				// Conduit token can't be used for cloning.
-				// cloneURL = setUserinfoBestEffort(cloneURL, conn.VCSPassword, "")
-			}
+			cloneURL = u.Effective
+			// TODO(tsenart): Authenticate the cloneURL with the user's
+			// VCS password once we have that setting in the config. The
+			// Conduit token can't be used for cloning.
+			// cloneURL = setUserinfoBestEffort(cloneURL, conn.VCSPassword, "")
 
 			if name == "" {
 				name = u.Normalized
