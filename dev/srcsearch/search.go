@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
 	"html"
@@ -13,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"jaytaylor.com/html2text"
 )
 
@@ -25,6 +25,13 @@ func search(args []string) error {
 		return &usageError{errors.New("expected exactly one argument: the search query")}
 	}
 	queryString := flag.Arg(0)
+
+	// Parse config.
+	var err error
+	cfg, err = readConfig()
+	if err != nil {
+		return errors.Wrap(err, "reading config")
+	}
 
 	query := `fragment FileMatchFields on FileMatch {
 				repository {

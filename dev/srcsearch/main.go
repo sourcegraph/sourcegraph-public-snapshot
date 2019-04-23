@@ -58,6 +58,8 @@ Other tips:
 	// Configure logging.
 	log.SetFlags(0)
 	log.SetPrefix("")
+
+	// Search.
 	if err := search(os.Args[1:]); err != nil {
 		if _, ok := err.(*usageError); ok {
 			log.Println(err)
