@@ -52,7 +52,6 @@ Other tips:
 		os.Exit(1)
 	}
 	searchQuery := flag.Arg(0)
-
 	if err := srcsearch(*configPath, *endpoint, searchQuery); err != nil {
 		log.Fatalf("srcsearch: %v", err)
 	}
@@ -176,45 +175,28 @@ func srcsearch(configPath, endpoint, searchQuery string) error {
 		  }
 `
 
-	var result struct {
-		Site struct {
-			BuildVersion string
-		}
-		Search struct {
-			Results searchResults
-		}
-	}
-
 	cfg, err := readConfig(configPath, endpoint)
 	if err != nil {
 		return errors.Wrap(err, "reading config")
 	}
 
-	return (&apiRequest{
+	res, err := (&apiRequest{
 		query: query,
 		vars: map[string]interface{}{
 			"query": nullString(searchQuery),
 		},
-		result: &result,
-		done: func() error {
-			improved := searchResultsImproved{
-				SourcegraphEndpoint: cfg.Endpoint,
-				Query:               searchQuery,
-				Site:                result.Site,
-				searchResults:       result.Search.Results,
-			}
-
-			// Print the formatted JSON.
-			f, err := marshalIndent(improved)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(f))
-			return nil
-		},
 		endpoint:    cfg.Endpoint,
 		accessToken: cfg.AccessToken,
 	}).do()
+
+	// Print the formatted JSON.
+	fmted, err := marshalIndent(res)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(fmted))
+
+	return nil
 }
 
 // gqlURL returns the URL to the GraphQL endpoint for the given Sourcegraph
@@ -227,28 +209,36 @@ func gqlURL(endpoint string) string {
 type apiRequest struct {
 	query       string                 // the GraphQL query
 	vars        map[string]interface{} // the GraphQL query variables
-	result      interface{}            // where to store the result
 	done        func() error           // a function to invoke for handling the response. If nil, flags like -get-curl are ignored.
 	endpoint    string
 	accessToken string
 }
 
+type result struct {
+	Site struct {
+		BuildVersion string
+	}
+	Search struct {
+		Results searchResults
+	}
+}
+
 // do performs the API request. Once the request is finished a.done is invoked to
 // handle the response (which is stored in a.result).
-func (a *apiRequest) do() error {
+func (a *apiRequest) do() (*result, error) {
 	// Create the JSON object.
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(map[string]interface{}{
 		"query":     a.query,
 		"variables": a.vars,
 	}); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create the HTTP request.
 	req, err := http.NewRequest("POST", gqlURL(a.endpoint), nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if a.accessToken != "" {
 		req.Header.Set("Authorization", "token "+a.accessToken)
@@ -258,7 +248,7 @@ func (a *apiRequest) do() error {
 	// Perform the request.
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -273,27 +263,28 @@ func (a *apiRequest) do() error {
 		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return fmt.Errorf("error: %s\n\n%s", resp.Status, body)
+		return nil, fmt.Errorf("error: %s\n\n%s", resp.Status, body)
 	}
 
 	// Decode the response.
-	var result struct {
+	var de struct {
 		Data   interface{} `json:"data,omitempty"`
 		Errors interface{} `json:"errors,omitempty"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return err
+	if err := json.NewDecoder(resp.Body).Decode(&de); err != nil {
+		return nil, err
 	}
 
-	if result.Errors != nil {
-		return fmt.Errorf("GraphQL errors:\n%s", &graphqlError{result.Errors})
+	if de.Errors != nil {
+		return nil, fmt.Errorf("GraphQL errors:\n%s", &graphqlError{de.Errors})
 	}
-	if err := jsonCopy(a.result, result.Data); err != nil {
-		return err
+	res := &result{}
+	if err := jsonCopy(&res, de.Data); err != nil {
+		return nil, err
 	}
-	return a.done()
+	return res, nil
 }
 
 // jsonCopy is a cheaty method of copying an already-decoded JSON (src)
