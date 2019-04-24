@@ -1,4 +1,4 @@
-package search
+package store
 
 import (
 	"io/ioutil"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestGetZipFileWithRetry(t *testing.T) {
@@ -49,7 +48,7 @@ func TestGetZipFileWithRetry(t *testing.T) {
 			}()
 
 			tries := 0
-			get := func() (string, *store.ZipFile, error) {
+			get := func() (string, *ZipFile, error) {
 				var err error
 				tmp, err = ioutil.TempFile("", "")
 				if err != nil {
@@ -57,15 +56,15 @@ func TestGetZipFileWithRetry(t *testing.T) {
 				}
 
 				err = test.errs[tries]
-				var zf *store.ZipFile
+				var zf *ZipFile
 				if err == nil {
-					zf = &store.ZipFile{}
+					zf = &ZipFile{}
 				}
 				tries++
 				return tmp.Name(), zf, err
 			}
 
-			zf, err := getZipFileWithRetry(get)
+			zf, err := GetZipFileWithRetry(get)
 			if test.succeeds && err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
