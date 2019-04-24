@@ -1,18 +1,3 @@
-/* Prevent header from covering hash tag links */
-/* This prevents the header from being covered by the nav bar when loading hash links */
-h1::before,
-h2::before,
-h3::before,
-h4::before,
-h5::before {
-    display: block;
-    content: ' ';
-    margin-top: -90px;
-    height: 90px;
-    visibility: hidden;
-    pointer-events: none;
-}
-
 /* Line break that is only visible, but not copy-pasted. Used for terminal commands. */
 .virtual-br::before {
     content: '\A';
@@ -24,6 +9,12 @@ h5::before {
 
 .text-center {
     text-align: center;
+}
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .markdown-body {
@@ -534,6 +525,9 @@ h5::before {
     padding-bottom: 0.3em;
     font-size: 2em;
     border-bottom: 1px solid #eaecef;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .markdown-body h2 {
