@@ -180,14 +180,8 @@ func srcsearch(configPath, endpoint, searchQuery string) error {
 		return errors.Wrap(err, "reading config")
 	}
 
-	res, err := (&apiRequest{
-		query: query,
-		vars: map[string]interface{}{
-			"query": nullString(searchQuery),
-		},
-		endpoint:    cfg.Endpoint,
-		accessToken: cfg.AccessToken,
-	}).do()
+	vars := map[string]interface{}{"query": nullString(searchQuery)}
+	res, err := apiRequest(query, vars, cfg.Endpoint, cfg.AccessToken)
 
 	// Print the formatted JSON.
 	fmted, err := marshalIndent(res)
@@ -205,15 +199,6 @@ func gqlURL(endpoint string) string {
 	return endpoint + "/.api/graphql"
 }
 
-// apiRequest represents a GraphQL API request.
-type apiRequest struct {
-	query       string                 // the GraphQL query
-	vars        map[string]interface{} // the GraphQL query variables
-	done        func() error           // a function to invoke for handling the response. If nil, flags like -get-curl are ignored.
-	endpoint    string
-	accessToken string
-}
-
 type result struct {
 	Site struct {
 		BuildVersion string
@@ -223,25 +208,27 @@ type result struct {
 	}
 }
 
-// do performs the API request. Once the request is finished a.done is invoked to
-// handle the response (which is stored in a.result).
-func (a *apiRequest) do() (*result, error) {
+// apiRequest makes an API request and returns the result.
+// query is the GraphQL query.
+// vars contains the GraphQL query variables.
+func apiRequest(query string, vars map[string]interface{}, endpoint string, accessToken string) (*result, error) {
+
 	// Create the JSON object.
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(map[string]interface{}{
-		"query":     a.query,
-		"variables": a.vars,
+		"query":     query,
+		"variables": vars,
 	}); err != nil {
 		return nil, err
 	}
 
 	// Create the HTTP request.
-	req, err := http.NewRequest("POST", gqlURL(a.endpoint), nil)
+	req, err := http.NewRequest("POST", gqlURL(endpoint), nil)
 	if err != nil {
 		return nil, err
 	}
-	if a.accessToken != "" {
-		req.Header.Set("Authorization", "token "+a.accessToken)
+	if accessToken != "" {
+		req.Header.Set("Authorization", "token "+accessToken)
 	}
 	req.Body = ioutil.NopCloser(&buf)
 
