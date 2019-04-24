@@ -21,6 +21,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.3.1
 
+### Changed
+- Indexed search is now enabled by default for new Docker deployments.
+
 ### Fixed
 
 - Fixed a bug that prevented external service configurations specifying client certificates from working (#3523)
