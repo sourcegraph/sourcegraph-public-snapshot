@@ -11,6 +11,10 @@ const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     if (td.classList.contains('blob-code-deletion')) {
         return 'base'
     }
+    // If we can't determine the diff part the code element's parent `<td>`
+    // (which may be because it is unchanged, or because the .blob-code(addition|deletion) classes
+    // aren't present), call `isSplitDomDiff()`, which will look at the parent
+    // code view to determine whether this is a split or unified diff view.
     if (isDomSplitDiff(codeElement)) {
         // If there are more cells on the right, this is the base, otherwise the head
         return td.nextElementSibling ? 'base' : 'head'
