@@ -1,5 +1,5 @@
 import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
-import { isDomSplitDiff } from './util'
+import { parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     const td = codeElement.closest('td')!
@@ -11,6 +11,10 @@ const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     if (td.classList.contains('blob-code-deletion')) {
         return 'base'
     }
+    // If we can't determine the diff part the code element's parent `<td>`
+    // (which may be because it is unchanged, or because the .blob-code(addition|deletion) classes
+    // aren't present), call `isSplitDomDiff()`, which will look at the parent
+    // code view to determine whether this is a split or unified diff view.
     if (isDomSplitDiff(codeElement)) {
         // If there are more cells on the right, this is the base, otherwise the head
         return td.nextElementSibling ? 'base' : 'head'
@@ -187,4 +191,29 @@ export const searchCodeSnippetDOMFunctions: DOMFunctions = {
 
         return parseInt(cell.firstElementChild!.textContent!, 10)
     },
+}
+
+/**
+ * Returns if the current view shows diffs with split (vs. unified) view.
+ *
+ * @param element, either an element contained in a code view or the code view itself
+ */
+export function isDomSplitDiff(element: HTMLElement): boolean {
+    const { isDelta } = parseURL()
+    if (!isDelta) {
+        return false
+    }
+    const codeView = element.classList.contains('file') ? element : element.closest('.file')
+    if (!codeView) {
+        throw new Error('Could not resolve code view element')
+    }
+    if (codeView.classList.contains('js-comment-container')) {
+        // Commented snippet in PR discussion
+        return false
+    }
+    const codeViewTable = codeView.querySelector('table')
+    if (!codeViewTable) {
+        throw new Error('Could not find code view table')
+    }
+    return codeViewTable.classList.contains('js-file-diff-split') || codeViewTable.classList.contains('file-diff-split')
 }

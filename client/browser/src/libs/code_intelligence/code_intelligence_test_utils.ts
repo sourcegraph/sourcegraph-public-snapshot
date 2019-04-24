@@ -3,7 +3,7 @@ import assert from 'assert'
 import { readFile } from 'mz/fs'
 import { SetIntersection } from 'utility-types'
 import { CodeHost, MountGetter } from './code_intelligence'
-import { CodeViewSpec } from './code_views'
+import { CodeView } from './code_views'
 
 const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = (typeof mountGetterKeys)[number]
@@ -29,7 +29,7 @@ export function testCodeHostMountGetters<C extends CodeHost>(
 
 export function testToolbarMountGetter(
     codeViewHtmlFixturePath: string,
-    getToolbarMount: NonNullable<CodeViewSpec['getToolbarMount']>
+    getToolbarMount: NonNullable<CodeView['getToolbarMount']>
 ): void {
     testMountGetter(codeViewHtmlFixturePath, getToolbarMount, false, false)
 }
