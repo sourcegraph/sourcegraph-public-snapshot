@@ -626,25 +626,10 @@ li.content-nav-no-hover:hover {
 .page-nav > ul li::before {
     content: '\203A\00a0';
 }
-/* Docs Content layout */
 .docs-content {
-    width: 100%;
-    /*
-		Set min height of content to viewport height minus the footer.
-		This prevents small pages from having footer above bottom of page.
-	 */
-    min-height: calc(100vh - 340px);
-    position: relative;
+    min-height: 100vh;
 }
-@media screen and (max-width: 1020px) {
-    .docs-content {
-        /*
-			Set min height of content to viewport height on mobile
-			This prevents small pages from having footer above bottom of page.
-		 */
-        min-height: 100vh;
-    }
-}
+
 .docs-content-section {
     padding: 0 1rem 2rem;
 }
