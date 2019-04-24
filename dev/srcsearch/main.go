@@ -359,4 +359,3 @@ func readConfig(configPath, endpoint string) (*config, error) {
 	}
 	return &cfg, nil
 }
-
