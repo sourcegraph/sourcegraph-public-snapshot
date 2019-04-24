@@ -1,7 +1,9 @@
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import { existsSync } from 'fs'
+import { startCase } from 'lodash'
+import { readFile } from 'mz/fs'
 import { DiffDOMFunctionsTest, testDOMFunctions } from '../code_intelligence/code_intelligence_test_utils'
-import { diffDomFunctions } from './dom_functions'
+import { diffDomFunctions, isDomSplitDiff } from './dom_functions'
 
 type GitHubVersion = 'github.com' | 'ghe-2.14.11'
 type GitHubPage = 'pull-request' | 'pull-request-discussion' | 'commit'
@@ -159,4 +161,55 @@ const DIFF_FIXTURES: Fixture[] = [
 
 describe('GitHub DOM Functions', () => {
     testFixtures(DIFF_FIXTURES, 'diffDOMFunctions', diffDomFunctions)
+})
+
+describe('isDomSplitDiff()', () => {
+    for (const version of ['github.com', 'ghe-2.14.11']) {
+        describe(`Version ${version}`, () => {
+            const views = [
+                {
+                    view: 'pull-request',
+                    url: 'https://github.com/sourcegraph/sourcegraph/pull/2672/files',
+                    hasSplitView: true,
+                },
+                {
+                    view: 'commit',
+                    url: 'https://github.com/sourcegraph/sourcegraph/commit/2c74f329fd03008fa0b446cd5e53234715dae3dc',
+                    hasSplitView: true,
+                },
+                {
+                    view: 'pull-request-discussion',
+                    url: 'https://github.com/sourcegraph/sourcegraph/pull/2672/',
+                    hasSplitView: false,
+                },
+            ]
+            for (const { view, url, hasSplitView } of views) {
+                describe(`${startCase(view)} page`, () => {
+                    beforeEach(() => {
+                        jsdom.reconfigure({ url })
+                    })
+                    for (const extension of ['vanilla', 'refined-github']) {
+                        describe(startCase(extension), () => {
+                            if (hasSplitView) {
+                                it('should return true for split view', async () => {
+                                    document.body.innerHTML = await readFile(
+                                        `${__dirname}/__fixtures__/${version}/${view}/${extension}/split/page.html`,
+                                        'utf-8'
+                                    )
+                                    expect(isDomSplitDiff(document.querySelector('.file') as HTMLElement)).toBe(true)
+                                })
+                            }
+                            it('should return false for unified view', async () => {
+                                document.body.innerHTML = await readFile(
+                                    `${__dirname}/__fixtures__/${version}/${view}/${extension}/unified/page.html`,
+                                    'utf-8'
+                                )
+                                expect(isDomSplitDiff(document.querySelector('.file') as HTMLElement)).toBe(false)
+                            })
+                        })
+                    }
+                })
+            }
+        })
+    }
 })

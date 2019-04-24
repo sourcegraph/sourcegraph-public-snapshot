@@ -1,5 +1,5 @@
 import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
-import { isDomSplitDiff } from './util'
+import { parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     const td = codeElement.closest('td')!
@@ -187,4 +187,29 @@ export const searchCodeSnippetDOMFunctions: DOMFunctions = {
 
         return parseInt(cell.firstElementChild!.textContent!, 10)
     },
+}
+
+/**
+ * Returns if the current view shows diffs with split (vs. unified) view.
+ *
+ * @param element, either an element contained in a code view or the code view itself
+ */
+export function isDomSplitDiff(element: HTMLElement): boolean {
+    const { isDelta } = parseURL()
+    if (!isDelta) {
+        return false
+    }
+    const codeView = element.classList.contains('file') ? element : element.closest('.file')
+    if (!codeView) {
+        throw new Error('Could not resolve code view element')
+    }
+    if (codeView.classList.contains('js-comment-container')) {
+        // Commented snippet in PR discussion
+        return false
+    }
+    const codeViewTable = codeView.querySelector('table')
+    if (!codeViewTable) {
+        throw new Error('Could not find code view table')
+    }
+    return codeViewTable.classList.contains('js-file-diff-split') || codeViewTable.classList.contains('file-diff-split')
 }
