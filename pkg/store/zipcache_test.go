@@ -1,4 +1,4 @@
-package search
+package store
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func TestZipCacheDelete(t *testing.T) {
 	}
 
 	// Grab a zip.
-	path, err := s.prepareZip(context.Background(), gitserver.Repo{Name: "somerepo"}, "0123456789012345678901234567890123456789")
+	path, err := s.PrepareZip(context.Background(), gitserver.Repo{Name: "somerepo"}, "0123456789012345678901234567890123456789")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,14 +33,14 @@ func TestZipCacheDelete(t *testing.T) {
 	}
 
 	// Load into zip cache.
-	zf, err := s.zipCache.get(path)
+	zf, err := s.ZipCache.Get(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	zf.Close() // don't block eviction of this zipFile
 
 	// Make sure it's there.
-	if n := s.zipCache.count(); n != 1 {
+	if n := s.ZipCache.count(); n != 1 {
 		t.Fatalf("expected 1 item in cache, got %d", n)
 	}
 
@@ -51,7 +51,7 @@ func TestZipCacheDelete(t *testing.T) {
 	}
 
 	// Make sure the zipFile is gone from the zip cache, too.
-	if n := s.zipCache.count(); n != 0 {
+	if n := s.ZipCache.count(); n != 0 {
 		t.Fatalf("expected 0 items in cache, got %d", n)
 	}
 

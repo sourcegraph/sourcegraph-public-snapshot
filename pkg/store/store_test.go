@@ -1,4 +1,4 @@
-package search
+package store
 
 import (
 	"archive/tar"
@@ -41,7 +41,7 @@ func TestPrepareZip(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			<-startPrepareZip
-			_, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
+			_, err := s.PrepareZip(context.Background(), wantRepo, wantCommit)
 			prepareZipErr <- err
 		}()
 	}
@@ -50,7 +50,7 @@ func TestPrepareZip(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		err := <-prepareZipErr
 		if err != nil {
-			t.Fatal("expected prepareZip to succeed:", err)
+			t.Fatal("expected PrepareZip to succeed:", err)
 		}
 	}
 
@@ -75,9 +75,9 @@ func TestPrepareZip(t *testing.T) {
 	if !onDisk {
 		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
 	}
-	_, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
+	_, err := s.PrepareZip(context.Background(), wantRepo, wantCommit)
 	if err != nil {
-		t.Fatal("expected prepareZip to succeed:", err)
+		t.Fatal("expected PrepareZip to succeed:", err)
 	}
 }
 
@@ -88,9 +88,9 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	s.FetchTar = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
-	_, err := s.prepareZip(context.Background(), gitserver.Repo{Name: "foo"}, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	_, err := s.PrepareZip(context.Background(), gitserver.Repo{Name: "foo"}, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 	if errors.Cause(err) != fetchErr {
-		t.Fatalf("expected prepareZip to fail with %v, failed with %v", fetchErr, err)
+		t.Fatalf("expected PrepareZip to fail with %v, failed with %v", fetchErr, err)
 	}
 }
 
@@ -126,7 +126,7 @@ func TestIngoreSizeMax(t *testing.T) {
 }
 
 func tmpStore(t *testing.T) (*Store, func()) {
-	d, err := ioutil.TempDir("", "search_test")
+	d, err := ioutil.TempDir("", "store_test")
 	if err != nil {
 		t.Fatal(err)
 	}

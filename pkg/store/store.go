@@ -1,4 +1,4 @@
-package search
+package store
 
 import (
 	"archive/tar"
@@ -25,6 +25,12 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+)
+
+const (
+	// maxFileSize is the limit on file size in bytes. Only files smaller
+	// than this are searched.
+	maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
 )
 
 // Store manages the fetching and storing of git archives. Its main purpose is
@@ -67,8 +73,8 @@ type Store struct {
 	// fetchLimiter limits concurrent calls to FetchTar.
 	fetchLimiter *mutablelimiter.Limiter
 
-	// zipCache provides efficient access to repo zip files.
-	zipCache zipCache
+	// ZipCache provides efficient access to repo zip files.
+	ZipCache ZipCache
 }
 
 // SetMaxConcurrentFetchTar sets the maximum number of concurrent calls allowed
@@ -96,15 +102,15 @@ func (s *Store) Start() {
 			Dir:               s.Path,
 			Component:         "store",
 			BackgroundTimeout: 2 * time.Minute,
-			BeforeEvict:       s.zipCache.delete,
+			BeforeEvict:       s.ZipCache.delete,
 		}
 		go s.watchAndEvict()
 	})
 }
 
-// prepareZip returns the path to a local zip archive of repo at commit.
+// PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (path string, err error) {
+func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (path string, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	defer func() {

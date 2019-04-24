@@ -153,7 +153,7 @@ func main() {
 		case "GITOLITE":
 			go repos.RunGitoliteRepositorySyncWorker(ctx)
 		case "PHABRICATOR":
-			go repos.RunPhabricatorRepositorySyncWorker(ctx)
+			go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 		case "OTHER":
 			log15.Warn("Other external service kind only supported with SRC_SYNCER_ENABLED=true")
 		default:

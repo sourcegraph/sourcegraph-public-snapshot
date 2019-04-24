@@ -31,6 +31,7 @@ import (
 	api "github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/matchtree"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/store"
 	"golang.org/x/net/trace"
 )
 
@@ -54,7 +55,7 @@ const source = api.Source("textjit")
 // StoreSearcher provides a pkg/search.Searcher which searches over a search
 // store.
 type StoreSearcher struct {
-	Store *Store
+	Store *store.Store
 }
 
 // Search implements pkg/search.Search
@@ -125,7 +126,7 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 		prepareCtx, cancel = context.WithTimeout(ctx, opts.FetchTimeout)
 		defer cancel()
 	}
-	path, err := s.Store.prepareZip(prepareCtx, gitserver.Repo{Name: repo.Name}, repo.Commit)
+	path, err := s.Store.PrepareZip(prepareCtx, gitserver.Repo{Name: repo.Name}, repo.Commit)
 	if err != nil {
 		if errcode.IsTimeout(err) {
 			return emptyResultWithStatus(api.RepositoryStatusTimedOut), nil
@@ -134,7 +135,7 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 		}
 		return nil, err
 	}
-	zf, err := s.Store.zipCache.get(path)
+	zf, err := s.Store.ZipCache.Get(path)
 	if err != nil {
 		return nil, err
 	}
@@ -406,8 +407,8 @@ type candidateMatch struct {
 }
 
 type contentProvider struct {
-	zf   *zipFile
-	file *srcFile
+	zf   *store.ZipFile
+	file *store.SrcFile
 
 	// Cache
 	fileName []byte

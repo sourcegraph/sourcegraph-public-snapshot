@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -278,7 +278,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	} else if client == nil {
 		return nil, clientErr
 	} else {
-		diff, err := client.GetRawDiff(int(args.DiffID))
+		diff, err := client.GetRawDiff(ctx, int(args.DiffID))
 		// No diff contents were given and we couldn't fetch them
 		if err != nil {
 			return nil, err
@@ -289,7 +289,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 
 	var info *phabricator.DiffInfo
 	if client != nil && (args.AuthorEmail == nil || args.AuthorName == nil || args.Date == nil) {
-		info, err = client.GetDiffInfo(int(args.DiffID))
+		info, err = client.GetDiffInfo(ctx, int(args.DiffID))
 		// Not all the information was given and we couldn't fetch it
 		if err != nil {
 			return nil, err
@@ -352,7 +352,7 @@ func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.C
 			return nil, errors.Errorf("no phabricator token was given for: %s", origin)
 		}
 
-		return phabricator.NewClient(phab.Url, phab.Token), nil
+		return phabricator.NewClient(ctx, phab.Url, phab.Token, nil)
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
