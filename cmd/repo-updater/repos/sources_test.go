@@ -615,6 +615,14 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 		} {
 			i.Response.Headers.Del(name)
 		}
+
+		// Phabricator requests include a token in the form and body.
+		ua := i.Request.Headers.Get("User-Agent")
+		if strings.Contains(strings.ToLower(ua), "phabricator") {
+			i.Request.Body = ""
+			i.Request.Form = nil
+		}
+
 		return nil
 	})
 
