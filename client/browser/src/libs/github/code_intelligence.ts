@@ -27,7 +27,9 @@ import { getFileContainers, parseURL } from './util'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
- * a `.file-actions` element.
+ * a `.file-actions` element, for instance:
+ * - A diff code view on a PR's files page, or a commit page
+ * - An older GHE single file code view (newer GitHub.com code views use createFileLineContainerToolbarMount)
  */
 export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElement {
     const className = 'sourcegraph-app-annotator'
