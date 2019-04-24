@@ -26,7 +26,16 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 		tr.Finish()
 	}()
 
-	q := sqlf.Sprintf(`SELECT id, description, query, notify_owner, notify_slack, owner_kind, user_id, org_id, slack_webhook_url FROM saved_searches`)
+	q := sqlf.Sprintf(`SELECT id,
+		description,
+		query,
+		notify_owner,
+		notify_slack,
+		owner_kind,
+		user_id,
+		org_id,
+		slack_webhook_url FROM saved_searches
+	`)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar))
 	if err != nil {
 		return nil, err
@@ -34,7 +43,16 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	var savedSearches []api.SavedQuerySpecAndConfig
 	for rows.Next() {
 		var sq api.SavedQuerySpecAndConfig
-		if err := rows.Scan(&sq.Config.Key, &sq.Config.Description, &sq.Config.Query, &sq.Config.Notify, &sq.Config.NotifySlack, &sq.Config.OwnerKind, &sq.Config.UserID, &sq.Config.OrgID, &sq.Config.SlackWebhookURL); err != nil {
+		if err := rows.Scan(
+			&sq.Config.Key,
+			&sq.Config.Description,
+			&sq.Config.Query,
+			&sq.Config.Notify,
+			&sq.Config.NotifySlack,
+			&sq.Config.OwnerKind,
+			&sq.Config.UserID,
+			&sq.Config.OrgID,
+			&sq.Config.SlackWebhookURL); err != nil {
 			return nil, err
 		}
 		sq.Spec.Key = sq.Config.Key
@@ -51,7 +69,26 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (*api.SavedQuerySpecAndConfig, error) {
 	var savedSearch api.SavedQuerySpecAndConfig
 
-	err := dbconn.Global.QueryRowContext(ctx, `SELECT id, description, query, notify_owner, notify_slack, owner_kind, user_id, org_id, slack_webhook_url FROM saved_searches WHERE id=$1`, id).Scan(&savedSearch.Config.Key, &savedSearch.Config.Description, &savedSearch.Config.Query, &savedSearch.Config.Notify, &savedSearch.Config.NotifySlack, &savedSearch.Config.OwnerKind, &savedSearch.Config.UserID, &savedSearch.Config.OrgID, &savedSearch.Config.SlackWebhookURL)
+	err := dbconn.Global.QueryRowContext(ctx, `SELECT
+		id,
+		description,
+		query,
+		notify_owner,
+		notify_slack,
+		owner_kind,
+		user_id,
+		org_id,
+		slack_webhook_url
+		FROM saved_searches WHERE id=$1`, id).Scan(
+		&savedSearch.Config.Key,
+		&savedSearch.Config.Description,
+		&savedSearch.Config.Query,
+		&savedSearch.Config.Notify,
+		&savedSearch.Config.NotifySlack,
+		&savedSearch.Config.OwnerKind,
+		&savedSearch.Config.UserID,
+		&savedSearch.Config.OrgID,
+		&savedSearch.Config.SlackWebhookURL)
 	savedSearch.Spec.Key = savedSearch.Config.Key
 	if savedSearch.Config.UserID != nil {
 		savedSearch.Spec.Subject = api.SettingsSubject{User: savedSearch.Config.UserID}
@@ -90,7 +127,24 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		OrgID:       newSavedSearch.OrgID,
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx, `INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id, org_id) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`, newSavedSearch.Description, newSavedSearch.Query, newSavedSearch.Notify, newSavedSearch.NotifySlack, strings.ToLower(newSavedSearch.OwnerKind), newSavedSearch.UserID, newSavedSearch.OrgID).Scan(&savedQuery.Key); err != nil {
+	err = dbconn.Global.QueryRowContext(ctx, `INSERT INTO saved_searches(
+			description,
+			query,
+			notify_owner,
+			notify_slack,
+			owner_kind,
+			user_id,
+			org_id
+		) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+		newSavedSearch.Description,
+		newSavedSearch.Query,
+		newSavedSearch.Notify,
+		newSavedSearch.NotifySlack,
+		strings.ToLower(newSavedSearch.OwnerKind),
+		newSavedSearch.UserID,
+		newSavedSearch.OrgID,
+	).Scan(&savedQuery.Key)
+	if err != nil {
 		return nil, err
 	}
 	return savedQuery, nil
