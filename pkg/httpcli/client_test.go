@@ -13,6 +13,62 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 )
 
+func TestHeadersMiddleware(t *testing.T) {
+	headers := []string{"X-Foo", "bar", "X-Bar", "foo"}
+	for _, tc := range []struct {
+		name    string
+		cli     Doer
+		headers []string
+		err     string
+	}{
+		{
+			name:    "odd number of headers panics",
+			headers: headers[:1],
+			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
+				t.Fatal("should not be called")
+				return nil, nil
+			}),
+			err: "missing header values",
+		},
+		{
+			name:    "even number of headers are set",
+			headers: headers,
+			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
+				for i := 0; i < len(headers); i += 2 {
+					name := headers[i]
+					if have, want := r.Header.Get(name), headers[i+1]; have != want {
+						t.Errorf("header %q: have: %q, want: %q", name, have, want)
+					}
+				}
+				return nil, nil
+			}),
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			defer func() {
+				if err := recover(); err != nil {
+					if have, want := fmt.Sprint(err), tc.err; have != want {
+						t.Fatalf("have error: %q\nwant error: %q", have, want)
+					}
+				}
+			}()
+
+			cli := HeadersMiddleware(tc.headers...)(tc.cli)
+			req, _ := http.NewRequest("GET", "http://dev/null", nil)
+
+			_, err := cli.Do(req)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			}
+		})
+	}
+}
+
 func TestContextErrorMiddleware(t *testing.T) {
 	cancelled, cancel := context.WithCancel(context.Background())
 	cancel()

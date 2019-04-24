@@ -89,6 +89,22 @@ func NewFactory(stack Middleware, common ...Opt) Factory {
 // Common Middleware
 //
 
+// HeadersMiddleware returns a middleware that wraps a Doer
+// and sets the given headers.
+func HeadersMiddleware(headers ...string) Middleware {
+	if len(headers)%2 != 0 {
+		panic("missing header values")
+	}
+	return func(cli Doer) Doer {
+		return DoerFunc(func(req *http.Request) (*http.Response, error) {
+			for i := 0; i < len(headers); i += 2 {
+				req.Header.Add(headers[i], headers[i+1])
+			}
+			return cli.Do(req)
+		})
+	}
+}
+
 // ContextErrorMiddleware wraps a Doer with context.Context error
 // handling.  It checks if the request context is done, and if so,
 // returns its error. Otherwise it returns the error from the inner
