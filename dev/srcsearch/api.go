@@ -123,12 +123,6 @@ func (a *apiRequest) do() error {
 	return a.done()
 }
 
-// apiFlags represents generic API flags available in all commands that perform
-// API requests. e.g. the ability to turn any CLI command into a curl command.
-type apiFlags struct {
-	getCurl *bool
-}
-
 // jsonCopy is a cheaty method of copying an already-decoded JSON (src)
 // response into its destination (dst) that would usually be passed to e.g.
 // json.Unmarshal.
@@ -151,13 +145,6 @@ type graphqlError struct {
 func (g *graphqlError) Error() string {
 	j, _ := marshalIndent(g.Errors)
 	return string(j)
-}
-
-func nullInt(n int) *int {
-	if n == -1 {
-		return nil
-	}
-	return &n
 }
 
 func nullString(s string) *string {
