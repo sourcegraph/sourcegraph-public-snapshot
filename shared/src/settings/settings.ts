@@ -177,9 +177,31 @@ export function mergeSettings<S extends Settings>(values: S[]): S | null {
     if (values.length === 0) {
         return null
     }
+    const customFunctions: CustomMergeFunctions = {
+        notices: (base: any, add: any) => {
+            base = [...base, ...add]
+            return base
+        },
+        extensions: (base: any, add: any) => {
+            base = { ...base, ...add }
+            return base
+        },
+        'search.scopes': (base: any, add: any) => {
+            base = [...base, ...add]
+            return base
+        },
+        'search.savedQueries': (base: any, add: any) => {
+            base = [...base, ...add]
+            return base
+        },
+        'search.repositoryGroups': (base: any, add: any) => {
+            base = { ...base, ...add }
+            return base
+        },
+    }
     const target = cloneDeep(values[0])
     for (const value of values.slice(1)) {
-        merge(target, value)
+        merge(target, value, customFunctions)
     }
     return target
 }
@@ -189,8 +211,11 @@ export interface CustomMergeFunctions {
 }
 
 /**
- * Deeply merges add into base (modifying base). The merged value for a key path can be customized by providing a
- * function at the same key path in custom.
+ * Merges add into base (modifying base). Only the top-level object is merged. To deeply merge nested objects,
+ * pass in a custom function as part of the `custom` parameter.
+ *
+ * The merged value for a key path can be customized by providing a
+ * function at the same key path in `custom`.
  *
  * Most callers should use mergeSettings, which uses the set of CustomMergeFunctions that are required to properly
  * merge settings.
@@ -202,9 +227,8 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
             if (customEntry && isFunction(customEntry)) {
                 base[key] = customEntry(base[key], add[key])
             } else if (isPlainObject(base[key]) && isPlainObject(add[key])) {
-                merge(base[key], add[key], customEntry)
-            } else if (Array.isArray(base[key])) {
-                base[key] = [...base[key], ...add[key]]
+                // By default, we don't do any deep merging of objects.
+                base[key] = add[key]
             } else {
                 base[key] = add[key]
             }
