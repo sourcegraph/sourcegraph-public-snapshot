@@ -319,16 +319,6 @@ type searchResults struct {
 	ElapsedMilliseconds        int
 }
 
-// searchResultsImproved is a superset of what the GraphQL API returns. It
-// contains the query responsible for producing the results, which is nice for
-// most consumers.
-type searchResultsImproved struct {
-	SourcegraphEndpoint string
-	Query               string
-	Site                struct{ BuildVersion string }
-	searchResults
-}
-
 // config represents the config format.
 type config struct {
 	Endpoint    string `json:"endpoint"`
@@ -370,28 +360,3 @@ func readConfig(configPath, endpoint string) (*config, error) {
 	return &cfg, nil
 }
 
-type User struct {
-	ID            string
-	Username      string
-	DisplayName   string
-	SiteAdmin     bool
-	Organizations struct {
-		Nodes []Org
-	}
-	Emails []UserEmail
-	URL    string
-}
-
-type UserEmail struct {
-	Email    string
-	Verified bool
-}
-
-type Org struct {
-	ID          string
-	Name        string
-	DisplayName string
-	Members     struct {
-		Nodes []User
-	}
-}
