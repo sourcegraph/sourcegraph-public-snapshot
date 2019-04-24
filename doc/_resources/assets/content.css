@@ -525,9 +525,6 @@
     padding-bottom: 0.3em;
     font-size: 2em;
     border-bottom: 1px solid #eaecef;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .markdown-body h2 {
