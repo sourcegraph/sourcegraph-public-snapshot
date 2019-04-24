@@ -626,10 +626,12 @@ li.content-nav-no-hover:hover {
 .page-nav > ul li::before {
     content: '\203A\00a0';
 }
+/* Docs Content layout */
 .docs-content {
+    position: relative;
+    width: 100%;
     min-height: 100vh;
 }
-
 .docs-content-section {
     padding: 0 1rem 2rem;
 }
@@ -1004,7 +1006,7 @@ li.content-nav-no-hover:hover {
 }
 /* Mobile devices with notch support. This must use a px value to compare sizes */
 @supports (padding: max(0px)) {
-    .footer__block {
+    .footer__block {.
         padding-left: max(0px, env(safe-area-inset-left));
         padding-right: max(0px, env(safe-area-inset-right));
     }
