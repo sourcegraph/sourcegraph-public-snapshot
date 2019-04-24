@@ -64,7 +64,7 @@ func TestGetZipFileWithRetry(t *testing.T) {
 				return tmp.Name(), zf, err
 			}
 
-			zf, err := GetZipFileWithRetry(get)
+			_, zf, err := GetZipFileWithRetry(get)
 			if test.succeeds && err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
