@@ -30,24 +30,11 @@ The options are:
 
 Examples:
 
-  Perform a search and get results:
+  Perform a search and get results in JSON format:
 
         $ srcsearch 'repogroup:sample error'
 
-  Perform a search and get results as JSON:
-
-        $ srcsearch -json 'repogroup:sample error'
-
 Other tips:
-
-  Make 'type:diff' searches have colored diffs by installing https://colordiff.org
-    - Ubuntu/Debian: $ sudo apt-get install colordiff
-    - Mac OS:        $ brew install colordiff
-    - Windows:       $ npm install -g colordiff
-
-  Disable color output by setting NO_COLOR=t (see https://no-color.org).
-
-  Force color output on (not on by default when piped to other programs) by setting COLOR=t
 
   Query syntax: https://about.sourcegraph.com/docs/search/query-syntax/
 `
@@ -77,11 +64,11 @@ func readConfig() (*config, error) {
 	cfgPath := *configPath
 	userSpecified := *configPath != ""
 	if !userSpecified {
-		u, err := user.Current()
+		user, err := user.Current()
 		if err != nil {
 			return nil, err
 		}
-		cfgPath = filepath.Join(u.HomeDir, "src-config.json")
+		cfgPath = filepath.Join(user.HomeDir, "src-config.json")
 	}
 	data, err := ioutil.ReadFile(os.ExpandEnv(cfgPath))
 	if err != nil && (!os.IsNotExist(err) || userSpecified) {

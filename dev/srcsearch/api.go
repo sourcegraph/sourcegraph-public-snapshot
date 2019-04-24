@@ -19,11 +19,11 @@ func gqlURL(endpoint string) string {
 
 // apiRequest represents a GraphQL API request.
 type apiRequest struct {
-	query  string                 // the GraphQL query
-	vars   map[string]interface{} // the GraphQL query variables
-	result interface{}            // where to store the result
-	done   func() error           // a function to invoke for handling the response. If nil, flags like -get-curl are ignored.
-	endpoint string
+	query       string                 // the GraphQL query
+	vars        map[string]interface{} // the GraphQL query variables
+	result      interface{}            // where to store the result
+	done        func() error           // a function to invoke for handling the response. If nil, flags like -get-curl are ignored.
+	endpoint    string
 	accessToken string
 
 	// If true, errors will not be unpacked.
@@ -153,3 +153,4 @@ func nullString(s string) *string {
 	}
 	return &s
 }
+
