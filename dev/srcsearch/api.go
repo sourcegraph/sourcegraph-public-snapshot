@@ -42,10 +42,8 @@ type apiRequest struct {
 	dontUnpackErrors bool
 }
 
-// do performs the API request. If a.flags specify something like -get-curl
-// then it is handled immediately and a.done is not invoked. Otherwise, once
-// the request is finished a.done is invoked to handle the response (which is
-// stored in a.result).
+// do performs the API request. Once the request is finished a.done is invoked to
+// handle the response (which is stored in a.result).
 func (a *apiRequest) do() error {
 	// Create the JSON object.
 	var buf bytes.Buffer
