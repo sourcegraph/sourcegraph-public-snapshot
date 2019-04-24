@@ -1,6 +1,7 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
+import { Omit } from 'utility-types'
 import {
     FileSpec,
     PositionSpec,
@@ -13,7 +14,7 @@ import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
-import { CodeView, CodeViewSpec, toCodeViewResolver } from '../code_intelligence/code_views'
+import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
 import { markdownBodyViewResolver } from './content_views'
@@ -69,19 +70,19 @@ const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
 }
 
-const diffCodeView: CodeViewSpec = {
+const diffCodeView: Omit<CodeView, 'element'> = {
     dom: diffDomFunctions,
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
 }
 
-const diffConversationCodeView: CodeViewSpec = {
+const diffConversationCodeView: Omit<CodeView, 'element'> = {
     ...diffCodeView,
     getToolbarMount: undefined,
 }
 
-const singleFileCodeView: CodeViewSpec = {
+const singleFileCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo,

@@ -1,9 +1,10 @@
 import { of, Subject } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
+import { Omit } from 'utility-types'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { FileInfo } from './code_intelligence'
-import { CodeViewSpec, toCodeViewResolver, trackCodeViews } from './code_views'
+import { CodeView, toCodeViewResolver, trackCodeViews } from './code_views'
 
 describe('code_views', () => {
     beforeEach(() => {
@@ -15,7 +16,7 @@ describe('code_views', () => {
             filePath: '/bar.ts',
             commitID: '1',
         }
-        const codeViewSpec: CodeViewSpec = {
+        const codeViewSpec: Omit<CodeView, 'element'> = {
             dom: {
                 getCodeElementFromTarget: () => null,
                 getCodeElementFromLineNumber: () => null,
