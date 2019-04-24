@@ -1,4 +1,5 @@
 import { DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
@@ -10,12 +11,10 @@ import { ensureRevisionsAreCloned } from './util/file_info'
 import { trackViews, ViewResolver } from './views'
 
 /**
- * Defines a type of code view a given code host can have. It tells us how to
- * look for the code view and how to do certain things when we find it.
+ * Describes a set of operations for manipulating a code view found on a page,
+ * and some CSS classes to be applied to injected UI elements.
  */
-export interface CodeViewSpec {
-    /** A selector used by `document.querySelectorAll` to find the code view. */
-    selector: string
+export interface CodeViewSpec extends Pick<CodeView, Exclude<keyof CodeView, 'element'>> {
     /** The DOMFunctions for the code view. */
     dom: DOMFunctions
     /**
@@ -38,25 +37,31 @@ export interface CodeViewSpec {
     adjustPosition?: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
     /** Props for styling the buttons in the `CodeViewToolbar`. */
     toolbarButtonProps?: ButtonProps
-
-    isDiff?: boolean
+    /**
+     * Gets the current selections for a code view.
+     */
+    getSelections?: (codeViewElement: HTMLElement) => Selection[]
+    /**
+     * Returns a stream of selections changes for a code view.
+     */
+    observeSelections?: (codeViewElement: HTMLElement) => Observable<Selection[]>
 }
 
 /**
- * Resolves a code view element found by a {@link CodeViewSpec} to a {@link ResolvedCodeView}.
+ * Defines a code view that is present on a page. Exposes operations for manipulating it,
+ * and CSS classes to be applied to injected UI elements.
  */
-export interface CodeViewSpecResolver extends Pick<CodeViewSpec, Exclude<keyof CodeViewSpec, 'selector'>> {}
-
-/**
- * A code view found on the page.
- */
-export interface ResolvedCodeView extends CodeViewSpecResolver {
-    /** The code view's HTML element. */
+export interface CodeView extends CodeViewSpec {
+    /**
+     * The code view element on the page.
+     */
     element: HTMLElement
 }
 
-/** Converts a static CodeViewSpec to a dynamic CodeViewSpecResolver. */
-const toCodeViewResolver = ({ selector, ...spec }: CodeViewSpec): ViewResolver<ResolvedCodeView> => ({
+/**
+ * Builds a CodeViewResolver from a static CodeView and a selector.
+ */
+export const toCodeViewResolver = (selector: string, spec: CodeViewSpec): ViewResolver<CodeView> => ({
     selector,
     resolveView: element => ({ ...spec, element }),
 })
@@ -65,22 +70,8 @@ const toCodeViewResolver = ({ selector, ...spec }: CodeViewSpec): ViewResolver<R
  * Find all the code views on a page using both the code view specs and the code view spec
  * resolvers, calling down to {@link trackViews}.
  */
-export const trackCodeViews = ({
-    codeViewSpecs = [],
-    codeViewSpecResolver,
-}: Pick<CodeHost, 'codeViewSpecs' | 'codeViewSpecResolver'>) => {
-    const codeViewSpecResolvers = codeViewSpecs.map(toCodeViewResolver)
-    if (codeViewSpecResolver) {
-        codeViewSpecResolvers.push({
-            selector: codeViewSpecResolver.selector,
-            resolveView: element => {
-                const view = codeViewSpecResolver.resolveView(element)
-                return view ? { ...view, element } : null
-            },
-        })
-    }
-    return trackViews<ResolvedCodeView>(codeViewSpecResolvers)
-}
+export const trackCodeViews = ({ codeViewResolvers }: Pick<CodeHost, 'codeViewResolvers'>) =>
+    trackViews<CodeView>(codeViewResolvers)
 
 export interface FileInfoWithContents extends FileInfo {
     content?: string

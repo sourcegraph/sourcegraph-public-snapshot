@@ -8,7 +8,6 @@ import { TextModel } from '../../../shared/src/api/client/services/modelService'
 import { PanelViewWithComponent } from '../../../shared/src/api/client/services/view'
 import { SNIPPET_URI_SCHEME } from '../../../shared/src/api/client/types/textDocument'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol'
-import { EditorCompletionWidget } from '../../../shared/src/components/completion/EditorCompletionWidget'
 import { EditorTextField } from '../../../shared/src/components/editorTextField/EditorTextField'
 import { WithLinkPreviews } from '../../../shared/src/components/linkPreviews/WithLinkPreviews'
 import { Markdown } from '../../../shared/src/components/Markdown'
@@ -16,8 +15,8 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import { createLinkClickHandler } from '../../../shared/src/util/linkClickHandler'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { isDefined } from '../../../shared/src/util/types'
-import { COMPLETION_WIDGET_CLASS_PROPS } from '../components/completion/styles'
 import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'
+import { WebEditorCompletionWidget } from '../components/shared'
 import { setElementTooltip } from '../components/tooltip/Tooltip'
 
 interface Props extends ExtensionsControllerProps {
@@ -102,11 +101,10 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
             {editorId && modelUri && (
                 <>
                     {textArea && (
-                        <EditorCompletionWidget
+                        <WebEditorCompletionWidget
                             textArea={textArea}
                             editorId={editorId.editorId}
                             extensionsController={props.extensionsController}
-                            {...COMPLETION_WIDGET_CLASS_PROPS}
                         />
                     )}
                     <EditorTextField

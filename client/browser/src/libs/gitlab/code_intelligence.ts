@@ -1,5 +1,6 @@
 import { CodeHost } from '../code_intelligence'
-import { CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { CodeView, CodeViewSpec } from '../code_intelligence/code_views'
+import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
@@ -44,45 +45,44 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     return mount
 }
 
-const singleFileCodeView: CodeViewSpecResolver = {
+const singleFileCodeView: CodeViewSpec = {
     dom: singleFileDOMFunctions,
-    isDiff: false,
     getToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
+    getSelections: getSelectionsFromHash,
+    observeSelections: observeSelectionsFromHash,
 }
 
-const mergeRequestCodeView: CodeViewSpecResolver = {
+const mergeRequestCodeView: CodeViewSpec = {
     dom: diffDOMFunctions,
-    isDiff: true,
     getToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
 }
 
-const commitCodeView: CodeViewSpecResolver = {
+const commitCodeView: CodeViewSpec = {
     dom: diffDOMFunctions,
-    isDiff: true,
     getToolbarMount,
     resolveFileInfo: resolveCommitFileInfo,
     toolbarButtonProps,
 }
 
-const resolveView = (codeView: HTMLElement): CodeViewSpecResolver => {
+const resolveView = (element: HTMLElement): CodeView => {
     const { pageKind } = getPageInfo()
 
     if (pageKind === GitLabPageKind.File) {
-        return singleFileCodeView
+        return { element, ...singleFileCodeView }
     }
 
     if (pageKind === GitLabPageKind.MergeRequest) {
-        return mergeRequestCodeView
+        return { element, ...mergeRequestCodeView }
     }
 
-    return commitCodeView
+    return { element, ...commitCodeView }
 }
 
-const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
+const codeViewResolver: ViewResolver<CodeView> = {
     selector: '.file-holder',
     resolveView,
 }
@@ -90,7 +90,7 @@ const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
 export const gitlabCodeHost: CodeHost = {
     name: 'gitlab',
     check: checkIsGitlab,
-    codeViewSpecResolver,
+    codeViewResolvers: [codeViewResolver],
     adjustOverlayPosition,
     getCommandPaletteMount,
     commandPaletteClassProps: {

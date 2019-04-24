@@ -1,5 +1,9 @@
-<!-- **NOTE:** this changelog should always be read on `master` branch. Its contents on version
-branches do not necessarily reflect the changes that have gone into that branch. -->
+<!--
+###################################### READ ME ###########################################
+### This changelog should always be read on `master` branch. Its contents on version   ###
+### branches do not necessarily reflect the changes that have gone into that branch.   ###
+##########################################################################################
+-->
 
 # Changelog
 
@@ -15,7 +19,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed an issue where the http.Client.Transport would not be initialized when using custom Certificate Authority or self signed certificate.
+- Removes corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
+
+## 3.3.1
+
+### Fixed
+
+- Fixed a bug that prevented external service configurations specifying client certificates from working (#3523)
 
 ## 3.3.0
 
@@ -57,6 +67,20 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed an issue where the site-admin repositories page `Cloning`, `Not Cloned`, `Needs Index` tabs were very slow on instances with thousands of repositories.
 - Fixed an issue where failing to syntax highlight a single file would take down the entire syntax highlighting service.
+
+## 3.2.4
+
+### Fixed
+
+- Fixed bundling of the Phabricator integration assets in the Sourcegraph docker image.
+
+## 3.2.3
+
+### Fixed
+
+- Fixed https://github.com/sourcegraph/sourcegraph/issues/3336.
+- Clearer error message when a repository sync fails due to the inability to clone a repository.
+- Rewrite '@' character in Gitolite repository names to '-', which permits them to be viewable in the UI.
 
 ## 3.2.2
 

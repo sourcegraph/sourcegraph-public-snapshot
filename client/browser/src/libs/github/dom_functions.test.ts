@@ -1,9 +1,11 @@
 import { DOMFunctions } from '@sourcegraph/codeintellify'
+import { existsSync } from 'fs'
 import { DiffDOMFunctionsTest, testDOMFunctions } from '../code_intelligence/code_intelligence_test_utils'
 import { diffDomFunctions } from './dom_functions'
 
 type GitHubVersion = 'github.com' | 'ghe-2.14.11'
-type GitHubPage = 'pull-request' | 'commit'
+type GitHubPage = 'pull-request' | 'pull-request-discussion' | 'commit'
+
 interface Fixture
     extends Pick<DiffDOMFunctionsTest, Exclude<keyof DiffDOMFunctionsTest, 'htmlFixturePath' | 'getCodeView'>> {
     version: GitHubVersion
@@ -20,8 +22,11 @@ function testFixtures(fixtures: Fixture[], testSuiteName: string, domFunctions: 
             for (const extension of ['vanilla', 'refined-github']) {
                 describe(extension, () => {
                     for (const view of ['split', 'unified']) {
+                        const htmlFixturePath = `${__dirname}/__fixtures__/${version}/${page}/${extension}/${view}/page.html`
+                        if (!existsSync(htmlFixturePath)) {
+                            continue
+                        }
                         describe(view, () => {
-                            const htmlFixturePath = `${__dirname}/__fixtures__/${version}/${page}/${extension}/${view}/page.html`
                             testDOMFunctions(testSuiteName, domFunctions, {
                                 htmlFixturePath,
                                 getCodeView: () => document.querySelector('.file') as HTMLElement,
@@ -77,6 +82,22 @@ const DIFF_FIXTURES: Fixture[] = [
         ],
     },
     {
+        version: 'ghe-2.14.11',
+        page: 'pull-request-discussion',
+        url: 'http://ghe.sgdev.org/beyang/mux/pull/1',
+        firstCharacterIsDiffIndicator: true,
+        codeElements: [
+            {
+                getElement: () =>
+                    [...document.querySelectorAll('.blob-code-inner')].find(e =>
+                        e.textContent!.includes('Another field')
+                    ) as HTMLElement,
+                lineNumber: 64,
+                diffPart: 'head',
+            },
+        ],
+    },
+    {
         version: 'github.com',
         page: 'pull-request',
         url: 'http://github.com/sourcegraph/sourcegraph/pull/1',
@@ -114,6 +135,22 @@ const DIFF_FIXTURES: Fixture[] = [
             {
                 getElement: () => document.querySelector('.blob-code-addition .blob-code-inner') as HTMLElement,
                 lineNumber: 42,
+                diffPart: 'head',
+            },
+        ],
+    },
+    {
+        version: 'github.com',
+        page: 'pull-request-discussion',
+        url: 'https://github.com/sourcegraph/sourcegraph/pull/3221',
+        firstCharacterIsDiffIndicator: false,
+        codeElements: [
+            {
+                getElement: () =>
+                    [...document.querySelectorAll('.blob-code-inner')].find(e =>
+                        e.textContent!.includes('len(parsedUrl.Opaque)')
+                    ) as HTMLElement,
+                lineNumber: 62,
                 diffPart: 'head',
             },
         ],
