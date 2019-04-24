@@ -24,6 +24,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/store"
 
 	"github.com/pkg/errors"
 
@@ -36,7 +37,7 @@ import (
 
 // Service is the search service. It is an http.Handler.
 type Service struct {
-	Store *Store
+	Store *store.Store
 	Log   log15.Logger
 }
 
@@ -186,12 +187,12 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 
-	getZf := func() (string, *zipFile, error) {
-		path, err := s.Store.prepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
+	getZf := func() (string, *store.ZipFile, error) {
+		path, err := s.Store.PrepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
 		if err != nil {
 			return "", nil, err
 		}
-		zf, err := s.Store.zipCache.get(path)
+		zf, err := s.Store.ZipCache.Get(path)
 		return path, zf, err
 	}
 

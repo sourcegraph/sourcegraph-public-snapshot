@@ -3,11 +3,13 @@ package search
 import (
 	"os"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 // getZipFileWithRetry retries getting a zip file if the zip is for some reason
 // invalid.
-func getZipFileWithRetry(get func() (string, *zipFile, error)) (zf *zipFile, err error) {
+func getZipFileWithRetry(get func() (string, *store.ZipFile, error)) (zf *store.ZipFile, err error) {
 	var path string
 	tries := 0
 	for zf == nil {

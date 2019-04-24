@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestGetZipFileWithRetry(t *testing.T) {
@@ -48,7 +49,7 @@ func TestGetZipFileWithRetry(t *testing.T) {
 			}()
 
 			tries := 0
-			get := func() (string, *zipFile, error) {
+			get := func() (string, *store.ZipFile, error) {
 				var err error
 				tmp, err = ioutil.TempFile("", "")
 				if err != nil {
@@ -56,9 +57,9 @@ func TestGetZipFileWithRetry(t *testing.T) {
 				}
 
 				err = test.errs[tries]
-				var zf *zipFile
+				var zf *store.ZipFile
 				if err == nil {
-					zf = &zipFile{}
+					zf = &store.ZipFile{}
 				}
 				tries++
 				return tmp.Name(), zf, err

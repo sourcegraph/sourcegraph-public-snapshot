@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
+	"github.com/sourcegraph/sourcegraph/pkg/store"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -49,7 +50,7 @@ func main() {
 	}
 
 	service := &search.Service{
-		Store: &search.Store{
+		Store: &store.Store{
 			FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 				return git.Archive(ctx, repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 			},
