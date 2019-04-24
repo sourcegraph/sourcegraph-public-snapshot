@@ -178,12 +178,12 @@ export function mergeSettings<S extends Settings>(values: S[]): S | null {
         return null
     }
     const customFunctions: CustomMergeFunctions = {
-        notices: (base: any, add: any) => {
-            base = [...base, ...add]
-            return base
-        },
         extensions: (base: any, add: any) => {
             base = { ...base, ...add }
+            return base
+        },
+        notices: (base: any, add: any) => {
+            base = [...base, ...add]
             return base
         },
         'search.scopes': (base: any, add: any) => {
@@ -211,11 +211,11 @@ export interface CustomMergeFunctions {
 }
 
 /**
- * Merges add into base (modifying base). Only the top-level object is merged. To deeply merge nested objects,
- * pass in a custom function as part of the `custom` parameter.
+ * Shallow merges add into base (modifying base). Only the top-level object is smerged.
  *
  * The merged value for a key path can be customized by providing a
- * function at the same key path in `custom`.
+ * function at the same key path in `custom`. To deeply merge a value at a key path,
+ * pass in a custom function at the same key path as part of the `custom` parameter.
  *
  * Most callers should use mergeSettings, which uses the set of CustomMergeFunctions that are required to properly
  * merge settings.
@@ -226,9 +226,6 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
             const customEntry = custom && custom[key]
             if (customEntry && isFunction(customEntry)) {
                 base[key] = customEntry(base[key], add[key])
-            } else if (isPlainObject(base[key]) && isPlainObject(add[key])) {
-                // By default, we don't do any deep merging of objects.
-                base[key] = add[key]
             } else {
                 base[key] = add[key]
             }
