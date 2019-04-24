@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -19,7 +18,10 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -476,6 +478,60 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "PHABRICATOR",
+				Config: marshalJSON(t, &schema.PhabricatorConnection{
+					Url:   "https://secure.phabricator.com",
+					Token: os.Getenv("PHABRICATOR_TOKEN"),
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "phabricator",
+			svcs: svcs,
+			assert: func(t testing.TB, rs Repos) {
+				t.Helper()
+
+				if len(rs) == 0 {
+					t.Fatalf("no repos yielded")
+				}
+
+				for _, r := range rs {
+					repo := r.Metadata.(*phabricator.Repo)
+					if repo.VCS != "git" {
+						t.Fatalf("non git repo yielded: %+v", repo)
+					}
+
+					if repo.Status == "inactive" {
+						t.Fatalf("inactive repo yielded: %+v", repo)
+					}
+
+					if repo.Name == "" {
+						t.Fatalf("empty repo name: %+v", repo)
+					}
+
+					if !r.Enabled {
+						t.Fatalf("repo disabled: %+v", repo)
+					}
+
+					ext := api.ExternalRepoSpec{
+						ID:          repo.PHID,
+						ServiceType: "phabricator",
+						ServiceID:   "https://secure.phabricator.com",
+					}
+
+					if have, want := r.ExternalRepo, ext; have != want {
+						t.Fatal(cmp.Diff(have, want))
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -515,7 +571,7 @@ func newClientFactory(t testing.TB, name string) (httpcli.Factory, func(testing.
 		githubProxyRedirectMiddleware,
 		gitserverRedirectMiddleware,
 	)
-	return httpcli.NewFactory(mw, newRecorderOpt(t, rec)),
+	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
 		func(t testing.TB) { save(t, rec) }
 }
 
@@ -541,18 +597,7 @@ func gitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
 }
 
 func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
-	mode := recorder.ModeReplaying
-	if record {
-		mode = recorder.ModeRecording
-	}
-
-	rec, err := recorder.NewAsMode(file, mode, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rec.AddFilter(func(i *cassette.Interaction) error {
-		delete(i.Request.Headers, "Authorization")
+	rec, err := httptestutil.NewRecorder(file, record, func(i *cassette.Interaction) error {
 		// The ratelimit.Monitor type resets its internal timestamp if it's
 		// updated with a timestamp in the past. This makes tests ran with
 		// recorded interations just wait for a very long time. Removing
@@ -573,9 +618,9 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 		return nil
 	})
 
-	rec.AddFilter(func(i *cassette.Interaction) error {
-		return nil
-	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	return rec
 }
@@ -584,58 +629,6 @@ func save(t testing.TB, rec *recorder.Recorder) {
 	if err := rec.Stop(); err != nil {
 		t.Errorf("failed to update test data: %s", err)
 	}
-}
-
-func newRecorderOpt(t testing.TB, rec *recorder.Recorder) httpcli.Opt {
-	return func(c *http.Client) error {
-		tr := c.Transport
-		if tr == nil {
-			tr = http.DefaultTransport
-		}
-
-		if testing.Verbose() {
-			rec.SetTransport(logged(t, "transport")(tr))
-			c.Transport = logged(t, "recorder")(rec)
-		} else {
-			rec.SetTransport(tr)
-			c.Transport = rec
-		}
-
-		return nil
-	}
-}
-
-func logged(t testing.TB, prefix string) func(http.RoundTripper) http.RoundTripper {
-	return func(rt http.RoundTripper) http.RoundTripper {
-		return roundTripFunc(func(req *http.Request) (*http.Response, error) {
-			bs, err := httputil.DumpRequestOut(req, true)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			t.Logf("[%s] request\n%s", prefix, bs)
-
-			res, err := rt.RoundTrip(req)
-			if err != nil {
-				return res, err
-			}
-
-			bs, err = httputil.DumpResponse(res, true)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			t.Logf("[%s] response\n%s", prefix, bs)
-
-			return res, nil
-		})
-	}
-}
-
-type roundTripFunc httpcli.DoerFunc
-
-func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req)
 }
 
 func marshalJSON(t testing.TB, v interface{}) string {
