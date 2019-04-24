@@ -1,4 +1,4 @@
-import { cloneDeep, isFunction, isPlainObject } from 'lodash'
+import { cloneDeep, isFunction } from 'lodash'
 import * as GQL from '../graphql/schema'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
