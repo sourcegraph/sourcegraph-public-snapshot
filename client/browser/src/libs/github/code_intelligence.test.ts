@@ -31,8 +31,8 @@ describe('github/code_intelligence', () => {
                 describe(`${startCase(page)} page`, () => {
                     for (const extension of ['vanilla', 'refined-github']) {
                         describe(startCase(extension), () => {
-                            if (page === 'blob') {
-                                // no split/unified view on blobs
+                            // no split/unified view on blobs, and pull-request-discussion is always unified
+                            if (page === 'blob' || page === 'pull-request-discussion') {
                                 const directory = `${__dirname}/__fixtures__/${version}/${page}/${extension}`
                                 testCodeHost(`${directory}/page.html`)
                                 testMountGetter(
