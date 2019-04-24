@@ -187,12 +187,12 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 
-	getZf := func() (string, *zipFile, error) {
-		path, err := s.Store.prepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
+	getZf := func() (string, *store.ZipFile, error) {
+		path, err := s.Store.PrepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
 		if err != nil {
 			return "", nil, err
 		}
-		zf, err := s.Store.zipCache.get(path)
+		zf, err := s.Store.ZipCache.Get(path)
 		return path, zf, err
 	}
 
