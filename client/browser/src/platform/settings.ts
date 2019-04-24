@@ -125,11 +125,10 @@ export function fetchViewerSettings(
             ${configurationCascadeFragment}
         `)
     ).pipe(
-        // Suppress deprecation warnings because our use of these deprecated fields is intentional (see
-        // tsdoc comment).
+        map(dataOrThrowErrors),
+        // Suppress deprecation warnings because our use of these deprecated fields is intentional (see tsdoc comment).
         //
         // tslint:disable deprecation
-        map(dataOrThrowErrors),
         map(({ viewerConfiguration }) => {
             if (!viewerConfiguration) {
                 throw new Error('fetchViewerSettings: empty viewerConfiguration')
@@ -145,8 +144,8 @@ export function fetchViewerSettings(
                 subjects: viewerConfiguration.subjects,
                 final: viewerConfiguration.merged.contents,
             }
-            // tslint:enable deprecation
         })
+        // tslint:enable deprecation
     )
 }
 
