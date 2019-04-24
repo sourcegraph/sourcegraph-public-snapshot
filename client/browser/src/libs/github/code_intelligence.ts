@@ -142,10 +142,10 @@ const commentSnippetCodeViewResolver = toCodeViewResolver('.js-comment-body', {
 })
 
 export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
-    repositoryContent: HTMLElement
+    codeViewElement: HTMLElement
 ): HTMLElement => {
     const className = 'sourcegraph-app-annotator'
-    const existingMount = repositoryContent.querySelector(`.${className}`) as HTMLElement
+    const existingMount = codeViewElement.querySelector(`.${className}`) as HTMLElement
     if (existingMount) {
         return existingMount
     }
@@ -154,7 +154,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountEl.style.verticalAlign = 'middle'
     mountEl.style.alignItems = 'center'
     mountEl.className = className
-    const rawURLLink = repositoryContent.querySelector('#raw-url')
+    const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink && rawURLLink.closest('.BtnGroup')
     if (!buttonGroup || !buttonGroup.parentNode) {
         throw new Error('File actions not found')
