@@ -30,7 +30,7 @@ var DevAndTesting = conftypes.RawUnified{
 	],
 }`,
 	Site: `{
-    "search.index.enabled": true,
+	"search.index.enabled": true,
 }`,
 }
 
@@ -47,7 +47,7 @@ var DockerContainer = conftypes.RawUnified{
 }`,
 	Site: `{
 	"disablePublicRepoRedirects": true,
-    "search.index.enabled": true,
+	"search.index.enabled": true,
 }`,
 }
 
@@ -73,7 +73,7 @@ var Cluster = conftypes.RawUnified{
 	]
 }`,
 	Site: `{
-    "search.index.enabled": true,
+	"search.index.enabled": true,
 }`,
 }
 
