@@ -1,9 +1,13 @@
 package conf
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -55,6 +59,27 @@ func TestSearchIndexEnabled(t *testing.T) {
 			got := SearchIndexEnabled()
 			if got != test.want {
 				t.Fatalf("SearchIndexEnabled() = %v, want %v", got, test.want)
+			}
+		})
+	}
+
+	defaults := map[string]conftypes.RawUnified{
+		"Cluster":         confdefaults.Cluster,
+		"Default":         confdefaults.Default,
+		"DevAndTesting":   confdefaults.DevAndTesting,
+		"DockerContainer": confdefaults.DockerContainer,
+	}
+	for dStr, d := range defaults {
+		test := fmt.Sprintf("for %s defaults", dStr)
+		t.Run(test, func(t *testing.T) {
+			cfg, err := ParseConfig(d)
+			if err != nil {
+				t.Fatal(err)
+			}
+			Mock(cfg)
+			defer Mock(nil)
+			if !SearchIndexEnabled() {
+				t.Errorf("search indexing should be enabled by default for Docker deployments")
 			}
 		})
 	}
