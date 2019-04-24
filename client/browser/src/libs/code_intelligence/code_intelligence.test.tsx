@@ -7,7 +7,7 @@ jest.mock('react-dom', () => ({
 
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { from, NEVER, of, Subject, Subscription, BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, from, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../../shared/src/api/client/services'
 import { Range } from '../../../../../shared/src/api/extension/types/range'
@@ -15,9 +15,9 @@ import { integrationTestContext } from '../../../../../shared/src/api/integratio
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
+import { MutationRecordLike } from '../../shared/util/dom'
 import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
-import { MutationRecordLike } from 'src/shared/util/dom'
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
@@ -291,13 +291,15 @@ describe('code_intelligence', () => {
             expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration 2')
         })
 
-        test('removes a code view', async () => {
+        test('removes code views and models', async () => {
             const { services } = await integrationTestContext(undefined, {
                 roots: [],
                 editors: [],
             })
-            const codeView = createTestElement()
-            codeView.id = 'code'
+            const codeView1 = createTestElement()
+            codeView1.className = 'code'
+            const codeView2 = createTestElement()
+            codeView2.className = 'code'
             const fileInfo: FileInfo = {
                 repoName: 'foo',
                 filePath: '/bar.ts',
@@ -313,7 +315,7 @@ describe('code_intelligence', () => {
                         name: 'test',
                         check: () => true,
                         codeViewResolvers: [
-                            toCodeViewResolver('#code', {
+                            toCodeViewResolver('.code', {
                                 dom: {
                                     getCodeElementFromTarget: jest.fn(),
                                     getCodeElementFromLineNumber: jest.fn(),
@@ -331,7 +333,7 @@ describe('code_intelligence', () => {
             )
             let editors = await from(services.editor.editors)
                 .pipe(
-                    skip(2),
+                    skip(3),
                     take(1)
                 )
                 .toPromise()
@@ -348,11 +350,47 @@ describe('code_intelligence', () => {
                     selections: [],
                     type: 'CodeEditor',
                 },
+                {
+                    editorId: 'editor#1',
+                    isActive: true,
+                    model: {
+                        languageId: 'typescript',
+                        text: undefined,
+                        uri: 'git://foo?1#/bar.ts',
+                    },
+                    resource: 'git://foo?1#/bar.ts',
+                    selections: [],
+                    type: 'CodeEditor',
+                },
             ])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(true)
-            // Simulate code view removal
-            mutations.next([{ addedNodes: [], removedNodes: [codeView] }])
-            // Model and editor should have been removed
+            // Simulate codeView1 removal
+            mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
+            // One editor should have been removed, model should still exist
+            editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors).toEqual([
+                {
+                    editorId: 'editor#1',
+                    isActive: true,
+                    model: {
+                        languageId: 'typescript',
+                        text: undefined,
+                        uri: 'git://foo?1#/bar.ts',
+                    },
+                    resource: 'git://foo?1#/bar.ts',
+                    selections: [],
+                    type: 'CodeEditor',
+                },
+            ])
+            expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(true)
+            // Simulate codeView2 removal
+            mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
+            // Second editor and model should have been removed
             editors = await from(services.editor.editors)
                 .pipe(
                     skip(1),

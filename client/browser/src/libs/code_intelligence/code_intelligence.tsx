@@ -24,7 +24,6 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
 import { CodeEditorData } from '../../../../../shared/src/api/client/services/editorService'
-import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
@@ -468,12 +467,16 @@ export function handleCodeHost({
             if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
                 const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const uri = toURIWithPath(fileInfo)
-                const model: TextModel = {
-                    uri,
-                    languageId: getModeFromPath(fileInfo.filePath),
-                    text: fileInfo.content,
+                const languageId = getModeFromPath(fileInfo.filePath)
+                // Only add the model if it doesn't exist
+                // (there may be several code views on the page pointing to the same model)
+                if (!extensionsController.services.model.hasModel(uri)) {
+                    extensionsController.services.model.addModel({
+                        uri,
+                        languageId,
+                        text: fileInfo.content,
+                    })
                 }
-                extensionsController.services.model.addModel(model)
                 const editorData: CodeEditorData = {
                     type: 'CodeEditor' as const,
                     resource: uri,
@@ -487,7 +490,6 @@ export function handleCodeHost({
                 }
                 codeViewState.subscriptions.add(() => {
                     extensionsController.services.editor.removeEditor(editorId)
-                    extensionsController.services.model.removeModel(uri)
                 })
                 codeViewStates.set(element, codeViewState)
 
@@ -508,11 +510,15 @@ export function handleCodeHost({
                         commitID: fileInfo.baseCommitID,
                         filePath: fileInfo.baseFilePath,
                     })
-                    extensionsController.services.model.addModel({
-                        uri,
-                        languageId: getModeFromPath(fileInfo.filePath),
-                        text: fileInfo.baseContent,
-                    })
+                    // Only add the model if it doesn't exist
+                    // (there may be several code views on the page pointing to the same model)
+                    if (!extensionsController.services.model.hasModel(uri)) {
+                        extensionsController.services.model.addModel({
+                            uri,
+                            languageId: getModeFromPath(fileInfo.baseFilePath),
+                            text: fileInfo.baseContent,
+                        })
+                    }
                     const editor = extensionsController.services.editor.addEditor({
                         type: 'CodeEditor' as const,
                         resource: uri,
@@ -522,7 +528,6 @@ export function handleCodeHost({
                     })
                     codeViewState.subscriptions.add(() => {
                         extensionsController.services.editor.removeEditor(editor)
-                        extensionsController.services.model.removeModel(uri)
                     })
                     codeViewState.roots.push({
                         uri: toRootURI({
@@ -601,7 +606,14 @@ export function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
-                            scope={{ ...editorData, model }}
+                            scope={{
+                                ...editorData,
+                                model: {
+                                    uri,
+                                    languageId,
+                                    text: fileInfo.content,
+                                },
+                            }}
                         />,
                         mount
                     )

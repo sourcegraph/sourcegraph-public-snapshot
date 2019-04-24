@@ -2,6 +2,7 @@ import { Selection } from '@sourcegraph/extension-api-types'
 import { from, of, Subscribable } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
+import * as sinon from 'sinon'
 import { CodeEditor, createEditorService, EditorService, getActiveCodeEditorPosition } from './editorService'
 import { TextModel } from './modelService'
 
@@ -19,6 +20,7 @@ describe('EditorService', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const editorService = createEditorService({
                     models: cold<TextModel[]>('a', { a: [{ uri: 'u', text: 't', languageId: 'l' }] }),
+                    removeModel: jest.fn(),
                 })
                 editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
                 expectObservable(
@@ -38,7 +40,10 @@ describe('EditorService', () => {
     })
 
     test('addEditor', async () => {
-        const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+        const editorService = createEditorService({
+            models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
+            removeModel: jest.fn(),
+        })
         const editor = editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
         expect(editor.editorId).toEqual('editor#0')
         expect(
@@ -59,7 +64,10 @@ describe('EditorService', () => {
 
     describe('setSelections', () => {
         test('ok', async () => {
-            const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+            const editorService = createEditorService({
+                models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
+                removeModel: jest.fn(),
+            })
             const editor = editorService.addEditor({
                 type: 'CodeEditor',
                 resource: 'u',
@@ -86,14 +94,17 @@ describe('EditorService', () => {
             ).toEqual([SELECTIONS])
         })
         test('not found', () => {
-            const editorService = createEditorService({ models: of([]) })
+            const editorService = createEditorService({ models: of([]), removeModel: jest.fn() })
             expect(() => editorService.setSelections({ editorId: 'x' }, [])).toThrowError('editor not found: x')
         })
     })
 
     describe('removeEditor', () => {
         test('ok', async () => {
-            const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+            const editorService = createEditorService({
+                models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
+                removeModel: jest.fn(),
+            })
             const editor = editorService.addEditor({
                 type: 'CodeEditor',
                 resource: 'u',
@@ -108,13 +119,45 @@ describe('EditorService', () => {
             ).toEqual([])
         })
         test('not found', () => {
-            const editorService = createEditorService({ models: of([]) })
+            const editorService = createEditorService({ models: of([]), removeModel: jest.fn() })
             expect(() => editorService.removeEditor({ editorId: 'x' })).toThrowError('editor not found: x')
+        })
+
+        test('calls removeModel() when removing the last editor that references the model', async () => {
+            const removeModel = sinon.spy()
+            const editorService = createEditorService({
+                models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
+                removeModel,
+            })
+            const editor1 = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
+            const editor2 = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
+            editorService.removeEditor(editor1)
+            expect(removeModel.called).toBe(false)
+            editorService.removeEditor(editor2)
+            expect(
+                await from(editorService.editors)
+                    .pipe(first())
+                    .toPromise()
+            ).toEqual([])
+            expect(removeModel.calledOnceWith('u')).toBe(true)
         })
     })
 
     test('removeAllEditors', async () => {
-        const editorService = createEditorService({ models: of([{ uri: 'u', text: 't', languageId: 'l' }]) })
+        const editorService = createEditorService({
+            models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
+            removeModel: jest.fn(),
+        })
         editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
         editorService.removeAllEditors()
         expect(
