@@ -1,26 +1,5 @@
 package main
 
-const userFragment = `
-fragment UserFields on User {
-    id
-    username
-    displayName
-    siteAdmin
-    organizations {
-		nodes {
-        	id
-        	name
-        	displayName
-		}
-    }
-    emails {
-        email
-        verified
-    }
-    url
-}
-`
-
 type User struct {
 	ID            string
 	Username      string
@@ -36,4 +15,13 @@ type User struct {
 type UserEmail struct {
 	Email    string
 	Verified bool
+}
+
+type Org struct {
+	ID          string
+	Name        string
+	DisplayName string
+	Members     struct {
+		Nodes []User
+	}
 }

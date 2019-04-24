@@ -8,7 +8,7 @@ import (
 	"text/template"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/sourcegraph/jsonx"
 )
 

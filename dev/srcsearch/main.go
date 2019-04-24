@@ -77,11 +77,11 @@ func readConfig() (*config, error) {
 	cfgPath := *configPath
 	userSpecified := *configPath != ""
 	if !userSpecified {
-		user, err := user.Current()
+		u, err := user.Current()
 		if err != nil {
 			return nil, err
 		}
-		cfgPath = filepath.Join(user.HomeDir, "src-config.json")
+		cfgPath = filepath.Join(u.HomeDir, "src-config.json")
 	}
 	data, err := ioutil.ReadFile(os.ExpandEnv(cfgPath))
 	if err != nil && (!os.IsNotExist(err) || userSpecified) {

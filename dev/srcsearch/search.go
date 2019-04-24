@@ -215,20 +215,6 @@ type searchResultsImproved struct {
 	searchResults
 }
 
-func envSetDefault(env []string, key, value string) []string {
-	set := false
-	for _, kv := range env {
-		if strings.HasPrefix(kv, key+"=") {
-			set = true
-			break
-		}
-	}
-	if !set {
-		env = append(env, key+"="+value)
-	}
-	return env
-}
-
 func searchHighlightPreview(preview interface{}, start, end string) string {
 	if start == "" {
 		start = ansiColors["search-match"]
