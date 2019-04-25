@@ -165,7 +165,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		bypassReason = "manual bypass env var BYPASS_GITHUB_API=1 is set"
 	}
 	if !bypass && minGitHubAPIRateLimit > 0 {
-		remaining, reset, known := conn.client.RateLimit.Get()
+		remaining, reset, _, known := conn.client.RateLimit.Get()
 		// If we're below the min rate limit, bypass the GitHub API. But if the rate limit has reset, then we need
 		// to perform an API request to check the new rate limit. (Give 30s of buffer for clock unsync.)
 		if known && remaining < minGitHubAPIRateLimit && reset > -30*time.Second {
@@ -174,7 +174,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		}
 	}
 	if bypass {
-		remaining, reset, known := conn.client.RateLimit.Get()
+		remaining, reset, _, known := conn.client.RateLimit.Get()
 
 		logArgs := []interface{}{"reason", bypassReason, "repo", args.Repo, "baseURL", conn.config.Url}
 		if known {
@@ -264,7 +264,7 @@ var gitHubRepositorySyncWorker = &worker{
 		for _, c := range githubConnections {
 			go func(c *githubConnection) {
 				for {
-					if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 200 {
+					if rateLimitRemaining, rateLimitReset, _, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 200 {
 						wait := rateLimitReset + 10*time.Second
 						log15.Warn("GitHub API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
 						time.Sleep(wait)
@@ -457,8 +457,15 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					errs = multierror.Append(errs, errors.Wrapf(err, "failed to list affiliated GitHub repositories page %d", page))
 					break
 				}
-				rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
-				log15.Debug("github sync: ListUserRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
+				rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := c.client.RateLimit.Get()
+				log15.Debug(
+					"github sync: ListUserRepositories",
+					"repos", len(repos),
+					"rateLimitCost", rateLimitCost,
+					"rateLimitRemaining", rateLimitRemaining,
+					"rateLimitReset", rateLimitReset,
+					"retryAfter", rateLimitRetry,
+				)
 
 				for _, r := range repos {
 					if c.githubDotCom && r.IsFork && r.ViewerPermission == "READ" {
@@ -504,8 +511,15 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 				hasNextPage = reposPage.HasNextPage
 				repos := reposPage.Repos
 
-				rateLimitRemaining, rateLimitReset, _ := c.searchClient.RateLimit.Get()
-				log15.Debug("github sync: ListRepositoriesForSearch", "searchString", repositoryQuery, "repos", len(repos), "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
+				rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := c.searchClient.RateLimit.Get()
+				log15.Debug(
+					"github sync: ListRepositoriesForSearch",
+					"searchString", repositoryQuery,
+					"repos", len(repos),
+					"rateLimitRemaining", rateLimitRemaining,
+					"rateLimitReset", rateLimitReset,
+					"retryAfter", rateLimitRetry,
+				)
 
 				for _, r := range repos {
 					set[r.DatabaseID] = r
@@ -520,7 +534,8 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					//
 					// So we only let the heuristic kick in if we have
 					// less than 5 requests left.
-					if remaining, _, ok := c.searchClient.RateLimit.Get(); ok && remaining < 5 {
+					remaining, _, retryAfter, ok := c.searchClient.RateLimit.Get()
+					if retryAfter > 0 || (ok && remaining < 5) {
 						time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(1))
 					}
 				}
