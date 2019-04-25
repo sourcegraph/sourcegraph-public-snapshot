@@ -19,16 +19,17 @@ type Monitor struct {
 	limit     int       // last RateLimit-Limit HTTP response header value
 	remaining int       // last RateLimit-Remaining HTTP response header value
 	reset     time.Time // last RateLimit-Remaining HTTP response header value
+	retry     time.Time // deadline based on Retry-After HTTP response header value
+
+	clock func() time.Time
 }
 
 // Get reports the client's rate limit status (as of the last API response it received).
-func (c *Monitor) Get() (remaining int, reset time.Duration, known bool) {
+func (c *Monitor) Get() (remaining int, reset, retry time.Duration, known bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if !c.known {
-		return 0, 0, false
-	}
-	return c.remaining, time.Until(c.reset), true
+	now := c.now()
+	return c.remaining, c.reset.Sub(now), c.retry.Sub(now), c.known
 }
 
 // TODO(keegancsmith) Update RecommendedWaitForBackgroundOp to work with other
@@ -59,6 +60,15 @@ func (c *Monitor) Get() (remaining int, reset time.Duration, known bool) {
 func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	now := c.now()
+	if !c.retry.IsZero() {
+		if remaining := c.retry.Sub(now); remaining > 0 {
+			return remaining
+		}
+		c.retry = time.Time{}
+	}
+
 	if !c.known {
 		return 0
 	}
@@ -66,14 +76,14 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	// If our rate limit info is out of date, assume it was reset.
 	limitRemaining := float64(c.remaining)
 	resetAt := c.reset
-	if time.Now().After(c.reset) {
+	if now.After(c.reset) {
 		limitRemaining = float64(c.limit)
-		resetAt = time.Now().Add(1 * time.Hour)
+		resetAt = now.Add(1 * time.Hour)
 	}
 
 	// Be conservative.
 	limitRemaining = float64(limitRemaining) * 0.8
-	timeRemaining := time.Until(resetAt) + 3*time.Minute
+	timeRemaining := resetAt.Sub(now) + 3*time.Minute
 
 	n := limitRemaining / float64(cost) // number of times this op can run before exhausting rate limit
 	if n < 1 {
@@ -102,6 +112,11 @@ func (c *Monitor) Update(h http.Header) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	retry, _ := strconv.ParseInt(h.Get("Retry-After"), 10, 64)
+	if retry > 0 {
+		c.retry = c.now().Add(time.Duration(retry) * time.Second)
+	}
+
 	// See https://developer.github.com/v3/#rate-limiting.
 	limit, err := strconv.Atoi(h.Get(c.HeaderPrefix + "RateLimit-Limit"))
 	if err != nil {
@@ -122,4 +137,11 @@ func (c *Monitor) Update(h http.Header) {
 	c.limit = limit
 	c.remaining = remaining
 	c.reset = time.Unix(resetAtSeconds, 0)
+}
+
+func (c *Monitor) now() time.Time {
+	if c.clock != nil {
+		return c.clock()
+	}
+	return time.Now()
 }
