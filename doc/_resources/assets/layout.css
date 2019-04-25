@@ -765,16 +765,13 @@ li.content-nav-no-hover:hover {
         position: relative;
         top: 135px;
         border-bottom: 1px solid #eaeaea;
-        padding: 1rem;
+        padding: 1rem 1rem 135px;
     }
     #home .page-nav {
         top: 135px;
     }
-    .docs-content-section {
-        top: 135px;
-        /* padding: 8rem 1rem 2rem; */
-    }
 }
+
 /* Footer */
 /* Code pulled from about.sourcegraph.com footer */
 /* This sound not be modified */
@@ -1006,7 +1003,7 @@ li.content-nav-no-hover:hover {
 }
 /* Mobile devices with notch support. This must use a px value to compare sizes */
 @supports (padding: max(0px)) {
-    .footer__block {.
+    .footer__block {
         padding-left: max(0px, env(safe-area-inset-left));
         padding-right: max(0px, env(safe-area-inset-right));
     }
