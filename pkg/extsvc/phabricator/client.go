@@ -27,7 +27,7 @@ type Client struct {
 func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Client, error) {
 	conn, err := gonduit.DialContext(ctx, url, &core.ClientOptions{
 		APIToken: token,
-		Client:   cli,
+		Client:   httpcli.HeadersMiddleware("User-Agent", "sourcegraph/phabricator-client")(cli),
 	})
 
 	if err != nil {
