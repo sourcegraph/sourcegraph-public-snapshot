@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed a nil dereference panic in indexed search. (#3596)
+
 ## 3.3.1
 
 ### Fixed
