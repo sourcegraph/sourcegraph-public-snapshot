@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/goware/urlx"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -311,6 +312,60 @@ func BitbucketServerSetDefaultRepositoryQueryMigration(clock func() time.Time) M
 			)
 
 			edited, err := jsonc.Edit(svc.Config, c.RepositoryQuery, "repositoryQuery")
+			if err != nil {
+				return errors.Wrapf(err, "%s.edit-json", prefix)
+			}
+
+			svc.Config = edited
+			svc.UpdatedAt = now
+		}
+
+		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
+			return errors.Wrapf(err, "%s.upsert-external-services", prefix)
+		}
+
+		return nil
+	})
+}
+
+// BitbucketServerUsernameMigration returns a Migration that changes all
+// configurations of BitbucketServer external services to explicitly have the
+// `username` setting set to the user defined in the `url`, if any.
+// This will only happen if the `username` fields is empty or unset.
+func BitbucketServerUsernameMigration(clock func() time.Time) Migration {
+	return migrate(func(ctx context.Context, s Store) error {
+		const prefix = "migrate.bitbucketserver-username-migration"
+
+		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: []string{"bitbucketserver"},
+		})
+
+		if err != nil {
+			return errors.Wrapf(err, "%s.list-external-services", prefix)
+		}
+
+		now := clock()
+		for _, svc := range svcs {
+			var c schema.BitbucketServerConnection
+			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+				return errors.Errorf("%s: external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+			}
+
+			if c.Username != "" {
+				continue
+			}
+
+			u, err := urlx.Parse(c.Url)
+			if err != nil {
+				return errors.Wrapf(err, "%s.parse-url", prefix)
+			}
+
+			username := u.User.Username()
+			if username == "" {
+				continue
+			}
+
+			edited, err := jsonc.Edit(svc.Config, username, "username")
 			if err != nil {
 				return errors.Wrapf(err, "%s.edit-json", prefix)
 			}

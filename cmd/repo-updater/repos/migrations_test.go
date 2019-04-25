@@ -689,6 +689,134 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 	}
 }
 
+func TestBitbucketServerUsernameMigration(t *testing.T) {
+	t.Parallel()
+	testBitbucketServerUsernameMigration(new(repos.FakeStore))(t)
+}
+
+func testBitbucketServerUsernameMigration(store repos.Store) func(*testing.T) {
+	bitbucketsrv := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://admin@bitbucketserver.mycorp.com",
+				"token": "secret"
+			}
+		`),
+	}
+
+	bitbucketsrvNoUsername := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://bitbucketserver.mycorp.com",
+				"token": "secret"
+			}
+		`),
+	}
+
+	bitbucketsrvWithUsername := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://bitbucketserver.mycorp.com",
+				"username": "admin",
+				"token": "secret",
+			}
+		`),
+	}
+
+	gitlab := repos.ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "Gitlab - Test",
+		Config:      formatJSON(`{"url": "https://gitlab.com"}`),
+	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name   string
+			stored repos.ExternalServices
+			assert repos.ExternalServicesAssertion
+			err    string
+		}{
+			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
+			{
+				name:   "non-bitbucketserver services are left unchanged",
+				stored: repos.ExternalServices{&gitlab},
+				assert: repos.Assert.ExternalServicesEqual(&gitlab),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services with username set are left unchanged",
+				stored: repos.ExternalServices{&bitbucketsrvWithUsername},
+				assert: repos.Assert.ExternalServicesEqual(&bitbucketsrvWithUsername),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services without username in url are left unchanged",
+				stored: repos.ExternalServices{&bitbucketsrvNoUsername},
+				assert: repos.Assert.ExternalServicesEqual(&bitbucketsrvNoUsername),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services without username are migrated",
+				stored: repos.ExternalServices{&bitbucketsrv},
+				assert: repos.Assert.ExternalServicesEqual(
+					bitbucketsrv.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+							e.Config, err = jsonc.Edit(e.Config, "admin", "username")
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+					t.Fatalf("failed to prepare store: %v", err)
+				}
+
+				err := repos.BitbucketServerUsernameMigration(clock.Now).Run(ctx, tx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, es)
+				}
+			}))
+		}
+
+	}
+}
 func formatJSON(s string) string {
 	formatted, err := jsonc.Format(s, true, 2)
 	if err != nil {
