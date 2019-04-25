@@ -1,11 +1,12 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 import { map } from 'rxjs/operators'
+import { Omit } from 'utility-types'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost } from '../code_intelligence'
-import { CodeView, CodeViewSpec, toCodeViewResolver } from '../code_intelligence/code_views'
+import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
 import { ViewResolver } from '../code_intelligence/views'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
@@ -79,7 +80,7 @@ const adjustPosition: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedR
 const toolbarButtonProps = {
     className: 'button grey button-grey has-icon has-text phui-button-default msl',
 }
-const commitCodeView: CodeViewSpec = {
+const commitCodeView: Omit<CodeView, 'element'> = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveRevisionFileInfo,
     adjustPosition,

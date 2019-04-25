@@ -15,6 +15,7 @@ import (
 	"testing/quick"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/store"
 	"github.com/sourcegraph/sourcegraph/pkg/testutil"
 )
 
@@ -248,13 +249,13 @@ func benchConcurrentFind(b *testing.B, p *protocol.Request) {
 	}
 
 	ctx := context.Background()
-	path, err := githubStore.prepareZip(ctx, p.GitserverRepo(), p.Commit)
+	path, err := githubStore.PrepareZip(ctx, p.GitserverRepo(), p.Commit)
 	if err != nil {
 		b.Fatal(err)
 	}
 
-	var zc zipCache
-	zf, err := zc.get(path)
+	var zc store.ZipCache
+	zf, err := zc.Get(path)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -445,11 +446,11 @@ func TestLineLimit(t *testing.T) {
 
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			fakeZipFile := zipFile{
+			fakeZipFile := store.ZipFile{
 				MaxLen: maxBuf,
 				Data:   bytes.Repeat([]byte("A"), test.size),
 			}
-			fakeSrcFile := srcFile{Len: int32(test.size)}
+			fakeSrcFile := store.SrcFile{Len: int32(test.size)}
 			matches, limitHit, err := rg.Find(&fakeZipFile, &fakeSrcFile)
 			if err != nil {
 				t.Fatal(err)
@@ -491,7 +492,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, err := mockZipFile(buf.Bytes())
+	zf, err := store.MockZipFile(buf.Bytes())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -547,7 +548,7 @@ func TestPathMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, err := mockZipFile(zipData)
+	zf, err := store.MockZipFile(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -599,7 +600,7 @@ func createZip(files map[string]string) ([]byte, error) {
 }
 
 // githubStore fetches from github and caches across test runs.
-var githubStore = &Store{
+var githubStore = &store.Store{
 	FetchTar: testutil.FetchTarFromGithub,
 	Path:     "/tmp/search_test/store",
 }

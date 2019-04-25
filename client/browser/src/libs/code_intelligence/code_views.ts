@@ -2,6 +2,7 @@ import { DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
+import { Omit } from 'utility-types'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, isErrorLike } from '../../shared/backend/errors'
 import { ButtonProps } from '../../shared/components/CodeViewToolbar'
@@ -11,10 +12,14 @@ import { ensureRevisionsAreCloned } from './util/file_info'
 import { trackViews, ViewResolver } from './views'
 
 /**
- * Describes a set of operations for manipulating a code view found on a page,
- * and some CSS classes to be applied to injected UI elements.
+ * Defines a code view that is present on a page.
+ * Exposes operations for manipulating it, and CSS classes to be applied to injected UI elements.
  */
-export interface CodeViewSpec extends Pick<CodeView, Exclude<keyof CodeView, 'element'>> {
+export interface CodeView {
+    /**
+     * The code view element on the page.
+     */
+    element: HTMLElement
     /** The DOMFunctions for the code view. */
     dom: DOMFunctions
     /**
@@ -48,20 +53,9 @@ export interface CodeViewSpec extends Pick<CodeView, Exclude<keyof CodeView, 'el
 }
 
 /**
- * Defines a code view that is present on a page. Exposes operations for manipulating it,
- * and CSS classes to be applied to injected UI elements.
- */
-export interface CodeView extends CodeViewSpec {
-    /**
-     * The code view element on the page.
-     */
-    element: HTMLElement
-}
-
-/**
  * Builds a CodeViewResolver from a static CodeView and a selector.
  */
-export const toCodeViewResolver = (selector: string, spec: CodeViewSpec): ViewResolver<CodeView> => ({
+export const toCodeViewResolver = (selector: string, spec: Omit<CodeView, 'element'>): ViewResolver<CodeView> => ({
     selector,
     resolveView: element => ({ ...spec, element }),
 })

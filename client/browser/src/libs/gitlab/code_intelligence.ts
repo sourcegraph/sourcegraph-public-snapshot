@@ -1,5 +1,6 @@
+import { Omit } from 'utility-types'
 import { CodeHost } from '../code_intelligence'
-import { CodeView, CodeViewSpec } from '../code_intelligence/code_views'
+import { CodeView } from '../code_intelligence/code_views'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
@@ -45,7 +46,7 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     return mount
 }
 
-const singleFileCodeView: CodeViewSpec = {
+const singleFileCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     getToolbarMount,
     resolveFileInfo,
@@ -54,14 +55,14 @@ const singleFileCodeView: CodeViewSpec = {
     observeSelections: observeSelectionsFromHash,
 }
 
-const mergeRequestCodeView: CodeViewSpec = {
+const mergeRequestCodeView: Omit<CodeView, 'element'> = {
     dom: diffDOMFunctions,
     getToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
 }
 
-const commitCodeView: CodeViewSpec = {
+const commitCodeView: Omit<CodeView, 'element'> = {
     dom: diffDOMFunctions,
     getToolbarMount,
     resolveFileInfo: resolveCommitFileInfo,

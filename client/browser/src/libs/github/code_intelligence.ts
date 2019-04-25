@@ -1,6 +1,7 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
+import { Omit } from 'utility-types'
 import {
     FileSpec,
     PositionSpec,
@@ -13,7 +14,7 @@ import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
-import { CodeView, CodeViewSpec, toCodeViewResolver } from '../code_intelligence/code_views'
+import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
 import { markdownBodyViewResolver } from './content_views'
@@ -26,7 +27,9 @@ import { getFileContainers, parseURL } from './util'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
- * a `.file-actions` element.
+ * a `.file-actions` element, for instance:
+ * - A diff code view on a PR's files page, or a commit page
+ * - An older GHE single file code view (newer GitHub.com code views use createFileLineContainerToolbarMount)
  */
 export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElement {
     const className = 'sourcegraph-app-annotator'
@@ -69,19 +72,19 @@ const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
 }
 
-const diffCodeView: CodeViewSpec = {
+const diffCodeView: Omit<CodeView, 'element'> = {
     dom: diffDomFunctions,
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
 }
 
-const diffConversationCodeView: CodeViewSpec = {
+const diffConversationCodeView: Omit<CodeView, 'element'> = {
     ...diffCodeView,
     getToolbarMount: undefined,
 }
 
-const singleFileCodeView: CodeViewSpec = {
+const singleFileCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo,
@@ -141,10 +144,10 @@ const commentSnippetCodeViewResolver = toCodeViewResolver('.js-comment-body', {
 })
 
 export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
-    repositoryContent: HTMLElement
+    codeViewElement: HTMLElement
 ): HTMLElement => {
     const className = 'sourcegraph-app-annotator'
-    const existingMount = repositoryContent.querySelector(`.${className}`) as HTMLElement
+    const existingMount = codeViewElement.querySelector(`.${className}`) as HTMLElement
     if (existingMount) {
         return existingMount
     }
@@ -153,7 +156,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountEl.style.verticalAlign = 'middle'
     mountEl.style.alignItems = 'center'
     mountEl.className = className
-    const rawURLLink = repositoryContent.querySelector('#raw-url')
+    const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink && rawURLLink.closest('.BtnGroup')
     if (!buttonGroup || !buttonGroup.parentNode) {
         throw new Error('File actions not found')

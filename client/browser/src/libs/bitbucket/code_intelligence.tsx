@@ -1,9 +1,10 @@
 import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
+import { Omit } from 'utility-types'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { CodeHost, MountGetter } from '../code_intelligence'
-import { CodeView, CodeViewSpec } from '../code_intelligence/code_views'
+import { CodeView } from '../code_intelligence/code_views'
 import { ViewResolver } from '../code_intelligence/views'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
@@ -79,7 +80,7 @@ const toolbarButtonProps = {
 /**
  * A code view spec for single file code view in the "source" view (not diff).
  */
-const singleFileSourceCodeView: CodeViewSpec = {
+const singleFileSourceCodeView: Omit<CodeView, 'element'> = {
     getToolbarMount,
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveFileInfoForSingleFileSourceView,
@@ -87,7 +88,7 @@ const singleFileSourceCodeView: CodeViewSpec = {
     toolbarButtonProps,
 }
 
-const baseDiffCodeView = {
+const baseDiffCodeView: Omit<CodeView, 'element' | 'resolveFileInfo'> = {
     getToolbarMount,
     dom: diffDOMFunctions,
     adjustPosition: createPositionAdjuster(diffDOMFunctions),
@@ -97,7 +98,7 @@ const baseDiffCodeView = {
 /**
  * A code view spec for a single file "diff to previous" view
  */
-const singleFileDiffCodeView: CodeViewSpec = {
+const singleFileDiffCodeView: Omit<CodeView, 'element'> = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveSingleFileDiffFileInfo,
 }
@@ -105,7 +106,7 @@ const singleFileDiffCodeView: CodeViewSpec = {
 /**
  * A code view spec for pull requests
  */
-const pullRequestDiffCodeView: CodeViewSpec = {
+const pullRequestDiffCodeView: Omit<CodeView, 'element'> = {
     ...baseDiffCodeView,
     resolveFileInfo: resolvePullRequestFileInfo,
 }
@@ -113,7 +114,7 @@ const pullRequestDiffCodeView: CodeViewSpec = {
 /**
  * A code view spec for compare pages
  */
-const compareDiffCodeView: CodeViewSpec = {
+const compareDiffCodeView: Omit<CodeView, 'element'> = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveCompareFileInfo,
 }
@@ -121,7 +122,7 @@ const compareDiffCodeView: CodeViewSpec = {
 /**
  * A code view spec for commit pages
  */
-const commitDiffCodeView: CodeViewSpec = {
+const commitDiffCodeView: Omit<CodeView, 'element'> = {
     ...baseDiffCodeView,
     resolveFileInfo: resolveCommitViewFileInfo,
 }
