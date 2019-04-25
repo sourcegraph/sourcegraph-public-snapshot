@@ -3,9 +3,9 @@
     <head>
         <title>{{with .Content}}{{.Doc.Title}}
             {{else}}Error{{end}} - Sourcegraph docs</title>
-        <link rel="stylesheet" href="{{asset "sourcegraph.css"}}?8" />
-        <link rel="stylesheet" href="{{asset "layout.css"}}?8" />
-        <link rel="stylesheet" href="{{asset "content.css"}}?5" />
+        <link rel="stylesheet" href="{{asset "sourcegraph.css"}}?9" />
+        <link rel="stylesheet" href="{{asset "layout.css"}}?9" />
+        <link rel="stylesheet" href="{{asset "content.css"}}?9" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
         {{if (or (not .Content) .ContentVersion)}}
         <meta name="robots" content="noindex">{{end}}
@@ -494,7 +494,7 @@
                 </footer>
             </div>
         </div>
-        <script src="{{asset "docs.js"}}?1"></script>
+        <script src="{{asset "docs.js"}}?9"></script>
         {{with .Content}}
         <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
         {{else}}
