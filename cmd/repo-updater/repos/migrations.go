@@ -74,11 +74,15 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 				// happening: we wait 15m which is likely to replenish enough
 				// of our rate limit to allow the migration to go through (note
 				// we need 1 API request per 100 repositories).
+				//
+				// TODO(tsenart): String error comparison here and time.Sleep
+				// is a super ugly / hacky approach but works. Ideally the
+				// underlying source ListRepos method would slow down when
+				// hitting rate limiting instead for just this use case.
 				log15.Error("migrate.repos-enabled-state-deprecation: rate limiting detected, waiting 15m before retrying", "error", err)
 				time.Sleep(15 * time.Minute)
 				log15.Error("migrate.repos-enabled-state-deprecation: restarting..")
 			}
-			// It is possible our code host rate limit has been exhausted at this point.
 			return errors.Wrapf(err, "%s sources.list-repos", prefix)
 		}
 
