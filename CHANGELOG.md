@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Changed
 
+- Indexed search is now enabled by default for new Docker deployments. (#3540)
+
 ### Removed
 
 ### Fixed
@@ -22,9 +24,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Removes corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
 
 ## 3.3.1
-
-### Changed
-- Indexed search is now enabled by default for new Docker deployments.
 
 ### Fixed
 
