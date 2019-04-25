@@ -1,25 +1,21 @@
 // We want to polyfill first.
-// prettier-ignore
 import '../../config/polyfill'
 
 import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
-import { fromEventPattern, noop, Observable } from 'rxjs'
+import { noop, Observable } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
-import DPT from 'webext-domain-permission-toggle'
+import * as domainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
-import * as browserAction from '../../browser/browserAction'
-import * as omnibox from '../../browser/omnibox'
-import * as permissions from '../../browser/permissions'
-import * as runtime from '../../browser/runtime'
-import storage, { defaultStorageItems } from '../../browser/storage'
-import * as tabs from '../../browser/tabs'
-import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
-import initializeCli from '../../libs/cli'
+import { IGraphQLResponseRoot } from '../../../../../shared/src/graphql/schema'
+import { defaultStorageItems, storage } from '../../browser/storage'
+import { BackgroundMessageHandlers, StorageItems } from '../../browser/types'
+import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
-import { requestGraphQL } from '../../shared/backend/graphql'
+import { GraphQLRequestArgs, requestGraphQL } from '../../shared/backend/graphql'
 import { resolveClientConfiguration } from '../../shared/backend/server'
+import { fromBrowserEvent } from '../../shared/util/browser'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
@@ -29,7 +25,7 @@ initSentry('background')
 
 let customServerOrigins: string[] = []
 
-const contentScripts = runtime.getContentScripts()
+const contentScripts = browser.runtime.getManifest().content_scripts
 
 // jsContentScriptOrigins are the required URLs inside of the manifest. When checking for permissions to inject
 // the content script on optional pages (inside browser.tabs.onUpdated) we need to skip manual injection of the
@@ -44,415 +40,322 @@ if (contentScripts) {
     }
 }
 
-const configureOmnibox = (serverUrl: string) => {
-    omnibox.setDefaultSuggestion({
+const configureOmnibox = (serverUrl: string): void => {
+    browser.omnibox.setDefaultSuggestion({
         description: `Search code on ${serverUrl}`,
     })
 }
 
-initializeCli(omnibox)
+initializeOmniboxInterface()
 
-storage.getSync(({ sourcegraphURL }) => {
+async function main(): Promise<void> {
+    const { sourcegraphURL } = await browser.storage.sync.get()
     // If no sourcegraphURL is set ensure we default back to https://sourcegraph.com.
     if (!sourcegraphURL) {
-        storage.setSync({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
+        await browser.storage.sync.set({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
         setSourcegraphUrl(DEFAULT_SOURCEGRAPH_URL)
     }
 
-    resolveClientConfiguration().subscribe(
-        config => {
-            // ClientConfiguration is the new storage option.
-            // Request permissions for the urls.
-            storage.setSync({
-                clientConfiguration: {
-                    parentSourcegraph: {
-                        url: config.parentSourcegraph.url,
-                    },
-                    contentScriptUrls: config.contentScriptUrls,
+    async function syncClientConfiguration(): Promise<void> {
+        const config = await resolveClientConfiguration().toPromise()
+        // ClientConfiguration is the new storage option.
+        // Request permissions for the urls.
+        await browser.storage.sync.set({
+            clientConfiguration: {
+                parentSourcegraph: {
+                    url: config.parentSourcegraph.url,
                 },
-            })
-        },
-        () => {
-            /* noop */
-        }
-    )
-    configureOmnibox(sourcegraphURL)
-})
-
-storage.getManaged(items => {
-    if (!items.enterpriseUrls || !items.enterpriseUrls.length) {
-        setDefaultBrowserAction()
-        return
-    }
-    const urls = items.enterpriseUrls.map(item => {
-        if (item.endsWith('/')) {
-            return item.substr(item.length - 1)
-        }
-        return item
-    })
-    handleManagedPermissionRequest(urls)
-})
-
-storage.onChanged((changes, areaName) => {
-    if (areaName === 'managed') {
-        storage.getSync(() => {
-            if (changes.enterpriseUrls && changes.enterpriseUrls.newValue) {
-                handleManagedPermissionRequest(changes.enterpriseUrls.newValue)
-            }
-        })
-        return
-    }
-
-    if (changes.sourcegraphURL && changes.sourcegraphURL.newValue) {
-        setSourcegraphUrl(changes.sourcegraphURL.newValue)
-        resolveClientConfiguration().subscribe(
-            config => {
-                // ClientConfiguration is the new storage option.
-                // Request permissions for the urls.
-                storage.setSync({
-                    clientConfiguration: {
-                        parentSourcegraph: {
-                            url: config.parentSourcegraph.url,
-                        },
-                        contentScriptUrls: config.contentScriptUrls,
-                    },
-                })
+                contentScriptUrls: config.contentScriptUrls,
             },
-            () => {
-                /* noop */
-            }
-        )
-        configureOmnibox(changes.sourcegraphURL.newValue)
+        })
     }
-})
 
-permissions
-    .getAll()
-    .then(permissions => {
-        if (!permissions.origins) {
-            customServerOrigins = []
+    configureOmnibox(sourcegraphURL)
+
+    const items = await storage.managed.get()
+    if (items.enterpriseUrls && items.enterpriseUrls.length > 1) {
+        setDefaultBrowserAction()
+        const urls = items.enterpriseUrls.map(item => item.replace(/\/$/, ''))
+        await handleManagedPermissionRequest(urls)
+    }
+
+    browser.storage.onChanged.addListener(async (changes: browser.storage.ChangeDict<StorageItems>, areaName) => {
+        if (areaName === 'managed') {
+            if (changes.enterpriseUrls && changes.enterpriseUrls.newValue) {
+                await handleManagedPermissionRequest(changes.enterpriseUrls.newValue)
+            }
             return
         }
-        customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
-    })
-    .catch(err => console.error('could not get permissions:', err))
 
-permissions.onAdded(permissions => {
+        if (changes.sourcegraphURL && changes.sourcegraphURL.newValue) {
+            setSourcegraphUrl(changes.sourcegraphURL.newValue)
+            await syncClientConfiguration()
+            configureOmnibox(changes.sourcegraphURL.newValue)
+        }
+    })
+
+    const permissions = await browser.permissions.getAll()
     if (!permissions.origins) {
+        customServerOrigins = []
         return
     }
-    storage.getSync(items => {
+    customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
+
+    browser.permissions.onAdded.addListener(async permissions => {
+        if (!permissions.origins) {
+            return
+        }
+        const items = await storage.sync.get()
         const enterpriseUrls = items.enterpriseUrls || []
-        for (const url of permissions.origins as string[]) {
+        for (const url of permissions.origins) {
             enterpriseUrls.push(url.replace('/*', ''))
         }
-        storage.setSync({ enterpriseUrls })
-    })
-    const origins = without(permissions.origins, ...jsContentScriptOrigins)
-    customServerOrigins.push(...origins)
-})
+        await browser.storage.sync.set({ enterpriseUrls })
 
-permissions.onRemoved(permissions => {
-    if (!permissions.origins) {
-        return
-    }
-    customServerOrigins = without(customServerOrigins, ...permissions.origins)
-    storage.getSync(items => {
+        const origins = without(permissions.origins, ...jsContentScriptOrigins)
+        customServerOrigins.push(...origins)
+    })
+
+    browser.permissions.onRemoved.addListener(async permissions => {
+        if (!permissions.origins) {
+            return
+        }
+        customServerOrigins = without(customServerOrigins, ...permissions.origins)
+        const items = await storage.sync.get()
         const enterpriseUrls = items.enterpriseUrls || []
         const urlsToRemove: string[] = []
-        for (const url of permissions.origins as string[]) {
+        for (const url of permissions.origins) {
             urlsToRemove.push(url.replace('/*', ''))
         }
-        storage.setSync({ enterpriseUrls: without(enterpriseUrls, ...urlsToRemove) })
+        await storage.sync.set({
+            enterpriseUrls: without(enterpriseUrls, ...urlsToRemove),
+        })
     })
-})
 
-storage.setSyncMigration(items => {
-    const newItems = { ...defaultStorageItems, ...items }
-
-    let featureFlags: FeatureFlags = {
-        ...featureFlagDefaults,
-        ...(newItems.featureFlags || {}),
-    }
-
-    const keysToRemove: string[] = []
-
-    // Ensure all feature flags are in storage.
-    for (const key of Object.keys(featureFlagDefaults) as (keyof FeatureFlags)[]) {
-        if (typeof featureFlags[key] === 'undefined') {
-            keysToRemove.push(key)
-            featureFlags = {
-                ...featureFlagDefaults,
-                ...items.featureFlags,
-                [key]: featureFlagDefaults[key],
-            }
-        }
-    }
-
-    newItems.featureFlags = featureFlags
-
-    // TODO: Remove this block after a few releases
-    const clientSettings = JSON.parse(items.clientSettings || '{}')
-    if (clientSettings['codecov.endpoints'] || typeof clientSettings['codecov.showCoverage'] !== 'undefined') {
-        if (typeof clientSettings.extensions === 'undefined') {
-            clientSettings.extensions = clientSettings.extensions || {}
-        }
-        clientSettings.extensions['souercegraph/codecov'] = true
-        newItems.clientSettings = JSON.stringify(clientSettings, null, 4)
-    }
-
-    return { newItems, keysToRemove }
-})
-
-tabs.onUpdated((tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete') {
-        for (const origin of customServerOrigins) {
-            if (origin !== '<all_urls>' && (!tab.url || !tab.url.startsWith(origin.replace('/*', '')))) {
-                continue
-            }
-            tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end', origin })
-        }
-    }
-})
-
-runtime.onMessage((message, _, cb) => {
-    switch (message.type) {
-        case 'setIdentity':
-            storage.setLocal({ identity: message.payload.identity })
-            return
-
-        case 'getIdentity':
-            storage.getLocalItem('identity', obj => {
-                const { identity } = obj
-
-                // TODO: remove "!"" added after typescript upgrade
-                cb!(identity)
-            })
-            return true
-
-        case 'setEnterpriseUrl':
-            // TODO: remove "!"" added after typescript upgrade
-            requestPermissionsForEnterpriseUrls([message.payload], cb!)
-            return true
-
-        case 'setSourcegraphUrl':
-            requestPermissionsForSourcegraphUrl(message.payload)
-            return true
-
-        case 'removeEnterpriseUrl':
-            // TODO: remove "!"" added after typescript upgrade
-            removeEnterpriseUrl(message.payload, cb!)
-            return true
-
-        case 'insertCSS':
-            const details = message.payload as { file: string; origin: string }
-            storage.getSyncItem('sourcegraphURL', ({ sourcegraphURL }) =>
-                tabs.insertCSS(0, {
-                    ...details,
-                    whitelist: details.origin ? [details.origin] : [],
-                    blacklist: [sourcegraphURL],
-                })
+    // Inject content script whenever a new tab was opened with a URL that we have premissions for
+    browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+        if (
+            changeInfo.status === 'complete' &&
+            customServerOrigins.some(
+                origin => origin === '<all_urls>' || (!!tab.url && tab.url.startsWith(origin.replace('/*', '')))
             )
-            return
+        ) {
+            await browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
+        }
+    })
 
-        case 'setBadgeText':
-            browserAction.setBadgeText({ text: message.payload })
-            return
-        case 'openOptionsPage':
-            runtime.openOptionsPage()
-            return true
-        case 'createBlobURL':
-            createBlobURLForBundle(message.payload)
-                .then(url => {
-                    if (cb) {
-                        cb(url)
-                    }
-                })
-                .catch(err => {
-                    throw new Error(`Unable to create blob url for bundle ${message.payload} error: ${err}`)
-                })
-            return true
-        case 'requestGraphQL':
-            requestGraphQL(message.payload)
-                .toPromise()
-                .then(result => cb && cb({ result }))
-                .catch(err => cb && cb({ err }))
-            return true
+    const handlers: BackgroundMessageHandlers = {
+        async setIdentity({ identity }: { identity: string }): Promise<void> {
+            await browser.storage.local.set({ identity })
+        },
+
+        async getIdentity(): Promise<string | undefined> {
+            const { identity } = await (browser.storage.local as browser.storage.StorageArea<StorageItems>).get(
+                'identity'
+            )
+            return identity
+        },
+
+        async setEnterpriseUrl(url: string): Promise<void> {
+            await requestPermissionsForEnterpriseUrls([url])
+        },
+
+        async setSourcegraphUrl(url: string): Promise<void> {
+            await requestPermissionsForSourcegraphUrl(url)
+        },
+
+        async removeEnterpriseUrl(url: string): Promise<void> {
+            await removeEnterpriseUrl(url)
+        },
+
+        async insertCSS(details: { file: string; origin: string }): Promise<void> {
+            await browser.tabs.insertCSS(0, { ...details })
+        },
+        setBadgeText(text: string): void {
+            browser.browserAction.setBadgeText({ text })
+        },
+
+        async openOptionsPage(): Promise<void> {
+            await browser.runtime.openOptionsPage()
+        },
+
+        async createBlobURL(bundleUrl: string): Promise<string> {
+            return await createBlobURLForBundle(bundleUrl)
+        },
+
+        async requestGraphQL(params: GraphQLRequestArgs): Promise<IGraphQLResponseRoot> {
+            return await requestGraphQL(params).toPromise()
+        },
     }
 
-    return
-})
+    // Handle calls from other scripts
+    browser.runtime.onMessage.addListener(async (message: any) => {
+        const handler = message.type as keyof typeof handlers
+        handlers[handler](message.payload)
+    })
 
-function requestPermissionsForEnterpriseUrls(urls: string[], cb: (res?: any) => void): void {
-    storage.getSync(items => {
+    async function requestPermissionsForEnterpriseUrls(urls: string[]): Promise<void> {
+        const items = await storage.sync.get()
         const enterpriseUrls = items.enterpriseUrls || []
-        storage.setSync(
-            {
-                enterpriseUrls: [...new Set([...enterpriseUrls, ...urls])],
-            },
-            cb
-        )
-    })
-}
-
-function requestPermissionsForSourcegraphUrl(url: string): void {
-    permissions
-        .request([url])
-        .then(granted => {
-            if (granted) {
-                storage.setSync({ sourcegraphURL: url })
-            }
+        // Add requested URLs, without duplicating
+        await browser.storage.sync.set({
+            enterpriseUrls: [...new Set([...enterpriseUrls, ...urls])],
         })
-        .catch(err => console.error('Permissions request denied', err))
-}
-
-function removeEnterpriseUrl(url: string, cb: (res?: any) => void): void {
-    permissions.remove(url).catch(err => console.error('could not remove permission', err))
-
-    storage.getSyncItem('enterpriseUrls', ({ enterpriseUrls }) => {
-        storage.setSync({ enterpriseUrls: without(enterpriseUrls, url) }, cb)
-    })
-}
-
-runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
-
-runtime.onInstalled(() => {
-    setDefaultBrowserAction()
-    storage.getSync(items => {
-        // Enterprise deployments of Sourcegraph are passed a configuration file.
-        storage.getManaged(managedItems => {
-            storage.setSync(
-                {
-                    ...defaultStorageItems,
-                    ...items,
-                    ...managedItems,
-                },
-                () => {
-                    if (managedItems && managedItems.enterpriseUrls && managedItems.enterpriseUrls.length) {
-                        handleManagedPermissionRequest(managedItems.enterpriseUrls)
-                    } else {
-                        setDefaultBrowserAction()
-                    }
-                }
-            )
-        })
-    })
-})
-
-function handleManagedPermissionRequest(managedUrls: string[]): void {
-    setDefaultBrowserAction()
-    if (managedUrls.length === 0) {
-        return
     }
-    permissions
-        .getAll()
-        .then(perms => {
-            const origins = perms.origins || []
-            if (managedUrls.every(val => origins.indexOf(`${val}/*`) >= 0)) {
-                setDefaultBrowserAction()
-                return
-            }
-            browserAction.onClicked(() => {
-                runtime.openOptionsPage()
-            })
+
+    async function requestPermissionsForSourcegraphUrl(url: string): Promise<void> {
+        const granted = await browser.permissions.request({ origins: [url + '/*'] })
+        if (granted) {
+            await storage.sync.set({ sourcegraphURL: url })
+        }
+    }
+
+    async function removeEnterpriseUrl(url: string): Promise<void> {
+        try {
+            await browser.permissions.remove({ origins: [url + '/*'] })
+            // tslint:disable-next-line:no-unnecessary-type-assertion False positive
+            const { enterpriseUrls } = (await browser.storage.sync.get('enterpriseUrls')) as Pick<
+                StorageItems,
+                'enterpriseUrls'
+            >
+            await browser.storage.sync.set({ enterpriseUrls: without(enterpriseUrls, url) })
+        } catch (err) {
+            console.error('Could not remove permission', err)
+        }
+    }
+
+    await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
+
+    browser.runtime.onInstalled.addListener(async () => {
+        setDefaultBrowserAction()
+        const items = await storage.sync.get()
+        // Enterprise deployments of Sourcegraph are passed a configuration file.
+        const managedItems = await storage.managed.get()
+        await storage.sync.set({
+            ...defaultStorageItems,
+            ...items,
+            ...managedItems,
         })
-        .catch(err => console.error('could not get all permissions', err))
-}
+        if (managedItems && managedItems.enterpriseUrls && managedItems.enterpriseUrls.length) {
+            await handleManagedPermissionRequest(managedItems.enterpriseUrls)
+        } else {
+            setDefaultBrowserAction()
+        }
+    })
 
-function setDefaultBrowserAction(): void {
-    browserAction.setBadgeText({ text: '' })
-    browserAction.setPopup({ popup: 'options.html?popup=true' }).catch(err => console.error(err))
-}
+    async function handleManagedPermissionRequest(managedUrls: string[]): Promise<void> {
+        setDefaultBrowserAction()
+        if (managedUrls.length === 0) {
+            return
+        }
+        const perms = await browser.permissions.getAll()
+        const origins = perms.origins || []
+        if (managedUrls.every(val => origins.indexOf(`${val}/*`) >= 0)) {
+            setDefaultBrowserAction()
+            return
+        }
+        browser.browserAction.onClicked.addListener(async () => {
+            await browser.runtime.openOptionsPage()
+        })
+    }
 
-browserAction.onClicked(noop)
-setDefaultBrowserAction()
+    function setDefaultBrowserAction(): void {
+        browser.browserAction.setBadgeText({ text: '' })
+        browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
+    }
 
-// Add "Enable Sourcegraph on this domain" context menu item
-DPT.addContextMenu()
+    browser.browserAction.onClicked.addListener(noop)
+    setDefaultBrowserAction()
 
-const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
+    // Add "Enable Sourcegraph on this domain" context menu item
+    domainPermissionToggle.addContextMenu()
 
-const portKind = (port: chrome.runtime.Port) => {
-    const match = port.name.match(ENDPOINT_KIND_REGEX)
-    return match && match[1]
-}
+    const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
 
-/**
- * A stream of EndpointPair created from Port objects emitted by chrome.runtime.onConnect.
- *
- * On initialization, the content script creates a pair of chrome.runtime.Port objects
- * using chrome.runtime.connect(). The two ports are named 'proxy-{uuid}' and 'expose-{uuid}',
- * and wrapped using {@link endpointFromPort} to behave like comlink endpoints on the content script side.
- *
- * This listens to events on chrome.runtime.onConnect, pairs emitted ports using their naming pattern,
- * and emits pairs. Each pair of ports represents a connection with an instance of the content script.
- */
-const endpointPairs: Observable<{ proxy: chrome.runtime.Port; expose: chrome.runtime.Port }> = fromEventPattern<
-    chrome.runtime.Port
->(
-    handler => chrome.runtime.onConnect.addListener(handler),
-    handler => chrome.runtime.onConnect.removeListener(handler)
-).pipe(
-    groupBy(
-        port => (port.name || 'other').replace(ENDPOINT_KIND_REGEX, ''),
-        port => port,
-        group => group.pipe(bufferCount(2))
-    ),
-    filter(group => group.key !== 'other'),
-    mergeMap(group =>
-        group.pipe(
-            bufferCount(2),
-            map(ports => {
-                const proxyPort = ports.find(port => portKind(port) === 'proxy')
-                if (!proxyPort) {
-                    throw new Error('No proxy port')
-                }
-                const exposePort = ports.find(port => portKind(port) === 'expose')
-                if (!exposePort) {
-                    throw new Error('No expose port')
-                }
-                return {
-                    proxy: proxyPort,
-                    expose: exposePort,
-                }
-            })
+    const portKind = (port: browser.runtime.Port): string | null => {
+        const match = port.name.match(ENDPOINT_KIND_REGEX)
+        return match && match[1]
+    }
+
+    /**
+     * A stream of EndpointPair created from Port objects emitted by browser.runtime.onConnect.
+     *
+     * On initialization, the content script creates a pair of browser.runtime.Port objects
+     * using browser.runtime.connect(). The two ports are named 'proxy-{uuid}' and 'expose-{uuid}',
+     * and wrapped using {@link endpointFromPort} to behave like comlink endpoints on the content script side.
+     *
+     * This listens to events on browser.runtime.onConnect, pairs emitted ports using their naming pattern,
+     * and emits pairs. Each pair of ports represents a connection with an instance of the content script.
+     */
+    const endpointPairs: Observable<{ proxy: browser.runtime.Port; expose: browser.runtime.Port }> = fromBrowserEvent(
+        browser.runtime.onConnect
+    ).pipe(
+        map(([port]) => port),
+        groupBy(
+            port => (port.name || 'other').replace(ENDPOINT_KIND_REGEX, ''),
+            port => port,
+            group => group.pipe(bufferCount(2))
+        ),
+        filter(group => group.key !== 'other'),
+        mergeMap(group =>
+            group.pipe(
+                bufferCount(2),
+                map(ports => {
+                    const proxyPort = ports.find(port => portKind(port) === 'proxy')
+                    if (!proxyPort) {
+                        throw new Error('No proxy port')
+                    }
+                    const exposePort = ports.find(port => portKind(port) === 'expose')
+                    if (!exposePort) {
+                        throw new Error('No expose port')
+                    }
+                    return {
+                        proxy: proxyPort,
+                        expose: exposePort,
+                    }
+                })
+            )
         )
     )
-)
 
-/**
- * Extension Host Connection
- *
- * When an Port pair is emitted, create an extension host worker.
- *
- * Messages from the ports are forwarded to the endpoints returned by {@link createExtensionHostWorker}, and vice-versa.
- *
- * The lifetime of the extension host worker is tied to that of the content script instance:
- * when a port disconnects, the worker is terminated. This means there should always be exactly one
- * extension host worker per active instance of the content script.
- *
- */
-endpointPairs.subscribe(({ proxy, expose }) => {
-    // It's necessary to wrap endpoints because chrome.runtime.Port objects do not support transfering MessagePorts.
-    // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
-    const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
-    const connectPortAndEndpoint = (
-        port: chrome.runtime.Port,
-        endpoint: Endpoint & Pick<MessagePort, 'start'>
-    ): void => {
-        endpoint.start()
-        port.onMessage.addListener(message => {
-            endpoint.postMessage(message)
-        })
-        endpoint.addEventListener('message', ({ data }) => {
-            port.postMessage(data)
-        })
-    }
-    // Connect proxy client endpoint
-    connectPortAndEndpoint(proxy, clientEndpoints.proxy)
-    // Connect expose client endpoint
-    connectPortAndEndpoint(expose, clientEndpoints.expose)
-    // Kill worker when either port disconnects
-    proxy.onDisconnect.addListener(() => worker.terminate())
-    expose.onDisconnect.addListener(() => worker.terminate())
+    /**
+     * Extension Host Connection
+     *
+     * When an Port pair is emitted, create an extension host worker.
+     *
+     * Messages from the ports are forwarded to the endpoints returned by {@link createExtensionHostWorker}, and vice-versa.
+     *
+     * The lifetime of the extension host worker is tied to that of the content script instance:
+     * when a port disconnects, the worker is terminated. This means there should always be exactly one
+     * extension host worker per active instance of the content script.
+     *
+     */
+    endpointPairs.subscribe(({ proxy, expose }) => {
+        // It's necessary to wrap endpoints because browser.runtime.Port objects do not support transfering MessagePorts.
+        // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
+        const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
+        const connectPortAndEndpoint = (
+            port: browser.runtime.Port,
+            endpoint: Endpoint & Pick<MessagePort, 'start'>
+        ): void => {
+            endpoint.start()
+            port.onMessage.addListener(message => {
+                endpoint.postMessage(message)
+            })
+            endpoint.addEventListener('message', ({ data }) => {
+                port.postMessage(data)
+            })
+        }
+        // Connect proxy client endpoint
+        connectPortAndEndpoint(proxy, clientEndpoints.proxy)
+        // Connect expose client endpoint
+        connectPortAndEndpoint(expose, clientEndpoints.expose)
+        // Kill worker when either port disconnects
+        proxy.onDisconnect.addListener(() => worker.terminate())
+        expose.onDisconnect.addListener(() => worker.terminate())
+    })
+}
+
+main().catch(err => {
+    console.error(err)
 })

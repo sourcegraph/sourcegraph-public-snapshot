@@ -5,8 +5,8 @@ import '../../config/polyfill'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { noop, Subscription } from 'rxjs'
-import storage from '../../browser/storage'
-import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
+import { observeStorageKey, storage } from '../../browser/storage'
+import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsMenuProps } from '../../libs/options/Menu'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { initSentry } from '../../libs/sentry'
@@ -62,17 +62,21 @@ class Options extends React.Component<{}, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            storage
-                .observeSync('featureFlags')
-                .subscribe(({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion }) => {
-                    this.setState({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion })
-                })
+            observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
+                const { allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion } = {
+                    ...featureFlagDefaults,
+                    ...featureFlags,
+                }
+                this.setState({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion })
+            })
         )
 
         this.subscriptions.add(
-            storage.observeSync('sourcegraphURL').subscribe(sourcegraphURL => {
-                this.setState({ sourcegraphURL })
-            })
+            observeStorageKey('sync', 'sourcegraphURL').subscribe(
+                (sourcegraphURL = defaultStorageItems.sourcegraphURL) => {
+                    this.setState({ sourcegraphURL })
+                }
+            )
         )
     }
 
@@ -99,10 +103,7 @@ class Options extends React.Component<{}, State> {
                     origins: [`${url}/*`],
                 }),
 
-            setSourcegraphURL: (url: string) => {
-                storage.setSync({ sourcegraphURL: url })
-            },
-
+            setSourcegraphURL: (sourcegraphURL: string) => storage.sync.set({ sourcegraphURL }),
             toggleFeatureFlag,
             featureFlags: [
                 { key: 'allowErrorReporting', value: this.state.allowErrorReporting },

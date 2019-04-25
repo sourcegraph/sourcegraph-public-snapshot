@@ -1,115 +1,56 @@
-import { EMPTY, Observable } from 'rxjs'
-import { shareReplay } from 'rxjs/operators'
-import { MigratableStorageArea, noopMigration, provideMigrations } from './storage_migrations'
-import { StorageChange, StorageItems } from './types'
+import { BehaviorSubject, concat, NextObserver, Observable } from 'rxjs'
+import { filter, map } from 'rxjs/operators'
+import { fromBrowserEvent } from '../shared/util/browser'
+import { StorageItems } from './types'
 
 export { StorageItems, defaultStorageItems } from './types'
 
-interface Storage {
-    getManaged: (callback: (items: StorageItems) => void) => void
-    getManagedItem: (key: keyof StorageItems, callback: (items: StorageItems) => void) => void
-    getSync: (callback: (items: StorageItems) => void) => void
-    getSyncItem: (key: keyof StorageItems, callback: (items: StorageItems) => void) => void
-    setSync: (items: Partial<StorageItems>, callback?: (() => void) | undefined) => void
-    observeSync: <T extends keyof StorageItems>(key: T) => Observable<StorageItems[T]>
-    getLocal: (callback: (items: StorageItems) => void) => void
-    getLocalItem: (key: keyof StorageItems, callback: (items: StorageItems) => void) => void
-    setLocal: (items: Partial<StorageItems>, callback?: (() => void) | undefined) => void
-    observeLocal: <T extends keyof StorageItems>(key: T) => Observable<StorageItems[T]>
-    setSyncMigration: MigratableStorageArea['setMigration']
-    setLocalMigration: MigratableStorageArea['setMigration']
-    onChanged: (listener: (changes: Partial<StorageChange>, areaName: string) => void) => void
-}
+export const storage: Record<browser.storage.AreaName, browser.storage.StorageArea<StorageItems>> & {
+    onChanged: browser.CallbackEventEmitter<
+        (changes: browser.storage.ChangeDict<StorageItems>, areaName: browser.storage.AreaName) => void
+    >
+} = browser.storage
 
-const get = (area: chrome.storage.StorageArea) => (callback: (items: StorageItems) => void) =>
-    area.get(items => callback(items as StorageItems))
-const set = (area: chrome.storage.StorageArea) => (items: Partial<StorageItems>, callback?: () => void) => {
-    area.set(items, callback)
-}
-const getItem = (area: chrome.storage.StorageArea) => (
-    key: keyof StorageItems,
-    callback: (items: StorageItems) => void
-) => area.get(key, items => callback(items as StorageItems))
+export const observeStorageKey = <K extends keyof StorageItems>(
+    areaName: browser.storage.AreaName,
+    key: K
+): Observable<StorageItems[K] | undefined> =>
+    concat(
+        storage[areaName].get(key),
+        fromBrowserEvent(storage.onChanged).pipe(
+            filter(([, name]) => areaName === name),
+            map(([changes]) => changes),
+            filter(
+                (changes): changes is typeof changes & { [k in K]-?: NonNullable<StorageItems[k]> } =>
+                    changes.hasOwnProperty(key)
+            ),
+            map(changes => changes[key].newValue)
+        )
+    )
 
-const onChanged = (listener: (changes: Partial<StorageChange>, areaName: string) => void) => {
-    if (chrome && chrome.storage) {
-        chrome.storage.onChanged.addListener(listener)
-    }
-}
+/**
+ * An RxJS subject that is backed by an extension storage item.
+ */
+export class ExtensionStorageSubject<K extends keyof StorageItems> extends Observable<StorageItems[K]>
+    implements NextObserver<StorageItems[K]>, Pick<BehaviorSubject<StorageItems[K]>, 'value'> {
+    public value: StorageItems[K]
 
-const observe = (area: chrome.storage.StorageArea) => <T extends keyof StorageItems>(
-    key: T
-): Observable<StorageItems[T]> =>
-    new Observable<StorageItems[T]>(observer => {
-        get(area)(items => {
-            const item = items[key]
-            observer.next(item)
+    /**
+     * @param key The key of the storage item to watch
+     * @param defaultValue The initial value that's emitted and readable through `value` and defaulted to when the storage item is removed.
+     */
+    constructor(private key: K, defaultValue: StorageItems[K]) {
+        super(subscriber => {
+            subscriber.next(this.value)
+            return observeStorageKey('local', this.key).subscribe((item = defaultValue) => {
+                this.value = item
+                subscriber.next(item)
+            })
         })
-        onChanged(changes => {
-            const change = changes[key]
-            if (change) {
-                observer.next(change.newValue)
-            }
-        })
-    }).pipe(shareReplay(1))
+        this.value = defaultValue
+    }
 
-const noopObserve = () => EMPTY
-
-const throwNoopErr = () => {
-    throw new Error('do not call browser extension apis from an in page script')
+    public async next(value: StorageItems[K]): Promise<void> {
+        await storage.local.set({ [this.key]: value })
+    }
 }
-
-export default ((): Storage => {
-    if (window.SG_ENV === 'EXTENSION') {
-        const chrome = global.chrome
-
-        const syncStorageArea = provideMigrations(chrome.storage.sync)
-        const localStorageArea = provideMigrations(chrome.storage.local)
-        const managedStorageArea: chrome.storage.StorageArea = chrome.storage.managed
-
-        const storage: Storage = {
-            getManaged: get(managedStorageArea),
-            getManagedItem: getItem(managedStorageArea),
-
-            getSync: get(syncStorageArea),
-            getSyncItem: getItem(syncStorageArea),
-            setSync: set(syncStorageArea),
-            observeSync: observe(syncStorageArea),
-
-            getLocal: get(localStorageArea),
-            getLocalItem: getItem(localStorageArea),
-            setLocal: set(localStorageArea),
-            observeLocal: observe(localStorageArea),
-
-            setSyncMigration: syncStorageArea.setMigration,
-            setLocalMigration: localStorageArea.setMigration,
-
-            onChanged,
-        }
-
-        // Only background script should set migrations.
-        if (window.EXTENSION_ENV !== 'BACKGROUND') {
-            storage.setSyncMigration(noopMigration)
-            storage.setLocalMigration(noopMigration)
-        }
-
-        return storage
-    }
-
-    // Running natively in the webpage(in Phabricator patch) so we don't need any storage.
-    return {
-        getManaged: throwNoopErr,
-        getManagedItem: throwNoopErr,
-        getSync: throwNoopErr,
-        getSyncItem: throwNoopErr,
-        setSync: throwNoopErr,
-        observeSync: noopObserve,
-        onChanged: throwNoopErr,
-        getLocal: throwNoopErr,
-        getLocalItem: throwNoopErr,
-        setLocal: throwNoopErr,
-        observeLocal: noopObserve,
-        setSyncMigration: throwNoopErr,
-        setLocalMigration: throwNoopErr,
-    }
-})()

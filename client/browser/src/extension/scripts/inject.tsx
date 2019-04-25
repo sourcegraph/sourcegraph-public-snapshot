@@ -5,8 +5,7 @@ import React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../../shared/src/components/Link'
-import storage from '../../browser/storage'
-import { StorageItems } from '../../browser/types'
+import { storage } from '../../browser/storage'
 import { determineCodeHost as detectCodeHost, injectCodeIntelligenceToCodeHost } from '../../libs/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { checkIsSourcegraph, injectSourcegraphApp } from '../../libs/sourcegraph/inject'
@@ -55,7 +54,7 @@ async function main(): Promise<void> {
         subtree: true,
     }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
 
-    const items = await new Promise<StorageItems>(resolve => storage.getSync(resolve))
+    const items = await storage.sync.get()
     if (items.disableExtension) {
         return
     }

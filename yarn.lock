@@ -14983,11 +14983,6 @@ wcwidth@^1.0.0:
   dependencies:
     defaults "^1.0.3"
 
-web-ext-types@^3.1.0:
-  version "3.1.0"
-  resolved "https://registry.npmjs.org/web-ext-types/-/web-ext-types-3.1.0.tgz#32aab56a3d0f4a3d499d43b4838b3356102d11eb"
-  integrity sha512-HKVibk040vuhpbOljcIYYYC8GP9w9REbHpquI3im/aoZqoDIRq9DnsHl4Zsg+4Fg3SBnWsnvlIr1rnspV4TdXQ==
-
 web-namespaces@^1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/web-namespaces/-/web-namespaces-1.1.2.tgz#c8dc267ab639505276bae19e129dbd6ae72b22b4"

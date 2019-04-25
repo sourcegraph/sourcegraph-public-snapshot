@@ -1,7 +1,7 @@
 import uuid from 'uuid'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { TelemetryService } from '../../../../../shared/src/telemetry/telemetryService'
-import storage from '../../browser/storage'
+import { storage } from '../../browser/storage'
 import { isInPage } from '../../context'
 import { logUserEvent } from '../backend/userEvents'
 
@@ -33,32 +33,29 @@ export class EventLogger implements TelemetryService {
      *
      * Not used at all for public/Sourcegraph.com usage.
      */
-    private getAnonUserID = (): Promise<string> =>
-        new Promise(resolve => {
-            if (this.uid) {
-                resolve(this.uid)
-                return
-            }
+    private getAnonUserID = async (): Promise<string> => {
+        if (this.uid) {
+            return this.uid
+        }
 
-            if (isInPage) {
-                let id = localStorage.getItem(uidKey)
-                if (id === null) {
-                    id = this.generateAnonUserID()
-                    localStorage.setItem(uidKey, id)
-                }
-                this.uid = id
-                resolve(this.uid)
-            } else {
-                storage.getSyncItem(uidKey, ({ sourcegraphAnonymousUid }) => {
-                    if (sourcegraphAnonymousUid === '') {
-                        sourcegraphAnonymousUid = this.generateAnonUserID()
-                        storage.setSync({ sourcegraphAnonymousUid })
-                    }
-                    this.uid = sourcegraphAnonymousUid
-                    resolve(sourcegraphAnonymousUid)
-                })
+        if (isInPage) {
+            let id = localStorage.getItem(uidKey)
+            if (id === null) {
+                id = this.generateAnonUserID()
+                localStorage.setItem(uidKey, id)
             }
-        })
+            this.uid = id
+            return this.uid
+        }
+
+        let { sourcegraphAnonymousUid } = await storage.sync.get(uidKey)
+        if (!sourcegraphAnonymousUid) {
+            sourcegraphAnonymousUid = this.generateAnonUserID()
+            await storage.sync.set({ sourcegraphAnonymousUid })
+        }
+        this.uid = sourcegraphAnonymousUid
+        return sourcegraphAnonymousUid
+    }
 
     /**
      * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private

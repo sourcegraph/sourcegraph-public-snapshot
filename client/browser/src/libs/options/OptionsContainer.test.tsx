@@ -1,3 +1,5 @@
+// tslint:disable:jsx-no-lambda Okay in tests
+
 import * as React from 'react'
 import { render, RenderResult } from 'react-testing-library'
 import { noop, Observable, of } from 'rxjs'
@@ -44,7 +46,7 @@ describe('OptionsContainer', () => {
                                     {...stubs}
                                     sourcegraphURL={url}
                                     ensureValidSite={ensureValidSite}
-                                    setSourcegraphURL={noop}
+                                    setSourcegraphURL={() => Promise.resolve()}
                                 />
                             )
                         })
@@ -92,7 +94,7 @@ describe('OptionsContainer', () => {
                                     {...stubs}
                                     sourcegraphURL={url}
                                     ensureValidSite={ensureValidSite}
-                                    setSourcegraphURL={noop}
+                                    setSourcegraphURL={() => Promise.resolve()}
                                 />
                             )
                         })
@@ -114,7 +116,7 @@ describe('OptionsContainer', () => {
                     {...stubs}
                     sourcegraphURL={'https://test.com'}
                     ensureValidSite={ensureValidSite}
-                    setSourcegraphURL={noop}
+                    setSourcegraphURL={() => Promise.resolve()}
                 />
             )
         } catch (err) {

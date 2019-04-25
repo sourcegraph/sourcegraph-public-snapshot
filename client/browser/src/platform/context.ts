@@ -7,8 +7,7 @@ import { mutateSettings, updateSettings } from '../../../../shared/src/settings/
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '../../../../shared/src/settings/settings'
 import { toPrettyBlobURL } from '../../../../shared/src/util/url'
 import { ExtensionStorageSubject } from '../browser/ExtensionStorageSubject'
-import * as runtime from '../browser/runtime'
-import storage from '../browser/storage'
+import { defaultStorageItems, observeStorageKey } from '../browser/storage'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
 import { getContext } from '../shared/backend/context'
@@ -37,7 +36,7 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
             merge(
                 isInPage
                     ? fetchViewerSettings()
-                    : storage.observeSync('sourcegraphURL').pipe(switchMap(() => fetchViewerSettings())),
+                    : observeStorageKey('sync', 'sourcegraphURL').pipe(switchMap(() => fetchViewerSettings())),
                 updatedViewerSettings
             ).pipe(
                 publishReplay(1),
@@ -86,10 +85,10 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
                 })
             }
 
-            return storage.observeSync('sourcegraphURL').pipe(
+            return observeStorageKey('sync', 'sourcegraphURL').pipe(
                 take(1),
                 mergeMap(
-                    (url: string): Observable<GraphQLResult<any>> =>
+                    (url: string = defaultStorageItems.sourcegraphURL): Observable<GraphQLResult<any>> =>
                         requestGraphQL({
                             ctx: getContext({ repoKey: '', isRepoSpecific: false }),
                             request,
@@ -114,15 +113,10 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
             // with a CSP that allowlists https://* in script-src (see
             // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
             // add-ons have an even stricter restriction.)
-            const blobURL = await new Promise<string>(resolve =>
-                runtime.sendMessage(
-                    {
-                        type: 'createBlobURL',
-                        payload: bundleURL,
-                    },
-                    resolve
-                )
-            )
+            const blobURL: string = await browser.runtime.sendMessage({
+                type: 'createBlobURL',
+                payload: bundleURL,
+            })
 
             return blobURL
         },

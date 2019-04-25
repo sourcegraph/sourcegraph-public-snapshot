@@ -1,3 +1,6 @@
+import { IGraphQLResponseRoot } from '../../../../shared/src/graphql/schema'
+import { GraphQLRequestArgs } from '../shared/backend/graphql'
+
 interface RepoLocations {
     [key: string]: string
 }
@@ -12,22 +15,10 @@ interface PhabricatorMapping {
  */
 export interface FeatureFlags {
     /**
-     * Whether or not to use the new inject method for code intelligence.
-     *
-     * @duration temporary - to be removed November first.
-     */
-    newInject: boolean
-    /**
-     * Enable inline symbol search by typing `!symbolQueryText` inside of GitHub PR comments (requires reload after toggling).
-     *
-     * @duration temporary - needs feedback from users.
-     */
-    inlineSymbolSearchEnabled: boolean
-
-    /**
      * Allow error reporting.
      *
      * @duration permanent
+     * @todo Since this is not really a feature flag, just unnest it into settings (and potentially get rid of the feature flags abstraction completely)
      */
     allowErrorReporting: boolean
 
@@ -43,21 +34,16 @@ export interface FeatureFlags {
 }
 
 export const featureFlagDefaults: FeatureFlags = {
-    newInject: false,
-    inlineSymbolSearchEnabled: true,
     allowErrorReporting: false,
     experimentalLinkPreviews: false,
     experimentalTextFieldCompletion: false,
 }
 
-// TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by
-// missing items.
 export interface StorageItems {
     sourcegraphURL: string
 
     identity: string
     enterpriseUrls: string[]
-    hasSeenServerModal: boolean
     repoLocations: RepoLocations
     phabricatorMappings: PhabricatorMapping[]
     sourcegraphAnonymousUid: string
@@ -65,17 +51,13 @@ export interface StorageItems {
     /**
      * Storage for feature flags.
      */
-    featureFlags: FeatureFlags
+    featureFlags: Partial<FeatureFlags>
     clientConfiguration: ClientConfigurationDetails
     /**
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
     sideloadedExtensionURL: string | null
-    NeedsServerConfigurationAlertDismissed?: boolean
-    NeedsRepoConfigurationAlertDismissed?: {
-        [repoName: string]: boolean
-    }
 }
 
 interface ClientConfigurationDetails {
@@ -90,7 +72,6 @@ export const defaultStorageItems: StorageItems = {
 
     identity: '',
     enterpriseUrls: [],
-    hasSeenServerModal: false,
     repoLocations: {},
     phabricatorMappings: [],
     sourcegraphAnonymousUid: '',
@@ -103,7 +84,25 @@ export const defaultStorageItems: StorageItems = {
         },
     },
     clientSettings: '',
-    sideloadedExtensionURL: '',
+    sideloadedExtensionURL: null,
 }
 
-export type StorageChange = { [key in keyof StorageItems]: chrome.storage.StorageChange }
+export interface BackgroundMessageHandlers {
+    setIdentity({ identity }: { identity: string }): Promise<void>
+    getIdentity(): Promise<string | undefined>
+
+    setEnterpriseUrl(url: string): Promise<void>
+
+    setSourcegraphUrl(url: string): Promise<void>
+
+    removeEnterpriseUrl(url: string): Promise<void>
+
+    insertCSS(details: { file: string; origin: string }): Promise<void>
+    setBadgeText(text: string): void
+
+    openOptionsPage(): Promise<void>
+
+    createBlobURL(bundleUrl: string): Promise<string>
+
+    requestGraphQL(params: GraphQLRequestArgs): Promise<IGraphQLResponseRoot>
+}

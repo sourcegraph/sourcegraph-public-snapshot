@@ -1,7 +1,7 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
-import storage from '../../browser/storage'
+import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
 import { getContext } from '../../shared/backend/context'
 import { mutateGraphQL } from '../../shared/backend/graphql'
@@ -404,45 +404,42 @@ export async function getRepoDetailsFromDifferentialID(differentialID: number): 
     return await getRepoDetailsFromRepoPHID(repositoryPHID)
 }
 
-function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<PhabricatorRepoDetails | null> {
-    return new Promise((resolve, reject) => {
-        if (isExtension) {
-            return storage.getSync(items => {
-                if (items.phabricatorMappings) {
-                    for (const mapping of items.phabricatorMappings) {
-                        if (mapping.callsign === repo.fields.callsign) {
-                            return resolve({
-                                callsign: repo.fields.callsign,
-                                repoName: mapping.path,
-                            })
-                        }
-                    }
-                }
-                return resolve(convertToDetails(repo))
-            })
-        }
-        // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
-        // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
-        // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
-        // in the browser extension options menu.
-        type Mappings = { callsign: string; path: string }[]
-        const mappingsString = window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS')
-        const callsignMappings = mappingsString
-            ? (JSON.parse(mappingsString) as Mappings)
-            : window.PHABRICATOR_CALLSIGN_MAPPINGS || []
-        const details = convertToDetails(repo)
-        if (callsignMappings) {
-            for (const mapping of callsignMappings) {
+async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<PhabricatorRepoDetails | null> {
+    if (isExtension) {
+        const items = await storage.sync.get()
+        if (items.phabricatorMappings) {
+            for (const mapping of items.phabricatorMappings) {
                 if (mapping.callsign === repo.fields.callsign) {
-                    return resolve({
+                    return {
                         callsign: repo.fields.callsign,
                         repoName: mapping.path,
-                    })
+                    }
                 }
             }
         }
-        return resolve(details)
-    })
+        return convertToDetails(repo)
+    }
+    // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
+    // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
+    // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
+    // in the browser extension options menu.
+    type Mappings = { callsign: string; path: string }[]
+    const mappingsString = window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS')
+    const callsignMappings = mappingsString
+        ? (JSON.parse(mappingsString) as Mappings)
+        : window.PHABRICATOR_CALLSIGN_MAPPINGS || []
+    const details = convertToDetails(repo)
+    if (callsignMappings) {
+        for (const mapping of callsignMappings) {
+            if (mapping.callsign === repo.fields.callsign) {
+                return {
+                    callsign: repo.fields.callsign,
+                    repoName: mapping.path,
+                }
+            }
+        }
+    }
+    return details
 }
 
 function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {

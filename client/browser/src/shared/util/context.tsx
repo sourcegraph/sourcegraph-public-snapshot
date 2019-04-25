@@ -1,5 +1,4 @@
-import * as runtime from '../../browser/runtime'
-import storage from '../../browser/storage'
+import { storage } from '../../browser/storage'
 import { isPhabricator, isPublicCodeHost } from '../../context'
 import { EventLogger } from '../tracking/EventLogger'
 
@@ -17,8 +16,11 @@ interface UrlCache {
 export const repoUrlCache: UrlCache = {}
 
 if (window.SG_ENV === 'EXTENSION') {
-    storage.getSync(items => {
-        sourcegraphUrl = items.sourcegraphURL
+    // tslint:disable-next-line: no-floating-promises TODO just get rid of the global sourcegraphUrl
+    storage.sync.get().then(items => {
+        if (items.sourcegraphURL) {
+            sourcegraphUrl = items.sourcegraphURL
+        }
     })
 }
 
@@ -38,8 +40,13 @@ export function getPlatformName(): 'phabricator-integration' | 'firefox-extensio
     return isFirefoxExtension() ? 'firefox-extension' : 'chrome-extension'
 }
 
-export function getExtensionVersionSync(): string {
-    return runtime.getExtensionVersionSync()
+export function getExtensionVersion(): string {
+    if (globalThis.browser) {
+        const manifest = browser.runtime.getManifest()
+        return manifest.version
+    }
+
+    return 'NO_VERSION'
 }
 
 function isFirefoxExtension(): boolean {

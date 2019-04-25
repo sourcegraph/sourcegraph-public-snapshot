@@ -1,4 +1,4 @@
-import { getExtensionVersionSync, getPlatformName } from '../util/context'
+import { getExtensionVersion, getPlatformName } from '../util/context'
 
 /**
  * getHeaders emits the required headers for making requests to Sourcegraph server instances.
@@ -7,6 +7,6 @@ import { getExtensionVersionSync, getPlatformName } from '../util/context'
 export function getHeaders(): { [name: string]: string } | undefined {
     // This is required for requests to be allowed by Sourcegraph's CORS rules.
     return {
-        'X-Requested-With': `Sourcegraph - ${getPlatformName()} v${getExtensionVersionSync()}`,
+        'X-Requested-With': `Sourcegraph - ${getPlatformName()} v${getExtensionVersion()}`,
     }
 }

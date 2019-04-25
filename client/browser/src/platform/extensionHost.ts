@@ -11,7 +11,7 @@ import { isInPage } from '../context'
  * When executing in-page (for example as a Phabricator plugin), this simply
  * creates an extension host worker and emits the returned EndpointPair.
  *
- * When executing in the browser extension, we create pair of chrome.runtime.Port objects,
+ * When executing in the browser extension, we create pair of browser.runtime.Port objects,
  * named 'expose-{uuid}' and 'proxy-{uuid}', and return the ports wrapped using ${@link endpointFromPort}.
  *
  * The background script will listen to newly created ports, create an extension host
@@ -24,8 +24,8 @@ export function createExtensionHost(): Observable<EndpointPair> {
     }
     const id = uuid.v4()
     return new Observable(subscriber => {
-        const proxyPort = chrome.runtime.connect({ name: `proxy-${id}` })
-        const exposePort = chrome.runtime.connect({ name: `expose-${id}` })
+        const proxyPort = browser.runtime.connect({ name: `proxy-${id}` })
+        const exposePort = browser.runtime.connect({ name: `expose-${id}` })
         subscriber.next({
             proxy: endpointFromPort(proxyPort),
             expose: endpointFromPort(exposePort),
@@ -38,25 +38,25 @@ export function createExtensionHost(): Observable<EndpointPair> {
 }
 
 /**
- * Partially wraps a chrome.runtime.Port and returns a MessagePort created using
+ * Partially wraps a browser.runtime.Port and returns a MessagePort created using
  * comlink's {@link MessageChannelAdapter}, so that the Port can be used
  * as a comlink Endpoint to transport messages between the content script and the extension host.
  *
- * It is necessary to wrap the port using MessageChannelAdapter because chrome.runtime.Port objects do not support
+ * It is necessary to wrap the port using MessageChannelAdapter because browser.runtime.Port objects do not support
  * transfering MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
  *
  */
-function endpointFromPort(port: chrome.runtime.Port): MessagePort {
-    const listeners = new Map<(event: MessageEvent) => any, (message: object, port: chrome.runtime.Port) => void>()
+function endpointFromPort(port: browser.runtime.Port): MessagePort {
+    const messageListeners = new Map<(event: MessageEvent) => any, (message: unknown) => void>()
     return MessageChannelAdapter.wrap({
-        send(data): void {
+        send(data: string): void {
             port.postMessage(data)
         },
-        addEventListener(event, messageListener): void {
+        addEventListener(event: 'message', messageListener: (event: MessageEvent) => any): void {
             if (event !== 'message') {
                 return
             }
-            const chromePortListener = (data: object) => {
+            const portListener = (data: unknown) => {
                 // This callback is called *very* often (e.g., ~900 times per keystroke in a
                 // monitored textarea). Avoid creating unneeded objects here because GC
                 // significantly hurts perf. See
@@ -69,18 +69,18 @@ function endpointFromPort(port: chrome.runtime.Port): MessagePort {
                 // so losing the properties is not a big problem.
                 messageListener.call(this, { data } as any)
             }
-            listeners.set(messageListener, chromePortListener)
-            port.onMessage.addListener(chromePortListener)
+            messageListeners.set(messageListener, portListener)
+            port.onMessage.addListener(portListener)
         },
-        removeEventListener(event, messageListener): void {
+        removeEventListener(event: 'message', messageListener: (event: MessageEvent) => any): void {
             if (event !== 'message') {
                 return
             }
-            const chromePortListener = listeners.get(messageListener)
-            if (!chromePortListener) {
+            const portListener = messageListeners.get(messageListener)
+            if (!portListener) {
                 return
             }
-            port.onMessage.removeListener(chromePortListener)
+            port.onMessage.removeListener(portListener)
         },
     })
 }

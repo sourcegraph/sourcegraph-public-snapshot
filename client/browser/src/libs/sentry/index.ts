@@ -1,14 +1,10 @@
 import * as Sentry from '@sentry/browser'
 import { once } from 'lodash'
-
-import { getExtensionVersionSync } from '../../browser/runtime'
-import storage from '../../browser/storage'
+import { observeStorageKey } from '../../browser/storage'
+import { featureFlagDefaults } from '../../browser/types'
 import { isInPage } from '../../context'
-import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
-import { CodeHost } from '../code_intelligence'
-import { githubCodeHost } from '../github/code_intelligence'
-import { gitlabCodeHost } from '../gitlab/code_intelligence'
-import { phabricatorCodeHost } from '../phabricator/code_intelligence'
+import { getExtensionVersion } from '../../shared/util/context'
+import { determineCodeHost } from '../code_intelligence'
 
 const isExtensionStackTrace = (stacktrace: Sentry.Stacktrace, extensionID: string): boolean =>
     !!(stacktrace.frames && stacktrace.frames.some(({ filename }) => !!(filename && filename.includes(extensionID))))
@@ -38,11 +34,15 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
         return
     }
 
-    storage.observeSync('featureFlags').subscribe(flags => {
+    observeStorageKey('sync', 'featureFlags').subscribe((flags = featureFlagDefaults) => {
         const allowed = flags.allowErrorReporting
 
         // Don't initialize if user hasn't allowed us to report errors or in Phabricator.
         if (!allowed || isInPage) {
+            const client = Sentry.getCurrentHub().getClient() as Sentry.BrowserClient | undefined
+            if (client) {
+                client.getOptions().enabled = false
+            }
             return
         }
 
@@ -50,22 +50,17 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
 
         Sentry.configureScope(async scope => {
             scope.setTag('script', script)
-            scope.setTag('extension_version', getExtensionVersionSync())
-
-            const codeHosts: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
-            for (const { check, name } of codeHosts) {
-                const is = await Promise.resolve(check())
-                if (is) {
-                    scope.setTag('code_host', name)
-                }
-                return
+            scope.setTag('extension_version', getExtensionVersion())
+            const codeHost = determineCodeHost()
+            if (codeHost) {
+                scope.setTag('code_host', codeHost.name)
             }
         })
+    })
 
-        storage.observeSync('sourcegraphURL').subscribe(url => {
-            Sentry.configureScope(scope => {
-                scope.setTag('using_dot_com', url === 'https://sourcegraph.com' ? 'true' : 'false')
-            })
+    observeStorageKey('sync', 'sourcegraphURL').subscribe(url => {
+        Sentry.configureScope(scope => {
+            scope.setTag('using_dot_com', url === 'https://sourcegraph.com' ? 'true' : 'false')
         })
     })
 }
