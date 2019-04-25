@@ -21,6 +21,8 @@ TODO(ryan): Replace with updated screencast
 </p>
 -->
 
+For next steps and further configuration options, visit the [site administration documentation](admin/index.md).
+
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
 ## Cloud installation guides
