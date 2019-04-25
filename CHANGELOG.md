@@ -15,6 +15,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Removes corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
+- The required `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration), if unset or empty, is automatically migrated to match the user part of the `url` (if defined).
+
+## 3.3.1
+
+### Fixed
+
+- Fixed a bug that prevented external service configurations specifying client certificates from working (#3523)
+
 ## 3.3.0
 
 ### Added
