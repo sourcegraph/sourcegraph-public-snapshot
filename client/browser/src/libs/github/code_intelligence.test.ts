@@ -45,10 +45,10 @@ describe('github/code_intelligence', () => {
                                 describe(`${startCase(view)} view`, () => {
                                     const directory = `${__dirname}/__fixtures__/${version}/${page}/${extension}/${view}`
                                     testCodeHost(`${directory}/page.html`)
-                                    describe('createCodeViewToolbarMount()', () => {
+                                    describe('createFileActionsToolbarMount()', () => {
                                         testMountGetter(
                                             createFileActionsToolbarMount,
-                                            'createCodeViewToolbarMount()',
+                                            'createFileActionsToolbarMount()',
                                             `${directory}/code-view.html`
                                         )
                                     })
