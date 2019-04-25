@@ -468,7 +468,8 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
-	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
+	// TODO: It is unclear if searcher.Search can return BOTH an error and resp? If not, we should be using if err != nil { ... } else { ... } with the if statement below.
+	if resp != nil && (resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime) {
 		timeoutToTry := 2 * searchOpts.MaxWallTime
 		if timeoutToTry <= 0 {
 			timeoutToTry = 10 * time.Second
