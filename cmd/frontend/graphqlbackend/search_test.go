@@ -11,22 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-func testStringResult(result *searchSuggestionResolver) string {
-	var name string
-	switch r := result.result.(type) {
-	case *repositoryResolver:
-		name = "repo:" + string(r.repo.Name)
-	case *gitTreeEntryResolver:
-		name = "file:" + r.path
-	default:
-		panic("never here")
-	}
-	if result.score == 0 {
-		return "<removed>"
-	}
-	return name
-}
-
 func TestSearch(t *testing.T) {
 	type Results struct {
 		Results []interface{}
@@ -189,3 +173,19 @@ var testSearchGQLQuery = `
 			}
 		}
 `
+
+func testStringResult(result *searchSuggestionResolver) string {
+	var name string
+	switch r := result.result.(type) {
+	case *repositoryResolver:
+		name = "repo:" + string(r.repo.Name)
+	case *gitTreeEntryResolver:
+		name = "file:" + r.path
+	default:
+		panic("never here")
+	}
+	if result.score == 0 {
+		return "<removed>"
+	}
+	return name
+}
