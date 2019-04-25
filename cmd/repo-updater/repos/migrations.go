@@ -27,9 +27,8 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 // without recourse to the now deprecated enabled column of a repository.
 //
 // This is done by:
-//  1. Explicitly adding enabled repos that would have been deleted to an explicit include list.
-//  2. Explicitly adding disabled repos that would have been added to an explicit exclude list.
-//  3. Removing the deprecated initialRepositoryEnablement field.
+//  1. Explicitly adding disabled repos that would have been added to an explicit exclude list.
+//  2. Removing the deprecated initialRepositoryEnablement field.
 //
 // This migration must be rolled-out together with the UI changes that remove the admin's
 // ability to explicitly enabled / disable individual repos.
@@ -72,7 +71,6 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 
 		type service struct {
 			svc     *ExternalService
-			include Repos
 			exclude Repos
 		}
 
@@ -129,16 +127,6 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			return err
 		}
 
-		err = group(
-			func(r *Repo) bool { return r.Enabled },
-			func(s *service) *Repos { return &s.include },
-			diff.Deleted,
-		)
-
-		if err != nil {
-			return err
-		}
-
 		now := clock()
 		for _, e := range svcs {
 			if err = removeInitalRepositoryEnablement(e.svc, now); err != nil {
@@ -153,16 +141,6 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 
 				log15.Info(prefix+".exclude", "service", e.svc.DisplayName, "repos", len(e.exclude))
 			}
-
-			if len(e.include) > 0 {
-				if err = e.svc.Include(e.include...); err != nil {
-					return errors.Wrapf(err, "%s.include", prefix)
-				}
-				e.svc.UpdatedAt = now
-
-				log15.Info(prefix+".include", "service", e.svc.DisplayName, "repos", len(e.include))
-			}
-
 		}
 
 		if err = s.UpsertExternalServices(ctx, upserts...); err != nil {
