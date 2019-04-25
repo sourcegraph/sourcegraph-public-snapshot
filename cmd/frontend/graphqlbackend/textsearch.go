@@ -468,6 +468,9 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
+	if err != nil {
+		return nil, false, nil, err
+	}
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
 		timeoutToTry := 2 * searchOpts.MaxWallTime
 		if timeoutToTry <= 0 {
@@ -475,9 +478,6 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		}
 		err2 := errors.Errorf("no results found before timeout in index search (try timeout:%v)", timeoutToTry)
 		return nil, false, nil, err2
-	}
-	if err != nil {
-		return nil, false, nil, err
 	}
 	limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
 	// Repositories that weren't fully evaluated because they hit the Zoekt or Sourcegraph file match limits.
