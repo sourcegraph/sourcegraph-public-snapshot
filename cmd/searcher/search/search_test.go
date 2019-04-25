@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	searchapi "github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestSearch(t *testing.T) {
@@ -384,7 +385,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	return r.Matches, err
 }
 
-func newStore(files map[string]string) (*search.Store, func(), error) {
+func newStore(files map[string]string) (*store.Store, func(), error) {
 	buf := new(bytes.Buffer)
 	w := tar.NewWriter(buf)
 	for name, body := range files {
@@ -415,7 +416,7 @@ func newStore(files map[string]string) (*search.Store, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	return &search.Store{
+	return &store.Store{
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},

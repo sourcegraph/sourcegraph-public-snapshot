@@ -19,7 +19,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed a nil dereference panic in indexed search. (#3596)
+- Fixed a nil dereference panic in indexed search. https://github.com/sourcegraph/sourcegraph/issues/3579
+- Removed corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
+- The required `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration), if unset or empty, is automatically migrated to match the user part of the `url` (if defined).
 
 ## 3.3.1
 

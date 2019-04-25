@@ -89,6 +89,9 @@ window.sgdocs = (() => {
     document.querySelectorAll('button.content-nav-button').forEach(el => {
       el.addEventListener('click', e => e.srcElement.closest('.content-nav-section').classList.toggle('expanded'))
     })
+
+    // TODO(ryan): Link titles should be auto-generated
+    document.querySelectorAll('.content-nav a').forEach(el => (el.title = el.text.trim()))
   }
 
   function breadcrumbsInit() {
