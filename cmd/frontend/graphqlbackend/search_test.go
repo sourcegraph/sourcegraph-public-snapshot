@@ -13,15 +13,14 @@ import (
 
 func TestSearch(t *testing.T) {
 	type Results struct {
-		Results []interface{}
-		LimitHit bool
+		Results     []interface{}
 		ResultCount int
 	}
 	tcs := []struct {
 		name          string
 		searchQuery   string
 		reposListMock func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-		wantResults	  Results
+		wantResults   Results
 	}{
 		{
 			name:        "empty query against no repos gets no results",
@@ -29,7 +28,10 @@ func TestSearch(t *testing.T) {
 			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
 			},
-			wantResults: Results{},
+			wantResults: Results{
+				Results:     nil,
+				ResultCount: 0,
+			},
 		},
 	}
 	for _, tc := range tcs {
