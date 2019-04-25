@@ -96,6 +96,7 @@ func main() {
 	migrations := []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
 		repos.GitLabSetDefaultProjectQueryMigration(clock),
+		repos.BitbucketServerSetDefaultRepositoryQueryMigration(clock),
 	}
 
 	var kinds []string
