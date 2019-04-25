@@ -16,7 +16,8 @@ It takes less than 5 minutes to install Sourcegraph using Docker. If you've got 
 
 <pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.3.1</code></pre>
 
-Create the admin account for the instance, then you'll be guided through the steps for adding repositories for searching and navigating from your code host.
+Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
+Create the admin account for the instance there, then you'll be guided through the steps for adding repositories for searching and navigating from your code host.
 
 <!--
 TODO(ryan): Replace with updated screencast
