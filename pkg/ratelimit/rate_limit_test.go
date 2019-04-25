@@ -1,6 +1,8 @@
 package ratelimit
 
 import (
+	"net/http"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -51,5 +53,118 @@ func TestMonitor_RecommendedWaitForBackgroundOp(t *testing.T) {
 		if got := m.RecommendedWaitForBackgroundOp(cost); !durationsApproxEqual(got, want) {
 			t.Errorf("with reset: for %d, got %s, want %s", cost, got, want)
 		}
+	}
+}
+
+func TestMonitor_RecommendedWaitForBackgroundOp_RetryAfter(t *testing.T) {
+	now := time.Now()
+	for _, tc := range []struct {
+		retry time.Time
+		now   time.Time
+		wait  time.Duration
+	}{
+		// 30 seconds remaining from now until retry
+		{now.Add(30 * time.Second), now, 30 * time.Second},
+		// 0 seconds remaing from now until retry
+		{now.Add(30 * time.Second), now.Add(30 * time.Second), 0},
+		// -30 seconds remaining from now until retry
+		{now.Add(30 * time.Second), now.Add(60 * time.Second), 0},
+	} {
+		m := Monitor{
+			retry: tc.retry,
+			clock: func() time.Time { return tc.now },
+		}
+
+		wait := m.RecommendedWaitForBackgroundOp(1)
+		if have, want := wait, tc.wait; have != want {
+			t.Errorf("retry: %s, now: %s: wait: have %s, want %s", tc.retry, tc.now, have, want)
+		}
+	}
+}
+
+func TestMonitor_Update(t *testing.T) {
+	now := time.Now()
+	clock := func() time.Time { return now }
+
+	equal := func(a, b *Monitor) bool {
+		return a.HeaderPrefix == b.HeaderPrefix &&
+			a.known == b.known &&
+			a.limit == b.limit &&
+			a.remaining == b.remaining &&
+			a.reset.Equal(b.reset) &&
+			a.retry.Equal(b.retry)
+	}
+
+	for _, tc := range []struct {
+		name   string
+		before *Monitor
+		h      http.Header
+		after  *Monitor
+	}{
+		{
+			name:   "Retry-After header sets retry deadline",
+			before: &Monitor{clock: clock},
+			h:      http.Header{"Retry-After": []string{"30"}},
+			after:  &Monitor{retry: now.Add(30 * time.Second)},
+		},
+		{
+			name:   "Empty Retry-After header leaves deadline intact",
+			before: &Monitor{clock: clock, retry: now.Add(time.Second)},
+			h:      http.Header{},
+			after:  &Monitor{retry: now.Add(time.Second)},
+		},
+		{
+			name:   "RateLimit headers must come together",
+			before: &Monitor{clock: clock, known: true},
+			// Missing the other headers, so nothing gets set and known becomes false
+			h:     http.Header{"RateLimit-Limit": []string{"500"}},
+			after: &Monitor{known: false},
+		},
+		{
+			name:   "RateLimit headers are set",
+			before: &Monitor{HeaderPrefix: "X-", clock: clock},
+			h: http.Header{
+				"X-RateLimit-Limit":     []string{"500"},
+				"X-RateLimit-Remaining": []string{"1"},
+				"X-RateLimit-Reset":     []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
+			},
+			after: &Monitor{
+				HeaderPrefix: "X-",
+				known:        true,
+				limit:        500,
+				remaining:    1,
+				reset:        time.Unix(now.Add(time.Minute).Unix(), 0),
+			},
+		},
+		{
+			name:   "Responses with X-From-Cache header are ignored",
+			before: &Monitor{clock: clock},
+			h: http.Header{
+				"X-From-Cache":        []string{"1"},
+				"RateLimit-Limit":     []string{"500"},
+				"RateLimit-Remaining": []string{"1"},
+				"RateLimit-Reset":     []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
+			},
+			after: &Monitor{},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			h := make(http.Header, len(tc.h))
+			for k, vs := range tc.h {
+				for _, v := range vs {
+					// So that header keys are made canonical with
+					// textproto.CanonicalMIMEHeaderKey
+					h.Add(k, v)
+				}
+			}
+
+			tc.before.Update(h)
+			if have, want := tc.before, tc.after; !equal(have, want) {
+				t.Errorf("\nhave: %#v\nwant: %#v", have, want)
+			}
+		})
 	}
 }
