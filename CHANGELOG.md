@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Changed
 
+- Indexed search is now enabled by default for new Docker deployments. (#3540)
+
 ### Removed
 
 ### Fixed
