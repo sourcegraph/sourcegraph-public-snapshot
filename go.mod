@@ -1,7 +1,7 @@
 module github.com/sourcegraph/sourcegraph
 
 require (
-	cloud.google.com/go v0.34.0
+	cloud.google.com/go v0.37.4
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/aws/aws-sdk-go-v2 v0.7.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
