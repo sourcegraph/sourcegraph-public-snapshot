@@ -27,14 +27,6 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		}
 	}
 
-	included := func(rs ...*repos.Repo) func(*repos.ExternalService) {
-		return func(e *repos.ExternalService) {
-			if err := e.Include(rs...); err != nil {
-				panic(err)
-			}
-		}
-	}
-
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -196,16 +188,13 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				err:  "<nil>",
 			},
 			testCase{
-				name: "enabled: was not deleted and got deleted, then included",
+				name: "enabled: was not deleted and got deleted, not included",
 				stored: repos.Repos{repo.With(func(r *repos.Repo) {
 					r.Enabled = true
 				})},
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				svcs: repos.Assert.ExternalServicesEqual(svc.With(
-					repos.Opt.ExternalServiceModifiedAt(now),
-					included(&repo),
-				)),
-				err: "<nil>",
+				svcs:    repos.Assert.ExternalServicesEqual(svc.Clone()),
+				err:     "<nil>",
 			},
 			testCase{
 				name:   "enabled: got added for the first time, so not included",
@@ -255,7 +244,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: "enabled: repo is included in all of its sources",
+				name: "enabled: deleted repo is not included in any of its sources",
 				stored: repos.Repos{repo.With(
 					repos.Opt.RepoSources(
 						svc.URN(),
@@ -268,15 +257,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil),
 				),
 				svcs: repos.Assert.ExternalServicesEqual(
-					svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-						included(&repo),
-					),
-					svc.With(
-						repos.Opt.ExternalServiceID(23),
-						repos.Opt.ExternalServiceModifiedAt(now),
-						included(&repo),
-					),
+					svc.Clone(),
+					svc.With(repos.Opt.ExternalServiceID(23)),
 				),
 				err: "<nil>",
 			},
