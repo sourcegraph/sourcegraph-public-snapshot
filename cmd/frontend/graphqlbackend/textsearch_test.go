@@ -231,6 +231,17 @@ func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.
 	return ss.result, nil
 }
 
+type errorSearcher struct {
+	err error
+
+	// Default all unimplemented zoekt.Searcher methods to panic.
+	zoekt.Searcher
+}
+
+func (es *errorSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	return nil, es.err
+}
+
 func Test_zoektSearchHEAD(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
@@ -297,6 +308,24 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				},
 				useFullDeadline: true,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{},
+				since:           func(time.Time) time.Duration { return 0 },
+			},
+			wantFm:            nil,
+			wantLimitHit:      false,
+			wantReposLimitHit: nil,
+			wantErr:           true,
+		},
+		{
+			name: "returns error if searcher returns an error",
+			args: args{
+				ctx:   context.Background(),
+				query: &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos: []*search.RepositoryRevisions{
+					{Repo: &types.Repo{}},
+				},
+				useFullDeadline: true,
+				searcher:        &errorSearcher{err: errors.New("womp womp")},
 				opts:            zoekt.SearchOptions{},
 				since:           func(time.Time) time.Duration { return 0 },
 			},
