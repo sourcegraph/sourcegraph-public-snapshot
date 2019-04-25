@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/goware/urlx"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -34,19 +35,19 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 // ability to explicitly enabled / disable individual repos.
 func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, kinds ...string) Migration {
 	return migrate(func(ctx context.Context, s Store) error {
-		const prefix = "migrate.repos-enabled-state-deprecation"
+		const prefix = "migrate.repos-enabled-state-deprecation:"
 
 		es, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: kinds,
 		})
 
 		if err != nil {
-			return errors.Wrapf(err, "%s.list-external-services", prefix)
+			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
 
 		srcs, err := sourcer(es...)
 		if err != nil {
-			return errors.Wrapf(err, "%s.list-sources", prefix)
+			return errors.Wrapf(err, "%s list-sources", prefix)
 		}
 
 		var sourced Repos
@@ -57,7 +58,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 		}
 
 		if err != nil {
-			return errors.Wrapf(err, "%s.sources.list-repos", prefix)
+			return errors.Wrapf(err, "%s sources.list-repos", prefix)
 		}
 
 		stored, err := s.ListRepos(ctx, StoreListReposArgs{
@@ -66,7 +67,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 		})
 
 		if err != nil {
-			return errors.Wrapf(err, "%s.store.list-repos", prefix)
+			return errors.Wrapf(err, "%s store.list-repos", prefix)
 		}
 
 		type service struct {
@@ -130,21 +131,21 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 		now := clock()
 		for _, e := range svcs {
 			if err = removeInitalRepositoryEnablement(e.svc, now); err != nil {
-				return errors.Wrapf(err, "%s.remove-initial-repository-enablement", prefix)
+				return errors.Wrapf(err, "%s remove-initial-repository-enablement", prefix)
 			}
 
 			if len(e.exclude) > 0 {
 				if err = e.svc.Exclude(e.exclude...); err != nil {
-					return errors.Wrapf(err, "%s.exclude", prefix)
+					return errors.Wrapf(err, "%s exclude", prefix)
 				}
 				e.svc.UpdatedAt = now
 
-				log15.Info(prefix+".exclude", "service", e.svc.DisplayName, "repos", len(e.exclude))
+				log15.Info(prefix+" exclude", "service", e.svc.DisplayName, "repos", len(e.exclude))
 			}
 		}
 
 		if err = s.UpsertExternalServices(ctx, upserts...); err != nil {
-			return errors.Wrapf(err, "%s.upsert-external-services", prefix)
+			return errors.Wrapf(err, "%s upsert-external-services", prefix)
 		}
 
 		var deleted Repos
@@ -157,7 +158,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 		}
 
 		if err = s.UpsertRepos(ctx, deleted...); err != nil {
-			return errors.Wrapf(err, "%s.upsert-repos", prefix)
+			return errors.Wrapf(err, "%s upsert-repos", prefix)
 		}
 
 		return nil
@@ -183,21 +184,21 @@ func removeInitalRepositoryEnablement(svc *ExternalService, ts time.Time) error 
 // migration to its explicit default.
 func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration {
 	return migrate(func(ctx context.Context, s Store) error {
-		const prefix = "migrate.github-set-default-repository-query"
+		const prefix = "migrate.github-set-default-repository-query:"
 
 		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"github"},
 		})
 
 		if err != nil {
-			return errors.Wrapf(err, "%s.list-external-services", prefix)
+			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
 
 		now := clock()
 		for _, svc := range svcs {
 			var c schema.GitHubConnection
 			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-				return fmt.Errorf("%s: external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+				return fmt.Errorf("%s external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
 			}
 
 			if len(c.RepositoryQuery) != 0 {
@@ -206,7 +207,7 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 
 			baseURL, err := url.Parse(c.Url)
 			if err != nil {
-				return errors.Wrapf(err, "%s.parse-url", prefix)
+				return errors.Wrapf(err, "%s parse-url", prefix)
 			}
 
 			_, githubDotCom := github.APIRoot(NormalizeBaseURL(baseURL))
@@ -218,7 +219,7 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 
 			edited, err := jsonc.Edit(svc.Config, c.RepositoryQuery, "repositoryQuery")
 			if err != nil {
-				return errors.Wrapf(err, "%s.edit-json", prefix)
+				return errors.Wrapf(err, "%s edit-json", prefix)
 			}
 
 			svc.Config = edited
@@ -226,7 +227,7 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 		}
 
 		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
-			return errors.Wrapf(err, "%s.upsert-external-services", prefix)
+			return errors.Wrapf(err, "%s upsert-external-services", prefix)
 		}
 
 		return nil
@@ -238,21 +239,21 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 // migration to its explicit default.
 func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 	return migrate(func(ctx context.Context, s Store) error {
-		const prefix = "migrate.gitlab-set-default-project-query"
+		const prefix = "migrate.gitlab-set-default-project-query:"
 
 		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"gitlab"},
 		})
 
 		if err != nil {
-			return errors.Wrapf(err, "%s.list-external-services", prefix)
+			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
 
 		now := clock()
 		for _, svc := range svcs {
 			var c schema.GitLabConnection
 			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-				return fmt.Errorf("%s: external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+				return fmt.Errorf("%s  external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
 			}
 
 			if len(c.ProjectQuery) != 0 {
@@ -263,7 +264,7 @@ func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 
 			edited, err := jsonc.Edit(svc.Config, c.ProjectQuery, "projectQuery")
 			if err != nil {
-				return errors.Wrapf(err, "%s.edit-json", prefix)
+				return errors.Wrapf(err, "%s edit-json", prefix)
 			}
 
 			svc.Config = edited
@@ -271,7 +272,7 @@ func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 		}
 
 		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
-			return errors.Wrapf(err, "%s.upsert-external-services", prefix)
+			return errors.Wrapf(err, "%s upsert-external-services", prefix)
 		}
 
 		return nil
@@ -284,21 +285,21 @@ func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 // behaviour of mirroring all repos accessible to the configured token.
 func BitbucketServerSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration {
 	return migrate(func(ctx context.Context, s Store) error {
-		const prefix = "migrate.bitbucketserver-set-default-repository-query"
+		const prefix = "migrate.bitbucketserver-set-default-repository-query:"
 
 		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"bitbucketserver"},
 		})
 
 		if err != nil {
-			return errors.Wrapf(err, "%s.list-external-services", prefix)
+			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
 
 		now := clock()
 		for _, svc := range svcs {
 			var c schema.BitbucketServerConnection
 			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-				return fmt.Errorf("%s: external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+				return fmt.Errorf("%s  external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
 			}
 
 			if len(c.RepositoryQuery) != 0 {
@@ -312,7 +313,7 @@ func BitbucketServerSetDefaultRepositoryQueryMigration(clock func() time.Time) M
 
 			edited, err := jsonc.Edit(svc.Config, c.RepositoryQuery, "repositoryQuery")
 			if err != nil {
-				return errors.Wrapf(err, "%s.edit-json", prefix)
+				return errors.Wrapf(err, "%s edit-json", prefix)
 			}
 
 			svc.Config = edited
@@ -320,7 +321,61 @@ func BitbucketServerSetDefaultRepositoryQueryMigration(clock func() time.Time) M
 		}
 
 		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
-			return errors.Wrapf(err, "%s.upsert-external-services", prefix)
+			return errors.Wrapf(err, "%s upsert-external-services", prefix)
+		}
+
+		return nil
+	})
+}
+
+// BitbucketServerUsernameMigration returns a Migration that changes all
+// configurations of BitbucketServer external services to explicitly have the
+// `username` setting set to the user defined in the `url`, if any.
+// This will only happen if the `username` fields is empty or unset.
+func BitbucketServerUsernameMigration(clock func() time.Time) Migration {
+	return migrate(func(ctx context.Context, s Store) error {
+		const prefix = "migrate.bitbucketserver-username-migration:"
+
+		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: []string{"bitbucketserver"},
+		})
+
+		if err != nil {
+			return errors.Wrapf(err, "%s list-external-services", prefix)
+		}
+
+		now := clock()
+		for _, svc := range svcs {
+			var c schema.BitbucketServerConnection
+			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+				return errors.Errorf("%s  external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+			}
+
+			if c.Username != "" {
+				continue
+			}
+
+			u, err := urlx.Parse(c.Url)
+			if err != nil {
+				return errors.Wrapf(err, "%s parse-url", prefix)
+			}
+
+			username := u.User.Username()
+			if username == "" {
+				continue
+			}
+
+			edited, err := jsonc.Edit(svc.Config, username, "username")
+			if err != nil {
+				return errors.Wrapf(err, "%s edit-json", prefix)
+			}
+
+			svc.Config = edited
+			svc.UpdatedAt = now
+		}
+
+		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
+			return errors.Wrapf(err, "%s upsert-external-services", prefix)
 		}
 
 		return nil
