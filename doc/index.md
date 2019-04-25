@@ -4,9 +4,7 @@
 
 ## Quickstart guide
 
-> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
-
-It takes less than 5 minutes to install Sourcegraph using Docker. If you've got [Docker installed](https://docs.docker.com/engine/installation/), you're ready to start the server which listens on port `7080` by default.
+It takes less than 5 minutes to run and install Sourcegraph using Docker:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
@@ -16,7 +14,7 @@ It takes less than 5 minutes to install Sourcegraph using Docker. If you've got 
 
 <pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.3.1</code></pre>
 
-Create the admin account for the instance, then you'll be guided through the steps for adding repositories for searching and navigating from your code host.
+Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
 <!--
 TODO(ryan): Replace with updated screencast
@@ -27,7 +25,9 @@ TODO(ryan): Replace with updated screencast
 </p>
 -->
 
-Once Sourcegraph has been configured, head to the [site administration documentation](admin/index.md) for next steps.
+For next steps and further configuration options, visit the [site administration documentation](admin/index.md).
+
+> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
 ## Upgrading Sourcegraph
 
