@@ -964,14 +964,16 @@ enum SavedSearchOwnerKind {
 
 # A saved search query, defined in settings.
 type SavedSearch {
-    # The unique key of this saved query (unique only among all other saved
-    # queries of the same subject).
-    id: String!
+    # The unique ID of this saved query.
+    id: ID!
+    # The unique database ID of this saved query.
+    databaseID: String!
     # The description.
     description: String!
     # The query.
     query: String!
-    # Whether or not to notify.
+    # Whether or not to notify the owner of the saved search via email. This owner is either
+    # a single user, or every member of an organization that owns the saved search.
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!

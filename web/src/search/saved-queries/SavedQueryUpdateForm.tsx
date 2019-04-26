@@ -37,7 +37,6 @@ export const SavedQueryUpdateForm: React.FunctionComponent<Props> = props => (
 )
 
 function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Observable<any> {
-    console.log(fields)
     // If the subject changed, we need to create it on the new subject and
     // delete it on the old subject.
     return updateSavedSearch(

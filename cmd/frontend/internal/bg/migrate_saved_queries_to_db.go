@@ -37,22 +37,26 @@ func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Co
 		err := jsonc.Unmarshal(s.Contents, &sq)
 		if err != nil {
 			log15.Error(`Unable to migrate saved query into database, unable to unmarshal JSON value. Please report this issue.`, err)
+			continue
 		}
 		InsertSavedQueryIntoDB(ctx, s, &sq)
 		// Remove "search.savedQueries" entry from settings.
 		edits, _, err := jsonx.ComputePropertyRemoval(s.Contents, jsonx.MakePath("search.savedQueries"), conf.FormatOptions)
 		if err != nil {
 			log15.Error(`Unable to remove saved query from settings. Please report this issue.`, err)
+			continue
 		}
 		text, err := jsonx.ApplyEdits(s.Contents, edits...)
 		if err != nil {
 			log15.Error(`Unable to remove saved query from settings. Please report this issue.`, err)
+			continue
 		}
 
 		lastID := &s.ID
 		_, err = db.Settings.CreateIfUpToDate(ctx, s.Subject, lastID, s.AuthorUserID, text)
 		if err != nil {
 			log15.Error(`Unable to update settings with saved queries removed. Please report this issue.`)
+			continue
 		}
 	}
 	// After migrating all saved searches into the DB, migrate organization Slack webhook URLs into the
@@ -80,17 +84,20 @@ func InsertSavedQueryIntoDB(ctx context.Context, s *api.Settings, sq *SavedQuery
 			_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "user", *s.Subject.User)
 			if err != nil {
 				log15.Error(`Warning: unable to migrate user saved query into database.`, err.Error())
+				continue
 			}
 		} else if s.Subject.Org != nil {
 			_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, org_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "org", *s.Subject.Org)
 			if err != nil {
 				log15.Error(`Warning: unable to migrate org saved query into database.`, err.Error())
+				continue
 			}
 		} else if s.Subject.Site || s.Subject.Default {
 			siteAdminID := GetFirstSiteAdminID(ctx)
 			_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO saved_searches(description, query, notify_owner, notify_slack, owner_kind, user_id) VALUES($1, $2, $3, $4, $5, $6)", query.Description, query.Query, query.Notify, query.NotifySlack, "user", siteAdminID)
 			if err != nil {
 				log15.Error(`Warning: unable to migrate global saved query into database.`, err.Error())
+				continue
 			}
 		}
 	}
@@ -118,6 +125,7 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) {
 		err := jsonc.Unmarshal(s.Contents, &notifsField)
 		if err != nil {
 			log15.Error(`Unable to migrate Slack webhook URL to saved search table. Error unmarshaling notifications.slack setting.`, err)
+			continue
 		}
 		if s.Subject.Org != nil {
 			InsertSlackWebhookURLIntoSavedSearchesTable(ctx, "org", s.Subject.Org, notifsField.NotificationsSlack.WebhookURL)
@@ -131,16 +139,19 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) {
 		edits, _, err := jsonx.ComputePropertyRemoval(s.Contents, jsonx.MakePath("notifications.slack"), conf.FormatOptions)
 		if err != nil {
 			log15.Error(`Unable to remove Slack webhook URL from settings. Please report this issue.`, err)
+			continue
 		}
 		text, err := jsonx.ApplyEdits(s.Contents, edits...)
 		if err != nil {
 			log15.Error(`Unable to apply settings with Slack webhook URL removed from settings. Please report this issue.`, err)
+			continue
 		}
 
 		lastID := &s.ID
 		_, err = db.Settings.CreateIfUpToDate(ctx, s.Subject, lastID, s.AuthorUserID, text)
 		if err != nil {
 			log15.Error(`Unable to create new settings with Slack webhook URL removed. Please report this issue.`)
+			continue
 		}
 	}
 

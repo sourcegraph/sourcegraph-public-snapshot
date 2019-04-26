@@ -2,7 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
@@ -56,12 +58,28 @@ func toSavedSearchResolver(entry api.ConfigSavedQuery) *savedSearchResolver {
 
 func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResolver, error) {
 	var savedSearches []*savedSearchResolver
-	allSavedSearches, err := db.SavedSearches.ListAll(ctx)
+	currentUser, err := CurrentUser(ctx)
+	if currentUser == nil {
+		return nil, errors.New("No currently authenticated user")
+	}
+	if err != nil {
+		return nil, err
+	}
+	allSavedSearches, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, currentUser.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
 	for _, savedSearch := range allSavedSearches {
-		savedSearches = append(savedSearches, toSavedSearchResolver(savedSearch.Config))
+		savedSearches = append(savedSearches, toSavedSearchResolver(api.ConfigSavedQuery{
+			Key:         string(savedSearch.ID),
+			Description: savedSearch.Description,
+			Query:       savedSearch.Query,
+			Notify:      savedSearch.Notify,
+			NotifySlack: savedSearch.NotifySlack,
+			OwnerKind:   savedSearch.OwnerKind,
+			UserID:      savedSearch.UserID,
+			OrgID:       savedSearch.OrgID,
+		}))
 	}
 
 	return savedSearches, nil
@@ -70,7 +88,10 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, args *struct {
 	ID string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Look it up to ensure the actor has access to it.
+	// 🚨 SECURITY: Only site admins should be able to send test notifications.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
 	savedSearch, err := db.SavedSearches.GetSavedSearchByID(ctx, args.ID)
 	if err != nil {
 		return nil, err
@@ -89,13 +110,24 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	OrgID       *int32
 	UserID      *int32
 }) (*savedSearchResolver, error) {
+	// 🚨 SECURITY: Make sure the current user has permission to create a saved search for the specified user or org.
+	if args.UserID != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, *args.UserID); err != nil {
+			return nil, err
+		}
+	} else if args.OrgID != nil {
+		if err := backend.CheckOrgAccess(ctx, *args.OrgID); err != nil {
+			return nil, err
+		}
+	}
+
 	configSavedQuery, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, OwnerKind: args.OwnerKind, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, err
 	}
 
 	sq := &savedSearchResolver{
-		id:          configSavedQuery.Key,
+		id:          configSavedQuery.ID,
 		description: configSavedQuery.Description,
 		query:       configSavedQuery.Query,
 		notify:      configSavedQuery.Notify,
@@ -117,12 +149,23 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	OrgID       *int32
 	UserID      *int32
 }) (*savedSearchResolver, error) {
+	// 🚨 SECURITY: Make sure the current user has permission to update a saved search for the specified user or org.
+	if args.UserID != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, *args.UserID); err != nil {
+			return nil, err
+		}
+	} else if args.OrgID != nil {
+		if err := backend.CheckOrgAccess(ctx, *args.OrgID); err != nil {
+			return nil, err
+		}
+	}
+
 	configSavedQuery, err := db.SavedSearches.Update(ctx, &types.SavedSearch{ID: args.ID, Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, OwnerKind: args.OwnerKind, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, err
 	}
 	sq := &savedSearchResolver{
-		id:          configSavedQuery.Key,
+		id:          configSavedQuery.ID,
 		description: configSavedQuery.Description,
 		query:       configSavedQuery.Query,
 		notify:      configSavedQuery.Notify,
@@ -137,7 +180,21 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	ID string
 }) (*EmptyResponse, error) {
-	err := db.SavedSearches.Delete(ctx, args.ID)
+	ss, err := db.SavedSearches.GetSavedSearchByID(ctx, args.ID)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Make sure the current user has permission to delete a saved search for the specified user or org.
+	if ss.Config.UserID != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, *ss.Config.UserID); err != nil {
+			return nil, err
+		}
+	} else if ss.Config.OrgID != nil {
+		if err := backend.CheckOrgAccess(ctx, *ss.Config.OrgID); err != nil {
+			return nil, err
+		}
+	}
+	err = db.SavedSearches.Delete(ctx, args.ID)
 	if err != nil {
 		return nil, err
 	}

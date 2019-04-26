@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -102,7 +103,61 @@ func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (*api
 	return &savedSearch, err
 }
 
-func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *api.ConfigSavedQuery, err error) {
+// // ListSavedSearchesByUserID lists all the saved searches associated with a user.
+// //
+// // 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
+// // It is the caller's responsibility to make sure this method returns only saved searches associated with
+// // the current user.
+func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
+	var savedSearches []*types.SavedSearch
+	orgIDRows, err := dbconn.Global.QueryContext(ctx, `SELECT org_id FROM org_members WHERE user_id=$1`, userID)
+	var orgIDs []int32
+	for orgIDRows.Next() {
+		var orgID int32
+		orgIDRows.Scan(&orgID)
+		orgIDs = append(orgIDs, orgID)
+	}
+	var orgConditions []*sqlf.Query
+	for _, orgID := range orgIDs {
+		orgConditions = append(orgConditions, sqlf.Sprintf("org_id=%d", orgID))
+	}
+	conds := sqlf.Sprintf("WHERE user_id=%d", userID)
+	if err != nil {
+		return nil, err
+	}
+	if len(orgConditions) > 0 {
+		conds = sqlf.Sprintf("%v OR %v", conds, orgConditions)
+	}
+	query := sqlf.Sprintf(`SELECT
+		id,
+		description,
+		query,
+		notify_owner,
+		notify_slack,
+		owner_kind,
+		user_id,
+		org_id,
+		slack_webhook_url
+		FROM saved_searches %v`, conds)
+
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var ss types.SavedSearch
+		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.OwnerKind, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
+			return nil, err
+		}
+		savedSearches = append(savedSearches, &ss)
+	}
+	for _, ss := range savedSearches {
+		fmt.Printf("%v+", ss)
+	}
+	return savedSearches, err
+}
+
+func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	if Mocks.SavedSearches.Create != nil {
 		return Mocks.SavedSearches.Create(ctx, newSavedSearch)
 	}
@@ -117,7 +172,7 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		tr.Finish()
 	}()
 
-	savedQuery = &api.ConfigSavedQuery{
+	savedQuery = &types.SavedSearch{
 		Description: newSavedSearch.Description,
 		Query:       newSavedSearch.Query,
 		Notify:      newSavedSearch.Notify,
@@ -143,14 +198,14 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		strings.ToLower(newSavedSearch.OwnerKind),
 		newSavedSearch.UserID,
 		newSavedSearch.OrgID,
-	).Scan(&savedQuery.Key)
+	).Scan(&savedQuery.ID)
 	if err != nil {
 		return nil, err
 	}
 	return savedQuery, nil
 }
 
-func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *api.ConfigSavedQuery, err error) {
+func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	if Mocks.SavedSearches.Update != nil {
 		return Mocks.SavedSearches.Update(ctx, savedSearch)
 	}
@@ -161,7 +216,7 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 		tr.Finish()
 	}()
 
-	savedQuery = &api.ConfigSavedQuery{
+	savedQuery = &types.SavedSearch{
 		Description: savedSearch.Description,
 		Query:       savedSearch.Query,
 		Notify:      savedSearch.Notify,
@@ -183,7 +238,7 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 	}
 
 	updateQuery := sqlf.Sprintf(`UPDATE saved_searches SET %s WHERE ID=%v RETURNING id`, sqlf.Join(fieldUpdates, ", "), savedSearch.ID)
-	if err := dbconn.Global.QueryRowContext(ctx, updateQuery.Query(sqlf.PostgresBindVar), updateQuery.Args()...).Scan(&savedQuery.Key); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, updateQuery.Query(sqlf.PostgresBindVar), updateQuery.Args()...).Scan(&savedQuery.ID); err != nil {
 		return nil, err
 	}
 	return savedQuery, nil
