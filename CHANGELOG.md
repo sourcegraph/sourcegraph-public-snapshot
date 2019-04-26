@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where the repo-updater service could become deadlocked while performing a migration, causing it to restart constantly. https://github.com/sourcegraph/sourcegraph/issues/3590
 - Removes corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
 - Fixed a bug where search scopes would not get merged, and only the lowest-level list of search scopes would appear.
+- Fixed an issue where repo-updater was slower in performing its work which could sometimes cause other performance issues. https://github.com/sourcegraph/sourcegraph/pull/3633
 
 ## 3.3.3
 
