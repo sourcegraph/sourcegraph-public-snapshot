@@ -13,11 +13,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+## 3.3.5
+
 ## Changed
 
 - Indexed search is now enabled by default for new Docker deployments. (#3540)
 
 ### Removed
+
+- Removed smart-casing behavior from search.
 
 ### Fixed
 
