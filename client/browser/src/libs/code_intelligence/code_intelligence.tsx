@@ -468,14 +468,11 @@ export function handleCodeHost({
                 const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const uri = toURIWithPath(fileInfo)
                 const languageId = getModeFromPath(fileInfo.filePath)
+                const model = { uri, languageId, text: fileInfo.content }
                 // Only add the model if it doesn't exist
                 // (there may be several code views on the page pointing to the same model)
                 if (!extensionsController.services.model.hasModel(uri)) {
-                    extensionsController.services.model.addModel({
-                        uri,
-                        languageId,
-                        text: fileInfo.content,
-                    })
+                    extensionsController.services.model.addModel(model)
                 }
                 const editorData: CodeEditorData = {
                     type: 'CodeEditor' as const,
@@ -606,14 +603,7 @@ export function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
-                            scope={{
-                                ...editorData,
-                                model: {
-                                    uri,
-                                    languageId,
-                                    text: fileInfo.content,
-                                },
-                            }}
+                            scope={{ ...editorData, model }}
                         />,
                         mount
                     )
