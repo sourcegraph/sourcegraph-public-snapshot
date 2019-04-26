@@ -30,6 +30,7 @@ func TestFakeStore(t *testing.T) {
 		{"ListExternalServices", testStoreListExternalServices},
 		{"UpsertExternalServices", testStoreUpsertExternalServices},
 		{"ListRepos", testStoreListRepos},
+		{"ListRepos_Pagination", testStoreListReposPagination},
 		{"UpsertRepos", testStoreUpsertRepos},
 	} {
 		t.Run(tc.name, tc.test(repos.NewObservedStore(
@@ -122,7 +123,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 		},
 		testCase{
 			name:   "results are in ascending order by id",
-			stored: mkExternalServices(512, svcs...),
+			stored: mkExternalServices(7, svcs...),
 			assert: repos.Assert.ExternalServicesOrderedBy(
 				func(a, b *repos.ExternalService) bool {
 					return a.ID < b.ID
@@ -228,8 +229,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 		})
 
 		t.Run("many external services", transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			// Test more than one page load
-			want := mkExternalServices(512, svcs...)
+			want := mkExternalServices(7, svcs...)
 
 			if err := tx.UpsertExternalServices(ctx, want...); err != nil {
 				t.Fatalf("UpsertExternalServices error: %s", err)
@@ -393,8 +393,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 		})
 
 		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			// Test more than one page load
-			want := mkRepos(512, repositories...)
+			want := mkRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -601,7 +600,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 	testCases = append(testCases, testCase{
 		name:   "returns repos in ascending order by id",
-		stored: mkRepos(512, repositories...),
+		stored: mkRepos(7, repositories...),
 		repos: repos.Assert.ReposOrderedBy(func(a, b *repos.Repo) bool {
 			return a.ID < b.ID
 		}),
@@ -668,6 +667,73 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 				}
 			}))
 		}
+	}
+}
+
+func testStoreListReposPagination(store repos.Store) func(*testing.T) {
+	github := repos.Repo{
+		Name:        "github.com/foo/bar",
+		Description: "The description",
+		Language:    "barlang",
+		Enabled:     true,
+		CreatedAt:   time.Now(),
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "AAAAA==",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:1": {
+				ID:       "extsvc:1",
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+		Metadata: new(github.Repository),
+	}
+
+	return func(t *testing.T) {
+		ctx := context.Background()
+		t.Run("", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(7, &github)
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			lo, hi := -2, len(stored)+2
+			for page := lo; page < hi; page++ {
+				for limit := lo; limit < hi; limit++ {
+					args := repos.StoreListReposArgs{
+						PerPage: int64(page),
+						Limit:   int64(limit),
+					}
+
+					listed, err := tx.ListRepos(ctx, args)
+					if err != nil {
+						t.Fatalf("unexpected error with page=%d, limit=%d: %v", page, limit, err)
+					}
+
+					var want int
+					if limit <= 0 || limit >= len(stored) {
+						want = len(stored)
+					} else {
+						want = limit
+					}
+
+					if have := len(listed); have != want {
+						t.Fatalf("page=%d, limit=%d: count:\nhave: %v\nwant: %v", page, limit, have, want)
+					}
+
+					set := make(map[api.ExternalRepoSpec]bool)
+					for _, r := range listed {
+						if _, ok := set[r.ExternalRepo]; !ok {
+							set[r.ExternalRepo] = true
+						} else {
+							t.Errorf("duplicate found: %v", r)
+						}
+					}
+				}
+			}
+		}))
 	}
 }
 
