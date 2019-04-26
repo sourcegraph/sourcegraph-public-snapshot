@@ -13,17 +13,33 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+### Removed
+
+### Fixed
+
+## 3.3.5
+
 ## Changed
 
 - Indexed search is now enabled by default for new Docker deployments. (#3540)
 
 ### Removed
 
+- Removed smart-casing behavior from search.
+
 ### Fixed
 
 - Removes corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
 - Fixed a bug where search scopes would not get merged, and only the lowest-level list of search scopes would appear.
 - Fixed an issue where repo-updater was slower in performing its work which could sometimes cause other performance issues. https://github.com/sourcegraph/sourcegraph/pull/3633
+
+## 3.3.4
+
+### Fixed
+
+- Fixed bundling of the Phabricator integration assets in the Sourcegraph docker image.
 
 ## 3.3.3
 
