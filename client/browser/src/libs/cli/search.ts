@@ -1,4 +1,5 @@
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
+import { storage } from '../../browser/storage'
 import { createSuggestionFetcher } from '../../shared/backend/search'
 import { sourcegraphUrl } from '../../shared/util/context'
 
@@ -37,7 +38,7 @@ class SearchCommand {
         })
 
     public action = async (query: string, disposition?: string): Promise<void> => {
-        const { sourcegraphURL: url } = await browser.storage.sync.get()
+        const { sourcegraphURL: url } = await storage.sync.get()
         const props = {
             url: isURL.test(query) ? query : `${url}/search?${buildSearchURLQuery(query)}&utm_source=omnibox`,
         }

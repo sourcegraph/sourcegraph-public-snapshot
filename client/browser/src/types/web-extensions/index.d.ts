@@ -881,7 +881,7 @@ declare namespace browser.runtime {
         disconnect(): void
         error: Error | null
         onDisconnect: EventEmitter<this>
-        onMessage: EventEmitter<unknown>
+        onMessage: EventEmitter<any>
         postMessage(message: any): void
     }
     interface PortWithSender extends Port {
@@ -1216,7 +1216,7 @@ declare namespace browser.runtime {
 
     const onConnectExternal: EventEmitter<PortWithSender>
 
-    type OnMessageHandler = (message: object, sender: MessageSender) => void | Promise<any>
+    type OnMessageHandler = (message: any, sender: MessageSender) => void | Promise<any>
 
     const onMessage: CallbackEventEmitter<OnMessageHandler>
 

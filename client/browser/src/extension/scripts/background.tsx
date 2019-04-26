@@ -189,9 +189,9 @@ async function main(): Promise<void> {
     }
 
     // Handle calls from other scripts
-    browser.runtime.onMessage.addListener(async (message: any) => {
+    browser.runtime.onMessage.addListener(async message => {
         const handler = message.type as keyof typeof handlers
-        handlers[handler](message.payload)
+        return await handlers[handler](message.payload)
     })
 
     async function requestPermissionsForEnterpriseUrls(urls: string[]): Promise<void> {
@@ -214,11 +214,8 @@ async function main(): Promise<void> {
         try {
             await browser.permissions.remove({ origins: [url + '/*'] })
             // tslint:disable-next-line:no-unnecessary-type-assertion False positive
-            const { enterpriseUrls } = (await browser.storage.sync.get('enterpriseUrls')) as Pick<
-                StorageItems,
-                'enterpriseUrls'
-            >
-            await browser.storage.sync.set({ enterpriseUrls: without(enterpriseUrls, url) })
+            const { enterpriseUrls } = await storage.sync.get('enterpriseUrls')
+            await storage.sync.set({ enterpriseUrls: without(enterpriseUrls, url) })
         } catch (err) {
             console.error('Could not remove permission', err)
         }
