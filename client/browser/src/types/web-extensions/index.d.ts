@@ -4,12 +4,13 @@
 
 declare namespace browser {
     /**
-     * An event emitter where event listeners can return a value.
+     * An object that allows adding, removing and inspecting listeners.
+     * Event listeners may return a value.
      */
-    interface CallbackEventEmitter<T extends (...args: any) => any> {
-        addListener: (callback: T) => void
-        removeListener: (listener: T) => void
-        hasListener: (listener: T) => boolean
+    interface CallbackEventEmitter<F extends (...args: any) => any> {
+        addListener(callback: F): void
+        removeListener(callback: F): void
+        hasListener(callback: F): boolean
     }
 
     /**
