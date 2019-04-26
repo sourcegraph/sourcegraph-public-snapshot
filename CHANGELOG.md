@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The required `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration), if unset or empty, is automatically migrated to match the user part of the `url` (if defined). https://github.com/sourcegraph/sourcegraph/issues/3592
 - Fixed a panic that would occur in indexed search / the frontend when a search error ocurred. https://github.com/sourcegraph/sourcegraph/issues/3579
 - Fixed an issue where the repo-updater service could become deadlocked while performing a migration. https://github.com/sourcegraph/sourcegraph/issues/3590
+- The required `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration), if unset or empty, is automatically migrated to match the user part of the `url` (if defined).
 
 ## 3.3.1
 
