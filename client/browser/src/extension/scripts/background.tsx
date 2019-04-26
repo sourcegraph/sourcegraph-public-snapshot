@@ -16,7 +16,7 @@ import { createBlobURLForBundle } from '../../platform/worker'
 import { GraphQLRequestArgs, requestGraphQL } from '../../shared/backend/graphql'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { fromBrowserEvent } from '../../shared/util/browser'
-import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, setSourcegraphUrl } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
@@ -72,11 +72,17 @@ async function main(): Promise<void> {
 
     configureOmnibox(sourcegraphURL)
 
-    const items = await storage.managed.get()
-    if (items.enterpriseUrls && items.enterpriseUrls.length > 1) {
-        setDefaultBrowserAction()
-        const urls = items.enterpriseUrls.map(item => item.replace(/\/$/, ''))
-        await handleManagedPermissionRequest(urls)
+    // Sync managed enterprise URLs
+    // TODO why sync vs merging values?
+    // Managed storage is currently only supported for Google Chrome (GSuite Admin)
+    // We don't have a managed storage manifest for Firefox, so storage.managed.get() throws on Firefox.
+    if (getPlatformName() === 'chrome-extension') {
+        const items = await storage.managed.get()
+        if (items.enterpriseUrls && items.enterpriseUrls.length > 1) {
+            setDefaultBrowserAction()
+            const urls = items.enterpriseUrls.map(item => item.replace(/\/$/, ''))
+            await handleManagedPermissionRequest(urls)
+        }
     }
 
     browser.storage.onChanged.addListener(async (changes: browser.storage.ChangeDict<StorageItems>, areaName) => {
@@ -101,36 +107,41 @@ async function main(): Promise<void> {
     }
     customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
 
-    browser.permissions.onAdded.addListener(async permissions => {
-        if (!permissions.origins) {
-            return
-        }
-        const items = await storage.sync.get()
-        const enterpriseUrls = items.enterpriseUrls || []
-        for (const url of permissions.origins) {
-            enterpriseUrls.push(url.replace('/*', ''))
-        }
-        await browser.storage.sync.set({ enterpriseUrls })
+    // Not supported in Firefox
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
+    if (browser.permissions.onAdded) {
+        browser.permissions.onAdded.addListener(async permissions => {
+            if (!permissions.origins) {
+                return
+            }
+            const items = await storage.sync.get()
+            const enterpriseUrls = items.enterpriseUrls || []
+            for (const url of permissions.origins) {
+                enterpriseUrls.push(url.replace('/*', ''))
+            }
+            await browser.storage.sync.set({ enterpriseUrls })
 
-        const origins = without(permissions.origins, ...jsContentScriptOrigins)
-        customServerOrigins.push(...origins)
-    })
-
-    browser.permissions.onRemoved.addListener(async permissions => {
-        if (!permissions.origins) {
-            return
-        }
-        customServerOrigins = without(customServerOrigins, ...permissions.origins)
-        const items = await storage.sync.get()
-        const enterpriseUrls = items.enterpriseUrls || []
-        const urlsToRemove: string[] = []
-        for (const url of permissions.origins) {
-            urlsToRemove.push(url.replace('/*', ''))
-        }
-        await storage.sync.set({
-            enterpriseUrls: without(enterpriseUrls, ...urlsToRemove),
+            const origins = without(permissions.origins, ...jsContentScriptOrigins)
+            customServerOrigins.push(...origins)
         })
-    })
+    }
+    if (browser.permissions.onRemoved) {
+        browser.permissions.onRemoved.addListener(async permissions => {
+            if (!permissions.origins) {
+                return
+            }
+            customServerOrigins = without(customServerOrigins, ...permissions.origins)
+            const items = await storage.sync.get()
+            const enterpriseUrls = items.enterpriseUrls || []
+            const urlsToRemove: string[] = []
+            for (const url of permissions.origins) {
+                urlsToRemove.push(url.replace('/*', ''))
+            }
+            await storage.sync.set({
+                enterpriseUrls: without(enterpriseUrls, ...urlsToRemove),
+            })
+        })
+    }
 
     // Inject content script whenever a new tab was opened with a URL that we have premissions for
     browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -351,8 +362,10 @@ async function main(): Promise<void> {
         proxy.onDisconnect.addListener(() => worker.terminate())
         expose.onDisconnect.addListener(() => worker.terminate())
     })
+
+    console.log('Sourcegraph background page initialized')
 }
 
-main().catch(err => {
-    console.error(err)
-})
+// Browsers log this unhandled Promise automatically (and with a better stack trace through console.error)
+// tslint:disable-next-line: no-floating-promises
+main()

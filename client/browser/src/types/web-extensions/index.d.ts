@@ -863,9 +863,17 @@ declare namespace browser.permissions {
 
     function request(permissions: Permissions): Promise<boolean>
 
-    // ~~Not yet support in Edge and Firefox~~
-    const onAdded: EventEmitter<Permissions>
-    const onRemoved: EventEmitter<Permissions>
+    /**
+     * Not supported yet in Firefox:
+     * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
+     */
+    const onAdded: EventEmitter<Permissions> | undefined
+
+    /**
+     * Not supported yet in Firefox:
+     * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
+     */
+    const onRemoved: EventEmitter<Permissions> | undefined
 }
 
 declare namespace browser.runtime {

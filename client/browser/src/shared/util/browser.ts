@@ -5,6 +5,6 @@ import { fromEventPattern, Observable } from 'rxjs'
  * The handler will always return `void`.
  */
 export const fromBrowserEvent = <T extends (...args: any[]) => any>(
-    event: browser.CallbackEventEmitter<T>
+    emitter: browser.CallbackEventEmitter<T>
 ): Observable<Parameters<T>> =>
-    fromEventPattern(handler => event.addListener(handler as T), handler => event.removeListener(handler as T))
+    fromEventPattern(handler => emitter.addListener(handler as T), handler => emitter.removeListener(handler as T))
