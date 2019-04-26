@@ -13,6 +13,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+### Removed
+
+### Fixed
+
 ## 3.3.5
 
 ## Changed
