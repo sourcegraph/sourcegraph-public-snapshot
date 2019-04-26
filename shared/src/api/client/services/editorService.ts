@@ -67,7 +67,8 @@ export interface EditorService {
     setSelections(editor: EditorId, selections: Selection[]): void
 
     /**
-     * Remove an editor.
+     * Removes an editor.
+     * Also removes the corresponding model if no other editor is referencing it.
      *
      * @param editor The editor to remove.
      */
