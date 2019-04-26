@@ -9,7 +9,7 @@ import * as domainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
 import { IGraphQLResponseRoot } from '../../../../../shared/src/graphql/schema'
 import { storage } from '../../browser/storage'
-import { BackgroundMessageHandlers, defaultStorageItems, StorageItems } from '../../browser/types'
+import { BackgroundMessageHandlers, defaultStorageItems } from '../../browser/types'
 import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
@@ -49,18 +49,19 @@ const configureOmnibox = (serverUrl: string): void => {
 initializeOmniboxInterface()
 
 async function main(): Promise<void> {
-    const { sourcegraphURL } = await browser.storage.sync.get()
+    let { sourcegraphURL } = await storage.sync.get()
     // If no sourcegraphURL is set ensure we default back to https://sourcegraph.com.
     if (!sourcegraphURL) {
-        await browser.storage.sync.set({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
+        await storage.sync.set({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
         setSourcegraphUrl(DEFAULT_SOURCEGRAPH_URL)
+        sourcegraphURL = DEFAULT_SOURCEGRAPH_URL
     }
 
     async function syncClientConfiguration(): Promise<void> {
         const config = await resolveClientConfiguration().toPromise()
         // ClientConfiguration is the new storage option.
         // Request permissions for the urls.
-        await browser.storage.sync.set({
+        await storage.sync.set({
             clientConfiguration: {
                 parentSourcegraph: {
                     url: config.parentSourcegraph.url,
@@ -85,7 +86,7 @@ async function main(): Promise<void> {
         }
     }
 
-    browser.storage.onChanged.addListener(async (changes: browser.storage.ChangeDict<StorageItems>, areaName) => {
+    storage.onChanged.addListener(async (changes, areaName) => {
         if (areaName === 'managed') {
             if (changes.enterpriseUrls && changes.enterpriseUrls.newValue) {
                 await handleManagedPermissionRequest(changes.enterpriseUrls.newValue)
@@ -119,7 +120,7 @@ async function main(): Promise<void> {
             for (const url of permissions.origins) {
                 enterpriseUrls.push(url.replace('/*', ''))
             }
-            await browser.storage.sync.set({ enterpriseUrls })
+            await storage.sync.set({ enterpriseUrls })
 
             const origins = without(permissions.origins, ...jsContentScriptOrigins)
             customServerOrigins.push(...origins)
@@ -157,13 +158,11 @@ async function main(): Promise<void> {
 
     const handlers: BackgroundMessageHandlers = {
         async setIdentity({ identity }: { identity: string }): Promise<void> {
-            await browser.storage.local.set({ identity })
+            await storage.local.set({ identity })
         },
 
         async getIdentity(): Promise<string | undefined> {
-            const { identity } = await (browser.storage.local as browser.storage.StorageArea<StorageItems>).get(
-                'identity'
-            )
+            const { identity } = await storage.local.get('identity')
             return identity
         },
 
@@ -212,7 +211,7 @@ async function main(): Promise<void> {
         const items = await storage.sync.get()
         const enterpriseUrls = items.enterpriseUrls || []
         // Add requested URLs, without duplicating
-        await browser.storage.sync.set({
+        await storage.sync.set({
             enterpriseUrls: [...new Set([...enterpriseUrls, ...urls])],
         })
     }
