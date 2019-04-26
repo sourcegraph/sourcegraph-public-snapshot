@@ -23,8 +23,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { CodeEditorData, EditorId } from '../../../../../shared/src/api/client/services/editorService'
-import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
+import { CodeEditorData } from '../../../../../shared/src/api/client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
@@ -455,7 +454,6 @@ export function handleCodeHost({
 
     interface CodeViewState {
         subscriptions: Subscription
-        editors: EditorId[]
         roots: WorkspaceRootWithMetadata[]
     }
     /** Map from code view element to the state associated with it (to be updated or removed) */
@@ -469,12 +467,13 @@ export function handleCodeHost({
             if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
                 const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const uri = toURIWithPath(fileInfo)
-                const model: TextModel = {
-                    uri,
-                    languageId: getModeFromPath(fileInfo.filePath),
-                    text: fileInfo.content,
+                const languageId = getModeFromPath(fileInfo.filePath)
+                const model = { uri, languageId, text: fileInfo.content }
+                // Only add the model if it doesn't exist
+                // (there may be several code views on the page pointing to the same model)
+                if (!extensionsController.services.model.hasModel(uri)) {
+                    extensionsController.services.model.addModel(model)
                 }
-                extensionsController.services.model.addModel(model)
                 const editorData: CodeEditorData = {
                     type: 'CodeEditor' as const,
                     resource: uri,
@@ -484,9 +483,11 @@ export function handleCodeHost({
                 const editorId = extensionsController.services.editor.addEditor(editorData)
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
-                    editors: [editorId],
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
                 }
+                codeViewState.subscriptions.add(() => {
+                    extensionsController.services.editor.removeEditor(editorId)
+                })
                 codeViewStates.set(element, codeViewState)
 
                 if (codeViewEvent.observeSelections) {
@@ -506,20 +507,25 @@ export function handleCodeHost({
                         commitID: fileInfo.baseCommitID,
                         filePath: fileInfo.baseFilePath,
                     })
-                    extensionsController.services.model.addModel({
-                        uri,
-                        languageId: getModeFromPath(fileInfo.filePath),
-                        text: fileInfo.baseContent,
-                    })
-                    codeViewState.editors.push(
-                        extensionsController.services.editor.addEditor({
-                            type: 'CodeEditor' as const,
-                            resource: uri,
-                            // There is no notion of a selection on diff views yet, so this is empty.
-                            selections: [],
-                            isActive: true,
+                    // Only add the model if it doesn't exist
+                    // (there may be several code views on the page pointing to the same model)
+                    if (!extensionsController.services.model.hasModel(uri)) {
+                        extensionsController.services.model.addModel({
+                            uri,
+                            languageId: getModeFromPath(fileInfo.baseFilePath),
+                            text: fileInfo.baseContent,
                         })
-                    )
+                    }
+                    const editor = extensionsController.services.editor.addEditor({
+                        type: 'CodeEditor' as const,
+                        resource: uri,
+                        // There is no notion of a selection on diff views yet, so this is empty.
+                        selections: [],
+                        isActive: true,
+                    })
+                    codeViewState.subscriptions.add(() => {
+                        extensionsController.services.editor.removeEditor(editor)
+                    })
                     codeViewState.roots.push({
                         uri: toRootURI({
                             repoName: fileInfo.baseRepoName,
@@ -607,11 +613,6 @@ export function handleCodeHost({
                 if (codeViewState) {
                     codeViewState.subscriptions.unsubscribe()
                     codeViewStates.delete(codeViewEvent.element)
-
-                    // Remove editors.
-                    for (const editor of codeViewState.editors) {
-                        extensionsController.services.editor.removeEditor(editor)
-                    }
                 }
             }
 

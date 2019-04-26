@@ -51,6 +51,13 @@ export interface EditorService {
     addEditor(editor: CodeEditorData): EditorId
 
     /**
+     * Reports whether an editor with the given URI has been added.
+     *
+     * @param editor the {@link EditorId} to check
+     */
+    hasEditor(editor: EditorId): boolean
+
+    /**
      * Sets the selections for an editor.
      *
      * @param editor The editor for which to set the selections.
@@ -60,7 +67,8 @@ export interface EditorService {
     setSelections(editor: EditorId, selections: Selection[]): void
 
     /**
-     * Remove an editor.
+     * Removes an editor.
+     * Also removes the corresponding model if no other editor is referencing it.
      *
      * @param editor The editor to remove.
      */
@@ -75,7 +83,7 @@ export interface EditorService {
 /**
  * Creates a {@link EditorService} instance.
  */
-export function createEditorService(modelService: Pick<ModelService, 'models'>): EditorService {
+export function createEditorService(modelService: Pick<ModelService, 'models' | 'removeModel'>): EditorService {
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
     // test code (because the IDs change depending on test execution order).
     let id = 0
@@ -91,7 +99,8 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
 
     type AddedCodeEditor = Pick<CodeEditor, Exclude<keyof CodeEditor, 'model'>>
     const editors = new BehaviorSubject<readonly AddedCodeEditor[]>([])
-    const exists = (editorId: EditorId['editorId']) => editors.value.some(e => e.editorId === editorId)
+    const getEditor = (editorId: EditorId['editorId']) => editors.value.find(e => e.editorId === editorId)
+    const exists = (editorId: EditorId['editorId']) => !!getEditor(editorId)
     return {
         editors: combineLatest(editors, modelService.models).pipe(
             map(([editors, models]) =>
@@ -103,6 +112,7 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
             editors.next([...editors.value, editor])
             return editor
         },
+        hasEditor: ({ editorId }) => exists(editorId),
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
             if (!exists(editorId)) {
                 throw new Error(`editor not found: ${editorId}`)
@@ -113,10 +123,17 @@ export function createEditorService(modelService: Pick<ModelService, 'models'>):
             ])
         },
         removeEditor({ editorId }: EditorId): void {
-            if (!exists(editorId)) {
+            const editor = getEditor(editorId)
+            if (!editor) {
                 throw new Error(`editor not found: ${editorId}`)
             }
+            const nextEditors = editors.value.filter(e => e.editorId !== editorId)
             editors.next(editors.value.filter(e => e.editorId !== editorId))
+            // If no other editor points to the same resouce,
+            // remove the resource.
+            if (!nextEditors.some(e => e.resource === editor.resource)) {
+                modelService.removeModel(editor.resource)
+            }
         },
         removeAllEditors(): void {
             editors.next([])
