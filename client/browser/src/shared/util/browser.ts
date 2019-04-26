@@ -1,10 +1,20 @@
-import { fromEventPattern, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 
 /**
  * Returns an Observable for a WebExtension API event listener.
  * The handler will always return `void`.
  */
-export const fromBrowserEvent = <T extends (...args: any[]) => any>(
-    emitter: browser.CallbackEventEmitter<T>
-): Observable<Parameters<T>> =>
-    fromEventPattern(handler => emitter.addListener(handler as T), handler => emitter.removeListener(handler as T))
+export const fromBrowserEvent = <F extends (...args: any[]) => void>(
+    emitter: browser.CallbackEventEmitter<F>
+): Observable<Parameters<F>> =>
+    // Do not use fromEventPattern() because of https://github.com/ReactiveX/rxjs/issues/4736
+    new Observable(subscriber => {
+        const handler: any = (...args: any) => subscriber.next(args)
+        try {
+            emitter.addListener(handler)
+        } catch (err) {
+            subscriber.error(err)
+            return undefined
+        }
+        return () => emitter.removeListener(handler)
+    })

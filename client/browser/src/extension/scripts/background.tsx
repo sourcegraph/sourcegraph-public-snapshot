@@ -8,8 +8,8 @@ import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
 import * as domainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
 import { IGraphQLResponseRoot } from '../../../../../shared/src/graphql/schema'
-import { defaultStorageItems, storage } from '../../browser/storage'
-import { BackgroundMessageHandlers, StorageItems } from '../../browser/types'
+import { storage } from '../../browser/storage'
+import { BackgroundMessageHandlers, defaultStorageItems, StorageItems } from '../../browser/types'
 import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
@@ -201,8 +201,11 @@ async function main(): Promise<void> {
 
     // Handle calls from other scripts
     browser.runtime.onMessage.addListener(async message => {
-        const handler = message.type as keyof typeof handlers
-        return await handlers[handler](message.payload)
+        const method = message.type as keyof typeof handlers
+        if (!handlers[method]) {
+            throw new Error(`Invalid RPC call for "${method}"`)
+        }
+        return await handlers[method](message.payload)
     })
 
     async function requestPermissionsForEnterpriseUrls(urls: string[]): Promise<void> {
@@ -295,7 +298,7 @@ async function main(): Promise<void> {
      * This listens to events on browser.runtime.onConnect, pairs emitted ports using their naming pattern,
      * and emits pairs. Each pair of ports represents a connection with an instance of the content script.
      */
-    const endpointPairs: Observable<{ proxy: browser.runtime.Port; expose: browser.runtime.Port }> = fromBrowserEvent(
+    const endpointPairs: Observable<Record<'proxy' | 'expose', browser.runtime.Port>> = fromBrowserEvent(
         browser.runtime.onConnect
     ).pipe(
         map(([port]) => port),
@@ -338,30 +341,35 @@ async function main(): Promise<void> {
      * extension host worker per active instance of the content script.
      *
      */
-    endpointPairs.subscribe(({ proxy, expose }) => {
-        // It's necessary to wrap endpoints because browser.runtime.Port objects do not support transfering MessagePorts.
-        // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
-        const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
-        const connectPortAndEndpoint = (
-            port: browser.runtime.Port,
-            endpoint: Endpoint & Pick<MessagePort, 'start'>
-        ): void => {
-            endpoint.start()
-            port.onMessage.addListener(message => {
-                endpoint.postMessage(message)
-            })
-            endpoint.addEventListener('message', ({ data }) => {
-                port.postMessage(data)
-            })
+    endpointPairs.subscribe(
+        ({ proxy, expose }) => {
+            // It's necessary to wrap endpoints because browser.runtime.Port objects do not support transfering MessagePorts.
+            // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
+            const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
+            const connectPortAndEndpoint = (
+                port: browser.runtime.Port,
+                endpoint: Endpoint & Pick<MessagePort, 'start'>
+            ): void => {
+                endpoint.start()
+                port.onMessage.addListener(message => {
+                    endpoint.postMessage(message)
+                })
+                endpoint.addEventListener('message', ({ data }) => {
+                    port.postMessage(data)
+                })
+            }
+            // Connect proxy client endpoint
+            connectPortAndEndpoint(proxy, clientEndpoints.proxy)
+            // Connect expose client endpoint
+            connectPortAndEndpoint(expose, clientEndpoints.expose)
+            // Kill worker when either port disconnects
+            proxy.onDisconnect.addListener(() => worker.terminate())
+            expose.onDisconnect.addListener(() => worker.terminate())
+        },
+        err => {
+            console.error('Error handling extension host client connection', err)
         }
-        // Connect proxy client endpoint
-        connectPortAndEndpoint(proxy, clientEndpoints.proxy)
-        // Connect expose client endpoint
-        connectPortAndEndpoint(expose, clientEndpoints.expose)
-        // Kill worker when either port disconnects
-        proxy.onDisconnect.addListener(() => worker.terminate())
-        expose.onDisconnect.addListener(() => worker.terminate())
-    })
+    )
 
     console.log('Sourcegraph background page initialized')
 }

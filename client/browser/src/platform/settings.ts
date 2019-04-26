@@ -27,11 +27,10 @@ const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
         : observeStorageKey('sync', 'clientSettings')
 
     const subject: SettingsSubject = {
-        id: 'Client',
-        settingsURL: 'N/A',
-        viewerCanAdminister: true,
         __typename: 'Client',
+        id: 'Client',
         displayName: 'Client',
+        viewerCanAdminister: true,
     }
 
     return storageSubject.pipe(

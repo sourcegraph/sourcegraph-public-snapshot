@@ -1,9 +1,7 @@
-import { BehaviorSubject, concat, NextObserver, Observable } from 'rxjs'
+import { BehaviorSubject, concat, from, NextObserver, Observable } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
 import { fromBrowserEvent } from '../shared/util/browser'
 import { StorageItems } from './types'
-
-export { StorageItems, defaultStorageItems } from './types'
 
 export const storage: Record<browser.storage.AreaName, browser.storage.StorageArea<StorageItems>> & {
     onChanged: browser.CallbackEventEmitter<
@@ -16,7 +14,9 @@ export const observeStorageKey = <K extends keyof StorageItems>(
     key: K
 ): Observable<StorageItems[K] | undefined> =>
     concat(
-        storage[areaName].get(key),
+        // Start with current value of the item
+        from(storage[areaName].get(key)).pipe(map(items => items[key])),
+        // Emit every new value from change events that affect that item
         fromBrowserEvent(storage.onChanged).pipe(
             filter(([, name]) => areaName === name),
             map(([changes]) => changes),
