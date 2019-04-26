@@ -38,7 +38,6 @@ require (
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
 	github.com/gin-gonic/gin v1.3.0 // indirect
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
-	github.com/go-delve/delve v1.2.0 // indirect
 	github.com/go-redsync/redsync v1.0.1
 	github.com/gobwas/glob v0.2.3
 	github.com/gogo/protobuf v1.2.1 // indirect
