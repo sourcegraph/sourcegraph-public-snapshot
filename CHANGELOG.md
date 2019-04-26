@@ -21,10 +21,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed a nil dereference panic in indexed search. https://github.com/sourcegraph/sourcegraph/issues/3579
 - Removed corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
-- The required `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration), if unset or empty, is automatically migrated to match the user part of the `url` (if defined).
-- Fixed an issue where the repo-updater service could become deadlocked while performing a migration, causing it to restart constantly. https://github.com/sourcegraph/sourcegraph/issues/3590
+
+## 3.3.2
+
+### Fixed
+
+- Fixed an issue where the default `bitbucketserver.repositoryQuery` would not be created on migration from older Sourcegraph versions. https://github.com/sourcegraph/sourcegraph/issues/3591
+- Fixed an issue where Sourcegraph would add deleted repositories to the external service configuration. https://github.com/sourcegraph/sourcegraph/issues/3588
+- Fixed an issue where a repo-updater migration would hit code host rate limits. https://github.com/sourcegraph/sourcegraph/issues/3582
+- The required `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration), if unset or empty, is automatically migrated to match the user part of the `url` (if defined). https://github.com/sourcegraph/sourcegraph/issues/3592
+- Fixed a panic that would occur in indexed search / the frontend when a search error ocurred. https://github.com/sourcegraph/sourcegraph/issues/3579
+- Fixed an issue where the repo-updater service could become deadlocked while performing a migration. https://github.com/sourcegraph/sourcegraph/issues/3590
 
 ## 3.3.1
 
