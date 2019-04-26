@@ -196,7 +196,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		return path, zf, err
 	}
 
-	zf, err := getZipFileWithRetry(getZf)
+	_, zf, err := store.GetZipFileWithRetry(getZf)
 	if err != nil {
 		return nil, false, false, err
 	}
