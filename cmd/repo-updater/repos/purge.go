@@ -86,6 +86,7 @@ func purge(ctx context.Context, log log15.Logger) error {
 
 		if info.CloneTime != nil {
 			age := time.Since(*info.CloneTime)
+
 			if age < 12*time.Hour {
 				log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", age)
 				purgeSkipped.Inc()
