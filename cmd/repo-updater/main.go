@@ -96,6 +96,8 @@ func main() {
 	migrations := []repos.Migration{
 		repos.GithubSetDefaultRepositoryQueryMigration(clock),
 		repos.GitLabSetDefaultProjectQueryMigration(clock),
+		repos.BitbucketServerUsernameMigration(clock), // Needs to run before EnabledStateDeprecationMigration
+		repos.BitbucketServerSetDefaultRepositoryQueryMigration(clock),
 	}
 
 	var kinds []string

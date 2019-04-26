@@ -2,6 +2,9 @@
 package redispool
 
 import (
+	"errors"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -49,6 +52,22 @@ func init() {
 	}
 }
 
+var schemeMatcher = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9\+\-\.]*://`)
+
+// dialRedis dials Redis given the raw endpoint string. The string can have two formats:
+// 1) If there is a HTTP scheme, it should be either be "redis://" or "rediss://" and the URL
+//    must be of the format specified in https://www.iana.org/assignments/uri-schemes/prov/redis.
+// 2) Otherwise, it is assumed to be of the format $HOSTNAME:$PORT.
+func dialRedis(rawEndpoint string) (redis.Conn, error) {
+	if schemeMatcher.MatchString(rawEndpoint) { // expect "redis://"
+		return redis.DialURL(rawEndpoint)
+	}
+	if strings.Contains(rawEndpoint, "/") {
+		return nil, errors.New("Redis endpoint without scheme should not contain '/'")
+	}
+	return redis.Dial("tcp", rawEndpoint)
+}
+
 // Cache is a redis configured for caching. You usually want to use this. Only
 // store data that can be recomputed here.
 //
@@ -57,7 +76,7 @@ var Cache = &redis.Pool{
 	MaxIdle:     3,
 	IdleTimeout: 240 * time.Second,
 	Dial: func() (redis.Conn, error) {
-		return redis.Dial("tcp", addrCache)
+		return dialRedis(addrCache)
 	},
 	TestOnBorrow: func(c redis.Conn, t time.Time) error {
 		_, err := c.Do("PING")
@@ -77,6 +96,6 @@ var Store = &redis.Pool{
 		return err
 	},
 	Dial: func() (redis.Conn, error) {
-		return redis.Dial("tcp", addrStore)
+		return dialRedis(addrStore)
 	},
 }

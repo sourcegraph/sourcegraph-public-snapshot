@@ -136,22 +136,37 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 		err   error
 	}
 
-	ch := make(chan result, len(srcs))
-	for _, src := range srcs {
-		go func(src Source) {
-			if repos, err := src.ListRepos(ctx); err != nil {
-				ch <- result{src: src, err: err}
-			} else {
-				ch <- result{src: src, repos: repos}
+	// Group sources by external service kind so that we execute requests
+	// serially to each code host. This is to comply with abuse rate limits of GitHub,
+	// but we do it for any source to be conservative.
+	// See https://developer.github.com/v3/guides/best-practices-for-integrators/#dealing-with-abuse-rate-limits)
+
+	var wg sync.WaitGroup
+	ch := make(chan result)
+	for _, sources := range group(srcs) {
+		wg.Add(1)
+		go func(sources Sources) {
+			defer wg.Done()
+			for _, src := range sources {
+				if repos, err := src.ListRepos(ctx); err != nil {
+					ch <- result{src: src, err: err}
+				} else {
+					ch <- result{src: src, repos: repos}
+				}
 			}
-		}(src)
+		}(sources)
 	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
 
 	var repos []*Repo
 	errs := new(multierror.Error)
 
-	for i := 0; i < cap(ch); i++ {
-		if r := <-ch; r.err != nil {
+	for r := range ch {
+		if r.err != nil {
 			errs = multierror.Append(errs, r.err)
 		} else {
 			repos = append(repos, r.repos...)
@@ -168,6 +183,33 @@ func (srcs Sources) ExternalServices() ExternalServices {
 		es = append(es, src.ExternalServices()...)
 	}
 	return es
+}
+
+type multiSource interface {
+	Sources() []Source
+}
+
+// Sources returns the underlying Sources.
+func (srcs Sources) Sources() []Source { return srcs }
+
+func group(srcs []Source) map[string]Sources {
+	groups := make(map[string]Sources)
+
+	for _, src := range srcs {
+		if ms, ok := src.(multiSource); ok {
+			for kind, ss := range group(ms.Sources()) {
+				groups[kind] = append(groups[kind], ss...)
+			}
+		} else if es := src.ExternalServices(); len(es) > 1 {
+			err := errors.Errorf("Source %#v has many external services and isn't a multiSource", src)
+			panic(err)
+		} else {
+			kind := es[0].Kind
+			groups[kind] = append(groups[kind], src)
+		}
+	}
+
+	return groups
 }
 
 // A GithubSource yields repositories from a single Github connection configured

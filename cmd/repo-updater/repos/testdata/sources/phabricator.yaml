@@ -2,15 +2,13 @@
 version: 1
 interactions:
 - request:
-    body: output=json&params=%7B%7D
-    form:
-      output:
-      - json
-      params:
-      - '{}'
+    body: ""
+    form: {}
     headers:
       Content-Type:
       - application/x-www-form-urlencoded
+      User-Agent:
+      - sourcegraph/phabricator-client
     url: https://secure.phabricator.com/api/conduit.getcapabilities
     method: POST
   response:
@@ -28,7 +26,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 23 Apr 2019 14:16:06 GMT
+      - Wed, 24 Apr 2019 15:07:50 GMT
       Expires:
       - Sat, 01 Jan 2000 00:00:00 GMT
       Referrer-Policy:
@@ -47,15 +45,13 @@ interactions:
     code: 200
     duration: ""
 - request:
-    body: output=json&params=%7B%22__conduit__%22%3A%7B%22token%22%3A%22api-w3ztmvqblkspxmanu4urlwz3d5sd%22%7D%2C%22limit%22%3A100%2C%22order%22%3A%22oldest%22%2C%22attachments%22%3A%7B%22uris%22%3Atrue%7D%7D
-    form:
-      output:
-      - json
-      params:
-      - '{"__conduit__":{"token":"api-w3ztmvqblkspxmanu4urlwz3d5sd"},"limit":100,"order":"oldest","attachments":{"uris":true}}'
+    body: ""
+    form: {}
     headers:
       Content-Type:
       - application/x-www-form-urlencoded
+      User-Agent:
+      - sourcegraph/phabricator-client
     url: https://secure.phabricator.com/api/diffusion.repository.search
     method: POST
   response:
@@ -76,7 +72,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 23 Apr 2019 14:16:06 GMT
+      - Wed, 24 Apr 2019 15:07:50 GMT
       Expires:
       - Sat, 01 Jan 2000 00:00:00 GMT
       Referrer-Policy:

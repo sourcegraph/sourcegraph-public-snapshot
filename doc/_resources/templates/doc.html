@@ -3,9 +3,9 @@
     <head>
         <title>{{with .Content}}{{.Doc.Title}}
             {{else}}Error{{end}} - Sourcegraph docs</title>
-        <link rel="stylesheet" href="{{asset "sourcegraph.css"}}?8" />
-        <link rel="stylesheet" href="{{asset "layout.css"}}?8" />
-        <link rel="stylesheet" href="{{asset "content.css"}}?5" />
+        <link rel="stylesheet" href="{{asset "sourcegraph.css"}}?9" />
+        <link rel="stylesheet" href="{{asset "layout.css"}}?9" />
+        <link rel="stylesheet" href="{{asset "content.css"}}?9" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
         {{if (or (not .Content) .ContentVersion)}}
         <meta name="robots" content="noindex">{{end}}
@@ -29,7 +29,7 @@
                                 {{/* Update these after each release. */}}
                                 {{$previousReleaseRevspec := "v3.2.4"}}
                                 {{$previousReleaseVersion := "3.2"}}
-                                {{$currentReleaseRevspec := "v3.3.0"}}
+                                {{$currentReleaseRevspec := "v3.3.2"}}
                                 {{$currentReleaseVersion := "3.3"}}
                                 {{$nextReleaseVersion := "master"}}
                                 <a rel="nofollow" class="dropdown-item monospace-text {{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
@@ -54,27 +54,27 @@
             </div>
         </div>
         <div class="docs-content">
-            <div class="nav-sticky-wrapper page-nav-wrapper column large-2 medium-3 mobile-show">
-                <!-- Mobile breadcrumb nav -->
+            <div class="nav-sticky-wrapper content-nav-wrapper column large-2 medium-3 mobile-show">
                 <nav id="breadcrumbs-mobile" class="breadcrumbs large-hidden medium-hidden">
                     <input type="button" class="content-nav-mobile-state large-hidden medium-hidden" />
                     <span class="content-nav-mobile-button"></span>
                     <span class="breadcrumb-links">
-                        {{with .Content}}
+                    {{with .Content}}
                         {{if eq (len .Breadcrumbs ) 0}}<a href="#">Home</a>{{end}}
-                        {{range .Breadcrumbs}}
-                        <a href="{{.URL}}" {{if .IsActive}} class="active" {{end}}>{{.Label}}</a>
-                        {{if not .IsActive}}/{{end}}
-                        {{end}} &nbsp;
-                        {{else}}
-                            {{if .ContentVersionNotFoundError}}
+                            {{range .Breadcrumbs}}
+                                <a href="{{.URL}}" {{if .IsActive}} class="active" {{end}}>{{.Label}}</a>
+                                {{if not .IsActive}}/{{end}}
+                                {{end}}
+                                &nbsp;
+                            {{else}}
+                        {{if .ContentVersionNotFoundError}}
                             Version not found
-                            {{else if .ContentPageNotFoundError}}
-                                Page not found
-                                {{else}}
-                                    Error
-                                    {{end}}
-                                    {{end}}
+                        {{else if .ContentPageNotFoundError}}
+                            Page not found
+                        {{else}}
+                            Error
+                        {{end}}
+                    {{end}}
                     </span>
                 </nav>
                 <div id="content-nav" class="content-nav">
@@ -85,7 +85,6 @@
                     <ul class="content-nav-section expandable">
                         <li><a class="content-nav-section-header" href="/">Home</a></li>
                     </ul>
-                    <!-- NAV START -->
                     <ul class="content-nav-section expandable" data-nav-section="user">
                         <button class="content-nav-button"></button>
                         <div class="close--icon">
@@ -302,10 +301,6 @@
                             </ul>
                         </li>
                     </ul>
-
-
-
-
                     <ul class="content-nav-section expandable" data-nav-section="dev">
                         <button class="content-nav-button"></button>
                         <div class="close--icon">
@@ -375,11 +370,14 @@
                             </ul>
                         </li>
                     </ul>
-                    <!-- NAV END -->
-
                 </div>
             </div>
-            <section class="column large-7 large-push-2 medium-9 medium-push-3 small-12 docs-content-section">
+            {{with .Content}}
+            <div class="page-nav column large-3 medium-3 small-12">
+                {{template "index" .}}
+            </div>
+            {{end}}
+            <section class="column large-7 large-push-2 medium-6 medium-push-3 small-12 docs-content-section">
                 {{/* Create breadcrumb nav*/}}
                 {{with .Content}}
 
@@ -417,15 +415,8 @@
                 </div>
                 {{end}}
             </section>
-            {{with .Content}}
-            <div class="nav-sticky-wrapper column large-3 medium-hidden small-hidden">
-                <div class="page-nav">
-                    {{template "index" .}}
-                </div>
-            </div>
-            {{end}}
         </div>
-        {{/* Sourcegraph.com Footer - Do not modify */}}
+        {{/* Keep up-to-date with Sourcegraph.com */}}
         <div class="footer-container column large-12">
             <div class="footer__block">
                 <footer>
@@ -503,7 +494,7 @@
                 </footer>
             </div>
         </div>
-        <script src="{{asset "docs.js"}}?1"></script>
+        <script src="{{asset "docs.js"}}?9"></script>
         {{with .Content}}
         <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
         {{else}}
@@ -533,24 +524,26 @@
         <h3 class="page-nav-title">On this page:</h3>
         <ul>{{template "doc_nav" .}}</ul>
     {{end}}
-    <a class="nav-edit-button" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">
-        Edit this page on GitHub
-        <svg class="icon-inline small" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V12H19V19Z"></path>
-        </svg>
-    </a>
+    <a class="nav-edit-button btn btn-secondary" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">Edit this page on GitHub</a>
 {{end}}
 
-{{/* Define Page Nav Template*/}}
-    {{define "doc_nav"}}
-        {{range .}}
+{{define "doc_nav"}}
+    {{range .}}
+        <li>
+            <a href="{{.URL}}">{{.Title}}</a>
+        </li>
+    {{end}}
+{{end}}
+
+{{define "doc_nav_nested"}}
+    {{range .}}
         <li>
             <a href="{{.URL}}">{{.Title}}</a>
             {{with .Children}}
-            <ul>
-                {{template "doc_nav" .}}
-            </ul>
+                <ul>
+                    {{template "doc_nav" .}}
+                </ul>
+            {{end}}
         </li>
-        {{end}}
     {{end}}
 {{end}}
