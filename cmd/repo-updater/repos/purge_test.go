@@ -12,21 +12,21 @@ func Test_shouldKeep(t *testing.T) {
 		info *protocol.RepoInfo
 	}
 	tests := []struct {
-		name  string
-		args  args
-		wantKeep  bool
-		wantAge time.Duration
+		name     string
+		args     args
+		wantKeep bool
+		wantAge  time.Duration
 	}{
 		{
 			name: "nil info",
-			args: args { info: nil },
+			args: args{info: nil},
 			// If we don't know anything about it then the answer will never change, so if we keep it then
 			// we will have to keep it forever.
 			wantKeep: false,
 		},
 		{
 			name: "default fields",
-			args: args { info: &protocol.RepoInfo{} },
+			args: args{info: &protocol.RepoInfo{}},
 			// We shouldn't keep in this case for the same reason as "nil info" above.
 			wantKeep: false,
 		},
