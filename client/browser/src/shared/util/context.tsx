@@ -1,3 +1,4 @@
+import { storage } from '../../browser/storage'
 import { isPhabricator, isPublicCodeHost } from '../../context'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
@@ -13,13 +14,11 @@ export const repoUrlCache: UrlCache = {}
 
 if (window.SG_ENV === 'EXTENSION' && globalThis.browser) {
     // tslint:disable-next-line: no-floating-promises TODO just get rid of the global sourcegraphUrl
-    import(/* webpackMode: "eager" */ '../../browser/storage')
-        .then(({ storage }) => storage.sync.get())
-        .then(items => {
-            if (items.sourcegraphURL) {
-                sourcegraphUrl = items.sourcegraphURL
-            }
-        })
+    storage.sync.get().then(items => {
+        if (items.sourcegraphURL) {
+            sourcegraphUrl = items.sourcegraphURL
+        }
+    })
 }
 
 export function setSourcegraphUrl(url: string): void {
