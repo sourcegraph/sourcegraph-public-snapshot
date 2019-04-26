@@ -82,15 +82,11 @@ func purge(ctx context.Context, log log15.Logger) error {
 			continue
 		}
 
-		info := infos.Results[repo]
-		if info.CloneTime != nil {
-			age := time.Since(*info.CloneTime)
-			if age < 12*time.Hour {
-				log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", age)
-				purgeSkipped.Inc()
-				skipped++
-				continue
-			}
+		if keep, age := shouldKeep(infos.Results[repo]); keep {
+			log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", age)
+			purgeSkipped.Inc()
+			skipped++
+			continue
 		}
 
 		// Race condition: A repo can be re-enabled between our listing and
@@ -117,6 +113,14 @@ func purge(ctx context.Context, log log15.Logger) error {
 	statusLogger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed, "skipped", skipped)
 
 	return nil
+}
+
+func shouldKeep(info *protocol.RepoInfo) (bool, time.Duration) {
+	if info == nil || info.CloneTime == nil {
+		return false, time.Duration(0)
+	}
+	age := time.Since(*info.CloneTime)
+	return age < 12*time.Hour, age
 }
 
 // randSleep will sleep for an expected d duration with a jitter in [-jitter /
