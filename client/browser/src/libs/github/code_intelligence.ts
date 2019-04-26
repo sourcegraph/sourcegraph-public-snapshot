@@ -32,37 +32,26 @@ import { getFileContainers, parseURL } from './util'
  * - An older GHE single file code view (newer GitHub.com code views use createFileLineContainerToolbarMount)
  */
 export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElement {
-    const className = 'sourcegraph-app-annotator'
+    const className = 'github-file-actions-toolbar-mount'
     const existingMount = codeView.querySelector('.' + className) as HTMLElement
     if (existingMount) {
         return existingMount
     }
 
     const mountEl = document.createElement('div')
-    mountEl.style.display = 'inline-flex'
-    mountEl.style.verticalAlign = 'middle'
-    mountEl.style.alignItems = 'center'
     mountEl.className = className
 
     const fileActions = codeView.querySelector('.file-actions')
     if (!fileActions) {
-        throw new Error(
-            "File actions not found. Make sure you aren't trying to create " +
-                "a toolbar mount for a code snippet that shouldn't have one"
-        )
+        throw new Error('Could not find GitHub file actions with selector .file-actions')
     }
 
-    const buttonGroup = fileActions.querySelector('.BtnGroup')
-    if (buttonGroup && buttonGroup.parentNode && !codeView.querySelector('.show-file-notes')) {
-        // blob view
-        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
+    // Old GitHub Enterprise PR views have a "☑ show comments" text that we want to insert *after*
+    const showCommentsElement = codeView.querySelector('.show-file-notes')
+    if (showCommentsElement) {
+        showCommentsElement.insertAdjacentElement('afterend', mountEl)
     } else {
-        // commit & pull request view
-        const note = codeView.querySelector('.show-file-notes')
-        if (!note || !note.parentNode) {
-            throw new Error('cannot find toolbar mount location')
-        }
-        note.parentNode.insertBefore(mountEl, note.nextSibling)
+        fileActions.prepend(mountEl)
     }
 
     return mountEl
