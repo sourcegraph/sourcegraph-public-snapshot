@@ -706,8 +706,8 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 			for page := lo; page < hi; page++ {
 				for limit := lo; limit < hi; limit++ {
 					args := repos.StoreListReposArgs{
-						Page:  int64(page),
-						Limit: int64(limit),
+						PerPage: int64(page),
+						Limit:   int64(limit),
 					}
 
 					listed, err := tx.ListRepos(ctx, args)
@@ -724,6 +724,15 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 
 					if have := len(listed); have != want {
 						t.Fatalf("page=%d, limit=%d: count:\nhave: %v\nwant: %v", page, limit, have, want)
+					}
+
+					set := make(map[api.ExternalRepoSpec]bool)
+					for _, r := range listed {
+						if _, ok := set[r.ExternalRepo]; !ok {
+							set[r.ExternalRepo] = true
+						} else {
+							t.Errorf("duplicate found: %v", r)
+						}
 					}
 				}
 			}

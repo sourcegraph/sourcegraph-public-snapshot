@@ -39,8 +39,8 @@ type StoreListReposArgs struct {
 	Deleted bool
 	// Limit the total number of repos returned. Zero means no limit
 	Limit int64
-	// Page determines the number of repos returned on each page. Zero means it defaults to 10000.
-	Page int64
+	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
+	PerPage int64
 }
 
 // StoreListExternalServicesArgs is a query arguments type used by
@@ -269,7 +269,7 @@ RETURNING *
 
 // ListRepos lists all stored repos that match the given arguments.
 func (s DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*Repo, _ error) {
-	return repos, s.paginate(ctx, args.Limit, args.Page, listReposQuery(args),
+	return repos, s.paginate(ctx, args.Limit, args.PerPage, listReposQuery(args),
 		func(sc scanner) (last, count int64, err error) {
 			var r Repo
 			if err = scanRepo(&r, sc); err != nil {
@@ -358,15 +358,22 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 type paginatedQuery func(cursor, limit int64) *sqlf.Query
 
 func (s DBStore) paginate(ctx context.Context, limit, page int64, q paginatedQuery, scan scanFunc) (err error) {
+	const defaultPerPageLimit = 10000
+
 	if page <= 0 {
-		page = 10000
+		page = defaultPerPageLimit
 	}
 
 	if limit > 0 && page > limit {
 		page = limit
 	}
 
-	var cursor, next, count, remaining int64 = -1, 0, 0, limit
+	var (
+		cursor      = int64(-1)
+		remaining   = limit
+		next, count int64
+	)
+
 	for cursor < next && err == nil && (limit <= 0 || remaining > 0) {
 		cursor = next
 		next, count, err = s.list(ctx, q(cursor, page), scan)
@@ -670,7 +677,7 @@ type scanner interface {
 }
 
 // a scanFunc scans one or more rows from a scanner, returning
-// the last id column scanned.
+// the last id column scanned and the count of scanned rows.
 type scanFunc func(scanner) (last, count int64, err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (last, count int64, err error) {
