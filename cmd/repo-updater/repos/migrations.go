@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/goware/urlx"
@@ -59,30 +58,6 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 		}
 
 		if err != nil {
-			if strings.Contains(err.Error(), "abuse detection") || strings.Contains(err.Error(), "rate limit") {
-				// If this has occurred, we do not have enough rate limit to
-				// list all of the repositories and perform the migration. If
-				// we were to return the error right now then Kubernetes or
-				// Docker would restart this process and the migration would
-				// run again. Each time we run, we are consuming more rate
-				// limit and thus we may become deadlocked for multiple hours
-				// waiting for this migration to run. This is believed to have
-				// occurred already, see https://github.com/sourcegraph/sourcegraph/issues/3590
-				// and the linked issue's discussion for more information.
-				//
-				// Here we take a dumb approach to mitigate the changes of this
-				// happening: we wait 15m which is likely to replenish enough
-				// of our rate limit to allow the migration to go through (note
-				// we need 1 API request per 100 repositories).
-				//
-				// TODO(tsenart): String error comparison here and time.Sleep
-				// is a super ugly / hacky approach but works. Ideally the
-				// underlying source ListRepos method would slow down when
-				// hitting rate limiting instead for just this use case.
-				log15.Error("migrate.repos-enabled-state-deprecation: rate limiting detected, waiting 15m before retrying", "error", err)
-				time.Sleep(15 * time.Minute)
-				log15.Error("migrate.repos-enabled-state-deprecation: restarting..")
-			}
 			return errors.Wrapf(err, "%s sources.list-repos", prefix)
 		}
 
