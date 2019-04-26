@@ -51,6 +51,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices(store)},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},
+		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},
 		{"Syncer/Sync", testSyncerSync(store)},
 		{"Migrations/GithubSetDefaultRepositoryQuery",
 			testGithubSetDefaultRepositoryQueryMigration(store)},

@@ -37,6 +37,10 @@ type StoreListReposArgs struct {
 	Kinds []string
 	// If true, includes deleted repos in the result set.
 	Deleted bool
+	// Limit the total number of repos returned. Zero means no limit
+	Limit int64
+	// Page determines the number of repos returned on each page. Zero means it defaults to 10000.
+	Page int64
 }
 
 // StoreListExternalServicesArgs is a query arguments type used by
@@ -126,15 +130,17 @@ func (s *DBStore) Done(errs ...*error) {
 
 // ListExternalServices lists all stored external services matching the given args.
 func (s DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
-	return svcs, s.paginate(ctx, listExternalServicesQuery(args), func(sc scanner) (int64, error) {
-		var svc ExternalService
-		err := scanExternalService(&svc, sc)
-		if err != nil {
-			return 0, err
-		}
-		svcs = append(svcs, &svc)
-		return svc.ID, nil
-	})
+	return svcs, s.paginate(ctx, 0, 500, listExternalServicesQuery(args),
+		func(sc scanner) (last, count int64, err error) {
+			var svc ExternalService
+			err = scanExternalService(&svc, sc)
+			if err != nil {
+				return 0, 0, err
+			}
+			svcs = append(svcs, &svc)
+			return svc.ID, 1, nil
+		},
+	)
 }
 
 const listExternalServicesQueryFmtstr = `
@@ -204,10 +210,10 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 	}
 
 	i := -1
-	_, err = scanAll(rows, func(sc scanner) (int64, error) {
+	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
 		i++
-		err := scanExternalService(svcs[i], sc)
-		return int64(svcs[i].ID), err
+		err = scanExternalService(svcs[i], sc)
+		return int64(svcs[i].ID), 1, err
 	})
 
 	return err
@@ -263,14 +269,16 @@ RETURNING *
 
 // ListRepos lists all stored repos that match the given arguments.
 func (s DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*Repo, _ error) {
-	return repos, s.paginate(ctx, listReposQuery(args), func(sc scanner) (int64, error) {
-		var r Repo
-		if err := scanRepo(&r, sc); err != nil {
-			return 0, err
-		}
-		repos = append(repos, &r)
-		return int64(r.ID), nil
-	})
+	return repos, s.paginate(ctx, args.Limit, args.Page, listReposQuery(args),
+		func(sc scanner) (last, count int64, err error) {
+			var r Repo
+			if err = scanRepo(&r, sc); err != nil {
+				return 0, 0, err
+			}
+			repos = append(repos, &r)
+			return int64(r.ID), 1, nil
+		},
+	)
 }
 
 const listReposQueryFmtstr = `
@@ -349,19 +357,33 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 // parameters
 type paginatedQuery func(cursor, limit int64) *sqlf.Query
 
-func (s DBStore) paginate(ctx context.Context, q paginatedQuery, scan scanFunc) (err error) {
-	var cursor, next int64 = -1, 0
-	for cursor < next && err == nil {
-		cursor = next
-		next, err = s.list(ctx, q(cursor, 500), scan)
+func (s DBStore) paginate(ctx context.Context, limit, page int64, q paginatedQuery, scan scanFunc) (err error) {
+	if page <= 0 {
+		page = 10000
 	}
+
+	if limit > 0 && page > limit {
+		page = limit
+	}
+
+	var cursor, next, count, remaining int64 = -1, 0, 0, limit
+	for cursor < next && err == nil && (limit <= 0 || remaining > 0) {
+		cursor = next
+		next, count, err = s.list(ctx, q(cursor, page), scan)
+		if limit > 0 {
+			if remaining -= count; page > remaining {
+				page = remaining
+			}
+		}
+	}
+
 	return err
 }
 
-func (s DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last int64, err error) {
+func (s DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, count int64, err error) {
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	return scanAll(rows, scan)
 }
@@ -386,10 +408,10 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 
 	i := -1
 
-	_, err = scanAll(rows, func(sc scanner) (int64, error) {
+	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
 		i++
-		err := scanRepo(repos[i], sc)
-		return int64(repos[i].ID), err
+		err = scanRepo(repos[i], sc)
+		return int64(repos[i].ID), 1, err
 	})
 
 	return err
@@ -649,19 +671,21 @@ type scanner interface {
 
 // a scanFunc scans one or more rows from a scanner, returning
 // the last id column scanned.
-type scanFunc func(scanner) (last int64, err error)
+type scanFunc func(scanner) (last, count int64, err error)
 
-func scanAll(rows *sql.Rows, scan scanFunc) (last int64, err error) {
+func scanAll(rows *sql.Rows, scan scanFunc) (last, count int64, err error) {
 	defer closeErr(rows, &err)
 
 	last = -1
 	for rows.Next() {
-		if last, err = scan(rows); err != nil {
-			return last, err
+		var n int64
+		if last, n, err = scan(rows); err != nil {
+			return last, count, err
 		}
+		count += n
 	}
 
-	return last, rows.Err()
+	return last, count, rows.Err()
 }
 
 func closeErr(c io.Closer, err *error) {
