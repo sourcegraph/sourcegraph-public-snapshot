@@ -9,7 +9,7 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## Unreleased
+## 3.4.0 (unreleased)
 
 ### Added
 
@@ -22,6 +22,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Removed corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
+
+## 3.3.3
+
+### Fixed
+
+- Fixed bug that prevented "Find references" action from being completed in the activation checklist.
 
 ## 3.3.2
 
