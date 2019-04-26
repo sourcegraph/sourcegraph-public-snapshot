@@ -6,16 +6,16 @@ OpenGrok was traditionally the most popular open-source code search tool. Origin
 
 **What people tell us they love about OpenGrok:**
 
-* Simple interface
-* Support for non-Git repositories
-* Easy deployment (for Java shops)
+- Simple interface
+- Support for non-Git repositories
+- Easy deployment (for Java shops)
 
 **What has made organizations switch from OpenGrok:**
 
-* Slow and difficult-to-manage indexing process (leading to stale results for users)
-* Poor support for searching/browsing multiple commits and branches
-* Poor scalability to many repositories and for large repositories
-* Inflexible and buggy API (using the new REST API)
+- Slow and difficult-to-manage indexing process (leading to stale results for users)
+- Poor support for searching/browsing multiple commits and branches
+- Poor scalability to many repositories and for large repositories
+- Inflexible and buggy API (using the new REST API)
 
 ## [Hound](https://github.com/etsy/hound)
 
@@ -23,15 +23,15 @@ Hound was created inside Etsy by [Kelly Norton](https://github.com/kellegous) an
 
 **What people tell us they love about Hound:**
 
-* Very simple deployment
-* Very simple interface
+- Very simple deployment
+- Very simple interface
 
 **What has made organizations switch from Hound:**
 
-* Apparent unmaintained status
-* Poor scalability to many repositories (both performance-wise and UX-wise)
-* Limited filtering available for search queries
-* No support for code navigation (code intelligence and/or ctags)
+- Apparent unmaintained status
+- Poor scalability to many repositories (both performance-wise and UX-wise)
+- Limited filtering available for search queries
+- No support for code navigation (code intelligence and/or ctags)
 
 ## [Livegrep](https://github.com/livegrep/livegrep)
 
@@ -39,14 +39,14 @@ Livegrep is maintained by a Stripe developer and is used inside Stripe. It has a
 
 **What people tell us they love about Livegrep:**
 
-* Instant, as-you-type search results
-* Quick search filters to narrow by path, etc.
+- Instant, as-you-type search results
+- Quick search filters to narrow by path, etc.
 
 **What has made organizations plan to switch from Livegrep:**
 
-* No support for code navigation (code intelligence and/or ctags)
-* Difficult to manage and scale (requires building custom infrastructure)
-* Although it’s used heavily by a small number of companies, it’s maintained part-time by a single * developer, so future trajectory is limited
+- No support for code navigation (code intelligence and/or ctags)
+- Difficult to manage and scale (requires building custom infrastructure)
+- Although it’s used heavily by a small number of companies, it’s maintained part-time by a single \* developer, so future trajectory is limited
 
 ## [Atlassian FishEye](https://www.atlassian.com/software/fisheye)
 
@@ -54,16 +54,16 @@ Atlassian released FishEye around 2007, initially as a source browser for compan
 
 **What people tell us they love about FishEye:**
 
-* It integrates well with the Atlassian suite of products
-* It integrates well with builds in particular (when using Atlassian Bamboo)
-* It supports Perforce (as well as Git, Subversion, Mercurial, and CVS)
-* Stability and reliability
+- It integrates well with the Atlassian suite of products
+- It integrates well with builds in particular (when using Atlassian Bamboo)
+- It supports Perforce (as well as Git, Subversion, Mercurial, and CVS)
+- Stability and reliability
 
 **What has made organizations switch from FishEye:**
 
-* “It feels like FishEye’s code search is for managers to report on changes, not for developers in their daily workflow”
-* Poor integration with GitHub and GitLab
-* It is deprioritized by Atlassian, with [only infrequent and minor feature releases](https://confluence.atlassian.com/fisheye/fisheye-releases-960155725.html)
+- “It feels like FishEye’s code search is for managers to report on changes, not for developers in their daily workflow”
+- Poor integration with GitHub and GitLab
+- It is deprioritized by Atlassian, with [only infrequent and minor feature releases](https://confluence.atlassian.com/fisheye/fisheye-releases-960155725.html)
 
 ## [Sourcegraph](https://sourcegraph.com/)
 
@@ -73,18 +73,18 @@ Sourcegraph was released in Dec 2017 to be the most productive code search and n
 
 **What people tell us they love about Sourcegraph:**
 
-* Fast code search with quick reindexing (average time from commit-pushed to reindex at a customer with 30,000 repositories and 3,500 engineers is 30 seconds)
-* Clean UI for search that developers can figure out how to use more easily
-* Code navigation (go-to-definition and find-references) via precise code intelligence or ctags, depending on the language
-* Ease of maintenance and scaling (for admins)
+- Fast code search with quick reindexing (average time from commit-pushed to reindex at a customer with 30,000 repositories and 3,500 engineers is 30 seconds)
+- Clean UI for search that developers can figure out how to use more easily
+- Code navigation (go-to-definition and find-references) via precise code intelligence or ctags, depending on the language
+- Ease of maintenance and scaling (for admins)
 
 **What has made organizations switch from Sourcegraph:**
 No organization with at least 20 daily Sourcegraph users has ever stopped using Sourcegraph, so there are no such companies to speak of.
 
 ## Other tools
 
-* **[Google Cloud Source Repositories Code Search](https://cloud.google.com/source-repositories/docs/searching-code)**: This is a hosted Git code search offering that integrates with Google Cloud Source Repositories (Google Cloud’s Git hosting product), but has limited distribution. You can try a public demo at [source.bazel.build](https://source.bazel.build/).
+- **[Google Cloud Source Repositories Code Search](https://cloud.google.com/source-repositories/docs/searching-code)**: This is a hosted Git code search offering that integrates with Google Cloud Source Repositories (Google Cloud’s Git hosting product), but has limited distribution. You can try a public demo at [source.bazel.build](https://source.bazel.build/).
 
-* **[GitHub code search](https://help.github.com/en/articles/searching-code)**, **[GitLab code search](https://docs.gitlab.com/ee/user/search/advanced_global_search.html)**, **[Bitbucket Server code search](https://confluence.atlassian.com/bitbucketserver/search-for-code-in-bitbucket-server-814204781.html)**, **[Bitbucket Cloud code search](https://confluence.atlassian.com/bitbucket/search-873876782.html)**: This is a great solution for smaller teams who already use these code hosts and who have simple/infrequent code search needs. The main pain points we hear are that they lack support for punctuation or regexps in queries, and the UXs are not optimized for searching across multiple repositories.
+- **[GitHub code search](https://help.github.com/en/articles/searching-code)**, **[GitLab code search](https://docs.gitlab.com/ee/user/search/advanced_global_search.html)**, **[Bitbucket Server code search](https://confluence.atlassian.com/bitbucketserver/search-for-code-in-bitbucket-server-814204781.html)**, **[Bitbucket Cloud code search](https://confluence.atlassian.com/bitbucket/search-873876782.html)**: This is a great solution for smaller teams who already use these code hosts and who have simple/infrequent code search needs. The main pain points we hear are that they lack support for punctuation or regexps in queries, and the UXs are not optimized for searching across multiple repositories.
 
-* **[Searchcode Server](https://searchcodeserver.com/)**
+- **[Searchcode Server](https://searchcodeserver.com/)**

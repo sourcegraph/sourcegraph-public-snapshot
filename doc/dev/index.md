@@ -2,7 +2,7 @@
 
 This documentation is for developers contributing to Sourcegraph itself.
 
-Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph). 
+Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 
 ### Project links
 

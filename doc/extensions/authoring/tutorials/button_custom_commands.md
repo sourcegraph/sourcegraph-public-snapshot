@@ -28,7 +28,7 @@ npm init sourcegraph-extension
 
 Then publish your extension:
 
-```src extension publish```
+`src extension publish`
 
 Confirm your extension is enabled and working by:
 
@@ -98,9 +98,7 @@ import * as sourcegraph from 'sourcegraph'
  * the document being viewed.
  */
 function activeEditor(): sourcegraph.CodeEditor | undefined {
-    return sourcegraph.app.activeWindow
-        ? sourcegraph.app.activeWindow.visibleViewComponents[0]
-        : undefined
+  return sourcegraph.app.activeWindow ? sourcegraph.app.activeWindow.visibleViewComponents[0] : undefined
 }
 
 /**
@@ -108,15 +106,18 @@ function activeEditor(): sourcegraph.CodeEditor | undefined {
  * @param editor
  */
 function displayLineCount(editor: sourcegraph.CodeEditor | undefined = activeEditor()): void {
-    if(!editor) {
-        return
-    }
+  if (!editor) {
+    return
+  }
 
-    const lineCount = editor.document.text.split(/\n/).length - 1
-    const fileName = editor.document.uri.substring(editor.document.uri.lastIndexOf('/') + 1).split('#').slice(-1)[0]
-    const message = `The ${fileName} file has ${lineCount} line${lineCount > 1 ? 's' : ''} of code `
+  const lineCount = editor.document.text.split(/\n/).length - 1
+  const fileName = editor.document.uri
+    .substring(editor.document.uri.lastIndexOf('/') + 1)
+    .split('#')
+    .slice(-1)[0]
+  const message = `The ${fileName} file has ${lineCount} line${lineCount > 1 ? 's' : ''} of code `
 
-    sourcegraph.app.activeWindow!.showNotification(message)
+  sourcegraph.app.activeWindow!.showNotification(message)
 }
 
 /**
@@ -124,10 +125,8 @@ function displayLineCount(editor: sourcegraph.CodeEditor | undefined = activeEdi
  * conditions in package.json are satisfied.
  */
 export function activate(ctx: sourcegraph.ExtensionContext): void {
-    // Add each subscription to the extension's context so they can unsubscribed upon deactivation
-    ctx.subscriptions.add(
-      sourcegraph.commands.registerCommand('linecounter.displayLineCount', displayLineCount)
-    )
+  // Add each subscription to the extension's context so they can unsubscribed upon deactivation
+  ctx.subscriptions.add(sourcegraph.commands.registerCommand('linecounter.displayLineCount', displayLineCount))
 }
 ```
 

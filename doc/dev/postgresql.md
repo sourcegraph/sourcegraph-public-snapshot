@@ -226,4 +226,3 @@ A test like this ought to exercise your data access module, regardless of the de
 Here's an example of how you could [structure such tests](https://github.com/sourcegraph/sourcegraph/blob/da3743ece358fbe6709f07e95d5fd97bd554e047/cmd/repo-updater/repos/integration_test.go#L17).
 
 If you're uncertain about using triggers as part of your work, do some research before committing to a solution and don't hesitate to discuss it with your peers.
-

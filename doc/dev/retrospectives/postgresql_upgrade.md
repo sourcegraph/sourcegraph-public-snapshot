@@ -31,7 +31,7 @@ In the end, we found another solution for the server image upgrade which we coul
 
 We proceeded to upgrade to the latest stable version (11.1) without assessing the compatibility of that version with the environments of our customers that run external databases.
 
-We rushed the first time around for the beta release on Postgres because  because we thought at the time that it was good for new users to already have 11.1 running. In retrospect, this was not really necessary and it caused more problems than it solved.
+We rushed the first time around for the beta release on Postgres because because we thought at the time that it was good for new users to already have 11.1 running. In retrospect, this was not really necessary and it caused more problems than it solved.
 
 After releasing 3.0 beta with the Postgres upgrade half done, we failed to clearly communicate this state of affairs to team members. Kingy, for instance, didn't learn in time about it and proceeded to ask some existing server image customers to upgrade to the 3.0.beta which didn't work since the auto-upgrade procedure wasn't in place at that time yet.
 

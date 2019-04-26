@@ -60,7 +60,7 @@ To start a new document, respect the file tree and file name guidelines, as well
 
 ```md
 ---
-description: "short document description." # Up to ~200 chars long. They will be displayed in Google search result previews.
+description: 'short document description.' # Up to ~200 chars long. They will be displayed in Google search result previews.
 ---
 
 # Feature name

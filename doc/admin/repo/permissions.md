@@ -14,11 +14,11 @@ Then, [add or edit a GitHub external service](../external_service/github.md#repo
 
 ```json
 {
-   "url": "https://github.com",
-   "token": "$PERSONAL_ACCESS_TOKEN",
-   "authorization": {
-     "ttl": "3h"
-   }
+  "url": "https://github.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  "authorization": {
+    "ttl": "3h"
+  }
 }
 ```
 
@@ -81,7 +81,7 @@ match the fields specified in the authentication provider config
 
 ### Username
 
-Prerequisite: Ensure that `http-header` is the *only* authentication provider type configured for
+Prerequisite: Ensure that `http-header` is the _only_ authentication provider type configured for
 Sourcegraph. If this is not the case, then it will be possible for users to escalate privileges,
 because Sourcegraph usernames are mutable.
 

@@ -2,10 +2,10 @@
 
 You can use Sourcegraph with Git repositories hosted on [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server) (and the [Bitbucket Data Center](https://www.atlassian.com/enterprise/data-center/bitbucket) deployment option).
 
-Feature | Supported?
-------- | ----------
-[Repository syncing](../admin/external_service/bitbucket_server.md) | ✅
-[Browser extension](#browser-extension) | ✅
+| Feature                                                             | Supported? |
+| ------------------------------------------------------------------- | ---------- |
+| [Repository syncing](../admin/external_service/bitbucket_server.md) | ✅         |
+| [Browser extension](#browser-extension)                             | ✅         |
 
 ## Repository syncing
 

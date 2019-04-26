@@ -18,20 +18,20 @@ See the `actions` property in [`extension.schema.json`](https://sourcegraph.com/
 
 A menu is an existing part of the user interface (of Sourcegraph or any other integrated application, such as a code host) where actions can be shown. The available menus are:
 
-* `editor/title`: The toolbar for a file or diff, which usually contains the filename on the left and actions on the right.
-* `commandPalette`: The command palette, which is a searchable list of actions that the user can open by clicking the <kbd>≡</kbd> icon in the top navigation bar.
-* `directory/page`: A section on all pages showing a directory listing. Sometimes known as a "tree page" on code hosts.
-* `global/nav`: The global navigation bar, shown at the top of every page.
-* `panel/toolbar`: The toolbar on the panel, which is used to show references, definitions, commit history, and other information related to a file or a token/position in a file.
-* `help`: The help menu or page.
+- `editor/title`: The toolbar for a file or diff, which usually contains the filename on the left and actions on the right.
+- `commandPalette`: The command palette, which is a searchable list of actions that the user can open by clicking the <kbd>≡</kbd> icon in the top navigation bar.
+- `directory/page`: A section on all pages showing a directory listing. Sometimes known as a "tree page" on code hosts.
+- `global/nav`: The global navigation bar, shown at the top of every page.
+- `panel/toolbar`: The toolbar on the panel, which is used to show references, definitions, commit history, and other information related to a file or a token/position in a file.
+- `help`: The help menu or page.
 
 The set of available menus is defined in the `menus` property in [`extension.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/schema/extension.schema.json).
 
-To display an action in a menu, an extension's `package.json` must define the action *and* specify which menu it's displayed in. The menu entry can also specify a `when` condition to selectively show/hide the action depending on a condition.
+To display an action in a menu, an extension's `package.json` must define the action _and_ specify which menu it's displayed in. The menu entry can also specify a `when` condition to selectively show/hide the action depending on a condition.
 
 For example, the following partial extension manifest would add an action to the command palette whenever the current file is a Python file:
 
-``` json
+```json
 {
   ...,
   "contributes": {
@@ -61,7 +61,7 @@ To help users edit their JSON settings, extensions can define a [JSON Schema](ht
 
 For example, the following partial extension manifest would define a settings property for an extension:
 
-``` json
+```json
 {
   ...,
   "contributes": {

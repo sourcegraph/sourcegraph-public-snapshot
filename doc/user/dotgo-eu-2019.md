@@ -18,7 +18,7 @@ The demos you saw at the conference are below:
 
 1. [**Start reviewing this GitHub PR**](https://github.com/sourcegraph/go-diff/pull/31/files#diff-334200dfc76f817e050f8dc5d9745843R19)
 1. Hover on `PrintMultiFileDiff(`
-2. Explore from there (who calls it?), using **Go to definition** and **Find references**
+1. Explore from there (who calls it?), using **Go to definition** and **Find references**
 
 You can see a demo of this below.
 

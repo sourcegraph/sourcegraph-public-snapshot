@@ -24,7 +24,6 @@ This is a temporary solution that injects a JavaScript code snippet that resets 
 
 To restart the feedback survey for a second (or subsequent) time, change both instances of `-000` to `-001` (or `-002`, etc.). Follow and participate in [issue #666](https://github.com/sourcegraph/sourcegraph/issues/666) if you need a more complete solution.
 
-
-## See also 
+## See also
 
 - [Usage statistics](usage_statistics.md)

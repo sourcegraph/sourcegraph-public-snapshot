@@ -27,7 +27,7 @@ There are three fields for configuring which projects are mirrored/synchronized:
 
 ### Troubleshooting
 
-You can test your access token's permissions by running a cURL command against the GitLab API. This is the same API and the same project list used by Sourcegraph. 
+You can test your access token's permissions by running a cURL command against the GitLab API. This is the same API and the same project list used by Sourcegraph.
 
 Replace `$ACCESS_TOKEN` with the access token you are providing to Sourcegraph, and `$GITLAB_HOSTNAME` with your GitLab hostname:
 

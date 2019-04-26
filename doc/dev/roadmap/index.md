@@ -22,10 +22,10 @@ We're continually improving Sourcegraph's core features for developers:
 
 We're also working toward making Sourcegraph the [**infrastructure for developer tools and data**](#infrastructure-for-developer-tools-and-data), with integration into the entire developer workflow (in the editor, code review, and anywhere else they interact with code). In addition to helping developers, this also helps engineering leaders and internal tools teams solve organization-wide problems.
 
-| Icon | Description |
-|------|-------------|
-| 🏃 | Features we are actively working on. |
-| 🙋 | We are hiring for all teams, but especially for these roles. |
+| Icon | Description                                                  |
+| ---- | ------------------------------------------------------------ |
+| 🏃   | Features we are actively working on.                         |
+| 🙋   | We are hiring for all teams, but especially for these roles. |
 
 ## Search
 
@@ -97,10 +97,10 @@ Owners: @rvantonder
 
 We will let you perform safe, large-scale refactors of code across repositories, services, and languages.
 
- - 🏃 [Find and replace string literals across multiple GitHub repositories](https://github.com/sourcegraph/sourcegraph/issues/3483)
- - Find and replace using sophisticated pattern matching and replacement templates (e.g. regex or comby).
- - Add support for modifing code on more code hosts (e.g. Bitbucket Server, GitLab).
- - Create a UI for viewing and managing the state of in progress refactors (e.g. how many PRs are merged, automatically opening new PRs to refactor matching code that just got committed).
+- 🏃 [Find and replace string literals across multiple GitHub repositories](https://github.com/sourcegraph/sourcegraph/issues/3483)
+- Find and replace using sophisticated pattern matching and replacement templates (e.g. regex or comby).
+- Add support for modifing code on more code hosts (e.g. Bitbucket Server, GitLab).
+- Create a UI for viewing and managing the state of in progress refactors (e.g. how many PRs are merged, automatically opening new PRs to refactor matching code that just got committed).
 
 ## Deployment, configuration, and management
 

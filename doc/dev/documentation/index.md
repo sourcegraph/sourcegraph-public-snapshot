@@ -34,7 +34,7 @@ The documentation is organized into the following top-level directories:
 
 - [`user/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/user) for users
 - [`admin/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin) for site admins
-  - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin/external_service) for external service-related documentation *for site admins* (vs. `integration/` for the general audience)
+  - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin/external_service) for external service-related documentation _for site admins_ (vs. `integration/` for the general audience)
 - [`extensions/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/extensions) for Sourcegraph extensions
 - [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
 - [`api/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for the Sourcegraph GraphQL API

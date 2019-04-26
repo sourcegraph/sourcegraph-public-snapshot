@@ -31,11 +31,11 @@ Sourcegraph provides tracing, metrics and logs to help you troubleshoot problems
 
 A Sourcegraph service's log level is configured via the environment variable `SRC_LOG_LEVEL`. The valid values (from most to least verbose) are:
 
-* `dbug`: Debug. Output all logs. Default in cluster deployments.
-* `info`: Informational.
-* `warn`: Warning. Default in Docker deployments.
-* `eror`: Error.
-* `crit`: Critical.
+- `dbug`: Debug. Output all logs. Default in cluster deployments.
+- `info`: Informational.
+- `warn`: Warning. Default in Docker deployments.
+- `eror`: Error.
+- `crit`: Critical.
 
 If you are having issues with repository syncing, view the output of `repo-updater`'s logs.
 

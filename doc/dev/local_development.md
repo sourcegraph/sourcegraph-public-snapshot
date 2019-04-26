@@ -20,6 +20,7 @@ The sections below describe the the dependencies that you need to have to be abl
 > Install [Go](https://golang.org/doc/install) (v1.11 or higher)
 
 On Mac with homebrew, you can run
+
 ```
 brew install golang
 ```
@@ -428,7 +429,7 @@ Sometimes you will want to develop Sourcegraph but it just so happens you will b
 train or perhaps a beach, and you will have no WiFi. And you may raise your fist toward heaven and
 say something like, "Why, we can put a man on the moon, so why can't we develop high-quality code
 search without an Internet connection?" But lower your hand back to your keyboard and fret no
-further, for the year is 2019, and you *can* develop Sourcegraph with no connectivity by setting the
+further, for the year is 2019, and you _can_ develop Sourcegraph with no connectivity by setting the
 `OFFLINE` environment variable:
 
 ```

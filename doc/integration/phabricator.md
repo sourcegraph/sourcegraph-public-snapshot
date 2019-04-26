@@ -2,13 +2,13 @@
 
 You can use Sourcegraph with [Phabricator](http://phabricator.org/).
 
-Feature | Supported?
-------- | ----------
-[Repository linking/syncing](../admin/external_service/phabricator.md#repository-linking-and-syncing) | ✅
-[Repository permissions](../admin/repo/permissions.md) | ❌
-[User authentication](../admin/auth.md) | ❌
-[Browser extension](#browser-extension) | ✅
-[Native extension](../admin/external_service/phabricator.md#native-extension) | ✅
+| Feature                                                                                               | Supported? |
+| ----------------------------------------------------------------------------------------------------- | ---------- |
+| [Repository linking/syncing](../admin/external_service/phabricator.md#repository-linking-and-syncing) | ✅         |
+| [Repository permissions](../admin/repo/permissions.md)                                                | ❌         |
+| [User authentication](../admin/auth.md)                                                               | ❌         |
+| [Browser extension](#browser-extension)                                                               | ✅         |
+| [Native extension](../admin/external_service/phabricator.md#native-extension)                         | ✅         |
 
 ## Repository syncing and linking
 

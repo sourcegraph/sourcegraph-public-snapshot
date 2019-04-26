@@ -58,7 +58,7 @@ Mirrors repositories from their code host. All other Sourcegraph services talk t
 
 gitserver's memory usage consists of short lived git subprocesses.
 
-This is an IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service. 
+This is an IO and compute heavy service since most Sourcegraph requests will trigger 1 or more git commands. As such we shard requests for a repo to a specific replica. This allows us to horizontally scale out the service.
 
 The service is stateful (maintaining git clones). However, it only contains data mirrored from upstream code hosts.
 

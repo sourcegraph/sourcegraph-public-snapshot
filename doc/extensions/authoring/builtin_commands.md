@@ -10,7 +10,7 @@ await sourcegraph.commands.executeCommand('open', 'https://example.com')
 
 Extension actions defined in `package.json` can also invoke commands. The following is an example `package.json` that defines an action that executes a command (`open`):
 
-``` json
+```json
 {
   ...
   "contributes": {

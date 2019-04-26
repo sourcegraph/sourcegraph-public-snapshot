@@ -23,9 +23,9 @@ To support deactivation, an extension records its subscriptions in the `Extensio
 import * as sourcegraph from 'sourcegraph'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {
-    ctx.subscriptions.add(
-        sourcegraph.languages.registerHoverProvider(['*'], () => ({ contents: { value: 'Hello, world!' } }))
-    )
+  ctx.subscriptions.add(
+    sourcegraph.languages.registerHoverProvider(['*'], () => ({ contents: { value: 'Hello, world!' } }))
+  )
 }
 ```
 
@@ -50,7 +50,7 @@ If the extension was never activated, then it does not need to be deactivated.
 
 ### Why explicit deactivation is necessary
 
-Extensions must support deactivation because there is no way for Sourcegraph to know (in general) which resources to free when an extension is deactivated. All extensions run in the same JavaScript execution context (usually a Web Worker), so Sourcegraph can't determine *which* extension called functions such as `registerHoverProvider`.
+Extensions must support deactivation because there is no way for Sourcegraph to know (in general) which resources to free when an extension is deactivated. All extensions run in the same JavaScript execution context (usually a Web Worker), so Sourcegraph can't determine _which_ extension called functions such as `registerHoverProvider`.
 
 ### Backcompat for Sourcegraph versions prior to 3.0
 
@@ -88,8 +88,8 @@ The following **incorrect** code example contains this bug:
 import * as sourcegraph from 'sourcegraph'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {
-    // ❌❌❌ INCORRECT USAGE (the hover provider will NOT be unsubscribed upon deactivation)
-    sourcegraph.languages.registerHoverProvider(['*'], () => ({ contents: { value: 'Hello, world!' } }))
+  // ❌❌❌ INCORRECT USAGE (the hover provider will NOT be unsubscribed upon deactivation)
+  sourcegraph.languages.registerHoverProvider(['*'], () => ({ contents: { value: 'Hello, world!' } }))
 }
 ```
 
@@ -101,10 +101,10 @@ The **correct** code is:
 import * as sourcegraph from 'sourcegraph'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {
-    // ✔️✔️✔️ CORRECT USAGE (the hover provider *will* unsubscribed upon deactivation)
-    ctx.subscriptions.add(
-        sourcegraph.languages.registerHoverProvider(['*'], () => ({ contents: { value: 'Hello, world!' } }))
-    )
+  // ✔️✔️✔️ CORRECT USAGE (the hover provider *will* unsubscribed upon deactivation)
+  ctx.subscriptions.add(
+    sourcegraph.languages.registerHoverProvider(['*'], () => ({ contents: { value: 'Hello, world!' } }))
+  )
 }
 ```
 

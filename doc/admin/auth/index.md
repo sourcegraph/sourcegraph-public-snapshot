@@ -84,11 +84,11 @@ Then add the following lines to your critical configuration:
   "auth.providers": [
     {
       "type": "github",
-      "url": "https://github.example.com",  // URL of your GitHub instance; can leave empty for github.com
+      "url": "https://github.example.com", // URL of your GitHub instance; can leave empty for github.com
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false  // Set to true to enable anyone with a GitHub account to sign up without invitation
+      "allowSignup": false // Set to true to enable anyone with a GitHub account to sign up without invitation
     }
   ]
 }

@@ -4,10 +4,10 @@
 
 Sourcegraph integrates with LightStep both for users (to easily view live traces when navigating code) and site admins (to monitor a self-hosted Sourcegraph instance).
 
-Feature | Supported?
-------- | ----------
-For users: [View live traces for your code](#view-live-traces-for-your-code) | ✅
-For site admins: [Monitoring a self-hosted Sourcegraph instance](#instrumenting-a-self-hosted-sourcegraph-instance) | ✅
+| Feature                                                                                                             | Supported? |
+| ------------------------------------------------------------------------------------------------------------------- | ---------- |
+| For users: [View live traces for your code](#view-live-traces-for-your-code)                                        | ✅         |
+| For site admins: [Monitoring a self-hosted Sourcegraph instance](#instrumenting-a-self-hosted-sourcegraph-instance) | ✅         |
 
 # View live traces for your code
 

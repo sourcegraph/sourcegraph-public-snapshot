@@ -2,10 +2,10 @@
 
 You can use Sourcegraph with Git repositories hosted on [AWS CodeCommit](https://aws.amazon.com/codecommit/).
 
-Feature | Supported?
-------- | ----------
-[Repository syncing](../admin/external_service/aws_codecommit.md) | ✅
-[Browser extension](browser_extension.md) | ❌
+| Feature                                                           | Supported? |
+| ----------------------------------------------------------------- | ---------- |
+| [Repository syncing](../admin/external_service/aws_codecommit.md) | ✅         |
+| [Browser extension](browser_extension.md)                         | ❌         |
 
 ## Repository syncing
 

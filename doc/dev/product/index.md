@@ -1,6 +1,6 @@
 # Product
 
-This document is about *how* we plan product changes at Sourcegraph. For the *what*, see the [product roadmap](../roadmap/index.md).
+This document is about _how_ we plan product changes at Sourcegraph. For the _what_, see the [product roadmap](../roadmap/index.md).
 
 ## Goals
 
@@ -61,7 +61,7 @@ If a project wants to do a project-specific [retrospective](../retrospectives/in
 
 ## Release early, release often
 
-Each project, no matter how long-running, needs to plan to ship *something* in each release. The "something" depends on the project. We strongly prefer for it to be a minimal viable feature that is enabled by default. The next best thing is to ship something that is feature-flagged off by default.
+Each project, no matter how long-running, needs to plan to ship _something_ in each release. The "something" depends on the project. We strongly prefer for it to be a minimal viable feature that is enabled by default. The next best thing is to ship something that is feature-flagged off by default.
 
 The reason for this is to avoid going for too long without customer feedback (from customers trying it) or even technical/product feedback (from performing the diligent work of polishing it to be ready to release). Lacking these critical checks means we will end up building something that doesn't solve people's problems or that is over-built.
 

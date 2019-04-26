@@ -52,7 +52,7 @@ Their purpose is to reexport symbols from a number of other files to make import
 
 When adding a new route (and new components), you can opt into code splitting for it by referring to a lazy-loading reference to the component (instead of a static import binding of the component). To create the lazy-loading reference to the component, use `React.lazy`, as in:
 
-``` typescript
+```typescript
 const MyComponent = React.lazy(async () => ({
     default: (await import('./path/to/MyComponent)).MyComponent,
 }))

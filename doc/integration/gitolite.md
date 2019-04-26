@@ -2,10 +2,10 @@
 
 You can use Sourcegraph with [Gitolite](http://gitolite.com/).
 
-Feature | Supported?
-------- | ----------
-[Repository syncing](../admin/external_service/gitolite.md#repository-syncing) | ✅
-[Browser extension](#browser-extension) | ❌
+| Feature                                                                        | Supported? |
+| ------------------------------------------------------------------------------ | ---------- |
+| [Repository syncing](../admin/external_service/gitolite.md#repository-syncing) | ✅         |
+| [Browser extension](#browser-extension)                                        | ❌         |
 
 ## Repository syncing
 

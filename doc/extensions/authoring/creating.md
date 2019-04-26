@@ -9,7 +9,7 @@ A Sourcegraph extension is a single JavaScript file that has an exported `activa
 ```javascript
 // my-extension.js
 export function activate() {
-  console.log('my-extension activated');
+  console.log('my-extension activated')
 }
 ```
 

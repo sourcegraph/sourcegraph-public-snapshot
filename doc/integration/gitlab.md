@@ -2,12 +2,12 @@
 
 You can use Sourcegraph with [GitLab.com](https://github.com) and GitLab CE/EE.
 
-Feature | Supported?
-------- | ----------
-[Repository syncing](../admin/external_service/gitlab.md#repository-syncing) | ✅
-[Repository permissions](../admin/external_service/gitlab.md#repository-permissions) | ✅
-[User authentication](../admin/external_service/gitlab.md#user-authentication) | ✅
-[Browser extension](#browser-extension) | ✅
+| Feature                                                                              | Supported? |
+| ------------------------------------------------------------------------------------ | ---------- |
+| [Repository syncing](../admin/external_service/gitlab.md#repository-syncing)         | ✅         |
+| [Repository permissions](../admin/external_service/gitlab.md#repository-permissions) | ✅         |
+| [User authentication](../admin/external_service/gitlab.md#user-authentication)       | ✅         |
+| [Browser extension](#browser-extension)                                              | ✅         |
 
 ## Repository syncing
 

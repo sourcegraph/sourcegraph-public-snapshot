@@ -74,11 +74,11 @@ The most common problem is:
 Try the following:
 
 1. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
-    - Ensure that the Sourcegraph URL is correct. It must point to your own Sourcegraph instance to work on private code.
-    - Check whether any permissions must be granted. If so, the settings page will offer you to "grant the Sourcegraph browser extension additional permissions".
+   - Ensure that the Sourcegraph URL is correct. It must point to your own Sourcegraph instance to work on private code.
+   - Check whether any permissions must be granted. If so, the settings page will offer you to "grant the Sourcegraph browser extension additional permissions".
 1. On some code hosts, you need to be signed in (to the code host) to use the browser extension. Try signing in.
 
-### The *Enable Sourcegraph on this domain* option is not available
+### The _Enable Sourcegraph on this domain_ option is not available
 
 In rare cases, Chrome can get into the state where the option to **Enable Sourcegraph on this domain** is not available when right-clicking on the extension icon. One fix we've observed is to toggle the site access from on, to off, then on again (see below).
 

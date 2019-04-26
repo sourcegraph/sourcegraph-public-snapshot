@@ -7,8 +7,8 @@ To set this up:
 1. In your extension's directory, run `npm run serve` to run the Parcel dev server. Wait until it reports that it's listening.
 2. Reveal the **Ext ▲** debug menu by running the following JavaScript code in your browser's devtools console on a Sourcegraph page: `localStorage.debug=true;location.reload()`.
 3. In the **Ext ▲** debug menu, click **Sideload Extension -> Load Extension**.
-3. Enter the URL the Parcel dev server is listening on.
-4. Your extension should appear in the debug menu's "active extensions" list. If it doesn't, there may have been an error when activating your extension - check the debug console for error messages.
+4. Enter the URL the Parcel dev server is listening on.
+5. Your extension should appear in the debug menu's "active extensions" list. If it doesn't, there may have been an error when activating your extension - check the debug console for error messages.
 
 After doing this, the development cycle is as follows:
 
@@ -22,15 +22,15 @@ When you're done, clear the sideload URL from the extensions debug menu.
 1. Add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`).
 2. Add the following npm script to your `package.json`:
 
-    ```json
-    "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json"
-    ```
+   ```json
+   "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json"
+   ```
 
 3. Edit the `serve` npm script to run `symlink-package`:
 
-    ```json
-    "serve": "npm run symlink-package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
-    ```
+   ```json
+   "serve": "npm run symlink-package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
+   ```
 
 ## Next steps
 

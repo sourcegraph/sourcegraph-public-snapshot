@@ -4,24 +4,24 @@ Sourcegraph extensions use a `package.json` file for metadata and configuration.
 
 ## Fields
 
-Name | Required | Type | Details
----- |:--------:| ---- | -------
-`name` | ✔️ | `string` | Extension identifier: all lowercase, alphanumeric with hyphens and underscores.
-`description` | ✔️ | `string` | The extension's description, which summarizes the extension's purpose and features.
-`version` | | `string` | [Semantic versioning](https://semver.org/) format.
-`publisher` | ✔️ | `string` | Your [Sourcegraph username](development_environment.md#sourcegraph-com-account-and-the-sourcegraph-cli) (or the name of an organization you're a member of)
-`license` | | `string` | The type of license chosen.
-`main` | | `string` | Path to the transpiled JavaScript file for your extension.
-`contributes` | | `object` | An object describing the contributions (features) this extension provides. See "[Extension contribution points](contributions.md)" for a full listing.
-[`activationEvents`](activation.md) | ✔️ | `array` | A list of events that cause this extension to be activated.
-`dependencies` | | `object` | npm dependencies.
-`devDependencies` | | `object` | npm dependencies needed for development.
-`scripts` | ✔️ | `object` | npm's scripts with Sourcegraph specific entries such as `sourcegraph:prepublish`.
-`browserslist` | | `string` | Modern list of browsers for build tools to target when transpiling.
-`repository` | | `object` | npm field for the repository location.
-`categories` | | `string[]` | Categories that describe this extension, from the predefined set [`Programming languages`](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22), `Linters`, `Code analysis`, `External services`, `Reports and stats`, `Other`.
-`tags` | | `string[]` | Arbitrary tags that describe this extension.
-`wip` | | `boolean`| Indicates that this is a [work-in-progress extension](publishing.md#wip-extensions).
+| Name                                | Required | Type       | Details                                                                                                                                                                                                                                                     |
+| ----------------------------------- | :------: | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                              |    ✔️    | `string`   | Extension identifier: all lowercase, alphanumeric with hyphens and underscores.                                                                                                                                                                             |
+| `description`                       |    ✔️    | `string`   | The extension's description, which summarizes the extension's purpose and features.                                                                                                                                                                         |
+| `version`                           |          | `string`   | [Semantic versioning](https://semver.org/) format.                                                                                                                                                                                                          |
+| `publisher`                         |    ✔️    | `string`   | Your [Sourcegraph username](development_environment.md#sourcegraph-com-account-and-the-sourcegraph-cli) (or the name of an organization you're a member of)                                                                                                 |
+| `license`                           |          | `string`   | The type of license chosen.                                                                                                                                                                                                                                 |
+| `main`                              |          | `string`   | Path to the transpiled JavaScript file for your extension.                                                                                                                                                                                                  |
+| `contributes`                       |          | `object`   | An object describing the contributions (features) this extension provides. See "[Extension contribution points](contributions.md)" for a full listing.                                                                                                      |
+| [`activationEvents`](activation.md) |    ✔️    | `array`    | A list of events that cause this extension to be activated.                                                                                                                                                                                                 |
+| `dependencies`                      |          | `object`   | npm dependencies.                                                                                                                                                                                                                                           |
+| `devDependencies`                   |          | `object`   | npm dependencies needed for development.                                                                                                                                                                                                                    |
+| `scripts`                           |    ✔️    | `object`   | npm's scripts with Sourcegraph specific entries such as `sourcegraph:prepublish`.                                                                                                                                                                           |
+| `browserslist`                      |          | `string`   | Modern list of browsers for build tools to target when transpiling.                                                                                                                                                                                         |
+| `repository`                        |          | `object`   | npm field for the repository location.                                                                                                                                                                                                                      |
+| `categories`                        |          | `string[]` | Categories that describe this extension, from the predefined set [`Programming languages`](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22), `Linters`, `Code analysis`, `External services`, `Reports and stats`, `Other`. |
+| `tags`                              |          | `string[]` | Arbitrary tags that describe this extension.                                                                                                                                                                                                                |
+| `wip`                               |          | `boolean`  | Indicates that this is a [work-in-progress extension](publishing.md#wip-extensions).                                                                                                                                                                        |
 
 See the [npm package.json documentation](https://docs.npmjs.com/creating-a-package-json-file) for other fields.
 
@@ -49,13 +49,9 @@ Here is an example `package.json` created by the [Sourcegraph extension creator]
   },
   "categories": ["Programming languages"],
   "tags": ["awesome"],
-  "activationEvents": [
-    "*"
-  ],
+  "activationEvents": ["*"],
   "contributes": {
-    "actions": [
-      {}
-    ],
+    "actions": [{}],
     "menus": {
       "editor/title": [],
       "commandPalette": []

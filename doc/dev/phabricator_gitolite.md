@@ -1,8 +1,8 @@
-Phabricator/Gitolite documentation
-==================================
+# Phabricator/Gitolite documentation
 
 Gitolite
-____________
+
+---
 
 Most customers who use our Phabricator integration use gitolite as their
 repository hosting service. For ease and reproducibility, we use
@@ -17,7 +17,7 @@ your public key and ask them give you permissions.
 
 1. Spin up gitolite.sgdev.org in the tooling cluster
 
-Create the gitolite pods by navigating to the *infrastructure* repository and applying the Gitolite config.
+Create the gitolite pods by navigating to the _infrastructure_ repository and applying the Gitolite config.
 
 ```shell
 cd sourcegraph/infrastructure/kubernetes/tooling
@@ -92,11 +92,10 @@ repository.](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/c
 
 #### Setup
 
-
 ##### K8s
 
 Create the phabricator pods by navigating to the
-*infrastructure* repository and applying the Phabricator
+_infrastructure_ repository and applying the Phabricator
 config.
 
 ```
@@ -106,7 +105,7 @@ kubectl apply -f ./phabricator
 
 ##### Docker (local)
 
-You can run locally via docker. We have 
+You can run locally via docker. We have
 [<https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator>](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator)
 for this using
 [Bitnami.](https://docs.bitnami.com/installer/apps/phabricator/)
@@ -124,10 +123,10 @@ dev/phabricator/stop.sh
 1. Click the link to [Diffusion](http://127.0.0.1/diffusion/)
 
 2. [Create a repository](http://127.0.0.1/diffusion/edit) and
-    select git as the vcs
+   select git as the vcs
 
-    Give the repository a name and a callsign with only
-    alphanumeric characters (just the name in all caps works).
+   Give the repository a name and a callsign with only
+   alphanumeric characters (just the name in all caps works).
 
 3. Click URIs in the side bar
 
@@ -137,13 +136,12 @@ dev/phabricator/stop.sh
 
 6. Once created, click "Set Credential" on the right
 
-    Click "Add New Credential". Fill out the form. Give it a private key from a public/private key pair that has access to your gitolite. To add it to Gitolite, checkout the `gitolite-admin` repo and add the public key to `keydir/` under the name `$USER.pub`. Then open `conf/gitolite.conf` and give $USER read and write permissions to the repository.
+   Click "Add New Credential". Fill out the form. Give it a private key from a public/private key pair that has access to your gitolite. To add it to Gitolite, checkout the `gitolite-admin` repo and add the public key to `keydir/` under the name `$USER.pub`. Then open `conf/gitolite.conf` and give \$USER read and write permissions to the repository.
 
+7) Now go back to the "manage repository" page and click activate repository on the right.
 
-7. Now go back to the "manage repository" page and click activate repository on the right.
-
-    If configured correctly, Phabricator will start mirroring
-    the repository.
+   If configured correctly, Phabricator will start mirroring
+   the repository.
 
 #### Install the Sourcegraph Phabricator extension.
 
@@ -160,27 +158,27 @@ will be `/opt/bitnami/phabricator`.
 3. Ensure `.arcconfig` has been added
 
 ```json
-  {
-    "phabricator.uri" : "https://<your phabricator host>/"
-  }
+{
+  "phabricator.uri": "https://<your phabricator host>/"
+}
 ```
 
 4. Make some changes and push the diff to Phabricator's
 
-    Use `arc` to create a new branch
+   Use `arc` to create a new branch
 
-    ```shell
-    arc branch my-branch
-    ```
+   ```shell
+   arc branch my-branch
+   ```
 
-    Make some changes, commit them, and upload the diff to Phabricator. DO NOT PUSH them to the git remote. If you push the changes to the git remote, we no longer are testing a critical feature of the Sourcegraph Phabricator integration, which is that it uses staging areas if configured or attempts to apply patchsets.
+   Make some changes, commit them, and upload the diff to Phabricator. DO NOT PUSH them to the git remote. If you push the changes to the git remote, we no longer are testing a critical feature of the Sourcegraph Phabricator integration, which is that it uses staging areas if configured or attempts to apply patchsets.
 
-    ```shell
-    git add . git commit -m "some changes" arc diff
-    ```
+   ```shell
+   git add . git commit -m "some changes" arc diff
+   ```
 
-    `arc` uploaded the patch that `git` generated from your changes and creates an associated "diff". Diffs are code reviews for patchsets. Phabricator's philosophy is to keep diffs as small as possible so they can be reviewed quickly and thoroughly, but don't assume that users follow this. Create large diffs in your test cases.
+   `arc` uploaded the patch that `git` generated from your changes and creates an associated "diff". Diffs are code reviews for patchsets. Phabricator's philosophy is to keep diffs as small as possible so they can be reviewed quickly and thoroughly, but don't assume that users follow this. Create large diffs in your test cases.
 
-    At this point, changes live on Phabricator that aren't in the git remote. Sourcegraph either gets these changes from [staging areas (cmd+f for "staging area")](https://secure.phabricator.com/book/phabricator/article/harbormaster/) or [it attempts to apply the patchset on a temporary clone of the repo.](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/repository.go#L225-338)
+   At this point, changes live on Phabricator that aren't in the git remote. Sourcegraph either gets these changes from [staging areas (cmd+f for "staging area")](https://secure.phabricator.com/book/phabricator/article/harbormaster/) or [it attempts to apply the patchset on a temporary clone of the repo.](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/repository.go#L225-338)
 
-    You are now at a point where you can test the Sourcegraph extensions in Phabricator code review. Navigate to the diff that `arc` created in your browser and the extension should be working just as the browser extension does on GitHub.
+   You are now at a point where you can test the Sourcegraph extensions in Phabricator code review. Navigate to the diff that `arc` created in your browser and the extension should be working just as the browser extension does on GitHub.

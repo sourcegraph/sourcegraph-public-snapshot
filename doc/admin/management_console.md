@@ -103,7 +103,7 @@ If you are using `sourcegraph/server` and the regular Docker flag:
 --volume ~/.sourcegraph/config:/etc/sourcegraph
 ```
 
-This means you can simply place them in `~/.sourcegraph/config/management/`  on the host.
+This means you can simply place them in `~/.sourcegraph/config/management/` on the host.
 
 Restart the container once you have copied the files there for the changes to take effect.
 

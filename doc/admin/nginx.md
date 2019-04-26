@@ -76,7 +76,7 @@ Services such as [Cloudflare](https://www.cloudflare.com/ssl/) can handle the SS
 
 The URL that clients should use to access Sourcegraph is defined in the `externalURL` property in [critical configuration](config/critical_config.md). To enforce that clients access Sourcegraph via this URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
 
-``` nginx
+```nginx
 # Redirect non-HTTPS traffic to HTTPS.
 server {
     listen 80;
@@ -92,7 +92,7 @@ server {
 
 [HTTP Strict Transport Security](https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security) instructs web clients to only communicate with the server over HTTPS. To configure it, add the following to `nginx.conf` (in the `server` block):
 
-``` nginx
+```nginx
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 ```
 

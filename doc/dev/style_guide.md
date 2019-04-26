@@ -43,7 +43,6 @@ Assume the reader is a busy non-native English speaker.
       - Sourcegraph['s] Firefox add-on
 - "Code intelligence" is reserved for describing benefit of using Sourcegraph holistically or from the organization's point of view. If referring to "go to definition" for example, use "code navigation" (not "code intel").
 
-
 When referring to the build result of the open-source repository, use the name Sourcegraph OSS.
 
 When specifically distinguishing between Core and Sourcegraph OSS it is important to note that Core is not built from the open-source code base and Sourcegraph OSS does not include the ability to upgrade, or access the extension registry on sourcegraph.com. These are included in the Core version of Sourcegraph, that is built from the same code as Sourcegraph Enterprise and has the ability to upgrade later.

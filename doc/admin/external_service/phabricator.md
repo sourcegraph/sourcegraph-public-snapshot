@@ -59,8 +59,7 @@ The Sourcegraph instance's site admin must [update the `corsOrigin` site config 
 ```json
 {
   // ...
-  "corsOrigin":
-    "https://my-phabricator.example.com"
+  "corsOrigin": "https://my-phabricator.example.com"
   // ...
 }
 ```

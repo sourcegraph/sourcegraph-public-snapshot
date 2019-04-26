@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "description": "Sourcegraph documentation",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph"
+  },
+  "engines": {
+    "node": ">=8.0.0",
+    "yarn": "^1.10.1"
+  },
+  "scripts": {
+    "prettier": "prettier '**/{*.{js?(on),md,css},.*.js?(on)}' --write --list-different --config ../prettier.config.js",
+    "prettier-check": "npm run prettier -- --write=false"
+  }
+}

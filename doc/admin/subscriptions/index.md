@@ -8,7 +8,7 @@ You can [buy a subscription](https://sourcegraph.com/subscriptions/new) on Sourc
 
 ## Volume discounts
 
-[Contact us](https://about.sourcegraph.com/contact) to ask about volume discounts for Sourcegraph Enterprise. 
+[Contact us](https://about.sourcegraph.com/contact) to ask about volume discounts for Sourcegraph Enterprise.
 
 ## True-up pricing
 

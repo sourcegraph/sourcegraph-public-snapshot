@@ -6,6 +6,6 @@ Here you can see charts with counts of unique users by day, week, or month, spli
 
 From this page, you can also see user-level activity, including counts of pageviews, searches, and code intelligence actions, and last active times. This user-level data is all stored locally on your Sourcegraph instance, and is never sent to Sourcegraph.com.
 
-## See also 
+## See also
 
 - [User satisfaction surveys](user_surveys.md)

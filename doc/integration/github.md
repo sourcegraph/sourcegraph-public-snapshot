@@ -2,12 +2,12 @@
 
 You can use Sourcegraph with [GitHub.com](https://github.com) and [GitHub Enterprise](https://enterprise.github.com).
 
-Feature | Supported?
-------- | ----------
-[Repository syncing](../admin/external_service/github.md#selecting-repositories-for-code-search) | ✅
-[Repository permissions](../admin/external_service/github.md#repository-permissions) | ✅
-[User authentication](../admin/external_service/github.md#user-authentication) | ✅
-[Browser extension](#browser-extension) | ✅
+| Feature                                                                                          | Supported? |
+| ------------------------------------------------------------------------------------------------ | ---------- |
+| [Repository syncing](../admin/external_service/github.md#selecting-repositories-for-code-search) | ✅         |
+| [Repository permissions](../admin/external_service/github.md#repository-permissions)             | ✅         |
+| [User authentication](../admin/external_service/github.md#user-authentication)                   | ✅         |
+| [Browser extension](#browser-extension)                                                          | ✅         |
 
 ## Repository syncing
 
