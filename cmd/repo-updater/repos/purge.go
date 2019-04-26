@@ -83,12 +83,15 @@ func purge(ctx context.Context, log log15.Logger) error {
 		}
 
 		info := infos.Results[repo]
-		age := time.Since(*info.CloneTime)
-		if info.CloneTime != nil && age < 12*time.Hour {
-			log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", age)
-			purgeSkipped.Inc()
-			skipped++
-			continue
+
+		if info.CloneTime != nil {
+			age := time.Since(*info.CloneTime)
+			if age < 12*time.Hour {
+				log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", age)
+				purgeSkipped.Inc()
+				skipped++
+				continue
+			}
 		}
 
 		// Race condition: A repo can be re-enabled between our listing and
