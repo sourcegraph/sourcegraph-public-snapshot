@@ -23,7 +23,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Removes corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
 - Fixed a bug where search scopes would not get merged, and only the lowest-level list of search scopes would appear.
-- Removed corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
 
 ## 3.3.3
 
