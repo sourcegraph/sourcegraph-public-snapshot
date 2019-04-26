@@ -178,26 +178,11 @@ export function mergeSettings<S extends Settings>(values: S[]): S | null {
         return null
     }
     const customFunctions: CustomMergeFunctions = {
-        extensions: (base: any, add: any) => {
-            base = { ...base, ...add }
-            return base
-        },
-        notices: (base: any, add: any) => {
-            base = [...base, ...add]
-            return base
-        },
-        'search.scopes': (base: any, add: any) => {
-            base = [...base, ...add]
-            return base
-        },
-        'search.savedQueries': (base: any, add: any) => {
-            base = [...base, ...add]
-            return base
-        },
-        'search.repositoryGroups': (base: any, add: any) => {
-            base = { ...base, ...add }
-            return base
-        },
+        extensions: (base: any, add: any) => ({ ...base, ...add }),
+        notices: (base: any, add: any) => [...base, ...add],
+        'search.scopes': (base: any, add: any) => [...base, ...add],
+        'search.savedQueries': (base: any, add: any) => [...base, ...add],
+        'search.repositoryGroups': (base: any, add: any) => ({ ...base, ...add }),
     }
     const target = cloneDeep(values[0])
     for (const value of values.slice(1)) {
@@ -214,8 +199,7 @@ export interface CustomMergeFunctions {
  * Shallow merges add into base (modifying base). Only the top-level object is smerged.
  *
  * The merged value for a key path can be customized by providing a
- * function at the same key path in `custom`. To deeply merge a value at a key path,
- * pass in a custom function at the same key path as part of the `custom` parameter.
+ * function at the same key path in `custom`.
  *
  * Most callers should use mergeSettings, which uses the set of CustomMergeFunctions that are required to properly
  * merge settings.
