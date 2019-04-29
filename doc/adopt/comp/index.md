@@ -46,7 +46,7 @@ Livegrep is maintained by a Stripe developer and is used inside Stripe. It has a
 
 * No support for code navigation (code intelligence and/or ctags)
 * Difficult to manage and scale (requires building custom infrastructure)
-* Although it’s used heavily by a small number of companies, it’s maintained part-time by a single * developer, so future trajectory is limited
+* Although it’s used heavily by a small number of companies, it’s maintained part-time by a single developer, so future trajectory is limited
 
 ## [Atlassian FishEye](https://www.atlassian.com/software/fisheye)
 
@@ -85,6 +85,6 @@ No organization with at least 20 daily Sourcegraph users has ever stopped using 
 
 * **[Google Cloud Source Repositories Code Search](https://cloud.google.com/source-repositories/docs/searching-code)**: This is a hosted Git code search offering that integrates with Google Cloud Source Repositories (Google Cloud’s Git hosting product), but has limited distribution. You can try a public demo at [source.bazel.build](https://source.bazel.build/).
 
-* **[GitHub code search](https://help.github.com/en/articles/searching-code)**, **[GitLab code search](https://docs.gitlab.com/ee/user/search/advanced_global_search.html)**, **[Bitbucket Server code search](https://confluence.atlassian.com/bitbucketserver/search-for-code-in-bitbucket-server-814204781.html)**, **[Bitbucket Cloud code search](https://confluence.atlassian.com/bitbucket/search-873876782.html)**: This is a great solution for smaller teams who already use these code hosts and who have simple/infrequent code search needs. The main pain points we hear are that they lack support for punctuation or regexps in queries, and the UXs are not optimized for searching across multiple repositories.
+* **[GitHub code search](https://help.github.com/en/articles/searching-code)**, **[GitLab code search](https://docs.gitlab.com/ee/user/search/advanced_global_search.html)**, **[Bitbucket Server code search](https://confluence.atlassian.com/bitbucketserver/search-for-code-in-bitbucket-server-814204781.html)**, **[Bitbucket Cloud code search](https://confluence.atlassian.com/bitbucket/search-873876782.html)**: These are a great solutions for smaller teams who already use these code hosts and who have simple/infrequent code search needs. The main pain points we hear are that they lack support for punctuation or regexps in queries, and the UXs are not optimized for searching across multiple repositories.
 
 * **[Searchcode Server](https://searchcodeserver.com/)**
