@@ -197,6 +197,7 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   // An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.
   // See the repositoryQuery documentation at https://docs.sourcegraph.com/admin/external_service/github#configuration for details.
   "repositoryQuery": [
+    // "org:sourcegraph"
   ]
 }`,
 }
@@ -280,6 +281,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   // Here's the official Bitbucket Server documentation about which query string parameters are valid:
   // https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
   "repositoryQuery": [
+    // "?name=sourcegraph"
   ]
 }`,
         editorActions: [
@@ -360,6 +362,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   // An array of strings specifying GitLab project search queries to mirror on Sourcegraph.
   // See the projectQuery documentation at https://docs.sourcegraph.com/admin/external_service/gitlab#configuration for details.
   "projectQuery": [
+    // "?search=sourcegraph",
   ]
 }`,
         editorActions: [
