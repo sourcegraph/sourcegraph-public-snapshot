@@ -22,9 +22,7 @@ const config = {
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
   transformIgnorePatterns: [
-    /^(?!\/node_modules\/).+\.js$/.source, // do not transform JS outside node_modules
-    /node_modules\/(?!abortable-rx|@sourcegraph\/react-loading-spinner|@sourcegraph\/codeintellify|@sourcegraph\/comlink)/
-      .source,
+    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify|@sourcegraph/comlink)',
   ],
 
   moduleNameMapper: { '\\.s?css$': 'identity-obj-proxy', '^worker-loader': 'identity-obj-proxy' },
