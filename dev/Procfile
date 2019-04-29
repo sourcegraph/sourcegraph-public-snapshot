@@ -7,7 +7,7 @@ github-proxy: github-proxy
 frontend: env CONFIGURATION_MODE=server frontend
 watch: ./dev/changewatch.sh
 nginx: nginx -p . -g 'daemon off;' -c $PWD/dev/nginx.conf | grep -v 'could not open error log file'
-web: ./node_modules/.bin/gulp --color watch
+web: yarn -s run watch
 syntect_server: ./dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
 zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc -listen :3070
