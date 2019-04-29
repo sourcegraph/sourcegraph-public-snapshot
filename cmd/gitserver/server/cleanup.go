@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -193,7 +194,7 @@ func (s *Server) cleanupRepos() {
 	// cheaper and faster to just reclone the repository.
 	cleanups = append(cleanups, cleanupFn{"maybe reclone", maybeReclone})
 
-	filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) error {
+	err := filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			return nil
 		}
@@ -221,6 +222,118 @@ func (s *Server) cleanupRepos() {
 		}
 		return filepath.SkipDir
 	})
+	if err != nil {
+		log15.Error("error iterating over repositories", "error", err)
+	}
+
+	actualFreeBytes, err := s.bytesFreeOnDisk()
+	if err != nil {
+		log15.Error("finding the amount of space free on disk", "error", err)
+		return
+	}
+	howManyBytesToFree := int64(s.DesiredFreeDiskSpace) - int64(actualFreeBytes)
+	if howManyBytesToFree < 0 {
+		return
+	}
+	if err := s.freeUpSpace(howManyBytesToFree); err != nil {
+		log15.Error("error freeing up space", "error", err)
+	}
+}
+
+func (s *Server) bytesFreeOnDisk() (uint64, error) {
+	var fs syscall.Statfs_t
+	if err := syscall.Statfs(s.MountPoint, &fs); err != nil {
+		return 0, errors.Wrap(err, "finding out how much disk space is free")
+	}
+	return fs.Bavail * uint64(fs.Bsize), nil
+}
+
+// freeUpSpace removes git directories under ReposDir, in order from least
+// recently to most recently used, until deltaFreeBytes have been freed.
+func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
+	if howManyBytesToFree < 0 {
+		return nil
+	}
+
+	// Get the git directories and their mod times.
+	gitDirs, err := s.findGitDirs(s.ReposDir)
+	if err != nil {
+		return errors.Wrap(err, "finding git dirs")
+	}
+	dirModTimes := make(map[string]time.Time)
+	for _, d := range gitDirs {
+		head, err := os.Stat(filepath.Join(d, "HEAD"))
+		if err != nil {
+			return errors.Wrap(err, "getting repository modification time")
+		}
+		dirModTimes[d] = head.ModTime()
+	}
+
+	// Sort the repos from least to most recently used.
+	sort.Slice(gitDirs, func(i, j int) bool {
+		return dirModTimes[gitDirs[i]].Before(dirModTimes[gitDirs[j]])
+	})
+
+	// Remove repos until the spaceNeededBytes is freed.
+	var spaceFreed int64
+	for _, d := range gitDirs {
+		delta, err := dirSize(d)
+		if err != nil {
+			return errors.Wrapf(err, "computing size of directory %s", d)
+		}
+		if err := s.removeRepoDirectory(d); err != nil {
+			return errors.Wrap(err, "removing repo directory")
+		}
+		spaceFreed += delta
+		if spaceFreed >= howManyBytesToFree {
+			return nil
+		}
+	}
+	return nil
+}
+
+// findGitDirs returns the .git directories below d.
+func (s *Server) findGitDirs(d string) ([]string, error) {
+	var dirs []string
+	err := filepath.Walk(d, func(path string, fi os.FileInfo, fileErr error) error {
+		if fileErr != nil {
+			return nil
+		}
+		if s.ignorePath(path) {
+			if fi.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !fi.IsDir() || fi.Name() != ".git" {
+			return nil
+		}
+		dirs = append(dirs, path)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "walking dir tree from %s to find git dirs", d)
+	}
+	return dirs, nil
+}
+
+// dirSize returns the total size in bytes of all the files under d.
+func dirSize(d string) (int64, error) {
+	var size int64
+	err := filepath.Walk(d, func(path string, fi os.FileInfo, fileErr error) error {
+		if fileErr != nil {
+			return nil
+		}
+		if fi.IsDir() {
+			return nil
+		}
+		size += fi.Size()
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrapf(err, "walking dir tree from %s to find size", d)
+	}
+	return size, nil
 }
 
 // removeRepoDirectory atomically removes a directory from s.ReposDir.
@@ -230,13 +343,13 @@ func (s *Server) cleanupRepos() {
 // the directory.
 //
 // Additionally it removes parent empty directories up until s.ReposDir.
-func (s *Server) removeRepoDirectory(dir string) error {
+func (s *Server) removeRepoDirectory(dir string) (err error) {
 	// Rename out of the location so we can atomically stop using the repo.
 	tmp, err := s.tempDir("delete-repo")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmp)
+	defer func() { err = os.RemoveAll(tmp) }()
 	if err := os.Rename(dir, filepath.Join(tmp, "repo")); err != nil {
 		return err
 	}

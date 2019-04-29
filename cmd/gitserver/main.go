@@ -21,11 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
-const janitorInterval = 24 * time.Hour
-
 var (
 	reposDir          = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
 	runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
+	mountPoint        = env.Get("SRC_REPOS_MOUNT_POINT", "/data", "Where the disk containing $SRC_REPOS_DIR is mounted")
+	wantFreeG         = env.Get("SRC_REPOS_DESIRED_FREE_GB", "10", "How many gigabytes of space to keep free on the disk with the repos")
+	janitorInterval   = env.Get("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
 )
 
 func main() {
@@ -40,9 +41,15 @@ func main() {
 		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
 	}
 
+	wantFreeG2, err := strconv.Atoi(wantFreeG)
+	if err != nil {
+		log.Fatalf("parsing $SRC_REPOS_DESIRED_FREE_GB: %v", err)
+	}
 	gitserver := server.Server{
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
+		MountPoint:              mountPoint,
+		DesiredFreeDiskSpace:    uint64(wantFreeG2 * 1024 * 1024 * 1024),
 	}
 	gitserver.RegisterMetrics()
 
@@ -59,10 +66,15 @@ func main() {
 
 	go debugserver.Start()
 
+
+	janitorInterval2, err := time.ParseDuration(janitorInterval)
+	if err != nil {
+		log.Fatalf("parsing $SRC_REPOS_JANITOR_INTERVAL: %v", err)
+	}
 	go func() {
 		for {
 			gitserver.Janitor()
-			time.Sleep(janitorInterval)
+			time.Sleep(janitorInterval2)
 		}
 	}()
 
