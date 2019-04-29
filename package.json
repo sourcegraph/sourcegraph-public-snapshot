@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "node": ">=8.0.0",
+    "node": ">=8.0.0 <12.0.0",
     "yarn": "^1.10.1"
   },
   "scripts": {
@@ -188,6 +188,7 @@
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^6.1.0",
     "@sourcegraph/comlink": "^3.1.1-fork.3",
+    "@sourcegraph/extension-api-classes": "link:packages/@sourcegraph/extension-api-classes",
     "@sourcegraph/extension-api-types": "link:packages/@sourcegraph/extension-api-types",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",

@@ -149,7 +149,10 @@ func main() {
 	// Shared tests
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
-		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
+		bk.Cmd("dev/ci/yarn-test.sh packages/@sourcegraph/extension-api-classes"),
+		bk.ArtifactPaths(
+			"shared/coverage/coverage-final.json",
+			"packages/@sourcegraph/extension-api-classes/coverage/coverage-final.json"))
 
 	if !isBextReleaseBranch {
 		pipeline.AddStep(":postgres:",

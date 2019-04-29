@@ -31,7 +31,7 @@ type Step struct {
 	Build            *BuildOptions          `json:"build,omitempty"`
 	Env              map[string]string      `json:"env,omitempty"`
 	Plugins          map[string]interface{} `json:"plugins,omitempty"`
-	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
+	ArtifactPaths    []string               `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
 	Concurrency      int                    `json:"concurrency,omitempty"`
 }
@@ -124,7 +124,7 @@ func Env(name, value string) StepOpt {
 	}
 }
 
-func ArtifactPaths(paths string) StepOpt {
+func ArtifactPaths(paths ...string) StepOpt {
 	return func(step *Step) {
 		step.ArtifactPaths = paths
 	}

@@ -1,9 +1,9 @@
 import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import {
     MessageActionItem,
-    NotificationType,
     ShowInputParams,
     ShowMessageRequestParams,
     ShowNotificationParams,

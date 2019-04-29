@@ -1,8 +1,8 @@
+import { NotificationType } from '@sourcegraph/extension-api-classes'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { NotificationType } from '../api/client/services/notifications'
 import { renderMarkdown } from '../util/markdown'
 import { Notification } from './notification'
 

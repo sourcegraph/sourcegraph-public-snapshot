@@ -1,20 +1,6 @@
 import { Observable, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
-/**
- * The type of a notification.
- * This is needed because if sourcegraph.NotificationType enum values are referenced,
- * the `sourcegraph` module import at the top of the file is emitted in the generated code.
- *
- */
-export const NotificationType = {
-    Error: 1,
-    Warning: 2,
-    Info: 3,
-    Log: 4,
-    Success: 5,
-}
-
 interface PromiseCallback<T> {
     resolve: (p: T | Promise<T>) => void
 }

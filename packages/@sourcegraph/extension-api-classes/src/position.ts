@@ -1,7 +1,7 @@
 import * as sourcegraph from 'sourcegraph'
 import { illegalArgument } from './errors'
 
-export class Position {
+export class Position implements sourcegraph.Position {
     public static min(position: sourcegraph.Position, ...positions: sourcegraph.Position[]): Position
     public static min(...positions: sourcegraph.Position[]): sourcegraph.Position | undefined
     public static min(...positions: sourcegraph.Position[]): sourcegraph.Position | undefined {
