@@ -874,7 +874,7 @@ declare module 'sourcegraph' {
         | Subscribable<T | undefined | null>
 
     /** The kinds of markup that can be used. */
-    export const enum MarkupKind {
+    export enum MarkupKind {
         PlainText = 'plaintext',
         Markdown = 'markdown',
     }
@@ -897,7 +897,7 @@ declare module 'sourcegraph' {
     /**
      * The type of a notification shown through {@link Window.showNotification}.
      */
-    export const enum NotificationType {
+    export enum NotificationType {
         /**
          * An error message.
          */
