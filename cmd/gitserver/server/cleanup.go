@@ -262,11 +262,11 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	}
 	dirModTimes := make(map[string]time.Time)
 	for _, d := range gitDirs {
-		head, err := os.Stat(filepath.Join(d, "HEAD"))
+		mt, err := gitDirModTime(d)
 		if err != nil {
-			return errors.Wrap(err, "getting repository modification time")
+			return errors.Wrap(err, "computing mod time of git dir")
 		}
-		dirModTimes[d] = head.ModTime()
+		dirModTimes[d] = mt
 	}
 
 	// Sort the repos from least to most recently used.
@@ -290,6 +290,14 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		}
 	}
 	return nil
+}
+
+func gitDirModTime(d string) (time.Time, error) {
+	head, err := os.Stat(filepath.Join(d, "HEAD"))
+	if err != nil {
+		return time.Time{}, errors.Wrap(err, "getting repository modification time")
+	}
+	return head.ModTime(), nil
 }
 
 // findGitDirs returns the .git directories below d.

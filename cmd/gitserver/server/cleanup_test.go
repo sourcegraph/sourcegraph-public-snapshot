@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -408,4 +409,82 @@ func isEmptyDir(path string) (bool, error) {
 		return true, nil
 	}
 	return false, err
+}
+
+func TestFreeUpSpace(t *testing.T) {
+	t.Run("no error if no space requested and no repos", func(t *testing.T) {
+		s := &Server{}
+		if err := s.freeUpSpace(0); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("error if space requested and no repos", func(t *testing.T) {
+		s := &Server{}
+		if err := s.freeUpSpace(1); err == nil {
+			t.Fatal("want error")
+		}
+	})
+	t.Run("oldest repo gets removed to free up space", func(t *testing.T) {
+		rd, err := ioutil.TempDir("", "freeUpSpace")
+		if err != nil {
+			t.Fatal(err)
+		}
+		r1 := filepath.Join(rd, "repo1")
+		r2 := filepath.Join(rd, "repo2")
+		if err := makeFakeRepo(r1, 1000); err != nil {
+			t.Fatal(err)
+		}
+		if err := makeFakeRepo(r2, 1000); err != nil {
+			t.Fatal(err)
+		}
+		m1, err := gitDirModTime(filepath.Join(r1, ".git"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		m2, err := gitDirModTime(filepath.Join(r2, ".git"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if m1.Equal(m2) || m1.After(m2) {
+			t.Fatalf("expected repo1 to be created before repo2, got mod times %v and %v", m1, m2)
+		}
+		s := Server{
+			ReposDir: rd,
+		}
+		if err := s.freeUpSpace(1000); err != nil {
+			t.Fatal(err)
+		}
+		files, err := ioutil.ReadDir(rd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(files) != 1 {
+			t.Fatalf("got %d items in %s, want exactly 1", len(files), rd)
+		}
+		if files[0].Name() != "repo2" {
+			t.Errorf("name of only item in repos dir is %q, want repo2", files[0].Name())
+		}
+		rds, err := dirSize(rd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantSize := int64(1000)
+		if rds > wantSize {
+			t.Errorf("repo dir size is %d, want no more than %d", rds, wantSize)
+		}
+	})
+}
+
+func makeFakeRepo(d string, sizeBytes int) error {
+	gd := filepath.Join(d, ".git")
+	if err := os.MkdirAll(gd, 0700); err != nil {
+		return errors.Wrap(err, "creating .git dir and any parents")
+	}
+	if err := ioutil.WriteFile(filepath.Join(gd, "HEAD"), nil, 0666); err != nil {
+		return errors.Wrap(err, "creating HEAD file")
+	}
+	if err := ioutil.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0666); err != nil {
+		return errors.Wrapf(err, "writing to space_eater file")
+	}
+	return nil
 }
