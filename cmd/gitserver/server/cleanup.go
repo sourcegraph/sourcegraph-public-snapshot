@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -281,13 +282,19 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		if err != nil {
 			return errors.Wrapf(err, "computing size of directory %s", d)
 		}
-		if err := s.removeRepoDirectory(d); err != nil {
+		gitDirParent := filepath.Dir(d)
+		if err := os.RemoveAll(gitDirParent); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
 		spaceFreed += delta
 		if spaceFreed >= howManyBytesToFree {
 			return nil
 		}
+	}
+
+	// Check.
+	if spaceFreed < howManyBytesToFree {
+		return fmt.Errorf("only freed %d bytes, wanted to free %d", spaceFreed, howManyBytesToFree)
 	}
 	return nil
 }

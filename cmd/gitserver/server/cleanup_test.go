@@ -425,6 +425,7 @@ func TestFreeUpSpace(t *testing.T) {
 		}
 	})
 	t.Run("oldest repo gets removed to free up space", func(t *testing.T) {
+		// Set up.
 		rd, err := ioutil.TempDir("", "freeUpSpace")
 		if err != nil {
 			t.Fatal(err)
@@ -448,12 +449,16 @@ func TestFreeUpSpace(t *testing.T) {
 		if m1.Equal(m2) || m1.After(m2) {
 			t.Fatalf("expected repo1 to be created before repo2, got mod times %v and %v", m1, m2)
 		}
+
+		// Run.
 		s := Server{
 			ReposDir: rd,
 		}
 		if err := s.freeUpSpace(1000); err != nil {
 			t.Fatal(err)
 		}
+
+		// Check.
 		files, err := ioutil.ReadDir(rd)
 		if err != nil {
 			t.Fatal(err)
