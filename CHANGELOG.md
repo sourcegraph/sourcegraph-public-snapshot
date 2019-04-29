@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed bug when submitting SavedQueryForm without selecting the location. (#3628)
+
 ## 3.3.5
 
 ## Changed
