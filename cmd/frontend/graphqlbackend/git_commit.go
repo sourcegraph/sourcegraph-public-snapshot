@@ -35,9 +35,9 @@ type gitCommitResolver struct {
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
-	oid     gitObjectID
-	once    sync.Once
-	onceErr error
+	oid    gitObjectID
+	oidErr error
+	once   sync.Once
 
 	author    signatureResolver
 	committer *signatureResolver
@@ -84,40 +84,50 @@ func (r *gitCommitResolver) ID() graphql.ID {
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
 func (r *gitCommitResolver) OID() (gitObjectID, error) {
-	return r.getCommitOID()
+	r.once.Do(func() {
+		if r.oid != "" {
+			return // We already have an oid because the creator of this *gitCommitResolver specified it.
+		}
+
+		r.doResolveCommitOIDUncached()
+	})
+	return r.oid, r.oidErr
 }
 
-func (r *gitCommitResolver) getCommitOID() (gitObjectID, error) {
-	r.once.Do(func() {
-		// If we already have the commit, no need to try to compute it.
-		if r.oid != "" {
-			return
+func (r *gitCommitResolver) doResolveCommitOIDUncached() {
+	if r.oid != "" || r.oidErr != nil {
+		// Possible scenarios for this case:
+		//
+		// - We already have an r.oid because the creator of this *gitCommitResolver specified it.
+		// - We already have an r.oid because we were called before.
+		// - We don't have an r.oid but have an r.oidErr from being called before.
+		//
+		// In any case, there is no point in doing the work again, so we return
+		// now.
+		return
+	}
+
+	// Commit OID is the empty string denoting the default branch. Find out
+	// what is the latest commit indexed by zoekt.
+
+	indexInfo := r.repo.TextSearchIndex()
+
+	ctx := context.Background()
+
+	var refs []*repositoryTextSearchIndexedRef
+	refs, r.oidErr = indexInfo.Refs(ctx)
+	if r.oidErr != nil {
+		return
+	}
+
+	for _, ref := range refs {
+		current, _ := ref.Current(ctx)
+		if current {
+			r.oid = ref.indexedCommit
+			break
 		}
-
-		// Commit OID is the empty string denoting the default branch. Find out
-		// what is the latest commit indexed by zoekt.
-
-		indexInfo := r.repo.TextSearchIndex()
-
-		ctx := context.Background()
-
-		var refs []*repositoryTextSearchIndexedRef
-		refs, r.onceErr = indexInfo.Refs(ctx)
-		if r.onceErr != nil {
-			return
-		}
-
-		for _, ref := range refs {
-			current, _ := ref.Current(ctx)
-			if current {
-				r.oid = ref.indexedCommit
-
-				break
-			}
-		}
-	})
-
-	return r.oid, r.onceErr
+	}
+	return
 }
 
 func (r *gitCommitResolver) AbbreviatedOID() (string, error) {
