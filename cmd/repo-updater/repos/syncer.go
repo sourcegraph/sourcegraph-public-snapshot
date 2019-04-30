@@ -55,8 +55,9 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...strin
 
 // Sync synchronizes the repositories of the given external service kinds.
 func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err error) {
+	duplicates := map[string][]string{}
 	ctx, save := s.observe(ctx, "Syncer.Sync", strings.Join(kinds, " "))
-	defer save(&diff, &err)
+	defer save(&duplicates, &diff, &err)
 
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, kinds...); err != nil {
@@ -79,8 +80,26 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
+	seenStored := make(map[api.ExternalRepoSpec]bool, len(stored))
+	for _, repo := range stored {
+		if seenStored[repo.ExternalRepo] {
+			log15.Error("syncer.sync.stored.duplicate: detected duplicate stored repo (bug)", "repo", repo.Name)
+			duplicates["stored"] = append(duplicates["stored"], repo.Name)
+		}
+		seenStored[repo.ExternalRepo] = true
+	}
+
+	seenSourced := make(map[api.ExternalRepoSpec]bool, len(sourced))
+	for _, repo := range sourced {
+		if seenSourced[repo.ExternalRepo] {
+			log15.Error("syncer.sync.sourced.duplicate: detected duplicate sourced repo (bug)", "repo", repo.Name)
+			duplicates["sourced"] = append(duplicates["sourced"], repo.Name)
+		}
+		seenSourced[repo.ExternalRepo] = true
+	}
+
 	diff = NewDiff(sourced, stored)
-	upserts := s.upserts(diff)
+	upserts := s.upserts(diff, &duplicates)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
@@ -93,7 +112,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 	return diff, nil
 }
 
-func (s *Syncer) upserts(diff Diff) []*Repo {
+func (s *Syncer) upserts(diff Diff, duplicates *map[string][]string) (result []*Repo) {
 	now := s.now()
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
 
@@ -104,7 +123,8 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 		// this bug other repositories are still updating as expected).
 		// Once that issue is resolved, we should remove this.
 		if seen[repo.ExternalRepo] {
-			log15.Error("syncer.sync.upserts.duplicate: ignoring duplicate Deleted repo (bug)")
+			(*duplicates)["upserts_deleted"] = append((*duplicates)["upserts_deleted"], repo.Name)
+			log15.Error("syncer.sync.upserts.deleted.duplicate: ignoring duplicate Deleted repo (bug)", "repo", repo.Name)
 			continue
 		}
 		seen[repo.ExternalRepo] = true
@@ -122,7 +142,8 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 		// this bug other repositories are still updating as expected).
 		// Once that issue is resolved, we should remove this.
 		if seen[repo.ExternalRepo] {
-			log15.Error("syncer.sync.upserts.duplicate: ignoring duplicate Modified repo (bug)")
+			(*duplicates)["upserts_modified"] = append((*duplicates)["upserts_modified"], repo.Name)
+			log15.Error("syncer.sync.upserts.modified.duplicate: ignoring duplicate Modified repo (bug)", "repo", repo.Name)
 			continue
 		}
 		seen[repo.ExternalRepo] = true
@@ -261,15 +282,26 @@ func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) 
 	return srcs.ListRepos(ctx)
 }
 
-func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
+func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*map[string][]string, *Diff, *error)) {
 	began := s.now()
 	tr, ctx := trace.New(ctx, family, title)
 
-	return ctx, func(d *Diff, err *error) {
+	return ctx, func(duplicates *map[string][]string, d *Diff, err *error) {
 		now := s.now()
 		took := s.now().Sub(began).Seconds()
 
 		fields := make([]otlog.Field, 0, 7)
+
+		// Note: using otlog.String here because I (@slimsag) believe Jaeger
+		// does not accept non-basic data types like otlog.Object with lists of
+		// strings? The "added.repos" etc fields below don't show up in Jaeger.
+		// Either that or those fields are too large for Jaeger's 65536 UDP
+		// packet limit (but I think that would drop the entire span so that
+		// seems less likely to me).
+		for category, duplicates := range *duplicates {
+			fields = append(fields, otlog.String(category, fmt.Sprintf("%q", duplicates)))
+		}
+
 		for state, repos := range map[string]Repos{
 			"added":      d.Added,
 			"modified":   d.Modified,
