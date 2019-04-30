@@ -1500,13 +1500,21 @@
     lodash "^4.17.10"
     rxjs "^6.3.2"
 
+"@sourcegraph/extension-api-classes@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/extension-api-classes/-/extension-api-classes-1.0.2.tgz#e76ff8394deacffb7cb1edd5f5d24d714e6026ee"
+  integrity sha512-2PUTf/hedG+5DTyUmA2QPK7I/qyiwIbgQHcmAeRGlysg17okOeNFRp4AVLJsAh+NLq8poxtbyXP+dIdrCzONgw==
+  dependencies:
+    "@sourcegraph/extension-api-types" "^2.0.0"
+
 "@sourcegraph/extension-api-types@^2.0.0":
   version "2.0.0"
   resolved "https://registry.npmjs.org/@sourcegraph/extension-api-types/-/extension-api-types-2.0.0.tgz#b38145521c0549b2be300df53bac48b648ccbc2d"
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -13659,7 +13667,8 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.0, source-map@~0.6.1:
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "23.0.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

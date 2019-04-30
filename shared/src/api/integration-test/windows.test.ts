@@ -4,8 +4,7 @@ import { ViewComponent, Window } from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { TextModel } from '../client/services/modelService'
 import { NotificationType } from '../client/services/notifications'
-import { assertToJSON } from '../extension/types/testHelpers'
-import { collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {

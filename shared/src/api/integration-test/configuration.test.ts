@@ -1,8 +1,7 @@
 import { BehaviorSubject, of } from 'rxjs'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../settings/settings'
 import { SettingsEdit } from '../client/services/settings'
-import { assertToJSON } from '../extension/types/testHelpers'
-import { integrationTestContext } from './testHelpers'
+import { assertToJSON, integrationTestContext } from './testHelpers'
 
 describe('Configuration (integration)', () => {
     test('is synchronously available', async () => {

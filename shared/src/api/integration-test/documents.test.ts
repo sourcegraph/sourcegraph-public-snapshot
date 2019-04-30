@@ -1,8 +1,7 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { TextDocument } from 'sourcegraph'
-import { assertToJSON } from '../extension/types/testHelpers'
-import { collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {

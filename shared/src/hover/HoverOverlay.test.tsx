@@ -1,4 +1,5 @@
 import { HoverAttachment } from '@sourcegraph/codeintellify/lib/types'
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { registerLanguage } from 'highlight.js/lib/highlight'
 import * as H from 'history'
 import { castArray } from 'lodash'
@@ -6,7 +7,6 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { HoverMerged } from '../api/client/types/hover'
-import { MarkupKind } from '../api/extension/types/enums'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 

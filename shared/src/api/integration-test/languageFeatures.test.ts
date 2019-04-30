@@ -1,11 +1,10 @@
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
 import { asyncScheduler, Observable, of } from 'rxjs'
 import { observeOn, switchMap, take, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { Services } from '../client/services'
-import { MarkupKind } from '../extension/types/enums'
-import { assertToJSON } from '../extension/types/testHelpers'
-import { createBarrier, integrationTestContext } from './testHelpers'
+import { assertToJSON, createBarrier, integrationTestContext } from './testHelpers'
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider<sourcegraph.HoverProvider>({
