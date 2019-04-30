@@ -1,7 +1,7 @@
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import * as sourcegraph from 'sourcegraph'
-import { MarkupKind } from '../../extension/types/enums'
 import {
     LinkPreviewMerged,
     LinkPreviewProviderRegistrationOptions,

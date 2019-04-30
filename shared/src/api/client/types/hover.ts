@@ -1,6 +1,6 @@
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Hover as PlainHover, Range } from '@sourcegraph/extension-api-types'
 import { Hover, MarkupContent } from 'sourcegraph'
-import { MarkupKind } from '../../extension/types/enums'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {

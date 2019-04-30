@@ -5,12 +5,12 @@ jest.mock('react-dom', () => ({
     unmountComponentAtNode: jest.fn(),
 }))
 
+import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../../shared/src/api/client/services'
-import { Range } from '../../../../../shared/src/api/extension/types/range'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'

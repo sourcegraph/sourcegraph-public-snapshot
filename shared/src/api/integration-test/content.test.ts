@@ -1,5 +1,5 @@
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { take } from 'rxjs/operators'
-import { MarkupKind } from '../extension/types/enums'
 import { integrationTestContext } from './testHelpers'
 
 describe('content (integration)', () => {

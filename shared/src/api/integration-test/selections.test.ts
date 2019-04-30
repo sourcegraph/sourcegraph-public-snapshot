@@ -1,8 +1,7 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, first, switchMap } from 'rxjs/operators'
 import { isDefined } from '../../util/types'
-import { assertToJSON } from '../extension/types/testHelpers'
-import { collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Selections (integration)', () => {
     describe('editor.selectionsChanged', () => {
