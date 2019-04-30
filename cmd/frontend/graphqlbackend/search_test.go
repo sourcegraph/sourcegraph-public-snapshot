@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"reflect"
 	"testing"
 
@@ -191,16 +190,4 @@ func testStringResult(result *searchSuggestionResolver) string {
 		return "<removed>"
 	}
 	return name
-}
-
-// serveLocalGitRepos serves git repositories in the given dir that have been set up according to
-// https://theartofmachinery.com/2016/07/02/git_over_http.html.
-func serveLocalGitRepos(dir string) error {
-	s := http.Server{
-		Addr: ":8080",
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// fixme: serve directory
-		}),
-	}
-	return s.ListenAndServe()
 }
