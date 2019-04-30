@@ -35,19 +35,10 @@ func TestCleanupInactive(t *testing.T) {
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	repoB := path.Join(root, testRepoB, ".git")
-	cmd = exec.Command("git", "--bare", "init", repoB)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
-	}
 	repoC := path.Join(root, testRepoC, ".git")
 	if err := os.MkdirAll(repoC, os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
-	filepath.Walk(repoB, func(p string, _ os.FileInfo, _ error) error {
-		// Rollback the mtime for these files to simulate an old repo.
-		return os.Chtimes(p, time.Now().Add(-inactiveRepoTTL-time.Hour), time.Now().Add(-inactiveRepoTTL-time.Hour))
-	})
 
 	s := &Server{ReposDir: root, DeleteStaleRepositories: true}
 	s.Handler() // Handler as a side-effect sets up Server
@@ -55,9 +46,6 @@ func TestCleanupInactive(t *testing.T) {
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
-	}
-	if _, err := os.Stat(repoB); err == nil {
-		t.Error("expected repoB to be removed during clean up")
 	}
 	if _, err := os.Stat(repoC); err == nil {
 		t.Error("expected corrupt repoC to be removed during clean up")
