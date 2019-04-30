@@ -29,9 +29,6 @@ func init() {
 	prometheus.MustRegister(reposRecloned)
 }
 
-// inactiveRepoTTL is the amount of time a repository will remain on a
-// gitserver without being updated before it is removed.
-const inactiveRepoTTL = time.Hour * 24 * 20
 const repoTTL = time.Hour * 24 * 45
 
 var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
