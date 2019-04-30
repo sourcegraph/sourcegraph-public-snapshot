@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -427,16 +428,16 @@ func TestFreeUpSpace(t *testing.T) {
 		if err := makeFakeRepo(r2, 1000); err != nil {
 			t.Fatal(err)
 		}
-		m1, err := gitDirModTime(filepath.Join(r1, ".git"))
+		// Force the modification time of r2 to be after that of r1.
+		fi1, err := os.Stat(r1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		m2, err := gitDirModTime(filepath.Join(r2, ".git"))
-		if err != nil {
+		mtime2 := fi1.ModTime().Add(time.Second)
+		stat1 := fi1.Sys().(*syscall.Stat_t)
+		atime2 := time.Unix(stat1.Atimespec.Unix())
+		if err := os.Chtimes(r2, atime2, mtime2); err != nil {
 			t.Fatal(err)
-		}
-		if m1.Equal(m2) || m1.After(m2) {
-			t.Fatalf("expected repo1 to be created before repo2, got mod times %v and %v", m1, m2)
 		}
 
 		// Run.
