@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (

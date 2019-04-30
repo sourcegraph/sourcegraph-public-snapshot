@@ -138,8 +138,8 @@ type Server struct {
 	cloneLimiter     *mutablelimiter.Limiter
 	cloneableLimiter *mutablelimiter.Limiter
 
-	repoUpdateLocksMu    sync.Mutex // protects the map below and also updates to locks.once
-	repoUpdateLocks      map[api.RepoName]*locks
+	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
+	repoUpdateLocks   map[api.RepoName]*locks
 }
 
 type locks struct {
