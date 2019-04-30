@@ -542,7 +542,8 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         title: 'Phabricator connection',
         icon: <PhabricatorIcon size={ICON_SIZE} />,
         iconBrandColor: 'phabricator',
-        shortDescription: 'Add links to Phabricator from Sourcegraph.',
+        shortDescription:
+            'Associate Phabricator repositories with existing repositories on Sourcegraph. Mirroring is not supported.',
         jsonSchema: phabricatorSchemaJSON,
         defaultDisplayName: 'Phabricator',
         defaultConfig: `{
