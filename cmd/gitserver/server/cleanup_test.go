@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 
@@ -434,9 +433,7 @@ func TestFreeUpSpace(t *testing.T) {
 			t.Fatal(err)
 		}
 		mtime2 := fi1.ModTime().Add(time.Second)
-		stat1 := fi1.Sys().(*syscall.Stat_t)
-		atime2 := time.Unix(stat1.Atimespec.Unix())
-		if err := os.Chtimes(r2, atime2, mtime2); err != nil {
+		if err := os.Chtimes(r2, time.Now(), mtime2); err != nil {
 			t.Fatal(err)
 		}
 
