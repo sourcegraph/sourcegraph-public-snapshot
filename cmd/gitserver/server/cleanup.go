@@ -73,30 +73,6 @@ func (s *Server) cleanupRepos() {
 		return true, nil
 	}
 
-	maybeRemoveInactive := func(gitDir string) (done bool, err error) {
-		// We rewrite the HEAD file whenever we update a repo, and repos are
-		// updated in response to user traffic. Check to see the last time
-		// HEAD was rewritten to determine whether to consider this repo
-		// inactive. Note: This is only accurate for installations which set
-		// disableAutoGitUpdates=true. This is true for sourcegraph.com and
-		// maybeRemoveInactive should only be run for sourcegraph.com
-		head, err := os.Stat(filepath.Join(gitDir, "HEAD"))
-		if err != nil {
-			return false, err
-		}
-		lastUpdated := head.ModTime()
-		if time.Since(lastUpdated) <= inactiveRepoTTL {
-			return false, nil
-		}
-
-		log15.Info("removing inactive repo", "repo", gitDir)
-		if err := s.removeRepoDirectory(gitDir); err != nil {
-			return true, err
-		}
-		reposRemoved.Inc()
-		return true, nil
-	}
-
 	ensureGitAttributes := func(gitDir string) (done bool, err error) {
 		return false, setGitAttributes(gitDir)
 	}
@@ -181,13 +157,6 @@ func (s *Server) cleanupRepos() {
 		// We always want to have the same git attributes file at
 		// info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
-	}
-	if s.DeleteStaleRepositories {
-		// Sourcegraph.com can potentially clone all of github.com, so we
-		// delete repos which have not been used for a period of
-		// time. s.DeleteStaleRepositories should only be true for
-		// sourcegraph.com.
-		cleanups = append(cleanups, cleanupFn{"maybe remove inactive", maybeRemoveInactive})
 	}
 	// Old git clones accumulate loose git objects that waste space and
 	// slow down git operations. Periodically do a fresh clone to avoid
