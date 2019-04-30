@@ -97,14 +97,36 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	now := s.now()
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
 
+	seen := make(map[api.ExternalRepoSpec]bool, len(diff.Deleted))
 	for _, repo := range diff.Deleted {
+		// TODO: This is dumb mitigation for https://github.com/sourcegraph/sourcegraph/issues/3680
+		// just so that one bad apple doesn't ruin the bunch (i.e., even with
+		// this bug other repositories are still updating as expected).
+		// Once that issue is resolved, we should remove this.
+		if seen[repo.ExternalRepo] {
+			log15.Error("syncer.sync.upserts.duplicate: ignoring duplicate Deleted repo (bug)")
+			continue
+		}
+		seen[repo.ExternalRepo] = true
+
 		repo.UpdatedAt, repo.DeletedAt = now, now
 		repo.Sources = map[string]*SourceInfo{}
 		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
+	seen = make(map[api.ExternalRepoSpec]bool, len(diff.Modified))
 	for _, repo := range diff.Modified {
+		// TODO: This is dumb mitigation for https://github.com/sourcegraph/sourcegraph/issues/3680
+		// just so that one bad apple doesn't ruin the bunch (i.e., even with
+		// this bug other repositories are still updating as expected).
+		// Once that issue is resolved, we should remove this.
+		if seen[repo.ExternalRepo] {
+			log15.Error("syncer.sync.upserts.duplicate: ignoring duplicate Modified repo (bug)")
+			continue
+		}
+		seen[repo.ExternalRepo] = true
+
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}
 		repo.Enabled = true
 		upserts = append(upserts, repo)
