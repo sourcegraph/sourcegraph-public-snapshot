@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -119,12 +120,6 @@ func main() {
 // dirCouldContain returns true if dir could contain findme, based only on lexical
 // properties of the paths.
 func dirCouldContain(dir, findme string) bool {
-	if findme == dir {
-		return true
-	}
-	findme2 := filepath.Dir(findme)
-	if findme2 == findme {
-		return false
-	}
-	return dirCouldContain(dir, findme2)
+	rel, err := filepath.Rel(dir, findme)
+	return err == nil && !strings.HasPrefix(rel, "..")
 }
