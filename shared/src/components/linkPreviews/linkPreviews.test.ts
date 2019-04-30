@@ -1,5 +1,5 @@
-import { MarkupKind } from 'sourcegraph'
 import { LinkPreviewMerged } from '../../api/client/services/linkPreview'
+import { MarkupKind } from '../../api/extension/types/enums'
 import { applyLinkPreview, ApplyLinkPreviewOptions } from './linkPreviews'
 
 const OPTIONS: ApplyLinkPreviewOptions = {
@@ -18,13 +18,13 @@ describe('applyLinkPreview', () => {
         const LINK_PREVIEW_MERGED: LinkPreviewMerged = {
             content: [
                 {
-                    kind: 'markdown' as MarkupKind.Markdown,
+                    kind: MarkupKind.Markdown,
                     value: '**x**',
                 },
             ],
             hover: [
                 {
-                    kind: 'plaintext' as MarkupKind.PlainText,
+                    kind: MarkupKind.PlainText,
                     value: 'y',
                 },
             ],

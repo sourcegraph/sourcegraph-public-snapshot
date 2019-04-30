@@ -3,6 +3,7 @@ import { asyncScheduler, Observable, of } from 'rxjs'
 import { observeOn, switchMap, take, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { Services } from '../client/services'
+import { MarkupKind } from '../extension/types/enums'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { createBarrier, integrationTestContext } from './testHelpers'
 
@@ -13,11 +14,11 @@ describe('LanguageFeatures (integration)', () => {
         labeledProvider: label => ({
             provideHover: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
                 of({
-                    contents: { value: label, kind: sourcegraph.MarkupKind.PlainText },
+                    contents: { value: label, kind: MarkupKind.PlainText },
                 }).pipe(observeOn(asyncScheduler)),
         }),
         labeledProviderResults: labels => ({
-            contents: labels.map(label => ({ value: label, kind: sourcegraph.MarkupKind.PlainText })),
+            contents: labels.map(label => ({ value: label, kind: MarkupKind.PlainText })),
         }),
         providerWithImplementation: run => ({ provideHover: run } as sourcegraph.HoverProvider),
         getResult: (services, uri) =>

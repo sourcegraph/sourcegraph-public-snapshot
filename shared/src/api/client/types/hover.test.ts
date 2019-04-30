@@ -1,5 +1,5 @@
 import { Range } from '@sourcegraph/extension-api-types'
-import { MarkupKind } from 'sourcegraph'
+import { MarkupKind } from '../../extension/types/enums'
 import { HoverMerged } from './hover'
 
 const FIXTURE_RANGE: Range = { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }

@@ -1,8 +1,9 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, map, switchMap, take, toArray } from 'rxjs/operators'
-import { NotificationType, ViewComponent, Window } from 'sourcegraph'
+import { ViewComponent, Window } from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { TextModel } from '../client/services/modelService'
+import { NotificationType } from '../client/services/notifications'
 import { assertToJSON } from '../extension/types/testHelpers'
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
