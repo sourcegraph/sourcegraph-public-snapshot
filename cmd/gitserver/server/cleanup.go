@@ -233,14 +233,12 @@ func (s *Server) cleanupRepos() {
 		return
 	}
 	howManyBytesToFree := int64(s.DesiredFreeDiskSpace) - int64(actualFreeBytes)
-	if howManyBytesToFree < 0 {
-		return
-	}
 	if err := s.freeUpSpace(howManyBytesToFree); err != nil {
 		log15.Error("error freeing up space", "error", err)
 	}
 }
 
+// bytesFreeOnDisk tells how much space is available on the disk mounted at s.MountPoint.
 func (s *Server) bytesFreeOnDisk() (uint64, error) {
 	var fs syscall.Statfs_t
 	if err := syscall.Statfs(s.MountPoint, &fs); err != nil {
@@ -250,9 +248,10 @@ func (s *Server) bytesFreeOnDisk() (uint64, error) {
 }
 
 // freeUpSpace removes git directories under ReposDir, in order from least
-// recently to most recently used, until deltaFreeBytes have been freed.
+// recently to most recently used, until it has freed howManyBytesToFree.
 func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	if howManyBytesToFree < 0 {
+		log15.Info("there is already enough disk space free, so not removing any repos", "howManyBytesToFree", howManyBytesToFree)
 		return nil
 	}
 
@@ -275,7 +274,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		return dirModTimes[gitDirs[i]].Before(dirModTimes[gitDirs[j]])
 	})
 
-	// Remove repos until the spaceNeededBytes is freed.
+	// Remove repos until howManyBytesToFree is met or exceeded.
 	var spaceFreed int64
 	for _, d := range gitDirs {
 		delta, err := dirSize(d)
@@ -283,6 +282,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 			return errors.Wrapf(err, "computing size of directory %s", d)
 		}
 		gitDirParent := filepath.Dir(d)
+		log15.Info("removing repo dir that hasn't been used in a while", "repodir", d, "howlong", time.Since(dirModTimes[d]))
 		if err := os.RemoveAll(gitDirParent); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
