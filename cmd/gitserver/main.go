@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/opentracing/opentracing-go"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -41,6 +42,10 @@ func main() {
 		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
 	}
 
+	if !dirCouldContain(mountPoint, reposDir) {
+		log.Fatalf("$SRC_REPOS_DIR is %s, want a subdirectory of $SRC_REPOS_MOUNT_POINT (%s)", reposDir, mountPoint)
+	}
+
 	wantFreeG2, err := strconv.Atoi(wantFreeG)
 	if err != nil {
 		log.Fatalf("parsing $SRC_REPOS_DESIRED_FREE_GB: %v", err)
@@ -65,7 +70,6 @@ func main() {
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
 
 	go debugserver.Start()
-
 
 	janitorInterval2, err := time.ParseDuration(janitorInterval)
 	if err != nil {
@@ -110,4 +114,17 @@ func main() {
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
+}
+
+// dirCouldContain returns true if dir could contain findme, based only on lexical
+// properties of the paths.
+func dirCouldContain(dir, findme string) bool {
+	if findme == dir {
+		return true
+	}
+	findme2 := filepath.Dir(findme)
+	if findme2 == findme {
+		return false
+	}
+	return dirCouldContain(dir, findme2)
 }
