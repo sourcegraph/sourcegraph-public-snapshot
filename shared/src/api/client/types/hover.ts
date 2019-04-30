@@ -1,5 +1,6 @@
 import { Hover as PlainHover, Range } from '@sourcegraph/extension-api-types'
-import { Hover, MarkupContent, MarkupKind } from 'sourcegraph'
+import { Hover, MarkupContent } from 'sourcegraph'
+import { MarkupKind } from '../../extension/types/enums'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {
@@ -21,7 +22,7 @@ export namespace HoverMerged {
                 if (result.contents && result.contents.value) {
                     contents.push({
                         value: result.contents.value,
-                        kind: result.contents.kind || ('plaintext' as MarkupKind),
+                        kind: result.contents.kind || MarkupKind.PlainText,
                     })
                 }
                 const __backcompatContents = result.__backcompatContents // tslint:disable-line deprecation
@@ -31,13 +32,13 @@ export namespace HoverMerged {
                         : [__backcompatContents]) {
                         if (typeof content === 'string') {
                             if (content) {
-                                contents.push({ value: content, kind: 'markdown' as MarkupKind })
+                                contents.push({ value: content, kind: MarkupKind.Markdown })
                             }
                         } else if ('language' in content) {
                             if (content.language && content.value) {
                                 contents.push({
                                     value: toMarkdownCodeBlock(content.language, content.value),
-                                    kind: 'markdown' as MarkupKind,
+                                    kind: MarkupKind.Markdown,
                                 })
                             }
                         }
