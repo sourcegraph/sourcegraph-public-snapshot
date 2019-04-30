@@ -216,7 +216,7 @@ func (s *Server) bytesFreeOnDisk() (uint64, error) {
 // freeUpSpace removes git directories under ReposDir, in order from least
 // recently to most recently used, until it has freed howManyBytesToFree.
 func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
-	if howManyBytesToFree < 0 {
+	if howManyBytesToFree <= 0 {
 		log15.Info("there is already enough disk space free, so not removing any repos", "howManyBytesToFree", howManyBytesToFree)
 		return nil
 	}
@@ -226,7 +226,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	if err != nil {
 		return errors.Wrap(err, "finding git dirs")
 	}
-	dirModTimes := make(map[string]time.Time)
+	dirModTimes := make(map[string]time.Time, len(gitDirs))
 	for _, d := range gitDirs {
 		mt, err := gitDirModTime(d)
 		if err != nil {
@@ -330,7 +330,7 @@ func (s *Server) removeRepoDirectory(dir string) (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() { err = os.RemoveAll(tmp) }()
+	defer os.RemoveAll(tmp)
 	if err := os.Rename(dir, filepath.Join(tmp, "repo")); err != nil {
 		return err
 	}
