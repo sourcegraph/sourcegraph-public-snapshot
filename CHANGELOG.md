@@ -19,6 +19,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+## 3.3.6
+
+## Changed
+
+- All 24 language extensions are enabled by default.
+
 ## 3.3.5
 
 ## Changed
