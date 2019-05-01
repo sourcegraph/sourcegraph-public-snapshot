@@ -25,10 +25,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] path/to/git/repo
 
 fakehub will serve any number (controlled with -n) of copies of the repo over
-HTTP at /repo/1/.git, /repo/2/.git etc.  These can be git cloned, and they can
+HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
 be used as test data for sourcegraph. The easiest way to get them into
-sourcegraph is to visit /config and paste the contents into the text box for
-adding single repos in sourcegraph Site Admin.
+sourcegraph is to visit http://localhost:3434/config and paste the contents
+into the text box for adding single repos in sourcegraph Site Admin.
 `)
 		flag.PrintDefaults()
 	}
