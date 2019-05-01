@@ -171,7 +171,7 @@
     "ts-jest": "^24.0.0",
     "ts-loader": "^5.3.2",
     "ts-node": "^7.0.1",
-    "tslint": "^5.15.0",
+    "tslint": "^5.16.0",
     "tslint-language-service": "^0.9.9",
     "typedoc": "^0.14.0",
     "typescript": "3.5.0-dev.20190406",
