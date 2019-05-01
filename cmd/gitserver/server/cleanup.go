@@ -259,7 +259,7 @@ func isMount(d string) (bool, error) {
 }
 
 // device gets the device id of a file f.
-func device(f string) (int32, error) {
+func device(f string) (int64, error) {
 	fi, err := os.Stat(f)
 	if err != nil {
 		return 0, errors.Wrapf(err, "running stat on %s", f)
@@ -268,7 +268,7 @@ func device(f string) (int32, error) {
 	if !ok {
 		return 0, fmt.Errorf("failed to get stat details for %s", f)
 	}
-	return stat.Dev, nil
+	return int64(stat.Dev), nil
 }
 
 // freeUpSpace removes git directories under ReposDir, in order from least
