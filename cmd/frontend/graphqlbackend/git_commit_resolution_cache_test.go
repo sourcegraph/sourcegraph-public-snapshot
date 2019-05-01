@@ -9,14 +9,18 @@ import (
 )
 
 func TestGitCommitResolutionCache(t *testing.T) {
+	doneSleep := make(chan struct{})
 	cache := (&resolutionCache{
-		ttl: 2 * time.Second,
+		ttl: 15 * time.Millisecond,
 		cacheEntries: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "src",
 			Subsystem: "graphql",
 			Name:      "git_commit_oid_resolution_cache_entries",
 			Help:      "Total number of entries in the in-memory Git commit OID resolution cache.",
 		}),
+		mockSleep: func(d time.Duration) {
+			<-doneSleep
+		},
 	}).startWorker()
 
 	cache.Set("repo-1", "commit-1")
@@ -27,7 +31,8 @@ func TestGitCommitResolutionCache(t *testing.T) {
 	if v, ok := cache.Get("repo-2"); !ok || v != "commit-2" {
 		t.Fatal("expected cache get to succeed")
 	}
-	time.Sleep(5 * time.Second)
+	doneSleep <- struct{}{}           // cause worker to begin a single iteration
+	time.Sleep(30 * time.Millisecond) // wait long enough for TTL
 	if _, ok := cache.Get("repo-1"); ok {
 		t.Fatal("expected cache entry to have expired")
 	}

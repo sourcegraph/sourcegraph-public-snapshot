@@ -25,6 +25,9 @@ type resolutionCache struct {
 	// checks for entries to evict. Defaults ttl / 2.
 	workerInterval time.Duration
 
+	// mockSleep, if non-nil can be used to mock time.Sleep for testing purposes.
+	mockSleep func(d time.Duration)
+
 	m sync.Map
 }
 
@@ -53,9 +56,13 @@ func (r *resolutionCache) startWorker() *resolutionCache {
 	if r.workerInterval == 0 {
 		r.workerInterval = r.ttl / 2
 	}
+	sleep := time.Sleep
+	if r.mockSleep != nil {
+		sleep = r.mockSleep
+	}
 	go func() {
 		for {
-			time.Sleep(r.workerInterval)
+			sleep(r.workerInterval)
 			size := 0
 			r.m.Range(func(key, value interface{}) bool {
 				size++
