@@ -3,6 +3,7 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -356,12 +357,12 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				diff: repos.Diff{
 					Modified: repos.Repos{
 						tc.repo.With(func(r *repos.Repo) {
-							r.Name = "bar"
+							r.Name = "foo"
 							r.ExternalRepo.ID = "1"
 							r.UpdatedAt = clock.Time(0)
 						}),
 						tc.repo.With(func(r *repos.Repo) {
-							r.Name = "foo"
+							r.Name = "bar"
 							r.ExternalRepo.ID = "2"
 							r.UpdatedAt = clock.Time(0)
 						}),
@@ -442,10 +443,11 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
 				diff, err := syncer.Sync(ctx)
 
-				diff.Repos().Apply(repos.Opt.RepoID(0))
-
 				var want repos.Repos
 				want.Concat(diff.Added, diff.Modified, diff.Unmodified)
+				sort.Sort(want)
+
+				diff.Repos().Apply(repos.Opt.RepoID(0))
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
