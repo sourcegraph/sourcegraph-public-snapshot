@@ -161,7 +161,7 @@
     "shelljs": "^0.8.3",
     "shelljs-exec-proxy": "^0.1.1",
     "signale": "^1.4.0",
-    "sinon": "^7.2.2",
+    "sinon": "^7.3.2",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0",
     "source-map-support": "^0.5.6",
