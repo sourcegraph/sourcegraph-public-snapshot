@@ -161,7 +161,6 @@ func (d Diff) Repos() Repos {
 // NewDiff returns a diff from the given sourced and stored repos.
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
-	byName := make(map[string]*Repo, len(sourced))
 
 	for _, r := range sourced {
 		if r.ExternalRepo == (api.ExternalRepoSpec{}) {
@@ -169,8 +168,13 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 		} else if old := byID[r.ExternalRepo]; old != nil {
 			merge(old, r)
 		} else {
-			byID[r.ExternalRepo], byName[r.Name] = r, r
+			byID[r.ExternalRepo] = r
 		}
+	}
+
+	byName := make(map[string]*Repo, len(byID))
+	for _, r := range byID {
+		byName[r.Name] = r
 	}
 
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
