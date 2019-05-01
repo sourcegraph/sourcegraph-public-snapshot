@@ -45,7 +45,7 @@ func fakehub(n int, addr, repoDir string) error {
 	// Configuring the repo such that it can be git cloned.
 	// See https://theartofmachinery.com/2016/07/02/git_over_http.html
 	// for background.
-	c := exec.Command("git", "--bare", "update-server-info")
+	c := exec.Command("git", "update-server-info")
 	c.Dir = filepath.Join(repoDir, ".git")
 	out, err := c.CombinedOutput()
 	if err != nil {
