@@ -217,9 +217,14 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 			repos = append(repos, r)
 			set[r] = true
 		}
+
 	}
 
 	sort.Sort(repos)
+
+	if args.Limit > 0 && args.Limit <= int64(len(repos)) {
+		repos = repos[:args.Limit]
+	}
 
 	return repos, nil
 }

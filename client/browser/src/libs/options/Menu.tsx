@@ -40,9 +40,9 @@ const buildRequestPermissionsHandler = (
 }
 
 /**
- * A list of hosts where we should *not* show the permissions notification.
+ * A list of protocols where we should *not* show the permissions notification.
  */
-const PERMISSIONS_HOST_BLACKLIST = ['extensions', 'newtab']
+const PERMISSIONS_PROTOCOL_BLACKLIST = ['chrome:', 'about:']
 
 export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
@@ -70,7 +70,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
         {status === 'connected' &&
             currentTabStatus &&
             !currentTabStatus.hasPermissions &&
-            !PERMISSIONS_HOST_BLACKLIST.includes(currentTabStatus.host) && (
+            !PERMISSIONS_PROTOCOL_BLACKLIST.includes(currentTabStatus.protocol) && (
                 <div className="options-menu__section">
                     <div className="alert alert-danger">
                         Sourcegraph is not enabled on <strong>{currentTabStatus.host}</strong>.{' '}

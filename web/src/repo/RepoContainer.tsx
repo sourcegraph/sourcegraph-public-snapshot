@@ -5,6 +5,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -42,6 +43,7 @@ export interface RepoContainerProps
         PlatformContextProps,
         EventLoggerProps,
         ExtensionsControllerProps,
+        ActivationProps,
         ThemeProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
@@ -217,6 +219,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repo: this.state.repoOrError,
             authenticatedUser: this.props.authenticatedUser,
             isLightTheme: this.props.isLightTheme,
+            activation: this.props.activation,
             telemetryService: this.props.telemetryService,
             repoMatchURL,
             settingsCascade: this.props.settingsCascade,

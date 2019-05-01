@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
+	"github.com/sourcegraph/sourcegraph/pkg/store"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -24,10 +25,6 @@ import (
 )
 
 const (
-	// maxFileSize is the limit on file size in bytes. Only files smaller
-	// than this are searched.
-	maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
-
 	// maxLineSize is the maximum length of a line in bytes.
 	// Lines larger than this are not scanned for results.
 	// (e.g. minified javascript files that are all on one line).
@@ -184,7 +181,7 @@ func (rg *readerGrep) matchString(s string) bool {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
+func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
 	if rg.ignoreCase && rg.transformBuf == nil {
 		rg.transformBuf = make([]byte, zf.MaxLen)
 	}
@@ -262,7 +259,7 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 			}
 			matches = append(matches, protocol.LineMatch{
 				// making a copy of lineBuf is intentional.
-				// we are not allowed to use the fileBuf data after the zipFile has been Closed,
+				// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
 				// which currently occurs before Preview has been serialized.
 				// TODO: consider moving the call to Close until after we are
 				// done with Preview, and stop making a copy here.
@@ -279,7 +276,7 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile) (protocol.FileMatch, error) {
+func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.FileMatch, error) {
 	lm, limitHit, err := rg.Find(zf, f)
 	return protocol.FileMatch{
 		Path:        f.Name,
@@ -289,7 +286,7 @@ func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile) (protocol.FileMatch, erro
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
 	if rg.re != nil {

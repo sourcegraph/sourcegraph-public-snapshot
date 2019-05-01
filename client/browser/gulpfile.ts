@@ -19,13 +19,14 @@ export function watch(): ChildProcess {
 }
 
 const PHABRICATOR_EXTENSION_FILES = path.join(__dirname, './build/phabricator/dist/**')
+const PHABRICATOR_ASSETS_DIRECTORY = path.join(__dirname, '../../ui/assets/extension')
 
 /**
  * Copies the phabricator extension over to the ui/assets folder so they can be served by the webapp. The package
  * is published from ./client/browser.
  */
 export function phabricator(): NodeJS.ReadWriteStream {
-    return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest('../../ui/assets/extension'))
+    return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest(PHABRICATOR_ASSETS_DIRECTORY))
 }
 
 export const watchPhabricator = gulp.series(phabricator, async function watchPhabricator(): Promise<void> {

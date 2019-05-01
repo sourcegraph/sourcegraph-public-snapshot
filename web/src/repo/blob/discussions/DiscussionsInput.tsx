@@ -8,7 +8,6 @@ import { catchError, filter, map, mergeMap, startWith, switchMap, tap, withLates
 import { CodeEditor, EditorId } from '../../../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
 import { COMMENT_URI_SCHEME } from '../../../../../shared/src/api/client/types/textDocument'
-import { EditorCompletionWidget } from '../../../../../shared/src/components/completion/EditorCompletionWidget'
 import { EditorTextField } from '../../../../../shared/src/components/editorTextField/EditorTextField'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import {
@@ -18,8 +17,8 @@ import {
 } from '../../../../../shared/src/components/Tabs'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError } from '../../../../../shared/src/util/errors'
-import { COMPLETION_WIDGET_CLASS_PROPS } from '../../../components/completion/styles'
 import { Form } from '../../../components/Form'
+import { WebEditorCompletionWidget } from '../../../components/shared'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -289,11 +288,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 >
                     <div key="write">
                         {this.textAreaRef.current && (
-                            <EditorCompletionWidget
+                            <WebEditorCompletionWidget
                                 textArea={this.textAreaRef.current}
                                 editorId={editorId}
                                 extensionsController={this.props.extensionsController}
-                                {...COMPLETION_WIDGET_CLASS_PROPS}
                             />
                         )}
                         <EditorTextField

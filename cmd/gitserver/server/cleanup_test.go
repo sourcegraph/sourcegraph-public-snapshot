@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -34,19 +36,10 @@ func TestCleanupInactive(t *testing.T) {
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	repoB := path.Join(root, testRepoB, ".git")
-	cmd = exec.Command("git", "--bare", "init", repoB)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
-	}
 	repoC := path.Join(root, testRepoC, ".git")
 	if err := os.MkdirAll(repoC, os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
-	filepath.Walk(repoB, func(p string, _ os.FileInfo, _ error) error {
-		// Rollback the mtime for these files to simulate an old repo.
-		return os.Chtimes(p, time.Now().Add(-inactiveRepoTTL-time.Hour), time.Now().Add(-inactiveRepoTTL-time.Hour))
-	})
 
 	s := &Server{ReposDir: root, DeleteStaleRepositories: true}
 	s.Handler() // Handler as a side-effect sets up Server
@@ -54,9 +47,6 @@ func TestCleanupInactive(t *testing.T) {
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
-	}
-	if _, err := os.Stat(repoB); err == nil {
-		t.Error("expected repoB to be removed during clean up")
 	}
 	if _, err := os.Stat(repoC); err == nil {
 		t.Error("expected corrupt repoC to be removed during clean up")
@@ -408,4 +398,117 @@ func isEmptyDir(path string) (bool, error) {
 		return true, nil
 	}
 	return false, err
+}
+
+func TestFreeUpSpace(t *testing.T) {
+	t.Run("no error if no space requested and no repos", func(t *testing.T) {
+		s := &Server{}
+		if err := s.freeUpSpace(0); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("error if space requested and no repos", func(t *testing.T) {
+		s := &Server{}
+		if err := s.freeUpSpace(1); err == nil {
+			t.Fatal("want error")
+		}
+	})
+	t.Run("oldest repo gets removed to free up space", func(t *testing.T) {
+		// Set up.
+		rd, err := ioutil.TempDir("", "freeUpSpace")
+		if err != nil {
+			t.Fatal(err)
+		}
+		r1 := filepath.Join(rd, "repo1")
+		r2 := filepath.Join(rd, "repo2")
+		if err := makeFakeRepo(r1, 1000); err != nil {
+			t.Fatal(err)
+		}
+		if err := makeFakeRepo(r2, 1000); err != nil {
+			t.Fatal(err)
+		}
+		// Force the modification time of r2 to be after that of r1.
+		fi1, err := os.Stat(r1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		mtime2 := fi1.ModTime().Add(time.Second)
+		if err := os.Chtimes(r2, time.Now(), mtime2); err != nil {
+			t.Fatal(err)
+		}
+
+		// Run.
+		s := Server{
+			ReposDir: rd,
+		}
+		if err := s.freeUpSpace(1000); err != nil {
+			t.Fatal(err)
+		}
+
+		// Check.
+		files, err := ioutil.ReadDir(rd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(files) != 1 {
+			t.Fatalf("got %d items in %s, want exactly 1", len(files), rd)
+		}
+		if files[0].Name() != "repo2" {
+			t.Errorf("name of only item in repos dir is %q, want repo2", files[0].Name())
+		}
+		rds, err := dirSize(rd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantSize := int64(1000)
+		if rds > wantSize {
+			t.Errorf("repo dir size is %d, want no more than %d", rds, wantSize)
+		}
+	})
+}
+
+func makeFakeRepo(d string, sizeBytes int) error {
+	gd := filepath.Join(d, ".git")
+	if err := os.MkdirAll(gd, 0700); err != nil {
+		return errors.Wrap(err, "creating .git dir and any parents")
+	}
+	if err := ioutil.WriteFile(filepath.Join(gd, "HEAD"), nil, 0666); err != nil {
+		return errors.Wrap(err, "creating HEAD file")
+	}
+	if err := ioutil.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0666); err != nil {
+		return errors.Wrapf(err, "writing to space_eater file")
+	}
+	return nil
+}
+
+func Test_findMountPoint(t *testing.T) {
+	type args struct {
+		d string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name:    "mount point of root is root",
+			args:    args{d: "/"},
+			want:    "/",
+			wantErr: false,
+		},
+		// What else can we portably count on?
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := findMountPoint(tt.args.d)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("findMountPoint() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("findMountPoint() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

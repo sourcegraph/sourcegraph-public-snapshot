@@ -45,11 +45,6 @@ func Test_Gitolite_listRepos(t *testing.T) {
 						return test.listRepos[host], nil
 					},
 				},
-				config: stubConfig{
-					Gitolite_: func(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-						return test.configs, nil
-					},
-				},
 			}
 			w := httptest.NewRecorder()
 			g.listRepos(context.Background(), test.gitoliteHost, w)
@@ -66,14 +61,6 @@ func Test_Gitolite_listRepos(t *testing.T) {
 			}
 		})
 	}
-}
-
-type stubConfig struct {
-	Gitolite_ func(ctx context.Context) ([]*schema.GitoliteConnection, error)
-}
-
-func (c stubConfig) Gitolite(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	return c.Gitolite_(ctx)
 }
 
 type stubGitoliteClient struct {

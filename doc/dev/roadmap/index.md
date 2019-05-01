@@ -5,11 +5,11 @@ We want Sourcegraph to be:
 - **For developers:** the best way to answer questions and get unblocked while writing, reviewing, or reading code.
 - **For organizations** (engineering leaders and internal tools teams): the infrastructure for developer tools and data.
 
-This roadmap shows what's planned for the next 12 months. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
-
-**Next release:** [Sourcegraph 3.3 release plan](https://github.com/sourcegraph/sourcegraph/issues/2931) (ships on April 20, 2019).
+This roadmap is a curated list of what we are working on now and the direction that we want to move in over the next 12 months. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
 
 We ship a release on the [20th day of each month](../releases.md#releases-are-monthly). See [previous Sourcegraph releases](previous_releases.md).
+
+**Next release:** [Sourcegraph 3.4](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+milestone%3A3.4+label%3Aroadmap) (ships on May 20, 2019).
 
 ## Overview
 
@@ -22,14 +22,20 @@ We're continually improving Sourcegraph's core features for developers:
 
 We're also working toward making Sourcegraph the [**infrastructure for developer tools and data**](#infrastructure-for-developer-tools-and-data), with integration into the entire developer workflow (in the editor, code review, and anywhere else they interact with code). In addition to helping developers, this also helps engineering leaders and internal tools teams solve organization-wide problems.
 
+| Icon | Description |
+|------|-------------|
+| 🏃 | Features we are actively working on. |
+| 🙋 | We are hiring for all teams, but especially for these roles. |
+
 ## Search
 
-We're making search faster, more accurate, and more comprehensive (so it includes issues, documents, and other data sources you might want to search).
+Owners: @ijt, @ijsnow
 
-- [Auto-fixup common mistakes in search queries](https://github.com/sourcegraph/sourcegraph/issues/2125)
-- [Enable indexed search by default](https://github.com/sourcegraph/sourcegraph/issues/2176)
+Currently we're prioritizing speed and stability of search. Here are some more things we plan to tackle in the near future.
+
+- [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
 - [Nested search queries](https://github.com/sourcegraph/sourcegraph/issues/1005) (e.g., in all repositories whose `package.json` contains `foo`, find matches of `bar`)
-  - [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
+- Streaming search results to reduce time to first result.
 - More ways to filter queries (provided by extensions), such as by authorship, recency, and language-specific or dependency graph information
 - [More types/sources of search results](https://github.com/sourcegraph/sourcegraph/issues/738) (provided by extensions), such as documentation (wiki, Markdown, and Google Docs), issues, PR comments, logs, and configuration data
 - Investigate instant, as-you-type search (Livegrep-style)
@@ -37,93 +43,81 @@ We're making search faster, more accurate, and more comprehensive (so it include
 
 ## Saved searches
 
-We want to help you stay on top of the code changes you care about, with better notifications, better integration with code reviews and PRs, and an easier way to add new saved searches and triage results.
+Owners: @attfarhan
 
-- Improve UI for adding and editing saved searches
-- More configurable notification destinations per-saved search
+We want to help you stay on top of the code changes you care about, and are working to improve saved searches with better notifications, better integration with code reviews and PRs, and an easier way to add new saved searches and triage results.
+
+- 🏃 Improve UI for adding and editing saved searches
+- 🏃 More configurable notification destinations per-saved search
 - Add GitHub/GitLab PR commit status integration for saved searches
 - Show read/unread saved search results
 - Allow creating issues (GitHub/GitLab/Jira/etc.) from saved search results
 
 ## Code navigation and intelligence
 
-We're continually refining code intelligence (hovers, go-to-definition, find-references, etc.) for all languages and making our integration into code hosts (such as GitHub) more robust. We're also working toward features that let you navigate the dependency graph of imports, libraries, and services.
+Owners: @lguychard, @chrismwendt, @felixfbecker, @vanesa
 
-- Search-based (non-language-server-based) code intelligence for [all languages](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
-- Language-server-based (precise) code intelligence for [more languages](https://sourcegraph.com/extensions?query=tag%3Alanguage-server)
-- Continually ensure code navigation/intelligence works on code hosts using our [browser extension](../../integration/browser_extension.md) and [native code host integrations](#code-hosts).
+Sourcegraph helps developers navigate code by providing code intelligence when browsing code on Sourcegraph or on supported code hosts (like GitHub) via our [browser extension](../../integration/browser_extension.md). Code intelligence includes hover tooltips, go-to-definition, find-references, and other capabilities contributed by [Sourcegraph extensions](../../extensions/index.md) like [Codecov](https://sourcegraph.com/extensions?query=Codecov), [Sentry](https://sourcegraph.com/extensions?query=Sentry), [LightStep](https://sourcegraph.com/extensions?query=LightStep), and [Datadog](https://sourcegraph.com/extensions?query=Datadog).
+
+- 🏃 [Increase the reliability and performance of the browser extension on GitHub and other code hosts](https://github.com/sourcegraph/sourcegraph/issues/3485)
+- 🏃 [Improvements for Datadog integration](https://github.com/sourcegraph/sourcegraph/issues/3297) (tracing and performance monitoring)
+- [Improve LightStep integration](https://github.com/sourcegraph/sourcegraph/issues/3304) (tracing and performance monitoring)
+- [Improve Codecov integration](https://github.com/sourcegraph/sourcegraph/issues/2920) (code coverage)
+- [Improve Sentry integration](https://github.com/sourcegraph/sourcegraph/issues/3305) (error monitoring)
 - [Analyze and expose dependency graph for all major languages and build systems](https://github.com/sourcegraph/sourcegraph/issues/2928)
-- [Compute and expose programming language statistics](https://github.com/sourcegraph/sourcegraph/issues/2587)
 - [Show panel (with references/etc.) UI in code host integrations](https://github.com/sourcegraph/sourcegraph/issues/3089)
 - Allow extensions to handle diffs and pull requests as a first-class concern
 - [Bazel support roadmap](https://github.com/sourcegraph/sourcegraph/issues/2982)
 - [Cross-language, cross-repository definitions and references support for APIs/IDLs (GraphQL, Thrift, Protobuf, etc.)](https://github.com/sourcegraph/sourcegraph/issues/981)
+- [Add Slack integration](https://github.com/sourcegraph/sourcegraph/issues/2986) (team chat)
+- [Add G Suite integration](https://github.com/sourcegraph/sourcegraph/issues/2987) (Google domain management)
+- [Add Jira integration](https://github.com/sourcegraph/sourcegraph/issues/2930) (project planning and issue tracking)
+- [Add Bazel integration](https://github.com/sourcegraph/sourcegraph/issues/2982) (builds)
+- [Add LaunchDarkly integration](https://github.com/sourcegraph/sourcegraph/issues/1249) (feature flags)
+- [Add FOSSA integration](https://github.com/sourcegraph/sourcegraph/issues/2988) (license compliance)
+- [Add SonarQube integration](https://github.com/sourcegraph/sourcegraph/issues/2989) (static analysis)
 
-## Integrations
+## Core services (repositories and authentication)
 
-We're refining and adding Sourcegraph integration with [code hosts](#code-hosts), [editors](#editors), and [other tools and services](#other-tools-and-services), so that Sourcegraph searches across all your code and gives you contextual information from your favorite developer tools in your workflow.
+Owners: @keegancsmith, @tsenart, @mrnugget
 
-### Code hosts
+- 🏃 [Robust synchronization behavior for all supported code hosts that handles repository renames and deletions](https://github.com/sourcegraph/sourcegraph/issues/3467)
+- 🏃 [Mapping local repositories in your editor to Sourcegraph](https://github.com/sourcegraph/sourcegraph/issues/462)
+- [Authentication and authorization support for Bitbucket Server](https://github.com/sourcegraph/sourcegraph/issues/1108)
+- [Compute and expose programming language statistics](https://github.com/sourcegraph/sourcegraph/issues/2587)
+- [Improve process for adding repositories from local disk](https://github.com/sourcegraph/sourcegraph/issues/1527)
+- Simpler configuration for HTTPS/SSH credentials for cloning repositories
+- [Support internal CA or self-signed TLS certificates for external communication](https://github.com/sourcegraph/sourcegraph/issues/71)
+- Support for non-Git version control systems (Perforce, Subversion, TFS, etc.)
 
-Code host integrations have (or will have) the following feature set (in order of priority):
+## Code modification
 
-- Repository syncing (project metadata and Git data)
-- UI integration with hovers/go-to-definition/find-references/etc. (provided as a native plugin and/or by the [Sourcegraph browser extension](../../integration/browser_extension.md))
-- Repository permissions
-- User authentication
+Owners: @rvantonder
 
-We are targeting the following code hosts (many of which already support the features above):
+We will let you perform safe, large-scale refactors of code across repositories, services, and languages.
 
-- [GitHub integration](https://github.com/sourcegraph/sourcegraph/issues/2915) (GitHub.com and GitHub Enterprise)
-- [GitLab integration](https://github.com/sourcegraph/sourcegraph/issues/2916) (GitLab.com and self-hosted GitLab instances)
-- [Bitbucket Server integration](https://github.com/sourcegraph/sourcegraph/issues/2917)
-- [Phabricator integration](https://github.com/sourcegraph/sourcegraph/issues/2918)
-- [AWS CodeCommit integration](https://github.com/sourcegraph/sourcegraph/issues/2919)
-- [Gitolite integration](https://github.com/sourcegraph/sourcegraph/issues/2922)
-- Future:
-  - [Gerrit integration](https://github.com/sourcegraph/sourcegraph/issues/871)
-  - [Bitbucket Cloud (bitbucket.org) integration](https://github.com/sourcegraph/sourcegraph/issues/2914)
+ - 🏃 [Find and replace string literals across multiple GitHub repositories](https://github.com/sourcegraph/sourcegraph/issues/3483)
+ - Find and replace using sophisticated pattern matching and replacement templates (e.g. regex or comby).
+ - Add support for modifing code on more code hosts (e.g. Bitbucket Server, GitLab).
+ - Create a UI for viewing and managing the state of in progress refactors (e.g. how many PRs are merged, automatically opening new PRs to refactor matching code that just got committed).
 
-### Editors
+## Deployment, configuration, and management
 
-We want to make it super fast to get the answer you need on Sourcegraph when you're in your editor, without switching to your browser and losing focus. We're focused on solving problems for you that local editor search and navigation can't answer. Editor integrations have (or will have) the following feature set:
+Owners: @beyang, @slimsag, @ggilmore
 
-- "View file at cursor location on Sourcegraph web interface" action
-- "Search code on Sourcegraph" action (for global searches or searches scoped to the current repository and its transitive dependencies/dependents)
-- Configurable single Sourcegraph URL (to support Sourcegraph.com or self-hosted Sourcegraph instance)
-- Future:
-  - [Support for Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/978)
+We want to make it easy to set up a self-hosted Sourcegraph instance in minutes, locally or on the most popular cloud providers. It needs to scale to the needs of organizations with thousands of developers, tens of thousands of repositories, and complex cluster and security needs.
 
-We are targeting the following editors (many of which already support the features above):
-
-- [VS Code integration](https://github.com/sourcegraph/sourcegraph/issues/2923)
-- [JetBrains IDE integration](https://github.com/sourcegraph/sourcegraph/issues/2926) (IntelliJ, WebStorm, PyCharm, GoLand, etc.)
-- [Emacs integration](https://github.com/sourcegraph/sourcegraph/issues/2924)
-- [Vim integration](https://github.com/sourcegraph/sourcegraph/issues/2927)
-- [Sublime Text integration](https://github.com/sourcegraph/sourcegraph/issues/2929)
-- Future:
-  - [Eclipse IDE integration](https://github.com/sourcegraph/sourcegraph/issues/2925)
-
-### Other tools and services
-
-Sourcegraph integrations enhance your developer workflow, giving you vital information you need while coding. These integrations add features such as contextual links to/from Sourcegraph and contextual information overlays on code in Sourcegraph.
-
-- [Codecov integration](https://github.com/sourcegraph/sourcegraph/issues/2920) (code coverage)
-- [Datadog integration](https://github.com/sourcegraph/sourcegraph/issues/3297) (tracing and performance monitoring)
-- [LightStep integration](https://github.com/sourcegraph/sourcegraph/issues/2984) (tracing and performance monitoring)
-- [Sentry integration](https://github.com/sourcegraph/sourcegraph/issues/2985) (error monitoring)
-- [Slack integration](https://github.com/sourcegraph/sourcegraph/issues/2986) (team chat)
-- [G Suite integration](https://github.com/sourcegraph/sourcegraph/issues/2987) (Google domain management)
-- Future:
-  - [Jira integration](https://github.com/sourcegraph/sourcegraph/issues/2930) (project planning and issue tracking)
-  - [Bazel integration](https://github.com/sourcegraph/sourcegraph/issues/2982) (builds)
-  - [LaunchDarkly integration](https://github.com/sourcegraph/sourcegraph/issues/1249) (feature flags)
-  - [FOSSA integration](https://github.com/sourcegraph/sourcegraph/issues/2988) (license compliance)
-  - [SonarQube integration](https://github.com/sourcegraph/sourcegraph/issues/2989) (static analysis)
+- Sourcegraph managed instances
+- Default request tracing for private instances
+- Easier deployment and configuration of language servers
+- Customization:
+  - [Configurable welcome page](https://github.com/sourcegraph/sourcegraph/issues/2443)
+  - [Configurable site admin contact info and internal helpdesk link](https://github.com/sourcegraph/sourcegraph/issues/2442)
+- Improved flow for common configuration use cases (e.g., "just make everything work well with my GitHub.com organization")
 
 ## Core UX
 
-<!-- TODO: we have no owner for this stuff right now -->
+Owners: [We're hiring](https://github.com/sourcegraph/careers/blob/master/job-descriptions/software-engineer.md)! 🙋
 
 - Speed up page loads and reduce UI jitter
 - Improve keyboard navigation and keyboard shortcuts
@@ -131,38 +125,21 @@ Sourcegraph integrations enhance your developer workflow, giving you vital infor
 - Improve accessibility
 - Address major pain points for mobile and tablet users
 
-## Core services (repositories and authentication)
-
-See the "[Code hosts](#code-hosts)" section above for plans related to repositories, user authentication, and permissions for specific code hosts (such as GitHub).
-
-- [Keep repository set in sync with config](https://github.com/sourcegraph/sourcegraph/issues/2025)
-- [Mapping local repositories in your editor to Sourcegraph](https://github.com/sourcegraph/sourcegraph/issues/462)
-- [Improve process for adding repositories from local disk](https://github.com/sourcegraph/sourcegraph/issues/1527)
-- Simpler configuration for HTTPS/SSH credentials for cloning repositories
-- [Support internal CA or self-signed TLS certificates for external communication](https://github.com/sourcegraph/sourcegraph/issues/71)
-- Support for non-Git version control systems (Perforce, Subversion, TFS, etc.)
-
 ## Extension API, authoring, and registry
 
-This section is only for extension API, authoring and registry improvements for [Sourcegraph extensions](../../extensions/index.md). Features that will be *provided by* extensions are listed in the other sections.
+Owners: [We're hiring](https://github.com/sourcegraph/careers/blob/master/job-descriptions/software-engineer.md)! 🙋
+
+The Sourcegraph extension API allows developers to enhance their code review workflow with custom data. We're working to make the extension API and extension registry even more powerful and useful.
 
 - [Integration testing support for Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph/issues/733)
 - [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
 - [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
 
-## Deployment, configuration, and management
+## Editors
 
-We want to make it easy to set up a self-hosted Sourcegraph instance in minutes, locally or on the most popular cloud providers. It needs to scale to the needs of organizations with thousands of developers, tens of thousands of repositories, and complex cluster and security needs.
+[Sourcegraph integrates with many editors](https://docs.sourcegraph.com/integration/editor). We want to make it super fast to get the answer you need on Sourcegraph when you're in your editor, without switching to your browser and losing focus. We're focused on solving problems for you that local editor search and navigation can't answer.
 
-- [Better communication of license expiration](https://github.com/sourcegraph/sourcegraph/pull/2969)
-- Customization:
-  - [Configurable welcome page](https://github.com/sourcegraph/sourcegraph/issues/2443)
-  - [Configurable site admin contact info and internal helpdesk link](https://github.com/sourcegraph/sourcegraph/issues/2442)
-- Improved flow for common configuration use cases (e.g., "just make everything work well with my GitHub.com organization")
-
-## Other
-
-- [Seamless use of open-source repositories from a self-hosted Sourcegraph instance](https://github.com/sourcegraph/sourcegraph/issues/2954)
+- [Add support for Sourcegraph extensions to existing editor integrations](https://github.com/sourcegraph/sourcegraph/issues/978).
 
 ---
 
@@ -174,7 +151,6 @@ We want Sourcegraph to be the infrastructure for developer tools and data inside
 
 - [Build and adopt new developer tools organization-wide](#build-and-adopt-developer-tools-more-easily) more easily, with seamless integration into the editor, code review, and anywhere else developers interact with code
 - [Provide consistent, remote-capable development environments to developers](#consistent-remote-capable-development-environments)
-- [Perform automated refactors programmatically across repositories and languages](#automated-refactoring)
 - [Make data-driven decisions about development processes](#data-driven-development-insights-and-reporting)
 - [Enforce rules around security, compliance, and licensing in a developer-friendly way](#security-compliance-and-licensing)
 
@@ -211,13 +187,6 @@ We will let you connect your local editor to your organization's Sourcegraph ins
 - The development environment would be centrally configured from your Sourcegraph instance, so every developer would have a consistent environment (subject to user customizations).
 - Computationally intensive tasks (such as builds, code intelligence, and tests) could be offloaded to the remote server. (Some will be harder to make remote than others, and we expect to make gradual progress here.)
 - You could also choose to launch a web-based cloud IDE session with a fully configured developer environment.
-
-### Automated refactoring
-
-We will let you perform safe, large-scale refactors of code across repositories, services, and languages.
-
-- For simple large-scale edits that can be merged independently, you'll be able to preview and create multiple linked diffs/PRs for the edit, each assigned to the right code reviewer. You can track progress of merging all of the individual edits and monitor new candidates for the edit to be applied (such as when a developer merges code after you created the initial batch of diffs/PRs).
-- For refactors that need coordinated or staged deployment, you'll be able to define templates that codify how to make the change in multiple steps. For example, to change the signature of a service method, a template might codify a multi-step process where first the implementation changes to handle both the old and new arguments, then all callers are updated, and finally (1 month after all calling services are deployed) support for the old arguments is removed. This process relies on Sourcegraph's knowledge of the dependency graph, code generation steps, and deployment status.
 
 ### Data-driven development insights and reporting
 

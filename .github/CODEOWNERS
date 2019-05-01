@@ -26,6 +26,14 @@
 */search/**/* @sourcegraph/code-search
 /cmd/searcher/ @sourcegraph/code-search
 
+# Saved searches
+/web/src/SavedQuery.tsx @attfarhan
+/web/src/SavedQueries.tsx @attfarhan
+/web/src/SavedQueryCreateForm.tsx @attfarhan
+/web/src/SavedQueryUpdateForm.tsx @attfarhan
+/web/src/SavedQueryForm.tsx @attfarhan
+/web/src/SavedQueryRow.tsx @attfarhan
+
 # Deployment
 Dockerfile @ggilmore
 

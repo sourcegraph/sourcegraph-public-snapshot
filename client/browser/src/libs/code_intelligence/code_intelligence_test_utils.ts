@@ -3,7 +3,7 @@ import assert from 'assert'
 import { readFile } from 'mz/fs'
 import { SetIntersection } from 'utility-types'
 import { CodeHost, MountGetter } from './code_intelligence'
-import { CodeViewSpec } from './code_views'
+import { CodeView } from './code_views'
 
 const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = (typeof mountGetterKeys)[number]
@@ -29,7 +29,7 @@ export function testCodeHostMountGetters<C extends CodeHost>(
 
 export function testToolbarMountGetter(
     codeViewHtmlFixturePath: string,
-    getToolbarMount: NonNullable<CodeViewSpec['getToolbarMount']>
+    getToolbarMount: NonNullable<CodeView['getToolbarMount']>
 ): void {
     testMountGetter(codeViewHtmlFixturePath, getToolbarMount, false, false)
 }
@@ -135,27 +135,33 @@ export function testDOMFunctions(
         })
         describe('getCodeElementFromLineNumber()', () => {
             for (const { getElement, diffPart, lineNumber } of codeElements) {
-                test(`diffPart: ${diffPart}`, () => {
-                    const codeView = getCodeView()
-                    const element = getElement()
-                    expect(domFunctions.getCodeElementFromLineNumber(codeView, lineNumber, diffPart)).toBe(element)
+                describe(`diffPart: ${diffPart}`, () => {
+                    it('should return the right element', () => {
+                        const codeView = getCodeView()
+                        const element = getElement()
+                        expect(domFunctions.getCodeElementFromLineNumber(codeView, lineNumber, diffPart)).toBe(element)
+                    })
                 })
             }
         })
         describe('getLineNumberFromCodeElement()', () => {
             for (const { getElement, diffPart, lineNumber } of codeElements) {
-                test(`diffPart: ${diffPart}`, () => {
-                    const element = getElement()
-                    expect(domFunctions.getLineNumberFromCodeElement(element)).toBe(lineNumber)
+                describe(`diffPart: ${diffPart}`, () => {
+                    it('should return a number', () => {
+                        const element = getElement()
+                        expect(domFunctions.getLineNumberFromCodeElement(element)).toBe(lineNumber)
+                    })
                 })
             }
         })
         if (domFunctions.getDiffCodePart) {
             describe('getDiffCodePart()', () => {
                 for (const { getElement, diffPart } of codeElements) {
-                    test(`diffPart: ${diffPart}`, () => {
-                        const element = getElement()
-                        expect(domFunctions.getDiffCodePart!(element)).toBe(diffPart)
+                    describe(`diffPart: ${diffPart}`, () => {
+                        it('should return the right diff part for an element', () => {
+                            const element = getElement()
+                            expect(domFunctions.getDiffCodePart!(element)).toBe(diffPart)
+                        })
                     })
                 }
             })
@@ -163,9 +169,13 @@ export function testDOMFunctions(
         if (domFunctions.isFirstCharacterDiffIndicator) {
             describe('isFirstCharacterDiffIndicator()', () => {
                 for (const { getElement, diffPart } of codeElements) {
-                    test(`diffPart: ${diffPart}`, () => {
-                        const element = getElement()
-                        expect(domFunctions.isFirstCharacterDiffIndicator!(element)).toBe(firstCharacterIsDiffIndicator)
+                    describe(`diffPart: ${diffPart}`, () => {
+                        it('should return correctly whether the first character is a diff indicator', () => {
+                            const element = getElement()
+                            expect(domFunctions.isFirstCharacterDiffIndicator!(element)).toBe(
+                                firstCharacterIsDiffIndicator
+                            )
+                        })
                     })
                 }
             })

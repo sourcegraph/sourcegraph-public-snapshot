@@ -29,7 +29,9 @@ var DevAndTesting = conftypes.RawUnified{
 		}
 	],
 }`,
-	Site: `{}`,
+	Site: `{
+	"search.index.enabled": true,
+}`,
 }
 
 // DockerContainer is the default configuration applied to Docker
@@ -44,7 +46,8 @@ var DockerContainer = conftypes.RawUnified{
 	]
 }`,
 	Site: `{
-	"disablePublicRepoRedirects": true
+	"disablePublicRepoRedirects": true,
+	"search.index.enabled": true,
 }`,
 }
 
@@ -69,7 +72,9 @@ var Cluster = conftypes.RawUnified{
 		}
 	]
 }`,
-	Site: `{}`,
+	Site: `{
+	"search.index.enabled": true,
+}`,
 }
 
 // Default is the default for *this* deployment type. It is populated by

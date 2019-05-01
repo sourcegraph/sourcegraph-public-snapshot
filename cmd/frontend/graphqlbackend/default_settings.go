@@ -20,9 +20,20 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/csharp":     true,
 	"sourcegraph/shell":      true,
 	"sourcegraph/scala":      true,
+	"sourcegraph/swift":      true,
+	"sourcegraph/rust":       true,
 	"sourcegraph/kotlin":     true,
-	"sourcegraph/r":          true,
+	"sourcegraph/elixir":     true,
 	"sourcegraph/perl":       true,
+	"sourcegraph/lua":        true,
+	"sourcegraph/clojure":    true,
+	"sourcegraph/haskell":    true,
+	"sourcegraph/powershell": true,
+	"sourcegraph/lisp":       true,
+	"sourcegraph/erlang":     true,
+	"sourcegraph/dart":       true,
+	"sourcegraph/ocaml":      true,
+	"sourcegraph/r":          true,
 }
 
 const singletonDefaultSettingsGQLID = "DefaultSettings"

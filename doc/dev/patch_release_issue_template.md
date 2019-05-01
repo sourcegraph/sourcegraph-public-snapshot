@@ -8,7 +8,7 @@ See [release_issue_template.md](release_issue_template.md) for the monthly relea
 
 - [ ] Create a checklist of the changes that you want to release (i.e. open or merged PRs).
 - [ ] Communicate your intentions by sending a message to #dev-announce that includes a link to this issue.
-- [ ] Cherry pick changes into the release branch and check them off the list above.
+- [ ] Cherry pick changes into the existing release branch (this exists already as `MAJOR.MINOR`, do not create a new branch) and check them off the list above.
     - [ ] Ensure that the cherry-picked commits don't depend on any commits that aren't already in the release branch.
 - [ ] Push the release branch with your cherry-picked commit(s) and make sure CI passes.
 
@@ -30,7 +30,7 @@ In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
 
 ## Update the docs
 
-- [ ] Update the version (major.minor.patch) of Sourcegraph in the docs ([example](https://github.com/sourcegraph/sourcegraph/pull/2841)) by running the following 
+- [ ] Update the version (major.minor.patch) of Sourcegraph in the docs ([example](https://github.com/sourcegraph/sourcegraph/pull/2841)) by running the following
   ```
   find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEW_VERSION/g' {} +
   ```

@@ -3,7 +3,6 @@ package highlight
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"golang.org/x/net/html"
@@ -82,8 +82,7 @@ func Code(ctx context.Context, content []byte, filepath string, disableTimeout b
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
 	} else if err != nil {
-		postTooLarge := strings.HasSuffix(err.Error(), "EOF")
-		if postTooLarge {
+		if cause := errors.Cause(err); cause == gosyntect.ErrRequestTooLarge || cause == gosyntect.ErrPanic {
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
 			table, err2 := generatePlainTable(code)

@@ -32,9 +32,12 @@ func TestIntegration(t *testing.T) {
 		Isolation: sql.LevelSerializable,
 	})
 
+	lg := log15.New()
+	lg.SetHandler(log15.DiscardHandler())
+
 	store := repos.NewObservedStore(
 		dbstore,
-		log15.Root(),
+		lg,
 		repos.NewStoreMetrics(),
 		trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	)
@@ -48,11 +51,16 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices(store)},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},
+		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},
 		{"Syncer/Sync", testSyncerSync(store)},
 		{"Migrations/GithubSetDefaultRepositoryQuery",
 			testGithubSetDefaultRepositoryQueryMigration(store)},
-		{"Migrations/GitLabSetDefaultProjectQueryMigration",
+		{"Migrations/GitLabSetDefaultProjectQuery",
 			testGitLabSetDefaultProjectQueryMigration(store)},
+		{"Migrations/BitbucketServerSetDefaultRepositoryQuery",
+			testBitbucketServerSetDefaultRepositoryQueryMigration(store)},
+		{"Migrations/BitbucketServerUsername",
+			testBitbucketServerUsernameMigration(store)},
 		{"Migrations/EnabledStateDeprecationMigration",
 			testEnabledStateDeprecationMigration(store)},
 	} {
