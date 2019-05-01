@@ -492,9 +492,9 @@ func Test_findMountPoint(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "mount point of root is root",
-			args: args { d: "/" },
-			want: "/",
+			name:    "mount point of root is root",
+			args:    args{d: "/"},
+			want:    "/",
 			wantErr: false,
 		},
 		// What else can we portably count on?
@@ -512,4 +512,3 @@ func Test_findMountPoint(t *testing.T) {
 		})
 	}
 }
-
