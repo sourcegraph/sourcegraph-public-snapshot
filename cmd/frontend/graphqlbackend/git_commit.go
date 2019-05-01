@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -35,9 +36,9 @@ type gitCommitResolver struct {
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
-	oid     gitObjectID
-	once    sync.Once
-	onceErr error
+	oid    gitObjectID
+	oidErr error
+	once   sync.Once
 
 	author    signatureResolver
 	committer *signatureResolver
@@ -84,40 +85,71 @@ func (r *gitCommitResolver) ID() graphql.ID {
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
 func (r *gitCommitResolver) OID() (gitObjectID, error) {
-	return r.getCommitOID()
-}
-
-func (r *gitCommitResolver) getCommitOID() (gitObjectID, error) {
 	r.once.Do(func() {
-		// If we already have the commit, no need to try to compute it.
 		if r.oid != "" {
+			return // We already have an oid because the creator of this *gitCommitResolver specified it.
+		}
+
+		// Try fetching it from the Redis cache to avoid doing lots of work
+		// previously done (as this method is called very often, e.g. multiple
+		// times per search result).
+		start := time.Now()
+		result, ok := oidResolutionCache.Get(string(r.repo.repo.ID))
+		oidResolutionCacheLookupDuration.Observe(time.Since(start).Seconds())
+		if ok {
+			oidResolutionCounter.WithLabelValues("hit").Inc()
+			r.oid = gitObjectID(result)
 			return
 		}
 
-		// Commit OID is the empty string denoting the default branch. Find out
-		// what is the latest commit indexed by zoekt.
-
-		indexInfo := r.repo.TextSearchIndex()
-
-		ctx := context.Background()
-
-		var refs []*repositoryTextSearchIndexedRef
-		refs, r.onceErr = indexInfo.Refs(ctx)
-		if r.onceErr != nil {
-			return
-		}
-
-		for _, ref := range refs {
-			current, _ := ref.Current(ctx)
-			if current {
-				r.oid = ref.indexedCommit
-
-				break
-			}
+		// The cache doesn't have it, so compute it and update the cache if we
+		// resolved it successfully.
+		start = time.Now()
+		r.resolveCommitIODUncached()
+		oidResolutionDuration.Observe(time.Since(start).Seconds())
+		if r.oidErr == nil {
+			oidResolutionCounter.WithLabelValues("miss").Inc()
+			oidResolutionCache.Set(string(r.repo.repo.ID), string(r.oid))
+		} else {
+			oidResolutionCounter.WithLabelValues("miss_error").Inc()
 		}
 	})
+	return r.oid, r.oidErr
+}
 
-	return r.oid, r.onceErr
+func (r *gitCommitResolver) resolveCommitIODUncached() {
+	if r.oid != "" || r.oidErr != nil {
+		// Possible scenarios for this case:
+		//
+		// - We already have an r.oid because the creator of this *gitCommitResolver specified it.
+		// - We already have an r.oid because we were called before.
+		// - We don't have an r.oid but have an r.oidErr from being called before.
+		//
+		// In any case, there is no point in doing the work again, so we return
+		// now.
+		return
+	}
+
+	// Commit OID is the empty string denoting the default branch. Find out
+	// what is the latest commit indexed by zoekt.
+
+	indexInfo := r.repo.TextSearchIndex()
+
+	ctx := context.Background()
+
+	var refs []*repositoryTextSearchIndexedRef
+	refs, r.oidErr = indexInfo.Refs(ctx)
+	if r.oidErr != nil {
+		return
+	}
+
+	for _, ref := range refs {
+		current, _ := ref.Current(ctx)
+		if current {
+			r.oid = ref.indexedCommit
+			break
+		}
+	}
 }
 
 func (r *gitCommitResolver) AbbreviatedOID() (string, error) {
