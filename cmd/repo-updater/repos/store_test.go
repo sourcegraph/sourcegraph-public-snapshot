@@ -397,7 +397,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 		})
 
 		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			want := mkRepos(1, repositories...)
+			want := mkRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
