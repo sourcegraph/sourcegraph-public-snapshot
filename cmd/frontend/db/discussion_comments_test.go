@@ -51,6 +51,9 @@ func TestDiscussionComments_Create(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := DiscussionThreads.Get(ctx, thread.ID); err != nil {
+		t.Fatal("expected to get created thread", err)
+	}
 
 	// Create the comment.
 	comment, err := DiscussionComments.Create(ctx, &types.DiscussionComment{
@@ -63,5 +66,22 @@ func TestDiscussionComments_Create(t *testing.T) {
 	}
 	if comment.CreatedAt == (time.Time{}) {
 		t.Fatal("expected CreatedAt to be set, got zero value time")
+	}
+	if _, err := DiscussionComments.Get(ctx, comment.ID); err != nil {
+		t.Fatal("expected to get created comment", err)
+	}
+
+	// Test deleting the repo cascade deletes
+	err = Repos.Delete(ctx, repo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = DiscussionComments.Get(ctx, comment.ID)
+	if _, ok := err.(*ErrCommentNotFound); !ok {
+		t.Fatal("expected to not find deleted comment", err)
+	}
+	_, err = DiscussionThreads.Get(ctx, thread.ID)
+	if _, ok := err.(*ErrThreadNotFound); !ok {
+		t.Fatal("expected to not find deleted thread", err)
 	}
 }

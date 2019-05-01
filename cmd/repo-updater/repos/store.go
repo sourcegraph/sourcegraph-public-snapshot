@@ -35,8 +35,6 @@ type StoreListReposArgs struct {
 	IDs []uint32
 	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
-	// If true, includes deleted repos in the result set.
-	Deleted bool
 	// Limit the total number of repos returned. Zero means no limit
 	Limit int64
 	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
@@ -335,13 +333,7 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
 	}
 
-	if !args.Deleted {
-		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
+	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
@@ -403,28 +395,61 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		return nil
 	}
 
-	q, err := upsertReposQuery(repos)
-	if err != nil {
-		return err
+	var deletes, updates, inserts []*Repo
+	for _, r := range repos {
+		switch {
+		case r.IsDeleted():
+			deletes = append(deletes, r)
+		case r.ID != 0:
+			updates = append(updates, r)
+		default:
+			inserts = append(inserts, r)
+		}
 	}
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
+	for _, op := range []struct {
+		name  string
+		query string
+		repos []*Repo
+	}{
+		{"delete", deleteReposQuery, deletes},
+		{"update", updateReposQuery, updates},
+		{"insert", insertReposQuery, inserts},
+	} {
+		q, err := batchReposQuery(op.query, op.repos)
+		if err != nil {
+			return errors.Wrap(err, op.name)
+		}
+
+		rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			return errors.Wrap(err, op.name)
+		}
+
+		if op.name == "delete" {
+			if err = rows.Close(); err != nil {
+				return errors.Wrap(err, op.name)
+			}
+			// Nothing to scan
+			continue
+		}
+
+		i := -1
+		_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
+			i++
+			err = scanRepo(op.repos[i], sc)
+			return int64(op.repos[i].ID), 1, err
+		})
+
+		if err != nil {
+			return errors.Wrap(err, op.name)
+		}
 	}
 
-	i := -1
-
-	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
-		i++
-		err = scanRepo(repos[i], sc)
-		return int64(repos[i].ID), 1, err
-	})
-
-	return err
+	return nil
 }
 
-func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
+func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	type record struct {
 		ID                  uint32          `json:"id"`
 		Name                string          `json:"name"`
@@ -447,12 +472,12 @@ func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
 	for _, r := range repos {
 		sources, err := json.Marshal(r.Sources)
 		if err != nil {
-			return nil, errors.Wrapf(err, "upsertReposQuery: sources marshalling failed")
+			return nil, errors.Wrapf(err, "batchReposQuery: sources marshalling failed")
 		}
 
 		metadata, err := metadataColumn(r.Metadata)
 		if err != nil {
-			return nil, errors.Wrapf(err, "upsertReposQuery: metadata marshalling failed")
+			return nil, errors.Wrapf(err, "batchReposQuery: metadata marshalling failed")
 		}
 
 		records = append(records, record{
@@ -479,12 +504,10 @@ func upsertReposQuery(repos []*Repo) (_ *sqlf.Query, err error) {
 		return nil, err
 	}
 
-	return sqlf.Sprintf(upsertReposQueryFmtstr, string(batch)), nil
+	return sqlf.Sprintf(fmtstr, string(batch)), nil
 }
 
-var upsertReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.UpsertRepos
-
+const batchReposQueryFmtstr = `
 --
 -- The "batch" Common Table Expression (CTE) produces the records to be upserted,
 -- leveraging the "json_to_recordset" Postgres function to parse the JSON
@@ -519,13 +542,9 @@ WITH batch AS (
     )
   )
   WITH ORDINALITY
-),
+)`
 
---
--- The "updated" Common Table Expression (CTE) updates all records from our "batch"
--- that already exist in the repos table as informed by their unique contraints.
--- It returns the set of updated records.
---
+var updateReposQuery = batchReposQueryFmtstr + `,
 updated AS (
   UPDATE repo
   SET
@@ -544,26 +563,38 @@ updated AS (
     sources               = batch.sources,
     metadata              = batch.metadata
   FROM batch
-  WHERE repo.name = batch.name OR (
-    repo.external_id IS NOT NULL
-    AND repo.external_service_id IS NOT NULL
-    AND repo.external_service_type IS NOT NULL
-    AND batch.external_id IS NOT NULL
-    AND batch.external_service_id IS NOT NULL
-    AND batch.external_service_type IS NOT NULL
-    AND repo.external_service_id = batch.external_service_id
-    AND repo.external_id = batch.external_id
-    AND repo.external_service_type = batch.external_service_type
-  )
+  WHERE repo.id = batch.id
   RETURNING repo.*
-),
+)
+SELECT
+  updated.id,
+  updated.name,
+  updated.description,
+  updated.language,
+  updated.created_at,
+  updated.updated_at,
+  updated.deleted_at,
+  updated.external_service_type,
+  updated.external_service_id,
+  updated.external_id,
+  updated.enabled,
+  updated.archived,
+  updated.fork,
+  updated.sources,
+  updated.metadata
+FROM updated
+LEFT JOIN batch ON batch.id = updated.id
+ORDER BY batch.ordinality
+`
 
---
--- The "inserted" Common Table Expression (CTE) inserts all records from our "batch"
--- that don't already exist in the repos table as informed by their unique constraints.
--- It returns the set of new records with their "id" column set as well as other columns
--- with default values that had no value set in the batch.
---
+var deleteReposQuery = batchReposQueryFmtstr + `
+DELETE FROM repo USING batch
+WHERE batch.deleted_at IS NOT NULL
+AND repo.id = batch.ID
+RETURNING repo.*
+`
+
+var insertReposQuery = batchReposQueryFmtstr + `,
 inserted AS (
   INSERT INTO repo (
     name,
@@ -597,47 +628,26 @@ inserted AS (
     sources,
     metadata
   FROM batch
-  WHERE NOT EXISTS (SELECT 1 FROM repo WHERE repo.name = batch.name)
-  AND NOT EXISTS (
-    SELECT 1
-    FROM repo
-    WHERE repo.external_id IS NOT NULL
-      AND repo.external_service_type IS NOT NULL
-      AND repo.external_service_id IS NOT NULL
-      AND batch.external_id IS NOT NULL
-      AND batch.external_service_type IS NOT NULL
-      AND batch.external_service_id IS NOT NULL
-      AND repo.external_service_id = batch.external_service_id
-      AND repo.external_id = batch.external_id
-      AND repo.external_service_type = batch.external_service_type
-    )
   RETURNING repo.*
 )
-
---
--- This select statement produces rows of the "batch" CTE hydrated with the
--- column values returned by the "updated" and "inserted" CTEs, in the same
--- order as the original batch.
---
 SELECT
-  GREATEST(updated.id, inserted.id, batch.id) AS id,
-  COALESCE(updated.name, inserted.name, batch.name) AS name,
-  COALESCE(updated.description, inserted.description, batch.description) AS description,
-  COALESCE(updated.language, inserted.language, batch.language) AS language,
-  COALESCE(updated.created_at, inserted.created_at, batch.created_at) AS created_at,
-  COALESCE(updated.updated_at, inserted.updated_at, batch.updated_at) AS updated_at,
-  COALESCE(updated.deleted_at, inserted.deleted_at, batch.deleted_at) AS deleted_at,
-  COALESCE(updated.external_service_type, inserted.external_service_type, batch.external_service_type) AS external_service_type,
-  COALESCE(updated.external_service_id, inserted.external_service_id, batch.external_service_id) AS external_service_id,
-  COALESCE(updated.external_id, inserted.external_id, batch.external_id) AS external_id,
-  COALESCE(updated.enabled, inserted.enabled, batch.enabled) AS enabled,
-  COALESCE(updated.archived, inserted.archived, batch.archived) AS archived,
-  COALESCE(updated.fork, inserted.fork, batch.fork) AS fork,
-  COALESCE(updated.sources, inserted.sources, batch.sources) AS sources,
-  COALESCE(updated.metadata, inserted.metadata, batch.metadata) AS metadata
-FROM batch
-LEFT JOIN updated  ON batch.name = updated.name
-LEFT JOIN inserted ON batch.name = inserted.name
+  inserted.id,
+  inserted.name,
+  inserted.description,
+  inserted.language,
+  inserted.created_at,
+  inserted.updated_at,
+  inserted.deleted_at,
+  inserted.external_service_type,
+  inserted.external_service_id,
+  inserted.external_id,
+  inserted.enabled,
+  inserted.archived,
+  inserted.fork,
+  inserted.sources,
+  inserted.metadata
+FROM inserted
+LEFT JOIN batch ON batch.name = inserted.name
 ORDER BY batch.ordinality
 `
 

@@ -87,8 +87,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 		}
 
 		stored, err := s.ListRepos(ctx, StoreListReposArgs{
-			Kinds:   kinds,
-			Deleted: true,
+			Kinds: kinds,
 		})
 
 		if err != nil {
