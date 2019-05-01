@@ -290,7 +290,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: "repo got renamed to anoter repo that gets deleted",
+				name: "repo got renamed to another repo that gets deleted",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil,
 						tc.repo.With(func(r *repos.Repo) { r.ExternalRepo.ID = "another-id" }),
@@ -573,6 +573,32 @@ func TestDiff(t *testing.T) {
 				Added: repos.Repos{
 					{Name: "1", ExternalRepo: eid("new"), Description: "bar"},
 				},
+			},
+		},
+		{
+			name:  "repo renamed to an already deleted repo",
+			store: repos.Repos{},
+			source: repos.Repos{
+				{Name: "a", ExternalRepo: eid("b")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "a", ExternalRepo: eid("b")},
+				},
+			},
+		},
+		{
+			name: "repo renamed to a repo that gets deleted",
+			store: repos.Repos{
+				{Name: "a", ExternalRepo: eid("a")},
+				{Name: "b", ExternalRepo: eid("b")},
+			},
+			source: repos.Repos{
+				{Name: "a", ExternalRepo: eid("b")},
+			},
+			diff: repos.Diff{
+				Deleted:  repos.Repos{{Name: "a", ExternalRepo: eid("a")}},
+				Modified: repos.Repos{{Name: "a", ExternalRepo: eid("b")}},
 			},
 		},
 		{
