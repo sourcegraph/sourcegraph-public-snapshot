@@ -218,7 +218,7 @@
     "react-dom-confetti": "^0.1.0",
     "react-router": "^4.4.0-beta.6",
     "react-router-dom": "^4.4.0-beta.6",
-    "react-stripe-elements": "^2.0.1",
+    "react-stripe-elements": "^2.0.3",
     "react-visibility-sensor": "^5.0.2",
     "reactstrap": "https://registry.npmjs.org/@sqs/reactstrap/-/reactstrap-6.5.0-tmp1.tgz",
     "rxjs": "^6.4.0",
