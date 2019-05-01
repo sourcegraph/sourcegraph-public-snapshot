@@ -1,4 +1,4 @@
-import { MarkupKind } from 'sourcegraph'
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { LinkPreviewMerged } from '../../api/client/services/linkPreview'
 import { applyLinkPreview, ApplyLinkPreviewOptions } from './linkPreviews'
 
@@ -18,13 +18,13 @@ describe('applyLinkPreview', () => {
         const LINK_PREVIEW_MERGED: LinkPreviewMerged = {
             content: [
                 {
-                    kind: 'markdown' as MarkupKind.Markdown,
+                    kind: MarkupKind.Markdown,
                     value: '**x**',
                 },
             ],
             hover: [
                 {
-                    kind: 'plaintext' as MarkupKind.PlainText,
+                    kind: MarkupKind.PlainText,
                     value: 'y',
                 },
             ],

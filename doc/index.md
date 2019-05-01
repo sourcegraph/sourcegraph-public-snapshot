@@ -12,7 +12,7 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.3.5</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.3.6</code></pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -36,6 +36,8 @@ All you need to do to upgrade Sourcegraph is to restart your Docker server with 
 We actively maintain the two most recent [monthly releases of Sourcegraph](dev/releases.md) and we support upgrading from the two previous monthly releases.
 
 For example, if you are running Sourcegraph 3.1, then you can upgrade directly to 3.2 and 3.3. If you want to upgrade to 3.4, then you first need to upgrade to 3.3 before you can upgrade to 3.4.
+
+> The Docker server image tags follow SemVer semantics, so version 3.3 can be found at `sourcegraph/server:3.3.6`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
 
 ## Documentation
 

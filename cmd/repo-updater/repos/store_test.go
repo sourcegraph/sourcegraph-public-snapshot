@@ -3,6 +3,7 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -702,6 +703,8 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
 
+			sort.Sort(stored)
+
 			lo, hi := -2, len(stored)+2
 			for page := lo; page < hi; page++ {
 				for limit := lo; limit < hi; limit++ {
@@ -715,24 +718,15 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 						t.Fatalf("unexpected error with page=%d, limit=%d: %v", page, limit, err)
 					}
 
-					var want int
+					var want repos.Repos
 					if limit <= 0 || limit >= len(stored) {
-						want = len(stored)
+						want = stored
 					} else {
-						want = limit
+						want = stored[:limit]
 					}
 
-					if have := len(listed); have != want {
-						t.Fatalf("page=%d, limit=%d: count:\nhave: %v\nwant: %v", page, limit, have, want)
-					}
-
-					set := make(map[api.ExternalRepoSpec]bool)
-					for _, r := range listed {
-						if _, ok := set[r.ExternalRepo]; !ok {
-							set[r.ExternalRepo] = true
-						} else {
-							t.Errorf("duplicate found: %v", r)
-						}
+					if have := repos.Repos(listed); !reflect.DeepEqual(have, want) {
+						t.Fatalf("page=%d, limit=%d: %s", page, limit, pretty.Compare(have, want))
 					}
 				}
 			}

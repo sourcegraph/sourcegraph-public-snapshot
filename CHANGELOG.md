@@ -21,6 +21,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
 
+## 3.3.6
+
+## Changed
+
+- All 24 language extensions are enabled by default.
+
 ## 3.3.5
 
 ## Changed

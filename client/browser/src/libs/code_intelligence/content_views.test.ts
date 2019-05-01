@@ -1,7 +1,7 @@
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import { concat, Observable, of, Subject, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { MarkupKind } from 'sourcegraph'
 import { LinkPreviewMerged } from '../../../../../shared/src/api/client/services/linkPreview'
 import { createBarrier } from '../../../../../shared/src/api/integration-test/testHelpers'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -52,13 +52,13 @@ describe('content_views', () => {
                                             of<LinkPreviewMerged>({
                                                 content: [
                                                     {
-                                                        kind: 'markdown' as MarkupKind.Markdown,
+                                                        kind: MarkupKind.Markdown,
                                                         value: `**${url.slice(url.lastIndexOf('#') + 1)}** x`,
                                                     },
                                                 ],
                                                 hover: [
                                                     {
-                                                        kind: 'plaintext' as MarkupKind.PlainText,
+                                                        kind: MarkupKind.PlainText,
                                                         value: url.slice(url.lastIndexOf('#') + 1),
                                                     },
                                                 ],
@@ -134,13 +134,13 @@ describe('content_views', () => {
             fooLinkPreviewValues.next({
                 content: [
                     {
-                        kind: 'markdown' as MarkupKind.Markdown,
+                        kind: MarkupKind.Markdown,
                         value: `**foo**`,
                     },
                 ],
                 hover: [
                     {
-                        kind: 'plaintext' as MarkupKind.PlainText,
+                        kind: MarkupKind.PlainText,
                         value: 'foo',
                     },
                 ],
@@ -152,13 +152,13 @@ describe('content_views', () => {
             fooLinkPreviewValues.next({
                 content: [
                     {
-                        kind: 'markdown' as MarkupKind.Markdown,
+                        kind: MarkupKind.Markdown,
                         value: `**foo2**`,
                     },
                 ],
                 hover: [
                     {
-                        kind: 'plaintext' as MarkupKind.PlainText,
+                        kind: MarkupKind.PlainText,
                         value: 'foo2',
                     },
                 ],
@@ -171,7 +171,7 @@ describe('content_views', () => {
                 content: [],
                 hover: [
                     {
-                        kind: 'plaintext' as MarkupKind.PlainText,
+                        kind: MarkupKind.PlainText,
                         value: 'foo2',
                     },
                 ],
