@@ -201,7 +201,7 @@
     "d3-scale": "^2.2.2",
     "d3-selection": "^1.2.0",
     "d3-shape": "^1.2.0",
-    "date-fns": "^2.0.0-alpha.7",
+    "date-fns": "^2.0.0-alpha.27",
     "downshift": "^2.2.3",
     "graphiql": "^0.13.0",
     "he": "^1.2.0",
