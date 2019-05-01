@@ -183,20 +183,11 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 		}
 
 		if src == nil {
-			if !old.IsDeleted() {
-				diff.Deleted = append(diff.Deleted, old)
-			} else {
-				diff.Unmodified = append(diff.Unmodified, old)
-			}
-		} else if !old.IsDeleted() {
-			if old.Update(src) {
-				diff.Modified = append(diff.Modified, old)
-			} else {
-				diff.Unmodified = append(diff.Unmodified, old)
-			}
+			diff.Deleted = append(diff.Deleted, old)
+		} else if old.Update(src) {
+			diff.Modified = append(diff.Modified, old)
 		} else {
-			old.Update(src)
-			diff.Added = append(diff.Added, old)
+			diff.Unmodified = append(diff.Unmodified, old)
 		}
 
 		seenID[old.ExternalRepo] = true
