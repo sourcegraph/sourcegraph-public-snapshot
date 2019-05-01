@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import format from 'date-fns/format'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
@@ -19,7 +20,9 @@ export const ProductSubscriptionHistory: React.FunctionComponent<{
                 {productSubscription.events.map(event => (
                     <tr key={event.id}>
                         <td className="text-nowrap">
-                            <span data-tooltip={format(event.date, 'PPpp')}>{format(event.date, 'yyyy-MM-dd')}</span>
+                            <span data-tooltip={format(parseISO(event.date), 'PPpp')}>
+                                {format(parseISO(event.date), 'yyyy-MM-dd')}
+                            </span>
                         </td>
                         <td className="w-100">
                             <LinkOrSpan to={event.url} target="_blank">

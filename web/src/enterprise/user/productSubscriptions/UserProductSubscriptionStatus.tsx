@@ -11,7 +11,7 @@ interface Props {
     subscriptionName: string
     productNameWithBrand: string
     userCount: number
-    expiresAt: string
+    expiresAt: Date | number
     licenseKey: string | null
 }
 

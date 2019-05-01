@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
@@ -78,19 +79,18 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             <GlobalAlert key={i} alert={alert} className="global-alerts__alert" />
                         ))}
                         {this.state.siteFlags.productSubscription.license &&
-                            differenceInDays(this.state.siteFlags.productSubscription.license.expiresAt, Date.now()) <=
-                                7 && (
-                                <LicenseExpirationAlert
-                                    expiresAt={this.state.siteFlags.productSubscription.license.expiresAt}
-                                    daysLeft={Math.floor(
-                                        differenceInDays(
-                                            this.state.siteFlags.productSubscription.license.expiresAt,
-                                            Date.now()
-                                        )
-                                    )}
-                                    className="global-alerts__alert"
-                                />
-                            )}
+                            (() => {
+                                const expiresAt = parseISO(this.state.siteFlags.productSubscription.license.expiresAt)
+                                return (
+                                    differenceInDays(expiresAt, Date.now()) <= 7 && (
+                                        <LicenseExpirationAlert
+                                            expiresAt={expiresAt}
+                                            daysLeft={Math.floor(differenceInDays(expiresAt, Date.now()))}
+                                            className="global-alerts__alert"
+                                        />
+                                    )
+                                )
+                            })()}
                     </>
                 )}
                 {isSettingsValid<Settings>(this.props.settingsCascade) &&
