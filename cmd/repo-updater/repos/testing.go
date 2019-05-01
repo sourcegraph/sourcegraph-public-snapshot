@@ -280,10 +280,12 @@ var Assert = struct {
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
 		want := append(Repos{}, rs...).With(Opt.RepoID(0))
+		sort.Sort(want)
 		return func(t testing.TB, have Repos) {
 			t.Helper()
 			have = append(Repos{}, have...)
 			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
+			sort.Sort(have)
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("repos: %s", cmp.Diff(have, want))
 			}
