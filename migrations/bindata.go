@@ -210,6 +210,8 @@
 // 1528395572_.up.sql (181B)
 // 1528395573_recent_searches.down.sql (55B)
 // 1528395573_recent_searches.up.sql (142B)
+// 1528395574_.down.sql (131B)
+// 1528395574_.up.sql (151B)
 
 package migrations
 
@@ -4478,6 +4480,46 @@ func _1528395573_recent_searchesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395574_DownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\xcb\x3b\x0e\x83\x30\x10\x84\xe1\x7e\x4f\x31\x65\x72\x06\x57\x06\x26\xd1\x4a\xb0\x4e\xec\x45\xa2\x43\x29\x5c\xa4\x08\x79\x48\xdc\x3f\x82\x96\xf6\x9b\xf9\x1b\x5e\xd5\x82\x48\xec\x9d\x19\x1e\x9b\x9e\xf8\xd5\xcf\x1b\x5d\x4e\x37\xb4\xc9\x8a\xe7\xa8\xe6\xd0\x0b\x38\x69\xf1\xb2\xcf\xf3\xf2\x78\xd5\x79\x5d\x9e\xdf\xb5\x06\x91\x36\x33\x3a\x31\x9a\xde\x47\x42\xad\xe3\x74\xb8\x21\xd9\x6e\xa7\xcd\xce\x5b\x94\x86\x41\x3d\xc8\x3f\x00\x00\xff\xff\x93\xcd\xc0\x2a\x83\x00\x00\x00")
+
+func _1528395574_DownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395574_DownSql,
+		"1528395574_.down.sql",
+	)
+}
+
+func _1528395574_DownSql() (*asset, error) {
+	bytes, err := _1528395574_DownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395574_.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc3, 0x5c, 0xff, 0xa, 0x77, 0x77, 0x55, 0xc3, 0xd5, 0xd3, 0xb0, 0xb2, 0x3a, 0xad, 0x8f, 0x3d, 0x96, 0x39, 0x14, 0x58, 0x2, 0x73, 0x5e, 0x88, 0x6f, 0x19, 0x6f, 0x86, 0x20, 0x4b, 0x41, 0xef}}
+	return a, nil
+}
+
+var __1528395574_UpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\xcb\xbd\x0e\x82\x50\x0c\x47\xf1\xbd\x4f\xd1\x51\x9f\xe1\x4e\x85\x16\xf3\x4f\xee\x2d\x7a\x29\x09\x4e\xc4\x81\xc1\x41\xfc\x48\x78\x7f\x23\xab\xeb\x39\xf9\x35\x76\x82\x27\x22\xad\xfd\x99\xe1\x6a\x13\xa3\x63\x9b\x30\xc4\xc0\x9f\xe5\xf5\x9c\xd7\xdb\x63\x99\xb7\xf5\xfe\xde\x96\x44\x24\x39\xac\x72\x48\x93\x6d\xdf\x2c\xaa\xdc\xf6\x3e\x44\x15\x78\xfc\x11\x1a\x1d\x97\xd1\x0e\xbf\x74\x64\xb5\xce\x6a\xdd\x31\x1c\x01\xc9\xf9\xca\x28\xc5\x14\x12\x96\x88\xda\xbe\x14\x44\xa2\x6f\x00\x00\x00\xff\xff\x5c\x62\xba\x64\x97\x00\x00\x00")
+
+func _1528395574_UpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395574_UpSql,
+		"1528395574_.up.sql",
+	)
+}
+
+func _1528395574_UpSql() (*asset, error) {
+	bytes, err := _1528395574_UpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395574_.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb2, 0xaf, 0x14, 0xfa, 0xc8, 0xdf, 0xb1, 0x20, 0x52, 0x67, 0x36, 0x1, 0x39, 0xdd, 0x14, 0x18, 0x21, 0xf5, 0x80, 0x39, 0x3e, 0xfb, 0x25, 0x9, 0x50, 0xde, 0xe4, 0x9c, 0xc5, 0x3c, 0x52, 0x7c}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -4988,6 +5030,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395573_recent_searches.down.sql": _1528395573_recent_searchesDownSql,
 
 	"1528395573_recent_searches.up.sql": _1528395573_recent_searchesUpSql,
+
+	"1528395574_.down.sql": _1528395574_DownSql,
+
+	"1528395574_.up.sql": _1528395574_UpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5241,6 +5287,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395572_.up.sql":                                          {_1528395572_UpSql, map[string]*bintree{}},
 	"1528395573_recent_searches.down.sql":                         {_1528395573_recent_searchesDownSql, map[string]*bintree{}},
 	"1528395573_recent_searches.up.sql":                           {_1528395573_recent_searchesUpSql, map[string]*bintree{}},
+	"1528395574_.down.sql":                                        {_1528395574_DownSql, map[string]*bintree{}},
+	"1528395574_.up.sql":                                          {_1528395574_UpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
