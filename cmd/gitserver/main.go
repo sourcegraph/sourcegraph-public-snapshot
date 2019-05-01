@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -111,9 +109,3 @@ func main() {
 	gitserver.Stop()
 }
 
-// isSubPath returns true if dir could contain findme, based only on lexical
-// properties of the paths.
-func isSubPath(dir, findme string) bool {
-	rel, err := filepath.Rel(dir, findme)
-	return err == nil && !strings.HasPrefix(rel, "..")
-}
