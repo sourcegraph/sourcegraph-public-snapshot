@@ -27,7 +27,7 @@ func main() {
 fakehub will serve any number (controlled with -n) of copies of the repo over
 HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
 be used as test data for sourcegraph. The easiest way to get them into
-sourcegraph is to visit http://localhost:3434/config and paste the contents
+sourcegraph is to visit http://127.0.0.1:3434/config and paste the contents
 into the text box for adding single repos in sourcegraph Site Admin.
 `)
 		flag.PrintDefaults()
@@ -85,7 +85,7 @@ func fakehub(n int, addr, repoDir string) error {
 		Addr:    addr,
 		Handler: logger(mux),
 	}
-	log.Printf("listening on http://localhost%s", s.Addr)
+	log.Printf("listening on http://127.0.0.1%s", s.Addr)
 	return s.ListenAndServe()
 }
 
@@ -101,7 +101,7 @@ func logger(h http.Handler) http.HandlerFunc {
 func handleDefault(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `
 <a href="/config">config</a>
-<div>Example: git clone http://localhost{{.Addr}}/repo/1/.git</div>
+<div>Example: git clone http://127.0.0.1{{.Addr}}/repo/1/.git</div>
 <div>Repos:</div>
 <div>
 	{{range .Nums}}
@@ -129,7 +129,7 @@ func handleDefault(tvars *templateVars, w http.ResponseWriter, r *http.Request) 
 func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
 {
-  "url": "http://localhost{{.Addr}}",
+  "url": "http://127.0.0.1{{.Addr}}",
   "repos": [
 	{{range .Nums}}
       "/repo/{{.}}/.git",
