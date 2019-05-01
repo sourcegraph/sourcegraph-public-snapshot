@@ -14297,10 +14297,10 @@ ts-key-enum@^2.0.0:
   resolved "https://registry.npmjs.org/ts-key-enum/-/ts-key-enum-2.0.0.tgz#35c98f0bc2c733fffe4225c4febe039b05f1c686"
   integrity sha1-NcmPC8LHM//+QiXE/r4DmwXxxoY=
 
-ts-loader@^5.3.2:
-  version "5.3.2"
-  resolved "https://registry.npmjs.org/ts-loader/-/ts-loader-5.3.2.tgz#31d10be522bedfac8ee4c20c735e05a9bd772faf"
-  integrity sha512-TPeXFkdPjOrVEawY4xUgRnzlHEmKQF1DclJghPGq67jKnroVvs6mEGHWYtbUczgeWTvTaqUjSSaMmp1k5do4vw==
+ts-loader@^5.4.5:
+  version "5.4.5"
+  resolved "https://registry.npmjs.org/ts-loader/-/ts-loader-5.4.5.tgz#a0c1f034b017a9344cef0961bfd97cc192492b8b"
+  integrity sha512-XYsjfnRQCBum9AMRZpk2rTYSVpdZBpZK+kDh0TeT3kxmQNBDVIeUjdPjY5RZry4eIAb8XHc4gYSUiUWPYvzSRw==
   dependencies:
     chalk "^2.3.0"
     enhanced-resolve "^4.0.0"
