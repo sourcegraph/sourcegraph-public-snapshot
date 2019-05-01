@@ -119,7 +119,7 @@
     "babel-plugin-lodash": "^3.3.4",
     "browserslist": "^4.3.6",
     "bundlesize": "^0.17.1",
-    "chai": "^4.1.2",
+    "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chalk": "^2.4.2",
     "child_process": "^1.0.2",
