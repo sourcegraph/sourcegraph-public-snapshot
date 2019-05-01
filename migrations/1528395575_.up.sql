@@ -26,6 +26,13 @@ ADD CONSTRAINT discussion_threads_target_repo_id_fk
   ON DELETE CASCADE;
 
 ALTER TABLE discussion_threads_target_repo
+DROP CONSTRAINT IF EXISTS discussion_threads_target_repo_thread_id_fkey,
+ADD CONSTRAINT discussion_threads_target_repo_thread_id_fkey
+  FOREIGN KEY (thread_id)
+  REFERENCES discussion_threads(id)
+  ON DELETE CASCADE;
+
+ALTER TABLE discussion_threads_target_repo
 DROP CONSTRAINT IF EXISTS discussion_threads_target_repo_repo_id_fkey,
 ADD CONSTRAINT discussion_threads_target_repo_repo_id_fkey
   FOREIGN KEY (repo_id)
