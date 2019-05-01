@@ -168,7 +168,7 @@
     "style-loader": "^0.23.1",
     "stylelint": "^9.9.0",
     "terser-webpack-plugin": "^1.2.0",
-    "ts-jest": "^24.0.0",
+    "ts-jest": "^24.0.2",
     "ts-loader": "^5.4.5",
     "ts-node": "^7.0.1",
     "tslint": "^5.16.0",
