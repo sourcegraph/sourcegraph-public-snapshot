@@ -2522,12 +2522,13 @@
   resolved "https://registry.npmjs.org/@types/storybook__addon-actions/-/storybook__addon-actions-3.4.2.tgz#1d08689cc3259269ddb3479a2307c9d16944309e"
   integrity sha512-CWxGz2pXav9PHcwrtXmkuH+xJL7sAu2AmIGEbkdT3Xs5jzBPZUEDEN//ZF7o6IOPP/tdXU37K1hrVMt9TDO0Bw==
 
-"@types/storybook__addon-info@3.4.2":
-  version "3.4.2"
-  resolved "https://registry.npmjs.org/@types/storybook__addon-info/-/storybook__addon-info-3.4.2.tgz#31a27e66867f02e593579cc58f54d22e726b0925"
-  integrity sha512-1af9u42JAMbi54MOkfzZt2+RTbUnpVJCN6vkkcAEtlyML4tXpmW482d3TZNiYPk3ePHKkielNZUtfpijT/XJ+A==
+"@types/storybook__addon-info@4.1.1":
+  version "4.1.1"
+  resolved "https://registry.npmjs.org/@types/storybook__addon-info/-/storybook__addon-info-4.1.1.tgz#8b05daa1cae8f6bfa252c9fa5d67aa648dfdf28c"
+  integrity sha512-ugk/BXBBZl0c8xhvIBIVFCF/WLxQhK6Mh8V4st6nbouLXA07SQMLtF1Fcuo2fLdDr1Ao1smABaQUiC2L2UwZwA==
   dependencies:
     "@types/react" "*"
+    "@types/storybook__react" "*"
 
 "@types/storybook__addon-notes@4.0.2":
   version "4.0.2"
