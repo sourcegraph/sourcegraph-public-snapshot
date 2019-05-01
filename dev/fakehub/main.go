@@ -65,7 +65,7 @@ func fakehub(n int, addr, repoDir string) error {
 	c.Dir = filepath.Join(repoDir2, ".git")
 	out, err = c.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "setting post-update hook")
+		return errors.Wrapf(err, "setting post-update hook: %s", out)
 	}
 
 	// Start the HTTP server.
