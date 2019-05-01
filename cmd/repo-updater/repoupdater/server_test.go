@@ -608,6 +608,11 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	// No sources are repos that are not managed by the syncer
 	repoNoSources := &repos.Repo{
 		Name: "gitolite.example.com/oldschool",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "nosources",
+			ServiceType: "gitolite",
+			ServiceID:   "http://gitolite.my.corp",
+		},
 	}
 
 	repoSources := (&repos.Repo{

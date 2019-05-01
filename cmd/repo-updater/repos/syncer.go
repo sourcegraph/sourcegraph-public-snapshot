@@ -74,7 +74,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 	}
 
 	var stored Repos
-	args := StoreListReposArgs{Kinds: kinds, Deleted: true}
+	args := StoreListReposArgs{Kinds: kinds}
 	if stored, err = store.ListRepos(ctx, args); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
@@ -161,42 +161,44 @@ func (d Diff) Repos() Repos {
 // NewDiff returns a diff from the given sourced and stored repos.
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
-	byName := make(map[string]*Repo, len(sourced))
-
 	for _, r := range sourced {
 		if r.ExternalRepo == (api.ExternalRepoSpec{}) {
 			panic(fmt.Errorf("%s has no external repo spec", r.Name))
 		} else if old := byID[r.ExternalRepo]; old != nil {
 			merge(old, r)
 		} else {
-			byID[r.ExternalRepo], byName[r.Name] = r, r
+			byID[r.ExternalRepo] = r
 		}
+	}
+
+	byName := make(map[string]*Repo, len(byID))
+	for _, r := range byID {
+		byName[r.Name] = r
 	}
 
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
 	seenName := make(map[string]bool, len(stored))
 
+	// We are unsure if customer repositories can have ExternalRepo unset. We
+	// know it can be unset for Sourcegraph.com. As such, we want to fallback
+	// to associating stored repositories by name with the sourced
+	// repositories.
+	//
+	// We do not want a stored repository without an externalrepo to be set
+	sort.Stable(byExternalRepoSpecSet(stored))
+
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
-		if src == nil {
+		if src == nil && old.ExternalRepo == (api.ExternalRepoSpec{}) && !seenName[old.Name] {
 			src = byName[old.Name]
 		}
 
 		if src == nil {
-			if !old.IsDeleted() {
-				diff.Deleted = append(diff.Deleted, old)
-			} else {
-				diff.Unmodified = append(diff.Unmodified, old)
-			}
-		} else if !old.IsDeleted() {
-			if old.Update(src) {
-				diff.Modified = append(diff.Modified, old)
-			} else {
-				diff.Unmodified = append(diff.Unmodified, old)
-			}
+			diff.Deleted = append(diff.Deleted, old)
+		} else if old.Update(src) {
+			diff.Modified = append(diff.Modified, old)
 		} else {
-			old.Update(src)
-			diff.Added = append(diff.Added, old)
+			diff.Unmodified = append(diff.Unmodified, old)
 		}
 
 		seenID[old.ExternalRepo] = true
@@ -276,4 +278,17 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		tr.Finish()
 	}
+}
+
+type byExternalRepoSpecSet []*Repo
+
+func (rs byExternalRepoSpecSet) Len() int      { return len(rs) }
+func (rs byExternalRepoSpecSet) Swap(i, j int) { rs[i], rs[j] = rs[j], rs[i] }
+func (rs byExternalRepoSpecSet) Less(i, j int) bool {
+	iSet := rs[i].ExternalRepo != (api.ExternalRepoSpec{})
+	jSet := rs[j].ExternalRepo != (api.ExternalRepoSpec{})
+	if iSet == jSet {
+		return false
+	}
+	return iSet
 }
