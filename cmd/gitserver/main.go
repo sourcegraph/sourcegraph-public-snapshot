@@ -108,4 +108,3 @@ func main() {
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
 }
-
