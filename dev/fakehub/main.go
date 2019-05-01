@@ -19,7 +19,7 @@ import (
 func main() {
 	log.SetPrefix("")
 	n := flag.Int("n", 10, "number of repos to specify in config")
-	addr := flag.String("addr", ":9847", "address on which to serve")
+	addr := flag.String("addr", ":3434", "address on which to serve")
 	flag.Parse()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `usage: fakehub [options] path/to/git/repo
