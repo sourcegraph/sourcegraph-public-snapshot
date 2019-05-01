@@ -31,9 +31,9 @@ We're also working toward making Sourcegraph the [**infrastructure for developer
 
 Owners: @ijt, @ijsnow
 
-We're making search more reliable, powerful, and comprehensive (so it includes issues, documents, and other data sources you might want to search).
+Currently we're prioritizing speed and stability of search. Here are some more things we plan to tackle in the near future.
 
-- 🏃 [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
+- [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
 - [Nested search queries](https://github.com/sourcegraph/sourcegraph/issues/1005) (e.g., in all repositories whose `package.json` contains `foo`, find matches of `bar`)
 - Streaming search results to reduce time to first result.
 - More ways to filter queries (provided by extensions), such as by authorship, recency, and language-specific or dependency graph information
