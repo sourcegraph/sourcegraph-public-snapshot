@@ -208,7 +208,7 @@
     "highlight.js": "^9.15.6",
     "lodash": "^4.17.10",
     "marked": "^0.6.0",
-    "mdi-react": "^5.1.0",
+    "mdi-react": "^5.3.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.15.6",
     "open-color": "^1.6.3",
