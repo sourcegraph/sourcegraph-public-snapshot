@@ -2270,10 +2270,10 @@
   resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.123.tgz#39be5d211478c8dd3bdae98ee75bb7efe4abfe4d"
   integrity sha512-pQvPkc4Nltyx7G1Ww45OjVqUsJP4UsZm+GWJpigXgkikZqJgRm4c48g027o6tdgubWHwFRF15iFd+Y4Pmqv6+Q==
 
-"@types/marked@*", "@types/marked@0.6.4":
-  version "0.6.4"
-  resolved "https://registry.npmjs.org/@types/marked/-/marked-0.6.4.tgz#7c1238662976dde4c74f89c0a94c573474edae02"
-  integrity sha512-rJe6ToeWAUmR6I7eY87gxb2CTwXKqfwfrkDAr9ododuha9D/d57DWWK0xdtKZ2C6yTdP60pAg5fJwC5PHguzyA==
+"@types/marked@*", "@types/marked@0.6.5":
+  version "0.6.5"
+  resolved "https://registry.npmjs.org/@types/marked/-/marked-0.6.5.tgz#3cf2a56ef615dad24aaf99784ef90a9eba4e29d8"
+  integrity sha512-6kBKf64aVfx93UJrcyEZ+OBM5nGv4RLsI6sR1Ar34bpgvGVRoyTgpxn4ZmtxOM5aDTAaaznYuYUH8bUX3Nk3YA==
 
 "@types/marked@^0.4.0":
   version "0.4.2"
@@ -9590,10 +9590,10 @@ marked@^0.5.2:
   resolved "https://registry.npmjs.org/marked/-/marked-0.5.2.tgz#3efdb27b1fd0ecec4f5aba362bddcd18120e5ba9"
   integrity sha512-fdZvBa7/vSQIZCi4uuwo2N3q+7jJURpMVCcbaX0S1Mg65WZ5ilXvC67MviJAsdjqqgD+CEq4RKo5AYGgINkVAA==
 
-marked@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.npmjs.org/marked/-/marked-0.6.0.tgz#a18d01cfdcf8d15c3c455b71c8329e5e0f01faa1"
-  integrity sha512-HduzIW2xApSXKXJSpCipSxKyvMbwRRa/TwMbepmlZziKdH8548WSoDP4SxzulEKjlo8BE39l+2fwJZuRKOln6g==
+marked@^0.6.2:
+  version "0.6.2"
+  resolved "https://registry.npmjs.org/marked/-/marked-0.6.2.tgz#c574be8b545a8b48641456ca1dbe0e37b6dccc1a"
+  integrity sha512-LqxwVH3P/rqKX4EKGz7+c2G9r98WeM/SW34ybhgNGhUQNKtf1GmmSkJ6cDGJ/t6tiyae49qRkpyTw2B9HOrgUA==
 
 marksy@^6.1.0:
   version "6.1.0"
