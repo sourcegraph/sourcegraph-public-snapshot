@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
@@ -84,7 +85,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                             <>
                                 {formatUserCount(license.userCount, true)} license,{' '}
                                 <ExpirationDate
-                                    date={license.expiresAt}
+                                    date={parseISO(license.expiresAt)}
                                     showRelative={true}
                                     lowercase={true}
                                     showPrefix={true}
