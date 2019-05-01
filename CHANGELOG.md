@@ -24,7 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ## Changed
 
 - All 24 language extensions are enabled by default.
-- Fixed a major performance regression in search that occurred in v3.2.0. (#3685)
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
 
 ## 3.3.5
 
