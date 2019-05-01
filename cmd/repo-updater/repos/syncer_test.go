@@ -290,6 +290,38 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
+				name: "repo got renamed to anoter repo that gets deleted",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(tc.svc.Clone(), nil,
+						tc.repo.With(func(r *repos.Repo) { r.ExternalRepo.ID = "another-id" }),
+					),
+				),
+				store: s,
+				stored: repos.Repos{
+					tc.repo.Clone(),
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "another-repo"
+						r.ExternalRepo.ID = "another-id"
+					}),
+				},
+				now: clock.Now,
+				diff: repos.Diff{
+					Deleted: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.Sources = map[string]*repos.SourceInfo{}
+							r.DeletedAt = clock.Time(0)
+						}),
+					},
+					Modified: repos.Repos{
+						tc.repo.With(
+							repos.Opt.RepoModifiedAt(clock.Time(1)),
+							func(r *repos.Repo) { r.ExternalRepo.ID = "another-id" },
+						),
+					},
+				},
+				err: "<nil>",
+			},
+			testCase{
 				name:    "renamed repo which was deleted is detected and added",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
