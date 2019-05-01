@@ -153,7 +153,7 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 }
 
 type templateVars struct {
-	n int
+	n    int
 	Addr string
 }
 
@@ -164,4 +164,3 @@ func (tv *templateVars) Nums() []int {
 	}
 	return nums
 }
-
