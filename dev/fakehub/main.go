@@ -22,12 +22,13 @@ func main() {
 	addr := flag.String("addr", ":3434", "address on which to serve")
 	flag.Parse()
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `usage: fakehub [options] path/to/git/repo
+		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] path/to/git/repo
 
-fakehub will serve any number (controlled with -n) of copies of the repo over HTTP at /repo/1/.git, /repo/2/.git etc.
-These can be git cloned, and they can be used as test data for sourcegraph. The easiest way to get them into
-sourcegraph is to visit /config and paste the contents into the text box for adding single repos in sourcegraph
-Site Admin.
+fakehub will serve any number (controlled with -n) of copies of the repo over
+HTTP at /repo/1/.git, /repo/2/.git etc.  These can be git cloned, and they can
+be used as test data for sourcegraph. The easiest way to get them into
+sourcegraph is to visit /config and paste the contents into the text box for
+adding single repos in sourcegraph Site Admin.
 `)
 		flag.PrintDefaults()
 	}
