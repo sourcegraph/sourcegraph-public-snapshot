@@ -56,8 +56,8 @@ func Test_dirCouldContain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := dirCouldContain(tt.args.dir, tt.args.findme); got != tt.want {
-				t.Errorf("dirCouldContain() = %v, want %v", got, tt.want)
+			if got := isSubPath(tt.args.dir, tt.args.findme); got != tt.want {
+				t.Errorf("isSubPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -43,7 +43,7 @@ func main() {
 		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
 	}
 
-	if !dirCouldContain(mountPoint, reposDir) {
+	if !isSubPath(mountPoint, reposDir) {
 		log.Fatalf("$SRC_REPOS_DIR is %s, want a subdirectory of $SRC_REPOS_MOUNT_POINT (%s)", reposDir, mountPoint)
 	}
 
@@ -117,9 +117,9 @@ func main() {
 	gitserver.Stop()
 }
 
-// dirCouldContain returns true if dir could contain findme, based only on lexical
+// isSubPath returns true if dir could contain findme, based only on lexical
 // properties of the paths.
-func dirCouldContain(dir, findme string) bool {
+func isSubPath(dir, findme string) bool {
 	rel, err := filepath.Rel(dir, findme)
 	return err == nil && !strings.HasPrefix(rel, "..")
 }
