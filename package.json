@@ -157,7 +157,7 @@
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-test-renderer": "^16.7.0",
     "react-testing-library": "^5.4.2",
-    "sass-loader": "^7.0.3",
+    "sass-loader": "^7.1.0",
     "shelljs": "^0.8.3",
     "shelljs-exec-proxy": "^0.1.1",
     "signale": "^1.4.0",
