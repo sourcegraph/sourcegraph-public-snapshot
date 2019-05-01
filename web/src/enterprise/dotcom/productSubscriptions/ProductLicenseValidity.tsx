@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import format from 'date-fns/format'
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -16,7 +17,7 @@ export const ProductLicenseValidity: React.FunctionComponent<{
     return (
         <div
             className={`${className} ${primary ? `alert alert-${validityClass} py-1 px-2` : ''}`}
-            data-tooltip={format(expiresAt, 'PPpp')}
+            data-tooltip={format(parseISO(expiresAt), 'PPpp')}
         >
             <strong className={primary ? '' : `text-${validityClass}`}>{isExpired ? 'Expired' : 'Valid'}</strong> (
             {formatRelativeExpirationDate(expiresAt)})

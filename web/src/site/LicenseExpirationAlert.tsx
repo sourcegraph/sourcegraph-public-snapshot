@@ -9,7 +9,7 @@ import { DismissibleAlert } from '../components/DismissibleAlert'
  * it reappears every day.
  */
 export const LicenseExpirationAlert: React.FunctionComponent<{
-    expiresAt: string
+    expiresAt: Date
     daysLeft: number
     className?: string
 }> = ({ expiresAt, daysLeft, className = '' }) => (
