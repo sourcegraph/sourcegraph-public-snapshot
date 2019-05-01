@@ -130,10 +130,8 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
 {
   "url": "http://127.0.0.1{{.Addr}}",
-  "repos": [
-	{{range .Nums}}
-      "/repo/{{.}}/.git",
-    {{end}}
+  "repos": [{{range .Nums}}
+      "/repo/{{.}}/.git",{{end}}
   ]
 }
 `
