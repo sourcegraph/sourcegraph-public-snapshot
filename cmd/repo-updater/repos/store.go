@@ -590,15 +590,7 @@ ORDER BY batch.ordinality
 var deleteReposQuery = batchReposQueryFmtstr + `
 DELETE FROM repo USING batch
 WHERE batch.deleted_at IS NOT NULL
-AND repo.external_id IS NOT NULL
-AND repo.external_service_id IS NOT NULL
-AND repo.external_service_type IS NOT NULL
-AND batch.external_id IS NOT NULL
-AND batch.external_service_id IS NOT NULL
-AND batch.external_service_type IS NOT NULL
-AND repo.external_service_id = batch.external_service_id
-AND repo.external_id = batch.external_id
-AND repo.external_service_type = batch.external_service_type
+AND repo.id = batch.ID
 RETURNING repo.*
 `
 
