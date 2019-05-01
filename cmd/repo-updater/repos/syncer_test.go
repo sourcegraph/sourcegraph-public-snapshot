@@ -84,6 +84,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	githubRepo := (&repos.Repo{
 		Name:     "github.com/org/foo",
 		Metadata: &github.Repository{},
+		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo-external-12345",
 			ServiceID:   "https://github.com/",
@@ -101,6 +102,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	gitlabRepo := (&repos.Repo{
 		Name:     "gitlab.com/org/foo",
 		Metadata: &gitlab.Project{},
+		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "12345",
 			ServiceID:   "https://gitlab.com/",
@@ -118,6 +120,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	bitbucketServerRepo := (&repos.Repo{
 		Name:     "bitbucketserver.mycorp.com/org/foo",
 		Metadata: &bitbucketserver.Repo{},
+		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "23456",
 			ServiceID:   "https://bitbucketserver.mycorp.com/",
@@ -133,7 +136,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	}
 
 	otherRepo := (&repos.Repo{
-		Name: "git-host.com/org/foo",
+		Name:    "git-host.com/org/foo",
+		Enabled: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "git-host.com/org/foo",
 			ServiceID:   "https://git-host.com/",
@@ -323,6 +327,46 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
 					repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
+				err: "<nil>",
+			},
+			testCase{
+				name: "repos have their names swapped",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "foo"
+						r.ExternalRepo.ID = "1"
+					}),
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "bar"
+						r.ExternalRepo.ID = "2"
+					}),
+				)),
+				now:   clock.Now,
+				store: s,
+				stored: repos.Repos{
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "bar"
+						r.ExternalRepo.ID = "1"
+					}),
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "foo"
+						r.ExternalRepo.ID = "2"
+					}),
+				},
+				diff: repos.Diff{
+					Modified: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.Name = "bar"
+							r.ExternalRepo.ID = "1"
+							r.UpdatedAt = clock.Time(0)
+						}),
+						tc.repo.With(func(r *repos.Repo) {
+							r.Name = "foo"
+							r.ExternalRepo.ID = "2"
+							r.UpdatedAt = clock.Time(0)
+						}),
+					},
+				},
 				err: "<nil>",
 			},
 			func() testCase {
