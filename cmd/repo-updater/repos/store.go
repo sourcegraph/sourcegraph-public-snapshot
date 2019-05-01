@@ -529,7 +529,7 @@ WITH batch AS (
 updated AS (
   UPDATE repo
   SET
-    name                  = COALESCE(NULLIF(batch.name, repo.name), '!tmp!' || batch.name),
+    name                  = CASE WHEN batch.name = repo.name THEN repo.name ELSE '!tmp!' || batch.name END,
     description           = batch.description,
     language              = batch.language,
     created_at            = COALESCE(batch.created_at, repo.created_at),
