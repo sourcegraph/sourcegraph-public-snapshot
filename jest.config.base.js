@@ -8,7 +8,7 @@ const config = {
   // for example to change the URL in window.location
   testEnvironment: __dirname + '/shared/dev/jest-environment.js',
 
-  collectCoverage: true,
+  collectCoverage: !!process.env.CI,
   coverageDirectory: '<rootDir>/coverage',
   coveragePathIgnorePatterns: [/\.test\.tsx?$/.source],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],

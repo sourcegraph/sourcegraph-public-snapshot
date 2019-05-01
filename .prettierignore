@@ -23,4 +23,5 @@ cmd/management-console/assets/
 **/.cache
 shared/dev/**/*.js
 **/__snapshots__
+**/*.html
 client/contrib/GH2SG.bookmarklet.js
