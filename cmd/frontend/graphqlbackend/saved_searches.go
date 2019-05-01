@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -21,7 +23,20 @@ type savedSearchResolver struct {
 	slackWebhookURL     *string
 }
 
-func (r savedSearchResolver) ID() string {
+func marshalSavedSearchID(savedSearchID string) graphql.ID {
+	return relay.MarshalID("SavedSearch", savedSearchID)
+}
+
+func unmarshalSavedSearchID(id graphql.ID) (savedSearchID int32, err error) {
+	err = relay.UnmarshalSpec(id, &savedSearchID)
+	return
+}
+
+func (r savedSearchResolver) ID() graphql.ID {
+	return marshalSavedSearchID(r.id)
+}
+
+func (r savedSearchResolver) DatabaseID() string {
 	return r.id
 }
 

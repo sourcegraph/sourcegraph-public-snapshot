@@ -1,5 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
+import { sortBy } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import AutoFixIcon from 'mdi-react/AutoFixIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
@@ -66,15 +67,7 @@ export class SavedQueries extends React.Component<Props, State> {
                     startWith(void 0),
                     switchMap(fetchSavedQueries),
                     map(savedQueries => ({
-                        savedQueries: savedQueries.sort((a, b) => {
-                            if (a.description < b.description) {
-                                return -1
-                            }
-                            if (a.description === b.description && a.id < b.id) {
-                                return -1
-                            }
-                            return 1
-                        }),
+                        savedQueries: sortBy(savedQueries, ['description', 'id']),
                         loading: false,
                     }))
                 )

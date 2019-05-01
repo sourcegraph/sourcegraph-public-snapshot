@@ -176,7 +176,9 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             </label>
                         )}
                     </div>
-                    <div>Organizations</div>
+                    {this.props.authenticatedUser && this.props.authenticatedUser.organizations.nodes.length > 0 && (
+                        <div>Organizations</div>
+                    )}
                     <div className="saved-query-form__save-location">
                         {this.props.authenticatedUser &&
                             this.props.authenticatedUser.organizations.nodes.map((org, i) => (
@@ -363,7 +365,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    ownerKind: 'ORG' as GQL.SavedSearchOwnerKind.ORG,
+                    ownerKind: GQL.SavedSearchOwnerKind.ORG,
                     orgID: id,
                     userID: null,
                 },
@@ -376,7 +378,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    ownerKind: 'USER' as GQL.SavedSearchOwnerKind.USER,
+                    ownerKind: GQL.SavedSearchOwnerKind.USER,
                     userID: id,
                     orgID: null,
                 },

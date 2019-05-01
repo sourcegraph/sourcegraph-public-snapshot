@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -16,6 +15,10 @@ import (
 
 type savedSearches struct{}
 
+// ListAll lists all the saved searches on an instance.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
+// It is the caller's responsibility to make sure this response never makes it to a user.
 func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndConfig, err error) {
 	if Mocks.SavedSearches.ListAll != nil {
 		return Mocks.SavedSearches.ListAll(ctx)
@@ -150,9 +153,6 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 			return nil, err
 		}
 		savedSearches = append(savedSearches, &ss)
-	}
-	for _, ss := range savedSearches {
-		fmt.Printf("%v+", ss)
 	}
 	return savedSearches, err
 }
