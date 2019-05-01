@@ -105,7 +105,7 @@ func (r *gitCommitResolver) OID() (gitObjectID, error) {
 		// The cache doesn't have it, so compute it and update the cache if we
 		// resolved it successfully.
 		start = time.Now()
-		r.doResolveCommitOIDUncached()
+		r.resolveCommitIODUncached()
 		oidResolutionDuration.Observe(time.Since(start).Seconds())
 		if r.oidErr == nil {
 			oidResolutionCounter.WithLabelValues("miss").Inc()
@@ -117,7 +117,7 @@ func (r *gitCommitResolver) OID() (gitObjectID, error) {
 	return r.oid, r.oidErr
 }
 
-func (r *gitCommitResolver) doResolveCommitOIDUncached() {
+func (r *gitCommitResolver) resolveCommitIODUncached() {
 	if r.oid != "" || r.oidErr != nil {
 		// Possible scenarios for this case:
 		//
