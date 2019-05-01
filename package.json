@@ -140,7 +140,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^24.7.1",
     "jsdom": "^14.0.0",
-    "json-schema-ref-parser": "^6.0.2",
+    "json-schema-ref-parser": "^6.1.0",
     "json-schema-to-typescript": "^6.1.0",
     "message-port-polyfill": "^0.1.0",
     "mini-css-extract-plugin": "^0.5.0",
