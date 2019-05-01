@@ -43,7 +43,7 @@ describe('code_views', () => {
             element.className = 'test-code-view'
             document.body.append(element)
             const selector = '.test-code-view'
-            const codeViewSpecResolver = { selector, resolveView: sinon.spy(() => codeViewSpec) }
+            const codeViewSpecResolver = { selector, resolveView: sinon.spy((_el: HTMLElement) => codeViewSpec) }
             const detected = await of([{ addedNodes: [document.body], removedNodes: [] }])
                 .pipe(
                     trackCodeViews({ codeViewSpecResolver }),
