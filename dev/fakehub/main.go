@@ -82,6 +82,7 @@ func fakehub(n int, addr, repoDir string) error {
 	return s.ListenAndServe()
 }
 
+// logger converts the given handler to one that will first log every request.
 func logger(h http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL.Path)
@@ -89,6 +90,7 @@ func logger(h http.Handler) http.HandlerFunc {
 	})
 }
 
+// handleDefault shows the root page with links to config and repos.
 func handleDefault(n int, addr string, w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(addr, ":") {
 		addr = "http://localhost" + addr
@@ -115,10 +117,11 @@ func handleDefault(n int, addr string, w http.ResponseWriter, r *http.Request) {
 	}()
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte(err.Error()))
+		fmt.Fprintf(w, "%v", err.Error())
 	}
 }
 
+// handleConfig shows the config for pasting into sourcegraph.
 func handleConfig(n int, addr string, w http.ResponseWriter, r *http.Request) {
 	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
 {
@@ -142,10 +145,11 @@ func handleConfig(n int, addr string, w http.ResponseWriter, r *http.Request) {
 	}()
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte(err.Error()))
+		fmt.Fprintf(w, "%v", err.Error())
 	}
 }
 
+// templateVars makes a map used for the config and default page templates.
 func templateVars(n int, addr string) map[string]interface{} {
 	var nums []int
 	for i := 1; i <= n; i++ {
@@ -155,5 +159,4 @@ func templateVars(n int, addr string) map[string]interface{} {
 		"addr": addr,
 		"nums": nums,
 	}
-
 }
