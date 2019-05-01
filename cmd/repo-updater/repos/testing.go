@@ -62,7 +62,7 @@ type FakeStore struct {
 	svcIDSeq  int64
 	repoIDSeq uint32
 	svcByID   map[int64]*ExternalService
-	repoByID  map[api.ExternalRepoSpec]*Repo
+	repoByID  map[uint32]*Repo
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
@@ -72,10 +72,10 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		svcByID[id] = svc.Clone()
 	}
 
-	repoByID := make(map[api.ExternalRepoSpec]*Repo, len(s.repoByID))
+	repoByID := make(map[uint32]*Repo, len(s.repoByID))
 	for _, r := range s.repoByID {
 		clone := r.Clone()
-		repoByID[r.ExternalRepo] = clone
+		repoByID[r.ID] = clone
 	}
 
 	return &FakeStore{
@@ -224,7 +224,7 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	if s.repoByID == nil {
-		s.repoByID = make(map[api.ExternalRepoSpec]*Repo, len(upserts))
+		s.repoByID = make(map[uint32]*Repo, len(upserts))
 	}
 
 	var deletes, updates, inserts []*Repo
@@ -240,28 +240,21 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	for _, r := range deletes {
-		delete(s.repoByID, r.ExternalRepo)
+		delete(s.repoByID, r.ID)
 	}
 
 	for _, r := range updates {
-		repo := s.repoByID[r.ExternalRepo]
-		if repo == nil {
+		if repo := s.repoByID[r.ID]; repo == nil {
 			inserts = append(inserts, r)
-			continue
+		} else {
+			repo.Update(r)
 		}
-
-		delete(s.repoByID, repo.ExternalRepo)
-		repo.Update(r)
-		s.repoByID[r.ExternalRepo] = repo
 	}
 
 	for _, r := range inserts {
 		s.repoIDSeq++
 		r.ID = s.repoIDSeq
-		if r.ExternalRepo == (api.ExternalRepoSpec{}) {
-			panic("empty external repo")
-		}
-		s.repoByID[r.ExternalRepo] = r
+		s.repoByID[r.ID] = r
 	}
 
 	return nil
