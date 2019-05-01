@@ -150,7 +150,6 @@ func (r *gitCommitResolver) doResolveCommitOIDUncached() {
 			break
 		}
 	}
-	return
 }
 
 func (r *gitCommitResolver) AbbreviatedOID() (string, error) {
