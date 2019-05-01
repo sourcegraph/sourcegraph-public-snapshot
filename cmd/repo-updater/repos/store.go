@@ -544,17 +544,7 @@ updated AS (
     sources               = batch.sources,
     metadata              = batch.metadata
   FROM batch
-  WHERE repo.name = batch.name OR (
-    repo.external_id IS NOT NULL
-    AND repo.external_service_id IS NOT NULL
-    AND repo.external_service_type IS NOT NULL
-    AND batch.external_id IS NOT NULL
-    AND batch.external_service_id IS NOT NULL
-    AND batch.external_service_type IS NOT NULL
-    AND repo.external_service_id = batch.external_service_id
-    AND repo.external_id = batch.external_id
-    AND repo.external_service_type = batch.external_service_type
-  )
+  WHERE repo.id = batch.id
   RETURNING repo.*
 ),
 
@@ -597,20 +587,7 @@ inserted AS (
     sources,
     metadata
   FROM batch
-  WHERE NOT EXISTS (SELECT 1 FROM repo WHERE repo.name = batch.name)
-  AND NOT EXISTS (
-    SELECT 1
-    FROM repo
-    WHERE repo.external_id IS NOT NULL
-      AND repo.external_service_type IS NOT NULL
-      AND repo.external_service_id IS NOT NULL
-      AND batch.external_id IS NOT NULL
-      AND batch.external_service_type IS NOT NULL
-      AND batch.external_service_id IS NOT NULL
-      AND repo.external_service_id = batch.external_service_id
-      AND repo.external_id = batch.external_id
-      AND repo.external_service_type = batch.external_service_type
-    )
+  WHERE batch.id = 0
   RETURNING repo.*
 )
 
