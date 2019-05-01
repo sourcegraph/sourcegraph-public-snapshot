@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -69,16 +68,17 @@ func fakehub(n int, addr, repoDir string) error {
 	}
 
 	// Start the HTTP server.
+	tvars := &templateVars{n, addr}
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handleDefault(n, addr, w, r)
+		handleDefault(tvars, w, r)
 	})
 	for i := 1; i <= n; i++ {
 		pfx := fmt.Sprintf("/repo/%d/", i)
 		mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(http.Dir(repoDir2))))
 	}
 	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		handleConfig(n, addr, w, r)
+		handleConfig(tvars, w, r)
 	})
 	s := http.Server{
 		Addr:    addr,
@@ -97,16 +97,13 @@ func logger(h http.Handler) http.HandlerFunc {
 }
 
 // handleDefault shows the root page with links to config and repos.
-func handleDefault(n int, addr string, w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(addr, ":") {
-		addr = "http://localhost" + addr
-	}
+func handleDefault(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `
 <a href="/config">config</a>
-<div>Example: git clone http://localhost{{.addr}}/repo/1/.git</div>
+<div>Example: git clone http://localhost{{.Addr}}/repo/1/.git</div>
 <div>Repos:</div>
 <div>
-	{{range .nums}}
+	{{range .Nums}}
 		<a href="/repo/{{.}}">/repo/{{.}}</a>
 	{{end}}
 </div>
@@ -116,7 +113,7 @@ func handleDefault(n int, addr string, w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return errors.Wrap(err, "parsing template for links page")
 		}
-		if err := t2.Execute(w, templateVars(n, addr)); err != nil {
+		if err := t2.Execute(w, tvars); err != nil {
 			return errors.Wrap(err, "executing links page template")
 		}
 		return nil
@@ -128,12 +125,12 @@ func handleDefault(n int, addr string, w http.ResponseWriter, r *http.Request) {
 }
 
 // handleConfig shows the config for pasting into sourcegraph.
-func handleConfig(n int, addr string, w http.ResponseWriter, r *http.Request) {
+func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
 {
-  "url": "http://localhost{{.addr}}",
+  "url": "http://localhost{{.Addr}}",
   "repos": [
-	{{range .nums}}
+	{{range .Nums}}
       "/repo/{{.}}/.git",
     {{end}}
   ]
@@ -144,7 +141,7 @@ func handleConfig(n int, addr string, w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return errors.Wrap(err, "parsing config template")
 		}
-		if err := t2.Execute(w, templateVars(n, addr)); err != nil {
+		if err := t2.Execute(w, tvars); err != nil {
 			return errors.Wrap(err, "executing config template")
 		}
 		return nil
@@ -155,14 +152,16 @@ func handleConfig(n int, addr string, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// templateVars makes a map used for the config and default page templates.
-func templateVars(n int, addr string) map[string]interface{} {
+type templateVars struct {
+	n int
+	Addr string
+}
+
+func (tv *templateVars) Nums() []int {
 	var nums []int
-	for i := 1; i <= n; i++ {
+	for i := 1; i <= tv.n; i++ {
 		nums = append(nums, i)
 	}
-	return map[string]interface{}{
-		"addr": addr,
-		"nums": nums,
-	}
+	return nums
 }
+
