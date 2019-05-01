@@ -20,13 +20,13 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
 
 ## 3.3.6
 
 ## Changed
 
 - All 24 language extensions are enabled by default.
-- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
 
 ## 3.3.5
 
@@ -113,6 +113,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed an issue where the site-admin repositories page `Cloning`, `Not Cloned`, `Needs Index` tabs were very slow on instances with thousands of repositories.
 - Fixed an issue where failing to syntax highlight a single file would take down the entire syntax highlighting service.
+
+## 3.2.5
+
+### Fixed
+
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
 
 ## 3.2.4
 
