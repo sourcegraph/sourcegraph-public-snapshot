@@ -4,15 +4,16 @@ You can use Sourcegraph with [Phabricator](http://phabricator.org/).
 
 Feature | Supported?
 ------- | ----------
-[Repository linking/syncing](../admin/external_service/phabricator.md#repository-linking-and-syncing) | ✅
+[Repository syncing and mirroring](../admin/external_service/phabricator.md#repository-linking-and-syncing) | ❌
+[Repository association](../admin/external_service/phabricator.md#repository-linking-and-syncing) | ✅
 [Repository permissions](../admin/repo/permissions.md) | ❌
 [User authentication](../admin/auth.md) | ❌
 [Browser extension](#browser-extension) | ✅
 [Native extension](../admin/external_service/phabricator.md#native-extension) | ✅
 
-## Repository syncing and linking
+## Repository association
 
-Site admins can [link and sync Phabricator repositories to Sourcegraph](../admin/external_service/phabricator.md#repository-syncing-and-linking).
+Site admins can [associate Phabricator repositories with Sourcegraph](../admin/external_service/phabricator.md#repository-syncing-and-linking).
 
 ## Browser extension
 
