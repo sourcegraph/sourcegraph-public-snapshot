@@ -206,7 +206,7 @@
     "graphiql": "^0.12.0",
     "he": "^1.2.0",
     "highlight.js": "^9.15.6",
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.11",
     "marked": "^0.6.0",
     "mdi-react": "^5.1.0",
     "minimatch": "^3.0.4",
