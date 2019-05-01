@@ -377,9 +377,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
 				diff, err := syncer.Sync(ctx)
 
+				diff.Repos().Apply(repos.Opt.RepoID(0))
+
 				var want repos.Repos
-				want.Concat(diff.Added, diff.Modified, diff.Unmodified, diff.Deleted)
-				want.Apply(repos.Opt.RepoID(0)) // Exclude auto-generated ID from comparisons
+				want.Concat(diff.Added, diff.Modified, diff.Unmodified)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -394,14 +395,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil {
-					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
-					for _, d := range have {
-						d.ID = 0 // Exclude auto-generated ID from comparisons
-					}
-					if diff := cmp.Diff(repos.Repos(have), want); diff != "" {
-						// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
-						t.Fatalf("unexpected stored repos:\n%s", diff)
-					}
+					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
+					repos.Assert.ReposEqual(want...)(t, have)
 				}
 			}))
 		}
