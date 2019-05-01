@@ -174,7 +174,7 @@
     "tslint": "^5.15.0",
     "tslint-language-service": "^0.9.9",
     "typedoc": "^0.14.0",
-    "typescript": "3.5.0-dev.20190406",
+    "typescript": "3.5.0-dev.20190501",
     "utc-version": "^1.1.0",
     "web-ext-types": "^3.1.0",
     "webpack": "^4.28.2",
