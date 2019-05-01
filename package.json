@@ -153,7 +153,7 @@
     "path": "^0.12.7",
     "plugin-error": "^1.0.1",
     "postcss-loader": "^3.0.0",
-    "prettier": "https://github.com/prettier/prettier.git#157b020de6cdf297346b2dd3185cb10e0c7a2d9f",
+    "prettier": "^1.17.0",
     "puppeteer": "1.14.0",
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-test-renderer": "^16.7.0",
