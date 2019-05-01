@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -84,7 +86,36 @@ func (r *gitCommitResolver) ID() graphql.ID {
 
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
-var oidResolutionCache = rcache.NewWithTTL("oid_resolution", 60) // 60s
+var (
+	oidResolutionCache = rcache.NewWithTTL("oid_resolution", 60) // 60s
+
+	oidResolutionCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "graphql",
+		Name:      "git_commit_oid_resolution_cache_hit",
+		Help:      "Counts cache hits and misses for Git commit OID resolution.",
+	}, []string{"type"})
+
+	oidResolutionDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "graphql",
+		Name:      "git_commit_oid_resolution_duration_seconds",
+		Help:      "Total time spent performing uncached Git commit OID resolution.",
+	})
+
+	oidResolutionCacheLookupDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "graphql",
+		Name:      "git_commit_oid_resolution_cache_lookup_duration_seconds",
+		Help:      "Total time spent performing cache lookups for Git commit OID resolution.",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(oidResolutionCounter)
+	prometheus.MustRegister(oidResolutionDuration)
+	prometheus.MustRegister(oidResolutionCacheLookupDuration)
+}
 
 func (r *gitCommitResolver) OID() (gitObjectID, error) {
 	r.once.Do(func() {
@@ -95,17 +126,25 @@ func (r *gitCommitResolver) OID() (gitObjectID, error) {
 		// Try fetching it from the Redis cache to avoid doing lots of work
 		// previously done (as this method is called very often, e.g. multiple
 		// times per search result).
+		start := time.Now()
 		result, ok := oidResolutionCache.Get(string(r.repo.repo.ID))
+		oidResolutionCacheLookupDuration.Observe(time.Since(start).Seconds())
 		if ok {
+			oidResolutionCounter.WithLabelValues("hit").Inc()
 			r.oid = gitObjectID(result)
 			return
 		}
 
 		// The cache doesn't have it, so compute it and update the cache if we
 		// resolved it successfully.
+		start = time.Now()
 		r.doResolveCommitOIDUncached()
+		oidResolutionDuration.Observe(time.Since(start).Seconds())
 		if r.oidErr == nil {
+			oidResolutionCounter.WithLabelValues("miss").Inc()
 			oidResolutionCache.Set(string(r.repo.repo.ID), []byte(r.oid))
+		} else {
+			oidResolutionCounter.WithLabelValues("miss_error").Inc()
 		}
 	})
 	return r.oid, r.oidErr
