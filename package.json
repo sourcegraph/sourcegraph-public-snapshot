@@ -94,7 +94,7 @@
     "@types/react-visibility-sensor": "5.0.1",
     "@types/reactstrap": "6.4.4",
     "@types/sanitize-html": "1.18.3",
-    "@types/shelljs": "0.8.4",
+    "@types/shelljs": "0.8.5",
     "@types/shelljs-exec-proxy": "0.1.0",
     "@types/signale": "1.2.0",
     "@types/sinon": "7.0.11",
