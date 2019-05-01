@@ -5,7 +5,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -43,29 +42,23 @@ into the text box for adding single repos in sourcegraph Site Admin.
 }
 
 func fakehub(n int, addr, repoDir string) error {
-	// Set up a copy of the repo in a temp dir, configuring the copy such that it
-	// can be git cloned. See https://theartofmachinery.com/2016/07/02/git_over_http.html
-	// for the idea behind this.
-	d, err := ioutil.TempDir("", "fakehub")
-	repoDir2 := filepath.Join(d, filepath.Base(repoDir))
-	if err != nil {
-		return errors.Wrap(err, "creating temp dir to contain template repo")
-	}
-	out, err := exec.Command("git", "--bare", "clone", repoDir, repoDir2).CombinedOutput()
-	if err != nil {
-		return errors.Wrapf(err, "copying repo to temp dir: %s", out)
-	}
+	// Configuring the repo such that it can be git cloned.
+	// See https://theartofmachinery.com/2016/07/02/git_over_http.html
+	// for background.
 	c := exec.Command("git", "--bare", "update-server-info")
-	c.Dir = filepath.Join(repoDir2, ".git")
-	out, err = c.CombinedOutput()
+	c.Dir = filepath.Join(repoDir, ".git")
+	out, err := c.CombinedOutput()
 	if err != nil {
 		return errors.Wrapf(err, "updating server info: %s", out)
 	}
-	c = exec.Command("mv", "hooks/post-update.sample", "hooks/post-update")
-	c.Dir = filepath.Join(repoDir2, ".git")
-	out, err = c.CombinedOutput()
-	if err != nil {
-		return errors.Wrapf(err, "setting post-update hook: %s", out)
+	if _, err := os.Stat(filepath.Join(repoDir, ".git", "hooks", "post-update")); err != nil {
+		log.Printf("attempting to set up post-update hook")
+		c = exec.Command("mv", "hooks/post-update.sample", "hooks/post-update")
+		c.Dir = filepath.Join(repoDir, ".git")
+		out, err = c.CombinedOutput()
+		if err != nil {
+			return errors.Wrapf(err, "setting post-update hook: %s", out)
+		}
 	}
 
 	// Start the HTTP server.
@@ -76,7 +69,7 @@ func fakehub(n int, addr, repoDir string) error {
 	})
 	for i := 1; i <= n; i++ {
 		pfx := fmt.Sprintf("/repo/%d/", i)
-		mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(http.Dir(repoDir2))))
+		mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(http.Dir(repoDir))))
 	}
 	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		handleConfig(tvars, w, r)
