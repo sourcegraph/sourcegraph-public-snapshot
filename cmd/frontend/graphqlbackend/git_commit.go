@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -83,13 +84,29 @@ func (r *gitCommitResolver) ID() graphql.ID {
 
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
+var oidResolutionCache = rcache.NewWithTTL("oid_resolution", 60) // 60s
+
 func (r *gitCommitResolver) OID() (gitObjectID, error) {
 	r.once.Do(func() {
 		if r.oid != "" {
 			return // We already have an oid because the creator of this *gitCommitResolver specified it.
 		}
 
+		// Try fetching it from the Redis cache to avoid doing lots of work
+		// previously done (as this method is called very often, e.g. multiple
+		// times per search result).
+		result, ok := oidResolutionCache.Get(string(r.repo.repo.ID))
+		if ok {
+			r.oid = gitObjectID(result)
+			return
+		}
+
+		// The cache doesn't have it, so compute it and update the cache if we
+		// resolved it successfully.
 		r.doResolveCommitOIDUncached()
+		if r.oidErr == nil {
+			oidResolutionCache.Set(string(r.repo.repo.ID), []byte(r.oid))
+		}
 	})
 	return r.oid, r.oidErr
 }
