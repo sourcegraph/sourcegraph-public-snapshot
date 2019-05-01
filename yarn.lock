@@ -1547,12 +1547,12 @@
   resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-4.0.0.tgz#dd2a406f90760bb789fd89fde4bd0a8d681f2767"
   integrity sha512-jxrhKbek4yu1HUDpUhqR9hAGFiUgaJ9NIM+c8JEkAnvpW67ab1AUFWb82aSVfZWX1UVqfR84AMr7xP3E8LlL+A==
 
-"@sourcegraph/tslint-config@^13.0.0":
-  version "13.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-13.0.0.tgz#f75d2ea51972c9f8cab233de98824b954457729b"
-  integrity sha512-kDWngKXc7Qu8rdtsUP1pics0vOIx37e1ygjyrxMfhav722dhByxYowK3AxcbyECyaKEYt0wCp+bCqeVQX+XksQ==
+"@sourcegraph/tslint-config@^13.1.0":
+  version "13.1.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-13.1.0.tgz#8053ea96bf58fcb0a9e120b129fb3e5aa03548cb"
+  integrity sha512-t4kkv7/q5+eG17LkFtNzT39dCOrokmugqsyFrVk0c8I+bH9R4lvFAgrMK6sOIaLQS0rYzPxECmgll5B5lY2haw==
   dependencies:
-    rxjs-tslint-rules "^4.19.1"
+    rxjs-tslint-rules "^4.23.0"
     tslint-config-prettier "^1.18.0"
     tslint-react "^4.0.0"
 
@@ -13090,14 +13090,15 @@ run-queue@^1.0.0, run-queue@^1.0.3:
   dependencies:
     aproba "^1.1.1"
 
-rxjs-tslint-rules@^4.19.1:
-  version "4.19.1"
-  resolved "https://registry.npmjs.org/rxjs-tslint-rules/-/rxjs-tslint-rules-4.19.1.tgz#e5328cface0a0d0b52f2601082fa1ffd617f7869"
-  integrity sha512-TwosfLg5HgG6vSq6uHM49cUMJxX6ZfF8Cd4/r7TPc/h4hV2vm675T7zwO49MD2YxNpQbge4Xi8EOzn8XvJwYAA==
+rxjs-tslint-rules@^4.23.0:
+  version "4.23.1"
+  resolved "https://registry.npmjs.org/rxjs-tslint-rules/-/rxjs-tslint-rules-4.23.1.tgz#3cc17714a8702ea82c72ee0f2da1035a333355e6"
+  integrity sha512-THyk7uh9IuI/uK+rPNMOFDtmw9mE0CxzKCpZAp/63uKlFvcII1/GQO2qrpaegjEJZTu7vIYFsOoPIV50j9L1eA==
   dependencies:
     "@phenomnomnominal/tsquery" "^3.0.0"
     decamelize "^3.0.0"
     resolve "^1.4.0"
+    semver "^6.0.0"
     tslib "^1.8.0"
     tsutils "^3.0.0"
     tsutils-etc "^1.1.0"
@@ -13270,6 +13271,11 @@ semver@5.5.0:
   version "5.5.0"
   resolved "https://registry.npmjs.org/semver/-/semver-5.5.0.tgz#dc4bbc7a6ca9d916dee5d43516f0092b58f7b8ab"
   integrity sha512-4SJ3dm0WAwWy/NVeioZh5AntkdJoWKxHxcmyP622fOkgHa4z3R0TdBJICINyaSDE6uNwVc8gZr+ZinwZAH4xIA==
+
+semver@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.npmjs.org/semver/-/semver-6.0.0.tgz#05e359ee571e5ad7ed641a6eec1e547ba52dea65"
+  integrity sha512-0UewU+9rFapKFnlbirLi3byoOuhrSsli/z/ihNnvM24vgF+8sNBiI1LZPBSH9wJKUwaUbw+s3hToDLCXkrghrQ==
 
 semver@~5.3.0:
   version "5.3.0"
