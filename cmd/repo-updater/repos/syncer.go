@@ -79,10 +79,20 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
-	diff = NewDiff(sourced, stored)
-	upserts := s.upserts(diff)
+	diff = NewDiff(sourced, stored, s.now())
+	updates, inserts := s.upserts(diff)
+	viewAll("updates", updates...)
+	viewAll("inserts", inserts...)
 
-	if err = store.UpsertRepos(ctx, upserts...); err != nil {
+	// We upsert deleted repositories first since they
+	//
+	// 1. Deleted is first since we rename if it conflicts with a repo that should appear.
+	// 2. Modified is second since it may contain renames in Added.
+	// We upsert deleted repositories first since they may have renames. We want them to be renamed before upserting added or modified
+	if err = store.UpsertRepos(ctx, updates...); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
+	}
+	if err = store.UpsertRepos(ctx, inserts...); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
 	}
 
@@ -93,30 +103,35 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 	return diff, nil
 }
 
-func (s *Syncer) upserts(diff Diff) []*Repo {
+func (s *Syncer) upserts(diff Diff) (updates, inserts []*Repo) {
 	now := s.now()
-	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
+	updates = make([]*Repo, 0, len(diff.Modified)+len(diff.Deleted))
+	inserts = make([]*Repo, 0, len(diff.Added))
 
 	for _, repo := range diff.Deleted {
 		repo.UpdatedAt, repo.DeletedAt = now, now
 		repo.Sources = map[string]*SourceInfo{}
 		repo.Enabled = true
-		upserts = append(upserts, repo)
+		updates = append(updates, repo)
 	}
 
 	for _, repo := range diff.Modified {
-		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}
+		repo.UpdatedAt = now
 		repo.Enabled = true
-		upserts = append(upserts, repo)
+		updates = append(updates, repo)
 	}
 
 	for _, repo := range diff.Added {
 		repo.CreatedAt, repo.UpdatedAt, repo.DeletedAt = now, now, time.Time{}
 		repo.Enabled = true
-		upserts = append(upserts, repo)
+		if repo.ID == 0 {
+			inserts = append(inserts, repo)
+		} else {
+			updates = append(updates, repo)
+		}
 	}
 
-	return upserts
+	return updates, inserts
 }
 
 // A Diff of two sets of Diffables.
@@ -158,8 +173,12 @@ func (d Diff) Repos() Repos {
 	return all
 }
 
-// NewDiff returns a diff from the given sourced and stored repos.
-func NewDiff(sourced, stored []*Repo) (diff Diff) {
+// NewDiff returns a diff from the given sourced and stored repos. now is used
+// to create unique names to avoid conflicts.
+func NewDiff(sourced, stored []*Repo, now time.Time) (diff Diff) {
+	viewAll("sourced", stored...)
+	viewAll("stored", stored...)
+
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
 
 	for _, r := range sourced {
@@ -180,25 +199,45 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
 	seenName := make(map[string]bool, len(stored))
 
+	// We are unsure if customer repositories can have ExternalRepo unset. We
+	// know it can be unset for Sourcegraph.com. As such, we want to fallback
+	// to associating stored repositories by name with the sourced
+	// repositories.
+	//
+	// We do not want a stored repository without an externalrepo to be set
+	sort.Stable(byExternalRepoSpecSet(stored))
+
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
-		if src == nil {
+		if old.ExternalRepo == (api.ExternalRepoSpec{}) && src == nil {
+			// TODO(keegancsmith)
+			// We only want to join by name when the stored repo doesn't
+			// have an external id set.
 			src = byName[old.Name]
+			if _, seen := seenName[old.Name]; seen {
+				src = nil
+			}
 		}
 
 		if src == nil {
-			if !old.IsDeleted() {
+			_, nameConflicts := byName[old.Name]
+			if nameConflicts {
+				old.Name = fmt.Sprintf("!DELETED!%s!%s", now.UTC().Format("20060102150405"), old.Name)
+			}
+			if !old.IsDeleted() { // Stored repo got deleted
 				diff.Deleted = append(diff.Deleted, old)
-			} else {
+			} else if nameConflicts { // Stored repo remains deleted but needs name changed.
+				diff.Modified = append(diff.Modified, old)
+			} else { // Stored repo remains deleted
 				diff.Unmodified = append(diff.Unmodified, old)
 			}
 		} else if !old.IsDeleted() {
-			if old.Update(src) {
+			if old.Update(src) { // Stored repo got updated
 				diff.Modified = append(diff.Modified, old)
-			} else {
+			} else { // Stored repo remains unchanged
 				diff.Unmodified = append(diff.Unmodified, old)
 			}
-		} else {
+		} else { // Previously deleted repo got undeleted
 			old.Update(src)
 			diff.Added = append(diff.Added, old)
 		}
@@ -209,6 +248,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 
 	for _, r := range byID {
 		if !seenID[r.ExternalRepo] && !seenName[r.Name] {
+			// Sourced repo got added for the first time
 			diff.Added = append(diff.Added, r)
 		}
 	}
@@ -279,5 +319,31 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 		}
 
 		tr.Finish()
+	}
+}
+
+type byExternalRepoSpecSet []*Repo
+
+func (rs byExternalRepoSpecSet) Len() int      { return len(rs) }
+func (rs byExternalRepoSpecSet) Swap(i, j int) { rs[i], rs[j] = rs[j], rs[i] }
+func (rs byExternalRepoSpecSet) Less(i, j int) bool {
+	iSet := rs[i].ExternalRepo != (api.ExternalRepoSpec{})
+	jSet := rs[j].ExternalRepo != (api.ExternalRepoSpec{})
+	if iSet == jSet {
+		return false
+	}
+	return iSet
+}
+
+func view(r *Repo) string {
+	if r == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("(%d, %s, %s, %v)", r.ID, r.Name, r.ExternalRepo.ID, !r.DeletedAt.IsZero())
+}
+
+func viewAll(prefix string, rs ...*Repo) {
+	for _, r := range rs {
+		fmt.Printf("%s: %s\n", prefix, view(r))
 	}
 }

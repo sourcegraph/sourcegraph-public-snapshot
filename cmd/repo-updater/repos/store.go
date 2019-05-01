@@ -529,7 +529,7 @@ WITH batch AS (
 updated AS (
   UPDATE repo
   SET
-    name                  = batch.name,
+    name                  = COALESCE(NULLIF(batch.name, repo.name), '!tmp!' || batch.name),
     description           = batch.description,
     language              = batch.language,
     created_at            = COALESCE(batch.created_at, repo.created_at),
@@ -545,6 +545,14 @@ updated AS (
     metadata              = batch.metadata
   FROM batch
   WHERE repo.id = batch.id
+  RETURNING repo.*
+),
+
+renamed AS (
+  UPDATE repo
+  SET name = batch.name
+  FROM batch
+  WHERE repo.id = batch.id AND repo.name <> batch.name
   RETURNING repo.*
 ),
 

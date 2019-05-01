@@ -116,7 +116,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			return nil
 		}
 
-		diff := NewDiff(sourced, stored)
+		diff := NewDiff(sourced, stored, clock())
 
 		err = group(
 			func(r *Repo) bool { return !r.Enabled },
