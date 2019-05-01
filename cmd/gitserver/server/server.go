@@ -111,10 +111,6 @@ type Server struct {
 	// Janitor job runs.
 	DeleteStaleRepositories bool
 
-	// MountPoint tells where the disk containing ReposDir is mounted, to
-	// keep track of how much disk space is free.
-	MountPoint string
-
 	// DesiredFreeDiskSpace is how much space we need to keep free in bytes.
 	DesiredFreeDiskSpace uint64
 

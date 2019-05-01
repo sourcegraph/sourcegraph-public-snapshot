@@ -204,13 +204,71 @@ func (s *Server) cleanupRepos() {
 	}
 }
 
-// bytesFreeOnDisk tells how much space is available on the disk mounted at s.MountPoint.
+// bytesFreeOnDisk tells how much space is available on the disk containing s.ReposDir.
 func (s *Server) bytesFreeOnDisk() (uint64, error) {
 	var fs syscall.Statfs_t
-	if err := syscall.Statfs(s.MountPoint, &fs); err != nil {
+	mp, err := findMountPoint(s.ReposDir)
+	if err != nil {
+		return 0, errors.Wrap(err, "finding mount point for dir containing repos")
+	}
+	if err := syscall.Statfs(mp, &fs); err != nil {
 		return 0, errors.Wrap(err, "finding out how much disk space is free")
 	}
-	return fs.Bavail * uint64(fs.Bsize), nil
+	free := fs.Bavail * uint64(fs.Bsize)
+	log15.Info("computed free space", "repo dir", s.ReposDir, "mount point", mp, "free space bytes", free)
+	return free, nil
+}
+
+// findMountPoint searches upwards starting from the directory d to find the mount point.
+func findMountPoint(d string) (string, error) {
+	d, err := filepath.Abs(d)
+	if err != nil {
+		return "", errors.Wrapf(err, "getting absolute version of %s", d)
+	}
+	for {
+		m, err := isMount(d)
+		if err != nil {
+			return "", errors.Wrapf(err, "finding out if %s is a mount point", d)
+		}
+		if m {
+			return d, nil
+		}
+		d2 := filepath.Dir(d)
+		if d2 == d {
+			return d2, nil
+		}
+		d = d2
+	}
+}
+
+// isMount tells whether the directory d is a mount point.
+func isMount(d string) (bool, error) {
+	ddev, err := device(d)
+	if err != nil {
+		return false, errors.Wrapf(err, "gettting device id for %s", d)
+	}
+	parent := filepath.Dir(d)
+	if parent == d {
+		return true, nil
+	}
+	pdev, err := device(parent)
+	if err != nil {
+		return false, errors.Wrapf(err, "getting device id for %s", parent)
+	}
+	return pdev != ddev, nil
+}
+
+// device gets the device id of a file f.
+func device(f string) (int32, error) {
+	fi, err := os.Stat(f)
+	if err != nil {
+		return 0, errors.Wrapf(err, "running stat on %s", f)
+	}
+	stat, ok := fi.Sys().(*syscall.Stat_t)
+	if !ok {
+		return 0, fmt.Errorf("failed to get stat details for %s", f)
+	}
+	return stat.Dev, nil
 }
 
 // freeUpSpace removes git directories under ReposDir, in order from least
