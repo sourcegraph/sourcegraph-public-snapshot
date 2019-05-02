@@ -1,4 +1,4 @@
-// Command replacer is an interface to replace and rewrite code. It passes a zipped repos
+// Command replacer is an interface to replace and rewrite code. It passes a zipped repo
 // to external tools and streams back JSON lines results.
 package main
 
@@ -49,18 +49,19 @@ func main() {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
-	service := &replace.Service{
-		Store: &store.Store{
-			FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
-				return git.Archive(ctx, repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
-			},
-			Path:              filepath.Join(cacheDir, "replacer-archives"),
-			MaxCacheSizeBytes: cacheSizeBytes,
+	store := store.Store{
+		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+			return git.Archive(ctx, repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
-		Log: log15.Root(),
+		Path:              filepath.Join(cacheDir, "replacer-archives"),
+		MaxCacheSizeBytes: cacheSizeBytes,
 	}
-	service.Store.SetMaxConcurrentFetchTar(10)
-	service.Store.Start()
+	store.SetMaxConcurrentFetchTar(10)
+	store.Start()
+	service := &replace.Service{
+		Store: &store,
+		Log:   log15.Root(),
+	}
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
 
 	host := ""

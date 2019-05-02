@@ -23,6 +23,7 @@ import (
 )
 
 func TestReplace(t *testing.T) {
+	t.Skip("external tooling is not integrated yet.")
 
 	files := map[string]string{
 
@@ -66,7 +67,8 @@ func main() {
 			RewriteSpecification: test.arg,
 			FetchTimeout:         "500ms",
 		}
-		if err := doReplace(ts.URL, &req); err != nil {
+		got, err := doReplace(ts.URL, &req)
+		if err != nil {
 			t.Errorf("%v failed: %s", test.arg, err)
 			continue
 		}
@@ -76,8 +78,6 @@ func main() {
 			test.want = test.want[1:]
 		}
 
-		// We set the expect oracle here: external tools are not integrated yet.
-		got := test.want
 		if got != test.want {
 			d, err := diff(test.want, got)
 			if err != nil {
@@ -110,7 +110,7 @@ func TestReplace_badrequest(t *testing.T) {
 	defer ts.Close()
 
 	for _, p := range cases {
-		err := doReplace(ts.URL, &p)
+		_, err := doReplace(ts.URL, &p)
 		if err == nil {
 			t.Fatalf("%v expected to fail", p)
 		}
@@ -121,7 +121,7 @@ func TestReplace_badrequest(t *testing.T) {
 
 }
 
-func doReplace(u string, p *protocol.Request) error {
+func doReplace(u string, p *protocol.Request) (string, error) {
 	form := url.Values{
 		"Repo":            []string{string(p.Repo)},
 		"URL":             []string{string(p.URL)},
@@ -132,18 +132,18 @@ func doReplace(u string, p *protocol.Request) error {
 	}
 	resp, err := http.PostForm(u, form)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
-	return err
+	return string(body), err
 }
 
 func newStore(files map[string]string) (*store.Store, func(), error) {
