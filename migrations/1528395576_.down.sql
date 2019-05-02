@@ -19,4 +19,9 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW
   EXECUTE PROCEDURE set_repo_name();
 
+-- Add back the unused columns
+ALTER TABLE repo
+  ADD COLUMN IF NOT EXISTS indexed_revision text,
+  ADD COLUMN IF NOT EXISTS freeze_indexed_revision boolean;
+
 COMMIT;

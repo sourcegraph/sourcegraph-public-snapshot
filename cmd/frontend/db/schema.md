@@ -394,8 +394,6 @@ Referenced by:
  created_at              | timestamp with time zone | not null default now()
  updated_at              | timestamp with time zone | 
  pushed_at               | timestamp with time zone | 
- indexed_revision        | text                     | 
- freeze_indexed_revision | boolean                  | 
  external_id             | text                     | 
  external_service_type   | text                     | 
  external_service_id     | text                     | 
