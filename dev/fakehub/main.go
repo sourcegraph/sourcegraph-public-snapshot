@@ -24,7 +24,7 @@ func main() {
 	addr := flag.String("addr", ":0", "address on which to serve (default picks an unused port)")
 	flag.Parse()
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] path/to/git/repo
+		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] path/to/dir/containing/git/dirs
 
 fakehub will serve any number (controlled with -n) of copies of the repo over
 HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
