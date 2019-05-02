@@ -384,25 +384,24 @@ Referenced by:
 
 # Table "public.repo"
 ```
-         Column          |           Type           |                     Modifiers                     
--------------------------+--------------------------+---------------------------------------------------
- id                      | integer                  | not null default nextval('repo_id_seq'::regclass)
- name                    | citext                   | not null
- description             | text                     | 
- language                | text                     | 
- fork                    | boolean                  | 
- created_at              | timestamp with time zone | not null default now()
- updated_at              | timestamp with time zone | 
- pushed_at               | timestamp with time zone | 
- external_id             | text                     | 
- external_service_type   | text                     | 
- external_service_id     | text                     | 
- enabled                 | boolean                  | not null default true
- archived                | boolean                  | not null default false
- uri                     | citext                   | 
- deleted_at              | timestamp with time zone | 
- sources                 | jsonb                    | not null default '{}'::jsonb
- metadata                | jsonb                    | not null default '{}'::jsonb
+         Column        |           Type           |                     Modifiers                     
+-----------------------+--------------------------+---------------------------------------------------
+ id                    | integer                  | not null default nextval('repo_id_seq'::regclass)
+ name                  | citext                   | not null
+ description           | text                     | 
+ language              | text                     | 
+ fork                  | boolean                  | 
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | 
+ external_id           | text                     | 
+ external_service_type | text                     | 
+ external_service_id   | text                     | 
+ enabled               | boolean                  | not null default true
+ archived              | boolean                  | not null default false
+ uri                   | citext                   | 
+ deleted_at            | timestamp with time zone | 
+ sources               | jsonb                    | not null default '{}'::jsonb
+ metadata              | jsonb                    | not null default '{}'::jsonb
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_service_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id) WHERE external_service_type IS NOT NULL AND external_service_id IS NOT NULL AND external_id IS NOT NULL

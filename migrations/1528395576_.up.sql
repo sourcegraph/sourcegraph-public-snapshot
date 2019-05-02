@@ -10,6 +10,7 @@ DROP FUNCTION IF EXISTS set_repo_name();
 -- These are unused columns since 3.0
 -- https://github.com/sourcegraph/sourcegraph/issues/644
 ALTER TABLE repo
+  DROP COLUMN IF EXISTS pushed_at,
   DROP COLUMN IF EXISTS indexed_revision,
   DROP COLUMN IF EXISTS freeze_indexed_revision;
 

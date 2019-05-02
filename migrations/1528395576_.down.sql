@@ -21,6 +21,7 @@ CREATE TRIGGER trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW
 
 -- Add back the unused columns
 ALTER TABLE repo
+  ADD COLUMN IF NOT EXISTS pushed_at timestamp with time zone,
   ADD COLUMN IF NOT EXISTS indexed_revision text,
   ADD COLUMN IF NOT EXISTS freeze_indexed_revision boolean;
 
