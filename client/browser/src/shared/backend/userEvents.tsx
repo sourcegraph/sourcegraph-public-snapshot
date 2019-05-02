@@ -13,13 +13,13 @@ export const logUserEvent = (
     event: string,
     uid: string,
     url: string,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
     if (url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
-    queryGraphQL<GQL.IMutation>(
+    requestGraphQL<GQL.IMutation>(
         gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
                 logUserEvent(event: $event, userCookieID: $userCookieID) {

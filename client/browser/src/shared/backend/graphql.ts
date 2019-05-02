@@ -14,7 +14,7 @@ const options: GraphQLRequestOptions = {
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export const queryGraphQLFromBackground: PlatformContext['requestGraphQL'] = (
+export const requestGraphQLFromBackground: PlatformContext['requestGraphQL'] = (
     request,
     variables,
     mightContainPrivateInfo

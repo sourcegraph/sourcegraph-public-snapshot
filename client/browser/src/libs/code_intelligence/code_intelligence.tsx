@@ -353,10 +353,10 @@ export function handleCodeHost({
 }: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
-    const { requestGraphQL: queryGraphQL } = platformContext
+    const { requestGraphQL } = platformContext
 
     const ensureRepoExists = (context: CodeHostContext) =>
-        resolveRev({ ...context, queryGraphQL }).pipe(
+        resolveRev({ ...context, requestGraphQL }).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
             catchError(() => [false])

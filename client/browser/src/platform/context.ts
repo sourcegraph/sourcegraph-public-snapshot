@@ -1,6 +1,6 @@
 import { combineLatest, merge, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
-import { requestGraphQL } from '../../../../shared/src/graphql/graphql'
+import { requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../../shared/src/settings/edit'
@@ -13,22 +13,22 @@ import { observeStorageKey } from '../browser/storage'
 import { defaultStorageItems } from '../browser/types'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
-import { queryGraphQLFromBackground, requestOptions } from '../shared/backend/graphql'
+import { requestGraphQLFromBackground, requestOptions } from '../shared/backend/graphql'
 import { sourcegraphUrl } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { createBlobURLForBundle } from './worker'
 
-const queryGraphQL: PlatformContext['requestGraphQL'] = (request, variables, mightContainPrivateInfo) => {
+const requestGraphQL: PlatformContext['requestGraphQL'] = (request, variables, mightContainPrivateInfo) => {
     if (isInPage) {
-        return requestGraphQL({
+        return requestGraphQLCommon({
             request,
             variables: {},
             baseUrl: window.SOURCEGRAPH_URL,
             ...requestOptions,
         })
     }
-    return queryGraphQLFromBackground(request, variables, mightContainPrivateInfo)
+    return requestGraphQLFromBackground(request, variables, mightContainPrivateInfo)
 }
 
 /**
@@ -49,9 +49,9 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
         settings: combineLatest(
             merge(
                 isInPage
-                    ? fetchViewerSettings(queryGraphQL)
+                    ? fetchViewerSettings(requestGraphQL)
                     : observeStorageKey('sync', 'sourcegraphURL').pipe(
-                          switchMap(() => fetchViewerSettings(queryGraphQL))
+                          switchMap(() => fetchViewerSettings(requestGraphQL))
                       ),
                 updatedViewerSettings
             ).pipe(
@@ -83,13 +83,13 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
                 if ('message' in error && /version mismatch/.test(error.message)) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
-                    updatedViewerSettings.next(await fetchViewerSettings(queryGraphQL).toPromise())
+                    updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
                     await updateSettings(context, subject, edit, mutateSettings)
                 }
             }
-            updatedViewerSettings.next(await fetchViewerSettings(queryGraphQL).toPromise())
+            updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
         },
-        requestGraphQL: queryGraphQL,
+        requestGraphQL,
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },

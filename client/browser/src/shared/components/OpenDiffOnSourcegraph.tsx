@@ -30,7 +30,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        const { requestGraphQL: queryGraphQL } = this.props.platformContext
+        const { requestGraphQL } = this.props.platformContext
         this.subscriptions.add(
             // Fetch all fileDiffs in a given comparison. We rely on queryRepositoryComparisonFileDiffs
             // being memoized so that there is at most one network request when viewing
@@ -43,7 +43,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
                             repo: this.props.openProps.repoName,
                             base: this.props.openProps.commit.baseRev,
                             head: this.props.openProps.commit.headRev,
-                            queryGraphQL,
+                            requestGraphQL,
                         }).pipe(
                             map(fileDiff => ({
                                 ...fileDiff,

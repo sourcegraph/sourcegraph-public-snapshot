@@ -9,9 +9,9 @@ import { getPhabricatorState } from './util'
 
 export const resolveRevisionFileInfo = (
     codeView: HTMLElement,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
-    from(getPhabricatorState(window.location, queryGraphQL)).pipe(
+    from(getPhabricatorState(window.location, requestGraphQL)).pipe(
         filter((state): state is RevisionState => state !== null && state.mode === PhabricatorMode.Revision),
         map(state => ({
             repoName: state.repoName,
@@ -26,9 +26,9 @@ export const resolveRevisionFileInfo = (
 
 export const resolveDiffFileInfo = (
     codeView: HTMLElement,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
-    from(getPhabricatorState(window.location, queryGraphQL)).pipe(
+    from(getPhabricatorState(window.location, requestGraphQL)).pipe(
         filter(state => state !== null && state.mode === PhabricatorMode.Differential),
         map(state => state as DifferentialState),
         map(state => {
@@ -52,7 +52,7 @@ export const resolveDiffFileInfo = (
                     filePath: info.baseFilePath || info.filePath,
                     isBase: true,
                 },
-                queryGraphQL
+                requestGraphQL
             ).pipe(
                 map(({ commitID, stagingRepoName }) => ({
                     baseCommitID: commitID,
@@ -74,7 +74,7 @@ export const resolveDiffFileInfo = (
                     filePath: info.filePath,
                     isBase: false,
                 },
-                queryGraphQL
+                requestGraphQL
             ).pipe(
                 map(({ commitID, stagingRepoName }) => ({
                     headCommitID: commitID,
@@ -109,8 +109,8 @@ export const resolveDiffFileInfo = (
 
 export const resolveDiffusionFileInfo = (
     codeView: HTMLElement,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
-    from(getPhabricatorState(window.location, queryGraphQL)).pipe(
+    from(getPhabricatorState(window.location, requestGraphQL)).pipe(
         filter((state): state is DiffusionState => state !== null && state.mode === PhabricatorMode.Diffusion)
     )

@@ -4,7 +4,7 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
-import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec } from '../../../../../shared/src/util/url'
+import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import {
     CloneInProgressError,
     createAggregateError,
@@ -19,14 +19,8 @@ import { isPrivateRepository } from '../util/context'
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
 export const resolveRepo = memoizeObservable(
-    ({
-        repoName,
-        queryGraphQL,
-    }: {
-        repoName: string
-        queryGraphQL: PlatformContext['requestGraphQL']
-    }): Observable<string> =>
-        queryGraphQL<GQL.IQuery>(
+    ({ repoName, requestGraphQL }: RepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
+        requestGraphQL<GQL.IQuery>(
             gql`
                 query ResolveRepo($repoName: String!) {
                     repository(name: $repoName) {
@@ -55,15 +49,11 @@ export const resolveRepo = memoizeObservable(
  */
 export const resolveRev = memoizeObservable(
     ({
-        queryGraphQL,
+        requestGraphQL,
         ...ctx
-    }: {
-        repoName: string
-        rev?: string
-        queryGraphQL: PlatformContext['requestGraphQL']
-    }): Observable<string> =>
+    }: RepoSpec & Partial<RevSpec> & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
         from(
-            queryGraphQL<GQL.IQuery>(
+            requestGraphQL<GQL.IQuery>(
                 gql`
                     query ResolveRev($repoName: String!, $rev: String!) {
                         repository(name: $repoName) {
@@ -124,13 +114,11 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
  */
 export const fetchBlobContentLines = memoizeObservable(
     ({
-        queryGraphQL,
+        requestGraphQL,
         ...ctx
-    }: RepoSpec & ResolvedRevSpec & FileSpec & { queryGraphQL: PlatformContext['requestGraphQL'] }): Observable<
-        string[]
-    > =>
+    }: RepoSpec & ResolvedRevSpec & FileSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string[]> =>
         from(
-            queryGraphQL<GQL.IQuery>(
+            requestGraphQL<GQL.IQuery>(
                 gql`
                     query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
                         repository(name: $repoName) {

@@ -250,16 +250,15 @@ async function getRepoPHIDForDifferentialID(differentialID: number): Promise<str
     return phid
 }
 
-interface CreatePhabricatorRepoOptions {
+interface CreatePhabricatorRepoOptions extends Pick<PlatformContext, 'requestGraphQL'> {
     callsign: string
     repoName: string
     phabricatorURL: string
-    queryGraphQL: PlatformContext['requestGraphQL']
 }
 
 const createPhabricatorRepo = memoizeObservable(
-    ({ queryGraphQL, ...options }: CreatePhabricatorRepoOptions): Observable<void> =>
-        queryGraphQL<GQL.IMutation>(
+    ({ requestGraphQL, ...options }: CreatePhabricatorRepoOptions): Observable<void> =>
+        requestGraphQL<GQL.IMutation>(
             gql`
                 mutation addPhabricatorRepo($callsign: String!, $repoName: String!, $phabricatorURL: String!) {
                     addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) {
@@ -279,7 +278,7 @@ interface PhabricatorRepoDetails {
 
 export function getRepoDetailsFromCallsign(
     callsign: string,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Promise<PhabricatorRepoDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
@@ -310,7 +309,7 @@ export function getRepoDetailsFromCallsign(
                             callsign,
                             repoName: details.repoName,
                             phabricatorURL: window.location.origin,
-                            queryGraphQL,
+                            requestGraphQL,
                         }).subscribe(() => resolve(details))
                     }
                     return reject(new Error('could not parse repo details'))
@@ -355,7 +354,7 @@ export function getSourcegraphURLFromConduit(): Promise<string> {
 
 function getRepoDetailsFromRepoPHID(
     phid: string,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Promise<PhabricatorRepoDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
@@ -387,7 +386,7 @@ function getRepoDetailsFromRepoPHID(
                             callsign: repo.fields.callsign,
                             repoName: details.repoName,
                             phabricatorURL: window.location.origin,
-                            queryGraphQL,
+                            requestGraphQL,
                         })
                             .pipe(map(() => details))
                             .subscribe(() => {
@@ -403,10 +402,10 @@ function getRepoDetailsFromRepoPHID(
 
 export async function getRepoDetailsFromDifferentialID(
     differentialID: number,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Promise<PhabricatorRepoDetails> {
     const repositoryPHID = await getRepoPHIDForDifferentialID(differentialID)
-    return await getRepoDetailsFromRepoPHID(repositoryPHID, queryGraphQL)
+    return await getRepoDetailsFromRepoPHID(repositoryPHID, requestGraphQL)
 }
 
 async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<PhabricatorRepoDetails | null> {
@@ -465,7 +464,7 @@ function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
     return { callsign: repo.fields.callsign, repoName }
 }
 
-interface ResolveStagingOptions {
+interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'> {
     repoName: string
     diffID: number
     baseRev: string
@@ -474,12 +473,11 @@ interface ResolveStagingOptions {
     authorName?: string
     authorEmail?: string
     description?: string
-    queryGraphQL: PlatformContext['requestGraphQL']
 }
 
 const resolveStagingRev = memoizeObservable(
-    ({ queryGraphQL, ...options }: ResolveStagingOptions): Observable<string | null> =>
-        queryGraphQL<GQL.IMutation>(
+    ({ requestGraphQL, ...options }: ResolveStagingOptions): Observable<string | null> =>
+        requestGraphQL<GQL.IMutation>(
             gql`
                 mutation ResolveStagingRev(
                     $repoName: String!
@@ -624,7 +622,7 @@ interface ResolvedDiff {
 
 export function resolveDiffRev(
     props: ResolveDiffOpt,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<ResolvedDiff> {
     // TODO: Do a proper refactor and convert all of this function call and it's deps from Promises to Observables.
     return from(
@@ -649,7 +647,7 @@ export function resolveDiffRev(
                         }
                         getRawDiffFromConduit(propsWithInfo.diffID)
                             .then(patch =>
-                                resolveStagingRev({ ...conduitProps, patch, queryGraphQL }).subscribe(commitID => {
+                                resolveStagingRev({ ...conduitProps, patch, requestGraphQL }).subscribe(commitID => {
                                     if (commitID) {
                                         resolve({ commitID })
                                     }
@@ -661,7 +659,7 @@ export function resolveDiffRev(
 
                     if (!stagingDetails.unconfigured) {
                         // Ensure the staging repo exists before resolving. Otherwise create the patch.
-                        resolveRepo({ repoName: stagingDetails.repoName, queryGraphQL }).subscribe(
+                        resolveRepo({ repoName: stagingDetails.repoName, requestGraphQL }).subscribe(
                             () =>
                                 resolve({
                                     commitID: stagingDetails.ref.commit,
@@ -670,7 +668,7 @@ export function resolveDiffRev(
                             error => {
                                 getRawDiffFromConduit(propsWithInfo.diffID)
                                     .then(patch =>
-                                        resolveStagingRev({ ...conduitProps, patch, queryGraphQL }).subscribe(
+                                        resolveStagingRev({ ...conduitProps, patch, requestGraphQL }).subscribe(
                                             commitID => {
                                                 if (commitID) {
                                                     resolve({ commitID })

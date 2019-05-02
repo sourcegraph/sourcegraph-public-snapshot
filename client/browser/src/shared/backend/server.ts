@@ -9,9 +9,9 @@ import { PlatformContext } from '../../../../../shared/src/platform/context'
  *         Errors
  */
 export const resolveClientConfiguration = (
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<GQL.IClientConfigurationDetails> =>
-    queryGraphQL<GQL.IQuery>(gql`query ClientConfiguration() {
+    requestGraphQL<GQL.IQuery>(gql`query ClientConfiguration() {
             clientConfiguration {
                 contentScriptUrls
                 parentSourcegraph {
@@ -23,8 +23,10 @@ export const resolveClientConfiguration = (
         map(({ clientConfiguration }) => clientConfiguration, catchError((err, caught) => caught))
     )
 
-export const fetchCurrentUser = (queryGraphQL: PlatformContext['requestGraphQL']): Observable<GQL.IUser | undefined> =>
-    queryGraphQL<GQL.IQuery>(gql`query CurrentUser() {
+export const fetchCurrentUser = (
+    requestGraphQL: PlatformContext['requestGraphQL']
+): Observable<GQL.IUser | undefined> =>
+    requestGraphQL<GQL.IQuery>(gql`query CurrentUser() {
             currentUser {
                 id
                 displayName
@@ -42,8 +44,8 @@ export const fetchCurrentUser = (queryGraphQL: PlatformContext['requestGraphQL']
         map(({ currentUser }) => currentUser || undefined, catchError((err, caught) => caught))
     )
 
-export const fetchSite = (queryGraphQL: PlatformContext['requestGraphQL']): Observable<GQL.ISite> =>
-    queryGraphQL<GQL.IQuery>(gql`query SiteProductVersion() {
+export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<GQL.ISite> =>
+    requestGraphQL<GQL.IQuery>(gql`query SiteProductVersion() {
             site {
                 productVersion
                 buildVersion
