@@ -9,6 +9,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- The `bitbucketserver.exclude` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) additionally allows you to exclude repositories matched by a regular expression (so that they won't be synced).
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
+
+## 3.3.6
+
 ## Changed
 
 ### Removed

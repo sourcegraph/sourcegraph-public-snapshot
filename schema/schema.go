@@ -146,8 +146,9 @@ type Discussions struct {
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
 }
 type ExcludedBitbucketServerRepo struct {
-	Id   int    `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
+	Id      int    `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
 	Id   string `json:"id,omitempty"`
