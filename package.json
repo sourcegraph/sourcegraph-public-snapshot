@@ -19,7 +19,8 @@
     "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
     "prepublish": "gulp generate && yarn --cwd shared -s run tslint:build-rules",
-    "test": "jest --testPathIgnorePatterns e2e"
+    "test": "jest --testPathIgnorePatterns e2e",
+    "deduplicate": "yarn-deduplicate -s fewer && yarn-deduplicate -s fewer ./cmd/management-console/web/yarn.lock"
   },
   "browserslist": [
     "last 1 version",
@@ -174,7 +175,8 @@
     "web-ext-types": "^3.1.0",
     "webpack": "^4.30.0",
     "webpack-dev-server": "^3.1.13",
-    "worker-loader": "^2.0.0"
+    "worker-loader": "^2.0.0",
+    "yarn-deduplicate": "^1.1.1"
   },
   "dependencies": {
     "@sentry/browser": "^5.1.1",

@@ -2841,6 +2841,11 @@
   resolved "https://registry.npmjs.org/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
+"@yarnpkg/lockfile@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/@yarnpkg/lockfile/-/lockfile-1.1.0.tgz#e77a97fbd345b76d83245edcd17d393b1b41fb31"
+  integrity sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==
+
 abab@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/abab/-/abab-2.0.0.tgz#aba0ab4c5eee2d4c79d3487d85450fb2376ebb0f"
@@ -4839,6 +4844,11 @@ commander@2.17.x, commander@^2.11.0, commander@^2.12.1, commander@^2.9.0, comman
   version "2.17.1"
   resolved "https://registry.npmjs.org/commander/-/commander-2.17.1.tgz#bd77ab7de6de94205ceacc72f1716d29f20a77bf"
   integrity sha512-wPMUt6FnH2yzG95SA6mzjQOEKUU3aLaDEmzs1ti+1E9h+CsrZghRlqEM/EJ4KscsQVG8uNN4uVreUeT8+drlgg==
+
+commander@^2.10.0:
+  version "2.20.0"
+  resolved "https://registry.npmjs.org/commander/-/commander-2.20.0.tgz#d58bb2b5c1ee8f87b0d340027e9e94e222c5a422"
+  integrity sha512-7j2y+40w61zy6YC2iRNpUe/NwhNyoXrYpHMrSunaMG64nRnaf96zO/KMQR4OyN/UnE5KLyEBnKHd4aG3rskjpQ==
 
 commander@^2.19.0:
   version "2.19.0"
@@ -15384,6 +15394,15 @@ yargs@^7.0.0, yargs@^7.1.0:
     which-module "^1.0.0"
     y18n "^3.2.1"
     yargs-parser "^5.0.0"
+
+yarn-deduplicate@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.npmjs.org/yarn-deduplicate/-/yarn-deduplicate-1.1.1.tgz#19b4a87654b66f55bf3a4bd6b153b4e4ab1b6e6d"
+  integrity sha512-2FDJ1dFmtvqhRmfja89ohYzpaheCYg7BFBSyaUq+kxK0y61C9oHv1XaQovCWGJtP2WU8PksQOgzMVV7oQOobzw==
+  dependencies:
+    "@yarnpkg/lockfile" "^1.1.0"
+    commander "^2.10.0"
+    semver "^5.3.0"
 
 yauzl@2.4.1:
   version "2.4.1"

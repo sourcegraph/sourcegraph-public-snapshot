@@ -5,6 +5,7 @@ cd $(dirname "${BASH_SOURCE[0]}")
 
 go version
 go env
+./yarn-deduplicate.sh
 ./docsite.sh
 ./gofmt.sh
 ./template-inlines.sh
