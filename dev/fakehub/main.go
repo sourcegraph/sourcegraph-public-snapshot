@@ -70,7 +70,7 @@ func fakehub(n int, ln net.Listener, reposRoot string) error {
 	// Replace [::] with 127.0.0.1 because [::] breaks double-click link opening in Mac terminals.
 	ipv6Rx, err := regexp.Compile(`^\[::\]`)
 	if err != nil {
-		return errors.Wrap(err, "compiling regexp for IPV6 localhost")
+		return errors.Wrap(err, "compiling regexp for IPV6 127.0.0.1")
 	}
 	addr = ipv6Rx.ReplaceAllString(addr, "127.0.0.1")
 	tvars := &templateVars{n, relDirs, addr}
