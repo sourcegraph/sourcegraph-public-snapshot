@@ -49,6 +49,9 @@ func Test_fakehub(t *testing.T) {
 
 		// Config should have no repos.
 		confStr, err := fetch(addr, "/config")
+		if err != nil {
+			t.Fatal(err)
+		}
 		type Conf struct {
 			Url   string
 			Repos []string
