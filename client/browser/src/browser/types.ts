@@ -2,11 +2,6 @@ import { IGraphQLResponseRoot } from '../../../../shared/src/graphql/schema'
 import { GraphQLRequestArgs } from '../shared/backend/graphql'
 import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context';
 
-interface PhabricatorMapping {
-    callsign: string
-    path: string
-}
-
 /**
  * The feature flags available.
  */
@@ -40,7 +35,6 @@ export interface StorageItems {
     sourcegraphURL: string
 
     enterpriseUrls: string[]
-    phabricatorMappings: PhabricatorMapping[]
 
     /**
      * Storage for feature flags.
@@ -86,7 +80,6 @@ interface ClientConfigurationDetails {
 export const defaultStorageItems: StorageItems = {
     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
     enterpriseUrls: [],
-    phabricatorMappings: [],
     featureFlags: featureFlagDefaults,
     clientConfiguration: {
         contentScriptUrls: [],

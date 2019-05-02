@@ -406,17 +406,6 @@ export async function getRepoDetailsFromDifferentialID(differentialID: number): 
 
 async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<PhabricatorRepoDetails | null> {
     if (isExtension) {
-        const items = await storage.sync.get()
-        if (items.phabricatorMappings) {
-            for (const mapping of items.phabricatorMappings) {
-                if (mapping.callsign === repo.fields.callsign) {
-                    return {
-                        callsign: repo.fields.callsign,
-                        repoName: mapping.path,
-                    }
-                }
-            }
-        }
         return convertToDetails(repo)
     }
     // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
