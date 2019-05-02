@@ -147,7 +147,7 @@
     "mz": "^2.7.0",
     "node-sass": "^4.12.0",
     "optimize-css-assets-webpack-plugin": "^5.0.1",
-    "p-retry": "^3.0.1",
+    "p-retry": "^4.1.0",
     "path": "^0.12.7",
     "plugin-error": "^1.0.1",
     "postcss-loader": "^3.0.0",
