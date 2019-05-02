@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -17,7 +18,7 @@ import (
 
 func main() {
 	log.SetPrefix("")
-	n := flag.Int("n", 10, "number of repos to specify in config")
+	n := flag.Int("n", 1, "number of copies to specify in config")
 	addr := flag.String("addr", ":3434", "address on which to serve")
 	flag.Parse()
 	flag.Usage = func() {
@@ -41,36 +42,26 @@ into the text box for adding single repos in sourcegraph Site Admin.
 	}
 }
 
-func fakehub(n int, addr, repoDir string) error {
-	// Configuring the repo such that it can be git cloned.
-	// See https://theartofmachinery.com/2016/07/02/git_over_http.html
-	// for background.
-	c := exec.Command("git", "update-server-info")
-	c.Dir = filepath.Join(repoDir, ".git")
-	out, err := c.CombinedOutput()
+func fakehub(n int, addr, reposRoot string) error {
+	gitDirs, err := configureRepos(reposRoot)
 	if err != nil {
-		return errors.Wrapf(err, "updating server info: %s", out)
-	}
-	if _, err := os.Stat(filepath.Join(repoDir, ".git", "hooks", "post-update")); err != nil {
-		log.Printf("attempting to set up post-update hook")
-		c = exec.Command("mv", "hooks/post-update.sample", "hooks/post-update")
-		c.Dir = filepath.Join(repoDir, ".git")
-		out, err = c.CombinedOutput()
-		if err != nil {
-			return errors.Wrapf(err, "setting post-update hook: %s", out)
-		}
+		return errors.Wrapf(err, "configuring repos under %s", reposRoot)
 	}
 
 	// Start the HTTP server.
-	tvars := &templateVars{n, addr}
+	if strings.HasPrefix(addr, ":") {
+		addr = "127.0.0.1" + addr
+	}
+	tvars := &templateVars{n, gitDirs, addr}
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleDefault(tvars, w, r)
 	})
-	for i := 1; i <= n; i++ {
-		pfx := fmt.Sprintf("/repo/%d/", i)
-		mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(http.Dir(repoDir))))
+	absRoot, err := filepath.Abs(reposRoot)
+	if err != nil {
+		return errors.Wrapf(err, "getting absolute version of repos root dir %s", reposRoot)
 	}
+	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(http.Dir(absRoot))))
 	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		handleConfig(tvars, w, r)
 	})
@@ -78,8 +69,55 @@ func fakehub(n int, addr, repoDir string) error {
 		Addr:    addr,
 		Handler: logger(mux),
 	}
-	log.Printf("listening on http://127.0.0.1%s", s.Addr)
+	log.Printf("listening on http://%s", s.Addr)
 	return s.ListenAndServe()
+}
+
+// configureRepos finds all .git directories and configures them to be served.
+// It returns a slice of all the git directories it finds.
+func configureRepos(root string) ([]string, error) {
+	var gitDirs []string
+	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
+		if !(filepath.Base(path) == ".git" && fi.IsDir()) {
+			return nil
+		}
+		if fileErr != nil {
+			log.Printf("error encountered on %s: %v", path, fileErr)
+			return nil
+		}
+		if err := configureOneRepo(path); err != nil {
+			log.Printf("configuring repo at %s: %v", path, err)
+			return nil
+		}
+		gitDirs = append(gitDirs, path)
+		return nil
+	})
+	if err != nil {
+		return gitDirs, errors.Wrap(err, "configuring repos and gathering git dirs")
+	}
+	return gitDirs, err
+}
+
+// configureOneRepos tweaks a .git repo such that it can be git cloned.
+// See https://theartofmachinery.com/2016/07/02/git_over_http.html
+// for background.
+func configureOneRepo(gitDir string) error {
+	c := exec.Command("git", "update-server-info")
+	c.Dir = gitDir
+	out, err := c.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "updating server info: %s", out)
+	}
+	if _, err := os.Stat(filepath.Join(gitDir, "hooks", "post-update")); err != nil {
+		log.Printf("setting post-update hook on %s", gitDir)
+		c = exec.Command("mv", "hooks/post-update.sample", "hooks/post-update")
+		c.Dir = gitDir
+		out, err = c.CombinedOutput()
+		if err != nil {
+			return errors.Wrapf(err, "setting post-update hook: %s", out)
+		}
+	}
+	return nil
 }
 
 // logger converts the given handler to one that will first log every request.
@@ -145,8 +183,9 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 }
 
 type templateVars struct {
-	n    int
-	Addr string
+	n       int
+	gitDirs []string
+	Addr    string
 }
 
 func (tv *templateVars) Nums() []int {
