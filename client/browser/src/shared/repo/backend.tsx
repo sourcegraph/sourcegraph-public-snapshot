@@ -24,7 +24,7 @@ export const resolveRepo = memoizeObservable(
         queryGraphQL,
     }: {
         repoName: string
-        queryGraphQL: PlatformContext['queryGraphQL']
+        queryGraphQL: PlatformContext['requestGraphQL']
     }): Observable<string> =>
         queryGraphQL<GQL.IQuery>(
             gql`
@@ -60,7 +60,7 @@ export const resolveRev = memoizeObservable(
     }: {
         repoName: string
         rev?: string
-        queryGraphQL: PlatformContext['queryGraphQL']
+        queryGraphQL: PlatformContext['requestGraphQL']
     }): Observable<string> =>
         from(
             queryGraphQL<GQL.IQuery>(
@@ -126,7 +126,7 @@ export const fetchBlobContentLines = memoizeObservable(
     ({
         queryGraphQL,
         ...ctx
-    }: RepoSpec & ResolvedRevSpec & FileSpec & { queryGraphQL: PlatformContext['queryGraphQL'] }): Observable<
+    }: RepoSpec & ResolvedRevSpec & FileSpec & { queryGraphQL: PlatformContext['requestGraphQL'] }): Observable<
         string[]
     > =>
         from(

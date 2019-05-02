@@ -7,7 +7,7 @@ describe('Services', () => {
         new Services({
             settings: NEVER,
             updateSettings: () => Promise.reject(new Error('not implemented')),
-            queryGraphQL: () => NEVER,
+            requestGraphQL: () => NEVER,
             getScriptURLForExtension: scriptURL => scriptURL,
             clientApplication: 'sourcegraph',
             sideloadedExtensionURL: new BehaviorSubject<string | null>(null),

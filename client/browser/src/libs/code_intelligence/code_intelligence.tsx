@@ -218,7 +218,7 @@ export interface FileInfo {
 }
 
 interface CodeIntelligenceProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'queryGraphQL'> {
+    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'> {
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
@@ -353,7 +353,7 @@ export function handleCodeHost({
 }: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
-    const { queryGraphQL } = platformContext
+    const { requestGraphQL: queryGraphQL } = platformContext
 
     const ensureRepoExists = (context: CodeHostContext) =>
         resolveRev({ ...context, queryGraphQL }).pipe(
@@ -428,9 +428,9 @@ export function handleCodeHost({
         trackCodeViews(codeHost),
         mergeMap(codeViewEvent => {
             if (codeViewEvent.type === 'added') {
-                return codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.queryGraphQL).pipe(
+                return codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
                     mergeMap(fileInfo =>
-                        fetchFileContents(fileInfo, platformContext.queryGraphQL).pipe(
+                        fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
                             map(fileInfoWithContents => ({
                                 fileInfo: fileInfoWithContents,
                                 ...codeViewEvent,
@@ -579,7 +579,7 @@ export function handleCodeHost({
                             : fileInfo.rev || fileInfo.commitID,
                 })
                 const adjustPosition = getPositionAdjuster
-                    ? getPositionAdjuster(platformContext.queryGraphQL)
+                    ? getPositionAdjuster(platformContext.requestGraphQL)
                     : undefined
                 codeViewState.subscriptions.add(
                     hoverifier.hoverify({

@@ -34,14 +34,14 @@ export interface CodeView {
      * because some code hosts need to resolve this asynchronously. The
      * observable should only emit once.
      */
-    resolveFileInfo: (codeView: HTMLElement, queryGraphQL: PlatformContext['queryGraphQL']) => Observable<FileInfo>
+    resolveFileInfo: (codeView: HTMLElement, queryGraphQL: PlatformContext['requestGraphQL']) => Observable<FileInfo>
     /**
      * In some situations, we need to be able to adjust the position going into
      * and coming out of codeintellify. For example, Phabricator converts tabs
      * to spaces in it's DOM.
      */
     getPositionAdjuster?: (
-        queryGraphQL: PlatformContext['queryGraphQL']
+        queryGraphQL: PlatformContext['requestGraphQL']
     ) => PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
     /** Props for styling the buttons in the `CodeViewToolbar`. */
     toolbarButtonProps?: ButtonProps
@@ -79,7 +79,7 @@ export interface FileInfoWithContents extends FileInfo {
 
 export const fetchFileContents = (
     info: FileInfo,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfoWithContents> =>
     ensureRevisionsAreCloned(info, queryGraphQL).pipe(
         switchMap(info => {

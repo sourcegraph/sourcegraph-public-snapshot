@@ -16,7 +16,7 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
         base: string | null
         head: string | null
         first?: number
-        queryGraphQL: PlatformContext['queryGraphQL']
+        queryGraphQL: PlatformContext['requestGraphQL']
     }): Observable<GQL.IFileDiffConnection> =>
         queryGraphQL<GQL.IQuery>(
             gql`

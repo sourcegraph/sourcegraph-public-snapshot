@@ -23,7 +23,7 @@ class TestExtensionsService extends ExtensionsService {
     ) {
         super(
             {
-                queryGraphQL: () => {
+                requestGraphQL: () => {
                     throw new Error('not implemented')
                 },
                 getScriptURLForExtension: scriptURL => scriptURL,

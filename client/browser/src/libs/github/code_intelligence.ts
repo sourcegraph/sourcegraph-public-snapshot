@@ -88,7 +88,7 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
 const getSnippetPositionAdjuster = (
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> => ({ direction, codeView, position }) =>
     fetchBlobContentLines({ ...position, queryGraphQL }).pipe(
         map(lines => {

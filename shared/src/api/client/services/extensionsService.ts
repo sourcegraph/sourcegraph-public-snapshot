@@ -42,7 +42,7 @@ const getConfiguredSideloadedExtension = (baseUrl: string) =>
         )
     )
 
-interface PartialContext extends Pick<PlatformContext, 'queryGraphQL' | 'getScriptURLForExtension'> {
+interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension'> {
     sideloadedExtensionURL: Subscribable<string | null>
 }
 
@@ -65,7 +65,7 @@ export class ExtensionsService {
 
     protected configuredExtensions: Subscribable<ConfiguredExtension[]> = viewerConfiguredExtensions({
         settings: this.settingsService.data,
-        queryGraphQL: this.platformContext.queryGraphQL,
+        requestGraphQL: this.platformContext.requestGraphQL,
     })
 
     /**

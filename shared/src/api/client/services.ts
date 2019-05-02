@@ -26,7 +26,7 @@ export class Services {
             PlatformContext,
             | 'settings'
             | 'updateSettings'
-            | 'queryGraphQL'
+            | 'requestGraphQL'
             | 'getScriptURLForExtension'
             | 'clientApplication'
             | 'sideloadedExtensionURL'

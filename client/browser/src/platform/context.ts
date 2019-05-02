@@ -19,7 +19,7 @@ import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { createBlobURLForBundle } from './worker'
 
-const queryGraphQL: PlatformContext['queryGraphQL'] = (request, variables, mightContainPrivateInfo) => {
+const queryGraphQL: PlatformContext['requestGraphQL'] = (request, variables, mightContainPrivateInfo) => {
     if (isInPage) {
         return requestGraphQL({
             request,
@@ -89,7 +89,7 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
             }
             updatedViewerSettings.next(await fetchViewerSettings(queryGraphQL).toPromise())
         },
-        queryGraphQL,
+        requestGraphQL: queryGraphQL,
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },

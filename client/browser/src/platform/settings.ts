@@ -113,7 +113,7 @@ const configurationCascadeFragment = gql`
  * TODO(sqs): This uses the DEPRECATED GraphQL Query.viewerConfiguration and ConfigurationCascade for backcompat.
  */
 export function fetchViewerSettings(
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
     return from(
         queryGraphQL<GQL.IQuery>(gql`
