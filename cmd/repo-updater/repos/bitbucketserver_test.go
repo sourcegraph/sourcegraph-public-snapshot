@@ -40,6 +40,12 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 			Token:                 "secret",
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
 		},
+		"username": {
+			Url:                   "bitbucket.example.com",
+			Username:              "foo",
+			Token:                 "secret",
+			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
+		},
 	}
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -53,6 +59,98 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 			}
 
 			golden := filepath.Join("testdata", "bitbucketserver-repos-"+name+".golden")
+			if *update {
+				err := ioutil.WriteFile(golden, actual, 0644)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			expect, err := ioutil.ReadFile(golden)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(actual, expect) {
+				d, err := diff(actual, expect)
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestBitbucketServerExclude(t *testing.T) {
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repos []*bitbucketserver.Repo
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := map[string]*schema.BitbucketServerConnection{
+		"none": {
+			Url:   "bitbucket.example.com",
+			Token: "secret",
+		},
+		"name": {
+			Url:   "bitbucket.example.com",
+			Token: "secret",
+			Exclude: []*schema.ExcludedBitbucketServerRepo{{
+				Name: "SG/python-langserver-fork",
+			}, {
+				Name: "~KEEGAN/rgp",
+			}},
+		},
+		"id": {
+			Url:     "bitbucket.example.com",
+			Token:   "secret",
+			Exclude: []*schema.ExcludedBitbucketServerRepo{{Id: 4}},
+		},
+		"both": {
+			Url:   "bitbucket.example.com",
+			Token: "secret",
+			// We match on the bitbucket server repo name, not the repository path pattern.
+			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
+			Exclude: []*schema.ExcludedBitbucketServerRepo{{
+				Id: 5,
+			}, {
+				Name: "~KEEGAN/rgp",
+			}},
+		},
+	}
+	for name, config := range cases {
+		t.Run(name, func(t *testing.T) {
+			conn, err := newBitbucketServerConnection(config, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			type output struct {
+				Include []string
+				Exclude []string
+			}
+			var got output
+			for _, r := range repos {
+				name := r.Slug
+				if r.Project != nil {
+					name = r.Project.Key + "/" + name
+				}
+				if conn.excludes(r) {
+					got.Exclude = append(got.Exclude, name)
+				} else {
+					got.Include = append(got.Include, name)
+				}
+			}
+			actual, err := json.MarshalIndent(got, "", "  ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			golden := filepath.Join("testdata", "bitbucketserver-repos-exclude-"+name+".golden")
 			if *update {
 				err := ioutil.WriteFile(golden, actual, 0644)
 				if err != nil {

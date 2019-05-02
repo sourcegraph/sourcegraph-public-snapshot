@@ -359,7 +359,7 @@ func (c *bitbucketServerConnection) excludes(r *bitbucketserver.Repo) bool {
 	if r.Project != nil {
 		name = r.Project.Key + "/" + name
 	}
-	return r.State == "AVAILABLE" &&
+	return r.State != "AVAILABLE" ||
 		c.exclude[strings.ToLower(name)] ||
 		c.exclude[strconv.Itoa(r.ID)] ||
 		(c.config.ExcludePersonalRepositories && r.IsPersonalRepository())

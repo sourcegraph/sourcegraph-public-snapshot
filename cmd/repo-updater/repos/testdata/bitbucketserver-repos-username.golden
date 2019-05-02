@@ -1,11 +1,11 @@
 [
   {
-    "Name": "/SG/go-langserver",
+    "Name": "bb/SG/go-langserver",
     "Description": "go-langserver",
     "Fork": false,
     "Archived": false,
     "VCS": {
-      "URL": "ssh://git@bitbucket.example.com:7999/sg/go-langserver.git"
+      "URL": "https://keegan:secret@bitbucket.example.com/scm/sg/go-langserver.git"
     },
     "Links": {
       "Root": "https://bitbucket.example.com/projects/SG/repos/go-langserver/browse",
@@ -20,12 +20,12 @@
     }
   },
   {
-    "Name": "/SG/python-langserver",
+    "Name": "bb/SG/python-langserver",
     "Description": "python-langserver",
     "Fork": false,
     "Archived": false,
     "VCS": {
-      "URL": "ssh://git@bitbucket.example.com:7999/sg/python-langserver.git"
+      "URL": "https://keegan:secret@bitbucket.example.com/scm/sg/python-langserver.git"
     },
     "Links": {
       "Root": "https://bitbucket.example.com/projects/SG/repos/python-langserver/browse",
@@ -40,12 +40,12 @@
     }
   },
   {
-    "Name": "/SG/python-langserver-fork",
+    "Name": "bb/SG/python-langserver-fork",
     "Description": "python-langserver-fork",
     "Fork": true,
     "Archived": false,
     "VCS": {
-      "URL": "ssh://git@bitbucket.example.com:7999/sg/python-langserver-fork.git"
+      "URL": "https://keegan:secret@bitbucket.example.com/scm/sg/python-langserver-fork.git"
     },
     "Links": {
       "Root": "https://bitbucket.example.com/projects/SG/repos/python-langserver-fork/browse",
@@ -60,12 +60,12 @@
     }
   },
   {
-    "Name": "/~KEEGAN/rgp",
+    "Name": "bb/~KEEGAN/rgp",
     "Description": "rgp",
     "Fork": false,
     "Archived": false,
     "VCS": {
-      "URL": "ssh://git@bitbucket.example.com:7999/~keegan/rgp.git"
+      "URL": "https://keegan:secret@bitbucket.example.com/scm/~keegan/rgp.git"
     },
     "Links": {
       "Root": "https://bitbucket.example.com/users/keegan/repos/rgp/browse",
@@ -80,12 +80,12 @@
     }
   },
   {
-    "Name": "/~KEEGAN/rgp-unavailable",
+    "Name": "bb/~KEEGAN/rgp-unavailable",
     "Description": "rgp-unavailable",
     "Fork": false,
     "Archived": false,
     "VCS": {
-      "URL": "ssh://git@bitbucket.example.com:7999/~keegan/rgp.git"
+      "URL": "https://foo:secret@bitbucket.example.com/scm/~keegan/rgp.git"
     },
     "Links": {
       "Root": "https://bitbucket.example.com/users/keegan/repos/rgp/browse",
