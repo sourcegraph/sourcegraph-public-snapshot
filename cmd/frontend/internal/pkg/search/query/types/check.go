@@ -143,12 +143,14 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 
 var leftParenRx = regexp.MustCompile(`([^\\]|^)\($`)
 var squareBraceRx = regexp.MustCompile(`([^\\]|^)\[$`)
+var leftRightParenRx = regexp.MustCompile(`([^\\]|^)\(\)`)
 
 // autoFix escapes various patterns that are very likely not meant to be
 // treated as regular expressions.
 func autoFix(pat string) string {
 	pat = leftParenRx.ReplaceAllString(pat, `$1\(`)
 	pat = squareBraceRx.ReplaceAllString(pat, `$1\[`)
+	pat = leftRightParenRx.ReplaceAllString(pat, `$1\(\)`)
 	return pat
 }
 
