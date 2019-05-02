@@ -23,6 +23,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
 - Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
+- Fixed an issue where Sourcegraph would fail to update repositories on some instances (`pq: duplicate key value violates unique constraint "repo_external_service_unique_idx"`) (#3680)
+- Fixed an issue where Sourcegraph would not exclude unavailable Bitbucket Server repositories. (#3772)
 
 ## 3.3.6
 
