@@ -15,7 +15,7 @@ import (
 
 func init() {
 	conf.ContributeValidator(func(c conf.Unified) (problems []string) {
-		for _, c := range conf.Get().GitCloneURLToRepositoryName {
+		for _, c := range c.GitCloneURLToRepositoryName {
 			if _, err := regexp.Compile(c.From); err != nil {
 				problems = append(problems, fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From))
 			}
