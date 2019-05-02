@@ -18,7 +18,7 @@ import (
 
 func main() {
 	log.SetPrefix("")
-	n := flag.Int("n", 1, "number of copies to specify in config")
+	numCopies := flag.Int("copies", 0, "number of copies of each repo to make")
 	addr := flag.String("addr", ":3434", "address on which to serve")
 	flag.Parse()
 	flag.Usage = func() {
@@ -37,12 +37,12 @@ into the text box for adding single repos in sourcegraph Site Admin.
 		os.Exit(1)
 	}
 	repoDir := flag.Arg(0)
-	if err := fakehub(*n, *addr, repoDir); err != nil {
+	if err := fakehub(*numCopies, *addr, repoDir); err != nil {
 		log.Fatalf("fakehub: %v", err)
 	}
 }
 
-func fakehub(n int, addr, reposRoot string) error {
+func fakehub(numCopies int, addr, reposRoot string) error {
 	gitDirs, err := configureRepos(reposRoot)
 	if err != nil {
 		return errors.Wrapf(err, "configuring repos under %s", reposRoot)
@@ -56,7 +56,7 @@ func fakehub(n int, addr, reposRoot string) error {
 		}
 		gitDirs[i] = "/repos/" + gitDirs[i]
 	}
-	tvars := &templateVars{n, gitDirs, addr}
+	tvars := &templateVars{numCopies, gitDirs, addr}
 
 	// Start the HTTP server.
 	if strings.HasPrefix(addr, ":") {
@@ -66,11 +66,11 @@ func fakehub(n int, addr, reposRoot string) error {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleDefault(tvars, w, r)
 	})
-	absRoot, err := filepath.Abs(reposRoot)
-	if err != nil {
-		return errors.Wrapf(err, "getting absolute version of repos root dir %s", reposRoot)
+	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(http.Dir(reposRoot))))
+	for i := 1; i <= numCopies; i++ {
+		pfx := fmt.Sprintf("/copies/%d/", i)
+		mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(http.Dir(reposRoot))))
 	}
-	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(http.Dir(absRoot))))
 	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		handleConfig(tvars, w, r)
 	})
@@ -147,6 +147,9 @@ func handleDefault(tvars *templateVars, w http.ResponseWriter, r *http.Request) 
 		{{range .GitDirs}}
 			<div><a href="{{.}}">{{.}}</a></div>
 		{{end}}
+		{{range .Copies}}
+			<div><a href="{{.}}">{{.}}</a></div>
+		{{end}}
 	</div>
 </div>
 `
@@ -172,6 +175,7 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 {
   "url": "http://127.0.0.1{{.Addr}}",
   "repos": [{{range .GitDirs}}
+      "{{.}}",{{end}}{{range .Copies}}
       "{{.}}",{{end}}
   ]
 }
@@ -193,15 +197,18 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 }
 
 type templateVars struct {
-	n       int
-	GitDirs []string
-	Addr    string
+	numCopies int
+	GitDirs   []string
+	Addr      string
 }
 
-func (tv *templateVars) Nums() []int {
-	var nums []int
-	for i := 1; i <= tv.n; i++ {
-		nums = append(nums, i)
+func (tv *templateVars) Copies() []string {
+	var copies []string
+	for i := 1; i <= tv.numCopies; i++ {
+		for _, gd := range tv.GitDirs {
+			gd = strings.Replace(gd, "/repos/", "", -1)
+			copies = append(copies, fmt.Sprintf("/copies/%d/%s", i, gd))
+		}
 	}
-	return nums
+	return copies
 }
