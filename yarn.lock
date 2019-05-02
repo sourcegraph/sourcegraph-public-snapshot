@@ -1459,7 +1459,8 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
@@ -2340,13 +2341,6 @@
   dependencies:
     "@types/webpack" "*"
 
-"@types/p-retry@3.0.0":
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/@types/p-retry/-/p-retry-3.0.0.tgz#d0bbf6ebe7fffadebbdd02058c38d39bf85901d9"
-  integrity sha512-whxkmt2onv2KJ8FrKtdzUiLvPns99e7JBk47bKq5OOnhugZrx9+QOp3s4+9W8jv1jfzXxLGbEN+yrT7HjRoijQ==
-  dependencies:
-    "@types/retry" "*"
-
 "@types/plugin-error@0.1.1":
   version "0.1.1"
   resolved "https://registry.npmjs.org/@types/plugin-error/-/plugin-error-0.1.1.tgz#22da36bc716285d2d1fbea7434ae3006f46801ba"
@@ -2448,7 +2442,7 @@
     "@types/react" "*"
     popper.js "^1.14.1"
 
-"@types/retry@*", "@types/retry@^0.12.0":
+"@types/retry@^0.12.0":
   version "0.12.0"
   resolved "https://registry.npmjs.org/@types/retry/-/retry-0.12.0.tgz#2b35eccfcee7d38cd72ad99232fbd58bffb3c84d"
   integrity sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==
@@ -13363,7 +13357,8 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.0, source-map@~0.6.1:
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "23.0.1"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
