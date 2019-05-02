@@ -401,7 +401,7 @@ Referenced by:
  external_service_id     | text                     | 
  enabled                 | boolean                  | not null default true
  archived                | boolean                  | not null default false
- uri                     | citext                   | not null
+ uri                     | citext                   | 
  deleted_at              | timestamp with time zone | 
  sources                 | jsonb                    | not null default '{}'::jsonb
  metadata                | jsonb                    | not null default '{}'::jsonb
@@ -419,8 +419,6 @@ Check constraints:
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
-Triggers:
-    trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW EXECUTE PROCEDURE set_repo_name()
 
 ```
 
