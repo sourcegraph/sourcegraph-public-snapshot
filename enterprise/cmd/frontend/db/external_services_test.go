@@ -257,7 +257,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
 				"exclude": [
-					{"name": "foo/bar", "id": 1234}
+					{"name": "foo/bar", "id": 1234},
+					{"pattern": "^private/.*"}
 				]
 			}`,
 			assert: equals(`<nil>`),
@@ -273,6 +274,21 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "invalid empty repos item",
 			config: `{"repos": [""]}`,
 			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "invalid exclude pattern",
+			config: `
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
+				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
+				"exclude": [
+					{"pattern": "["}
+				]
+			}`,
+			assert: includes(`exclude.0.pattern: Does not match format 'regex'`),
 		},
 		{
 			kind: "BITBUCKETSERVER",
