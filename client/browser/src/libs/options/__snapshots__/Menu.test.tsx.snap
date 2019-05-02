@@ -49,13 +49,13 @@ exports[`ServerURLForm doesn't render the permissions alert on about://addons 1`
       className="server-url-form__input-container"
     >
       <div
-        className="server-url-form__input-container__status"
+        className="server-url-form__status"
       >
         <span
-          className="server-url-form__input-container__status__indicator server-url-form__input-container__status__indicator--success"
+          className="server-url-form__status-indicator server-url-form__status-indicator--success"
         />
         <span
-          className="server-url-form__input-container__status__text"
+          className="server-url-form__status-text"
         >
           Connected
         </span>
@@ -63,7 +63,7 @@ exports[`ServerURLForm doesn't render the permissions alert on about://addons 1`
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input-container__input"
+        className="server-url-form__input"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -123,13 +123,13 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://extensio
       className="server-url-form__input-container"
     >
       <div
-        className="server-url-form__input-container__status"
+        className="server-url-form__status"
       >
         <span
-          className="server-url-form__input-container__status__indicator server-url-form__input-container__status__indicator--success"
+          className="server-url-form__status-indicator server-url-form__status-indicator--success"
         />
         <span
-          className="server-url-form__input-container__status__text"
+          className="server-url-form__status-text"
         >
           Connected
         </span>
@@ -137,7 +137,7 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://extensio
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input-container__input"
+        className="server-url-form__input"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -197,13 +197,13 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://newtab 1
       className="server-url-form__input-container"
     >
       <div
-        className="server-url-form__input-container__status"
+        className="server-url-form__status"
       >
         <span
-          className="server-url-form__input-container__status__indicator server-url-form__input-container__status__indicator--success"
+          className="server-url-form__status-indicator server-url-form__status-indicator--success"
         />
         <span
-          className="server-url-form__input-container__status__text"
+          className="server-url-form__status-text"
         >
           Connected
         </span>
@@ -211,7 +211,7 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://newtab 1
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input-container__input"
+        className="server-url-form__input"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -271,13 +271,13 @@ exports[`ServerURLForm renders a default state 1`] = `
       className="server-url-form__input-container"
     >
       <div
-        className="server-url-form__input-container__status"
+        className="server-url-form__status"
       >
         <span
-          className="server-url-form__input-container__status__indicator server-url-form__input-container__status__indicator--success"
+          className="server-url-form__status-indicator server-url-form__status-indicator--success"
         />
         <span
-          className="server-url-form__input-container__status__text"
+          className="server-url-form__status-text"
         >
           Connected
         </span>
@@ -285,7 +285,7 @@ exports[`ServerURLForm renders a default state 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input-container__input"
+        className="server-url-form__input"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -345,13 +345,13 @@ exports[`ServerURLForm renders the current tab permissions alert 1`] = `
       className="server-url-form__input-container"
     >
       <div
-        className="server-url-form__input-container__status"
+        className="server-url-form__status"
       >
         <span
-          className="server-url-form__input-container__status__indicator server-url-form__input-container__status__indicator--success"
+          className="server-url-form__status-indicator server-url-form__status-indicator--success"
         />
         <span
-          className="server-url-form__input-container__status__text"
+          className="server-url-form__status-text"
         >
           Connected
         </span>
@@ -359,7 +359,7 @@ exports[`ServerURLForm renders the current tab permissions alert 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input-container__input"
+        className="server-url-form__input"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -442,13 +442,13 @@ exports[`ServerURLForm renders the feature flags 1`] = `
       className="server-url-form__input-container"
     >
       <div
-        className="server-url-form__input-container__status"
+        className="server-url-form__status"
       >
         <span
-          className="server-url-form__input-container__status__indicator server-url-form__input-container__status__indicator--success"
+          className="server-url-form__status-indicator server-url-form__status-indicator--success"
         />
         <span
-          className="server-url-form__input-container__status__text"
+          className="server-url-form__status-text"
         >
           Connected
         </span>
@@ -456,7 +456,7 @@ exports[`ServerURLForm renders the feature flags 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input-container__input"
+        className="server-url-form__input"
         onChange={[Function]}
         spellCheck={false}
         type="text"
