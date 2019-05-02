@@ -12082,10 +12082,10 @@ react-split-pane@^0.1.84:
     react-lifecycles-compat "^3.0.4"
     react-style-proptype "^3.0.0"
 
-react-stripe-elements@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.npmjs.org/react-stripe-elements/-/react-stripe-elements-2.0.3.tgz#cfd0f68d00ce52a07aab1cb2b59b29dc12309486"
-  integrity sha512-aKLiWyfP0n3Gq42BKykULgoruNVRXEaeYh8NSokdgH3ubGU3nsHFZJg3LgbT/XOquttDGHE7kLhleaX+UnN81A==
+react-stripe-elements@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/react-stripe-elements/-/react-stripe-elements-3.0.0.tgz#8b5e354e6e421b85f909329c9818a719b132410a"
+  integrity sha512-ouGHPmPhdg7KUTOFVuYIr0UWVgBjG5CqmOn9/y0vaJICryPB6llkiOGeUXKrac7fu1/vtPdn8t/4JKnbi8PT8g==
   dependencies:
     prop-types "^15.5.10"
 
