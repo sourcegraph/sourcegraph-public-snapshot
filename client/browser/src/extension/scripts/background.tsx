@@ -144,7 +144,7 @@ async function main(): Promise<void> {
         })
     }
 
-    // Inject content script whenever a new tab was opened with a URL that we have premissions for
+    // Inject content script whenever a new tab was opened with a URL that we have permissions for
     browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         if (
             changeInfo.status === 'complete' &&
