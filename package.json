@@ -170,7 +170,6 @@
     "ts-loader": "^5.4.5",
     "ts-node": "^7.0.1",
     "tslint": "^5.16.0",
-    "tslint-language-service": "^0.9.9",
     "typedoc": "^0.14.2",
     "typescript": "3.5.0-dev.20190406",
     "utc-version": "^1.1.0",
