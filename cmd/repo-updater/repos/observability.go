@@ -393,7 +393,6 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 		otlog.Object("args.names", args.Names),
 		otlog.Object("args.ids", args.IDs),
 		otlog.Object("args.kinds", args.Kinds),
-		otlog.Bool("args.deleted", args.Deleted),
 	)
 
 	defer func(began time.Time) {

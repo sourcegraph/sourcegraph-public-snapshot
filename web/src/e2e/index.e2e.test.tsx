@@ -79,6 +79,7 @@ describe('e2e test suite', function(this: any): void {
             }
             browser = await puppeteer.launch(launchOpt)
             page = await browser.newPage()
+            page.on('console', message => console.log('Browser console message:', JSON.stringify(message)))
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2

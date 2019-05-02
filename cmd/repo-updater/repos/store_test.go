@@ -437,14 +437,14 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
-			want.Apply(repos.Opt.RepoDeletedAt(now))
-			args := repos.StoreListReposArgs{Deleted: true}
+			deleted := want.Clone().With(repos.Opt.RepoDeletedAt(now))
+			args := repos.StoreListReposArgs{}
 
-			if err = tx.UpsertRepos(ctx, want.Clone()...); err != nil {
-				t.Errorf("UpsertRepos error: %s", err)
+			if err = tx.UpsertRepos(ctx, deleted...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, args); err != nil {
 				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, want); diff != "" {
+			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
@@ -593,12 +593,9 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	{
 		stored := repositories.With(repos.Opt.RepoDeletedAt(now))
 		testCases = append(testCases, testCase{
-			name: "includes soft deleted repos",
-			args: func(repos.Repos) repos.StoreListReposArgs {
-				return repos.StoreListReposArgs{Deleted: true}
-			},
+			name:   "excludes deleted repos",
 			stored: stored,
-			repos:  repos.Assert.ReposEqual(stored...),
+			repos:  repos.Assert.ReposEqual(),
 		})
 	}
 

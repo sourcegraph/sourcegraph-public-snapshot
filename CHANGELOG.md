@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- The `bitbucketserver.exclude` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) additionally allows you to exclude repositories matched by a regular expression (so that they won't be synced).
+
 ### Changed
 
 ### Removed
@@ -20,6 +22,9 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
+- Fixed an issue where Sourcegraph would fail to update repositories on some instances (`pq: duplicate key value violates unique constraint "repo_external_service_unique_idx"`) (#3680)
+- Fixed an issue where Sourcegraph would not exclude unavailable Bitbucket Server repositories. (#3772)
 
 ## 3.3.6
 
@@ -112,6 +117,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed an issue where the site-admin repositories page `Cloning`, `Not Cloned`, `Needs Index` tabs were very slow on instances with thousands of repositories.
 - Fixed an issue where failing to syntax highlight a single file would take down the entire syntax highlighting service.
+
+## 3.2.5
+
+### Fixed
+
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
 
 ## 3.2.4
 

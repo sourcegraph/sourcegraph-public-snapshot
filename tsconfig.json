@@ -13,12 +13,7 @@
     "skipLibCheck": true,
     "noErrorTruncation": true,
     "importHelpers": true,
-    "resolveJsonModule": true,
-    "plugins": [
-      {
-        "name": "tslint-language-service"
-      }
-    ]
+    "resolveJsonModule": true
   },
 
   "files": ["gulpfile.ts"],

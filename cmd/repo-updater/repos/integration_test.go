@@ -52,7 +52,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},
-		{"Syncer/Sync", testSyncerSync(store)},
+		{"DBStore/Syncer/Sync", testSyncerSync(store)},
 		{"Migrations/GithubSetDefaultRepositoryQuery",
 			testGithubSetDefaultRepositoryQueryMigration(store)},
 		{"Migrations/GitLabSetDefaultProjectQuery",
