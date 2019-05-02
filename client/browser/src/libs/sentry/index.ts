@@ -3,7 +3,7 @@ import { once } from 'lodash'
 import { observeStorageKey } from '../../browser/storage'
 import { featureFlagDefaults } from '../../browser/types'
 import { isInPage } from '../../context'
-import { getExtensionVersion } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion } from '../../shared/util/context'
 import { determineCodeHost } from '../code_intelligence'
 
 const isExtensionStackTrace = (stacktrace: Sentry.Stacktrace, extensionID: string): boolean =>
@@ -60,7 +60,7 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
 
     observeStorageKey('sync', 'sourcegraphURL').subscribe(url => {
         Sentry.configureScope(scope => {
-            scope.setTag('using_dot_com', url === 'https://sourcegraph.com' ? 'true' : 'false')
+            scope.setTag('using_dot_com', url === DEFAULT_SOURCEGRAPH_URL ? 'true' : 'false')
         })
     })
 }

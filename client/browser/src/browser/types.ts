@@ -1,5 +1,6 @@
 import { IGraphQLResponseRoot } from '../../../../shared/src/graphql/schema'
 import { GraphQLRequestArgs } from '../shared/backend/graphql'
+import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context';
 
 interface RepoLocations {
     [key: string]: string
@@ -68,7 +69,7 @@ interface ClientConfigurationDetails {
 }
 
 export const defaultStorageItems: StorageItems = {
-    sourcegraphURL: 'https://sourcegraph.com',
+    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
 
     identity: '',
     enterpriseUrls: [],
@@ -80,7 +81,7 @@ export const defaultStorageItems: StorageItems = {
     clientConfiguration: {
         contentScriptUrls: [],
         parentSourcegraph: {
-            url: 'https://sourcegraph.com',
+            url: DEFAULT_SOURCEGRAPH_URL,
         },
     },
     clientSettings: '',
