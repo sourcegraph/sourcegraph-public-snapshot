@@ -1,4 +1,4 @@
-// Command fakehub serves multiple instances of a local git repository over HTTP,
+// Command fakehub serves git repositories within some directory over HTTP,
 // along with a pastable config for easier manual testing of sourcegraph.
 package main
 
