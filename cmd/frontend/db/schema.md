@@ -384,7 +384,7 @@ Referenced by:
 
 # Table "public.repo"
 ```
-         Column        |           Type           |                     Modifiers                     
+        Column         |           Type           |                     Modifiers                     
 -----------------------+--------------------------+---------------------------------------------------
  id                    | integer                  | not null default nextval('repo_id_seq'::regclass)
  name                  | citext                   | not null
