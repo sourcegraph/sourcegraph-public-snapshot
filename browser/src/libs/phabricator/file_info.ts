@@ -9,7 +9,7 @@ import { getPhabricatorState } from './util'
 
 export const resolveRevisionFileInfo = (
     codeView: HTMLElement,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     from(getPhabricatorState(window.location, queryGraphQL)).pipe(
         filter((state): state is RevisionState => state !== null && state.mode === PhabricatorMode.Revision),
@@ -26,7 +26,7 @@ export const resolveRevisionFileInfo = (
 
 export const resolveDiffFileInfo = (
     codeView: HTMLElement,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     from(getPhabricatorState(window.location, queryGraphQL)).pipe(
         filter(state => state !== null && state.mode === PhabricatorMode.Differential),
@@ -109,7 +109,7 @@ export const resolveDiffFileInfo = (
 
 export const resolveDiffusionFileInfo = (
     codeView: HTMLElement,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     from(getPhabricatorState(window.location, queryGraphQL)).pipe(
         filter((state): state is DiffusionState => state !== null && state.mode === PhabricatorMode.Diffusion)

@@ -31,7 +31,7 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
 }
 
 export interface CodeViewToolbarProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'queryGraphQL'>,
+    extends PlatformContextProps<'forceUpdateTooltip' | 'requestGraphQL'>,
         ExtensionsControllerProps,
         FileInfoWithContents,
         TelemetryProps,
@@ -54,10 +54,10 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            fetchSite(this.props.platformContext.queryGraphQL).subscribe(site => this.setState(() => ({ site })))
+            fetchSite(this.props.platformContext.requestGraphQL).subscribe(site => this.setState(() => ({ site })))
         )
         this.subscriptions.add(
-            fetchCurrentUser(this.props.platformContext.queryGraphQL).subscribe(currentUser =>
+            fetchCurrentUser(this.props.platformContext.requestGraphQL).subscribe(currentUser =>
                 this.setState(() => ({ currentUser }))
             )
         )

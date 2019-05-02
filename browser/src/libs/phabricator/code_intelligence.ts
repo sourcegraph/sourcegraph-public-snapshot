@@ -47,7 +47,7 @@ const adjustCharacter = (position: Position, adjustment: number): Position => ({
 })
 
 const getPositionAdjuster = (
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> => ({ direction, codeView, position }) =>
     fetchBlobContentLines({ ...position, queryGraphQL }).pipe(
         map(lines => {

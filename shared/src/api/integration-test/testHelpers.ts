@@ -45,7 +45,7 @@ interface Mocks
         PlatformContext,
         | 'settings'
         | 'updateSettings'
-        | 'queryGraphQL'
+        | 'requestGraphQL'
         | 'getScriptURLForExtension'
         | 'clientApplication'
         | 'sideloadedExtensionURL'
@@ -54,13 +54,13 @@ interface Mocks
 const NOOP_MOCKS: Mocks = {
     settings: NEVER,
     updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
-    queryGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
+    requestGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
     getScriptURLForExtension: scriptURL => scriptURL,
     clientApplication: 'sourcegraph',
     sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
 }
 
-/**
+/**requestGraphQL
  * Set up a new client-extension integration test.
  *
  * @internal

@@ -15,7 +15,7 @@ import { PlatformContext } from '../platform/context'
  */
 export function registerBuiltinClientCommands(
     { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
-    context: Pick<PlatformContext, 'queryGraphQL'>
+    context: Pick<PlatformContext, 'requestGraphQL'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -89,7 +89,7 @@ export function registerBuiltinClientCommands(
                 // extension) to check that parameter and prevent the request
                 // from being sent to Sourcegraph.com.
                 from(
-                    context.queryGraphQL(
+                    context.requestGraphQL(
                         gql`
                             ${query}
                         `,

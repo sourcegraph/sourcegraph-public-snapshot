@@ -254,7 +254,7 @@ interface CreatePhabricatorRepoOptions {
     callsign: string
     repoName: string
     phabricatorURL: string
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 }
 
 const createPhabricatorRepo = memoizeObservable(
@@ -279,7 +279,7 @@ interface PhabricatorRepoDetails {
 
 export function getRepoDetailsFromCallsign(
     callsign: string,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Promise<PhabricatorRepoDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
@@ -355,7 +355,7 @@ export function getSourcegraphURLFromConduit(): Promise<string> {
 
 function getRepoDetailsFromRepoPHID(
     phid: string,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Promise<PhabricatorRepoDetails> {
     return new Promise((resolve, reject) => {
         const form = createConduitRequestForm()
@@ -403,7 +403,7 @@ function getRepoDetailsFromRepoPHID(
 
 export async function getRepoDetailsFromDifferentialID(
     differentialID: number,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Promise<PhabricatorRepoDetails> {
     const repositoryPHID = await getRepoPHIDForDifferentialID(differentialID)
     return await getRepoDetailsFromRepoPHID(repositoryPHID, queryGraphQL)
@@ -474,7 +474,7 @@ interface ResolveStagingOptions {
     authorName?: string
     authorEmail?: string
     description?: string
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 }
 
 const resolveStagingRev = memoizeObservable(
@@ -624,7 +624,7 @@ interface ResolvedDiff {
 
 export function resolveDiffRev(
     props: ResolveDiffOpt,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Observable<ResolvedDiff> {
     // TODO: Do a proper refactor and convert all of this function call and it's deps from Promises to Observables.
     return from(

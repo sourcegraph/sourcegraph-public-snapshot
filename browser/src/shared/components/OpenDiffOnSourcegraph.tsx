@@ -8,7 +8,7 @@ import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName, sourcegraphUrl } from '../util/context'
 import { SourcegraphIconButton } from './Button'
 
-interface Props extends PlatformContextProps<'queryGraphQL'> {
+interface Props extends PlatformContextProps<'requestGraphQL'> {
     openProps: OpenDiffInSourcegraphProps
     className?: string
     iconClassName?: string
@@ -30,7 +30,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        const { queryGraphQL } = this.props.platformContext
+        const { requestGraphQL: queryGraphQL } = this.props.platformContext
         this.subscriptions.add(
             // Fetch all fileDiffs in a given comparison. We rely on queryRepositoryComparisonFileDiffs
             // being memoized so that there is at most one network request when viewing

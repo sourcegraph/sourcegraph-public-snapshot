@@ -59,7 +59,7 @@ export interface PlatformContext {
      * could leak private information such as repository names.
      * @return Observable that emits the result or an error if the HTTP request failed
      */
-    queryGraphQL<R extends GQL.IQuery | GQL.IMutation>(
+    requestGraphQL<R extends GQL.IQuery | GQL.IMutation>(
         request: GraphQLDocument,
         variables?: { [name: string]: any },
         mightContainPrivateInfo?: boolean

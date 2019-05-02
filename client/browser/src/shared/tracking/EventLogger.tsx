@@ -12,7 +12,7 @@ const uidKey = 'sourcegraphAnonymousUid'
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
 
-    constructor(private queryGraphQL: PlatformContext['queryGraphQL']) {
+    constructor(private queryGraphQL: PlatformContext['requestGraphQL']) {
         // Fetch user ID on initial load.
         this.getAnonUserID().then(
             () => {

@@ -13,12 +13,12 @@ import { ConfiguredRegistryExtension, extensionIDsFromSettings, toConfiguredRegi
  */
 export function viewerConfiguredExtensions({
     settings,
-    queryGraphQL,
-}: Pick<PlatformContext, 'settings' | 'queryGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
+    requestGraphQL,
+}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
     return from(settings).pipe(
         map(settings => extensionIDsFromSettings(settings)),
         distinctUntilChanged((a, b) => isEqual(a, b)),
-        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ queryGraphQL }, extensionIDs)),
+        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ requestGraphQL }, extensionIDs)),
         catchError(error => throwError(asError(error))),
         publishReplay(),
         refCount()
@@ -31,7 +31,7 @@ export function viewerConfiguredExtensions({
  * @returns An observable that emits once with the results.
  */
 export function queryConfiguredRegistryExtensions(
-    { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     extensionIDs: string[]
 ): Observable<ConfiguredRegistryExtension[]> {
     if (extensionIDs.length === 0) {
@@ -42,7 +42,7 @@ export function queryConfiguredRegistryExtensions(
         prioritizeExtensionIDs: extensionIDs,
     }
     return from(
-        queryGraphQL<GQL.IQuery>(
+        requestGraphQL<GQL.IQuery>(
             gql`
                 query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                     extensionRegistry {

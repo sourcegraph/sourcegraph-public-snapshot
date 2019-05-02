@@ -12,7 +12,7 @@ export class SearchCommand {
 
     private prev: { query: string; suggestions: browser.omnibox.SuggestResult[] } = { query: '', suggestions: [] }
 
-    constructor(private queryGraphQL: PlatformContext['queryGraphQL']) {}
+    constructor(private queryGraphQL: PlatformContext['requestGraphQL']) {}
 
     public getSuggestions = (query: string): Promise<browser.omnibox.SuggestResult[]> =>
         new Promise(resolve => {

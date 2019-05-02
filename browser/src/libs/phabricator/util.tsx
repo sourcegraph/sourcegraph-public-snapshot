@@ -135,7 +135,7 @@ function getBaseCommitIDFromRevisionPage(): string | null {
 
 export async function getPhabricatorState(
     loc: Location,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Promise<DiffusionState | DifferentialState | RevisionState | ChangeState | null> {
     const stateUrl = loc.href.replace(loc.origin, '')
     const diffusionMatch = PHAB_DIFFUSION_REGEX.exec(stateUrl)

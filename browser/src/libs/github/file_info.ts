@@ -10,7 +10,7 @@ import { getDeltaFileName, getDiffResolvedRev, getGitHubState, parseURL } from '
 
 export const resolveDiffFileInfo = (
     codeView: HTMLElement,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     of(codeView).pipe(
         map(codeView => {
@@ -100,7 +100,7 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
 
 export const resolveSnippetFileInfo = (
     codeView: HTMLElement,
-    queryGraphQL: PlatformContext['queryGraphQL']
+    queryGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     of(codeView).pipe(
         map(codeView => {

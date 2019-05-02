@@ -38,11 +38,11 @@ const createMockController = (services: Services): Controller => ({
 
 const createMockPlatformContext = (
     partialMocks?: Partial<PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'>>
-): PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile' | 'queryGraphQL'> => ({
+): PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile' | 'requestGraphQL'> => ({
     platformContext: {
         forceUpdateTooltip: jest.fn(),
         urlToFile: jest.fn(),
-        queryGraphQL: jest.fn(() => throwError(new PrivateRepoPublicSourcegraphComError(''))),
+        requestGraphQL: jest.fn(() => throwError(new PrivateRepoPublicSourcegraphComError(''))),
         sideloadedExtensionURL: new Subject<string | null>(),
         ...partialMocks,
     },
