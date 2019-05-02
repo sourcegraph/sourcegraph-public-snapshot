@@ -7,12 +7,12 @@
     display: block;
     overflow-x: auto;
     padding: 0.5em;
-    color: #333;
+    color: #333333;
 }
 
 .hljs-comment,
 .hljs-quote {
-    color: #998;
+    color: #999988;
 }
 
 .hljs-keyword,
@@ -31,7 +31,7 @@
 
 .hljs-string,
 .hljs-doctag {
-    color: #d14;
+    color: #dd1144;
 }
 
 .hljs-title,
@@ -50,7 +50,7 @@
 
 .hljs-type,
 .hljs-class .hljs-title {
-    color: #458;
+    color: #445588;
 }
 
 .hljs-tag,
@@ -76,16 +76,16 @@
 }
 
 .hljs-meta {
-    color: #999;
+    color: #999999;
     font-weight: bold;
 }
 
 .hljs-deletion {
-    background: #fdd;
+    background: #ffdddd;
 }
 
 .hljs-addition {
-    background: #dfd;
+    background: #ddffdd;
 }
 
 .hljs-emphasis {
