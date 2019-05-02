@@ -18,7 +18,7 @@ import (
 
 func main() {
 	log.SetPrefix("")
-	numCopies := flag.Int("copies", 0, "number of copies of each repo to make")
+	n := flag.Int("n", 1, "number of instances of each repo to make")
 	addr := flag.String("addr", ":3434", "address on which to serve")
 	flag.Parse()
 	flag.Usage = func() {
@@ -37,26 +37,27 @@ into the text box for adding single repos in sourcegraph Site Admin.
 		os.Exit(1)
 	}
 	repoDir := flag.Arg(0)
-	if err := fakehub(*numCopies, *addr, repoDir); err != nil {
+	if err := fakehub(*n, *addr, repoDir); err != nil {
 		log.Fatalf("fakehub: %v", err)
 	}
 }
 
-func fakehub(numCopies int, addr, reposRoot string) error {
+func fakehub(n int, addr, reposRoot string) error {
 	gitDirs, err := configureRepos(reposRoot)
 	if err != nil {
 		return errors.Wrapf(err, "configuring repos under %s", reposRoot)
 	}
 
 	// Set up the template vars for pages.
-	for i, gd := range gitDirs {
-		gitDirs[i], err = filepath.Rel(reposRoot, gd)
+	var relDirs []string
+	for _, gd := range gitDirs {
+		rd, err := filepath.Rel(reposRoot, gd)
 		if err != nil {
 			return errors.Wrap(err, "getting relative path of git dir")
 		}
-		gitDirs[i] = "/repos/" + gitDirs[i]
+		relDirs = append(relDirs, rd)
 	}
-	tvars := &templateVars{numCopies, gitDirs, addr}
+	tvars := &templateVars{n, relDirs, addr}
 
 	// Start the HTTP server.
 	if strings.HasPrefix(addr, ":") {
@@ -66,11 +67,16 @@ func fakehub(numCopies int, addr, reposRoot string) error {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleDefault(tvars, w, r)
 	})
-	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(http.Dir(reposRoot))))
-	for i := 1; i <= numCopies; i++ {
-		pfx := fmt.Sprintf("/copies/%d/", i)
-		mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(http.Dir(reposRoot))))
+
+	if n == 1 {
+		mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(http.Dir(reposRoot))))
+	} else {
+		for i := 1; i <= n; i++ {
+			pfx := fmt.Sprintf("/repos/%d/", i)
+			mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(http.Dir(reposRoot))))
+		}
 	}
+
 	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		handleConfig(tvars, w, r)
 	})
@@ -143,13 +149,8 @@ func handleDefault(tvars *templateVars, w http.ResponseWriter, r *http.Request) 
 <p><a href="/config">config</a></p>
 <div>
 	<div>repos:</div>
-	<div>
-		{{range .GitDirs}}
-			<div><a href="{{.}}">{{.}}</a></div>
-		{{end}}
-		{{range .Copies}}
-			<div><a href="{{.}}">{{.}}</a></div>
-		{{end}}
+	<div>{{range .Repos}}
+		<div><a href="{{.}}">{{.}}</a></div>{{end}}
 	</div>
 </div>
 `
@@ -174,8 +175,7 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
 {
   "url": "http://127.0.0.1{{.Addr}}",
-  "repos": [{{range .GitDirs}}
-      "{{.}}",{{end}}{{range .Copies}}
+  "repos": [{{range .Repos}}
       "{{.}}",{{end}}
   ]
 }
@@ -197,18 +197,24 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 }
 
 type templateVars struct {
-	numCopies int
-	GitDirs   []string
-	Addr      string
+	n       int
+	RelDirs []string
+	Addr    string
 }
 
-func (tv *templateVars) Copies() []string {
-	var copies []string
-	for i := 1; i <= tv.numCopies; i++ {
-		for _, gd := range tv.GitDirs {
-			gd = strings.Replace(gd, "/repos/", "", -1)
-			copies = append(copies, fmt.Sprintf("/copies/%d/%s", i, gd))
+// Repos returns a slice of URL paths for all the repos, including any copies.
+func (tv *templateVars) Repos() []string {
+	var paths []string
+	if tv.n == 1 {
+		for _, rd := range tv.RelDirs {
+			paths = append(paths, "/repos/" + rd)
+		}
+	} else {
+		for i := 1; i <= tv.n; i++ {
+			for _, rd := range tv.RelDirs {
+				paths = append(paths, fmt.Sprint("/repos/", i, "/", rd))
+			}
 		}
 	}
-	return copies
+	return paths
 }
