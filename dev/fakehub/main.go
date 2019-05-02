@@ -6,10 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -19,7 +21,7 @@ import (
 func main() {
 	log.SetPrefix("")
 	n := flag.Int("n", 1, "number of instances of each repo to make")
-	addr := flag.String("addr", ":3434", "address on which to serve")
+	addr := flag.String("addr", ":0", "address on which to serve (default picks an unused port)")
 	flag.Parse()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] path/to/git/repo
@@ -37,12 +39,16 @@ into the text box for adding single repos in sourcegraph Site Admin.
 		os.Exit(1)
 	}
 	repoDir := flag.Arg(0)
-	if err := fakehub(*n, *addr, repoDir); err != nil {
+	ln, err := net.Listen("tcp", *addr)
+	if err != nil {
+		log.Fatalf("fakehub: %v", err)
+	}
+	if err := fakehub(*n, ln, repoDir); err != nil {
 		log.Fatalf("fakehub: %v", err)
 	}
 }
 
-func fakehub(n int, addr, reposRoot string) error {
+func fakehub(n int, ln net.Listener, reposRoot string) error {
 	gitDirs, err := configureRepos(reposRoot)
 	if err != nil {
 		return errors.Wrapf(err, "configuring repos under %s", reposRoot)
@@ -57,12 +63,19 @@ func fakehub(n int, addr, reposRoot string) error {
 		}
 		relDirs = append(relDirs, rd)
 	}
-	tvars := &templateVars{n, relDirs, addr}
-
-	// Start the HTTP server.
+	addr := ln.Addr().String()
 	if strings.HasPrefix(addr, ":") {
 		addr = "127.0.0.1" + addr
 	}
+	// Replace [::] with 127.0.0.1 because [::] breaks double-click link opening in Mac terminals.
+	ipv6Rx, err := regexp.Compile(`^\[::\]`)
+	if err != nil {
+		return errors.Wrap(err, "compiling regexp for IPV6 localhost")
+	}
+	addr = ipv6Rx.ReplaceAllString(addr, "127.0.0.1")
+	tvars := &templateVars{n, relDirs, addr}
+
+	// Start the HTTP server.
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleDefault(tvars, w, r)
@@ -85,7 +98,7 @@ func fakehub(n int, addr, reposRoot string) error {
 		Handler: logger(mux),
 	}
 	log.Printf("listening on http://%s", s.Addr)
-	return s.ListenAndServe()
+	return s.Serve(ln)
 }
 
 // configureRepos finds all .git directories and configures them to be served.
