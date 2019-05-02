@@ -8,6 +8,7 @@ import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '../../../../shared/src/set
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import { toPrettyBlobURL } from '../../../../shared/src/util/url'
 import { ExtensionStorageSubject } from '../browser/ExtensionStorageSubject'
+import { background } from '../browser/runtime';
 import { observeStorageKey } from '../browser/storage'
 import { defaultStorageItems } from '../browser/types'
 import { isInPage } from '../context'
@@ -115,11 +116,7 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
             // with a CSP that allowlists https://* in script-src (see
             // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
             // add-ons have an even stricter restriction.)
-            const blobURL: string = await browser.runtime.sendMessage({
-                type: 'createBlobURL',
-                payload: bundleURL,
-            })
-
+            const blobURL = await background.createBlobURL(bundleURL)
             return blobURL
         },
         urlToFile: location => {

@@ -165,8 +165,8 @@ async function main(): Promise<void> {
             return await createBlobURLForBundle(bundleUrl)
         },
 
-        async requestGraphQL(params: GraphQLRequestArgs): Promise<IGraphQLResponseRoot> {
-            return await requestGraphQL(params).toPromise()
+        async requestGraphQL<T extends IGraphQLResponseRoot>(params: GraphQLRequestArgs): Promise<T> {
+            return await requestGraphQL<T>(params).toPromise()
         },
     }
 

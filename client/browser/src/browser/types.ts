@@ -88,8 +88,11 @@ export const defaultStorageItems: StorageItems = {
     sideloadedExtensionURL: null,
 }
 
+/**
+ * Functions in the background page that can be invoked from content scripts.
+ */
 export interface BackgroundMessageHandlers {
     openOptionsPage(): Promise<void>
     createBlobURL(bundleUrl: string): Promise<string>
-    requestGraphQL(params: GraphQLRequestArgs): Promise<IGraphQLResponseRoot>
+    requestGraphQL<T extends IGraphQLResponseRoot>(params: GraphQLRequestArgs): Promise<T>
 }

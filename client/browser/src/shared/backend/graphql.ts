@@ -3,6 +3,7 @@ import { ajax } from 'rxjs/ajax'
 import { catchError, map } from 'rxjs/operators'
 import { GraphQLResult } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { background } from '../../browser/runtime'
 import { isBackground, isInPage } from '../../context'
 import { DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { RequestContext } from './context'
@@ -11,10 +12,18 @@ import { getHeaders } from './headers'
 
 export interface GraphQLRequestArgs {
     ctx: RequestContext
+
+    /** The GraphQL request (query or mutation) */
     request: string
+
+    /** A key/value object with variable values */
     variables?: any
+
+    /** the url the request is going to */
     url?: string
+
     retry?: boolean
+
     /**
      * Whether or not to use an access token for the request. All requests
      * except requests used while creating an access token  should use an access
@@ -22,10 +31,13 @@ export interface GraphQLRequestArgs {
      * user ID for `createAccessToken`.
      */
     useAccessToken?: boolean
+
     authError?: AuthRequiredError
     requestMightContainPrivateInfo?: boolean
+
     /**
      * An alternative `AjaxCreationMethod`, useful to stub rxjs.ajax in tests.
+     * Cannot be provided from content scripts.
      */
     ajaxRequest?: typeof ajax
 }
@@ -42,13 +54,9 @@ function privateRepoPublicSourcegraph({
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`
  *
- * @param request The GraphQL request (query or mutation)
- * @param variables A key/value object with variable values
- * @param url the url the request is going to
- * @param options configuration options for the request
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export const requestGraphQL: typeof performRequest = (args: GraphQLRequestArgs) => {
+export const requestGraphQL = <T extends GQL.IGraphQLResponseRoot>(args: GraphQLRequestArgs): Observable<T> => {
     // Make sure all GraphQL API requests are sent from the background page, so as to bypass CORS
     // restrictions when running on private code hosts with the public Sourcegraph instance.  This
     // allows us to run extensions on private code hosts without needing a private Sourcegraph
@@ -57,7 +65,7 @@ export const requestGraphQL: typeof performRequest = (args: GraphQLRequestArgs) 
         return performRequest(args)
     }
 
-    return from(browser.runtime.sendMessage({ type: 'requestGraphQL', payload: args }))
+    return from(background.requestGraphQL<T>(args))
 }
 
 function performRequest<T extends GQL.IGraphQLResponseRoot>({
@@ -69,7 +77,7 @@ function performRequest<T extends GQL.IGraphQLResponseRoot>({
     authError,
     requestMightContainPrivateInfo = true,
     ajaxRequest = ajax,
-}: GraphQLRequestArgs & { ajaxRequest?: typeof ajax }): Observable<T> {
+}: GraphQLRequestArgs): Observable<T> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const queryName = nameMatch ? '?' + nameMatch[1] : ''
 
