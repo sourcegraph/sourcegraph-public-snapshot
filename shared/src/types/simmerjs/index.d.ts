@@ -18,15 +18,15 @@ declare module 'simmerjs' {
         errorHandling?: boolean | ((error: any, element: Element) => void)
     }
 
+    export type QueryEngine = (selector: string, onError: (error: any) => void) => ArrayLike<Element>
     export interface Queryable {
         querySelectorAll: QueryEngine
     }
 
-    interface WindowLike {
+    export interface WindowLike {
         document: Queryable
     }
     export type Scope = Queryable | WindowLike
-    export type QueryEngine = (selector: string, onError: (error: Error) => void) => ArrayLike<Element>
 
     export type Simmer = (element: Element) => string
     interface SimmerConstructor {

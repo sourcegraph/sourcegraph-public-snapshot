@@ -149,21 +149,10 @@ export function testDOMFunctions(
                     expect(codeElement).not.toBeNull()
                     // if the codeElement contains more than one line, something is off
                     expect(codeElement!.textContent!.includes('\n')).toBe(false)
-
-                    // OPTION 1: Selectors
+                    // Generate CSS selector for element
                     const simmer = new Simmer(codeViewElement)
                     const selector = simmer(codeElement!)
-                    // expect(selector).toMatchSnapshot()
-
-                    // OPTION 1+2:
                     expect({ selector, content: codeElement!.textContent }).toMatchSnapshot()
-
-                    // OPTION 2: Content
-                    // expect(codeElement!.textContent).toMatchSnapshot()
-
-                    // OPTION 3: Annotated fixture
-                    // codeElement!.setAttribute('sg-test-code-element-for-line-numer', lineNumber.toString())
-                    // expect(codeViewElement).toMatchSnapshot()
                 })
             })
 
@@ -199,7 +188,7 @@ export function testDOMFunctions(
                         domFunctions.isFirstCharacterDiffIndicator(codeElement)
                     expect(is).toBe(firstCharacterIsDiffIndicator)
                     if (is) {
-                        // Check that the first character is truly a diff indicator / not a diff indicator
+                        // Check that the first character is truly a diff indicator
                         const diffIndicators = new Set(['+', '-', ' '])
                         expect(is).toBe(diffIndicators.has(codeElement.textContent![0]))
                     }
