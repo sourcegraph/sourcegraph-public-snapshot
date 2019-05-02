@@ -9,16 +9,15 @@ import { RepoNotFoundError } from './errors'
 
 export const queryRepositoryComparisonFileDiffs = memoizeObservable(
     ({
-        queryGraphQL,
+        requestGraphQL,
         ...args
     }: {
         repo: string
         base: string | null
         head: string | null
         first?: number
-        queryGraphQL: PlatformContext['requestGraphQL']
-    }): Observable<GQL.IFileDiffConnection> =>
-        queryGraphQL<GQL.IQuery>(
+    } & Pick<PlatformContext, 'requestGraphQL'>): Observable<GQL.IFileDiffConnection> =>
+        requestGraphQL<GQL.IQuery>(
             gql`
                 query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
                     repository(name: $repo) {

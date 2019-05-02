@@ -47,14 +47,14 @@ const configureOmnibox = (serverUrl: string): void => {
 }
 
 initializeOmniboxInterface()
-const queryGraphQL: PlatformContext['queryGraphQL'] = (request, variables) =>
+const requestGraphQL: PlatformContext['requestGraphQL'] = (request, variables, mightContainPrivateInfo) =>
     storage.observeSync('sourcegraphURL').pipe(
         take(1),
         switchMap(baseUrl => {
             if (mightContainPrivateInfo && baseUrl === DEFAULT_SOURCEGRAPH_URL) {
                 return throwError(new PrivateRepoPublicSourcegraphComError('query'))
             }
-            return requestGraphQL({
+            return requestGraphQLCommon({
                 request: gql`
                     ${request}
                 `,
@@ -75,7 +75,7 @@ async function main(): Promise<void> {
     }
 
     async function syncClientConfiguration(): Promise<void> {
-        const config = await resolveClientConfiguration().toPromise()
+        const config = await resolveClientConfiguration(requestGraphQL).toPromise()
         // ClientConfiguration is the new storage option.
         // Request permissions for the urls.
         await storage.sync.set({

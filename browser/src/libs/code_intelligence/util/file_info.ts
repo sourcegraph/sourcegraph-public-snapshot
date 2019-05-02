@@ -7,20 +7,22 @@ import { FileInfo } from '../code_intelligence'
 
 export const ensureRevisionsAreCloned = (
     { repoName, commitID, baseCommitID, ...rest }: FileInfo,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> => {
     // Although we get the commit SHA's from elsewhere, we still need to
     // use `resolveRev` otherwise we can't guarantee Sourcegraph has the
     // revision cloned.
 
     // Head
-    const resolvingHeadRev = resolveRev({ repoName, rev: commitID, queryGraphQL }).pipe(retryWhenCloneInProgressError())
+    const resolvingHeadRev = resolveRev({ repoName, rev: commitID, requestGraphQL }).pipe(
+        retryWhenCloneInProgressError()
+    )
 
     const requests = [resolvingHeadRev]
 
     // If theres a base, resolve it as well.
     if (baseCommitID) {
-        const resolvingBaseRev = resolveRev({ repoName, rev: baseCommitID, queryGraphQL }).pipe(
+        const resolvingBaseRev = resolveRev({ repoName, rev: baseCommitID, requestGraphQL }).pipe(
             retryWhenCloneInProgressError()
         )
 

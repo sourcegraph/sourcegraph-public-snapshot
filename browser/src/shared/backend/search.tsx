@@ -145,8 +145,8 @@ const symbolsFragment = gql`
     }
 `
 
-const fetchSuggestions = (query: string, first: number, queryGraphQL: PlatformContext['requestGraphQL']) =>
-    queryGraphQL<GQL.IQuery>(
+const fetchSuggestions = (query: string, first: number, requestGraphQL: PlatformContext['requestGraphQL']) =>
+    requestGraphQL<GQL.IQuery>(
         gql`
             query SearchSuggestions($query: String!, $first: Int!) {
                 search(query: $query) {
@@ -196,7 +196,7 @@ interface SuggestionInput {
     handler: (suggestion: Suggestion[]) => void
 }
 
-export const createSuggestionFetcher = (first = 5, queryGraphQL: PlatformContext['requestGraphQL']) => {
+export const createSuggestionFetcher = (first = 5, requestGraphQL: PlatformContext['requestGraphQL']) => {
     const fetcher = new Subject<SuggestionInput>()
 
     fetcher
@@ -204,7 +204,7 @@ export const createSuggestionFetcher = (first = 5, queryGraphQL: PlatformContext
             distinctUntilChanged(),
             debounceTime(200),
             switchMap(({ query, handler }) =>
-                fetchSuggestions(query, first, queryGraphQL).pipe(
+                fetchSuggestions(query, first, requestGraphQL).pipe(
                     take(first),
                     map(createSuggestion),
                     // createSuggestion will return null if we get a type we don't recognize
@@ -228,9 +228,9 @@ export const createSuggestionFetcher = (first = 5, queryGraphQL: PlatformContext
 
 export const fetchSymbols = (
     query: string,
-    queryGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<GQL.ISymbol[]> =>
-    queryGraphQL<GQL.IQuery>(
+    requestGraphQL<GQL.IQuery>(
         gql`
             query SearchResults($query: String!) {
                 search(query: $query) {
