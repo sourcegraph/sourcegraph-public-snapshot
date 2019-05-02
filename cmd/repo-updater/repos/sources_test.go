@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -276,8 +277,9 @@ func TestSources_ListRepos(t *testing.T) {
 						"?visibility=private",
 					},
 					Exclude: []*schema.ExcludedBitbucketServerRepo{
-						{Name: "ORG/Foo"}, // test case insensitivity
-						{Id: 3},           // baz id
+						{Name: "ORG/Foo"},   // test case insensitivity
+						{Id: 3},             // baz id
+						{Pattern: ".*/bar"}, // only matches org/bar
 					},
 				}),
 			},
@@ -290,6 +292,7 @@ func TestSources_ListRepos(t *testing.T) {
 				t.Helper()
 
 				set := make(map[string]bool)
+				var patterns []*regexp.Regexp
 				for _, s := range svcs {
 					c, err := s.Configuration()
 					if err != nil {
@@ -297,7 +300,7 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 
 					type excluded struct {
-						name, id string
+						name, id, pattern string
 					}
 
 					var ex []excluded
@@ -312,7 +315,7 @@ func TestSources_ListRepos(t *testing.T) {
 						}
 					case *schema.BitbucketServerConnection:
 						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id)})
+							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
 						}
 					}
 
@@ -327,12 +330,24 @@ func TestSources_ListRepos(t *testing.T) {
 							name = strings.ToLower(name)
 						}
 						set[name], set[e.id] = true, true
+						if e.pattern != "" {
+							re, err := regexp.Compile(e.pattern)
+							if err != nil {
+								t.Fatal(err)
+							}
+							patterns = append(patterns, re)
+						}
 					}
 				}
 
 				for _, r := range rs {
 					if set[r.Name] || set[r.ExternalRepo.ID] {
 						t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
+					}
+					for _, re := range patterns {
+						if re.MatchString(r.Name) {
+							t.Errorf("excluded repo{name=%s} matching %q was yielded", r.Name, re.String())
+						}
 					}
 				}
 			},
