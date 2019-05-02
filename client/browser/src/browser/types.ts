@@ -2,10 +2,6 @@ import { IGraphQLResponseRoot } from '../../../../shared/src/graphql/schema'
 import { GraphQLRequestArgs } from '../shared/backend/graphql'
 import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context';
 
-interface RepoLocations {
-    [key: string]: string
-}
-
 interface PhabricatorMapping {
     callsign: string
     path: string
@@ -43,40 +39,54 @@ export const featureFlagDefaults: FeatureFlags = {
 export interface StorageItems {
     sourcegraphURL: string
 
-    identity: string
     enterpriseUrls: string[]
-    repoLocations: RepoLocations
     phabricatorMappings: PhabricatorMapping[]
-    sourcegraphAnonymousUid: string
-    disableExtension: boolean
+
     /**
      * Storage for feature flags.
      */
     featureFlags: Partial<FeatureFlags>
+
+    /**
+     * Configuration details for the browser extension, editor extensions, etc from GraphQL.
+     * See GraphQL schema.
+     */
     clientConfiguration: ClientConfigurationDetails
+
     /**
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
+
     sideloadedExtensionURL: string | null
 }
 
+/**
+ * Configuration details for the browser extension, editor extensions, etc from GraphQL.
+ * See GraphQL schema.
+ */
 interface ClientConfigurationDetails {
+    /**
+     * The list of phabricator/gitlab/bitbucket/etc instance URLs that specifies
+     * which pages the content script will be injected into.
+     */
     contentScriptUrls: string[]
+
+    /**
+     * Returns details about the parent Sourcegraph instance.
+     */
     parentSourcegraph: {
+        /**
+         * Sourcegraph instance URL.
+         */
         url: string
     }
 }
 
 export const defaultStorageItems: StorageItems = {
     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-
-    identity: '',
     enterpriseUrls: [],
-    repoLocations: {},
     phabricatorMappings: [],
-    sourcegraphAnonymousUid: '',
-    disableExtension: false,
     featureFlags: featureFlagDefaults,
     clientConfiguration: {
         contentScriptUrls: [],

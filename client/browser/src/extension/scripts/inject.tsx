@@ -55,9 +55,6 @@ async function main(): Promise<void> {
     }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
 
     const items = await storage.sync.get()
-    if (items.disableExtension) {
-        return
-    }
 
     const sourcegraphServerUrl = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
     setSourcegraphUrl(sourcegraphServerUrl)
