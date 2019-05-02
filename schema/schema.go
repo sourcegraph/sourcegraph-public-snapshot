@@ -101,6 +101,8 @@ type BrandAssets struct {
 }
 
 // Branding description: Customize Sourcegraph homepage logo and search icon.
+//
+// Only available in Sourcegraph Enterprise.
 type Branding struct {
 	Dark    *BrandAssets `json:"dark,omitempty"`
 	Favicon string       `json:"favicon,omitempty"`
