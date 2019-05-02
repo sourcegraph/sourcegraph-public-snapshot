@@ -160,12 +160,12 @@ func logger(h http.Handler) http.HandlerFunc {
 func handleDefault(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `
 <p><a href="/config">config</a></p>
-<div>
-	<div>repos:</div>
-	<div>{{range .Repos}}
-		<div><a href="{{.}}">{{.}}</a></div>{{end}}
-	</div>
-</div>
+{{if .Repos}}
+{{range .Repos}}
+<div><a href="{{.}}">{{.}}</a></div>{{end}}
+{{else}}
+<div>No git repos found.</div>
+{{end}}
 `
 	err := func() error {
 		t2, err := template.New("linkspage").Parse(t1)
@@ -220,7 +220,7 @@ func (tv *templateVars) Repos() []string {
 	var paths []string
 	if tv.n == 1 {
 		for _, rd := range tv.RelDirs {
-			paths = append(paths, "/repos/" + rd)
+			paths = append(paths, "/repos/"+rd)
 		}
 	} else {
 		for i := 1; i <= tv.n; i++ {
