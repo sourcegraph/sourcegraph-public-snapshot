@@ -47,7 +47,7 @@ javascript:(function() {
         continue;
       }
 
-      var r = new RegExp(pat[2])
+      var r = new RegExp(pat[2]);
       if (pathname.match(r)) {
         var pathname2 = pathname.replace(r, pat[3]);
         window.location = 'https://github.com' + pathname2;
