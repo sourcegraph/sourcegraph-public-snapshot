@@ -78,5 +78,25 @@
       "ServiceType": "bitbucketServer",
       "ServiceID": "bitbucket.example.com/"
     }
+  },
+  {
+    "Name": "/~KEEGAN/rgp-unavailable",
+    "Description": "rgp-unavailable",
+    "Fork": false,
+    "Archived": false,
+    "VCS": {
+      "URL": "https://bitbucket.example.com/scm/~keegan/rgp.git"
+    },
+    "Links": {
+      "Root": "https://bitbucket.example.com/users/keegan/repos/rgp/browse",
+      "Tree": "https://bitbucket.example.com/users/keegan/repos/rgp/browse/{path}?at={rev}",
+      "Blob": "https://bitbucket.example.com/users/keegan/repos/rgp/browse/{path}?at={rev}",
+      "Commit": "https://bitbucket.example.com/users/keegan/repos/rgp/commits/{commit}"
+    },
+    "ExternalRepo": {
+      "ID": "4",
+      "ServiceType": "bitbucketServer",
+      "ServiceID": "bitbucket.example.com/"
+    }
   }
 ]

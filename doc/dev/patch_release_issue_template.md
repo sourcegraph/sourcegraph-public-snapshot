@@ -36,5 +36,8 @@ In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
   ```
 - [ ] Update versions in docs.sourcegraph.com template ([example](https://github.com/sourcegraph/sourcegraph/pull/2841/files#diff-3d0e70da24a04f44a1fdc404b7242b89))
 - [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
+- [ ] [Update deploy-aws version](https://github.com/sourcegraph/deploy-sourcegraph-aws/edit/master/ec2/resources/user-data.sh#L3)
+- [ ] [Update deploy-digitalocean version ](https://github.com/sourcegraph/deploy-sourcegraph-digitalocean/edit/master/resources/user-data.sh#L3)
+- [ ] Message @slimsag on Slack: `MAJOR.MINOR.PATCH has been released, update deploy-sourcegraph-docker as needed`
 - [ ] Create a new section for the patch version in the changelog. Verify that all changes that have been cherry picked onto the release branch have been moved to this section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
 - [ ] Post a reply in the #dev-announce thread to say that the release is complete.

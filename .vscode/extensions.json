@@ -3,7 +3,7 @@
   // for the documentation about the extensions.json format
   "recommendations": [
     "EditorConfig.editorconfig",
-    "eg2.tslint",
+    "ms-vscode.vscode-typescript-tslint-plugin",
     "esbenp.prettier-vscode",
     "kumar-harsh.graphql-for-vscode",
     "ms-vscode.Go",
@@ -12,5 +12,8 @@
     "bierner.markdown-mermaid",
     "zignd.html-css-class-completion",
     "orta.vscode-jest"
+  ],
+  "unwantedRecommendations": [
+    "eg2.tslint" // deprecated
   ]
 }

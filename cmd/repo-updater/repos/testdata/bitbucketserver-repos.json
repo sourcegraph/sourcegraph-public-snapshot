@@ -218,5 +218,61 @@
         }
       ]
     }
+  },
+  {
+    "slug": "rgp-unavailable",
+    "id": 4,
+    "name": "rgp-unavailable",
+    "scmId": "git",
+    "state": "UNAVAILABLE",
+    "statusMessage": "Unavailable",
+    "forkable": true,
+    "project": {
+      "key": "~KEEGAN",
+      "id": 2,
+      "name": "Keegan",
+      "type": "PERSONAL",
+      "owner": {
+        "name": "keegan",
+        "emailAddress": "keegan@sourcegraph.com",
+        "id": 1,
+        "displayName": "Keegan",
+        "active": true,
+        "slug": "keegan",
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "https://bitbucket.example.com/users/keegan"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": [
+          {
+            "href": "https://bitbucket.example.com/users/keegan"
+          }
+        ]
+      }
+    },
+    "public": false,
+    "links": {
+      "clone": [
+        {
+          "href": "https://bitbucket.example.com/scm/~keegan/rgp.git",
+          "name": "http"
+        },
+        {
+          "href": "ssh://git@bitbucket.example.com:7999/~keegan/rgp.git",
+          "name": "ssh"
+        }
+      ],
+      "self": [
+        {
+          "href": "https://bitbucket.example.com/users/keegan/repos/rgp/browse"
+        }
+      ]
+    }
   }
 ]
