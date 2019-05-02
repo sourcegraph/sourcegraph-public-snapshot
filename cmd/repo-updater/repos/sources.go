@@ -109,7 +109,7 @@ func includesGitHubDotComSource(srcs []Source) bool {
 }
 
 // sourceTimeout is the default timeout to use on Source.ListRepos
-const sourceTimeout = 10 * time.Minute
+const sourceTimeout = 30 * time.Minute
 
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
