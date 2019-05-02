@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -77,28 +75,6 @@ func migrateSavedQueryIntoDB(ctx context.Context, s *api.Settings) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	// Remove "search.savedQueries" entry from settings.
-	edits, _, err := jsonx.ComputePropertyRemoval(s.Contents, jsonx.MakePath("search.savedQueries"), conf.FormatOptions)
-	if err != nil {
-		return false, errors.WithMessagef(err, `Unable to remove saved query from settings on subject %s. Please report this issue.`, s.Subject)
-	}
-	// Apply edits to settings JSON.
-	text, err := jsonx.ApplyEdits(s.Contents, edits...)
-	if err != nil {
-		return false, errors.WithMessagef(err, `Unable to apply edited site settings without search.savedQueries on subject %s. Please report this issue.`, s.Subject)
-	}
-	if text == s.Contents {
-		// There are no changes, no need to update settings.
-		return false, nil
-	}
-
-	// Create new settings object in DB.
-	lastID := &s.ID
-	_, err = db.Settings.CreateIfUpToDate(ctx, s.Subject, lastID, s.AuthorUserID, text)
-	if err != nil {
-		return false, errors.WithMessagef(err, `Unable to create updated settings with saved queries removed on subject %s. Please report this issue.`, s.Subject)
-	}
-	// insertSlackWebhookURL(s.Contents)
 
 	return true, nil
 }
@@ -149,22 +125,6 @@ type WebhookURL struct {
 	WebhookURL string `json:"webhookURL"`
 }
 
-// func insertSlackWebhookURL(settingsContents string) error {
-// 	// We should add the slack webhook URL here if exists
-// 	root, parseErrorCodes := jsonx.ParseTree(settingsContents, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-// 	if len(parseErrorCodes) > 0 {
-// 		return errors.Errorf(`Unable to insert Slack webhook URL, error parsing settings JSON with parse error codes: %v`, parseErrorCodes)
-// 	}
-// 	fmt.Println("rooot value", root.Value)
-
-// 	node := jsonx.FindNodeAtLocation(root, jsonx.MakePath("notifications.slack"))
-// 	// The value is returned as []map{"webhookURL": "$WEBHOOK_URL"}
-// 	mappedValue := jsonx.NodeValue(*node)
-// 	fmt.Println(mappedValue.(map[string]interface{})["webhookURL"])
-
-// 	return nil
-// }
-
 // MigrateSlackWebhookUrlsToSavedSearches migrates Slack webhook URLs from site settings into the
 // slack_webhook_url column of the saved_searches database table. As a result, Slack webhook URLs
 // will be associated with individual saved searches rather than user or organization profiles.
@@ -188,24 +148,6 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) {
 		} else if s.Subject.Site || s.Subject.Default {
 			siteAdminID := getFirstSiteAdminID(ctx)
 			insertSlackWebhookURLIntoSavedSearchesTable(ctx, "user", siteAdminID, notifsField.NotificationsSlack.WebhookURL)
-		}
-
-		edits, _, err := jsonx.ComputePropertyRemoval(s.Contents, jsonx.MakePath("notifications.slack"), conf.FormatOptions)
-		if err != nil {
-			log15.Error(`Unable to remove Slack webhook URL from settings. Please report this issue.`, err)
-			continue
-		}
-		text, err := jsonx.ApplyEdits(s.Contents, edits...)
-		if err != nil {
-			log15.Error(`Unable to apply settings with Slack webhook URL removed from settings. Please report this issue.`, err)
-			continue
-		}
-
-		lastID := &s.ID
-		_, err = db.Settings.CreateIfUpToDate(ctx, s.Subject, lastID, s.AuthorUserID, text)
-		if err != nil {
-			log15.Error(`Unable to create new settings with Slack webhook URL removed. Please report this issue.`)
-			continue
 		}
 	}
 
