@@ -111,7 +111,6 @@
     "@types/webpack": "4.4.29",
     "@types/webpack-dev-server": "3.1.1",
     "@types/whatwg-url": "6.4.0",
-    "@types/yargs": "12.0.11",
     "abort-controller": "^2.0.0",
     "autoprefixer": "^9.5.1",
     "babel-loader": "^8.0.5",
@@ -178,8 +177,7 @@
     "web-ext-types": "^3.1.0",
     "webpack": "^4.30.0",
     "webpack-dev-server": "^3.1.13",
-    "worker-loader": "^2.0.0",
-    "yargs": "^13.2.0"
+    "worker-loader": "^2.0.0"
   },
   "dependencies": {
     "@sentry/browser": "^5.1.1",
