@@ -110,15 +110,26 @@ func TestBitbucketServerExclude(t *testing.T) {
 			Token:   "secret",
 			Exclude: []*schema.ExcludedBitbucketServerRepo{{Id: 4}},
 		},
+		"pattern": {
+			Url:   "bitbucket.example.com",
+			Token: "secret",
+			Exclude: []*schema.ExcludedBitbucketServerRepo{{
+				Pattern: "SG/python.*",
+			}, {
+				Pattern: "~KEEGAN/.*",
+			}},
+		},
 		"both": {
 			Url:   "bitbucket.example.com",
 			Token: "secret",
 			// We match on the bitbucket server repo name, not the repository path pattern.
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
 			Exclude: []*schema.ExcludedBitbucketServerRepo{{
-				Id: 5,
+				Id: 1,
 			}, {
 				Name: "~KEEGAN/rgp",
+			}, {
+				Pattern: ".*-fork",
 			}},
 		},
 	}

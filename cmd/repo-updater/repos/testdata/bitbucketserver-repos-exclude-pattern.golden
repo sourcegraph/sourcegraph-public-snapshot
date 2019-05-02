@@ -1,9 +1,9 @@
 {
   "Include": [
-    "SG/python-langserver"
+    "SG/go-langserver"
   ],
   "Exclude": [
-    "SG/go-langserver",
+    "SG/python-langserver",
     "SG/python-langserver-fork",
     "~KEEGAN/rgp",
     "~KEEGAN/rgp-unavailable"

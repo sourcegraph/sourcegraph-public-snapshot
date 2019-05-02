@@ -103,7 +103,7 @@ const BitbucketServerSchemaJSON = `{
         "type": "object",
         "title": "ExcludedBitbucketServerRepo",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
         "properties": {
           "name": {
             "description": "The name of a Bitbucket Server repo (\"projectKey/repositorySlug\") to exclude from mirroring.",
@@ -113,12 +113,17 @@ const BitbucketServerSchemaJSON = `{
           "id": {
             "description": "The ID of a Bitbucket Server repo (as returned by the Bitbucket Server instance's API) to exclude from mirroring.",
             "type": "integer"
+          },
+          "pattern": {
+            "description": "Regular expression which matches against the name of a Bitbucket Server repo.",
+            "type": "string",
+            "format": "regex"
           }
         }
       },
       "examples": [
         [{ "name": "myproject/myrepo" }, { "id": 42 }],
-        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }]
+        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
       ]
     },
     "initialRepositoryEnablement": {
