@@ -233,12 +233,12 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if envvar.SourcegraphDotComMode() && !actor.FromContext(r.Context()).IsAuthenticated() {
-		// The user is not signed in and tried to access Sourcegraph.com.  Redirect to /welcome so
-		// they see the welcome page.
-		http.Redirect(w, r, "/welcome", http.StatusTemporaryRedirect)
+		// The user is not signed in and tried to access Sourcegraph.com.  Redirect to
+		// about.sourcegraph.com so they see general info page.
+		http.Redirect(w, r, (&url.URL{Scheme: aboutRedirectScheme, Host: aboutRedirectHost}).String(), http.StatusTemporaryRedirect)
 		return nil
 	}
-	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
+	// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 	r.URL.Path = "/search"
 	http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 	return nil
