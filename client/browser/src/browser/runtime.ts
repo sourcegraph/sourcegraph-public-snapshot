@@ -1,7 +1,9 @@
 import { isBackground, isInPage } from '../context'
 import { BackgroundMessageHandlers } from './types'
 
-const messageSender = <T extends keyof BackgroundMessageHandlers>(type: T): BackgroundMessageHandlers[T] => (payload: any) => {
+const messageSender = <T extends keyof BackgroundMessageHandlers>(type: T): BackgroundMessageHandlers[T] => (
+    payload: any
+) => {
     if (isBackground) {
         throw new Error('Tried to call background page function from background page itself')
     }

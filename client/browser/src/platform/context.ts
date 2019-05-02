@@ -8,7 +8,7 @@ import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '../../../../shared/src/set
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import { toPrettyBlobURL } from '../../../../shared/src/util/url'
 import { ExtensionStorageSubject } from '../browser/ExtensionStorageSubject'
-import { background } from '../browser/runtime';
+import { background } from '../browser/runtime'
 import { observeStorageKey } from '../browser/storage'
 import { defaultStorageItems } from '../browser/types'
 import { isInPage } from '../context'

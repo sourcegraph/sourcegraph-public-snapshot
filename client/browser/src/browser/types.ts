@@ -1,6 +1,6 @@
 import { IGraphQLResponseRoot } from '../../../../shared/src/graphql/schema'
 import { GraphQLRequestArgs } from '../shared/backend/graphql'
-import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context';
+import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context'
 
 interface RepoLocations {
     [key: string]: string
