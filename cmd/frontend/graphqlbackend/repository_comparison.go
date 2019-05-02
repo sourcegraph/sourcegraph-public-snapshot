@@ -259,7 +259,7 @@ func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error
 	if err != nil {
 		return "", err
 	}
-	b, err := diff.PrintMultiFileDiff(fileDiffs)
+	b, err := diff.RenderDiffs(fileDiffs)
 	return string(b), err
 }
 
