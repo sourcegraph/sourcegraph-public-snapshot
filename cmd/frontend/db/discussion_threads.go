@@ -146,14 +146,6 @@ type DiscussionThreadsUpdateOptions struct {
 	// Delete, when true, specifies that the thread should be deleted. This
 	// operation cannot be undone.
 	Delete bool
-
-	// hardDelete, when true, indicates that the discussion thread should be
-	// deleted entirely from the DB (not just marked as deleted / a soft
-	// delete).
-	//
-	// In general, this should only occur when e.g. deleting repositories. NOT
-	// when a user or admin requests to delete something.
-	hardDelete bool
 }
 
 func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *DiscussionThreadsUpdateOptions) (*types.DiscussionThread, error) {
@@ -198,48 +190,12 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			}
 		}
 	}
-	if opts.hardDelete {
-		// Intentionally not setting anyUpdate=true here, it would cause us to
-		// try to update updated_at below which would fail.
-
-		// Hard delete the mail reply tokens.
-		if _, err := dbconn.Global.ExecContext(ctx, "DELETE FROM discussion_mail_reply_tokens WHERE thread_id=$1", threadID); err != nil {
-			return nil, err
-		}
-
-		// Unlink and hard delete discussion thread targets.
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET target_repo_id=null WHERE id=$1", threadID); err != nil {
-			return nil, err
-		}
-		if _, err := dbconn.Global.ExecContext(ctx, "DELETE FROM discussion_threads_target_repo WHERE thread_id=$1", threadID); err != nil {
-			return nil, err
-		}
-
-		// Hard delete all comments in the thread.
-		comments, err := DiscussionComments.List(ctx, &DiscussionCommentsListOptions{
-			ThreadID: &threadID,
-		})
-		if err != nil {
-			return nil, err
-		}
-		for _, comment := range comments {
-			_, err := DiscussionComments.Update(ctx, comment.ID, &DiscussionCommentsUpdateOptions{hardDelete: true, noThreadDelete: true})
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		// Finally, hard delete the discussion thread itself.
-		if _, err := dbconn.Global.ExecContext(ctx, "DELETE FROM discussion_threads WHERE id=$1", threadID); err != nil {
-			return nil, err
-		}
-	}
 	if anyUpdate {
 		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
 			return nil, err
 		}
 	}
-	if opts.Delete || opts.hardDelete {
+	if opts.Delete {
 		return nil, nil
 	}
 	return t.Get(ctx, threadID)
