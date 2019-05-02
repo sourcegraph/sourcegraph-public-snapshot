@@ -157,34 +157,6 @@ async function main(): Promise<void> {
     })
 
     const handlers: BackgroundMessageHandlers = {
-        async setIdentity({ identity }: { identity: string }): Promise<void> {
-            await storage.local.set({ identity })
-        },
-
-        async getIdentity(): Promise<string | undefined> {
-            const { identity } = await storage.local.get('identity')
-            return identity
-        },
-
-        async setEnterpriseUrl(url: string): Promise<void> {
-            await requestPermissionsForEnterpriseUrls([url])
-        },
-
-        async setSourcegraphUrl(url: string): Promise<void> {
-            await requestPermissionsForSourcegraphUrl(url)
-        },
-
-        async removeEnterpriseUrl(url: string): Promise<void> {
-            await removeEnterpriseUrl(url)
-        },
-
-        async insertCSS(details: { file: string; origin: string }): Promise<void> {
-            await browser.tabs.insertCSS(0, { ...details })
-        },
-        setBadgeText(text: string): void {
-            browser.browserAction.setBadgeText({ text })
-        },
-
         async openOptionsPage(): Promise<void> {
             await browser.runtime.openOptionsPage()
         },
@@ -206,33 +178,6 @@ async function main(): Promise<void> {
         }
         return await handlers[method](message.payload)
     })
-
-    async function requestPermissionsForEnterpriseUrls(urls: string[]): Promise<void> {
-        const items = await storage.sync.get()
-        const enterpriseUrls = items.enterpriseUrls || []
-        // Add requested URLs, without duplicating
-        await storage.sync.set({
-            enterpriseUrls: [...new Set([...enterpriseUrls, ...urls])],
-        })
-    }
-
-    async function requestPermissionsForSourcegraphUrl(url: string): Promise<void> {
-        const granted = await browser.permissions.request({ origins: [url + '/*'] })
-        if (granted) {
-            await storage.sync.set({ sourcegraphURL: url })
-        }
-    }
-
-    async function removeEnterpriseUrl(url: string): Promise<void> {
-        try {
-            await browser.permissions.remove({ origins: [url + '/*'] })
-            // tslint:disable-next-line:no-unnecessary-type-assertion False positive
-            const { enterpriseUrls } = await storage.sync.get('enterpriseUrls')
-            await storage.sync.set({ enterpriseUrls: without(enterpriseUrls, url) })
-        } catch (err) {
-            console.error('Could not remove permission', err)
-        }
-    }
 
     await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
 

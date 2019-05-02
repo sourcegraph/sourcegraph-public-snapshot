@@ -88,21 +88,7 @@ export const defaultStorageItems: StorageItems = {
 }
 
 export interface BackgroundMessageHandlers {
-    setIdentity({ identity }: { identity: string }): Promise<void>
-    getIdentity(): Promise<string | undefined>
-
-    setEnterpriseUrl(url: string): Promise<void>
-
-    setSourcegraphUrl(url: string): Promise<void>
-
-    removeEnterpriseUrl(url: string): Promise<void>
-
-    insertCSS(details: { file: string; origin: string }): Promise<void>
-    setBadgeText(text: string): void
-
     openOptionsPage(): Promise<void>
-
     createBlobURL(bundleUrl: string): Promise<string>
-
     requestGraphQL(params: GraphQLRequestArgs): Promise<IGraphQLResponseRoot>
 }
