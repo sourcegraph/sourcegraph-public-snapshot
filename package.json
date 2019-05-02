@@ -108,7 +108,7 @@
     "@types/textarea-caret": "3.0.0",
     "@types/tmp": "0.1.0",
     "@types/uuid": "3.4.4",
-    "@types/webpack": "4.4.22",
+    "@types/webpack": "4.4.29",
     "@types/webpack-dev-server": "3.1.1",
     "@types/whatwg-url": "6.4.0",
     "@types/yargs": "12.0.11",
@@ -176,7 +176,7 @@
     "typescript": "3.5.0-dev.20190406",
     "utc-version": "^1.1.0",
     "web-ext-types": "^3.1.0",
-    "webpack": "^4.28.2",
+    "webpack": "^4.30.0",
     "webpack-dev-server": "^3.1.13",
     "worker-loader": "^2.0.0",
     "yargs": "^13.2.0"
