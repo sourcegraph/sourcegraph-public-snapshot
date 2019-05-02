@@ -80,7 +80,7 @@ func filterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 	}
 
 	var err error
-	rawDiff, err = diff.PrintMultiFileDiff(matchingFileDiffs)
+	rawDiff, err = diff.RenderDiffs(matchingFileDiffs)
 	if err != nil {
 		return nil, nil, err
 	}
