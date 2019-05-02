@@ -48,11 +48,20 @@ func fakehub(n int, addr, reposRoot string) error {
 		return errors.Wrapf(err, "configuring repos under %s", reposRoot)
 	}
 
+	// Set up the template vars for pages.
+	for i, gd := range gitDirs {
+		gitDirs[i], err = filepath.Rel(reposRoot, gd)
+		if err != nil {
+			return errors.Wrap(err, "getting relative path of git dir")
+		}
+		gitDirs[i] = "/repos/" + gitDirs[i]
+	}
+	tvars := &templateVars{n, gitDirs, addr}
+
 	// Start the HTTP server.
 	if strings.HasPrefix(addr, ":") {
 		addr = "127.0.0.1" + addr
 	}
-	tvars := &templateVars{n, gitDirs, addr}
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleDefault(tvars, w, r)
@@ -131,13 +140,14 @@ func logger(h http.Handler) http.HandlerFunc {
 // handleDefault shows the root page with links to config and repos.
 func handleDefault(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `
-<a href="/config">config</a>
-<div>Example: git clone http://127.0.0.1{{.Addr}}/repo/1/.git</div>
-<div>Repos:</div>
+<p><a href="/config">config</a></p>
 <div>
-	{{range .Nums}}
-		<a href="/repo/{{.}}">/repo/{{.}}</a>
-	{{end}}
+	<div>repos:</div>
+	<div>
+		{{range .GitDirs}}
+			<div><a href="{{.}}">{{.}}</a></div>
+		{{end}}
+	</div>
 </div>
 `
 	err := func() error {
@@ -161,8 +171,8 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
 {
   "url": "http://127.0.0.1{{.Addr}}",
-  "repos": [{{range .Nums}}
-      "/repo/{{.}}/.git",{{end}}
+  "repos": [{{range .GitDirs}}
+      "{{.}}",{{end}}
   ]
 }
 `
@@ -184,7 +194,7 @@ func handleConfig(tvars *templateVars, w http.ResponseWriter, r *http.Request) {
 
 type templateVars struct {
 	n       int
-	gitDirs []string
+	GitDirs []string
 	Addr    string
 }
 
