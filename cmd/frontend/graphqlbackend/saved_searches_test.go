@@ -13,9 +13,15 @@ import (
 func TestSavedSearches(t *testing.T) {
 	ctx := context.Background()
 	defer resetMocks()
+
 	key := int32(1)
-	db.Mocks.SavedSearches.ListAll = func(ctx context.Context) ([]api.SavedQuerySpecAndConfig, error) {
-		return []api.SavedQuerySpecAndConfig{{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &key}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &key, OrgID: nil}}}, nil
+
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true, ID: key}, nil
+	}
+
+	db.Mocks.SavedSearches.ListSavedSearchesByUserID = func(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
+		return []*types.SavedSearch{&types.SavedSearch{ID: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &userID, OrgID: nil}}, nil
 	}
 
 	savedSearches, err := (&schemaResolver{}).SavedSearches(ctx)
@@ -33,7 +39,7 @@ func TestSavedSearches(t *testing.T) {
 		orgID:       nil,
 	}}
 	if !reflect.DeepEqual(savedSearches, want) {
-		t.Errorf("got %v+, want %v+", savedSearches, want)
+		t.Errorf("got %v+, want %v+", savedSearches[0], want[0])
 	}
 }
 
@@ -46,9 +52,12 @@ func TestCreateSavedSearch(t *testing.T) {
 
 	db.Mocks.SavedSearches.Create = func(ctx context.Context,
 		newSavedSearch *types.SavedSearch,
-	) (*api.ConfigSavedQuery, error) {
+	) (*types.SavedSearch, error) {
 		createSavedSearchCalled = true
-		return &api.ConfigSavedQuery{Key: "1", Description: newSavedSearch.Description, Query: newSavedSearch.Query, Notify: newSavedSearch.Notify, NotifySlack: newSavedSearch.NotifySlack, OwnerKind: newSavedSearch.OwnerKind, UserID: newSavedSearch.UserID, OrgID: newSavedSearch.OrgID}, nil
+		return &types.SavedSearch{ID: "1", Description: newSavedSearch.Description, Query: newSavedSearch.Query, Notify: newSavedSearch.Notify, NotifySlack: newSavedSearch.NotifySlack, OwnerKind: newSavedSearch.OwnerKind, UserID: newSavedSearch.UserID, OrgID: newSavedSearch.OrgID}, nil
+	}
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true, ID: key}, nil
 	}
 
 	savedSearches, err := (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
@@ -89,11 +98,14 @@ func TestUpdateSavedSearch(t *testing.T) {
 	defer resetMocks()
 
 	key := int32(1)
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true, ID: key}, nil
+	}
 	updateSavedSearchCalled := false
 
-	db.Mocks.SavedSearches.Update = func(ctx context.Context, savedSearch *types.SavedSearch) (*api.ConfigSavedQuery, error) {
+	db.Mocks.SavedSearches.Update = func(ctx context.Context, savedSearch *types.SavedSearch) (*types.SavedSearch, error) {
 		updateSavedSearchCalled = true
-		return &api.ConfigSavedQuery{Key: "1", Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, OwnerKind: savedSearch.OwnerKind, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
+		return &types.SavedSearch{ID: "1", Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, OwnerKind: savedSearch.OwnerKind, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
 	}
 
 	savedSearches, err := (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
@@ -133,6 +145,14 @@ func TestUpdateSavedSearch(t *testing.T) {
 func TestDeleteSavedSearch(t *testing.T) {
 	ctx := context.Background()
 	defer resetMocks()
+
+	key := int32(1)
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true, ID: key}, nil
+	}
+	db.Mocks.SavedSearches.GetSavedSearchByID = func(ctx context.Context, id string) (*api.SavedQuerySpecAndConfig, error) {
+		return &api.SavedQuerySpecAndConfig{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &key}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &key, OrgID: nil}}, nil
+	}
 
 	deleteSavedSearchCalled := false
 

@@ -71,6 +71,9 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 }
 
 func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (*api.SavedQuerySpecAndConfig, error) {
+	if Mocks.SavedSearches.GetSavedSearchByID != nil {
+		return Mocks.SavedSearches.GetSavedSearchByID(ctx, id)
+	}
 	var savedSearch api.SavedQuerySpecAndConfig
 
 	err := dbconn.Global.QueryRowContext(ctx, `SELECT
@@ -113,6 +116,9 @@ func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (*api
 // It is the caller's responsibility to make sure this method returns only saved searches associated with
 // the current user.
 func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
+	if Mocks.SavedSearches.ListSavedSearchesByUserID != nil {
+		return Mocks.SavedSearches.ListSavedSearchesByUserID(ctx, userID)
+	}
 	var savedSearches []*types.SavedSearch
 	orgIDRows, err := dbconn.Global.QueryContext(ctx, `SELECT org_id FROM org_members WHERE user_id=$1`, userID)
 	var orgIDs []int32
