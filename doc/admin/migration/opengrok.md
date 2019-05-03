@@ -17,7 +17,7 @@ Sourcegraph is a self-hosted code search and intelligence tool that helps develo
 - Sourcegraph's [query syntax](../../user/search/queries.md), user interface, and [integrations](../../integration/index.md) are superior and easier to use.
 - Sourcegraph's [code intelligence](../../user/code_intelligence/index.md), has better language support (hover tooltips, definitions, references, implementations, etc.) and is based on the Language Server Protocol standard.
 - The [Sourcegraph API](../../api/graphql/index.md) is more powerful, better documented, and easier to use than OpenGrok's API.
-- Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/kubernetes_cluster.md)).
+- Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/cluster.md)).
 
 Both Sourcegraph and OpenGrok are self-hosted, and your code never touches Sourcegraph's (or Oracle's) servers.
 
