@@ -20,13 +20,13 @@
             text-decoration: none;
         }
 
-        &:not(:first-child) {
-            border-top: 1px solid #2a3a51;
+        &:not(:last-child) {
+            border-bottom: 1px solid #2a3a51;
         }
 
         .theme-light & {
             background-color: $color-light-bg-1;
-            border-top: 1px solid $color-light-border;
+            border-color: $color-light-border;
 
             &:hover {
                 background-color: $color-light-bg-4;
