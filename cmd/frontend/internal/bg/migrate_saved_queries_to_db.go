@@ -2,7 +2,7 @@ package bg
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -28,6 +28,9 @@ type SavedQueryField struct {
 // MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase migrates saved searches from the `search.SavedQueries` value in
 // site settings into the `saved_searches` PostgreSQL table, and migrates organization Slack webhook URLs from the
 // `notifications.slack` value in site settings to the `slack_webhook_url` column in the `saved_searches` table.
+//
+// This migration does NOT remove the existing "search.savedQueries" and "notifications.slack" values from the user or org's settings.
+// This is to be done in a future iteration after all customer instances have upgraded and ran the migration successfully.
 func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Context) {
 	if err := doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx); err != nil {
 		log15.Error(`Warning: unable to migrate "search.savedQueries" settings to database. Please report this issue. The search.savedQueries setting has been deprecated in favor of a database table, and is no longer functional.`, "error", err)
@@ -35,37 +38,28 @@ func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Co
 }
 
 func doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Context) error {
-rerun:
 	// List all settings that include a `search.savedQueries` field.
 	settings, err := db.Settings.ListAll(ctx, "search.savedQueries")
 	if err != nil {
 		// Don't continue the migration if we can't list settings.
 		return errors.WithMessagef(err, `Warning: unable to migrate saved queries to database. Error listing settings. Please report this issue`)
 	}
-	count := 0
-	for _, s := range settings {
-		migrated, err := migrateSavedQueryIntoDB(ctx, s)
-		if err != nil {
-			// Do we want to fail completely if one user's json is invalid, for example?
-			return errors.WithMessagef(err, "for settings subject %s", s.Subject)
-		}
-		if migrated {
-			count++
-		}
-	}
 
-	// To reduce the (small) chance of a race condition whereby a new settings document can have an
-	// "search.savedQueries" added without reporting a validation error (e.g., by an older deployed version while
-	// this migration is running), rerun until we have nothing else to do.
-	if count > 0 {
-		log15.Info(`Migrated settings "search.savedQueries" to saved_searches table.`, "count", count)
-		time.Sleep(60 * time.Second)
-		goto rerun
+	for _, s := range settings {
+		if _, err := migrateSavedQueryIntoDB(ctx, s); err != nil {
+			// Do we want to fail completely if one user's json is invalid, for example?
+			errorMsg := fmt.Sprintf(err.Error(), "for settings subject %s", s.Subject)
+			log15.Error(errorMsg)
+			continue
+		}
 	}
 
 	// After migrating all saved searches into the DB, migrate organization Slack webhook URLs into the
 	// slack_webhook_url column in the saved_searches table.
-	MigrateSlackWebhookUrlsToSavedSearches(ctx)
+	err = MigrateSlackWebhookUrlsToSavedSearches(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -132,10 +126,10 @@ type WebhookURL struct {
 // MigrateSlackWebhookUrlsToSavedSearches migrates Slack webhook URLs from site settings into the
 // slack_webhook_url column of the saved_searches database table. As a result, Slack webhook URLs
 // will be associated with individual saved searches rather than user or organization profiles.
-func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) {
+func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) error {
 	settings, err := db.Settings.ListAll(ctx, "notifications.slack")
 	if err != nil {
-		log15.Error(`Warning: unable to migrate "saved queries" to database). Please report this issue`, err)
+		return errors.WithMessagef(err, `Warning: unable to migrate "saved queries" to database). Please report this issue`)
 	}
 
 	for _, s := range settings {
@@ -154,7 +148,7 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) {
 			insertSlackWebhookURLIntoSavedSearchesTable(ctx, "user", siteAdminID, notifsField.NotificationsSlack.WebhookURL)
 		}
 	}
-
+	return nil
 }
 
 // insertSlackWebhookURLIntoSavedSearchesTable inserts an existing Slack webhook URL into the slack_webhook_url column of the

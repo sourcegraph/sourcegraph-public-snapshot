@@ -106,11 +106,12 @@ func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (*api
 	return &savedSearch, err
 }
 
-// // ListSavedSearchesByUserID lists all the saved searches associated with a user.
-// //
-// // 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
-// // It is the caller's responsibility to make sure this method returns only saved searches associated with
-// // the current user.
+// ListSavedSearchesByUserID lists all the saved searches associated with a user,
+// including saved searches in organizations the user is a member of.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
+// It is the caller's responsibility to make sure this method returns only saved searches associated with
+// the current user.
 func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
 	var savedSearches []*types.SavedSearch
 	orgIDRows, err := dbconn.Global.QueryContext(ctx, `SELECT org_id FROM org_members WHERE user_id=$1`, userID)
@@ -131,6 +132,39 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 	if len(orgConditions) > 0 {
 		conds = sqlf.Sprintf("%v OR %v", conds, orgConditions)
 	}
+	query := sqlf.Sprintf(`SELECT
+		id,
+		description,
+		query,
+		notify_owner,
+		notify_slack,
+		owner_kind,
+		user_id,
+		org_id,
+		slack_webhook_url
+		FROM saved_searches %v`, conds)
+
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var ss types.SavedSearch
+		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.OwnerKind, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
+			return nil, err
+		}
+		savedSearches = append(savedSearches, &ss)
+	}
+	return savedSearches, err
+}
+
+// ListSavedSearchesByUserID lists all the saved searches associated with an organization.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
+// It is the caller's responsibility to make sure this method returns only saved searches from organizations the user is a part of.
+func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error) {
+	var savedSearches []*types.SavedSearch
+	conds := sqlf.Sprintf("WHERE org_id=%d", orgID)
 	query := sqlf.Sprintf(`SELECT
 		id,
 		description,
