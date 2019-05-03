@@ -13,15 +13,15 @@
             background: $color-light-bg-1;
             border-bottom: 1px solid $color-light-border;
         }
+    }
 
-        &-filters {
-            margin-left: 0.5rem;
-            display: flex;
-            overflow-x: auto;
+    &__filters {
+        margin-left: 0.5rem;
+        display: flex;
+        overflow-x: auto;
 
-            &::-webkit-scrollbar {
-                display: none;
-            }
+        &::-webkit-scrollbar {
+            display: none;
         }
     }
 }
