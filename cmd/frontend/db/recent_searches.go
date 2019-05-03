@@ -10,12 +10,12 @@ type RecentSearches struct {
 	DB *sql.DB
 }
 
-// Add inserts the query q to the RecentSearches table in the db.
+// Add inserts the query q to the recent_searches table in the db.
 func (rs *RecentSearches) Add(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
 	res, err := rs.DB.ExecContext(ctx, insert, q)
 	if err != nil {
-		return errors.Errorf("inserting %q into RecentSearches table: %v", q, err)
+		return errors.Errorf("inserting %q into recent_searches table: %v", q, err)
 	}
 	nrows, err := res.RowsAffected()
 	if err != nil {
@@ -27,7 +27,7 @@ func (rs *RecentSearches) Add(ctx context.Context, q string) error {
 	return nil
 }
 
-// DeleteExcessRows keeps the row count in the RecentSearches table below limit.
+// DeleteExcessRows keeps the row count in the recent_searches table below limit.
 func (rs *RecentSearches) DeleteExcessRows(ctx context.Context, limit int) error {
 	enforceLimit := `
 DELETE FROM recent_searches
@@ -38,12 +38,12 @@ DELETE FROM recent_searches
 		 LIMIT 1)
 `
 	if _, err := rs.DB.ExecContext(ctx, enforceLimit, limit); err != nil {
-		return errors.Errorf("deleting excess rows in RecentSearches table: %v", err)
+		return errors.Errorf("deleting excess rows in recent_searches table: %v", err)
 	}
 	return nil
 }
 
-// Get returns all the search queries in the RecentSearches table.
+// Get returns all the search queries in the recent_searches table.
 func (rs *RecentSearches) Get(ctx context.Context) ([]string, error) {
 	sel := `SELECT query FROM recent_searches`
 	rows, err := rs.DB.QueryContext(ctx, sel)
