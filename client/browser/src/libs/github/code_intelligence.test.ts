@@ -35,24 +35,27 @@ describe('github/code_intelligence', () => {
                             if (page === 'blob' || page === 'pull-request-discussion') {
                                 const directory = `${__dirname}/__fixtures__/${version}/${page}/${extension}`
                                 testCodeHost(`${directory}/page.html`)
-                                testMountGetter(
-                                    createFileLineContainerToolbarMount,
-                                    'createSingleFileToolbarMount()',
-                                    `${directory}/code-view.html`
-                                )
-                            }
-                            for (const view of ['split', 'unified']) {
-                                describe(`${startCase(view)} view`, () => {
-                                    const directory = `${__dirname}/__fixtures__/${version}/${page}/${extension}/${view}`
-                                    testCodeHost(`${directory}/page.html`)
-                                    describe('createFileActionsToolbarMount()', () => {
-                                        testMountGetter(
-                                            createFileActionsToolbarMount,
-                                            'createFileActionsToolbarMount()',
-                                            `${directory}/code-view.html`
-                                        )
+                                if (page !== 'pull-request-discussion') {
+                                    testMountGetter(
+                                        createFileLineContainerToolbarMount,
+                                        'createSingleFileToolbarMount()',
+                                        `${directory}/code-view.html`
+                                    )
+                                }
+                            } else {
+                                for (const view of ['split', 'unified']) {
+                                    describe(`${startCase(view)} view`, () => {
+                                        const directory = `${__dirname}/__fixtures__/${version}/${page}/${extension}/${view}`
+                                        testCodeHost(`${directory}/page.html`)
+                                        describe('createFileActionsToolbarMount()', () => {
+                                            testMountGetter(
+                                                createFileActionsToolbarMount,
+                                                'createFileActionsToolbarMount()',
+                                                `${directory}/code-view.html`
+                                            )
+                                        })
                                     })
-                                })
+                                }
                             }
                         })
                     }

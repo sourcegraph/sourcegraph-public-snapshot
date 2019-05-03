@@ -112,7 +112,7 @@ export const diffDomFunctions: DOMFunctions = {
         // <span class="blob-code-inner">+	fmt.<span class="pl-c1">Println</span>...
         //                               ^
         //
-        // New versions of GitHub do not, and Refined GitHub strips these
+        // New versions of GitHub do not, and Refined GitHub used to strip these
         // characters.
         //
         // Since a +, -, or space character in the first column could be either
@@ -138,7 +138,7 @@ export const diffDomFunctions: DOMFunctions = {
         const hasDataCodeMarkerSplit = blobCodeInner && blobCodeInner.hasAttribute('data-code-marker')
         const hasDataCodeMarker = hasDataCodeMarkerUnified || hasDataCodeMarkerSplit
 
-        // Refined GitHub strips the first character diff indicator.
+        // Refined GitHub used to strip the first character diff indicator.
         const hasRefinedGitHub = codeElement.closest('.refined-github-diff-signs')
 
         // When no other diff indicator is found, we assume the first character

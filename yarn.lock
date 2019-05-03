@@ -2483,6 +2483,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/simmerjs@0.5.0":
+  version "0.5.0"
+  resolved "https://registry.npmjs.org/@types/simmerjs/-/simmerjs-0.5.0.tgz#8af013ff6aa071bb18328c6ce8861d7c51fca4b3"
+  integrity sha512-2SbGw2eDt9eFGoj7KwuJbw2Kqccw6MXO8ViIBDPolV4naxsZtMCJg3E5cmj53uZj7tIwyyiQMfY2ty016Yc/wA==
+
 "@types/sinon@7.0.11":
   version "7.0.11"
   resolved "https://registry.npmjs.org/@types/sinon/-/sinon-7.0.11.tgz#6f28f005a36e779b7db0f1359b9fb9eef72aae88"
@@ -9389,12 +9394,22 @@ lodash.clonedeep@^4.5.0:
   resolved "https://registry.npmjs.org/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
   integrity sha1-4j8/nE+Pvd6HJSnBBxhXoIblzO8=
 
+lodash.difference@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.npmjs.org/lodash.difference/-/lodash.difference-4.5.0.tgz#9ccb4e505d486b91651345772885a2df27fd017c"
+  integrity sha1-nMtOUF1Ia5FlE0V3KIWi3yf9AXw=
+
 lodash.escaperegexp@^4.1.2:
   version "4.1.2"
   resolved "https://registry.npmjs.org/lodash.escaperegexp/-/lodash.escaperegexp-4.1.2.tgz#64762c48618082518ac3df4ccf5d5886dae20347"
   integrity sha1-ZHYsSGGAglGKw99Mz11YhtriA0c=
 
-lodash.isfunction@^3.0.9:
+lodash.flatmap@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.npmjs.org/lodash.flatmap/-/lodash.flatmap-4.5.0.tgz#ef8cbf408f6e48268663345305c6acc0b778702e"
+  integrity sha1-74y/QI9uSCaGYzRTBcaswLd4cC4=
+
+lodash.isfunction@^3.0.8, lodash.isfunction@^3.0.9:
   version "3.0.9"
   resolved "https://registry.npmjs.org/lodash.isfunction/-/lodash.isfunction-3.0.9.tgz#06de25df4db327ac931981d1bdb067e5af68d051"
   integrity sha512-AirXNj15uRIMMPihnkInB4i3NHeb4iBtNg9WRWuK2o31S+ePwwNmDPaTL3o7dTJ+VXNZim7rFs4rxN4YU1oUJw==
@@ -9438,6 +9453,16 @@ lodash.tail@^4.1.1:
   version "4.1.1"
   resolved "https://registry.npmjs.org/lodash.tail/-/lodash.tail-4.1.1.tgz#d2333a36d9e7717c8ad2f7cacafec7c32b444664"
   integrity sha1-0jM6NtnncXyK0vfKyv7HwytERmQ=
+
+lodash.take@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.npmjs.org/lodash.take/-/lodash.take-4.1.1.tgz#0b4146dcb7a70c6153495187fc10b12b71fefadf"
+  integrity sha1-C0FG3LenDGFTSVGH/BCxK3H++t8=
+
+lodash.takeright@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.npmjs.org/lodash.takeright/-/lodash.takeright-4.1.1.tgz#c98d84aa9b80e4d2ff675335a62e02e9a65bb210"
+  integrity sha1-yY2EqpuA5NL/Z1M1pi4C6aZbshA=
 
 lodash.template@^4.4.0:
   version "4.4.0"
@@ -13183,6 +13208,17 @@ signale@^1.4.0:
     chalk "^2.3.2"
     figures "^2.0.0"
     pkg-conf "^2.1.0"
+
+simmerjs@^0.5.6:
+  version "0.5.6"
+  resolved "https://registry.npmjs.org/simmerjs/-/simmerjs-0.5.6.tgz#4bba4fd4cbac18d889037aa199dd742dd1402b96"
+  integrity sha512-Z00zGHUp2IVSDUuni6gzBxVVQwAEZ7jVHnqL97+2RaHVWTYKfgCNyCvgm68Uc1M6X84hjatxvtOc24Y9ECLPWQ==
+  dependencies:
+    lodash.difference "^4.5.0"
+    lodash.flatmap "^4.5.0"
+    lodash.isfunction "^3.0.8"
+    lodash.take "^4.1.1"
+    lodash.takeright "^4.1.1"
 
 simple-concat@^1.0.0:
   version "1.0.0"

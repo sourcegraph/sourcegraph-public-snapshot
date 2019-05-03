@@ -19,17 +19,17 @@
 
 
   <link crossorigin="anonymous" media="all" integrity="sha512-dcLOgLGIYz/Y2ShFrU1QIrJkdqKiEQTjJoK2MCHtHxMhGAWpMAXyHjWgNqTdNzTcvNINu08lYn79EStdgLYUSQ==" rel="stylesheet" href="https://github.githubassets.com/assets/frameworks-911c0a12b70ded25a66d3432705a7c0f.css" />
-  
+
     <link crossorigin="anonymous" media="all" integrity="sha512-XJNYTvrBO0RaqB0tZVdKYfFq2gUiGETJOuCNi0+e/mIPlZ+UdLrTBgJ60Lx3tvS88u7LstVp5RDs/mBTR/jKjA==" rel="stylesheet" href="https://github.githubassets.com/assets/github-dc94120ec27a5bf991be50539bbad76e.css" />
-    
-    
-    
-    
+
+
+
+
 
   <meta name="viewport" content="width=device-width">
-  
+
   <title>make sourcegraph support redis password by alexandnpu · Pull Request #3221 · sourcegraph/sourcegraph</title>
-    <meta name="description" content="Test plan: 
+    <meta name="description" content="Test plan:
 sourcegraph should be able to support redis with authorization.
 Note:
 I failed to setup my dev environment to test on my own mac, as the dev setup is not that easy enough for only the server side.
@@ -38,11 +38,11 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
   <link rel="fluid-icon" href="https://github.com/fluidicon.png" title="GitHub">
   <meta property="fb:app_id" content="1401488693436528">
 
-    <meta name="twitter:image:src" content="https://avatars2.githubusercontent.com/u/3979584?s=400&amp;v=4" /><meta name="twitter:site" content="@github" /><meta name="twitter:card" content="summary" /><meta name="twitter:title" content="make sourcegraph support redis password by alexandnpu · Pull Request #3221 · sourcegraph/sourcegraph" /><meta name="twitter:description" content="Test plan: 
+    <meta name="twitter:image:src" content="https://avatars2.githubusercontent.com/u/3979584?s=400&amp;v=4" /><meta name="twitter:site" content="@github" /><meta name="twitter:card" content="summary" /><meta name="twitter:title" content="make sourcegraph support redis password by alexandnpu · Pull Request #3221 · sourcegraph/sourcegraph" /><meta name="twitter:description" content="Test plan:
 sourcegraph should be able to support redis with authorization.
 Note:
 I failed to setup my dev environment to test on my own mac, as the dev setup is not that easy enough for only the s..." />
-    <meta property="og:image" content="https://avatars2.githubusercontent.com/u/3979584?s=400&amp;v=4" /><meta property="og:site_name" content="GitHub" /><meta property="og:type" content="object" /><meta property="og:title" content="make sourcegraph support redis password by alexandnpu · Pull Request #3221 · sourcegraph/sourcegraph" /><meta property="og:url" content="https://github.com/sourcegraph/sourcegraph/pull/3221" /><meta property="og:description" content="Test plan: 
+    <meta property="og:image" content="https://avatars2.githubusercontent.com/u/3979584?s=400&amp;v=4" /><meta property="og:site_name" content="GitHub" /><meta property="og:type" content="object" /><meta property="og:title" content="make sourcegraph support redis password by alexandnpu · Pull Request #3221 · sourcegraph/sourcegraph" /><meta property="og:url" content="https://github.com/sourcegraph/sourcegraph/pull/3221" /><meta property="og:description" content="Test plan:
 sourcegraph should be able to support redis with authorization.
 Note:
 I failed to setup my dev environment to test on my own mac, as the dev setup is not that easy enough for only the s..." />
@@ -55,7 +55,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 
     <meta name="hovercard-subject-tag" content="pull_request:267437447" data-pjax-transient>
 
-  
+
 
   <meta name="selected-link" value="repo_pulls" data-pjax-transient>
 
@@ -76,7 +76,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 
 
 
-  
+
 
       <meta name="hostname" content="github.com">
     <meta name="user-login" content="lguychard">
@@ -89,7 +89,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
   <meta name="html-safe-nonce" content="f2aa177d3304d4abd9f30ff5c7aa38ba935da1e9">
 
   <meta http-equiv="x-pjax-version" content="1223b38dd2a06fa9c0439d9aa3018058">
-  
+
 
       <link href="https://github.com/sourcegraph/sourcegraph/commits/81008f4f999e8aa4d7c47746ee4421334f304af9.atom" rel="alternate" title="Recent Commits to sourcegraph:81008f4f999e8aa4d7c47746ee4421334f304af9" type="application/atom+xml">
 
@@ -118,15 +118,15 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
   </head>
 
   <body class="logged-in env-production emoji-size-boost">
-    
+
 
   <div class="position-relative js-header-wrapper ">
     <a href="#start-of-content" tabindex="1" class="p-3 bg-blue text-white show-on-focus js-skip-to-content">Skip to content</a>
     <div id="js-pjax-loader-bar" class="pjax-loader-bar"><div class="progress"></div></div>
 
-    
-    
-    
+
+
+
 
 
           <header class="Header" role="banner">
@@ -170,9 +170,9 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
             <img src="https://github.githubassets.com/images/search-key-slash.svg" alt="" class="mr-2 header-search-key-slash">
 
             <div class="Box position-absolute overflow-hidden d-none jump-to-suggestions js-jump-to-suggestions-container">
-              
+
 <ul class="d-none js-jump-to-suggestions-template-container">
-  
+
 
 <li class="d-flex flex-justify-start flex-items-center p-0 f5 navigation-item js-navigation-item js-jump-to-suggestion" role="option">
   <a tabindex="-1" class="no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path js-jump-to-suggestion-path js-navigation-open p-2" href="">
@@ -213,7 +213,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 </ul>
 
 <ul id="jump-to-results" role="listbox" class="p-0 m-0 js-navigation-container jump-to-suggestions-results-container js-jump-to-suggestions-results-container">
-  
+
 
 <li class="d-flex flex-justify-start flex-items-center p-0 f5 navigation-item js-navigation-item js-jump-to-scoped-search d-none" role="option">
   <a tabindex="-1" class="no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path js-jump-to-suggestion-path js-navigation-open p-2" href="">
@@ -245,7 +245,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
   </a>
 </li>
 
-  
+
 
 <li class="d-flex flex-justify-start flex-items-center p-0 f5 navigation-item js-navigation-item js-jump-to-global-search d-none" role="option">
   <a tabindex="-1" class="no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path js-jump-to-suggestion-path js-navigation-open p-2" href="">
@@ -299,7 +299,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 </a>
     <a class="js-selected-navigation-item Header-link  mr-3" data-ga-click="Header, click, Nav menu - item:marketplace context:user" data-octo-click="marketplace_click" data-octo-dimensions="location:nav_bar" data-selected-links=" /marketplace" href="/marketplace">
       Marketplace
-</a>      
+</a>
 
   <a class="js-selected-navigation-item Header-link  mr-3" data-ga-click="Header, click, Nav menu - item:explore" data-selected-links="/explore /trending /trending/developers /integrations /integrations/feature/code /integrations/feature/collaborate /integrations/feature/ship showcases showcases_search showcases_landing /explore" href="/explore">
     Explore
@@ -310,7 +310,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 
 
     <div class="Header-item">
-      
+
     <a aria-label="You have unread notifications" class="Header-link notification-indicator tooltipped tooltipped-s  js-socket-channel js-notification-indicator" data-hotkey="g n" data-ga-click="Header, go to notifications, icon:unread" data-channel="notification-changed:1741180" href="/notifications">
         <span class="mail-status unread"></span>
         <svg class="octicon octicon-bell" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14 12v1H0v-1l.73-.58c.77-.77.81-2.55 1.19-4.42C2.69 3.23 6 2 6 2c0-.55.45-1 1-1s1 .45 1 1c0 0 3.39 1.23 4.16 5 .38 1.88.42 3.66 1.19 4.42l.66.58H14zm-7 4c1.11 0 2-.89 2-2H5c0 1.11.89 2 2 2z"/></svg>
@@ -326,7 +326,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
     <svg class="octicon octicon-plus" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M12 9H7v5H5V9H0V7h5V2h2v5h5v2z"/></svg> <span class="dropdown-caret"></span>
   </summary>
   <details-menu class="dropdown-menu dropdown-menu-sw">
-    
+
 <a role="menuitem" class="dropdown-item" href="/new" data-ga-click="Header, create new repository">
   New repository
 </a>
@@ -359,7 +359,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
     </div>
 
     <div class="Header-item position-relative mr-0">
-      
+
 <details class="details-overlay details-reset">
   <summary class="Header-link"
     aria-label="View profile and more"
@@ -372,7 +372,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
     <div role="none" class="dropdown-divider"></div>
 
       <div class="pl-3 pr-5 f6 user-status-container js-user-status-context pb-1" data-url="/users/status?compact=1&amp;link_mentions=0&amp;truncate=1">
-        
+
 <div class="js-user-status-container user-status-compact" data-team-hovercards-enabled>
   <details class="js-user-status-details details-reset details-overlay details-overlay-dark">
     <summary class="btn-link no-underline js-toggle-user-status-edit toggle-user-status-edit width-full " aria-haspopup="dialog" role="menuitem" data-hydro-click="{&quot;event_type&quot;:&quot;user_profile.click&quot;,&quot;payload&quot;:{&quot;profile_user_id&quot;:3979584,&quot;target&quot;:&quot;EDIT_USER_STATUS&quot;,&quot;user_id&quot;:1741180,&quot;client_id&quot;:&quot;1032549827.1548354440&quot;,&quot;originating_request_id&quot;:&quot;C1A5:1FB94:1D9944:2C1953:5CB87E24&quot;,&quot;originating_url&quot;:&quot;https://github.com/sourcegraph/sourcegraph/pull/3221&quot;,&quot;referrer&quot;:&quot;https://github.com/sourcegraph/sourcegraph/issues/3480&quot;}}" data-hydro-click-hmac="eb88faf71edca62003e09067ce7f957985a978ec96d449802a9ddf619a0bbbfe">
@@ -473,7 +473,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
               </div>
             </div>
           </div>
-            
+
 
 <div class="d-inline-block f5 mr-2 pt-3 pb-2" >
   <div class="d-inline-block mr-1">
@@ -556,7 +556,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
     <a role="menuitem" class="dropdown-item" href="https://help.github.com" data-ga-click="Header, go to help, text:help">Help</a>
     <a role="menuitem" class="dropdown-item" href="/settings/profile" data-ga-click="Header, go to settings, icon:settings">Settings</a>
     <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="logout-form" action="/logout" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="/k/gQlew4QTA5EA4pGQyHUrfGZ88mfVb6sAn8fIUWNdGUfh+7141qMoVS+DZSDDD/ObcJZEsejP6xcUF7A3h6A==" />
-      
+
       <button type="submit" class="dropdown-item dropdown-signout" data-ga-click="Header, sign out, icon:logout" role="menuitem">
         Sign out
       </button>
@@ -567,7 +567,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 
   </header>
 
-      
+
 
   </div>
 
@@ -583,15 +583,15 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
   <div class="application-main " data-commit-hovercards-enabled>
         <div itemscope itemtype="http://schema.org/SoftwareSourceCode" class="">
     <main id="js-repo-pjax-container" data-pjax-container >
-      
+
 <!-- base sha1: &quot;7ce8d734442bb0d43557a3163ca8c3231db3b6c2&quot; -->
 <!-- head sha1: &quot;81008f4f999e8aa4d7c47746ee4421334f304af9&quot; -->
 
-  
 
 
 
-  
+
+
 
 
 
@@ -604,7 +604,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 
 
   <li>
-    
+
     <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-remote="true" class="clearfix js-social-form js-social-container" action="/notifications/subscribe" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="1qdTfBawyeH8yWRP0yBUIB+XrxIjRZ4oC1IFChz/dxTygnsmgmvIFgmS6YIX34om2P0YRtVqn/WdZHS2QBMzhg==" />      <input type="hidden" name="repository_id" value="41288708">
 
       <details class="details-reset details-overlay select-menu float-left">
@@ -736,12 +736,12 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
   <span class="author" itemprop="author"><a class="url fn" rel="author" data-hovercard-type="organization" data-hovercard-url="/orgs/sourcegraph/hovercard" href="/sourcegraph">sourcegraph</a></span><!--
 --><span class="path-divider">/</span><!--
 --><strong itemprop="name"><a data-pjax="#js-repo-pjax-container" href="/sourcegraph/sourcegraph">sourcegraph</a></strong>
-  
+
 
 </h1>
 
     </div>
-    
+
 <nav class="reponav js-repo-nav js-sidenav-container-pjax container"
      itemscope
      itemtype="http://schema.org/BreadcrumbList"
@@ -798,15 +798,15 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 <div class="container new-discussion-timeline experiment-repo-nav  ">
   <div class="repository-content ">
 
-    
-    
+
+
   <div class="js-check-all-container" data-pjax>
-    
-  
+
+
 
 
   <div class="clearfix js-issues-results">
-    
+
   <div
     id="partial-discussion-header"
     class="gh-header js-details-container Details js-socket-channel js-updatable-content pull request js-pull-header-details"
@@ -837,7 +837,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
   <div class="TableObject gh-header-meta">
     <div class="TableObject-item">
         <span class="State State--red  " title="Status: Closed">
-  
+
   <svg height="16" class="octicon octicon-git-pull-request" viewBox="0 0 12 16" version="1.1" width="12" aria-hidden="true"><path fill-rule="evenodd" d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0 0 10 15a1.993 1.993 0 0 0 1-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v6.56A1.993 1.993 0 0 0 2 15a1.993 1.993 0 0 0 1-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg> Closed
 
 </span>
@@ -868,7 +868,7 @@ from
           <div class="d-flex flex-row flex-items-center">
             <div class="mr-2 flex-shrink-0">
                 <span class="State State--red  " title="Status: Closed">
-  
+
   <svg height="16" class="octicon octicon-git-pull-request" viewBox="0 0 12 16" version="1.1" width="12" aria-hidden="true"><path fill-rule="evenodd" d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0 0 10 15a1.993 1.993 0 0 0 1-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v6.56A1.993 1.993 0 0 0 2 15a1.993 1.993 0 0 0 1-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg> Closed
 
 </span>
@@ -907,7 +907,7 @@ from
 </div>
 
 
-      
+
 <div class="tabnav tabnav-pr">
     <div class="tabnav-extra float-right">
       <span class="diffstat" id="diffstat">
@@ -970,7 +970,7 @@ from
     <div id="discussion_bucket"
           class="clearfix pull-request-tab-content is-visible js-socket-channel js-updatable-content"
           data-channel="pull_request:267437447:timeline">
-      
+
 <div class="discussion-sidebar">
   <div id="partial-discussion-sidebar"
   class="js-socket-channel js-updatable-content"
@@ -981,7 +981,7 @@ from
 
     <div class="discussion-sidebar-item sidebar-assignee js-discussion-sidebar-item position-relative" data-team-hovercards-enabled>
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="js-issue-sidebar-form" aria-label="Select reviewers" action="/sourcegraph/sourcegraph/pull/3221/review-requests?pr_global_id=MDExOlB1bGxSZXF1ZXN0MjY3NDM3NDQ3" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="6bEWQsrc/d82F8TX4g2ygghoqVQchcMBjmbBCKf4S4SPzyvNhkeY/vDeWs+E8K8eSZcgAPt6KNaNbfAZf+zo/g==" />
-    
+
   <details class="details-reset details-overlay select-menu js-select-menu js-dropdown-details js-load-contents "
     data-contents-url="/sourcegraph/sourcegraph/pull/3221/review-requests"
     data-multiple data-max-options=15>
@@ -997,10 +997,10 @@ from
       <div class="select-menu-header">
         <span class="select-menu-title">Request a review</span>
       </div>
-      
-        
-        
-  
+
+
+
+
 <div class="select-menu-filters">
   <div class="select-menu-text-filter">
     <input type="text" id="review-filter-field" class="form-control js-filterable-field js-navigation-enable"
@@ -1046,7 +1046,7 @@ from
 </div>
 
 
-        
+
         <div class="select-menu-loading-overlay anim-pulse">
           <svg height="32" class="octicon octicon-octoface" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true"><path fill-rule="evenodd" d="M14.7 5.34c.13-.32.55-1.59-.13-3.31 0 0-1.05-.33-3.44 1.3-1-.28-2.07-.32-3.13-.32s-2.13.04-3.13.32c-2.39-1.64-3.44-1.3-3.44-1.3-.68 1.72-.26 2.99-.13 3.31C.49 6.21 0 7.33 0 8.69 0 13.84 3.33 15 7.98 15S16 13.84 16 8.69c0-1.36-.49-2.48-1.3-3.35zM8 14.02c-3.3 0-5.98-.15-5.98-3.35 0-.76.38-1.48 1.02-2.07 1.07-.98 2.9-.46 4.96-.46 2.07 0 3.88-.52 4.96.46.65.59 1.02 1.3 1.02 2.07 0 3.19-2.68 3.35-5.98 3.35zM5.49 9.01c-.66 0-1.2.8-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.54-1.78-1.2-1.78zm5.02 0c-.66 0-1.2.79-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.53-1.78-1.2-1.78z"/></svg>
         </div>
@@ -1056,7 +1056,7 @@ from
     <span class="css-truncate">
 
         <p>
-          
+
 <span class="js-hovercard-left" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-assignee-name="beyang">
   <a class="no-underline" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">
     <img class="avatar" src="https://avatars3.githubusercontent.com/u/1646931?s=40&amp;v=4" width="20" height="20" alt="@beyang" />
@@ -1074,7 +1074,7 @@ from
 
         </p>
 
-      
+
 </span>
 
 </form></div>
@@ -1082,7 +1082,7 @@ from
 
   <div class="discussion-sidebar-item sidebar-assignee js-discussion-sidebar-item">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="js-issue-sidebar-form" aria-label="Select assignees" action="/sourcegraph/sourcegraph/issues/3221/assignees" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="N8P6n804x0RbjPmdoCZXDKPw4qD+qF55vsfpo5FeDWPvimSHKFhstOMdXZBMg3wDR2hwreUYBmVMB5os3oqrCg==" />
-    
+
   <details class="details-reset details-overlay select-menu js-select-menu js-dropdown-details js-load-contents "
     data-contents-url="/sourcegraph/sourcegraph/issues/3221/show_partial?partial=issues%2Fsidebar%2Fassignees_menu_content"
     data-multiple data-max-options=10>
@@ -1098,10 +1098,10 @@ from
       <div class="select-menu-header">
         <span class="select-menu-title">Assign up to 10 people to this pull request</span>
       </div>
-      
-        
-        
-  
+
+
+
+
 <div class="select-menu-filters">
   <div class="select-menu-text-filter">
     <input type="text" id="assignee-filter-field" class="form-control js-filterable-field js-navigation-enable"
@@ -1152,7 +1152,7 @@ from
 </div>
 
 
-        
+
         <div class="select-menu-loading-overlay anim-pulse">
           <svg height="32" class="octicon octicon-octoface" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true"><path fill-rule="evenodd" d="M14.7 5.34c.13-.32.55-1.59-.13-3.31 0 0-1.05-.33-3.44 1.3-1-.28-2.07-.32-3.13-.32s-2.13.04-3.13.32c-2.39-1.64-3.44-1.3-3.44-1.3-.68 1.72-.26 2.99-.13 3.31C.49 6.21 0 7.33 0 8.69 0 13.84 3.33 15 7.98 15S16 13.84 16 8.69c0-1.36-.49-2.48-1.3-3.35zM8 14.02c-3.3 0-5.98-.15-5.98-3.35 0-.76.38-1.48 1.02-2.07 1.07-.98 2.9-.46 4.96-.46 2.07 0 3.88-.52 4.96.46.65.59 1.02 1.3 1.02 2.07 0 3.19-2.68 3.35-5.98 3.35zM5.49 9.01c-.66 0-1.2.8-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.54-1.78-1.2-1.78zm5.02 0c-.66 0-1.2.79-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.53-1.78-1.2-1.78z"/></svg>
         </div>
@@ -1161,7 +1161,7 @@ from
 
     <span class="css-truncate js-issue-assignees">
       <p>
-        
+
 <span class="js-hovercard-left" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-assignee-name="beyang">
   <a class="no-underline" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">
     <img class="avatar" src="https://avatars3.githubusercontent.com/u/1646931?s=40&amp;v=4" width="20" height="20" alt="@beyang" />
@@ -1174,7 +1174,7 @@ from
 </form></div>
 
     <div class="discussion-sidebar-item sidebar-labels js-discussion-sidebar-item">
-  
+
 
 
   <details class="details-reset details-overlay select-menu js-select-menu js-dropdown-details js-load-contents label-select-menu"
@@ -1200,7 +1200,7 @@ from
   </div>
 
         <div class="js-select-menu-deferred-content js-updatable-content js-issue-labels-menu-content" data-url="/sourcegraph/sourcegraph/issues/3221/show_partial?partial=issues%2Fsidebar%2Flabels_menu_content">
-          
+
         </div>
         <div class="select-menu-loading-overlay anim-pulse">
           <svg height="32" class="octicon octicon-octoface" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true"><path fill-rule="evenodd" d="M14.7 5.34c.13-.32.55-1.59-.13-3.31 0 0-1.05-.33-3.44 1.3-1-.28-2.07-.32-3.13-.32s-2.13.04-3.13.32c-2.39-1.64-3.44-1.3-3.44-1.3-.68 1.72-.26 2.99-.13 3.31C.49 6.21 0 7.33 0 8.69 0 13.84 3.33 15 7.98 15S16 13.84 16 8.69c0-1.36-.49-2.48-1.3-3.35zM8 14.02c-3.3 0-5.98-.15-5.98-3.35 0-.76.38-1.48 1.02-2.07 1.07-.98 2.9-.46 4.96-.46 2.07 0 3.88-.52 4.96.46.65.59 1.02 1.3 1.02 2.07 0 3.19-2.68 3.35-5.98 3.35zM5.49 9.01c-.66 0-1.2.8-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.54-1.78-1.2-1.78zm5.02 0c-.66 0-1.2.79-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.53-1.78-1.2-1.78z"/></svg>
@@ -1216,7 +1216,7 @@ from
 
     <div class="discussion-sidebar-item js-discussion-sidebar-item">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="js-issue-sidebar-form" aria-label="Select projects" action="/sourcegraph/sourcegraph/projects/issues/3221" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="IetfYplTDR4jhvwcCyyi4t7ghp088IHxAetMEHJCZimHPVKmN/Laelvw/p32i0nVT28UBQne9BkCSSG6p/7sOA==" />
-    
+
   <details class="details-reset details-overlay select-menu js-select-menu js-dropdown-details js-load-contents "
     data-contents-url="/sourcegraph/sourcegraph/issues/3221/show_partial?partial=issues%2Fsidebar%2Fprojects_menu_content"
     data-multiple>
@@ -1232,9 +1232,9 @@ from
       <div class="select-menu-header">
         <span class="select-menu-title">Projects</span>
       </div>
-      
+
         <div class="js-select-menu-deferred-content " data-url="/sourcegraph/sourcegraph/issues/3221/show_partial?partial=issues%2Fsidebar%2Fprojects_menu_content">
-          
+
         </div>
         <div class="select-menu-loading-overlay anim-pulse">
           <svg height="32" class="octicon octicon-octoface" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true"><path fill-rule="evenodd" d="M14.7 5.34c.13-.32.55-1.59-.13-3.31 0 0-1.05-.33-3.44 1.3-1-.28-2.07-.32-3.13-.32s-2.13.04-3.13.32c-2.39-1.64-3.44-1.3-3.44-1.3-.68 1.72-.26 2.99-.13 3.31C.49 6.21 0 7.33 0 8.69 0 13.84 3.33 15 7.98 15S16 13.84 16 8.69c0-1.36-.49-2.48-1.3-3.35zM8 14.02c-3.3 0-5.98-.15-5.98-3.35 0-.76.38-1.48 1.02-2.07 1.07-.98 2.9-.46 4.96-.46 2.07 0 3.88-.52 4.96.46.65.59 1.02 1.3 1.02 2.07 0 3.19-2.68 3.35-5.98 3.35zM5.49 9.01c-.66 0-1.2.8-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.54-1.78-1.2-1.78zm5.02 0c-.66 0-1.2.79-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.53-1.78-1.2-1.78z"/></svg>
@@ -1242,7 +1242,7 @@ from
     </div>
   </details>
 
-    
+
 <span class="css-truncate sidebar-projects">
     None yet
 </span>
@@ -1251,7 +1251,7 @@ from
 
     <div class="discussion-sidebar-item sidebar-milestone js-discussion-sidebar-item">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="js-issue-sidebar-form" aria-label="Select milestones" action="/sourcegraph/sourcegraph/issues/3221/set_milestone?partial=issues%2Fsidebar%2Fshow%2Fmilestone" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="wn8zqrBQXA/PPU8VoTH/EGjJh4/Vxqhs8SGVN2ueBm8t7ui/elBPwqQehWpJu6ow8hledn7GS+qCtJrUMExICQ==" />
-    
+
   <details class="details-reset details-overlay select-menu js-select-menu js-dropdown-details js-load-contents "
     data-contents-url="/sourcegraph/sourcegraph/issues/3221/show_partial?partial=issues%2Fsidebar%2Fmilestone_menu_content"
     >
@@ -1267,9 +1267,9 @@ from
       <div class="select-menu-header">
         <span class="select-menu-title">Set milestone</span>
       </div>
-      
+
         <div class="js-select-menu-deferred-content " data-url="/sourcegraph/sourcegraph/issues/3221/show_partial?partial=issues%2Fsidebar%2Fmilestone_menu_content">
-          
+
         </div>
         <div class="select-menu-loading-overlay anim-pulse">
           <svg height="32" class="octicon octicon-octoface" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true"><path fill-rule="evenodd" d="M14.7 5.34c.13-.32.55-1.59-.13-3.31 0 0-1.05-.33-3.44 1.3-1-.28-2.07-.32-3.13-.32s-2.13.04-3.13.32c-2.39-1.64-3.44-1.3-3.44-1.3-.68 1.72-.26 2.99-.13 3.31C.49 6.21 0 7.33 0 8.69 0 13.84 3.33 15 7.98 15S16 13.84 16 8.69c0-1.36-.49-2.48-1.3-3.35zM8 14.02c-3.3 0-5.98-.15-5.98-3.35 0-.76.38-1.48 1.02-2.07 1.07-.98 2.9-.46 4.96-.46 2.07 0 3.88-.52 4.96.46.65.59 1.02 1.3 1.02 2.07 0 3.19-2.68 3.35-5.98 3.35zM5.49 9.01c-.66 0-1.2.8-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.54-1.78-1.2-1.78zm5.02 0c-.66 0-1.2.79-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.53-1.78-1.2-1.78z"/></svg>
@@ -1316,15 +1316,15 @@ from
     </div>
     <div class="participation-avatars d-flex flex-wrap">
         <a class="participant-avatar" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">
-          <img class="avatar" src="https://avatars0.githubusercontent.com/u/1999503?s=52&amp;v=4" width="26" height="26" alt="@alexandnpu" /> 
+          <img class="avatar" src="https://avatars0.githubusercontent.com/u/1999503?s=52&amp;v=4" width="26" height="26" alt="@alexandnpu" />
 </a>        <a class="participant-avatar" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">
-          <img class="avatar" src="https://avatars2.githubusercontent.com/u/1646931?s=52&amp;v=4" width="26" height="26" alt="@beyang" /> 
+          <img class="avatar" src="https://avatars2.githubusercontent.com/u/1646931?s=52&amp;v=4" width="26" height="26" alt="@beyang" />
 </a>    </div>
   </div>
 </div>
 
 
-  
+
   <div class="discussion-sidebar-item">
     <details class="details-reset details-overlay details-overlay-dark">
       <summary class="text-bold link-gray-dark lock-toggle-link" aria-haspopup="dialog">
@@ -1380,7 +1380,7 @@ from
 
 
 
-  
+
 
 </div>
 
@@ -1395,13 +1395,13 @@ from
     data-quote-markdown=".js-comment-body" data-issue-and-pr-hovercards-enabled data-team-hovercards-enabled>
     <div class="js-discussion js-socket-channel" data-channel="marked-as-read:pull-request:267437447">
 
-    
+
 <div class="timeline-comment-wrapper js-comment-container mt-0 js-socket-channel"
   data-gid="MDExOlB1bGxSZXF1ZXN0MjY3NDM3NDQ3"
   data-url="/_render_node/MDExOlB1bGxSZXF1ZXN0MjY3NDM3NDQ3/pull_requests/body"
   data-channel="pull_request:267437447">
 
-  
+
 
 <div class="avatar-parent-child timeline-comment-avatar">
     <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu"><img class="avatar rounded-1" height="44" width="44" alt="@alexandnpu" src="https://avatars3.githubusercontent.com/u/1999503?s=88&amp;v=4" /></a>
@@ -1409,17 +1409,16 @@ from
 </div>
 
 
-  
+
 <div class="timeline-comment-group js-minimizable-comment-group js-targetable-comment" id="issue-267437447">
   <div class="unminimized-comment editable-comment comment previewable-edit js-comment js-task-list-container timeline-comment reorderable-task-lists "
        data-body-version="cc42b4e3384ae91f02b330e1febc6a9c"
        data-unfurl-hide-url="/content_reference_attachments/hide"
        data-unfurl-authenticity-token="7Xm9+IkyExSM9yQg3MLeGzxv5juOQwQoaBE6H0abZVi+8jwDxzGfrvd3xGKgMUGejRa9qnqqPYaOq4uO2OLPIw==">
 
-    
+
 <div class="timeline-comment-header clearfix">
   <div class="timeline-comment-actions">
-    
 
 
 
@@ -1435,7 +1434,8 @@ from
 
 
 
-  
+
+
   <details class="details-overlay details-reset position-relative d-inline-block js-socket-channel js-updatable-content js-reaction-popover-container js-comment-header-reaction-button"
       data-channel="reaction:pull-request:267437447"
       data-url="/_render_node/MDExOlB1bGxSZXF1ZXN0MjY3NDM3NDQ3/comments/comment_header_reaction_button">
@@ -1443,7 +1443,7 @@ from
       <svg class="octicon octicon-plus-small add-reaction-plus-icon" viewBox="0 0 7 16" version="1.1" width="7" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 4H3v3H0v1h3v3h1V8h3V7H4V4z"/></svg>
       <svg class="octicon octicon-smiley" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm4.81 12.81a6.72 6.72 0 0 1-2.17 1.45c-.83.36-1.72.53-2.64.53-.92 0-1.81-.17-2.64-.53-.81-.34-1.55-.83-2.17-1.45a6.773 6.773 0 0 1-1.45-2.17A6.59 6.59 0 0 1 1.21 8c0-.92.17-1.81.53-2.64.34-.81.83-1.55 1.45-2.17.62-.62 1.36-1.11 2.17-1.45A6.59 6.59 0 0 1 8 1.21c.92 0 1.81.17 2.64.53.81.34 1.55.83 2.17 1.45.62.62 1.11 1.36 1.45 2.17.36.83.53 1.72.53 2.64 0 .92-.17 1.81-.53 2.64-.34.81-.83 1.55-1.45 2.17zM4 6.8v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2H5.2C4.53 8 4 7.47 4 6.8zm5 0v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2h-.59C9.53 8 9 7.47 9 6.8zm4 3.2c-.72 1.88-2.91 3-5 3s-4.28-1.13-5-3c-.14-.39.23-1 .66-1h8.59c.41 0 .89.61.75 1z"/></svg>
     </summary>
-    
+
 <details-menu class="dropdown-menu dropdown-menu-sw add-reaction-popover js-add-reaction-popover anim-scale-in" aria-label="Pick your reaction">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="reaction-popover-form js-pick-reaction" action="/users/sourcegraph/reactions" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="aZKUxxZzVitv4iXdiy7rzjp32dPB7OQ2nBq1Iq8lt7u21SY/d+DoYgHYPiCUEDcchpFHUD3Ee3p06i4T1ckA2g==" />
     <p class="text-gray mx-2 my-1">
@@ -1553,7 +1553,7 @@ from
     class="dropdown-item btn-link"
     for="pullrequest-267437447-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -1580,26 +1580,26 @@ from
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221&amp;report=alexandnpu+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
   </div>
 
-    
 
 
-  
+
+
 
 
   <h3 class="timeline-comment-header-text f5 text-normal">
 
 
     <strong class="css-truncate">
-      
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
-  
+
 
     </strong>
 
@@ -1616,14 +1616,14 @@ from
 
     <div class="edit-comment-hide">
 
-      
+
 <task-lists disabled sortable>
 <table class="d-block">
   <tbody class="d-block">
     <tr class="d-block">
       <td class="d-block comment-body markdown-body  js-comment-body">
 
-          
+
 <p>Test plan: </p>
 <p>sourcegraph should be able to support redis with authorization.</p>
 <p>Note:<br>
@@ -1636,7 +1636,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 </task-lists>
 
 
-        
+
 
 <div class="comment-reactions  js-reactions-container js-socket-channel js-updatable-content"
 
@@ -1646,20 +1646,20 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 </div>
 
 
-        
+
 
     </div>
 
       <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="6ma/BrUCIHzfvhAo3YVv9uevJfKDcE4OhcpgzX4YyfowtJ2CpWpQ/YB0IqRRPS6GL8/e0/QQc2wadJMSRVhnRw==" class="js-comment-update" action="/sourcegraph/sourcegraph/issues/3221" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="bDqynw+TJ2zhaoACoRcAV5CMVjCxtbma6r7G5Tr32ii5AAXWhri2Xuk31NaY3uA6Gs7jzPd1V22hzVpVAJPv3w==" />
         <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="GQqKr/fH+fDokck03J1uHgK8mh77vL1Sr1EFYxdDJHKsM0GGzPVB67IG2qgNvlSv3gpvLmyq0QydJi16nsizoA==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="issue-267437447-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -1737,7 +1737,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="XwKyS0YMZbvKtL0bGDSJWzwoSQ/F3zzsQkiGyeHUY7eF0JDPVmQVOpV+j5eUjMgr9EiyLrK/AY7d9nUW2pTNCg=="
       data-upload-repository-id="41288708"
@@ -1769,7 +1769,7 @@ I failed to setup my dev environment to test on my own mac, as the dev setup is 
 Maybe this PR is an idea to show you that sourcegraph should be able to use password to connect redis. Because in my company, every redis server should use password to connect.
 </textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -1835,7 +1835,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -1877,22 +1877,22 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 </div>
 
 
-    
+
 
   <div id="js-timeline-progressive-loader" data-timeline-item-src="sourcegraph/sourcegraph/timeline?id=MDExOlB1bGxSZXF1ZXN0MjY3NDM3NDQ3&amp;variables%5Bafter%5D=Y3Vyc29yOnYyOpPPAAABai_xBfAAqTQ4NDQzOTA5OQ%3D%3D&amp;variables%5Bfirst%5D=60" ></div>
 
 
-  
-  
+
+
 <div class="js-timeline-item js-timeline-progressive-focus-container" data-gid="MDE3OlB1bGxSZXF1ZXN0Q29tbWl0MjY3NDM3NDQ3OjRlYTQ2ZWUxZTBmMzMxOWFiOWE5YmFhMjQ0NDU1MzFmYmNiMmM5Njk=">
-  
-      
+
+
 <div class="discussion-item discussion-commits" id="commits-pushed-4ea46ee">
     <h3 class="discussion-item-header f5 text-normal">
       <span class="discussion-item-icon">
         <svg class="octicon octicon-repo-push" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 3H3V2h1v1zM3 5h1V4H3v1zm4 0L4 9h2v7h2V9h2L7 5zm4-5H1C.45 0 0 .45 0 1v12c0 .55.45 1 1 1h4v-1H1v-2h4v-1H2V1h9.02L11 10H9v1h2v2H9v1h2c.55 0 1-.45 1-1V1c0-.55-.45-1-1-1z"/></svg>
       </span>
-      
+
   <a class="author" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
 
       added some commits
@@ -1902,7 +1902,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     </h3>
   <div class="discussion-item-body">
     <div class="timeline-commits ">
-        
+
 
 <div class="commit js-details-container Details js-socket-channel js-updatable-content no-wrap d-flex mb-2"
      data-channel="repo:41288708:commit:4ea46ee1e0f3319ab9a9baa24445531fbcb2c969"
@@ -1912,7 +1912,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     <svg class="octicon octicon-git-commit" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M10.86 7c-.45-1.72-2-3-3.86-3-1.86 0-3.41 1.28-3.86 3H0v2h3.14c.45 1.72 2 3 3.86 3 1.86 0 3.41-1.28 3.86-3H14V7h-3.14zM7 10.2c-1.22 0-2.2-.98-2.2-2.2 0-1.22.98-2.2 2.2-2.2 1.22 0 2.2.98 2.2 2.2 0 1.22-.98 2.2-2.2 2.2z"/></svg>
   </div>
 
-  
+
 <div class="AvatarStack flex-self-start ">
   <div class="AvatarStack-body" aria-label="alexandnpu">
         <a class="avatar" data-skip-pjax="true" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">
@@ -1931,7 +1931,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
   </div>
 
   <div class="commit-sig-status text-right pr-1">
-    
+
 
   </div>
 
@@ -1946,7 +1946,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 </div>
 
 
-        
+
 
 <div class="commit js-details-container Details js-socket-channel js-updatable-content no-wrap d-flex mb-2"
      data-channel="repo:41288708:commit:af9ce8bd17fc70b7cb7e2deffd68cf0b46b9f5da"
@@ -1956,7 +1956,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     <svg class="octicon octicon-git-commit" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M10.86 7c-.45-1.72-2-3-3.86-3-1.86 0-3.41 1.28-3.86 3H0v2h3.14c.45 1.72 2 3 3.86 3 1.86 0 3.41-1.28 3.86-3H14V7h-3.14zM7 10.2c-1.22 0-2.2-.98-2.2-2.2 0-1.22.98-2.2 2.2-2.2 1.22 0 2.2.98 2.2 2.2 0 1.22-.98 2.2-2.2 2.2z"/></svg>
   </div>
 
-  
+
 <div class="AvatarStack flex-self-start ">
   <div class="AvatarStack-body" aria-label="alexandnpu">
         <a class="avatar" data-skip-pjax="true" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">
@@ -1975,7 +1975,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
   </div>
 
   <div class="commit-sig-status text-right pr-1">
-    
+
 
   </div>
 
@@ -1990,7 +1990,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 </div>
 
 
-        
+
 
 <div class="commit js-details-container Details js-socket-channel js-updatable-content no-wrap d-flex mb-2"
      data-channel="repo:41288708:commit:cb632145276dd3e17f03e44b272b611b8107f725"
@@ -2000,7 +2000,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     <svg class="octicon octicon-git-commit" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M10.86 7c-.45-1.72-2-3-3.86-3-1.86 0-3.41 1.28-3.86 3H0v2h3.14c.45 1.72 2 3 3.86 3 1.86 0 3.41-1.28 3.86-3H14V7h-3.14zM7 10.2c-1.22 0-2.2-.98-2.2-2.2 0-1.22.98-2.2 2.2-2.2 1.22 0 2.2.98 2.2 2.2 0 1.22-.98 2.2-2.2 2.2z"/></svg>
   </div>
 
-  
+
 <div class="AvatarStack flex-self-start ">
   <div class="AvatarStack-body" aria-label="alexandnpu">
         <a class="avatar" data-skip-pjax="true" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">
@@ -2019,7 +2019,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
   </div>
 
   <div class="commit-sig-status text-right pr-1">
-    
+
 
   </div>
 
@@ -2041,10 +2041,10 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 
 </div>
 
-  
-  
+
+
 <div class="js-timeline-item js-timeline-progressive-focus-container" data-gid="MDEzOkFzc2lnbmVkRXZlbnQyMjUzOTA2NTM2">
-  
+
         <div class="discussion-item discussion-item-assigned" data-team-hovercards-enabled>
   <h3 class="discussion-item-header f5 text-normal" id="event-2253906536">
 
@@ -2052,14 +2052,14 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
       <svg class="octicon octicon-person" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M12 14.002a.998.998 0 0 1-.998.998H1.001A1 1 0 0 1 0 13.999V13c0-2.633 4-4 4-4s.229-.409 0-1c-.841-.62-.944-1.59-1-4 .173-2.413 1.867-3 3-3s2.827.586 3 3c-.056 2.41-.159 3.38-1 4-.229.59 0 1 0 1s4 1.367 4 4v1.002z"/></svg>
     </span>
 
-    
+
 
         <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang"><img class="avatar" height="16" width="16" alt="@beyang" src="https://avatars0.githubusercontent.com/u/1646931?s=60&amp;v=4" /></a>
   <a class="author text-inherit" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
 
 
-      
+
+
 
       self-assigned this
 
@@ -2074,18 +2074,18 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 
 </div>
 
-  
-  
+
+
 <div class="js-timeline-item js-timeline-progressive-focus-container" data-gid="MDE3OlB1bGxSZXF1ZXN0UmV2aWV3MjIzMDY0MzI0">
-  
-      
+
+
 
 <div class="timeline-comment-wrapper discussion-item-review mt-0
-            
-            
-            
+
+
+
             is-writer">
-  
+
 
 <div
   id="pullrequestreview-223064324"
@@ -2093,7 +2093,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
   data-gid="MDE3OlB1bGxSZXF1ZXN0UmV2aWV3MjIzMDY0MzI0"
   data-channel="pull_request_review:223064324"
   data-url="/_render_node/MDE3OlB1bGxSZXF1ZXN0UmV2aWV3MjIzMDY0MzI0/pull_request_reviews/body">
-    
+
 
 <div class="avatar-parent-child timeline-comment-avatar">
     <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang"><img class="avatar rounded-1" height="44" width="44" alt="@beyang" src="https://avatars1.githubusercontent.com/u/1646931?s=88&amp;v=4" /></a>
@@ -2108,10 +2108,10 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 
         <div class="discussion-item-copy d-inline-block">
           <strong>
-            
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
+
 
           </strong>
 
@@ -2138,17 +2138,16 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 
 
       <div class="pull-request-review-body-wrapper position-relative">
-        
+
 <div class="timeline-comment-group js-minimizable-comment-group js-targetable-comment" id="pullrequestreview-223064324-body-html">
   <div class="unminimized-comment editable-comment comment previewable-edit js-comment js-task-list-container timeline-comment reorderable-task-lists "
        data-body-version="9e99df3d671a9935c502278f2f6ea2bb"
        data-unfurl-hide-url="/content_reference_attachments/hide"
        data-unfurl-authenticity-token="MrO9lfUe/QOX0G4MDk972ow3XXA9Cy3lQWzi88nOAAthODxuux1xuexQjk5yvORfPU4G4cniFEun1lNiV7eqcA==">
 
-    
+
 <div class="timeline-comment-header clearfix">
   <div class="timeline-comment-actions">
-    
 
 
 
@@ -2164,7 +2163,8 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 
 
 
-  
+
+
   <details class="details-overlay details-reset position-relative d-inline-block js-socket-channel js-updatable-content js-reaction-popover-container js-comment-header-reaction-button"
       data-channel="reaction:pull-request-review:223064324"
       data-url="/_render_node/MDE3OlB1bGxSZXF1ZXN0UmV2aWV3MjIzMDY0MzI0/comments/comment_header_reaction_button">
@@ -2172,7 +2172,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
       <svg class="octicon octicon-plus-small add-reaction-plus-icon" viewBox="0 0 7 16" version="1.1" width="7" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 4H3v3H0v1h3v3h1V8h3V7H4V4z"/></svg>
       <svg class="octicon octicon-smiley" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm4.81 12.81a6.72 6.72 0 0 1-2.17 1.45c-.83.36-1.72.53-2.64.53-.92 0-1.81-.17-2.64-.53-.81-.34-1.55-.83-2.17-1.45a6.773 6.773 0 0 1-1.45-2.17A6.59 6.59 0 0 1 1.21 8c0-.92.17-1.81.53-2.64.34-.81.83-1.55 1.45-2.17.62-.62 1.36-1.11 2.17-1.45A6.59 6.59 0 0 1 8 1.21c.92 0 1.81.17 2.64.53.81.34 1.55.83 2.17 1.45.62.62 1.11 1.36 1.45 2.17.36.83.53 1.72.53 2.64 0 .92-.17 1.81-.53 2.64-.34.81-.83 1.55-1.45 2.17zM4 6.8v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2H5.2C4.53 8 4 7.47 4 6.8zm5 0v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2h-.59C9.53 8 9 7.47 9 6.8zm4 3.2c-.72 1.88-2.91 3-5 3s-4.28-1.13-5-3c-.14-.39.23-1 .66-1h8.59c.41 0 .89.61.75 1z"/></svg>
     </summary>
-    
+
 <details-menu class="dropdown-menu dropdown-menu-sw add-reaction-popover js-add-reaction-popover anim-scale-in" aria-label="Pick your reaction">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="reaction-popover-form js-pick-reaction" action="/users/sourcegraph/reactions" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="8e19BoJxquFkpneXPSLzBVhg4i7LhCtLvowD/Xb+mc8uqs/+4+IUqAqcbGoiHC/X5IZ8rTestAdWfJjMDBIurg==" />
     <p class="text-gray mx-2 my-1">
@@ -2282,7 +2282,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     class="dropdown-item btn-link"
     for="pullrequestreview-223064324-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -2309,29 +2309,29 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221%23pullrequestreview-223064324&amp;report=beyang+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
   </div>
 
-    
+
     <span class="timeline-comment-label text-bold tooltipped tooltipped-multiline tooltipped-s" aria-label="This user is a member of the Sourcegraph organization.">
       Member
     </span>
 
 
-  
+
 
 
   <h3 class="timeline-comment-header-text f5 text-normal">
 
 
     <strong class="css-truncate">
-      
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
+
 
     </strong>
 
@@ -2347,7 +2347,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 
     <div class="edit-comment-hide">
 
-      
+
 <task-lists disabled sortable>
 <table class="d-block">
   <tbody class="d-block">
@@ -2362,7 +2362,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 </task-lists>
 
 
-        
+
 
 <div class="comment-reactions  js-reactions-container js-socket-channel js-updatable-content"
 
@@ -2376,14 +2376,14 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 
       <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="tmovwCrTB7yPmE6ngC6WUtPDyDCtMG8zDf9eB6xzrd1suA1EOrt3PdBSfCsMltciG6MzEdpQUlGSQa3YlzMDYA==" class="js-comment-update" action="/sourcegraph/sourcegraph/pull/3221/reviews/223064324/update" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="OaBcKhVoht5jF3g2ANpktf+leD4jvzEzrh9Cd5prBcIqRHG6ysbG5sAQe6+8bqbHT50Wgf+cduLqtTSfbzvalg==" />
         <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="0x1RuBdbMjMVsNps8NgjKlzXemPeDwTaElTEkIunPsJmJJqRLGmKKE8nyfAh+xmbgGGPU0kZaIQgI+yJAiypEA==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="pullrequestreview-223064324-body-html-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -2461,7 +2461,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="ESziWt4DF9NTpUN1WIHXvPPqryZqYbioUEcCTXJlTl7L/sDezmtnUgxvcfnUOZbMO4pUBx0BhcrP+fGSSSXg4w=="
       data-upload-repository-id="41288708"
@@ -2482,7 +2482,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
             data-suggest-mention="/suggestions?mention_suggester=1&amp;repository=sourcegraph&amp;user_id=sourcegraph"
             >Thanks for submitting this! Have a quick inline comment now, but will do a more thorough review of this shortly.</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -2548,7 +2548,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -2590,10 +2590,10 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
       </div>
   </div>
 
-  
-        
+
+
 <div class="discussion-item-body">
-      
+
 
 
 
@@ -2606,11 +2606,11 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     <span title="Label: Outdated" class="Label Label--outline bg-yellow-light">Outdated</span>
 
   </div>
-      
-  
+
+
 <div class="blob-wrapper border-bottom">
   <table id="discussion-diff-272416639" class="diff-table">
-    
+
 
 
     <tr>
@@ -2668,7 +2668,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 <div class="js-inline-comments-container">
   <div class="js-line-comments js-quote-selection-container" data-quote-markdown=".js-comment-body">
     <div class="js-comments-holder">
-        
+
 
 <div class="review-comment js-minimizable-comment-group js-targetable-comment"
       id="discussion_r272416639"
@@ -2676,9 +2676,9 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
       data-url="/_render_node/MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3MjQxNjYzOQ==/comments/review_comment">
 
     <div class="minimized-comment d-none">
-      
 
-  
+
+
 
   <details class="Details-element details-reset "
        data-body-version="d1773e368c1e4ab89003e7785857bb71">
@@ -2701,7 +2701,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
       <div class="previewable-edit  js-task-list-container reorderable-task-lists">
         <div class="edit-comment-hide">
           <div class="timeline-comment-actions">
-            
+
 
 
 
@@ -2729,7 +2729,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     class="dropdown-item btn-link"
     for="discussion_r272416639-minimized-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -2777,7 +2777,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221%23discussion_r272416639&amp;report=beyang+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
@@ -2786,22 +2786,22 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
           <div class="review-comment-contents">
             <h4 class="f5 text-normal d-inline text-gray-dark">
               <strong class="text-gray">
-                
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
+
 
               </strong>
               <span class="text-gray">
                   <a href="#discussion_r272416639" id="discussion_r272416639-minimized-permalink" class="timestamp"><relative-time datetime="2019-04-05T00:58:40Z">Apr 5, 2019</relative-time></a>
               </span>
             </h4>
-            
+
     <span class="timeline-comment-label text-bold tooltipped tooltipped-multiline tooltipped-s" aria-label="This user is a member of the Sourcegraph organization.">
       Member
     </span>
 
-            
+
             <task-lists disabled sortable>
               <div class="comment-body markdown-body p-0 pt-1 js-comment-body ">
                   <p>Can you provide an example of a URL with an opaque component that would be used here? Haven't seen one used for connecting to Redis before, and adding that example to a unit test would be beneficial.</p>
@@ -2812,14 +2812,14 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
 
           <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="4k+JTvYfNbvK4avXUYOe+aoOWKJ3/O/CHAO0gldrdXM4navK5ndFOpUrmVvdO9+JYm6jgwCc0qCDvUddbCvbzg==" class="js-comment-update" data-type="json" action="/sourcegraph/sourcegraph/pull/3221/review_comment/272416639" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="vpKh97CSiuYs4UiBSL0HvVcFt/QFxAYGo8FKxzR2lOx9dJidkLEDyQehNwlrosw09YFiIFXIx0tLLkB1dugqVQ==" />
             <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="BjFcRRK4nYsr9FAmdHG7PEdd6kQrdrkoZKys7PG51RWzCJdsKYolkHFjQ7qlUoGNm+sfdLxg1XZW24T1eDJCxw==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="discussion_r272416639-minimize-comment-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -2897,7 +2897,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="5GQ2bvqZJpnBFLYvOqsHWxB6bctVKcPts2IGP5ehAt0+thTq6vFWGJ7ehKO2E0Yr2BqW6iJJ/o8s3PXgrOGsYA=="
       data-upload-repository-id="41288708"
@@ -2918,7 +2918,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
             data-suggest-mention="/suggestions?mention_suggester=1&amp;repository=sourcegraph&amp;user_id=sourcegraph"
             >Can you provide an example of a URL with an opaque component that would be used here? Haven&#39;t seen one used for connecting to Redis before, and adding that example to a unit test would be beneficial.</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -2984,7 +2984,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -3032,7 +3032,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
        data-thread-side="right">
     <div class="edit-comment-hide">
       <div class="timeline-comment-actions">
-          
+
   <details class="details-overlay details-reset position-relative d-inline-block js-socket-channel js-updatable-content js-reaction-popover-container js-comment-header-reaction-button"
       data-channel="reaction:pull-request-review-comment:272416639"
       data-url="/_render_node/MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3MjQxNjYzOQ==/comments/comment_header_reaction_button">
@@ -3040,7 +3040,7 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
       <svg class="octicon octicon-plus-small add-reaction-plus-icon" viewBox="0 0 7 16" version="1.1" width="7" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 4H3v3H0v1h3v3h1V8h3V7H4V4z"/></svg>
       <svg class="octicon octicon-smiley" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm4.81 12.81a6.72 6.72 0 0 1-2.17 1.45c-.83.36-1.72.53-2.64.53-.92 0-1.81-.17-2.64-.53-.81-.34-1.55-.83-2.17-1.45a6.773 6.773 0 0 1-1.45-2.17A6.59 6.59 0 0 1 1.21 8c0-.92.17-1.81.53-2.64.34-.81.83-1.55 1.45-2.17.62-.62 1.36-1.11 2.17-1.45A6.59 6.59 0 0 1 8 1.21c.92 0 1.81.17 2.64.53.81.34 1.55.83 2.17 1.45.62.62 1.11 1.36 1.45 2.17.36.83.53 1.72.53 2.64 0 .92-.17 1.81-.53 2.64-.34.81-.83 1.55-1.45 2.17zM4 6.8v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2H5.2C4.53 8 4 7.47 4 6.8zm5 0v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2h-.59C9.53 8 9 7.47 9 6.8zm4 3.2c-.72 1.88-2.91 3-5 3s-4.28-1.13-5-3c-.14-.39.23-1 .66-1h8.59c.41 0 .89.61.75 1z"/></svg>
     </summary>
-    
+
 <details-menu class="dropdown-menu dropdown-menu-sw add-reaction-popover js-add-reaction-popover anim-scale-in" aria-label="Pick your reaction">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="reaction-popover-form js-pick-reaction" action="/users/sourcegraph/reactions" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="yVUrImxX1nx8axv9Oe9kZZwagBkA1lrQQuGvU2W7xNMWEpnaDcRoNRJRAAAm0bi3IPwemvz+xZyqETRiH1dzsg==" />
     <p class="text-gray mx-2 my-1">
@@ -3161,25 +3161,25 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
               Quote reply
             </button>
 
-              
+
 <details
   class="details-reset details-overlay details-overlay-dark lh-default text-gray-dark "
   >
   <summary
       class="dropdown-item"
       aria-haspopup="dialog"
-      
-      
+
+
         role="menuitem"
-        
+
       >
-    
+
     Reference in new issue
   </summary>
   <details-dialog
     aria-label="Reference in new issue"
     class="Box Box--overlay d-flex flex-column anim-fade-in fast "
-    
+
     >
     <div class="Box-header">
       <button class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
@@ -3187,9 +3187,9 @@ Maybe this PR is an idea to show you that sourcegraph should be able to use pass
       </button>
       <h3 class="Box-title">Reference in new issue</h3>
     </div>
-    
+
                 <div class="Box-body scrollable-overlay">
-                  
+
 <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/comments/issues" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="yUbcmC4T+VsJBLmO+M0RKXhd6P/u1KfHoqKxTvEqyd15oL854tkQHkXFV6bC9vj+0kE4tWuhWmH1buAanw2XvA==" />
   <dl class="form-group">
     <dt><label for="convert-to-issue-repository-MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3MjQxNjYzOQ==">Repository</label></dt>
@@ -3283,7 +3283,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
         <h4 class="f5 text-normal d-inline">
           <strong>
               <a class="author link-gray-dark" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-              
+
           </strong>
           <span class="text-gray">
 
@@ -3294,15 +3294,15 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
           </span>
         </h4>
 
-        
-        
+
+
     <span class="timeline-comment-label text-bold tooltipped tooltipped-multiline tooltipped-s" aria-label="This user is a member of the Sourcegraph organization.">
       Member
     </span>
 
 
           <div class="js-minimize-comment d-none">
-            
+
 
 <div class="flash flash-warn my-2">
   <button class="flash-close js-comment-hide-minimize-form" type="button"><svg aria-label="Cancel hiding comment" class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16" role="img"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg></button>
@@ -3356,7 +3356,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
               </div>
             </div>
 
-          
+
 
 <div class="comment-reactions  js-reactions-container js-socket-channel js-updatable-content"
 
@@ -3370,14 +3370,14 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
 
       <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="lMyVAXR+TLql0Py6e4A14ZA0nA+99PZtQxXRAqe3+D5OHreFZBY8O/oazjb3OHSRWFRnLsqUyw/cqyLdnPdWgw==" class="js-comment-update" data-type="json" action="/sourcegraph/sourcegraph/pull/3221/review_comment/272416639" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="BG8N9d/pP4Zcj6vLgVAlIAx4SgjWxoaXx/dBDx+DYQHHiTSf/8q2qXfP1EOiT+6prvyf3IbKR9ovGEu9XR3fuA==" />
         <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="YQEITa9srIKInh/+mkIngD76PWfjytZTX3syGqQ+MqTUOMNklF4UmdIJDGJLYR0x4kzIV3Tcug1tDBoDLbWldg==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="discussion_r272416639-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -3455,7 +3455,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="iAK38fAGwrWG53YwOYSu0GuRluQSwFT2YanrDz8RFWdS0JV14G6yNNktRLy1PO+go/FtxWWgaZT+FxjQBFG72g=="
       data-upload-repository-id="41288708"
@@ -3476,7 +3476,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
             data-suggest-mention="/suggestions?mention_suggester=1&amp;repository=sourcegraph&amp;user_id=sourcegraph"
             >Can you provide an example of a URL with an opaque component that would be used here? Haven&#39;t seen one used for connecting to Redis before, and adding that example to a unit test would be beneficial.</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -3542,7 +3542,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -3581,7 +3581,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
 </form>  </div>
 </div>
 
-        
+
 
 <div class="review-comment js-minimizable-comment-group js-targetable-comment"
       id="discussion_r272796448"
@@ -3589,9 +3589,9 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
       data-url="/_render_node/MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3Mjc5NjQ0OA==/comments/review_comment">
 
     <div class="minimized-comment d-none">
-      
 
-  
+
+
 
   <details class="Details-element details-reset "
        data-body-version="cb2c551d0d9dac9546de9ea2988f9bdd">
@@ -3614,7 +3614,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
       <div class="previewable-edit  js-task-list-container reorderable-task-lists">
         <div class="edit-comment-hide">
           <div class="timeline-comment-actions">
-            
+
 
 
 
@@ -3642,7 +3642,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
     class="dropdown-item btn-link"
     for="discussion_r272796448-minimized-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -3690,7 +3690,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221%23discussion_r272796448&amp;report=alexandnpu+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
@@ -3699,17 +3699,17 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
           <div class="review-comment-contents">
             <h4 class="f5 text-normal d-inline text-gray-dark">
               <strong class="text-gray">
-                
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
-  
+
 
               </strong>
               <span class="text-gray">
                   <a href="#discussion_r272796448" id="discussion_r272796448-minimized-permalink" class="timestamp"><relative-time datetime="2019-04-06T13:53:50Z">Apr 6, 2019</relative-time></a>
               </span>
             </h4>
-            
+
 
             <span
   class="timeline-comment-label tooltipped tooltipped-multiline tooltipped-s"
@@ -3758,14 +3758,14 @@ type URL struct {
 
           <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="sIjvan3QH1HFt3vUcfVc+X3vKnZRt9OC0kvWpFD++F1qWs3ubbhv0Jp9SVj9TR2JtY/RVybX7uBN9SV7a75W4A==" class="js-comment-update" data-type="json" action="/sourcegraph/sourcegraph/pull/3221/review_comment/272796448" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="Rzky7gpGcazPcQG33aUvpMwFfS8jdpckGy4XCu6hcYD7PaZ5FLtXoVtzGunQWbgW9+430jlDEao42jOid8M7rg==" />
             <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="/pwpLikp1oaJVQweR/LDvE8Hhz9+1y5BfuhJKkqt+dtLpeIHEhtundPCH4KW0fkNk7FyD+nBQh9Mn2EzwyZuCQ==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="discussion_r272796448-minimize-comment-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -3843,7 +3843,7 @@ type URL struct {
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="L3k2irima7+05nbXBXMNFFnTyeS1GQY/JCLGP8qYbcr1qxQOqM4bPussRFuJy0xkkbMyxcJ5O127nDXg8djDdw=="
       data-upload-repository-id="41288708"
@@ -3899,7 +3899,7 @@ type URL struct {
 
 any suggestions for making this part more elegant?</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -3965,7 +3965,7 @@ any suggestions for making this part more elegant?</textarea>
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -4013,7 +4013,7 @@ any suggestions for making this part more elegant?</textarea>
        data-thread-side="right">
     <div class="edit-comment-hide">
       <div class="timeline-comment-actions">
-          
+
   <details class="details-overlay details-reset position-relative d-inline-block js-socket-channel js-updatable-content js-reaction-popover-container js-comment-header-reaction-button"
       data-channel="reaction:pull-request-review-comment:272796448"
       data-url="/_render_node/MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3Mjc5NjQ0OA==/comments/comment_header_reaction_button">
@@ -4021,7 +4021,7 @@ any suggestions for making this part more elegant?</textarea>
       <svg class="octicon octicon-plus-small add-reaction-plus-icon" viewBox="0 0 7 16" version="1.1" width="7" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 4H3v3H0v1h3v3h1V8h3V7H4V4z"/></svg>
       <svg class="octicon octicon-smiley" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm4.81 12.81a6.72 6.72 0 0 1-2.17 1.45c-.83.36-1.72.53-2.64.53-.92 0-1.81-.17-2.64-.53-.81-.34-1.55-.83-2.17-1.45a6.773 6.773 0 0 1-1.45-2.17A6.59 6.59 0 0 1 1.21 8c0-.92.17-1.81.53-2.64.34-.81.83-1.55 1.45-2.17.62-.62 1.36-1.11 2.17-1.45A6.59 6.59 0 0 1 8 1.21c.92 0 1.81.17 2.64.53.81.34 1.55.83 2.17 1.45.62.62 1.11 1.36 1.45 2.17.36.83.53 1.72.53 2.64 0 .92-.17 1.81-.53 2.64-.34.81-.83 1.55-1.45 2.17zM4 6.8v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2H5.2C4.53 8 4 7.47 4 6.8zm5 0v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2h-.59C9.53 8 9 7.47 9 6.8zm4 3.2c-.72 1.88-2.91 3-5 3s-4.28-1.13-5-3c-.14-.39.23-1 .66-1h8.59c.41 0 .89.61.75 1z"/></svg>
     </summary>
-    
+
 <details-menu class="dropdown-menu dropdown-menu-sw add-reaction-popover js-add-reaction-popover anim-scale-in" aria-label="Pick your reaction">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="reaction-popover-form js-pick-reaction" action="/users/sourcegraph/reactions" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="JhYNOELnx/gL357zGzKF2xhdd3m8bimgJQc6vrzf3nb5Ub/AI3R5sWXlhQ4EDFkJpLvp+kBGtuzN96GPxjNpFw==" />
     <p class="text-gray mx-2 my-1">
@@ -4142,25 +4142,25 @@ any suggestions for making this part more elegant?</textarea>
               Quote reply
             </button>
 
-              
+
 <details
   class="details-reset details-overlay details-overlay-dark lh-default text-gray-dark "
   >
   <summary
       class="dropdown-item"
       aria-haspopup="dialog"
-      
-      
+
+
         role="menuitem"
-        
+
       >
-    
+
     Reference in new issue
   </summary>
   <details-dialog
     aria-label="Reference in new issue"
     class="Box Box--overlay d-flex flex-column anim-fade-in fast "
-    
+
     >
     <div class="Box-header">
       <button class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
@@ -4168,9 +4168,9 @@ any suggestions for making this part more elegant?</textarea>
       </button>
       <h3 class="Box-title">Reference in new issue</h3>
     </div>
-    
+
                 <div class="Box-body scrollable-overlay">
-                  
+
 <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/comments/issues" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="uThpVvXtDGIBL+nXTFgCz++ZifsRfTN6ESo51HbT9tIJ3gr3OSflJ03uB/92Y+sYRYVZsZQIztxG5miAGPSosw==" />
   <dl class="form-group">
     <dt><label for="convert-to-issue-repository-MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3Mjc5NjQ0OA==">Repository</label></dt>
@@ -4299,7 +4299,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
         <h4 class="f5 text-normal d-inline">
           <strong>
               <a class="author link-gray-dark" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
-              
+
           </strong>
           <span class="text-gray">
 
@@ -4307,7 +4307,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
                 <relative-time datetime="2019-04-06T13:53:50Z">Apr 6, 2019</relative-time>
               </a>
 
-              
+
   <span class="d-inline-block text-gray-light">&#8226;</span>
 
   <details class="details-overlay details-reset d-inline-block dropdown">
@@ -4333,11 +4333,11 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
   Author
 </span>
 
-        
+
 
 
           <div class="js-minimize-comment d-none">
-            
+
 
 <div class="flash flash-warn my-2">
   <button class="flash-close js-comment-hide-minimize-form" type="button"><svg aria-label="Cancel hiding comment" class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16" role="img"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg></button>
@@ -4422,7 +4422,7 @@ type URL struct {
               </div>
             </div>
 
-          
+
 
 <div class="comment-reactions  js-reactions-container js-socket-channel js-updatable-content"
 
@@ -4436,14 +4436,14 @@ type URL struct {
 
       <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="3MI6yepb3m5ZrVz3tzYo3er/o5xA9jeyve//X7Tkj5sGEBhN+jOu7wZnbns7jmmtIp9YvTeWCtAiUQyAj6QhJg==" class="js-comment-update" data-type="json" action="/sourcegraph/sourcegraph/pull/3221/review_comment/272796448" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="q4PtmUf/S4JvMBcVrrX7yVYhUb3xAxnVJxWDUc7m0lgXh3kOWQJtj/syDEujSWx7bcobQOs2n1sE4af5V4SYdg==" />
         <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="TL019PJYxUteHAO3TXYDiMp9yCYdR2/zaQnXV78lOgX5hP7dyWp9UASLECucVTk5Fss9FopRA61bfv9ONq6t1w==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="discussion_r272796448-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -4521,7 +4521,7 @@ type URL struct {
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="+gyE8iYTJsLzWsyZBMcwvm2yF2BV990ShT9P7NyQkT8g3qZ2NntWQ6yQ/hWIf3HOpdLsQSKX4HAagbwz59A/gg=="
       data-upload-repository-id="41288708"
@@ -4577,7 +4577,7 @@ type URL struct {
 
 any suggestions for making this part more elegant?</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -4643,7 +4643,7 @@ any suggestions for making this part more elegant?</textarea>
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -4682,7 +4682,7 @@ any suggestions for making this part more elegant?</textarea>
 </form>  </div>
 </div>
 
-        
+
 
 <div class="review-comment js-minimizable-comment-group js-targetable-comment"
       id="discussion_r272957122"
@@ -4690,9 +4690,9 @@ any suggestions for making this part more elegant?</textarea>
       data-url="/_render_node/MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3Mjk1NzEyMg==/comments/review_comment">
 
     <div class="minimized-comment d-none">
-      
 
-  
+
+
 
   <details class="Details-element details-reset "
        data-body-version="b844590cffa5a736fcb6fac819c0af65">
@@ -4715,7 +4715,7 @@ any suggestions for making this part more elegant?</textarea>
       <div class="previewable-edit  js-task-list-container reorderable-task-lists">
         <div class="edit-comment-hide">
           <div class="timeline-comment-actions">
-            
+
 
 
 
@@ -4743,7 +4743,7 @@ any suggestions for making this part more elegant?</textarea>
     class="dropdown-item btn-link"
     for="discussion_r272957122-minimized-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -4791,7 +4791,7 @@ any suggestions for making this part more elegant?</textarea>
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221%23discussion_r272957122&amp;report=alexandnpu+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
@@ -4800,17 +4800,17 @@ any suggestions for making this part more elegant?</textarea>
           <div class="review-comment-contents">
             <h4 class="f5 text-normal d-inline text-gray-dark">
               <strong class="text-gray">
-                
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
-  
+
 
               </strong>
               <span class="text-gray">
                   <a href="#discussion_r272957122" id="discussion_r272957122-minimized-permalink" class="timestamp"><relative-time datetime="2019-04-08T09:28:14Z">Apr 8, 2019</relative-time></a>
               </span>
             </h4>
-            
+
 
             <span
   class="timeline-comment-label tooltipped tooltipped-multiline tooltipped-s"
@@ -4828,14 +4828,14 @@ any suggestions for making this part more elegant?</textarea>
 
           <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="WAlMeLQf6N4FrjU/dC8L2qd5XAbiydg6UbnvZZVSK6qC2278pHeYX1pkB7P4l0qqbxmnJ5Wp5VjOBxy6rhKFFw==" class="js-comment-update" data-type="json" action="/sourcegraph/sourcegraph/pull/3221/review_comment/272957122" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="g9FU2GK4ldgaNBbUQHh59rclbuitrkmFxinl5Y6luwVxRp02o0hRa+Z2QCu8xJI2VW0n1SJ5xBEQ1q0PV2Z3ew==" />
             <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="zLAaOa/CYzVXd5tyeOTsaxsRFcp5rOBBaMFUBi4b+kN5idEQlPDbLg3giO6px9bax6fg+u66jB9atnwfp5BtkQ==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="discussion_r272957122-minimize-comment-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -4913,7 +4913,7 @@ any suggestions for making this part more elegant?</textarea>
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="mc5pNxE0K+D9MVJD05lhlX1fBZtE32A9XFAcmk44i5pDHEuzAVxbYaL7YM9fISDltT/+ujO/XV/D7u9FdXglJw=="
       data-upload-repository-id="41288708"
@@ -4934,7 +4934,7 @@ any suggestions for making this part more elegant?</textarea>
             data-suggest-mention="/suggestions?mention_suggester=1&amp;repository=sourcegraph&amp;user_id=sourcegraph"
             >I&#39;ve updated my way of parsing redis connection string and added some tests. Please have a review.</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -5000,7 +5000,7 @@ any suggestions for making this part more elegant?</textarea>
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -5048,7 +5048,7 @@ any suggestions for making this part more elegant?</textarea>
        data-thread-side="right">
     <div class="edit-comment-hide">
       <div class="timeline-comment-actions">
-          
+
   <details class="details-overlay details-reset position-relative d-inline-block js-socket-channel js-updatable-content js-reaction-popover-container js-comment-header-reaction-button"
       data-channel="reaction:pull-request-review-comment:272957122"
       data-url="/_render_node/MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3Mjk1NzEyMg==/comments/comment_header_reaction_button">
@@ -5056,7 +5056,7 @@ any suggestions for making this part more elegant?</textarea>
       <svg class="octicon octicon-plus-small add-reaction-plus-icon" viewBox="0 0 7 16" version="1.1" width="7" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 4H3v3H0v1h3v3h1V8h3V7H4V4z"/></svg>
       <svg class="octicon octicon-smiley" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm4.81 12.81a6.72 6.72 0 0 1-2.17 1.45c-.83.36-1.72.53-2.64.53-.92 0-1.81-.17-2.64-.53-.81-.34-1.55-.83-2.17-1.45a6.773 6.773 0 0 1-1.45-2.17A6.59 6.59 0 0 1 1.21 8c0-.92.17-1.81.53-2.64.34-.81.83-1.55 1.45-2.17.62-.62 1.36-1.11 2.17-1.45A6.59 6.59 0 0 1 8 1.21c.92 0 1.81.17 2.64.53.81.34 1.55.83 2.17 1.45.62.62 1.11 1.36 1.45 2.17.36.83.53 1.72.53 2.64 0 .92-.17 1.81-.53 2.64-.34.81-.83 1.55-1.45 2.17zM4 6.8v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2H5.2C4.53 8 4 7.47 4 6.8zm5 0v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2h-.59C9.53 8 9 7.47 9 6.8zm4 3.2c-.72 1.88-2.91 3-5 3s-4.28-1.13-5-3c-.14-.39.23-1 .66-1h8.59c.41 0 .89.61.75 1z"/></svg>
     </summary>
-    
+
 <details-menu class="dropdown-menu dropdown-menu-sw add-reaction-popover js-add-reaction-popover anim-scale-in" aria-label="Pick your reaction">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="reaction-popover-form js-pick-reaction" action="/users/sourcegraph/reactions" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="qWp4wos5KthGTSpFDc9XbOBk2GVxKGfcBN6/9iVvMF92Lco66qqUkSh3MbgS8Yu+XIJG5o0A+JDsLiTHX4OHPg==" />
     <p class="text-gray mx-2 my-1">
@@ -5177,25 +5177,25 @@ any suggestions for making this part more elegant?</textarea>
               Quote reply
             </button>
 
-              
+
 <details
   class="details-reset details-overlay details-overlay-dark lh-default text-gray-dark "
   >
   <summary
       class="dropdown-item"
       aria-haspopup="dialog"
-      
-      
+
+
         role="menuitem"
-        
+
       >
-    
+
     Reference in new issue
   </summary>
   <details-dialog
     aria-label="Reference in new issue"
     class="Box Box--overlay d-flex flex-column anim-fade-in fast "
-    
+
     >
     <div class="Box-header">
       <button class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
@@ -5203,9 +5203,9 @@ any suggestions for making this part more elegant?</textarea>
       </button>
       <h3 class="Box-title">Reference in new issue</h3>
     </div>
-    
+
                 <div class="Box-body scrollable-overlay">
-                  
+
 <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/comments/issues" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="3+vizAeGRVeBeEruoScdO8qVBkJ58iNiCGhmtogImaJvDYFty0ysEs25pMabHPTsYInWCPyH3sRfpDfi5i/Hww==" />
   <dl class="form-group">
     <dt><label for="convert-to-issue-repository-MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3Mjk1NzEyMg==">Repository</label></dt>
@@ -5299,7 +5299,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
         <h4 class="f5 text-normal d-inline">
           <strong>
               <a class="author link-gray-dark" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
-              
+
           </strong>
           <span class="text-gray">
 
@@ -5316,11 +5316,11 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
   Author
 </span>
 
-        
+
 
 
           <div class="js-minimize-comment d-none">
-            
+
 
 <div class="flash flash-warn my-2">
   <button class="flash-close js-comment-hide-minimize-form" type="button"><svg aria-label="Cancel hiding comment" class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16" role="img"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg></button>
@@ -5374,7 +5374,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
               </div>
             </div>
 
-          
+
 
 <div class="comment-reactions  js-reactions-container js-socket-channel js-updatable-content"
 
@@ -5388,14 +5388,14 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
 
       <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="0N+JaV8SPUYhMHkRkSAy1NO7kmuDbjkbs1AZzdNbHaQKDavtT3pNx376S50dmHOkG9tpSvQOBHks7uoS6BuzGQ==" class="js-comment-update" data-type="json" action="/sourcegraph/sourcegraph/pull/3221/review_comment/272957122" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="cr84NMitcEICpYZUTUDl5Z0fvkN96rjj1BgjybbyQ9uAKPHaCV208f7n0Kux/A4lf1f3fvI9NXcC52sjbzGPpQ==" />
         <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="/GuZzghANOxJTrrti4E2lEKAfOsqc/Xsjzs9gBXXY6BJUlLnM3KM9xPZqXFaogwlnjaJ271lmbK9TBWZnFz0cg==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="discussion_r272957122-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -5473,7 +5473,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="jfaefyywGFhqcNh77iCPHcj8WdSUPGeoHRpyOOsErbVXJLz7PNho2TW66vdimM5tAJyi9eNcWsqCpIHn0EQDCA=="
       data-upload-repository-id="41288708"
@@ -5494,7 +5494,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
             data-suggest-mention="/suggestions?mention_suggester=1&amp;repository=sourcegraph&amp;user_id=sourcegraph"
             >I&#39;ve updated my way of parsing redis connection string and added some tests. Please have a review.</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -5560,7 +5560,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -5604,7 +5604,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
     </div>
 
       <div class="review-thread-reply border-bottom">
-        
+
 <div class="inline-comment-form-container js-inline-comment-form-container">
   <div class="inline-comment-form-actions">
     <div class="d-table width-full">
@@ -5624,10 +5624,10 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
       <input type="hidden" name="comment_context" value="discussion">
       <input type="hidden" name="in_reply_to" value="272416639">
 
-      
+
 <div class="js-previewable-comment-form js-suggested-changes-container previewable-comment-form write-selected" data-preview-url="/preview?repository=41288708" data-preview-authenticity-token="UFZ0EiPpZ+e4YHJGl+b6HsDY/AxCnO+BFdeAGqz124Hlb787GNvf/OL3YdpGxcCvHG4JPNWKg98noKgDJX5MUw==">
   <div class="comment-form-head tabnav">
-    
+
 <markdown-toolbar for="new_inline_comment_discussion_diff-5bd3e793932782601ddbd53a3d8dd073_272416639_21" class="toolbar-commenting ">
     <div class="toolbar-group">
       <button type="button" class="toolbar-item tooltipped tooltipped-n js-suggested-change-toolbar-item" aria-label="Insert a suggestion &lt;cmd-g&gt;" data-hydro-click="{&quot;event_type&quot;:&quot;suggested_changes.target.click&quot;,&quot;payload&quot;:{&quot;user_id&quot;:1741180,&quot;target_type&quot;:&quot;insert_suggestion&quot;,&quot;pull_request_id&quot;:&quot;MDExOlB1bGxSZXF1ZXN0MjY3NDM3NDQ3&quot;,&quot;relationship_to_suggestion&quot;:&quot;reviewer&quot;,&quot;client_id&quot;:&quot;1032549827.1548354440&quot;,&quot;originating_request_id&quot;:&quot;C1A5:1FB94:1D9944:2C1953:5CB87E24&quot;,&quot;originating_url&quot;:&quot;https://github.com/sourcegraph/sourcegraph/pull/3221&quot;,&quot;referrer&quot;:&quot;https://github.com/sourcegraph/sourcegraph/issues/3480&quot;}}" data-hydro-click-hmac="b2c27d592009bbae4ac8ccac7d39787701bf5e39fd5d624ddba8b94bfd74b4c7" data-ga-click="Markdown Toolbar, click, insert code suggestion" hotkey="g">
@@ -5722,7 +5722,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
                 data-suggest-mention="/suggestions?mention_suggester=1&amp;repository=sourcegraph&amp;user_id=sourcegraph"
                 ></textarea>
 
-      
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -5788,7 +5788,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -5848,15 +5848,15 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
 
 </div>
 
-  
-  
+
+
 <div class="js-timeline-item js-timeline-progressive-focus-container" data-gid="MDE3OlB1bGxSZXF1ZXN0Q29tbWl0MjY3NDM3NDQ3OjgxMDA4ZjRmOTk5ZThhYTRkN2M0Nzc0NmVlNDQyMTMzNGYzMDRhZjk=">
-  
-      
+
+
 <div class="discussion-item discussion-commits" id="commits-pushed-81008f4">
   <div class="discussion-item-body">
     <div class="timeline-commits ">
-        
+
 
 <div class="commit js-details-container Details js-socket-channel js-updatable-content no-wrap d-flex mb-2"
      data-channel="repo:41288708:commit:81008f4f999e8aa4d7c47746ee4421334f304af9"
@@ -5866,7 +5866,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
     <svg class="octicon octicon-git-commit" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M10.86 7c-.45-1.72-2-3-3.86-3-1.86 0-3.41 1.28-3.86 3H0v2h3.14c.45 1.72 2 3 3.86 3 1.86 0 3.41-1.28 3.86-3H14V7h-3.14zM7 10.2c-1.22 0-2.2-.98-2.2-2.2 0-1.22.98-2.2 2.2-2.2 1.22 0 2.2.98 2.2 2.2 0 1.22-.98 2.2-2.2 2.2z"/></svg>
   </div>
 
-  
+
 <div class="AvatarStack flex-self-start ">
   <div class="AvatarStack-body" aria-label="alexandnpu">
         <a class="avatar" data-skip-pjax="true" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">
@@ -5885,7 +5885,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
   </div>
 
   <div class="commit-sig-status text-right pr-1">
-    
+
 
   </div>
 
@@ -5907,10 +5907,10 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
 
 </div>
 
-  
-  
+
+
 <div class="js-timeline-item js-timeline-progressive-focus-container" data-gid="MDIzOkhlYWRSZWZGb3JjZVB1c2hlZEV2ZW50MjI1OTA5MDI4MQ==">
-  
+
         <div class="discussion-item discussion-item-head_ref_force_pushed" data-team-hovercards-enabled>
   <h3 class="discussion-item-header f5 text-normal" id="event-2259090281">
 
@@ -5918,14 +5918,14 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
       <svg class="octicon octicon-repo-force-push" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M10 9H8v7H6V9H4l2.25-3H4l3-4 3 4H7.75L10 9zm1-9H1C.45 0 0 .45 0 1v12c0 .55.45 1 1 1h4v-1H1v-2h4v-1H2V1h9v9H9v1h2v2H9v1h2c.55 0 1-.45 1-1V1c0-.55-.45-1-1-1z"/></svg>
     </span>
 
-    
+
 
         <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu"><img class="avatar" height="16" width="16" alt="@alexandnpu" src="https://avatars2.githubusercontent.com/u/1999503?s=60&amp;v=4" /></a>
   <a class="author text-inherit" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
-  
 
 
-      
+
+
 <a data-hydro-click="{&quot;event_type&quot;:&quot;force_push_timeline_diff.click&quot;,&quot;payload&quot;:{&quot;pull_request_id&quot;:267437447,&quot;repository_id&quot;:179436078,&quot;event_id&quot;:2259090281,&quot;client_id&quot;:&quot;1032549827.1548354440&quot;,&quot;originating_request_id&quot;:&quot;C1A5:1FB94:1D9944:2C1953:5CB87E24&quot;,&quot;originating_url&quot;:&quot;https://github.com/sourcegraph/sourcegraph/pull/3221&quot;,&quot;referrer&quot;:&quot;https://github.com/sourcegraph/sourcegraph/issues/3480&quot;,&quot;user_id&quot;:1741180}}" data-hydro-click-hmac="7ad32e2144474e239dc08d9d6f063ee3d3a78ee5d11d17bdbfdefe28d815847f" href="/sourcegraph/sourcegraph/compare/599667e6949d53bce28c2bf575b44945edfa0296..81008f4f999e8aa4d7c47746ee4421334f304af9">force-pushed</a> the
 <span class="commit-ref user-select-contain">
   <span class="css-truncate-target">
@@ -5953,14 +5953,14 @@ branch
       <svg class="octicon octicon-milestone" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 2H6V0h2v2zm4 5H2c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h10l2 2-2 2zM8 4H6v2h2V4zM6 16h2V8H6v8z"/></svg>
     </span>
 
-    
+
 
         <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang"><img class="avatar" height="16" width="16" alt="@beyang" src="https://avatars0.githubusercontent.com/u/1646931?s=60&amp;v=4" /></a>
   <a class="author text-inherit" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
 
 
-      
+
+
 
   added this to the   <a href="/sourcegraph/sourcegraph/milestone/21" class="discussion-item-entity">3.4</a> milestone
 
@@ -5978,7 +5978,7 @@ branch
       </span>
         <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1387653" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/chrismwendt"><img class="avatar" height="16" width="16" alt="@chrismwendt" src="https://avatars0.githubusercontent.com/u/1387653?s=60&amp;v=4" /></a>
   <a class="author text-inherit" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1387653" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/chrismwendt">chrismwendt</a>
-  
+
 
         referenced this pull request
       <a class="timestamp" href="#ref-issue-434532810">
@@ -5986,27 +5986,27 @@ branch
       </a>
     </h3>
 
-  
+
       <span class="State State--green State--small float-right ml-1" title="Status: Open">
-  
+
   <svg height="14" class="octicon octicon-issue-opened" viewBox="0 0 14 16" version="1.1" width="12" aria-hidden="true"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"/></svg> Open
 
 </span>
 
 
 
-    
+
       <h4 class="discussion-item-ref-title">
         <a href="/sourcegraph/sourcegraph/issues/3480" class="title-link" data-hovercard-type="issue" data-hovercard-url="/sourcegraph/sourcegraph/issues/3480/hovercard">
           Code intel sometimes doesn&#39;t work on GitHub PRs
           <span class="issue-num">#3480</span>
 </a>      </h4>
-    
-
-    
 
 
-  
+
+
+
+
 
 </div>
 
@@ -6017,7 +6017,7 @@ branch
       </span>
         <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang"><img class="avatar" height="16" width="16" alt="@beyang" src="https://avatars0.githubusercontent.com/u/1646931?s=60&amp;v=4" /></a>
   <a class="author text-inherit" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
+
 
         referenced this pull request
       <a class="timestamp" href="#ref-pullrequest-434595204">
@@ -6025,44 +6025,44 @@ branch
       </a>
     </h3>
 
-  
+
       <span class="State State--green State--small float-right ml-1" title="Status: Open">
-  
+
   <svg height="14" class="octicon octicon-git-pull-request" viewBox="0 0 12 16" version="1.1" width="10" aria-hidden="true"><path fill-rule="evenodd" d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0 0 10 15a1.993 1.993 0 0 0 1-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v6.56A1.993 1.993 0 0 0 2 15a1.993 1.993 0 0 0 1-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg> Open
 
 </span>
 
 
 
-    
+
       <h4 class="discussion-item-ref-title">
         <a href="/sourcegraph/sourcegraph/pull/3482" class="title-link" data-hovercard-type="pull_request" data-hovercard-url="/sourcegraph/sourcegraph/pull/3482/hovercard">
           Make redis support password
           <span class="issue-num">#3482</span>
 </a>      </h4>
-    
-
-    
 
 
-  
 
-</div>
+
 
 
 
 </div>
 
-  
-  
+
+
+</div>
+
+
+
 <div class="js-timeline-item js-timeline-progressive-focus-container" data-gid="MDEyOklzc3VlQ29tbWVudDQ4NDM2MTYxOA==">
-  
-    
+
+
 <div class="timeline-comment-wrapper js-comment-container"
       data-gid="MDEyOklzc3VlQ29tbWVudDQ4NDM2MTYxOA=="
       data-url="/_render_node/MDEyOklzc3VlQ29tbWVudDQ4NDM2MTYxOA==/timeline/issue_comment">
 
-  
+
 
 <div class="avatar-parent-child timeline-comment-avatar">
     <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang"><img class="avatar rounded-1" height="44" width="44" alt="@beyang" src="https://avatars1.githubusercontent.com/u/1646931?s=88&amp;v=4" /></a>
@@ -6070,12 +6070,12 @@ branch
 </div>
 
 
-  
+
 <div class="timeline-comment-group js-minimizable-comment-group js-targetable-comment" id="issuecomment-484361618">
     <div class="minimized-comment d-none ">
-      
 
-  
+
+
 
   <details class="Details-element details-reset border rounded-1 bg-white"
        data-body-version="1b7d052371c1123bd3f20f025b25b565">
@@ -6093,7 +6093,7 @@ branch
       <div class="previewable-edit  js-task-list-container reorderable-task-lists">
         <div class="edit-comment-hide">
           <div class="timeline-comment-actions">
-            
+
 
 
 
@@ -6121,7 +6121,7 @@ branch
     class="dropdown-item btn-link"
     for="issuecomment-484361618-minimized-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -6169,7 +6169,7 @@ branch
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221%23issuecomment-484361618&amp;report=beyang+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
@@ -6178,22 +6178,22 @@ branch
           <div class="review-comment-contents">
             <h4 class="f5 text-normal d-inline text-gray-dark">
               <strong class="text-gray">
-                
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
+
 
               </strong>
               <span class="text-gray">
                   <a href="#issuecomment-484361618" id="issuecomment-484361618-minimized-permalink" class="timestamp"><relative-time datetime="2019-04-18T05:30:55Z">Apr 18, 2019</relative-time></a>
               </span>
             </h4>
-            
+
     <span class="timeline-comment-label text-bold tooltipped tooltipped-multiline tooltipped-s" aria-label="This user is a member of the Sourcegraph organization.">
       Member
     </span>
 
-            
+
             <task-lists disabled sortable>
               <div class="comment-body markdown-body p-0 pt-1 js-comment-body ">
                   <p>Thanks for pushing up this PR <a class="user-mention" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/alexandnpu">@alexandnpu</a>. I've incorporated this into  <a class="issue-link js-issue-link" data-error-text="Failed to load issue title" data-id="434595204" data-permission-text="Issue title is private" data-url="https://github.com/sourcegraph/sourcegraph/issues/3482" data-hovercard-type="pull_request" data-hovercard-url="/sourcegraph/sourcegraph/pull/3482/hovercard" href="https://github.com/sourcegraph/sourcegraph/pull/3482">#3482</a>, so will close this in favor of that. I expect this to ship in 3.4.</p>
@@ -6204,14 +6204,14 @@ branch
 
           <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="x6BMKsFQVHPyjOyIuQKxBLmN6FKFq4D5XfBAAfUFJ+Qdcm6u0Tgk8q1G3gQ1uvB0ce0Tc/LLvZvCTrPezkWJWQ==" class="js-comment-update" data-type="json" action="/sourcegraph/sourcegraph/issue_comments/484361618" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="p8GZwaKPJ2KoB2qgfjJKW2fRSpvgxNLLeWR9uKGksyUdqN6bVZcY8PQYSkQwRMTmff96yrtA1hmYV/UENDmzKA==" />
             <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="IJE3U0Jd965/9+KW9XZSPOlhWKjBoGQULfK9DF5wGcyVqPx6eW9PtSVg8QokVWiNNdetmFa2CEofhZUV1/uOHg==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="issuecomment-484361618-minimize-comment-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -6289,7 +6289,7 @@ branch
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="CApQWR7N9oNcOtu0l7LoFb7jdZCybgfOQ9qtxcK8MjvS2HLdDqWGAgPw6TgbCqlldoOOscUOOqzcZF4a+fychg=="
       data-upload-repository-id="41288708"
@@ -6310,7 +6310,7 @@ branch
             data-suggest-mention="/suggestions?mention_suggester=1&amp;repository=sourcegraph&amp;user_id=sourcegraph"
             >Thanks for pushing up this PR @alexandnpu. I&#39;ve incorporated this into  https://github.com/sourcegraph/sourcegraph/pull/3482, so will close this in favor of that. I expect this to ship in 3.4.</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -6376,7 +6376,7 @@ branch
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -6423,10 +6423,9 @@ branch
        data-unfurl-hide-url="/content_reference_attachments/hide"
        data-unfurl-authenticity-token="kNJNNcOD5bAoVgUT7+0lCtECoXSK+qWyVLx6Q4Mb7GrDWczOjYBpClPW5VGTHrqPYHv65X4TnByyBsvSHWJGEQ==">
 
-    
+
 <div class="timeline-comment-header clearfix">
   <div class="timeline-comment-actions">
-    
 
 
 
@@ -6442,7 +6441,8 @@ branch
 
 
 
-  
+
+
   <details class="details-overlay details-reset position-relative d-inline-block js-socket-channel js-updatable-content js-reaction-popover-container js-comment-header-reaction-button"
       data-channel="reaction:issue-comment:484361618"
       data-url="/_render_node/MDEyOklzc3VlQ29tbWVudDQ4NDM2MTYxOA==/comments/comment_header_reaction_button">
@@ -6450,7 +6450,7 @@ branch
       <svg class="octicon octicon-plus-small add-reaction-plus-icon" viewBox="0 0 7 16" version="1.1" width="7" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 4H3v3H0v1h3v3h1V8h3V7H4V4z"/></svg>
       <svg class="octicon octicon-smiley" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm4.81 12.81a6.72 6.72 0 0 1-2.17 1.45c-.83.36-1.72.53-2.64.53-.92 0-1.81-.17-2.64-.53-.81-.34-1.55-.83-2.17-1.45a6.773 6.773 0 0 1-1.45-2.17A6.59 6.59 0 0 1 1.21 8c0-.92.17-1.81.53-2.64.34-.81.83-1.55 1.45-2.17.62-.62 1.36-1.11 2.17-1.45A6.59 6.59 0 0 1 8 1.21c.92 0 1.81.17 2.64.53.81.34 1.55.83 2.17 1.45.62.62 1.11 1.36 1.45 2.17.36.83.53 1.72.53 2.64 0 .92-.17 1.81-.53 2.64-.34.81-.83 1.55-1.45 2.17zM4 6.8v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2H5.2C4.53 8 4 7.47 4 6.8zm5 0v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2h-.59C9.53 8 9 7.47 9 6.8zm4 3.2c-.72 1.88-2.91 3-5 3s-4.28-1.13-5-3c-.14-.39.23-1 .66-1h8.59c.41 0 .89.61.75 1z"/></svg>
     </summary>
-    
+
 <details-menu class="dropdown-menu dropdown-menu-sw add-reaction-popover js-add-reaction-popover anim-scale-in" aria-label="Pick your reaction">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="reaction-popover-form js-pick-reaction" action="/users/sourcegraph/reactions" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="00o71qgqOQGDkuvhPxyhLllraheEZogcsgZKQzr4mvIMDYkuybmHSO2o8BwgIn385Y30lHhOF1Ba9tFyQBQtkw==" />
     <p class="text-gray mx-2 my-1">
@@ -6560,7 +6560,7 @@ branch
     class="dropdown-item btn-link"
     for="issuecomment-484361618-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -6572,26 +6572,26 @@ branch
     Quote reply
   </button>
 
-      
-    
+
+
 <details
   class="details-reset details-overlay details-overlay-dark lh-default text-gray-dark "
   >
   <summary
       class="dropdown-item"
       aria-haspopup="dialog"
-      
-      
+
+
         role="menuitem"
-        
+
       >
-    
+
     Reference in new issue
   </summary>
   <details-dialog
     aria-label="Reference in new issue"
     class="Box Box--overlay d-flex flex-column anim-fade-in fast Box-overlay--wide"
-    
+
     >
     <div class="Box-header">
       <button class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
@@ -6599,9 +6599,9 @@ branch
       </button>
       <h3 class="Box-title">Reference in new issue</h3>
     </div>
-    
+
       <div class="Box-body overflow-auto">
-        
+
 <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/comments/issues" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="7NPYw6zQDs1cFtD2GiemAU4pzoD1ALD6TJ2egfL8FbFcNbtiYBrniBDXPt4gHE/W5DUeynB1TVwbUc/VnNtL0A==" />
   <dl class="form-group">
     <dt><label for="convert-to-issue-repository-MDEyOklzc3VlQ29tbWVudDQ4NDM2MTYxOA==">Repository</label></dt>
@@ -6683,29 +6683,29 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221%23issuecomment-484361618&amp;report=beyang+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
   </div>
 
-    
+
     <span class="timeline-comment-label text-bold tooltipped tooltipped-multiline tooltipped-s" aria-label="This user is a member of the Sourcegraph organization.">
       Member
     </span>
 
 
-  
+
 
 
   <h3 class="timeline-comment-header-text f5 text-normal">
 
 
     <strong class="css-truncate">
-      
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
+
 
     </strong>
 
@@ -6722,7 +6722,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
 
     <div class="edit-comment-hide">
         <div class="js-minimize-comment d-none">
-          
+
 
 <div class="flash flash-warn flash-full">
   <button class="flash-close js-comment-hide-minimize-form" type="button"><svg aria-label="Cancel hiding comment" class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16" role="img"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg></button>
@@ -6747,7 +6747,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
 
         </div>
 
-      
+
 <task-lists disabled sortable>
 <table class="d-block">
   <tbody class="d-block">
@@ -6762,7 +6762,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
 </task-lists>
 
 
-        
+
 
 <div class="comment-reactions  js-reactions-container js-socket-channel js-updatable-content"
 
@@ -6776,14 +6776,14 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
 
       <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="yJ5bypln2aH3ch/EsPonTc9/ZUL937SC37+UQIxnOCQSTHlOiQ+pIKi4LUg8QmY9Bx+eY4q/ieBAAWeftyeWmQ==" class="js-comment-update" action="/sourcegraph/sourcegraph/issue_comments/484361618" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="P/gStNmi/X/sYDcyMSJY1VMmgmdBd/6S+s2vwgYrdzeFkVXuLrrC7bB/F9Z/VNZoSQiyNhrz+kAb/id+k7Z3Og==" />
         <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="wkSB/0nsSF7i9uMZtnXVtTr+mVLsXj9CVZu2obiJEjp3fUrWct7wRbhh8IVnVu8E5khsYntIUxxn7J64MQKF6A==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="issuecomment-484361618-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -6861,7 +6861,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="opu6+mpbrEYFx8p73oeGrFmtHWryZC57bX+ZJktQEsB4SZh+ejPcx1oN+PdSP8fckc3mS4UEExnywWr5cBC8fQ=="
       data-upload-repository-id="41288708"
@@ -6882,7 +6882,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
             data-suggest-mention="/suggestions?mention_suggester=1&amp;repository=sourcegraph&amp;user_id=sourcegraph"
             >Thanks for pushing up this PR @alexandnpu. I&#39;ve incorporated this into  https://github.com/sourcegraph/sourcegraph/pull/3482, so will close this in favor of that. I expect this to ship in 3.4.</textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -6948,7 +6948,7 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -6994,10 +6994,10 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
 </div>
 
 
-  
-  
+
+
 <div class="js-timeline-item js-timeline-progressive-focus-container" data-gid="MDExOkNsb3NlZEV2ZW50MjI4NDY0NjE1Nw==">
-  
+
         <div class="discussion-item discussion-item-closed" data-team-hovercards-enabled>
   <h3 class="discussion-item-header f5 text-normal" id="event-2284646157">
 
@@ -7005,14 +7005,14 @@ _Originally posted by @beyang in https://github.com/sourcegraph/sourcegraph/pull
       <svg class="octicon octicon-circle-slash" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm0 1.3c1.3 0 2.5.44 3.47 1.17l-8 8A5.755 5.755 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zm0 11.41c-1.3 0-2.5-.44-3.47-1.17l8-8c.73.97 1.17 2.17 1.17 3.47 0 3.14-2.56 5.7-5.7 5.7z"/></svg>
     </span>
 
-    
+
 
         <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang"><img class="avatar" height="16" width="16" alt="@beyang" src="https://avatars0.githubusercontent.com/u/1646931?s=60&amp;v=4" /></a>
   <a class="author text-inherit" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1646931" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/beyang">beyang</a>
-  
 
 
-      
+
+
 closed this
 
 
@@ -7027,16 +7027,16 @@ closed this
 
 </div>
 
-  
-  
+
+
 <div class="js-timeline-item js-timeline-progressive-focus-container" data-gid="MDEyOklzc3VlQ29tbWVudDQ4NDQzOTA5OQ==">
-  
-    
+
+
 <div class="timeline-comment-wrapper js-comment-container"
       data-gid="MDEyOklzc3VlQ29tbWVudDQ4NDQzOTA5OQ=="
       data-url="/_render_node/MDEyOklzc3VlQ29tbWVudDQ4NDQzOTA5OQ==/timeline/issue_comment">
 
-  
+
 
 <div class="avatar-parent-child timeline-comment-avatar">
     <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu"><img class="avatar rounded-1" height="44" width="44" alt="@alexandnpu" src="https://avatars3.githubusercontent.com/u/1999503?s=88&amp;v=4" /></a>
@@ -7044,12 +7044,12 @@ closed this
 </div>
 
 
-  
+
 <div class="timeline-comment-group js-minimizable-comment-group js-targetable-comment" id="issuecomment-484439099">
     <div class="minimized-comment d-none ">
-      
 
-  
+
+
 
   <details class="Details-element details-reset border rounded-1 bg-white"
        data-body-version="9fffe6fe31d89970dbb1e023ed78ecb4">
@@ -7067,7 +7067,7 @@ closed this
       <div class="previewable-edit  js-task-list-container reorderable-task-lists">
         <div class="edit-comment-hide">
           <div class="timeline-comment-actions">
-            
+
 
 
 
@@ -7095,7 +7095,7 @@ closed this
     class="dropdown-item btn-link"
     for="issuecomment-484439099-minimized-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -7143,7 +7143,7 @@ closed this
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221%23issuecomment-484439099&amp;report=alexandnpu+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
@@ -7152,17 +7152,17 @@ closed this
           <div class="review-comment-contents">
             <h4 class="f5 text-normal d-inline text-gray-dark">
               <strong class="text-gray">
-                
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
-  
+
 
               </strong>
               <span class="text-gray">
                   <a href="#issuecomment-484439099" id="issuecomment-484439099-minimized-permalink" class="timestamp"><relative-time datetime="2019-04-18T10:14:46Z">Apr 18, 2019</relative-time></a>
               </span>
             </h4>
-            
+
 
             <span
   class="timeline-comment-label tooltipped tooltipped-multiline tooltipped-s"
@@ -7184,14 +7184,14 @@ I am really expecting it to be released as soon as possible. So my team can use 
 
           <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="cvx65HUZoLOFYB7PPbgBRW1p+8erJkJ8O2gzBRW099KoLlhgZXHQMtqqLEOxAEA1pQkA5txGfx6k1sDaLvRZbw==" class="js-comment-update" data-type="json" action="/sourcegraph/sourcegraph/issue_comments/484439099" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="yCN+a099gykfoiXmvig2U5LrORyMjeOTpWzP/JDHItpHGBg1+mq0ko7MwwgB8Ll4MCu+AaZK5mcE3ZtdYHLEpg==" />
             <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="I26xYCxnySjx198nrxFHuNufVKm8tIPWhe4JnKHzbn6WV3pJF1VxM6tAzLt+Mn0JBymhmSui74i3mSGFKHj5rA==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="issuecomment-484439099-minimize-comment-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -7269,7 +7269,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="ibLlqexAhvG8OJ+30NmWhPlL1Ax5kRDINnfy0V1uX8RTYMct/Cj2cOPyrTtcYdf0MSsvLQ7xLaqpyQEOZi7xeQ=="
       data-upload-repository-id="41288708"
@@ -7298,7 +7298,7 @@ PS:
 I am really expecting it to be released as soon as possible. So my team can use SG again, :).
 </textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -7364,7 +7364,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -7411,10 +7411,9 @@ I am really expecting it to be released as soon as possible. So my team can use 
        data-unfurl-hide-url="/content_reference_attachments/hide"
        data-unfurl-authenticity-token="NAHoTKG2e+FqxNq0sLhW6Iey1N8x7tJBvlU84EAFwHxnimm377X3WxFEOvbMS8ltNsuPTsUH6+9Y741x3nxqBw==">
 
-    
+
 <div class="timeline-comment-header clearfix">
   <div class="timeline-comment-actions">
-    
 
 
 
@@ -7430,7 +7429,8 @@ I am really expecting it to be released as soon as possible. So my team can use 
 
 
 
-  
+
+
   <details class="details-overlay details-reset position-relative d-inline-block js-socket-channel js-updatable-content js-reaction-popover-container js-comment-header-reaction-button"
       data-channel="reaction:issue-comment:484439099"
       data-url="/_render_node/MDEyOklzc3VlQ29tbWVudDQ4NDQzOTA5OQ==/comments/comment_header_reaction_button">
@@ -7438,7 +7438,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
       <svg class="octicon octicon-plus-small add-reaction-plus-icon" viewBox="0 0 7 16" version="1.1" width="7" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 4H3v3H0v1h3v3h1V8h3V7H4V4z"/></svg>
       <svg class="octicon octicon-smiley" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm4.81 12.81a6.72 6.72 0 0 1-2.17 1.45c-.83.36-1.72.53-2.64.53-.92 0-1.81-.17-2.64-.53-.81-.34-1.55-.83-2.17-1.45a6.773 6.773 0 0 1-1.45-2.17A6.59 6.59 0 0 1 1.21 8c0-.92.17-1.81.53-2.64.34-.81.83-1.55 1.45-2.17.62-.62 1.36-1.11 2.17-1.45A6.59 6.59 0 0 1 8 1.21c.92 0 1.81.17 2.64.53.81.34 1.55.83 2.17 1.45.62.62 1.11 1.36 1.45 2.17.36.83.53 1.72.53 2.64 0 .92-.17 1.81-.53 2.64-.34.81-.83 1.55-1.45 2.17zM4 6.8v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2H5.2C4.53 8 4 7.47 4 6.8zm5 0v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2h-.59C9.53 8 9 7.47 9 6.8zm4 3.2c-.72 1.88-2.91 3-5 3s-4.28-1.13-5-3c-.14-.39.23-1 .66-1h8.59c.41 0 .89.61.75 1z"/></svg>
     </summary>
-    
+
 <details-menu class="dropdown-menu dropdown-menu-sw add-reaction-popover js-add-reaction-popover anim-scale-in" aria-label="Pick your reaction">
   <!-- '"` --><!-- </textarea></xmp> --></option></form><form class="reaction-popover-form js-pick-reaction" action="/users/sourcegraph/reactions" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="Fvco5+i89qRr6CZ2Q/ZYFj3lYuex/7GkcjG1tlShkAPJsJofiS9I7QXSPYtcyITEgQP8ZE3XLuiawS6HLk0nYg==" />
     <p class="text-gray mx-2 my-1">
@@ -7548,7 +7548,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
     class="dropdown-item btn-link"
     for="issuecomment-484439099-permalink"
     role="menuitem"
-    
+
     >
     Copy link
   </clipboard-copy>
@@ -7560,26 +7560,26 @@ I am really expecting it to be released as soon as possible. So my team can use 
     Quote reply
   </button>
 
-      
-    
+
+
 <details
   class="details-reset details-overlay details-overlay-dark lh-default text-gray-dark "
   >
   <summary
       class="dropdown-item"
       aria-haspopup="dialog"
-      
-      
+
+
         role="menuitem"
-        
+
       >
-    
+
     Reference in new issue
   </summary>
   <details-dialog
     aria-label="Reference in new issue"
     class="Box Box--overlay d-flex flex-column anim-fade-in fast Box-overlay--wide"
-    
+
     >
     <div class="Box-header">
       <button class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
@@ -7587,9 +7587,9 @@ I am really expecting it to be released as soon as possible. So my team can use 
       </button>
       <h3 class="Box-title">Reference in new issue</h3>
     </div>
-    
+
       <div class="Box-body overflow-auto">
-        
+
 <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/comments/issues" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="mNYFnUJ/d/Ieovy6AKtJJ9nImnRuAkW1DiPH7RusBHMoMGY8jrWet1JjEpI6kKDwc9RKPut3uBNZ75a5dYtaEg==" />
   <dl class="form-group">
     <dt><label for="convert-to-issue-repository-MDEyOklzc3VlQ29tbWVudDQ4NDQzOTA5OQ==">Repository</label></dt>
@@ -7678,13 +7678,13 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
           <a aria-label="Report abusive content" role="menuitem" class="dropdown-item btn-link" data-ga-click="Report content, reported by OWNER" href="/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3221%23issuecomment-484439099&amp;report=alexandnpu+%28user%29">
       Report abuse
 </a>
-      
+
   </details-menu>
 </details>
 
   </div>
 
-    
+
 
 
   <span
@@ -7699,10 +7699,10 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
 
 
     <strong class="css-truncate">
-      
+
 
   <a class="author text-inherit css-truncate-target" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=1999503" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/alexandnpu">alexandnpu</a>
-  
+
 
     </strong>
 
@@ -7712,7 +7712,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
 
 
     <span class="js-comment-edit-history">
-        
+
   <span class="d-inline-block text-gray-light">&#8226;</span>
 
   <details class="details-overlay details-reset d-inline-block dropdown">
@@ -7736,7 +7736,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
 
     <div class="edit-comment-hide">
         <div class="js-minimize-comment d-none">
-          
+
 
 <div class="flash flash-warn flash-full">
   <button class="flash-close js-comment-hide-minimize-form" type="button"><svg aria-label="Cancel hiding comment" class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16" role="img"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg></button>
@@ -7761,7 +7761,7 @@ _Originally posted by @alexandnpu in https://github.com/sourcegraph/sourcegraph/
 
         </div>
 
-      
+
 <task-lists disabled sortable>
 <table class="d-block">
   <tbody class="d-block">
@@ -7780,7 +7780,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
 </task-lists>
 
 
-        
+
 
 <div class="comment-reactions  js-reactions-container js-socket-channel js-updatable-content"
 
@@ -7794,14 +7794,14 @@ I am really expecting it to be released as soon as possible. So my team can use 
 
       <!-- '"` --><!-- </textarea></xmp> --></option></form><form data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="K0N2kV4Z/4pH/EOH4tbOdiuqn9qsmiyZJiB3/J3YEbTxkVQVTnGPCxg2cQtubo8G48pk+9v6Efu5noQjppi/CQ==" class="js-comment-update" action="/sourcegraph/sourcegraph/issue_comments/484439099" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="RQawMoaqjYt76WM3AwgTKrctc3CK3z7cZq/Sz/uZuD3KPdZsM726MOqHhdm80JwBFe30baAYOyjHHoZuCyxeQQ==" />
         <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708" data-preview-authenticity-token="29dfUQKfXKt1mEKbU5yGi/4oGNGsPIUlFTfKDM3Lbctu7pR4Oa3ksC8PUQeCv7w6Ip7t4Tsq6XsnQOIVRED6GQ==">
-  
+
 <div class="comment-form-head tabnav ">
   <nav class="tabnav-tabs" role="tablist">
     <button type="button" class="btn-link tabnav-tab write-tab js-write-tab selected" role="tab" aria-selected="true">Write</button>
     <button type="button" class="btn-link tabnav-tab preview-tab js-preview-tab" role="tab">Preview</button>
   </nav>
 
-    
+
 <markdown-toolbar for="issuecomment-484439099-body" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -7879,7 +7879,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg> The content you are editing has changed. Please try again.
   </p>
 
-  
+
 <div class="write-content js-write-bucket js-uploadable-container js-upload-markdown-image is-default upload-enabled"
     data-upload-policy-url="/upload/policies/assets" data-upload-policy-authenticity-token="+mlg074kHU09JBy7nI1T7leWC8TK51Cd6KvpJzhg1y4gu0JXrkxtzGLuLjcQNRKen/bw5b2Hbf93FRr4AyB5kw=="
       data-upload-repository-id="41288708"
@@ -7908,7 +7908,7 @@ PS:
 I am really expecting it to be released as soon as possible. So my team can use SG again, :).
 </textarea>
 
-  
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -7974,7 +7974,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -8040,7 +8040,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
   </div>
 
   <div class="discussion-timeline-actions">
-        
+
 
 
 <div id="partial-pull-merging" class="pull-merging js-pull-merging js-socket-channel js-updatable-content"
@@ -8048,12 +8048,12 @@ I am really expecting it to be released as soon as possible. So my team can use 
      data-channel="repo:179436078:branch:feature/make_redis_support_password repo:41288708:branch:master repo:41288708:commit:81008f4f999e8aa4d7c47746ee4421334f304af9 issue:429264796:state pull_request:267437447:review_state"
      data-url="/sourcegraph/sourcegraph/pull/3221/show_partial?merge_type=squash&amp;partial=pull_requests%2Fmerging">
 
-    
 
 
 
 
-  
+
+
 
 <div class="branch-action branch-action-state-error pull-merging-error">
   <span class="branch-action-icon">
@@ -8066,7 +8066,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
     </button>
     <h4 class="merge-branch-heading">Couldn’t update branch</h4>
     <p class="merge-branch-description">Oops, something went wrong.</p>
-    
+
   </div>
 </div>
 
@@ -8084,7 +8084,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
         <input type="hidden" name="issue" value="3221">
           <div class="js-previewable-comment-form previewable-comment-form write-selected" data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708&amp;subject=3221&amp;subject_type=PullRequest" data-preview-authenticity-token="+wRjccS/47FTEzL2pDHOnmzlGwHsvHd++rz6VBj6SsNOPahY/41bqgmEIWp1EvQvsFPuMXuqGyDIy9JNkXHdEQ==">
   <div class="comment-form-head tabnav ">
-      
+
 <markdown-toolbar for="new_comment_field" class="toolbar-commenting ">
   <div class="toolbar-group">
     <md-header tabindex="-1" class="toolbar-item tooltipped tooltipped-n" aria-label="Add header text" data-ga-click="Markdown Toolbar, click, header">
@@ -8171,7 +8171,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
 
       <textarea name="comment[body]"
                 id="new_comment_field"
-                
+
                 placeholder="Leave a comment"
                 aria-label="Comment body"
                 class="form-control input-contrast comment-form-textarea js-comment-field js-paste-markdown js-task-list-field js-quick-submit js-size-to-fit js-session-resumable js-saved-reply-shortcut-comment-field"
@@ -8179,7 +8179,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
                 data-suggest-issue="/suggestions/pull_request/267437447?repository=sourcegraph&amp;user_id=sourcegraph&amp;issue_suggester=1"
                 data-suggest-mention="/suggestions/pull_request/267437447?repository=sourcegraph&amp;user_id=sourcegraph&amp;mention_suggester=1"
                 ></textarea>
-        
+
   <p class="drag-and-drop position-relative d-flex flex-justify-between">
     <input accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip" type="file"
       multiple="multiple"
@@ -8245,7 +8245,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
         target="_blank"
         data-ga-click="Markdown Toolbar, click, help"
         aria-label="Learn about styling with Markdown"
-        
+
       >
         <svg class="octicon octicon-markdown v-align-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/></svg>
       </a>
@@ -8286,7 +8286,7 @@ I am really expecting it to be released as soon as possible. So my team can use 
       class="btn js-comment-and-button js-quick-submit-alternative"
       data-comment-text="Reopen and comment"
       data-disable-with
-      
+
       >
       <span class="js-form-action-text">Reopen pull request</span>
     </button>
@@ -8337,11 +8337,11 @@ I am really expecting it to be released as soon as possible. So my team can use 
 
     </main>
   </div>
-  
+
 
   </div>
 
-        
+
 <div class="footer container-lg width-full px-3" role="contentinfo">
   <div class="position-relative d-flex flex-justify-between pt-6 pb-2 mt-6 f6 text-gray border-top border-gray-light ">
     <ul class="list-style-none d-flex flex-wrap ">
@@ -8382,13 +8382,13 @@ I am really expecting it to be released as soon as possible. So my team can use 
   </div>
 
 
-    
+
     <script crossorigin="anonymous" integrity="sha512-eYWkirt5BXd8Z6IvLT/AkE0jvsyFHbTICcEN1Aczj9caa8b+20ToUYPgohknnTlFrLElgEN0HX9Oh8XHbTFNBw==" type="application/javascript" src="https://github.githubassets.com/assets/frameworks-4199e113.js"></script>
-    
+
     <script crossorigin="anonymous" async="async" integrity="sha512-zT3yg8XcIqRtlUJnQovmYSmIl0RfhG7aoMhH4p8XYwmEFK9gxqdExkfLSP0TFp08sqefj+2jtG9z8o3XgnDlMg==" type="application/javascript" src="https://github.githubassets.com/assets/github-bootstrap-ead35243.js"></script>
-    
-    
-    
+
+
+
   <div class="js-stale-session-flash stale-session-flash flash flash-warn flash-banner" hidden
     >
     <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg>
