@@ -50,39 +50,52 @@ type Opt func(*http.Client) error
 // A Factory constructs an http.Client with the given functional
 // options applied, returning an aggreagte error of the errors returned by
 // all those options.
-type Factory func(...Opt) (Doer, error)
+type Factory struct {
+	stack  Middleware
+	common []Opt
+}
 
-// NewClient returns a new http.Client from the factory with the given opts
-// applied to it.
-func (f Factory) NewClient(opts ...Opt) (Doer, error) {
-	return f(opts...)
+// Doer returns a new Doer wrapped with the middleware stack
+// provided in the Factory constructor and with the given common
+// and base opts applied to it.
+func (f Factory) Doer(base ...Opt) (Doer, error) {
+	cli, err := f.Client(base...)
+	if err != nil {
+		return nil, err
+	}
+
+	if f.stack != nil {
+		return f.stack(cli), nil
+	}
+
+	return cli, nil
+}
+
+// Client returns a new http.Client configured with the
+// given common and base opts, but not wrapped with any
+// middleware.
+func (f Factory) Client(base ...Opt) (*http.Client, error) {
+	opts := make([]Opt, 0, len(f.common)+len(base))
+	opts = append(opts, base...)
+	opts = append(opts, f.common...)
+
+	var cli http.Client
+	var err *multierror.Error
+
+	for _, opt := range opts {
+		err = multierror.Append(err, opt(&cli))
+	}
+
+	return &cli, err.ErrorOrNil()
 }
 
 // NewFactory returns a Factory that applies the given common
-// Opts after the ones provided on each invocation of New.
+// Opts after the ones provided on each invocation of Client or Doer.
 //
 // If the given Middleware stack is not nil, the final configured client
-// will be wrapped by it before being returned.
-func NewFactory(stack Middleware, common ...Opt) Factory {
-	return func(base ...Opt) (do Doer, _ error) {
-		opts := make([]Opt, 0, len(common)+len(base))
-		opts = append(opts, base...)
-		opts = append(opts, common...)
-
-		var cli http.Client
-		var err *multierror.Error
-
-		for _, opt := range opts {
-			err = multierror.Append(err, opt(&cli))
-		}
-
-		do = &cli
-		if stack != nil {
-			do = stack(do)
-		}
-
-		return do, err.ErrorOrNil()
-	}
+// will be wrapped by it before being returned from a call to Doer, but not Client.
+func NewFactory(stack Middleware, common ...Opt) *Factory {
+	return &Factory{stack: stack, common: common}
 }
 
 //
