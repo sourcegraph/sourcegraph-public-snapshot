@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )

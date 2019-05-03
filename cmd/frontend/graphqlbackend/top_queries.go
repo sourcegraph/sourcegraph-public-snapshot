@@ -9,7 +9,7 @@ import (
 )
 
 // TopQueries returns the top most frequent recent queries.
-func (s *schemaResolver) TopQueries(ctx context.Context, args *struct { Limit int32 }) ([]queryCountResolver, error) {
+func (s *schemaResolver) TopQueries(ctx context.Context, args *struct{ Limit int32 }) ([]queryCountResolver, error) {
 	searches, err := db.RecentSearches.Get(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting recent searches from database")
