@@ -9,7 +9,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, USE_SEARCH_EXP } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
@@ -337,18 +337,20 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                             return (
                                 <>
                                     {/* Info Bar */}
-                                    <SearchResultsInfoBar
-                                        authenticatedUser={this.props.authenticatedUser}
-                                        results={results}
-                                        allExpanded={this.props.allExpanded}
-                                        didSave={this.props.didSave}
-                                        onDidCreateSavedQuery={this.props.onDidCreateSavedQuery}
-                                        onExpandAllResultsToggle={this.props.onExpandAllResultsToggle}
-                                        onSaveQueryClick={this.props.onSaveQueryClick}
-                                        onShowMoreResultsClick={this.props.onShowMoreResultsClick}
-                                        showDotComMarketing={this.props.isSourcegraphDotCom}
-                                        displayPerformanceWarning={this.state.displayPerformanceWarning}
-                                    />
+                                    {!USE_SEARCH_EXP && (
+                                        <SearchResultsInfoBar
+                                            authenticatedUser={this.props.authenticatedUser}
+                                            results={results}
+                                            allExpanded={this.props.allExpanded}
+                                            didSave={this.props.didSave}
+                                            onDidCreateSavedQuery={this.props.onDidCreateSavedQuery}
+                                            onExpandAllResultsToggle={this.props.onExpandAllResultsToggle}
+                                            onSaveQueryClick={this.props.onSaveQueryClick}
+                                            onShowMoreResultsClick={this.props.onShowMoreResultsClick}
+                                            showDotComMarketing={this.props.isSourcegraphDotCom}
+                                            displayPerformanceWarning={this.state.displayPerformanceWarning}
+                                        />
+                                    )}
 
                                     {/* Results */}
                                     <VirtualList

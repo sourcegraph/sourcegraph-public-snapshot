@@ -6,6 +6,7 @@ import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, ta
 import { parseSearchURLQuery, USE_SEARCH_EXP } from '..'
 import { EvaluatedContributions } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
+import { Resizable } from '../../../../shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -14,6 +15,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../theme'
 import { EventLogger } from '../../tracking/eventLogger'
+import { SearchContextBar } from '../contextBar/SearchContextBar'
 import {
     isSearchResults,
     submitSearch,
@@ -175,9 +177,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         calculateShowMoreResultsCount={this.calculateCount}
                     />
                 )}
-                <div className="d-flex flex-wrap-reverse">
+                <div className="d-flex flex-wrap flex-1 overflow-hidden">
+                    {USE_SEARCH_EXP && (
+                        <Resizable
+                            className="h-100"
+                            handlePosition="right"
+                            storageKey="search-context-bar-resizable"
+                            defaultSize={200}
+                            element={<SearchContextBar className="flex-1 overflow-auto" />}
+                        />
+                    )}
                     <SearchResultsList
-                        className="flex-1"
+                        className="flex-1 h-100"
                         resultsOrError={this.state.resultsOrError}
                         onShowMoreResultsClick={this.showMoreResults}
                         onExpandAllResultsToggle={this.onExpandAllResultsToggle}
@@ -196,13 +207,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         deployType={this.props.deployType}
                     />
-                    {USE_SEARCH_EXP && (
-                        <div>
-                            hello
-                            <br />
-                            world
-                        </div>
-                    )}
                 </div>
             </div>
         )
