@@ -1,7 +1,6 @@
 BEGIN;
 
-ALTER TABLE query_runner_state RENAME TO saved_queries;
-
+DROP TABLE IF EXISTS "query_runner_state";
 DROP TABLE IF EXISTS "saved_searches";
 DROP TYPE IF EXISTS user_or_org;
 

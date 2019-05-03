@@ -1,6 +1,6 @@
 BEGIN;
 
-ALTER TABLE saved_queries RENAME TO query_runner_state;
+CREATE TABLE query_runner_state AS SELECT * FROM saved_queries;
 
 CREATE TYPE user_or_org AS ENUM ('user', 'org');
 

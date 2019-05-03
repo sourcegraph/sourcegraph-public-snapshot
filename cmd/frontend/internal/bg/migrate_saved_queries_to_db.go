@@ -54,11 +54,15 @@ rerun:
 		}
 	}
 
+	// To reduce the (small) chance of a race condition whereby a new settings document can have an
+	// "search.savedQueries" added without reporting a validation error (e.g., by an older deployed version while
+	// this migration is running), rerun until we have nothing else to do.
 	if count > 0 {
 		log15.Info(`Migrated settings "search.savedQueries" to saved_searches table.`, "count", count)
 		time.Sleep(60 * time.Second)
 		goto rerun
 	}
+
 	// After migrating all saved searches into the DB, migrate organization Slack webhook URLs into the
 	// slack_webhook_url column in the saved_searches table.
 	MigrateSlackWebhookUrlsToSavedSearches(ctx)
@@ -69,7 +73,7 @@ func migrateSavedQueryIntoDB(ctx context.Context, s *api.Settings) (bool, error)
 	var sq SavedQueryField
 	err := jsonc.Unmarshal(s.Contents, &sq)
 	if err != nil {
-		return false, errors.WithMessagef(err, `Unable to migrate saved query into database, unable to unmarshal JSON value on %s. Please report this issue.`, s.Subject)
+		return false, errors.WithMessagef(err, `Warning: unable to migrate saved queries from settings subject %s. Unable to unmarshal JSON value. Please report this issue.`, s.Subject)
 	}
 	err = insertSavedQueryIntoDB(ctx, s, &sq)
 	if err != nil {
