@@ -384,27 +384,24 @@ Referenced by:
 
 # Table "public.repo"
 ```
-         Column          |           Type           |                     Modifiers                     
--------------------------+--------------------------+---------------------------------------------------
- id                      | integer                  | not null default nextval('repo_id_seq'::regclass)
- name                    | citext                   | not null
- description             | text                     | 
- language                | text                     | 
- fork                    | boolean                  | 
- created_at              | timestamp with time zone | not null default now()
- updated_at              | timestamp with time zone | 
- pushed_at               | timestamp with time zone | 
- indexed_revision        | text                     | 
- freeze_indexed_revision | boolean                  | 
- external_id             | text                     | 
- external_service_type   | text                     | 
- external_service_id     | text                     | 
- enabled                 | boolean                  | not null default true
- archived                | boolean                  | not null default false
- uri                     | citext                   | not null
- deleted_at              | timestamp with time zone | 
- sources                 | jsonb                    | not null default '{}'::jsonb
- metadata                | jsonb                    | not null default '{}'::jsonb
+        Column         |           Type           |                     Modifiers                     
+-----------------------+--------------------------+---------------------------------------------------
+ id                    | integer                  | not null default nextval('repo_id_seq'::regclass)
+ name                  | citext                   | not null
+ description           | text                     | 
+ language              | text                     | 
+ fork                  | boolean                  | 
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | 
+ external_id           | text                     | 
+ external_service_type | text                     | 
+ external_service_id   | text                     | 
+ enabled               | boolean                  | not null default true
+ archived              | boolean                  | not null default false
+ uri                   | citext                   | 
+ deleted_at            | timestamp with time zone | 
+ sources               | jsonb                    | not null default '{}'::jsonb
+ metadata              | jsonb                    | not null default '{}'::jsonb
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_service_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id) WHERE external_service_type IS NOT NULL AND external_service_id IS NOT NULL AND external_id IS NOT NULL
@@ -419,8 +416,6 @@ Check constraints:
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
-Triggers:
-    trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW EXECUTE PROCEDURE set_repo_name()
 
 ```
 
