@@ -87,5 +87,5 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 </div>
             </div>
         )}
-    </>
+    </div>
 )
