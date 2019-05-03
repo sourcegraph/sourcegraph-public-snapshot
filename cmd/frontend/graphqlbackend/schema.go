@@ -780,7 +780,10 @@ type Query {
         first: Int
     ): SurveyResponseConnection!
     # The top 1000 most frequently occurring recent queries.
-    topQueries: [QueryCount!]!
+    topQueries(
+        # maximum number of unique queries to return
+        limit: Int!
+    ): [QueryCount!]!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
     # Queries which are for internal use only.

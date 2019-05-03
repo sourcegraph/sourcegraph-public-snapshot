@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
 
-// TopQueries returns the top 1000 most frequent recent queries.
-func (s *schemaResolver) TopQueries(ctx context.Context) ([]queryCountResolver, error) {
+// TopQueries returns the top most frequent recent queries.
+func (s *schemaResolver) TopQueries(ctx context.Context, args *struct { Limit int32 }) ([]queryCountResolver, error) {
 	searches, err := db.RecentSearches.Get(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting recent searches from database")
@@ -36,9 +36,8 @@ func (s *schemaResolver) TopQueries(ctx context.Context) ([]queryCountResolver, 
 			return uniques[i] < uniques[j]
 		}
 	})
-	wantLen := 1000
-	if len(uniques) > wantLen {
-		uniques = uniques[:wantLen]
+	if int32(len(uniques)) > args.Limit {
+		uniques = uniques[:args.Limit]
 	}
 
 	var qcrs []queryCountResolver
