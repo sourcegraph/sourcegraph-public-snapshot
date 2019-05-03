@@ -61,7 +61,7 @@ export interface GraphQLRequestOptions {
     baseUrl?: string
 }
 
-export function requestGraphQL<R extends GQL.IGraphQLResponseRoot>({
+export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
     request,
     variables = {},
     headers,
@@ -70,7 +70,7 @@ export function requestGraphQL<R extends GQL.IGraphQLResponseRoot>({
 }: GraphQLRequestOptions & {
     request: GraphQLDocument
     variables: any
-}): Observable<R> {
+}): Observable<GraphQLResult<T>> {
     const nameMatch = request[graphQLContent].match(/^\s*(?:query|mutation)\s+(\w+)/)
     return ajax({
         method: 'POST',

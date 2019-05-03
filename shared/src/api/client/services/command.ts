@@ -60,7 +60,7 @@ export class CommandRegistry {
 /**
  * Executes the command (in the commands list) specified in params.
  *
- * Most callers should use CommandRegistry's getHover method, which uses the registered commands.
+ * Most callers should use CommandRegistry's executeCommand method, which uses the registered commands.
  */
 export function executeCommand(commands: CommandEntry[], params: ExecuteCommandParams): Promise<any> {
     const command = commands.find(c => c.command === params.command)

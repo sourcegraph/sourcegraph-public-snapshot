@@ -89,7 +89,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 /**
  * The context the code host is in on the current page.
  */
-export type CodeHostContext = RepoSpec & Partial<RevSpec>
+export type CodeHostContext = RepoSpec & Partial<RevSpec> & { privateRepository: boolean }
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {

@@ -52,5 +52,6 @@ export function getContext(): CodeHostContext {
     return {
         ...repoSpec,
         ...revSpec,
+        privateRepository: window.location.hostname === 'bitbucket.org',
     }
 }

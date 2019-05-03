@@ -1,5 +1,5 @@
+import { Observable, of } from 'rxjs'
 import { storage } from '../../browser/storage'
-import { isPhabricator, isPublicCodeHost } from '../../context'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
@@ -13,6 +13,13 @@ if (window.SG_ENV === 'EXTENSION' && globalThis.browser) {
             sourcegraphUrl = items.sourcegraphURL
         }
     })
+}
+
+export function observeSourcegraphURL(): Observable<string> {
+    if (window.SG_ENV === 'EXTENSION') {
+        return storage.observeSync('sourcegraphURL')
+    }
+    return of(sourcegraphUrl)
 }
 
 export function setSourcegraphUrl(url: string): void {
@@ -42,22 +49,4 @@ export function getExtensionVersion(): string {
 
 function isFirefoxExtension(): boolean {
     return window.navigator.userAgent.indexOf('Firefox') !== -1
-}
-
-/**
- * Check the DOM to see if we can determine if a repository is private or public.
- */
-export function isPrivateRepository(): boolean {
-    if (isPhabricator) {
-        return true
-    }
-    if (!isPublicCodeHost) {
-        return true
-    }
-    // @TODO(lguychard) this is github-specific and should not be in /shared
-    const header = document.querySelector('.repohead-details-container')
-    if (!header) {
-        return false
-    }
-    return !!header.querySelector('.private')
 }
