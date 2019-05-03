@@ -237,6 +237,47 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 		}
 	})
 
+	t.Run("invalid slack webhook URL", func(t *testing.T) {
+		u, err := db.Users.Create(ctx, db.NewUser{Username: "u2"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Migrate saved query without Slack webhook URL into DB.
+		latest, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		// Create invalid JSON settings with notifications.slack for the same user.
+		_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, &latest.ID, nil, `{"notifications.slack": {"webhookURL": [1]}}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = MigrateSlackWebhookUrlsToSavedSearches(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ss, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, u.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, s := range ss {
+			t.Logf("%v+", s)
+		}
+
+		got := ss[0]
+		want := &types.SavedSearch{ID: "2", Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	})
+
 	t.Run("migrate org slack webhook URL", func(t *testing.T) {
 		org, err := db.Orgs.Create(ctx, "myorg", nil)
 		if err != nil {
@@ -273,7 +314,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 
 		got := ss[0]
 		webhookURL := "https://test.slackwebhook.com"
-		want := &types.SavedSearch{ID: "2", Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "org", UserID: nil, OrgID: &org.ID, SlackWebhookURL: &webhookURL}
+		want := &types.SavedSearch{ID: "3", Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "org", UserID: nil, OrgID: &org.ID, SlackWebhookURL: &webhookURL}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -314,3 +355,5 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 	})
 
 }
+
+// Test multiple saved queries and slack webhook URLs where one is invalid.
