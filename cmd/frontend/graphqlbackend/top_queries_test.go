@@ -2,10 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"reflect"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
 
 func Test_schemaResolver_TopQueries(t *testing.T) {
@@ -60,11 +59,12 @@ func Test_schemaResolver_TopQueries(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &schemaResolver{}
-			db.Mocks.RecentSearches.Get = func(ctx context.Context) ([]string, error) {
-				return tt.queries, nil
+			rsm := &RecentSearchesMock{
+				queries: tt.queries,
 			}
-			defer func() { db.Mocks.RecentSearches.Get = nil }()
+			s := &schemaResolver{
+				recentSearches: rsm,
+			}
 			got, err := s.TopQueries(context.Background(), (*struct{ Limit int32 })(&tt.args))
 			if err != nil {
 				t.Fatal(err)
@@ -74,4 +74,15 @@ func Test_schemaResolver_TopQueries(t *testing.T) {
 			}
 		})
 	}
+}
+
+type RecentSearchesMock struct {
+	queries []string
+
+	// Default unimplemented interface methods to nil panic.
+	db.RecentSearchesTracker
+}
+
+func (rsm *RecentSearchesMock) Get(ctx context.Context) ([]string, error) {
+	return rsm.queries, nil
 }

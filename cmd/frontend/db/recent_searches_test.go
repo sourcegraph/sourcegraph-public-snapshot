@@ -14,10 +14,11 @@ func TestRecentSearches_Add(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 	q := fmt.Sprintf("fake query with random number %d", rand.Int())
-	if err := RecentSearches.Add(ctx, q); err != nil {
+	rs := &RecentSearches{dbconn.Global}
+	if err := rs.Add(ctx, q); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := RecentSearches.Get(ctx)
+	ss, err := rs.Get(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,22 +34,23 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	rs := &RecentSearches{dbconn.Global}
 	t.Run("empty case", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
-		if err := RecentSearches.DeleteExcessRows(ctx, 1); err != nil {
+		if err := rs.DeleteExcessRows(ctx, 1); err != nil {
 			t.Error(err)
 		}
 	})
 	t.Run("single case", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
 		q := "fake query"
-		if err := RecentSearches.Add(ctx, q); err != nil {
+		if err := rs.Add(ctx, q); err != nil {
 			t.Fatal(err)
 		}
-		if err := RecentSearches.DeleteExcessRows(ctx, 2); err != nil {
+		if err := rs.DeleteExcessRows(ctx, 2); err != nil {
 			t.Error(err)
 		}
-		ss, err := RecentSearches.Get(ctx)
+		ss, err := rs.Get(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -61,14 +63,14 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 		limit := 10
 		for i := 1; i <= limit+1; i++ {
 			q := fmt.Sprintf("fake query for i = %d", i)
-			if err := RecentSearches.Add(ctx, q); err != nil {
+			if err := rs.Add(ctx, q); err != nil {
 				t.Fatal(err)
 			}
 		}
-		if err := RecentSearches.DeleteExcessRows(ctx, limit); err != nil {
+		if err := rs.DeleteExcessRows(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
-		ss, err := RecentSearches.Get(ctx)
+		ss, err := rs.Get(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,29 +91,29 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 			q := fmt.Sprintf("fake query for i = %d", i)
 			addQueryWithRandomId(q)
 		}
-		if err := RecentSearches.DeleteExcessRows(ctx, limit); err != nil {
+		if err := rs.DeleteExcessRows(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
-		ss, err := RecentSearches.Get(ctx)
+		ss, err := rs.Get(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(ss) != limit {
 			t.Errorf("recent_searches table has %d rows, want %d", len(ss), limit)
 		}
-
 	})
 }
 
 func BenchmarkRecentSearches_AddAndDeleteExcessRows(b *testing.B) {
+	rs := &RecentSearches{dbconn.Global}
 	ctx := dbtesting.TestContext(b)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		q := fmt.Sprintf("fake query for i = %d", i)
-		if err := RecentSearches.Add(ctx, q); err != nil {
+		if err := rs.Add(ctx, q); err != nil {
 			b.Fatal(err)
 		}
-		if err := RecentSearches.DeleteExcessRows(ctx, b.N); err != nil {
+		if err := rs.DeleteExcessRows(ctx, b.N); err != nil {
 			b.Fatal(err)
 		}
 	}

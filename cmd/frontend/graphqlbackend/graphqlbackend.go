@@ -138,7 +138,9 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-type schemaResolver struct{}
+type schemaResolver struct{
+	recentSearches db.RecentSearchesTracker
+}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {

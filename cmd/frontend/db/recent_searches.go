@@ -2,25 +2,27 @@ package db
 
 import (
 	"context"
-
+	"database/sql"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-type recentSearches struct{}
+type RecentSearchesTracker interface {
+	Add(ctx context.Context, q string) error
+	DeleteExcessRows(ctx context.Context, limit int) error
+	Get(ctx context.Context) ([]string, error)
+}
 
-// Add inserts the query q to the recentSearches table in the db.
-func (*recentSearches) Add(ctx context.Context, q string) error {
-	if Mocks.RecentSearches.Add != nil {
-		return Mocks.RecentSearches.Add(ctx, q)
-	}
+// RecentSearches implements RecentSearchesTracker.
+type RecentSearches struct{
+	DB *sql.DB
+}
+
+// Add inserts the query q to the RecentSearches table in the db.
+func (rs *RecentSearches) Add(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
-	if dbconn.Global == nil {
-		return errors.New("db connection is nil")
-	}
-	res, err := dbconn.Global.ExecContext(ctx, insert, q)
+	res, err := rs.DB.ExecContext(ctx, insert, q)
 	if err != nil {
-		return errors.Errorf("inserting %q into recentSearches table: %v", q, err)
+		return errors.Errorf("inserting %q into RecentSearches table: %v", q, err)
 	}
 	nrows, err := res.RowsAffected()
 	if err != nil {
@@ -32,11 +34,8 @@ func (*recentSearches) Add(ctx context.Context, q string) error {
 	return nil
 }
 
-// DeleteExcessRows keeps the row count in the recentSearches table below limit.
-func (*recentSearches) DeleteExcessRows(ctx context.Context, limit int) error {
-	if Mocks.RecentSearches.DeleteExcessRows != nil {
-		return Mocks.RecentSearches.DeleteExcessRows(ctx, limit)
-	}
+// DeleteExcessRows keeps the row count in the RecentSearches table below limit.
+func (rs *RecentSearches) DeleteExcessRows(ctx context.Context, limit int) error {
 	enforceLimit := `
 DELETE FROM recent_searches
 	WHERE id <
@@ -45,22 +44,16 @@ DELETE FROM recent_searches
 		 OFFSET GREATEST(0, (SELECT (SELECT COUNT(*) FROM recent_searches) - $1))
 		 LIMIT 1)
 `
-	if dbconn.Global == nil {
-		return errors.New("db connection is nil")
-	}
-	if _, err := dbconn.Global.ExecContext(ctx, enforceLimit, limit); err != nil {
-		return errors.Errorf("deleting excess rows in recentSearches table: %v", err)
+	if _, err := rs.DB.ExecContext(ctx, enforceLimit, limit); err != nil {
+		return errors.Errorf("deleting excess rows in RecentSearches table: %v", err)
 	}
 	return nil
 }
 
-// Get returns all the search queries in the recentSearches table.
-func (*recentSearches) Get(ctx context.Context) ([]string, error) {
-	if Mocks.RecentSearches.Get != nil {
-		return Mocks.RecentSearches.Get(ctx)
-	}
+// Get returns all the search queries in the RecentSearches table.
+func (rs *RecentSearches) Get(ctx context.Context) ([]string, error) {
 	sel := `SELECT query FROM recent_searches`
-	rows, err := dbconn.Global.QueryContext(ctx, sel)
+	rows, err := rs.DB.QueryContext(ctx, sel)
 	var qs []string
 	if err != nil {
 		return nil, errors.Errorf("running SELECT query: %v", err)

@@ -69,7 +69,10 @@ func (r *schemaResolver) Search(args *struct {
 		return newSearcherResolver(query2)
 	}
 
-	go addQueryToSearchesTable(args.Query)
+	// TODO(ijt): remove this goroutine leak. One simple approach would be to issue a separate, concurrent query
+	// from the typescript frontend to a new graphql mutation that adds a query to the recent_searches table.
+	go addQueryToSearchesTable(r.recentSearches, args.Query)
+
 	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
@@ -80,14 +83,16 @@ func (r *schemaResolver) Search(args *struct {
 	}, nil
 }
 
-func addQueryToSearchesTable(q string) {
+func addQueryToSearchesTable(rs db.RecentSearchesTracker, q string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := db.RecentSearches.Add(ctx, q); err != nil {
-		log15.Error("adding query to searches table", "error", err)
-	}
-	if err := db.RecentSearches.DeleteExcessRows(ctx, 1e5); err != nil {
-		log15.Error("deleting excess rows from searches table", "error", err)
+	if rs != nil {
+		if err := rs.Add(ctx, q); err != nil {
+			log15.Error("adding query to searches table", "error", err)
+		}
+		if err := rs.DeleteExcessRows(ctx, 1e5); err != nil {
+			log15.Error("deleting excess rows from searches table", "error", err)
+		}
 	}
 }
 
