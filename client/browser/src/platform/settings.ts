@@ -13,7 +13,7 @@ import {
 } from '../../../../shared/src/settings/settings'
 import { createAggregateError, isErrorLike } from '../../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
-import storage, { StorageItems } from '../browser/storage'
+import { observeStorageKey, storage } from '../browser/storage'
 import { isInPage } from '../context'
 import { getContext } from '../shared/backend/context'
 import { queryGraphQL } from '../shared/backend/graphql'
@@ -24,14 +24,13 @@ const inPageClientSettingsKey = 'sourcegraphClientSettings'
 const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
     const storageSubject = isInPage
         ? new LocalStorageSubject<string>(inPageClientSettingsKey, '{}')
-        : storage.observeSync('clientSettings')
+        : observeStorageKey('sync', 'clientSettings')
 
     const subject: SettingsSubject = {
-        id: 'Client',
-        settingsURL: 'N/A',
-        viewerCanAdminister: true,
         __typename: 'Client',
+        id: 'Client',
         displayName: 'Client',
+        viewerCanAdminister: true,
     }
 
     return storageSubject.pipe(
@@ -157,7 +156,7 @@ export function fetchViewerSettings(): Observable<Pick<GQL.ISettingsCascade, 'su
 /**
  * Applies an edit and persists the result to client settings.
  */
-export function editClientSettings(edit: SettingsEdit | string): Promise<void> {
+export async function editClientSettings(edit: SettingsEdit | string): Promise<void> {
     const getNext = (prev: string) =>
         typeof edit === 'string'
             ? edit
@@ -180,16 +179,8 @@ export function editClientSettings(edit: SettingsEdit | string): Promise<void> {
         return Promise.resolve()
     }
 
-    return new Promise<StorageItems>(resolve => storage.getSync(storageItems => resolve(storageItems))).then(
-        storageItems => {
-            const prev = storageItems.clientSettings
-            const next = getNext(prev)
+    const { clientSettings: prev = '{}' } = await storage.sync.get()
+    const next = getNext(prev)
 
-            return new Promise<undefined>(resolve =>
-                storage.setSync({ clientSettings: next }, () => {
-                    resolve(undefined)
-                })
-            )
-        }
-    )
+    await storage.sync.set({ clientSettings: next })
 }

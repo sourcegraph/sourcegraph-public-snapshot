@@ -5,6 +5,7 @@ import { render } from 'react-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { SourcegraphIconButton } from '../../shared/components/Button'
+import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { CodeHost, CodeHostContext } from './code_intelligence'
 
 export interface ViewOnSourcegraphButtonClassProps {
@@ -73,7 +74,7 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         // user to configure Sourcegraph.
         if (
             !this.state.repoExists &&
-            this.props.sourcegraphUrl === 'https://sourcegraph.com' &&
+            this.props.sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL &&
             this.props.onConfigureSourcegraphClick
         ) {
             return (

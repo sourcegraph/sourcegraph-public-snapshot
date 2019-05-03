@@ -39,7 +39,7 @@ const config = {
     },
   },
 
-  setupFiles: [path.join(__dirname, 'shared/dev/mockDate.js')],
+  setupFiles: [path.join(__dirname, 'shared/dev/mockDate.js'), path.join(__dirname, 'shared/dev/globalThis.js')],
 }
 
 module.exports = config

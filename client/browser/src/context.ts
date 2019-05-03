@@ -21,11 +21,9 @@ function getContext(): AppContext {
 
     let scriptEnv: ScriptEnv = ScriptEnv.Content
     if (appEnv === AppEnv.Extension) {
-        const chrome = global.chrome
-
         if (options.test(window.location.pathname)) {
             scriptEnv = ScriptEnv.Options
-        } else if (chrome && chrome.runtime.getBackgroundPage) {
+        } else if (globalThis.browser && browser.runtime.getBackgroundPage) {
             scriptEnv = ScriptEnv.Background
         }
     }
