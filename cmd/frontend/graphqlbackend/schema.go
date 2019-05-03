@@ -798,7 +798,10 @@ type Query {
 
 # A query and an associated number of times it occurred.
 type QueryCount {
+    # The search query.
     query: String!
+
+    # The number of times the search query was made.
     count: Int!
 }
 
