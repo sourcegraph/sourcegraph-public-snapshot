@@ -116,14 +116,18 @@ export function fetchViewerSettings(
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
     return from(
-        requestGraphQL<GQL.IQuery>(gql`
-            query ViewerConfiguration {
-                viewerConfiguration {
-                    ...ConfigurationCascadeFields
+        requestGraphQL<GQL.IQuery>(
+            gql`
+                query ViewerConfiguration {
+                    viewerConfiguration {
+                        ...ConfigurationCascadeFields
+                    }
                 }
-            }
-            ${configurationCascadeFragment}
-        `)
+                ${configurationCascadeFragment}
+            `,
+            {},
+            false
+        )
     ).pipe(
         map(dataOrThrowErrors),
         // Suppress deprecation warnings because our use of these deprecated fields is intentional (see tsdoc comment).

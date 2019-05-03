@@ -11,14 +11,18 @@ import { PlatformContext } from '../../../../../shared/src/platform/context'
 export const resolveClientConfiguration = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<GQL.IClientConfigurationDetails> =>
-    requestGraphQL<GQL.IQuery>(gql`query ClientConfiguration() {
+    requestGraphQL<GQL.IQuery>(
+        gql`query ClientConfiguration() {
             clientConfiguration {
                 contentScriptUrls
                 parentSourcegraph {
                     url
                 }
             }
-        }`).pipe(
+        }`,
+        {},
+        false
+    ).pipe(
         map(dataOrThrowErrors),
         map(({ clientConfiguration }) => clientConfiguration, catchError((err, caught) => caught))
     )
@@ -26,7 +30,8 @@ export const resolveClientConfiguration = (
 export const fetchCurrentUser = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<GQL.IUser | undefined> =>
-    requestGraphQL<GQL.IQuery>(gql`query CurrentUser() {
+    requestGraphQL<GQL.IQuery>(
+        gql`query CurrentUser() {
             currentUser {
                 id
                 displayName
@@ -39,19 +44,26 @@ export const fetchCurrentUser = (
                 }
                 siteAdmin
             }
-        }`).pipe(
+        }`,
+        {},
+        false
+    ).pipe(
         map(dataOrThrowErrors),
         map(({ currentUser }) => currentUser || undefined, catchError((err, caught) => caught))
     )
 
 export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<GQL.ISite> =>
-    requestGraphQL<GQL.IQuery>(gql`query SiteProductVersion() {
+    requestGraphQL<GQL.IQuery>(
+        gql`query SiteProductVersion() {
             site {
                 productVersion
                 buildVersion
                 hasCodeIntelligence
             }
-        }`).pipe(
+        }`,
+        {},
+        false
+    ).pipe(
         map(dataOrThrowErrors),
         map(({ site }) => site, catchError((err, caught) => caught))
     )

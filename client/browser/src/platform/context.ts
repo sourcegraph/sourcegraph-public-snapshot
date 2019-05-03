@@ -28,11 +28,7 @@ export function createPlatformContext({
     getContext,
 }: Pick<CodeHost, 'urlToFile' | 'getContext'>): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
-    const requestGraphQL: PlatformContext['requestGraphQL'] = (
-        request,
-        variables = {},
-        mightContainPrivateInfo = true
-    ) =>
+    const requestGraphQL: PlatformContext['requestGraphQL'] = (request, variables, mightContainPrivateInfo) =>
         observeSourcegraphURL().pipe(
             take(1),
             switchMap(sourcegraphURL => {
@@ -44,17 +40,16 @@ export function createPlatformContext({
                         throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
                     }
                 }
-                // In the browser extension, send all GraphQL requests from the background page.
                 if (isInPage) {
-                    return requestGraphQLFromBackground(request, variables)
+                    return requestGraphQLCommon({
+                        request,
+                        variables: {},
+                        baseUrl: window.SOURCEGRAPH_URL,
+                        ...requestOptions,
+                    })
                 }
-                // Otherwise, make a graphQL request directly.
-                return requestGraphQLCommon({
-                    request,
-                    variables: {},
-                    baseUrl: window.SOURCEGRAPH_URL,
-                    ...requestOptions,
-                })
+                // In the browser extension, send all GraphQL requests from the background page.
+                return requestGraphQLFromBackground(request, variables)
             })
         )
 

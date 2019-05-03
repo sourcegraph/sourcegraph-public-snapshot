@@ -266,7 +266,9 @@ const createPhabricatorRepo = memoizeObservable(
                     }
                 }
             `,
-            options
+            options,
+            // This request may leak private repo names
+            true
         ).pipe(mapTo(undefined)),
     ({ callsign }) => callsign
 )
@@ -503,7 +505,9 @@ const resolveStagingRev = memoizeObservable(
                     }
                 }
             `,
-            options
+            options,
+            // This request may leak private repo names
+            true
         ).pipe(
             map(dataOrThrowErrors),
             map(result => {
