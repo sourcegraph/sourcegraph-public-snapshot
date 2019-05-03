@@ -91,7 +91,7 @@
     "@types/react-stripe-elements": "1.1.10",
     "@types/react-test-renderer": "16.8.1",
     "@types/react-visibility-sensor": "5.0.1",
-    "@types/reactstrap": "6.4.4",
+    "@types/reactstrap": "8.0.1",
     "@types/sanitize-html": "1.18.3",
     "@types/shelljs": "0.8.5",
     "@types/shelljs-exec-proxy": "0.1.0",
