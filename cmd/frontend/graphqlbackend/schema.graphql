@@ -786,7 +786,7 @@ type Query {
         # Returns the first n survey responses from the list.
         first: Int
     ): SurveyResponseConnection!
-    # The top 1000 most frequently occurring recent queries.
+    # The most frequently occurring recent queries.
     topQueries(
         # Maximum number of unique queries to return.
         limit: Int!
