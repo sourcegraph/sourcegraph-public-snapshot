@@ -787,7 +787,7 @@ type Query {
         first: Int
     ): SurveyResponseConnection!
     # The top 1000 most frequently occurring recent queries.
-    topQueries: [String!]!
+    topQueries: [QueryCount!]!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
     # Queries which are for internal use only.
@@ -798,6 +798,12 @@ type Query {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
+}
+
+# A query and an associated number of times it occurred.
+type QueryCount {
+    query: String!
+    count: Int!
 }
 
 # Queries which are for internal use only.
