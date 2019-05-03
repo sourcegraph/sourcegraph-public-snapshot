@@ -14,7 +14,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../theme'
 import { EventLogger } from '../../tracking/eventLogger'
-import { FilterChip } from '../FilterChip'
 import {
     isSearchResults,
     submitSearch,
@@ -22,6 +21,7 @@ import {
     toggleSearchFilterAndReplaceSampleRepogroup,
 } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
+import { SearchResultsFilterBars } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 
 const UI_PAGE_SIZE = 75
@@ -41,10 +41,11 @@ export interface SearchResultsProps extends ExtensionsControllerProps<'services'
     deployType: DeployType
 }
 
-interface SearchScope {
+export interface SearchScopeWithOptionalName {
     name?: string
     value: string
 }
+
 interface SearchResultsState {
     /** The loaded search results, error or undefined while loading */
     resultsOrError?: GQL.ISearchResults
@@ -168,68 +169,15 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="search-results">
                 <PageTitle key="page-title" title={query} />
-                {((isSearchResults(this.state.resultsOrError) && filters.length > 0) || extensionFilters) && (
-                    <div className="search-results__filters-bar" data-testid="filters-bar">
-                        Filters:
-                        <div className="search-results__filters">
-                            {extensionFilters &&
-                                extensionFilters
-                                    .filter(filter => filter.value !== '')
-                                    .map((filter, i) => (
-                                        <FilterChip
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.onDynamicFilterClicked}
-                                            key={filter.name + filter.value}
-                                            value={filter.value}
-                                            name={filter.name}
-                                        />
-                                    ))}
-                            {filters
-                                .filter(filter => filter.value !== '')
-                                .map((filter, i) => (
-                                    <FilterChip
-                                        query={this.props.navbarSearchQuery}
-                                        onFilterChosen={this.onDynamicFilterClicked}
-                                        key={filter.name + filter.value}
-                                        value={filter.value}
-                                        name={filter.name}
-                                    />
-                                ))}
-                        </div>
-                    </div>
-                )}
-                {isSearchResults(this.state.resultsOrError) &&
-                    this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
-                        <div className="search-results__filters-bar" data-testid="repo-filters-bar">
-                            Repositories:
-                            <div className="search-results__filters">
-                                {this.state.resultsOrError.dynamicFilters
-                                    .filter(filter => filter.kind === 'repo' && filter.value !== '')
-                                    .map((filter, i) => (
-                                        <FilterChip
-                                            name={filter.label}
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.onDynamicFilterClicked}
-                                            key={filter.value}
-                                            value={filter.value}
-                                            count={filter.count}
-                                            limitHit={filter.limitHit}
-                                        />
-                                    ))}
-                                {this.state.resultsOrError.limitHit &&
-                                    !/\brepo:/.test(this.props.navbarSearchQuery) && (
-                                        <FilterChip
-                                            name="Show more"
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.showMoreResults}
-                                            key={`count:${this.calculateCount()}`}
-                                            value={`count:${this.calculateCount()}`}
-                                            showMore={true}
-                                        />
-                                    )}
-                            </div>
-                        </div>
-                    )}
+                <SearchResultsFilterBars
+                    navbarSearchQuery={this.props.navbarSearchQuery}
+                    resultsOrError={this.state.resultsOrError}
+                    filters={filters}
+                    extensionFilters={extensionFilters}
+                    onFilterClick={this.onDynamicFilterClicked}
+                    onShowMoreResultsClick={this.showMoreResults}
+                    calculateShowMoreResultsCount={this.calculateCount}
+                />
                 <SearchResultsList
                     resultsOrError={this.state.resultsOrError}
                     onShowMoreResultsClick={this.showMoreResults}
@@ -254,8 +202,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     /** Combines dynamic filters and search scopes into a list de-duplicated by value. */
-    private getFilters(): SearchScope[] {
-        const filters = new Map<string, SearchScope>()
+    private getFilters(): SearchScopeWithOptionalName[] {
+        const filters = new Map<string, SearchScopeWithOptionalName>()
 
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
             let dynamicFilters = this.state.resultsOrError.dynamicFilters
