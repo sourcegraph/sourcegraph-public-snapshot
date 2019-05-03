@@ -20,8 +20,8 @@
             text-decoration: none;
         }
 
-        &:not(:last-child) {
-            border-bottom: 1px solid #2a3a51;
+        &:not(:first-child) {
+            border-top: 1px solid #2a3a51;
         }
 
         .theme-light & {
@@ -32,9 +32,6 @@
                 background-color: $color-light-bg-4;
                 text-decoration: none;
             }
-        }
-        &:first-of-type {
-            border-top: none;
         }
     }
 

@@ -1,7 +1,12 @@
 .result-container {
     position: relative;
-    border-radius: 2px;
-    border-top: 1px solid #2b3750;
+
+    border-width: 0 0 1px 0;
+    border-style: solid;
+    border-color: #2b3750;
+    &:first-child {
+        border-top-width: 1px;
+    }
 
     &__header {
         padding: 0.5rem 0.5rem;
