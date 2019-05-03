@@ -64,6 +64,7 @@ func Test_schemaResolver_TopQueries(t *testing.T) {
 			db.Mocks.RecentSearches.Get = func(ctx context.Context) ([]string, error) {
 				return tt.queries, nil
 			}
+			defer func() { db.Mocks.RecentSearches.Get = nil }()
 			got, err := s.TopQueries(context.Background(), (*struct{ Limit int32 })(&tt.args))
 			if err != nil {
 				t.Fatal(err)
