@@ -43,7 +43,7 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 		}
 	})
 
-	t.Run("do not throw error on an invalid settings JSON", func(t *testing.T) {
+	t.Run("do not throw error for an invalid settings JSON", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u3"})
 		if err != nil {
 			t.Fatal(err)
@@ -55,6 +55,42 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 		if err != nil {
 			t.Error(err, "there should not be an error for an invalid settings json")
 		}
+	})
+
+	t.Run("do not throw error for an invalid settings JSON and properly migrate saved queries from valid settings", func(t *testing.T) {
+		u, err := db.Users.Create(ctx, db.NewUser{Username: "u4"})
+		u2, err := db.Users.Create(ctx, db.NewUser{Username: "u5"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u2.ID}, nil, nil, `{"search.savedQueries": [1]}`); err != nil {
+			t.Fatal(err)
+		}
+		err = doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx)
+		if err != nil {
+			t.Error(err, "there should not be an error for an invalid settings json")
+		}
+		ss, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, u.ID)
+		if len(ss) == 0 {
+			t.Fatal("Error: user saved query not created")
+		}
+		allSaved, err := db.SavedSearches.ListAll(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, a := range allSaved {
+			t.Logf("%v+", a)
+		}
+		got := ss[0]
+		t.Logf("%v+", ss)
+		want := &types.SavedSearch{ID: "5", Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+
 	})
 }
 func TestMigrateSavedQueryIntoDB(t *testing.T) {
@@ -354,6 +390,64 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 		}
 	})
 
-}
+	t.Run("invalid slack webhook URL", func(t *testing.T) {
+		u, err := db.Users.Create(ctx, db.NewUser{Username: "u3"})
+		u2, err := db.Users.Create(ctx, db.NewUser{Username: "u4"})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-// Test multiple saved queries and slack webhook URLs where one is invalid.
+		// Migrate saved query without Slack webhook URL into DB.
+		latest, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		latest2, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u2.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c4d", "description": "test query2", "query": "test2 type:diff"}]}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx); err != nil {
+			t.Fatal(err)
+		}
+		// Create valid JSON settings with notifications.slack for one user.
+		_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, &latest.ID, nil, `{"notifications.slack": {"webhookURL": "https://test.slackwebhook.com"}}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Create invalid JSON settings with notifications.slack for one user.
+		_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u2.ID}, &latest2.ID, nil, `{"notifications.slack": {"webhookURL": [1]}}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = MigrateSlackWebhookUrlsToSavedSearches(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ss, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, u.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got := ss[0]
+		webhookURL := "https://test.slackwebhook.com"
+		want := &types.SavedSearch{ID: "4", Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u.ID, OrgID: nil, SlackWebhookURL: &webhookURL}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+
+		ss2, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, u2.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got2 := ss2[0]
+		want2 := &types.SavedSearch{ID: "5", Description: "test query2", Query: "test2 type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u2.ID, OrgID: nil, SlackWebhookURL: nil}
+		if !reflect.DeepEqual(got2, want2) {
+			t.Fatalf("got2 %v, want2 %v", got2, want2)
+		}
+	})
+
+}

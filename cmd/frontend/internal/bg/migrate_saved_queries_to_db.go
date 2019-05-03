@@ -33,7 +33,7 @@ type SavedQueryField struct {
 // This is to be done in a future iteration after all customer instances have upgraded and ran the migration successfully.
 func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Context) {
 	if err := doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx); err != nil {
-		log15.Error(`Warning: unable to migrate "search.savedQueries" settings to database. Please report this issue. The search.savedQueries setting has been deprecated in favor of a database table, and is no longer functional.`, "error", err)
+		log15.Error(`Warning: unable to migrate "search.savedQueries" settings to database. Please report this issue.`, "error", err)
 	}
 }
 
@@ -47,7 +47,7 @@ func doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.
 
 	for _, s := range settings {
 		if _, err := migrateSavedQueryIntoDB(ctx, s); err != nil {
-			// Do we want to fail completely if one user's json is invalid, for example?
+			// Do not fail completely if one settings JSON is invalid.
 			errorMsg := fmt.Sprintf(err.Error(), "for settings subject %s", s.Subject)
 			log15.Error(errorMsg)
 			continue
@@ -136,6 +136,7 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) error {
 		var notifsField NotificationsSlackField
 		err := jsonc.Unmarshal(s.Contents, &notifsField)
 		if err != nil {
+			// Do not fail completely if one settings JSON is invalid.
 			log15.Error(`Unable to migrate Slack webhook URL to saved search table. Error unmarshaling notifications.slack setting.`, err)
 			continue
 		}
