@@ -162,7 +162,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
 
         return (
-            <div className="search-results">
+            <div className="search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
                 <SearchResultsFilterBars
                     navbarSearchQuery={this.props.navbarSearchQuery}

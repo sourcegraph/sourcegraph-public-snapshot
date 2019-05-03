@@ -26,11 +26,11 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     onShowMoreResultsClick,
     calculateShowMoreResultsCount,
 }) => (
-    <>
+    <div className="search-results-filter-bars">
         {((isSearchResults(results) && filters.length > 0) || extensionFilters) && (
-            <div className="search-results__filters-bar" data-testid="filters-bar">
+            <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
-                <div className="search-results__filters">
+                <div className="search-results-filter-bars__row-filters">
                     {extensionFilters &&
                         extensionFilters
                             .filter(filter => filter.value !== '')
@@ -58,9 +58,9 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
             </div>
         )}
         {isSearchResults(results) && results.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
-            <div className="search-results__filters-bar" data-testid="repo-filters-bar">
+            <div className="search-results-filter-bars__row" data-testid="repo-filters-bar">
                 Repositories:
-                <div className="search-results__filters">
+                <div className="search-results-filter-bars__row-filters">
                     {results.dynamicFilters
                         .filter(filter => filter.kind === 'repo' && filter.value !== '')
                         .map((filter, i) => (
