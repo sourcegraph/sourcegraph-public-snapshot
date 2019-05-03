@@ -53,7 +53,7 @@ describe('SearchResultsList', () => {
             </BrowserRouter>
         )
 
-        expect(getByText(container, 'Loading')).toBeTruthy()
+        expect(queryByTestId(container, 'loading-container')).toBeTruthy()
     })
 
     it('shows error message when the search GraphQL request returns an error', () => {
