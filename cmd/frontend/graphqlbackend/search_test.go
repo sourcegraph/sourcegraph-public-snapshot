@@ -52,7 +52,7 @@ func TestSearch(t *testing.T) {
 			searchQuery: "",
 			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
 				return []*types.Repo{
-					&types.Repo{
+					{
 						Name: "test",
 					},
 				}, nil
