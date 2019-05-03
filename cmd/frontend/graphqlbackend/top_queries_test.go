@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"reflect"
 	"testing"
 )
@@ -80,7 +79,7 @@ type RecentSearchesMock struct {
 	queries []string
 
 	// Default unimplemented interface methods to nil panic.
-	db.RecentSearchesTracker
+	RecentSearchesTracker
 }
 
 func (rsm *RecentSearchesMock) Get(ctx context.Context) ([]string, error) {

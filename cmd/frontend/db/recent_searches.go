@@ -6,14 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type RecentSearchesTracker interface {
-	Add(ctx context.Context, q string) error
-	DeleteExcessRows(ctx context.Context, limit int) error
-	Get(ctx context.Context) ([]string, error)
-}
-
-// RecentSearches implements RecentSearchesTracker.
-type RecentSearches struct{
+type RecentSearches struct {
 	DB *sql.DB
 }
 

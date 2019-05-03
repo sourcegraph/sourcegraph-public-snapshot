@@ -83,7 +83,7 @@ func (r *schemaResolver) Search(args *struct {
 	}, nil
 }
 
-func addQueryToSearchesTable(rs db.RecentSearchesTracker, q string) {
+func addQueryToSearchesTable(rs RecentSearchesTracker, q string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if rs != nil {

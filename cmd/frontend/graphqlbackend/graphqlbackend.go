@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
@@ -138,8 +138,14 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-type schemaResolver struct{
-	recentSearches db.RecentSearchesTracker
+type RecentSearchesTracker interface {
+	Add(ctx context.Context, q string) error
+	DeleteExcessRows(ctx context.Context, limit int) error
+	Get(ctx context.Context) ([]string, error)
+}
+
+type schemaResolver struct {
+	recentSearches RecentSearchesTracker
 }
 
 // DEPRECATED
