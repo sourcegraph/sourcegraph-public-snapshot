@@ -15,7 +15,7 @@ By default, users are only presented with the feedback survey once. Site admins 
 ```json
 {
   ...,
-  "htmlBodyBottom": "if (localStorage.getItem('reset-survey-000') === null) { localStorage.removeItem('has-dismissed-survey-toast'); localStorage.setItem('days-active-count', 3); localStorage.setItem('reset-survey-000', true); }",
+  "htmlBodyBottom": "<script>if (localStorage.getItem('reset-survey-000') === null) { localStorage.removeItem('has-dismissed-survey-toast'); localStorage.setItem('days-active-count', 3); localStorage.setItem('reset-survey-000', true); }</script>",
   ...
 }
 ```

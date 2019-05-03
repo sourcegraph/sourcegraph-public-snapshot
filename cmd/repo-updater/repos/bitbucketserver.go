@@ -300,7 +300,7 @@ func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnec
 // still have 50 API requests left-over to serve users.
 const rateLimitReservationSize = 250
 
-func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf httpcli.Factory) (*bitbucketServerConnection, error) {
+func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf *httpcli.Factory) (*bitbucketServerConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -320,7 +320,7 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf h
 		opts = append(opts, httpcli.NewCertPoolOpt(pool))
 	}
 
-	cli, err := cf.NewClient(opts...)
+	cli, err := cf.Doer(opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -37,7 +37,7 @@ type Sourcer func(...*ExternalService) (Sources, error)
 // Deleted external services are ignored.
 //
 // The provided decorator functions will be applied to each Source.
-func NewSourcer(cf httpcli.Factory, decs ...func(Source) Source) Sourcer {
+func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
 		errs := new(multierror.Error)
@@ -74,7 +74,7 @@ func NewSourcer(cf httpcli.Factory, decs ...func(Source) Source) Sourcer {
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *ExternalService, cf httpcli.Factory) (Source, error) {
+func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":
 		return NewGithubSource(svc, cf)
@@ -220,7 +220,7 @@ type GithubSource struct {
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -231,7 +231,7 @@ func NewGithubSource(svc *ExternalService, cf httpcli.Factory) (*GithubSource, e
 // NewGithubDotComSource returns a GithubSource for github.com, meant to be added
 // to the list of sources in Sourcer when one isn't already configured in order to
 // support navigating to URL paths like /github.com/foo/bar to auto-add that repository.
-func NewGithubDotComSource(cf httpcli.Factory) (*GithubSource, error) {
+func NewGithubDotComSource(cf *httpcli.Factory) (*GithubSource, error) {
 	svc := ExternalService{Kind: "GITHUB"}
 	return newGithubSource(&svc, &schema.GitHubConnection{
 		RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
@@ -240,7 +240,7 @@ func NewGithubDotComSource(cf httpcli.Factory) (*GithubSource, error) {
 	}, cf)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	conn, err := newGitHubConnection(c, cf)
 	if err != nil {
 		return nil, err
@@ -294,7 +294,7 @@ type GitLabSource struct {
 }
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *ExternalService, cf httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -302,7 +302,7 @@ func NewGitLabSource(svc *ExternalService, cf httpcli.Factory) (*GitLabSource, e
 	return newGitLabSource(svc, &c, cf)
 }
 
-func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	conn, err := newGitLabConnection(c, cf)
 	if err != nil {
 		return nil, err
@@ -356,7 +356,7 @@ type BitbucketServerSource struct {
 }
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
-func NewBitbucketServerSource(svc *ExternalService, cf httpcli.Factory) (*BitbucketServerSource, error) {
+func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	var c schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -364,7 +364,7 @@ func NewBitbucketServerSource(svc *ExternalService, cf httpcli.Factory) (*Bitbuc
 	return newBitbucketServerSource(svc, &c, cf)
 }
 
-func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf httpcli.Factory) (*BitbucketServerSource, error) {
+func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	conn, err := newBitbucketServerConnection(c, cf)
 	if err != nil {
 		return nil, err
@@ -423,13 +423,13 @@ type GitoliteSource struct {
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(svc *ExternalService, cf httpcli.Factory) (*GitoliteSource, error) {
+func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
 	var c schema.GitoliteConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
-	hc, err := cf.NewClient(func(c *http.Client) error {
+	hc, err := cf.Doer(func(c *http.Client) error {
 		if tr, ok := c.Transport.(*http.Transport); ok {
 			tr.MaxIdleConnsPerHost = 500
 		}
@@ -508,14 +508,14 @@ func gitoliteRepoToRepo(
 type PhabricatorSource struct {
 	svc  *ExternalService
 	conn *schema.PhabricatorConnection
-	cf   httpcli.Factory
+	cf   *httpcli.Factory
 
 	mu  sync.Mutex
 	cli *phabricator.Client
 }
 
 // NewPhabricatorSource returns a new PhabricatorSource from the given external service.
-func NewPhabricatorSource(svc *ExternalService, cf httpcli.Factory) (*PhabricatorSource, error) {
+func NewPhabricatorSource(svc *ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
 	var c schema.PhabricatorConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -661,7 +661,7 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 		return s.cli, nil
 	}
 
-	hc, err := s.cf.NewClient()
+	hc, err := s.cf.Doer()
 	if err != nil {
 		return nil, err
 	}

@@ -38,7 +38,7 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 
 // NewHTTPClientFactory returns an httpcli.Factory with common
 // options and middleware pre-set.
-func NewHTTPClientFactory() httpcli.Factory {
+func NewHTTPClientFactory() *httpcli.Factory {
 	return httpcli.NewFactory(
 		// TODO(tsenart): Use middle for Prometheus instrumentation later.
 		httpcli.NewMiddleware(

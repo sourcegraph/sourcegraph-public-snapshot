@@ -75,7 +75,7 @@ $theme-colors-light: (
 @import './libs/code_intelligence/external_links';
 @import './shared';
 
-#sourcegraph-options-menu {
+.sourcegraph-options-menu {
     .list-group-item.active {
         background-color: $blue;
     }

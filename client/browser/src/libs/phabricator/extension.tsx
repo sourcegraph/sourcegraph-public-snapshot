@@ -1,7 +1,10 @@
 import '../../config/polyfill'
 
+import * as H from 'history'
+import React from 'react'
 import { Observable } from 'rxjs'
 import { startWith } from 'rxjs/operators'
+import { setLinkComponent } from '../../../../../shared/src/components/Link'
 import { setSourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../code_intelligence'
@@ -32,6 +35,12 @@ async function injectModules(): Promise<void> {
         await injectCodeIntelligenceToCodeHost(mutations, codeHost)
     }
 }
+
+setLinkComponent(({ to, children, ...props }) => (
+    <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
+        {children}
+    </a>
+))
 
 function init(): void {
     /**
