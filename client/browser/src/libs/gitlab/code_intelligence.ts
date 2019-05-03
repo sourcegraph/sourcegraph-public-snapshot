@@ -94,6 +94,10 @@ export const gitlabCodeHost: CodeHost = {
     codeViewResolvers: [codeViewResolver],
     adjustOverlayPosition,
     getCommandPaletteMount,
+    getContext: () => ({
+        ...getPageInfo(),
+        privateRepository: window.location.hostname === 'gitlab.com',
+    }),
     commandPaletteClassProps: {
         popoverClassName: 'dropdown-menu command-list-popover--gitlab',
         formClassName: 'dropdown-input',

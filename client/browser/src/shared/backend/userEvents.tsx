@@ -27,7 +27,8 @@ export const logUserEvent = (
                 }
             }
         `,
-        { event, userCookieID: uid }
+        { event, userCookieID: uid },
+        false
     ).subscribe({
         error: error => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail

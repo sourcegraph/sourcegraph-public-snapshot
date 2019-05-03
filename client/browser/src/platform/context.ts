@@ -1,6 +1,6 @@
 import { combineLatest, merge, ReplaySubject } from 'rxjs'
-import { map, publishReplay, refCount } from 'rxjs/operators'
-import { requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
+import { map, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
+import { graphQLContent, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../../shared/src/settings/edit'
@@ -13,29 +13,50 @@ import { observeStorageKey } from '../browser/storage'
 import { defaultStorageItems } from '../browser/types'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
+import { PrivateRepoPublicSourcegraphComError } from '../shared/backend/errors'
 import { requestGraphQLFromBackground, requestOptions } from '../shared/backend/graphql'
-import { sourcegraphUrl } from '../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL, sourcegraphUrl } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { createBlobURLForBundle } from './worker'
 
-const requestGraphQL: PlatformContext['requestGraphQL'] = (request, variables, mightContainPrivateInfo) => {
-    if (isInPage) {
-        return requestGraphQLCommon({
-            request,
-            variables: {},
-            baseUrl: window.SOURCEGRAPH_URL,
-            ...requestOptions,
-        })
-    }
-    return requestGraphQLFromBackground(request, variables, mightContainPrivateInfo)
-}
-
 /**
  * Creates the {@link PlatformContext} for the browser extension.
  */
-export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>): PlatformContext {
+export function createPlatformContext({
+    urlToFile,
+    getContext,
+}: Pick<CodeHost, 'urlToFile' | 'getContext'>): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
+    const requestGraphQL: PlatformContext['requestGraphQL'] = (
+        request,
+        variables = {},
+        mightContainPrivateInfo = true
+    ) =>
+        observeSourcegraphURL().pipe(
+            take(1),
+            switchMap(sourcegraphURL => {
+                if (mightContainPrivateInfo && sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+                    // If we can't determine the code host context, assume the current repository is private.
+                    const privateRepository = getContext ? getContext().privateRepository : true
+                    if (privateRepository) {
+                        const nameMatch = request[graphQLContent].match(/^\s*(?:query|mutation)\s+(\w+)/)
+                        throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
+                    }
+                }
+                // In the browser extension, send all GraphQL requests from the background page.
+                if (isInPage) {
+                    return requestGraphQLFromBackground(request, variables)
+                }
+                // Otherwise, make a graphQL request directly.
+                return requestGraphQLCommon({
+                    request,
+                    variables: {},
+                    baseUrl: window.SOURCEGRAPH_URL,
+                    ...requestOptions,
+                })
+            })
+        )
 
     const context: PlatformContext = {
         /**
@@ -98,7 +119,6 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
             if (isInPage) {
                 return await createBlobURLForBundle(bundleURL)
             }
-
             // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
             // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
             // with a CSP that allowlists https://* in script-src (see

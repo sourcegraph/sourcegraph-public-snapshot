@@ -17,7 +17,6 @@ import {
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { isPrivateRepository } from '../util/context'
 import { createAggregateError } from './errors'
 
 interface BaseSuggestion {
@@ -179,8 +178,8 @@ const fetchSuggestions = (query: string, first: number, requestGraphQL: Platform
             // The browser extension API only takes 5 suggestions
             first,
         },
-        // This request may contain private info if the repository is private
-        isPrivateRepository()
+        // This request may leak private repository names
+        true
     ).pipe(
         map(dataOrThrowErrors),
         mergeMap(({ search }) => {
@@ -250,8 +249,8 @@ export const fetchSymbols = (
         {
             query,
         },
-        // This request may contain private info if the repository is private
-        isPrivateRepository()
+        // This request may leak private repository names
+        true
     ).pipe(
         map(dataOrThrowErrors),
         map(({ search }) => {

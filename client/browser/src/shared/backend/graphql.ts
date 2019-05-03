@@ -1,4 +1,9 @@
-const options: GraphQLRequestOptions = {
+import { from } from 'rxjs'
+import { graphQLContent, GraphQLDocument, GraphQLRequestOptions } from '../../../../../shared/src/graphql/graphql'
+import { isBackground } from '../../context'
+import { getHeaders } from './headers'
+
+export const requestOptions: GraphQLRequestOptions = {
     headers: getHeaders(),
     requestOptions: {
         crossDomain: true,
@@ -14,11 +19,7 @@ const options: GraphQLRequestOptions = {
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export const requestGraphQLFromBackground: PlatformContext['requestGraphQL'] = (
-    request,
-    variables,
-    mightContainPrivateInfo
-) => {
+export const requestGraphQLFromBackground = (request: GraphQLDocument, variables: { [name: string]: any }) => {
     if (isBackground) {
         throw new Error('Should not be called from the background page')
     }
@@ -29,7 +30,6 @@ export const requestGraphQLFromBackground: PlatformContext['requestGraphQL'] = (
                 payload: {
                     request: request[graphQLContent],
                     variables: variables || {},
-                    mightContainPrivateInfo,
                 },
             })
             .then(response => {

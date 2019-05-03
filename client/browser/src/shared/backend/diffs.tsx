@@ -4,7 +4,6 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
-import { isPrivateRepository } from '../util/context'
 import { RepoNotFoundError } from './errors'
 
 export const queryRepositoryComparisonFileDiffs = memoizeObservable(
@@ -39,8 +38,8 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
                 }
             `,
             { repo: args.repo, base: args.base, head: args.head, first: args.first },
-            // This request may contain private info if the repository is private
-            isPrivateRepository()
+            // This request may leak private repository names
+            true
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {

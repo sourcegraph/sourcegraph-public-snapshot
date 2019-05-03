@@ -31,8 +31,9 @@ import { CodeHost } from './code_intelligence'
  */
 export function initializeExtensions({
     urlToFile,
-}: Pick<CodeHost, 'urlToFile'>): PlatformContextProps & ExtensionsControllerProps {
-    const platformContext = createPlatformContext({ urlToFile })
+    getContext,
+}: Pick<CodeHost, 'urlToFile' | 'getContext'>): PlatformContextProps & ExtensionsControllerProps {
+    const platformContext = createPlatformContext({ urlToFile, getContext })
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }

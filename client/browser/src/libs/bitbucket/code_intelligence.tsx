@@ -92,7 +92,7 @@ const singleFileSourceCodeView: Omit<CodeView, 'element'> = {
 const baseDiffCodeView: Omit<CodeView, 'element' | 'resolveFileInfo'> = {
     getToolbarMount,
     dom: diffDOMFunctions,
-    adjustPosition: createPositionAdjuster(diffDOMFunctions),
+    getPositionAdjuster: createPositionAdjuster(diffDOMFunctions),
     toolbarButtonProps,
 }
 /**

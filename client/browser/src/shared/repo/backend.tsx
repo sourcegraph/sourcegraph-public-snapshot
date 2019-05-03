@@ -12,7 +12,6 @@ import {
     RepoNotFoundError,
     RevNotFoundError,
 } from '../backend/errors'
-import { isPrivateRepository } from '../util/context'
 
 /**
  * @return Observable that emits the repo URL
@@ -29,7 +28,8 @@ export const resolveRepo = memoizeObservable(
                 }
             `,
             { repoName },
-            isPrivateRepository()
+            // This request may leak private repository names
+            true
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
@@ -67,7 +67,8 @@ export const resolveRev = memoizeObservable(
                     }
                 `,
                 { ...ctx, rev: ctx.rev || '' },
-                isPrivateRepository()
+                // This request may leak private repository names
+                true
             )
         ).pipe(
             map(dataOrThrowErrors),
@@ -131,7 +132,8 @@ export const fetchBlobContentLines = memoizeObservable(
                     }
                 `,
                 ctx,
-                isPrivateRepository()
+                // This request may leak private repository names
+                true
             )
         ).pipe(
             map(({ data, errors }) => {

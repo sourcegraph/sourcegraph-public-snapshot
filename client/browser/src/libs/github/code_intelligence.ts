@@ -260,7 +260,14 @@ export const githubCodeHost: CodeHost = {
     ],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
-    getContext: parseURL,
+    getContext: () => {
+        const header = document.querySelector('.repohead-details-container')
+        const repoHeaderHasPrivateMarker = !!(header && header.querySelector('.private'))
+        return {
+            ...parseURL(),
+            privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
+        }
+    },
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
         className: 'btn btn-sm tooltipped tooltipped-s',

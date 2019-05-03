@@ -4,7 +4,7 @@ import '../../config/polyfill'
 import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
 import { noop, Observable } from 'rxjs'
-import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
+import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import * as domainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
 import { IGraphQLResponseRoot } from '../../../../../shared/src/graphql/schema'
@@ -47,14 +47,11 @@ const configureOmnibox = (serverUrl: string): void => {
 }
 
 initializeOmniboxInterface()
-const requestGraphQL: PlatformContext['requestGraphQL'] = (request, variables, mightContainPrivateInfo) =>
+const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(request: GraphQLDocument, variables: {}) =>
     storage.observeSync('sourcegraphURL').pipe(
         take(1),
-        switchMap(baseUrl => {
-            if (mightContainPrivateInfo && baseUrl === DEFAULT_SOURCEGRAPH_URL) {
-                return throwError(new PrivateRepoPublicSourcegraphComError('query'))
-            }
-            return requestGraphQLCommon({
+        switchMap(baseUrl =>
+            requestGraphQLCommon<T>({
                 request: gql`
                     ${request}
                 `,
@@ -62,8 +59,8 @@ const requestGraphQL: PlatformContext['requestGraphQL'] = (request, variables, m
                 baseUrl,
                 ...requestOptions,
             })
-        })
-    ) as any // TODO(lguychard) remove any cast
+        )
+    )
 
 async function main(): Promise<void> {
     let { sourcegraphURL } = await storage.sync.get()
