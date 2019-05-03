@@ -321,12 +321,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     )}
 
                     {this.props.resultsOrError === undefined ? (
-                        <div className="text-center" data-testid="loading-container">
-                            <LoadingSpinner className="icon-inline" /> Loading
+                        <div className="text-center mt-2" data-testid="loading-container">
+                            <LoadingSpinner className="icon-inline" />
                         </div>
                     ) : isErrorLike(this.props.resultsOrError) ? (
                         /* GraphQL, network, query syntax error */
-                        <div className="alert alert-warning" data-testid="search-results-list-error">
+                        <div className="alert alert-warning m-2" data-testid="search-results-list-error">
                             <AlertCircleIcon className="icon-inline" />
                             {upperFirst(this.props.resultsOrError.message)}
                         </div>
@@ -373,7 +373,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                                     {/* Server-provided help message */}
                                     {results.alert ? (
-                                        <div className="alert alert-info">
+                                        <div className="alert alert-info m-2">
                                             <h3>
                                                 <AlertCircleIcon className="icon-inline" /> {results.alert.title}
                                             </h3>
@@ -406,7 +406,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         results.results.length === 0 &&
                                         (results.timedout.length > 0 ? (
                                             /* No results, but timeout hit */
-                                            <div className="alert alert-warning">
+                                            <div className="alert alert-warning m-2">
                                                 <h3>
                                                     <TimerSandIcon className="icon-inline" /> Search timed out
                                                 </h3>
@@ -432,7 +432,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                             </div>
                                         ) : (
                                             <>
-                                                <div className="alert alert-info d-flex">
+                                                <div className="alert alert-info d-flex m-2">
                                                     <h3 className="m-0">
                                                         <SearchIcon className="icon-inline" /> No results
                                                     </h3>
@@ -447,7 +447,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                     <div className="pb-4" />
                     {this.props.resultsOrError !== undefined && (
-                        <Link className="mb-2" to="/help/user/search">
+                        <Link className="mb-4 p-3" to="/help/user/search">
                             Not seeing expected results?
                         </Link>
                     )}
