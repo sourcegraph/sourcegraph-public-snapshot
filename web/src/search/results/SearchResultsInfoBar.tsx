@@ -38,7 +38,7 @@ interface SearchResultsInfoBarProps {
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => (
-    <div className="search-results-info-bar" data-testid="results-info-bar">
+    <div className="search-results-info-bar px-2" data-testid="results-info-bar">
         {(props.results.timedout.length > 0 ||
             props.results.cloning.length > 0 ||
             props.results.results.length > 0 ||

@@ -117,8 +117,7 @@ class Options extends React.Component<{}, State> {
 
 const inject = async () => {
     const injectDOM = document.createElement('div')
-    injectDOM.id = 'sourcegraph-options-menu'
-    injectDOM.className = 'options'
+    injectDOM.className = 'sourcegraph-options-menu options'
     document.body.appendChild(injectDOM)
 
     render(<Options />, injectDOM)

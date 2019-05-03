@@ -318,7 +318,7 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	}
 }
 
-func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*githubConnection, error) {
+func newGitHubConnection(config *schema.GitHubConnection, cf *httpcli.Factory) (*githubConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -341,7 +341,7 @@ func newGitHubConnection(config *schema.GitHubConnection, cf httpcli.Factory) (*
 		opts = append(opts, httpcli.NewCertPoolOpt(pool))
 	}
 
-	cli, err := cf.NewClient(opts...)
+	cli, err := cf.Doer(opts...)
 	if err != nil {
 		return nil, err
 	}

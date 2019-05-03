@@ -1,7 +1,7 @@
 import { createBrowserHistory } from 'history'
 import * as React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, getByText, queryByTestId, render } from 'react-testing-library'
+import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from 'react-testing-library'
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { HIGHLIGHTED_FILE_LINES_REQUEST, MULTIPLE_SEARCH_REQUEST, SEARCH_REQUEST } from '../testHelpers'
@@ -53,7 +53,7 @@ describe('SearchResultsList', () => {
             </BrowserRouter>
         )
 
-        expect(getByText(container, 'Loading')).toBeTruthy()
+        expect(queryByTestId(container, 'loading-container')).toBeTruthy()
     })
 
     it('shows error message when the search GraphQL request returns an error', () => {

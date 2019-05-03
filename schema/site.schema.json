@@ -151,7 +151,7 @@
       "group": "Security"
     },
     "branding": {
-      "description": "Customize Sourcegraph homepage logo and search icon.",
+      "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -166,7 +166,20 @@
           "type": "string",
           "format": "uri"
         }
-      }
+      },
+      "examples": [
+        {
+          "favicon": "https://example.com/favicon.ico",
+          "light": {
+            "logo": "https://example.com/logo_light.png",
+            "symbol": "https://example.com/search_symbol_light_24x24.png"
+          },
+          "dark": {
+            "logo": "https://example.com/logo_dark.png",
+            "symbol": "https://example.com/search_symbol_dark_24x24.png"
+          }
+        }
+      ]
     },
     "email.smtp": {
       "title": "SMTPServerConfig",

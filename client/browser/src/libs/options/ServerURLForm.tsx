@@ -97,15 +97,15 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
             <form className={`server-url-form ${this.props.className || ''}`} onSubmit={this.handleSubmit}>
                 <label className="server-url-form__label">Sourcegraph URL</label>
                 <div className="server-url-form__input-container">
-                    <div className="server-url-form__input-container__status">
+                    <div className="server-url-form__status">
                         <span
                             className={
-                                'server-url-form__input-container__status__indicator ' +
-                                'server-url-form__input-container__status__indicator--' +
+                                'server-url-form__status-indicator ' +
+                                'server-url-form__status-indicator--' +
                                 (this.isUpdating ? 'default' : statusClassNames[this.props.status])
                             }
                         />
-                        <span className="server-url-form__input-container__status__text">
+                        <span className="server-url-form__status-text">
                             {this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}
                         </span>
                     </div>
@@ -113,7 +113,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         type="text"
                         ref={this.inputElement}
                         value={this.props.value}
-                        className="server-url-form__input-container__input"
+                        className="server-url-form__input"
                         onChange={this.handleChange}
                         spellCheck={false}
                         autoCapitalize="off"
