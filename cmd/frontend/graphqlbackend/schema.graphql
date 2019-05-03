@@ -786,6 +786,8 @@ type Query {
         # Returns the first n survey responses from the list.
         first: Int
     ): SurveyResponseConnection!
+    # The top 1000 most frequently occurring recent queries.
+    topQueries: [String!]!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
     # Queries which are for internal use only.
