@@ -21,6 +21,7 @@ import { Key } from 'ts-key-enum'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
+import { QueryInputInlineOptions } from './query/QueryInputInlineOptions'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
 
 /**
@@ -280,21 +281,24 @@ export class QueryInput extends React.Component<Props, State> {
 
         return (
             <div className="query-input2">
-                <input
-                    className="form-control query-input2__input rounded-left e2e-query-input"
-                    value={this.props.value}
-                    autoFocus={this.props.autoFocus === true}
-                    onChange={this.onInputChange}
-                    onKeyDown={this.onInputKeyDown}
-                    onFocus={this.onInputFocus}
-                    onBlur={this.onInputBlur}
-                    spellCheck={false}
-                    autoCapitalize="off"
-                    placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
-                    ref={ref => (this.inputElement = ref!)}
-                    name="query"
-                    autoComplete="off"
-                />
+                <div className="input-group border">
+                    <input
+                        className="form-control border-0 query-input2__input rounded-left e2e-query-input"
+                        value={this.props.value}
+                        autoFocus={this.props.autoFocus === true}
+                        onChange={this.onInputChange}
+                        onKeyDown={this.onInputKeyDown}
+                        onFocus={this.onInputFocus}
+                        onBlur={this.onInputBlur}
+                        spellCheck={false}
+                        autoCapitalize="off"
+                        placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
+                        ref={ref => (this.inputElement = ref!)}
+                        name="query"
+                        autoComplete="off"
+                    />
+                    <QueryInputInlineOptions className="input-group-append" />
+                </div>
                 {showSuggestions && (
                     <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
                         {this.state.suggestions.map((suggestion, i) => {
