@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/pkg/productlicense"
 )
 
 // GetProductNameWithBrand is called to obtain the full product name (e.g., "Sourcegraph OSS") from a
@@ -34,14 +35,14 @@ var NoLicenseWarningUserCount *int32
 type productSubscriptionStatus struct{}
 
 func (productSubscriptionStatus) ProductNameWithBrand() (string, error) {
-	info, err := GetConfiguredProductLicenseInfo()
+	info, err := productlicense.GetConfiguredProductLicenseInfo()
 	if err != nil {
 		return "", err
 	}
 	hasLicense := info != nil
 	var licenseTags []string
 	if hasLicense {
-		licenseTags = info.Tags()
+		licenseTags = info.Tags
 	}
 	return GetProductNameWithBrand(hasLicense, licenseTags), nil
 }
@@ -55,7 +56,7 @@ func (productSubscriptionStatus) ActualUserCountDate(ctx context.Context) (strin
 }
 
 func (productSubscriptionStatus) NoLicenseWarningUserCount(ctx context.Context) (*int32, error) {
-	if info, err := GetConfiguredProductLicenseInfo(); info != nil {
+	if info, err := productlicense.GetConfiguredProductLicenseInfo(); info != nil {
 		// if a license exists, warnings never need to be shown.
 		return nil, err
 	}
@@ -63,17 +64,28 @@ func (productSubscriptionStatus) NoLicenseWarningUserCount(ctx context.Context) 
 }
 
 func (productSubscriptionStatus) MaximumAllowedUserCount(ctx context.Context) (*int32, error) {
-	info, err := GetConfiguredProductLicenseInfo()
+	info, err := productlicense.GetConfiguredProductLicenseInfo()
 	if err != nil {
 		return nil, err
 	}
 	if info != nil {
-		tmp := info.UserCount()
+		tmp := int32(info.UserCount)
 		return &tmp, nil
 	}
 	return NoLicenseMaximumAllowedUserCount, nil
 }
 
 func (r productSubscriptionStatus) License() (*ProductLicenseInfo, error) {
-	return GetConfiguredProductLicenseInfo()
+	info, err := productlicense.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return nil, err
+	}
+	if info == nil {
+		return nil, nil
+	}
+	return &ProductLicenseInfo{
+		TagsValue:      info.Tags,
+		UserCountValue: info.UserCount,
+		ExpiresAtValue: info.ExpiresAt,
+	}, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/productlicense"
 )
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {
@@ -80,7 +81,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 	}
 
 	// If a license exists, warnings never need to be shown.
-	if info, err := GetConfiguredProductLicenseInfo(); info != nil {
+	if info, err := productlicense.GetConfiguredProductLicenseInfo(); info != nil {
 		return false, err
 	}
 	// If OSS, warnings never need to be shown.

@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/productlicense"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -78,15 +79,15 @@ func initLicensing() {
 
 	// Make the Site.productSubscription GraphQL field return the actual info about the product license,
 	// if any.
-	graphqlbackend.GetConfiguredProductLicenseInfo = func() (*graphqlbackend.ProductLicenseInfo, error) {
+	productlicense.GetConfiguredProductLicenseInfo = func() (*productlicense.Info, error) {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if info == nil || err != nil {
 			return nil, err
 		}
-		return &graphqlbackend.ProductLicenseInfo{
-			TagsValue:      info.Tags,
-			UserCountValue: info.UserCount,
-			ExpiresAtValue: info.ExpiresAt,
+		return &productlicense.Info{
+			Tags:      info.Tags,
+			UserCount: info.UserCount,
+			ExpiresAt: info.ExpiresAt,
 		}, nil
 	}
 }

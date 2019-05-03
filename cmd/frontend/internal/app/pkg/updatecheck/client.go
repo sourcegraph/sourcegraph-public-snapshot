@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/productlicense"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
@@ -200,14 +201,31 @@ var started bool
 
 // Start starts checking for software updates periodically.
 func Start() {
+	logFunc := log15.Debug
+	if envvar.SourcegraphDotComMode() {
+		logFunc = log15.Warn
+	}
+
 	if started {
 		panic("already started")
 	}
 	started = true
 
-	if channel := conf.UpdateChannel(); channel != "release" {
-		return // no update check
+	info, err := productlicense.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		logFunc("productlicense.GetConfiguredProductLicenseInfo failed", "error", err)
+		return
 	}
+	hasLicense := info != nil
+	fmt.Println("==============: has license?" + strconv.FormatBool(info != nil))
+	if hasLicense {
+		fmt.Println("has license, channel release?: " + conf.UpdateChannel())
+		if channel := conf.UpdateChannel(); channel != "release" {
+			fmt.Println("=================== EXITING EARLY")
+			return // no update check
+		}
+	}
+	fmt.Println("=================== CONTINUING TO RUN")
 
 	ctx := context.Background()
 	const delay = 30 * time.Minute
