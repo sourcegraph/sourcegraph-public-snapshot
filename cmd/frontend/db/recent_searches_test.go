@@ -2,10 +2,11 @@ package db
 
 import (
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"math/rand"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 func TestRecentSearches_Add(t *testing.T) {
