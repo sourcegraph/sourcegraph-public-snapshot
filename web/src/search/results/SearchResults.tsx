@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, USE_SEARCH_EXP } from '..'
 import { EvaluatedContributions } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -164,34 +164,46 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                <SearchResultsFilterBars
-                    navbarSearchQuery={this.props.navbarSearchQuery}
-                    results={this.state.resultsOrError}
-                    filters={filters}
-                    extensionFilters={extensionFilters}
-                    onFilterClick={this.onDynamicFilterClicked}
-                    onShowMoreResultsClick={this.showMoreResults}
-                    calculateShowMoreResultsCount={this.calculateCount}
-                />
-                <SearchResultsList
-                    resultsOrError={this.state.resultsOrError}
-                    onShowMoreResultsClick={this.showMoreResults}
-                    onExpandAllResultsToggle={this.onExpandAllResultsToggle}
-                    allExpanded={this.state.allExpanded}
-                    showSavedQueryModal={this.state.showSavedQueryModal}
-                    onSaveQueryClick={this.showSaveQueryModal}
-                    onSavedQueryModalClose={this.onModalClose}
-                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                    didSave={this.state.didSaveQuery}
-                    location={this.props.location}
-                    history={this.props.history}
-                    authenticatedUser={this.props.authenticatedUser}
-                    settingsCascade={this.props.settingsCascade}
-                    isLightTheme={this.props.isLightTheme}
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                    deployType={this.props.deployType}
-                />
+                {!USE_SEARCH_EXP && (
+                    <SearchResultsFilterBars
+                        navbarSearchQuery={this.props.navbarSearchQuery}
+                        results={this.state.resultsOrError}
+                        filters={filters}
+                        extensionFilters={extensionFilters}
+                        onFilterClick={this.onDynamicFilterClicked}
+                        onShowMoreResultsClick={this.showMoreResults}
+                        calculateShowMoreResultsCount={this.calculateCount}
+                    />
+                )}
+                <div className="d-flex flex-wrap-reverse">
+                    <SearchResultsList
+                        className="flex-1"
+                        resultsOrError={this.state.resultsOrError}
+                        onShowMoreResultsClick={this.showMoreResults}
+                        onExpandAllResultsToggle={this.onExpandAllResultsToggle}
+                        allExpanded={this.state.allExpanded}
+                        showSavedQueryModal={this.state.showSavedQueryModal}
+                        onSaveQueryClick={this.showSaveQueryModal}
+                        onSavedQueryModalClose={this.onModalClose}
+                        onDidCreateSavedQuery={this.onDidCreateSavedQuery}
+                        didSave={this.state.didSaveQuery}
+                        location={this.props.location}
+                        history={this.props.history}
+                        authenticatedUser={this.props.authenticatedUser}
+                        settingsCascade={this.props.settingsCascade}
+                        isLightTheme={this.props.isLightTheme}
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        deployType={this.props.deployType}
+                    />
+                    {USE_SEARCH_EXP && (
+                        <div>
+                            hello
+                            <br />
+                            world
+                        </div>
+                    )}
+                </div>
             </div>
         )
     }

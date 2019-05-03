@@ -36,6 +36,7 @@ export interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps
     authenticatedUser: GQL.IUser | null
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    className?: string
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
@@ -303,7 +304,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     </div>
                 )}
 
-                <div className="search-results-list" ref={this.setScrollableElementRef}>
+                <div className={`search-results-list ${this.props.className || ''}`} ref={this.setScrollableElementRef}>
                     {/* Saved Queries Form */}
                     {this.props.showSavedQueryModal && (
                         <ModalContainer
