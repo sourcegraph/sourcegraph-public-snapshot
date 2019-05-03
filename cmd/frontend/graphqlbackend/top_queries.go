@@ -52,7 +52,10 @@ func (s *schemaResolver) TopQueries(ctx context.Context, args *struct{ Limit int
 }
 
 type queryCountResolver struct {
+	// query is a search query.
 	query string
+
+	// count is how many times the search query occurred.
 	count int32
 }
 
