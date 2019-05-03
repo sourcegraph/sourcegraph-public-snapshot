@@ -21,7 +21,7 @@ import {
     toggleSearchFilterAndReplaceSampleRepogroup,
 } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
-import { SearchResultsFilterBars } from './SearchResultsFilterBars'
+import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 
 const UI_PAGE_SIZE = 75
@@ -39,11 +39,6 @@ export interface SearchResultsProps extends ExtensionsControllerProps<'services'
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-}
-
-export interface SearchScopeWithOptionalName {
-    name?: string
-    value: string
 }
 
 interface SearchResultsState {
@@ -171,7 +166,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 <PageTitle key="page-title" title={query} />
                 <SearchResultsFilterBars
                     navbarSearchQuery={this.props.navbarSearchQuery}
-                    resultsOrError={this.state.resultsOrError}
+                    results={this.state.resultsOrError}
                     filters={filters}
                     extensionFilters={extensionFilters}
                     onFilterClick={this.onDynamicFilterClicked}

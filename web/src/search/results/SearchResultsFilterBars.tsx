@@ -3,11 +3,15 @@ import { SearchFilters } from '../../../../shared/src/api/protocol'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { FilterChip } from '../FilterChip'
 import { isSearchResults } from '../helpers'
-import { SearchScopeWithOptionalName } from './SearchResults'
+
+export interface SearchScopeWithOptionalName {
+    name?: string
+    value: string
+}
 
 export const SearchResultsFilterBars: React.FunctionComponent<{
     navbarSearchQuery: string
-    resultsOrError?: GQL.ISearchResults
+    results?: GQL.ISearchResults
     filters: SearchScopeWithOptionalName[]
     extensionFilters: SearchFilters[] | undefined
     onFilterClick: (value: string) => void
@@ -15,7 +19,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     calculateShowMoreResultsCount: () => number
 }> = ({
     navbarSearchQuery,
-    resultsOrError,
+    results,
     filters,
     extensionFilters,
     onFilterClick,
@@ -23,7 +27,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     calculateShowMoreResultsCount,
 }) => (
     <>
-        {((isSearchResults(resultsOrError) && filters.length > 0) || extensionFilters) && (
+        {((isSearchResults(results) && filters.length > 0) || extensionFilters) && (
             <div className="search-results__filters-bar" data-testid="filters-bar">
                 Filters:
                 <div className="search-results__filters">
@@ -53,36 +57,35 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 </div>
             </div>
         )}
-        {isSearchResults(resultsOrError) &&
-            resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
-                <div className="search-results__filters-bar" data-testid="repo-filters-bar">
-                    Repositories:
-                    <div className="search-results__filters">
-                        {resultsOrError.dynamicFilters
-                            .filter(filter => filter.kind === 'repo' && filter.value !== '')
-                            .map((filter, i) => (
-                                <FilterChip
-                                    name={filter.label}
-                                    query={navbarSearchQuery}
-                                    onFilterChosen={onFilterClick}
-                                    key={filter.value}
-                                    value={filter.value}
-                                    count={filter.count}
-                                    limitHit={filter.limitHit}
-                                />
-                            ))}
-                        {resultsOrError.limitHit && !/\brepo:/.test(navbarSearchQuery) && (
+        {isSearchResults(results) && results.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
+            <div className="search-results__filters-bar" data-testid="repo-filters-bar">
+                Repositories:
+                <div className="search-results__filters">
+                    {results.dynamicFilters
+                        .filter(filter => filter.kind === 'repo' && filter.value !== '')
+                        .map((filter, i) => (
                             <FilterChip
-                                name="Show more"
+                                name={filter.label}
                                 query={navbarSearchQuery}
-                                onFilterChosen={onShowMoreResultsClick}
-                                key={`count:${calculateShowMoreResultsCount()}`}
-                                value={`count:${calculateShowMoreResultsCount()}`}
-                                showMore={true}
+                                onFilterChosen={onFilterClick}
+                                key={filter.value}
+                                value={filter.value}
+                                count={filter.count}
+                                limitHit={filter.limitHit}
                             />
-                        )}
-                    </div>
+                        ))}
+                    {results.limitHit && !/\brepo:/.test(navbarSearchQuery) && (
+                        <FilterChip
+                            name="Show more"
+                            query={navbarSearchQuery}
+                            onFilterChosen={onShowMoreResultsClick}
+                            key={`count:${calculateShowMoreResultsCount()}`}
+                            value={`count:${calculateShowMoreResultsCount()}`}
+                            showMore={true}
+                        />
+                    )}
                 </div>
-            )}
+            </div>
+        )}
     </>
 )
