@@ -2483,6 +2483,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/simmerjs@0.5.0":
+  version "0.5.0"
+  resolved "https://registry.npmjs.org/@types/simmerjs/-/simmerjs-0.5.0.tgz#8af013ff6aa071bb18328c6ce8861d7c51fca4b3"
+  integrity sha512-2SbGw2eDt9eFGoj7KwuJbw2Kqccw6MXO8ViIBDPolV4naxsZtMCJg3E5cmj53uZj7tIwyyiQMfY2ty016Yc/wA==
+
 "@types/sinon@7.0.11":
   version "7.0.11"
   resolved "https://registry.npmjs.org/@types/sinon/-/sinon-7.0.11.tgz#6f28f005a36e779b7db0f1359b9fb9eef72aae88"
