@@ -57,6 +57,10 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                     <li>Total count of existing user accounts</li>
                     <li>Aggregate counts of current daily, weekly, and monthly users</li>
                     <li>Aggregate counts of current users using code host integrations</li>
+                    <li>
+                        Aggregate counts of current users by product feature (site management, code search and
+                        navigation, code review, saved searches, diff searches)
+                    </li>
                 </ul>
                 {!pingsEnabled ? (
                     <p>Pings are disabled.</p>

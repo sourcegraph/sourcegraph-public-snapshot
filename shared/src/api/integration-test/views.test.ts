@@ -1,8 +1,7 @@
 import { NEVER } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { assertToJSON } from '../extension/types/testHelpers'
 import { ContributableViewContainer } from '../protocol'
-import { collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Views (integration)', () => {
     describe('app.createPanelView', () => {

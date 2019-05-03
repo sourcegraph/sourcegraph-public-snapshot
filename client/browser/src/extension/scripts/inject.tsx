@@ -5,12 +5,11 @@ import React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../../shared/src/components/Link'
-import storage from '../../browser/storage'
-import { StorageItems } from '../../browser/types'
+import { storage } from '../../browser/storage'
 import { determineCodeHost as detectCodeHost, injectCodeIntelligenceToCodeHost } from '../../libs/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { checkIsSourcegraph, injectSourcegraphApp } from '../../libs/sourcegraph/inject'
-import { setSourcegraphUrl } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
@@ -55,12 +54,12 @@ async function main(): Promise<void> {
         subtree: true,
     }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
 
-    const items = await new Promise<StorageItems>(resolve => storage.getSync(resolve))
+    const items = await storage.sync.get()
     if (items.disableExtension) {
         return
     }
 
-    const sourcegraphServerUrl = items.sourcegraphURL || 'https://sourcegraph.com'
+    const sourcegraphServerUrl = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
     setSourcegraphUrl(sourcegraphServerUrl)
 
     const isSourcegraphServer = checkIsSourcegraph(sourcegraphServerUrl)

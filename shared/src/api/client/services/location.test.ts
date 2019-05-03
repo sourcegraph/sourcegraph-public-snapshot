@@ -1,7 +1,7 @@
+import { Selection } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
 import { Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { Selection } from '../../extension/types/selection'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 import {
     getLocationsFromProviders,

@@ -1,11 +1,10 @@
 import { ProxyResult } from '@sourcegraph/comlink'
+import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { CodeEditorData, EditorId } from '../../client/services/editorService'
-import { Range } from '../types/range'
-import { Selection } from '../types/selection'
 import { createDecorationType } from './decorations'
 import { ExtDocuments } from './documents'
 

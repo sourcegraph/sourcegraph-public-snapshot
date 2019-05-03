@@ -1,8 +1,9 @@
+import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import * as React from 'react'
 
 interface Props {
-    /** The date (if string, in RFC 3339 format). */
+    /** The date (if string, in ISO 8601 format). */
     date: string | Date | number
 
     /** Omit the "about". */
@@ -29,7 +30,11 @@ export class Timestamp extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        let label = formatDistance(this.props.date, new Date(), { addSuffix: true, includeSeconds: true })
+        let label = formatDistance(
+            typeof this.props.date === 'string' ? parseISO(this.props.date) : this.props.date,
+            new Date(),
+            { addSuffix: true, includeSeconds: true }
+        )
         if (this.props.noAbout) {
             label = label.replace('about ', '')
         }

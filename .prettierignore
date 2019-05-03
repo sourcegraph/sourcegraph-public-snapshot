@@ -19,8 +19,9 @@ ts-node-*
 testdata
 .github/*
 doc/
-shared/src/types/abort-controller/index.d.ts
 cmd/management-console/assets/
 **/.cache
 shared/dev/**/*.js
 **/__snapshots__
+**/*.html
+client/contrib/GH2SG.bookmarklet.js

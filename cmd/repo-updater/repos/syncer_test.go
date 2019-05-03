@@ -3,6 +3,7 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -84,6 +85,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	githubRepo := (&repos.Repo{
 		Name:     "github.com/org/foo",
 		Metadata: &github.Repository{},
+		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo-external-12345",
 			ServiceID:   "https://github.com/",
@@ -101,6 +103,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	gitlabRepo := (&repos.Repo{
 		Name:     "gitlab.com/org/foo",
 		Metadata: &gitlab.Project{},
+		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "12345",
 			ServiceID:   "https://gitlab.com/",
@@ -118,6 +121,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	bitbucketServerRepo := (&repos.Repo{
 		Name:     "bitbucketserver.mycorp.com/org/foo",
 		Metadata: &bitbucketserver.Repo{},
+		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "23456",
 			ServiceID:   "https://bitbucketserver.mycorp.com/",
@@ -133,7 +137,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	}
 
 	otherRepo := (&repos.Repo{
-		Name: "git-host.com/org/foo",
+		Name:    "git-host.com/org/foo",
+		Enabled: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "git-host.com/org/foo",
 			ServiceID:   "https://git-host.com/",
@@ -187,20 +192,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
 				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
-					r.ExternalRepo.ID = ""
-				})},
-				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
-					tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
-				}},
-				err: "<nil>",
-			},
-			testCase{
-				name:    "updated external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
-				store:   s,
-				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
-					r.ExternalRepo.ID = "old-and-out-of-date"
+					r.ExternalRepo = api.ExternalRepoSpec{}
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
@@ -290,6 +282,40 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
+				name: "repo got renamed to another repo that gets deleted",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(tc.svc.Clone(), nil,
+						tc.repo.With(func(r *repos.Repo) { r.ExternalRepo.ID = "another-id" }),
+					),
+				),
+				store: s,
+				stored: repos.Repos{
+					tc.repo.Clone(),
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "another-repo"
+						r.ExternalRepo.ID = "another-id"
+					}),
+				},
+				now: clock.Now,
+				diff: repos.Diff{
+					Deleted: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.Enabled = true
+							r.Sources = map[string]*repos.SourceInfo{}
+							r.DeletedAt = clock.Time(0)
+							r.UpdatedAt = clock.Time(0)
+						}),
+					},
+					Modified: repos.Repos{
+						tc.repo.With(
+							repos.Opt.RepoModifiedAt(clock.Time(1)),
+							func(r *repos.Repo) { r.ExternalRepo.ID = "another-id" },
+						),
+					},
+				},
+				err: "<nil>",
+			},
+			testCase{
 				name:    "renamed repo which was deleted is detected and added",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
@@ -302,6 +328,46 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
 					repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
+				err: "<nil>",
+			},
+			testCase{
+				name: "repos have their names swapped",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "foo"
+						r.ExternalRepo.ID = "1"
+					}),
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "bar"
+						r.ExternalRepo.ID = "2"
+					}),
+				)),
+				now:   clock.Now,
+				store: s,
+				stored: repos.Repos{
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "bar"
+						r.ExternalRepo.ID = "1"
+					}),
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "foo"
+						r.ExternalRepo.ID = "2"
+					}),
+				},
+				diff: repos.Diff{
+					Modified: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.Name = "foo"
+							r.ExternalRepo.ID = "1"
+							r.UpdatedAt = clock.Time(0)
+						}),
+						tc.repo.With(func(r *repos.Repo) {
+							r.Name = "bar"
+							r.ExternalRepo.ID = "2"
+							r.UpdatedAt = clock.Time(0)
+						}),
+					},
+				},
 				err: "<nil>",
 			},
 			func() testCase {
@@ -378,8 +444,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				diff, err := syncer.Sync(ctx)
 
 				var want repos.Repos
-				want.Concat(diff.Added, diff.Modified, diff.Unmodified, diff.Deleted)
-				want.Apply(repos.Opt.RepoID(0)) // Exclude auto-generated ID from comparisons
+				want.Concat(diff.Added, diff.Modified, diff.Unmodified)
+				sort.Sort(want)
+
+				diff.Repos().Apply(repos.Opt.RepoID(0))
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -394,14 +462,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil {
-					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
-					for _, d := range have {
-						d.ID = 0 // Exclude auto-generated ID from comparisons
-					}
-					if diff := cmp.Diff(repos.Repos(have), want); diff != "" {
-						// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
-						t.Fatalf("unexpected stored repos:\n%s", diff)
-					}
+					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
+					repos.Assert.ReposEqual(want...)(t, have)
 				}
 			}))
 		}
@@ -546,6 +608,32 @@ func TestDiff(t *testing.T) {
 				Added: repos.Repos{
 					{Name: "1", ExternalRepo: eid("new"), Description: "bar"},
 				},
+			},
+		},
+		{
+			name:  "repo renamed to an already deleted repo",
+			store: repos.Repos{},
+			source: repos.Repos{
+				{Name: "a", ExternalRepo: eid("b")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "a", ExternalRepo: eid("b")},
+				},
+			},
+		},
+		{
+			name: "repo renamed to a repo that gets deleted",
+			store: repos.Repos{
+				{Name: "a", ExternalRepo: eid("a")},
+				{Name: "b", ExternalRepo: eid("b")},
+			},
+			source: repos.Repos{
+				{Name: "a", ExternalRepo: eid("b")},
+			},
+			diff: repos.Diff{
+				Deleted:  repos.Repos{{Name: "a", ExternalRepo: eid("a")}},
+				Modified: repos.Repos{{Name: "a", ExternalRepo: eid("b")}},
 			},
 		},
 		{

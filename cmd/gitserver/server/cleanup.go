@@ -2,24 +2,26 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func init() {
@@ -27,9 +29,6 @@ func init() {
 	prometheus.MustRegister(reposRecloned)
 }
 
-// inactiveRepoTTL is the amount of time a repository will remain on a
-// gitserver without being updated before it is removed.
-const inactiveRepoTTL = time.Hour * 24 * 20
 const repoTTL = time.Hour * 24 * 45
 
 var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
@@ -64,30 +63,6 @@ func (s *Server) cleanupRepos() {
 		}
 
 		log15.Info("removing corrupt repo", "repo", gitDir)
-		if err := s.removeRepoDirectory(gitDir); err != nil {
-			return true, err
-		}
-		reposRemoved.Inc()
-		return true, nil
-	}
-
-	maybeRemoveInactive := func(gitDir string) (done bool, err error) {
-		// We rewrite the HEAD file whenever we update a repo, and repos are
-		// updated in response to user traffic. Check to see the last time
-		// HEAD was rewritten to determine whether to consider this repo
-		// inactive. Note: This is only accurate for installations which set
-		// disableAutoGitUpdates=true. This is true for sourcegraph.com and
-		// maybeRemoveInactive should only be run for sourcegraph.com
-		head, err := os.Stat(filepath.Join(gitDir, "HEAD"))
-		if err != nil {
-			return false, err
-		}
-		lastUpdated := head.ModTime()
-		if time.Since(lastUpdated) <= inactiveRepoTTL {
-			return false, nil
-		}
-
-		log15.Info("removing inactive repo", "repo", gitDir)
 		if err := s.removeRepoDirectory(gitDir); err != nil {
 			return true, err
 		}
@@ -180,20 +155,13 @@ func (s *Server) cleanupRepos() {
 		// info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
 	}
-	if s.DeleteStaleRepositories {
-		// Sourcegraph.com can potentially clone all of github.com, so we
-		// delete repos which have not been used for a period of
-		// time. s.DeleteStaleRepositories should only be true for
-		// sourcegraph.com.
-		cleanups = append(cleanups, cleanupFn{"maybe remove inactive", maybeRemoveInactive})
-	}
 	// Old git clones accumulate loose git objects that waste space and
 	// slow down git operations. Periodically do a fresh clone to avoid
 	// these problems. git gc is slow and resource intensive. It is
 	// cheaper and faster to just reclone the repository.
 	cleanups = append(cleanups, cleanupFn{"maybe reclone", maybeReclone})
 
-	filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) error {
+	err := filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			return nil
 		}
@@ -221,6 +189,190 @@ func (s *Server) cleanupRepos() {
 		}
 		return filepath.SkipDir
 	})
+	if err != nil {
+		log15.Error("cleanup: error iterating over repositories", "error", err)
+	}
+
+	actualFreeBytes, err := s.bytesFreeOnDisk()
+	if err != nil {
+		log15.Error("cleanup: finding the amount of space free on disk", "error", err)
+		return
+	}
+	howManyBytesToFree := int64(s.DesiredFreeDiskSpace) - int64(actualFreeBytes)
+	if err := s.freeUpSpace(howManyBytesToFree); err != nil {
+		log15.Error("cleanup: error freeing up space", "error", err)
+	}
+}
+
+// bytesFreeOnDisk tells how much space is available on the disk containing s.ReposDir.
+func (s *Server) bytesFreeOnDisk() (uint64, error) {
+	var fs syscall.Statfs_t
+	mp, err := findMountPoint(s.ReposDir)
+	if err != nil {
+		return 0, errors.Wrap(err, "finding mount point for dir containing repos")
+	}
+	if err := syscall.Statfs(mp, &fs); err != nil {
+		return 0, errors.Wrap(err, "finding out how much disk space is free")
+	}
+	free := fs.Bavail * uint64(fs.Bsize)
+	log15.Info("computed free space", "repo dir", s.ReposDir, "mount point", mp, "free space bytes", free)
+	return free, nil
+}
+
+// findMountPoint searches upwards starting from the directory d to find the mount point.
+func findMountPoint(d string) (string, error) {
+	d, err := filepath.Abs(d)
+	if err != nil {
+		return "", errors.Wrapf(err, "getting absolute version of %s", d)
+	}
+	for {
+		m, err := isMount(d)
+		if err != nil {
+			return "", errors.Wrapf(err, "finding out if %s is a mount point", d)
+		}
+		if m {
+			return d, nil
+		}
+		d2 := filepath.Dir(d)
+		if d2 == d {
+			return d2, nil
+		}
+		d = d2
+	}
+}
+
+// isMount tells whether the directory d is a mount point.
+func isMount(d string) (bool, error) {
+	ddev, err := device(d)
+	if err != nil {
+		return false, errors.Wrapf(err, "gettting device id for %s", d)
+	}
+	parent := filepath.Dir(d)
+	if parent == d {
+		return true, nil
+	}
+	pdev, err := device(parent)
+	if err != nil {
+		return false, errors.Wrapf(err, "getting device id for %s", parent)
+	}
+	return pdev != ddev, nil
+}
+
+// device gets the device id of a file f.
+func device(f string) (int64, error) {
+	fi, err := os.Stat(f)
+	if err != nil {
+		return 0, errors.Wrapf(err, "running stat on %s", f)
+	}
+	stat, ok := fi.Sys().(*syscall.Stat_t)
+	if !ok {
+		return 0, fmt.Errorf("failed to get stat details for %s", f)
+	}
+	return int64(stat.Dev), nil
+}
+
+// freeUpSpace removes git directories under ReposDir, in order from least
+// recently to most recently used, until it has freed howManyBytesToFree.
+func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
+	if howManyBytesToFree <= 0 {
+		log15.Info("cleanup: skipping repository cleanup, don't need to free disk space", "howManyBytesToFree", howManyBytesToFree)
+		return nil
+	}
+
+	// Get the git directories and their mod times.
+	gitDirs, err := s.findGitDirs(s.ReposDir)
+	if err != nil {
+		return errors.Wrap(err, "finding git dirs")
+	}
+	dirModTimes := make(map[string]time.Time, len(gitDirs))
+	for _, d := range gitDirs {
+		mt, err := gitDirModTime(d)
+		if err != nil {
+			return errors.Wrap(err, "computing mod time of git dir")
+		}
+		dirModTimes[d] = mt
+	}
+
+	// Sort the repos from least to most recently used.
+	sort.Slice(gitDirs, func(i, j int) bool {
+		return dirModTimes[gitDirs[i]].Before(dirModTimes[gitDirs[j]])
+	})
+
+	// Remove repos until howManyBytesToFree is met or exceeded.
+	var spaceFreed int64
+	for _, d := range gitDirs {
+		delta, err := dirSize(d)
+		if err != nil {
+			return errors.Wrapf(err, "computing size of directory %s", d)
+		}
+		gitDirParent := filepath.Dir(d)
+		log15.Info("cleanup: removing repo dir that hasn't been used in a while", "repodir", d, "howlong", time.Since(dirModTimes[d]))
+		if err := os.RemoveAll(gitDirParent); err != nil {
+			return errors.Wrap(err, "removing repo directory")
+		}
+		spaceFreed += delta
+		if spaceFreed >= howManyBytesToFree {
+			return nil
+		}
+	}
+
+	// Check.
+	if spaceFreed < howManyBytesToFree {
+		return fmt.Errorf("only freed %d bytes, wanted to free %d", spaceFreed, howManyBytesToFree)
+	}
+	return nil
+}
+
+func gitDirModTime(d string) (time.Time, error) {
+	head, err := os.Stat(filepath.Join(d, "HEAD"))
+	if err != nil {
+		return time.Time{}, errors.Wrap(err, "getting repository modification time")
+	}
+	return head.ModTime(), nil
+}
+
+// findGitDirs returns the .git directories below d.
+func (s *Server) findGitDirs(d string) ([]string, error) {
+	var dirs []string
+	err := filepath.Walk(d, func(path string, fi os.FileInfo, fileErr error) error {
+		if fileErr != nil {
+			return nil
+		}
+		if s.ignorePath(path) {
+			if fi.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !fi.IsDir() || fi.Name() != ".git" {
+			return nil
+		}
+		dirs = append(dirs, path)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "walking dir tree from %s to find git dirs", d)
+	}
+	return dirs, nil
+}
+
+// dirSize returns the total size in bytes of all the files under d.
+func dirSize(d string) (int64, error) {
+	var size int64
+	err := filepath.Walk(d, func(path string, fi os.FileInfo, fileErr error) error {
+		if fileErr != nil {
+			return nil
+		}
+		if fi.IsDir() {
+			return nil
+		}
+		size += fi.Size()
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrapf(err, "walking dir tree from %s to find size", d)
+	}
+	return size, nil
 }
 
 // removeRepoDirectory atomically removes a directory from s.ReposDir.
@@ -360,7 +512,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 			}
 			go func(path string) {
 				if err := os.RemoveAll(path); err != nil {
-					log15.Error("failed to remove old temporary directory", "path", path, "error", err)
+					log15.Error("cleanup: failed to remove old temporary directory", "path", path, "error", err)
 				}
 			}(filepath.Join(s.ReposDir, f.Name()))
 		}

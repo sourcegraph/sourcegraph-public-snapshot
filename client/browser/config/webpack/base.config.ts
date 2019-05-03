@@ -20,7 +20,6 @@ const config: webpack.Configuration = {
         inject: buildEntry(extEntry, contentEntry, '../../src/extension/scripts/inject.tsx'),
         phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.tsx'),
 
-        bootstrap: path.join(__dirname, '../../../../node_modules/bootstrap/dist/css/bootstrap.css'),
         style: path.join(__dirname, '../../src/app.scss'),
     },
     output: {
@@ -32,6 +31,8 @@ const config: webpack.Configuration = {
     plugins: [
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }) as any, // @types package is incorrect
         new OptimizeCssAssetsPlugin(),
+        // Code splitting doesn't make sense/work in the browser extension, but we still want to use dynamic import()
+        new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],

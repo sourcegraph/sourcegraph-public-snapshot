@@ -1,19 +1,92 @@
-<!-- **NOTE:** this changelog should always be read on `master` branch. Its contents on version
-branches do not necessarily reflect the changes that have gone into that branch. -->
+<!--
+###################################### READ ME ###########################################
+### This changelog should always be read on `master` branch. Its contents on version   ###
+### branches do not necessarily reflect the changes that have gone into that branch.   ###
+##########################################################################################
+-->
 
 # Changelog
 
 All notable changes to Sourcegraph are documented in this file.
 
-## Unreleased
+## 3.4.0 (unreleased)
 
 ### Added
 
-## Changed
+### Changed
 
 ### Removed
 
 ### Fixed
+
+- Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
+
+## 3.3.7
+
+### Added
+
+- The `bitbucketserver.exclude` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) additionally allows you to exclude repositories matched by a regular expression (so that they won't be synced).
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
+- Fixed an issue where Sourcegraph would fail to update repositories on some instances (`pq: duplicate key value violates unique constraint "repo_external_service_unique_idx"`) (#3680)
+- Fixed an issue where Sourcegraph would not exclude unavailable Bitbucket Server repositories. (#3772)
+
+## 3.3.6
+
+## Changed
+
+- All 24 language extensions are enabled by default.
+
+## 3.3.5
+
+## Changed
+
+- Indexed search is now enabled by default for new Docker deployments. (#3540)
+
+### Removed
+
+- Removed smart-casing behavior from search.
+
+### Fixed
+
+- Removes corrupted archives in the searcher cache and tries to populate the cache again instead of returning an error.
+- Fixed a bug where search scopes would not get merged, and only the lowest-level list of search scopes would appear.
+- Fixed an issue where repo-updater was slower in performing its work which could sometimes cause other performance issues. https://github.com/sourcegraph/sourcegraph/pull/3633
+
+## 3.3.4
+
+### Fixed
+
+- Fixed bundling of the Phabricator integration assets in the Sourcegraph docker image.
+
+## 3.3.3
+
+### Fixed
+
+- Fixed bug that prevented "Find references" action from being completed in the activation checklist.
+
+## 3.3.2
+
+### Fixed
+
+- Fixed an issue where the default `bitbucketserver.repositoryQuery` would not be created on migration from older Sourcegraph versions. https://github.com/sourcegraph/sourcegraph/issues/3591
+- Fixed an issue where Sourcegraph would add deleted repositories to the external service configuration. https://github.com/sourcegraph/sourcegraph/issues/3588
+- Fixed an issue where a repo-updater migration would hit code host rate limits. https://github.com/sourcegraph/sourcegraph/issues/3582
+- The required `bitbucketserver.username` field of a [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration), if unset or empty, is automatically migrated to match the user part of the `url` (if defined). https://github.com/sourcegraph/sourcegraph/issues/3592
+- Fixed a panic that would occur in indexed search / the frontend when a search error ocurred. https://github.com/sourcegraph/sourcegraph/issues/3579
+- Fixed an issue where the repo-updater service could become deadlocked while performing a migration. https://github.com/sourcegraph/sourcegraph/issues/3590
+
+## 3.3.1
+
+### Fixed
+
+- Fixed a bug that prevented external service configurations specifying client certificates from working (#3523)
 
 ## 3.3.0
 
@@ -22,9 +95,9 @@ All notable changes to Sourcegraph are documented in this file.
 - In search queries, treat `foo(` as `foo\(` and `bar[` as `bar\[` rather than failing with an error message.
 - Enterprise admins can now customize the appearance of the homepage and search icon.
 - A new settings property `notices` allows showing custom informational messages on the homepage and at the top of each page. The `motd` property is deprecated and its value is automatically migrated to the new `notices` property.
-- The new `gitlab.exclude` setting in [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) allows you to exclude specific repositories matched by `gitlab.projectQuery` and `gitlab.projects` (so that they won't be synced).
+- The new `gitlab.exclude` setting in [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) allows you to exclude specific repositories matched by `gitlab.projectQuery` and `gitlab.projects` (so that they won't be synced). Upon upgrading, previously "disabled" repositories will be automatically migrated to this exclusion list.
 - The new `gitlab.projects` setting in [GitLab external service config](https://docs.sourcegraph.com/admin/external_service/gitlab#configuration) allows you to select specific repositories to be synced.
-- The new `bitbucketserver.exclude` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to exclude specific repositories matched by `bitbucketserver.repositoryQuery` and `bitbucketserver.repos` (so that they won't be synced).
+- The new `bitbucketserver.exclude` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to exclude specific repositories matched by `bitbucketserver.repositoryQuery` and `bitbucketserver.repos` (so that they won't be synced). Upon upgrading, previously "disabled" repositories will be automatically migrated to this exclusion list.
 - The new `bitbucketserver.repos` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to select specific repositories to be synced.
 - The new required `bitbucketserver.repositoryQuery` setting in [Bitbucket Server external service configuration](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) allows you to use Bitbucket API repository search queries to select repos to be synced. Existing configurations will be migrate to have it set to `["?visibility=public", "?visibility=private"]` which is equivalent to the previous implicit behaviour that this setting supersedes.
 - "Quick configure" buttons for common actions have been added to the config editor for all external services.
@@ -54,6 +127,27 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where the site-admin repositories page `Cloning`, `Not Cloned`, `Needs Index` tabs were very slow on instances with thousands of repositories.
+- Fixed an issue where failing to syntax highlight a single file would take down the entire syntax highlighting service.
+
+## 3.2.5
+
+### Fixed
+
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
+
+## 3.2.4
+
+### Fixed
+
+- Fixed bundling of the Phabricator integration assets in the Sourcegraph docker image.
+
+## 3.2.3
+
+### Fixed
+
+- Fixed https://github.com/sourcegraph/sourcegraph/issues/3336.
+- Clearer error message when a repository sync fails due to the inability to clone a repository.
+- Rewrite '@' character in Gitolite repository names to '-', which permits them to be viewable in the UI.
 
 ## 3.2.2
 

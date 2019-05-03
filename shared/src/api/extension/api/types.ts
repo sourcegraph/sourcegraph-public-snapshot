@@ -1,7 +1,6 @@
+import { Position, Range } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
-import { Position } from '../types/position'
-import { Range } from '../types/range'
 
 /**
  * Converts from a plain object {@link clientType.Position} to an instance of {@link Position}.

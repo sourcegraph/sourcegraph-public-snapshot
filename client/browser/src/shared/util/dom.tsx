@@ -31,8 +31,8 @@ export function commitIDFromPermalink({ selector, hrefRegex }: { selector: strin
  * Compatible with MutationRecord, but synthesizable.
  */
 export interface MutationRecordLike {
-    addedNodes: Iterable<Node>
-    removedNodes: Iterable<Node>
+    addedNodes: ArrayLike<Node> & Iterable<Node>
+    removedNodes: ArrayLike<Node> & Iterable<Node>
 }
 
 /**
@@ -91,13 +91,16 @@ export const observeMutations = (
 export function querySelectorAllOrSelf<K extends keyof HTMLElementTagNameMap>(
     element: Element,
     selectors: K
-): Iterable<HTMLElementTagNameMap[K]>
+): ArrayLike<HTMLElementTagNameMap[K]> & Iterable<HTMLElementTagNameMap[K]>
 export function querySelectorAllOrSelf<K extends keyof SVGElementTagNameMap>(
     element: Element,
     selectors: K
-): Iterable<SVGElementTagNameMap[K]>
-export function querySelectorAllOrSelf(element: Element, selectors: string): Iterable<Element>
-export function querySelectorAllOrSelf(element: Element, selectors: string): Iterable<Element> {
+): ArrayLike<SVGElementTagNameMap[K]> & Iterable<SVGElementTagNameMap[K]>
+export function querySelectorAllOrSelf<E extends Element = Element>(
+    element: Element,
+    selectors: string
+): ArrayLike<E> & Iterable<E>
+export function querySelectorAllOrSelf(element: Element, selectors: string): ArrayLike<Node> & Iterable<Element> {
     return element.matches(selectors) ? [element] : element.querySelectorAll(selectors)
 }
 

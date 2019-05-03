@@ -1,12 +1,10 @@
+import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { from } from 'rxjs'
 import { distinctUntilChanged, first, switchMap, take, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../util/types'
-import { Range } from '../extension/types/range'
-import { Selection } from '../extension/types/selection'
-import { assertToJSON } from '../extension/types/testHelpers'
-import { integrationTestContext } from './testHelpers'
+import { assertToJSON, integrationTestContext } from './testHelpers'
 
 describe('CodeEditor (integration)', () => {
     describe('selection', () => {

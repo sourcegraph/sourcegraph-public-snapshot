@@ -1,6 +1,7 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
+import { Omit } from 'utility-types'
 import {
     FileSpec,
     PositionSpec,
@@ -13,7 +14,8 @@ import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
-import { CodeViewSpec, CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
+import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
 import { markdownBodyViewResolver } from './content_views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
@@ -24,40 +26,32 @@ import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 
 /**
- * Creates the mount element for the CodeViewToolbar.
+ * Creates the mount element for the CodeViewToolbar on code views containing
+ * a `.file-actions` element, for instance:
+ * - A diff code view on a PR's files page, or a commit page
+ * - An older GHE single file code view (newer GitHub.com code views use createFileLineContainerToolbarMount)
  */
-export function createCodeViewToolbarMount(codeView: HTMLElement): HTMLElement {
-    const className = 'sourcegraph-app-annotator'
+export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElement {
+    const className = 'github-file-actions-toolbar-mount'
     const existingMount = codeView.querySelector('.' + className) as HTMLElement
     if (existingMount) {
         return existingMount
     }
 
     const mountEl = document.createElement('div')
-    mountEl.style.display = 'inline-flex'
-    mountEl.style.verticalAlign = 'middle'
-    mountEl.style.alignItems = 'center'
     mountEl.className = className
 
     const fileActions = codeView.querySelector('.file-actions')
     if (!fileActions) {
-        throw new Error(
-            "File actions not found. Make sure you aren't trying to create " +
-                "a toolbar mount for a code snippet that shouldn't have one"
-        )
+        throw new Error('Could not find GitHub file actions with selector .file-actions')
     }
 
-    const buttonGroup = fileActions.querySelector('.BtnGroup')
-    if (buttonGroup && buttonGroup.parentNode && !codeView.querySelector('.show-file-notes')) {
-        // blob view
-        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
+    // Old GitHub Enterprise PR views have a "☑ show comments" text that we want to insert *after*
+    const showCommentsElement = codeView.querySelector('.show-file-notes')
+    if (showCommentsElement) {
+        showCommentsElement.insertAdjacentElement('afterend', mountEl)
     } else {
-        // commit & pull request view
-        const note = codeView.querySelector('.show-file-notes')
-        if (!note || !note.parentNode) {
-            throw new Error('cannot find toolbar mount location')
-        }
-        note.parentNode.insertBefore(mountEl, note.nextSibling)
+        fileActions.prepend(mountEl)
     }
 
     return mountEl
@@ -67,25 +61,25 @@ const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-s',
 }
 
-const diffCodeView: CodeViewSpecResolver = {
+const diffCodeView: Omit<CodeView, 'element'> = {
     dom: diffDomFunctions,
-    getToolbarMount: createCodeViewToolbarMount,
+    getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
-    isDiff: true,
 }
 
-const diffConversationCodeView: CodeViewSpecResolver = {
+const diffConversationCodeView: Omit<CodeView, 'element'> = {
     ...diffCodeView,
     getToolbarMount: undefined,
 }
 
-const singleFileCodeView: CodeViewSpecResolver = {
+const singleFileCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
-    getToolbarMount: createCodeViewToolbarMount,
+    getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
-    isDiff: false,
+    getSelections: getSelectionsFromHash,
+    observeSelections: observeSelectionsFromHash,
 }
 
 /**
@@ -124,67 +118,69 @@ const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec &
         })
     )
 
-const searchResultCodeView: CodeViewSpec = {
-    selector: '.code-list-item',
+const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
     dom: searchCodeSnippetDOMFunctions,
     adjustPosition: adjustPositionForSnippet,
     resolveFileInfo: resolveSnippetFileInfo,
     toolbarButtonProps,
-    isDiff: false,
-}
+})
 
-const commentSnippetCodeView: CodeViewSpec = {
-    selector: '.js-comment-body',
+const commentSnippetCodeViewResolver = toCodeViewResolver('.js-comment-body', {
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveSnippetFileInfo,
     adjustPosition: adjustPositionForSnippet,
     toolbarButtonProps,
-    isDiff: false,
+})
+
+export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
+    codeViewElement: HTMLElement
+): HTMLElement => {
+    const className = 'sourcegraph-app-annotator'
+    const existingMount = codeViewElement.querySelector(`.${className}`) as HTMLElement
+    if (existingMount) {
+        return existingMount
+    }
+    const mountEl = document.createElement('div')
+    mountEl.style.display = 'inline-flex'
+    mountEl.style.verticalAlign = 'middle'
+    mountEl.style.alignItems = 'center'
+    mountEl.className = className
+    const rawURLLink = codeViewElement.querySelector('#raw-url')
+    const buttonGroup = rawURLLink && rawURLLink.closest('.BtnGroup')
+    if (!buttonGroup || !buttonGroup.parentNode) {
+        throw new Error('File actions not found')
+    }
+    buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
+    return mountEl
 }
 
 /**
  * The modern single file blob view.
  *
- * @todo This code view does not follow the code view contract because
- * the selector returns just the code table, not including the toolbar.
- * This requires `getToolbarMount()` to look at the parent elements, which makes it not possible
- * unit test like other toolbar mount getters.
- * Change this after https://github.com/sourcegraph/sourcegraph/issues/3271 is fixed.
  */
-export const fileLineContainerCodeView = {
+export const fileLineContainerResolver: ViewResolver<CodeView> = {
     selector: '.js-file-line-container',
-    dom: singleFileDOMFunctions,
-    getToolbarMount: (fileLineContainer: HTMLElement): HTMLElement => {
-        const codeViewParent = fileLineContainer.closest('.repository-content')
-        if (!codeViewParent) {
-            throw new Error('Repository content element not found')
+    resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
+        const { filePath } = parseURL()
+        if (!filePath) {
+            // this is not a single-file code view
+            return null
         }
-        const className = 'sourcegraph-app-annotator'
-        const existingMount = codeViewParent.querySelector(`.${className}`) as HTMLElement
-        if (existingMount) {
-            return existingMount
+        const repositoryContent = fileLineContainer.closest('.repository-content')
+        if (!repositoryContent) {
+            throw new Error('Could not find repository content element')
         }
-        const mountEl = document.createElement('div')
-        mountEl.style.display = 'inline-flex'
-        mountEl.style.verticalAlign = 'middle'
-        mountEl.style.alignItems = 'center'
-        mountEl.className = className
-        const rawURLLink = codeViewParent.querySelector('#raw-url')
-        const buttonGroup = rawURLLink && rawURLLink.closest('.BtnGroup')
-        if (!buttonGroup || !buttonGroup.parentNode) {
-            throw new Error('File actions not found')
+        return {
+            element: repositoryContent as HTMLElement,
+            ...singleFileCodeView,
+            getToolbarMount: createFileLineContainerToolbarMount,
         }
-        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
-        return mountEl
     },
-    resolveFileInfo,
-    toolbarButtonProps,
-    isDiff: false,
 }
 
-const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
+const genericCodeViewResolver: ViewResolver<CodeView> = {
     selector: '.file',
-    resolveView: (elem: HTMLElement): CodeViewSpecResolver | null => {
+    resolveView: (elem: HTMLElement): CodeView | null => {
         if (elem.querySelector('article.markdown-body')) {
             // This code view is rendered markdown, we shouldn't add code intelligence
             return null
@@ -201,14 +197,14 @@ const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
             files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
         if (isSingleCodeFile) {
-            return singleFileCodeView
+            return { element: elem, ...singleFileCodeView }
         }
 
         if (elem.closest('.discussion-item-body')) {
-            return diffConversationCodeView
+            return { element: elem, ...diffConversationCodeView }
         }
 
-        return diffCodeView
+        return { element: elem, ...diffCodeView }
     },
 }
 
@@ -257,8 +253,12 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
 
 export const githubCodeHost: CodeHost = {
     name: 'github',
-    codeViewSpecs: [searchResultCodeView, commentSnippetCodeView, fileLineContainerCodeView],
-    codeViewSpecResolver,
+    codeViewResolvers: [
+        genericCodeViewResolver,
+        fileLineContainerResolver,
+        searchResultCodeViewResolver,
+        commentSnippetCodeViewResolver,
+    ],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
     getContext: parseURL,
@@ -289,8 +289,8 @@ export const githubCodeHost: CodeHost = {
         actionItemIconClass: 'action-item__icon--github v-align-text-bottom',
     },
     completionWidgetClassProps: {
-        widgetContainerClassName: 'suggester-container',
-        widgetClassName: 'suggester',
+        widgetClassName: 'suggester-container',
+        widgetContainerClassName: 'suggester',
         listClassName: 'suggestions',
         selectedListItemClassName: 'navigation-focus',
         listItemClassName: 'text-normal',

@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
-import { getExtensionVersionSync } from '../../browser/runtime'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
+import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './Menu'
 import { ConnectionErrors } from './ServerURLForm'
 
@@ -12,7 +12,7 @@ export interface OptionsContainerProps {
     fetchCurrentTabStatus: () => Promise<OptionsMenuProps['currentTabStatus']>
     hasPermissions: (url: string) => Promise<boolean>
     requestPermissions: (url: string) => void
-    setSourcegraphURL: (url: string) => void
+    setSourcegraphURL: (url: string) => Promise<void>
     toggleFeatureFlag: (key: string) => void
     featureFlags: { key: string; value: boolean }[]
 }
@@ -24,7 +24,7 @@ interface OptionsContainerState
     > {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
-    private version = getExtensionVersionSync()
+    private version = getExtensionVersion()
 
     private urlUpdates = new Subject<string>()
 
@@ -84,7 +84,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 const urlHasPermissions = await props.hasPermissions(url)
                 this.setState({ urlHasPermissions })
 
-                props.setSourcegraphURL(url)
+                await props.setSourcegraphURL(url)
             })
         )
 
@@ -126,8 +126,8 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         this.setState({ sourcegraphURL: value })
     }
 
-    private handleURLSubmit = () => {
-        this.props.setSourcegraphURL(this.state.sourcegraphURL)
+    private handleURLSubmit = async () => {
+        await this.props.setSourcegraphURL(this.state.sourcegraphURL)
     }
 
     private handleSettingsClick = () => {

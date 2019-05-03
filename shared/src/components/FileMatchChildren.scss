@@ -26,15 +26,12 @@
 
         .theme-light & {
             background-color: $color-light-bg-1;
-            border-top: 1px solid $color-light-border;
+            border-color: $color-light-border;
 
             &:hover {
                 background-color: $color-light-bg-4;
                 text-decoration: none;
             }
-        }
-        &:first-of-type {
-            border-top: none;
         }
     }
 

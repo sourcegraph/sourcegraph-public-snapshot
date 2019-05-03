@@ -1,12 +1,8 @@
 import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
-import { isDomSplitDiff } from './util'
+import { parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     const td = codeElement.closest('td')!
-    if (isDomSplitDiff()) {
-        // If there are more cells on the right, this is the base, otherwise the head
-        return td.nextElementSibling ? 'base' : 'head'
-    }
 
     if (td.classList.contains('blob-code-addition')) {
         return 'head'
@@ -14,6 +10,14 @@ const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
 
     if (td.classList.contains('blob-code-deletion')) {
         return 'base'
+    }
+    // If we can't determine the diff part the code element's parent `<td>`
+    // (which may be because it is unchanged, or because the .blob-code(addition|deletion) classes
+    // aren't present), call `isSplitDomDiff()`, which will look at the parent
+    // code view to determine whether this is a split or unified diff view.
+    if (isDomSplitDiff(codeElement)) {
+        // If there are more cells on the right, this is the base, otherwise the head
+        return td.nextElementSibling ? 'base' : 'head'
     }
 
     return 'head'
@@ -24,11 +28,12 @@ const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
  * depending on whether the diff is in unified or split view.
  * Prefers head.
  */
-const getLineNumberElementIndex = (part: DiffPart): number => {
-    if (isDomSplitDiff()) {
-        return part === 'base' ? 0 : 2
+const getLineNumberElementIndex = (part: DiffPart, isSplitDiff: boolean): number => {
+    if (part === 'base') {
+        // base line number is always the first child
+        return 0
     }
-    return part === 'base' ? 0 : 1
+    return isSplitDiff ? 2 : 1
 }
 
 /**
@@ -79,7 +84,8 @@ export const diffDomFunctions: DOMFunctions = {
         return codeCell && getBlobCodeInner(codeCell)
     },
     getCodeElementFromLineNumber: (codeView, line, part) => {
-        const nthChild = getLineNumberElementIndex(part!) + 1 // nth-child() is 1-indexed
+        const isSplitDiff = isDomSplitDiff(codeView)
+        const nthChild = getLineNumberElementIndex(part!, isSplitDiff) + 1 // nth-child() is 1-indexed
         const lineNumberCell = codeView.querySelector<HTMLTableCellElement>(
             `td:nth-child(${nthChild})[data-line-number="${line}"]`
         )
@@ -87,7 +93,7 @@ export const diffDomFunctions: DOMFunctions = {
             return null
         }
         let codeCell: HTMLTableCellElement
-        if (isDomSplitDiff()) {
+        if (isSplitDiff) {
             // In split diff view, the code cell is next to the line number cell
             codeCell = lineNumberCell.nextElementSibling as HTMLTableCellElement
         } else {
@@ -106,7 +112,7 @@ export const diffDomFunctions: DOMFunctions = {
         // <span class="blob-code-inner">+	fmt.<span class="pl-c1">Println</span>...
         //                               ^
         //
-        // New versions of GitHub do not, and Refined GitHub strips these
+        // New versions of GitHub do not, and Refined GitHub used to strip these
         // characters.
         //
         // Since a +, -, or space character in the first column could be either
@@ -132,7 +138,7 @@ export const diffDomFunctions: DOMFunctions = {
         const hasDataCodeMarkerSplit = blobCodeInner && blobCodeInner.hasAttribute('data-code-marker')
         const hasDataCodeMarker = hasDataCodeMarkerUnified || hasDataCodeMarkerSplit
 
-        // Refined GitHub strips the first character diff indicator.
+        // Refined GitHub used to strip the first character diff indicator.
         const hasRefinedGitHub = codeElement.closest('.refined-github-diff-signs')
 
         // When no other diff indicator is found, we assume the first character
@@ -185,4 +191,29 @@ export const searchCodeSnippetDOMFunctions: DOMFunctions = {
 
         return parseInt(cell.firstElementChild!.textContent!, 10)
     },
+}
+
+/**
+ * Returns if the current view shows diffs with split (vs. unified) view.
+ *
+ * @param element, either an element contained in a code view or the code view itself
+ */
+export function isDomSplitDiff(element: HTMLElement): boolean {
+    const { isDelta } = parseURL()
+    if (!isDelta) {
+        return false
+    }
+    const codeView = element.classList.contains('file') ? element : element.closest('.file')
+    if (!codeView) {
+        throw new Error('Could not resolve code view element')
+    }
+    if (codeView.classList.contains('js-comment-container')) {
+        // Commented snippet in PR discussion
+        return false
+    }
+    const codeViewTable = codeView.querySelector('table')
+    if (!codeViewTable) {
+        throw new Error('Could not find code view table')
+    }
+    return codeViewTable.classList.contains('js-file-diff-split') || codeViewTable.classList.contains('file-diff-split')
 }

@@ -186,7 +186,7 @@ var gitLabRepositorySyncWorker = &worker{
 		for _, c := range gitlabConnections {
 			go func(c *gitlabConnection) {
 				for {
-					if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 50 {
+					if rateLimitRemaining, rateLimitReset, _, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 50 {
 						wait := rateLimitReset + 10*time.Second
 						log15.Warn("GitLab API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
 						time.Sleep(wait)
@@ -239,7 +239,7 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 	}
 }
 
-func newGitLabConnection(config *schema.GitLabConnection, cf httpcli.Factory) (*gitlabConnection, error) {
+func newGitLabConnection(config *schema.GitLabConnection, cf *httpcli.Factory) (*gitlabConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -259,7 +259,7 @@ func newGitLabConnection(config *schema.GitLabConnection, cf httpcli.Factory) (*
 		opts = append(opts, httpcli.NewCertPoolOpt(pool))
 	}
 
-	cli, err := cf.NewClient(opts...)
+	cli, err := cf.Doer(opts...)
 	if err != nil {
 		return nil, err
 	}

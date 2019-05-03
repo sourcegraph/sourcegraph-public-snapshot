@@ -1,9 +1,10 @@
 import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
 import assert from 'assert'
 import { readFile } from 'mz/fs'
+import Simmer from 'simmerjs'
 import { SetIntersection } from 'utility-types'
 import { CodeHost, MountGetter } from './code_intelligence'
-import { CodeViewSpec } from './code_views'
+import { CodeView } from './code_views'
 
 const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = (typeof mountGetterKeys)[number]
@@ -29,9 +30,38 @@ export function testCodeHostMountGetters<C extends CodeHost>(
 
 export function testToolbarMountGetter(
     codeViewHtmlFixturePath: string,
-    getToolbarMount: NonNullable<CodeViewSpec['getToolbarMount']>
+    getToolbarMount: NonNullable<CodeView['getToolbarMount']>
 ): void {
     testMountGetter(codeViewHtmlFixturePath, getToolbarMount, false, false)
+}
+
+export async function getFixtureBody({
+    isFullDocument,
+    htmlFixturePath,
+}: {
+    isFullDocument: boolean
+    htmlFixturePath: string
+}): Promise<HTMLElement> {
+    const content = await readFile(htmlFixturePath, 'utf-8')
+    // Do not append to global document to test that the mount getter only looks at the container
+    if (isFullDocument) {
+        // Create Document
+        const fixtureDocument = document.implementation.createHTMLDocument()
+        fixtureDocument.write(content)
+        return fixtureDocument.documentElement
+    }
+    // Create DocumentFragment
+    const template = document.createElement('template')
+    template.innerHTML = content
+    if (template.content.children.length !== 1) {
+        throw new Error(
+            `Fixture must have exactly one element, has ${template.content.children.length}: ${htmlFixturePath}`
+        )
+    }
+    if (!(template.content.firstElementChild instanceof HTMLElement)) {
+        throw new Error(`Fixture must be HTML: ${htmlFixturePath}`)
+    }
+    return template.content.firstElementChild
 }
 
 /**
@@ -40,35 +70,13 @@ export function testToolbarMountGetter(
  * It will be tested to return `null` in that case.
  */
 export function testMountGetter(
-    containerHTMLPath: string,
+    htmlFixturePath: string,
     getMount: MountGetter,
     isFullDocument: boolean,
     mayReturnNull: boolean
 ): void {
-    const getFixtureBody = async () => {
-        const content = await readFile(containerHTMLPath, 'utf-8')
-        // Do not append use global document to test that the mount getter only looks at the container
-        if (isFullDocument) {
-            // Create Document
-            const fixtureDocument = document.implementation.createHTMLDocument()
-            fixtureDocument.write(content)
-            return fixtureDocument.documentElement
-        }
-        // Create DocumentFragment
-        const template = document.createElement('template')
-        template.innerHTML = content
-        if (template.content.children.length !== 1) {
-            throw new Error(
-                `Fixture must have exactly one element, has ${template.content.children.length}: ${containerHTMLPath}`
-            )
-        }
-        if (!(template.content.firstElementChild instanceof HTMLElement)) {
-            throw new Error(`Fixture must be HTML: ${containerHTMLPath}`)
-        }
-        return template.content.firstElementChild
-    }
     it('creates and returns a new mount in the container', async () => {
-        const container = await getFixtureBody()
+        const container = await getFixtureBody({ isFullDocument, htmlFixturePath })
         const outerHtmlBefore = container.outerHTML
         const mount = getMount(container)
         expect(mount).toBeInstanceOf(HTMLElement)
@@ -79,7 +87,7 @@ export function testMountGetter(
         }
     })
     it('is idempotent', async () => {
-        const container = await getFixtureBody()
+        const container = await getFixtureBody({ isFullDocument, htmlFixturePath })
         const first = getMount(container)
         const outerHTMLAfterFirstCall = container.outerHTML
         const second = getMount(container)
@@ -108,67 +116,84 @@ export function testMountGetter(
     }
 }
 
-interface CodeElement {
-    getElement: () => HTMLElement
+interface DiffLine {
     lineNumber: number
     diffPart?: DiffPart
 }
 
 export interface DiffDOMFunctionsTest {
     htmlFixturePath: string
-    getCodeView: () => HTMLElement
-    codeElements: CodeElement[]
-    url: string
-    firstCharacterIsDiffIndicator?: boolean
+    /**
+     * Descriptors for lines in the diff that will be tested
+     */
+    diffLineCases: DiffLine[]
+    url: string // TODO DOM functions should not rely on global state like the URL
+    firstCharacterIsDiffIndicator: boolean
 }
 
 export function testDOMFunctions(
-    testSuiteName: string,
     domFunctions: DOMFunctions,
-    { htmlFixturePath, getCodeView, codeElements, url, firstCharacterIsDiffIndicator }: DiffDOMFunctionsTest
+    { htmlFixturePath, diffLineCases: codeElements, url, firstCharacterIsDiffIndicator }: DiffDOMFunctionsTest
 ): void {
-    describe(testSuiteName, () => {
-        beforeAll(async () => {
-            jsdom.reconfigure({ url })
-            const content = await readFile(htmlFixturePath, 'utf-8')
-            document.body.innerHTML = content
-        })
-        describe('getCodeElementFromLineNumber()', () => {
-            for (const { getElement, diffPart, lineNumber } of codeElements) {
-                test(`diffPart: ${diffPart}`, () => {
-                    const codeView = getCodeView()
-                    const element = getElement()
-                    expect(domFunctions.getCodeElementFromLineNumber(codeView, lineNumber, diffPart)).toBe(element)
-                })
-            }
-        })
-        describe('getLineNumberFromCodeElement()', () => {
-            for (const { getElement, diffPart, lineNumber } of codeElements) {
-                test(`diffPart: ${diffPart}`, () => {
-                    const element = getElement()
-                    expect(domFunctions.getLineNumberFromCodeElement(element)).toBe(lineNumber)
-                })
-            }
-        })
-        if (domFunctions.getDiffCodePart) {
-            describe('getDiffCodePart()', () => {
-                for (const { getElement, diffPart } of codeElements) {
-                    test(`diffPart: ${diffPart}`, () => {
-                        const element = getElement()
-                        expect(domFunctions.getDiffCodePart!(element)).toBe(diffPart)
-                    })
-                }
-            })
-        }
-        if (domFunctions.isFirstCharacterDiffIndicator) {
-            describe('isFirstCharacterDiffIndicator()', () => {
-                for (const { getElement, diffPart } of codeElements) {
-                    test(`diffPart: ${diffPart}`, () => {
-                        const element = getElement()
-                        expect(domFunctions.isFirstCharacterDiffIndicator!(element)).toBe(firstCharacterIsDiffIndicator)
-                    })
-                }
-            })
-        }
+    let codeViewElement: HTMLElement
+    beforeEach(async () => {
+        jsdom.reconfigure({ url })
+        codeViewElement = await getFixtureBody({ htmlFixturePath, isFullDocument: false })
     })
+    for (const { diffPart, lineNumber } of codeElements) {
+        describe(`line number ${lineNumber} in ${diffPart} diff part`, () => {
+            describe('getCodeElementFromLineNumber()', () => {
+                it(`should return the right code element given the line number`, async () => {
+                    const codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)
+                    expect(codeElement).toBeDefined()
+                    expect(codeElement).not.toBeNull()
+                    // if the codeElement contains more than one line, something is off
+                    expect(codeElement!.textContent!.includes('\n')).toBe(false)
+                    // Generate CSS selector for element
+                    const simmer = new Simmer(codeViewElement)
+                    const selector = simmer(codeElement!)
+                    expect({ selector, content: codeElement!.textContent }).toMatchSnapshot()
+                })
+            })
+
+            let codeElement: HTMLElement
+            const setCodeElement = () => {
+                codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)!
+                if (!codeElement) {
+                    throw new Error('Test depends on test for getCodeElementFromLineNumber() passing')
+                }
+            }
+            // These tests depend on getCodeElementFromLineNumber() working as expected
+            describe('getLineNumberFromCodeElement()', () => {
+                beforeEach(setCodeElement)
+                it(`should return the right line number given the code element`, () => {
+                    const returnedLineNumber = domFunctions.getLineNumberFromCodeElement(codeElement)
+                    expect(returnedLineNumber).toBe(lineNumber)
+                })
+            })
+            if (domFunctions.getDiffCodePart) {
+                describe('getDiffCodePart()', () => {
+                    beforeEach(setCodeElement)
+                    it(`should return "${diffPart}" when given the code element`, () => {
+                        expect(domFunctions.getDiffCodePart!(codeElement)).toBe(diffPart)
+                    })
+                })
+            }
+            describe('isFirstCharacterDiffIndicator()', () => {
+                beforeEach(setCodeElement)
+                it('should return correctly whether the first character is a diff indicator', () => {
+                    // Default is false
+                    const is =
+                        !!domFunctions.isFirstCharacterDiffIndicator &&
+                        domFunctions.isFirstCharacterDiffIndicator(codeElement)
+                    expect(is).toBe(firstCharacterIsDiffIndicator)
+                    if (is) {
+                        // Check that the first character is truly a diff indicator
+                        const diffIndicators = new Set(['+', '-', ' '])
+                        expect(is).toBe(diffIndicators.has(codeElement.textContent![0]))
+                    }
+                })
+            })
+        })
+    }
 }

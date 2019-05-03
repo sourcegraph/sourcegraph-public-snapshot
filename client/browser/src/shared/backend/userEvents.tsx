@@ -24,6 +24,7 @@ export const logUserEvent = (event: string, uid: string): void => {
         }`,
         variables: { event, userCookieID: uid },
         retry: false,
+        // tslint:disable-next-line: rxjs-no-ignored-subscription
     }).subscribe({
         error: error => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail

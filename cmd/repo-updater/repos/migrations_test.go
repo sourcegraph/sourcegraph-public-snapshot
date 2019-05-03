@@ -27,14 +27,6 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		}
 	}
 
-	included := func(rs ...*repos.Repo) func(*repos.ExternalService) {
-		return func(e *repos.ExternalService) {
-			if err := e.Include(rs...); err != nil {
-				panic(err)
-			}
-		}
-	}
-
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -135,16 +127,13 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		repo, svc := k.repo, k.svc
 		testCases = append(testCases,
 			testCase{
-				name:   "disabled: was deleted, got added, then excluded",
+				name:   "enabled: was deleted, got added (enabled), not excluded",
 				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
 				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
+					repos.NewFakeSource(svc.Clone(), nil, repo.With(repos.Opt.RepoEnabled(true))),
 				),
-				svcs: repos.Assert.ExternalServicesEqual(svc.With(
-					repos.Opt.ExternalServiceModifiedAt(now),
-					excluded(&repo),
-				)),
-				err: "<nil>",
+				svcs: repos.Assert.ExternalServicesEqual(svc.Clone()),
+				err:  "<nil>",
 			},
 			testCase{
 				name:   "disabled: was not deleted and was not modified, got excluded",
@@ -173,16 +162,6 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name:    "disabled: was deleted and is still deleted, got excluded",
-				stored:  repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				svcs: repos.Assert.ExternalServicesEqual(svc.With(
-					repos.Opt.ExternalServiceModifiedAt(now),
-					excluded(&repo),
-				)),
-				err: "<nil>",
-			},
-			testCase{
 				name: "enabled: was not deleted and is still not deleted, not included",
 				stored: repos.Repos{repo.With(func(r *repos.Repo) {
 					r.Enabled = true
@@ -196,16 +175,13 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				err:  "<nil>",
 			},
 			testCase{
-				name: "enabled: was not deleted and got deleted, then included",
+				name: "enabled: was not deleted and got deleted, not included",
 				stored: repos.Repos{repo.With(func(r *repos.Repo) {
 					r.Enabled = true
 				})},
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				svcs: repos.Assert.ExternalServicesEqual(svc.With(
-					repos.Opt.ExternalServiceModifiedAt(now),
-					included(&repo),
-				)),
-				err: "<nil>",
+				svcs:    repos.Assert.ExternalServicesEqual(svc.Clone()),
+				err:     "<nil>",
 			},
 			testCase{
 				name:   "enabled: got added for the first time, so not included",
@@ -255,7 +231,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: "enabled: repo is included in all of its sources",
+				name: "enabled: deleted repo is not included in any of its sources",
 				stored: repos.Repos{repo.With(
 					repos.Opt.RepoSources(
 						svc.URN(),
@@ -268,15 +244,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil),
 				),
 				svcs: repos.Assert.ExternalServicesEqual(
-					svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-						included(&repo),
-					),
-					svc.With(
-						repos.Opt.ExternalServiceID(23),
-						repos.Opt.ExternalServiceModifiedAt(now),
-						included(&repo),
-					),
+					svc.Clone(),
+					svc.With(repos.Opt.ExternalServiceID(23)),
 				),
 				err: "<nil>",
 			},
@@ -284,13 +253,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				name:    "disabled: repos are deleted",
 				stored:  repos.Repos{&repo},
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				repos: repos.Assert.ReposEqual(repo.With(
-					func(r *repos.Repo) {
-						r.DeletedAt = now
-						r.Enabled = true
-					},
-				)),
-				err: "<nil>",
+				repos:   repos.Assert.ReposEqual(),
+				err:     "<nil>",
 			},
 		)
 	}
@@ -321,7 +285,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				}
 
 				if tc.repos != nil {
-					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{Deleted: true})
+					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -707,6 +671,134 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 	}
 }
 
+func TestBitbucketServerUsernameMigration(t *testing.T) {
+	t.Parallel()
+	testBitbucketServerUsernameMigration(new(repos.FakeStore))(t)
+}
+
+func testBitbucketServerUsernameMigration(store repos.Store) func(*testing.T) {
+	bitbucketsrv := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://admin@bitbucketserver.mycorp.com",
+				"token": "secret"
+			}
+		`),
+	}
+
+	bitbucketsrvNoUsername := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://bitbucketserver.mycorp.com",
+				"token": "secret"
+			}
+		`),
+	}
+
+	bitbucketsrvWithUsername := repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "BitbucketServer - Test",
+		Config: formatJSON(`
+			{
+				// Some comment
+				"url": "https://bitbucketserver.mycorp.com",
+				"username": "admin",
+				"token": "secret",
+			}
+		`),
+	}
+
+	gitlab := repos.ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "Gitlab - Test",
+		Config:      formatJSON(`{"url": "https://gitlab.com"}`),
+	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name   string
+			stored repos.ExternalServices
+			assert repos.ExternalServicesAssertion
+			err    string
+		}{
+			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
+			{
+				name:   "non-bitbucketserver services are left unchanged",
+				stored: repos.ExternalServices{&gitlab},
+				assert: repos.Assert.ExternalServicesEqual(&gitlab),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services with username set are left unchanged",
+				stored: repos.ExternalServices{&bitbucketsrvWithUsername},
+				assert: repos.Assert.ExternalServicesEqual(&bitbucketsrvWithUsername),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services without username in url are left unchanged",
+				stored: repos.ExternalServices{&bitbucketsrvNoUsername},
+				assert: repos.Assert.ExternalServicesEqual(&bitbucketsrvNoUsername),
+				err:    "<nil>",
+			},
+			{
+				name:   "bitbucketserver services without username are migrated",
+				stored: repos.ExternalServices{&bitbucketsrv},
+				assert: repos.Assert.ExternalServicesEqual(
+					bitbucketsrv.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+							e.Config, err = jsonc.Edit(e.Config, "admin", "username")
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+					t.Fatalf("failed to prepare store: %v", err)
+				}
+
+				err := repos.BitbucketServerUsernameMigration(clock.Now).Run(ctx, tx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, es)
+				}
+			}))
+		}
+
+	}
+}
 func formatJSON(s string) string {
 	formatted, err := jsonc.Format(s, true, 2)
 	if err != nil {

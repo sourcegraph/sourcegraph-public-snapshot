@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import * as H from 'history'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
@@ -105,7 +106,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                     onClick={stopPropagationToCollapseOrExpand}
                     onMouseDown={logClickOnTimestamp}
                 >
-                    {formatDistance(props.result.commit.author.date, new Date(), {
+                    {formatDistance(parseISO(props.result.commit.author.date), new Date(), {
                         addSuffix: true,
                     })}
                 </Link>

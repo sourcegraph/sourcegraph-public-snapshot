@@ -50,44 +50,73 @@ type Opt func(*http.Client) error
 // A Factory constructs an http.Client with the given functional
 // options applied, returning an aggreagte error of the errors returned by
 // all those options.
-type Factory func(...Opt) (Doer, error)
+type Factory struct {
+	stack  Middleware
+	common []Opt
+}
 
-// NewClient returns a new http.Client from the factory with the given opts
-// applied to it.
-func (f Factory) NewClient(opts ...Opt) (Doer, error) {
-	return f(opts...)
+// Doer returns a new Doer wrapped with the middleware stack
+// provided in the Factory constructor and with the given common
+// and base opts applied to it.
+func (f Factory) Doer(base ...Opt) (Doer, error) {
+	cli, err := f.Client(base...)
+	if err != nil {
+		return nil, err
+	}
+
+	if f.stack != nil {
+		return f.stack(cli), nil
+	}
+
+	return cli, nil
+}
+
+// Client returns a new http.Client configured with the
+// given common and base opts, but not wrapped with any
+// middleware.
+func (f Factory) Client(base ...Opt) (*http.Client, error) {
+	opts := make([]Opt, 0, len(f.common)+len(base))
+	opts = append(opts, base...)
+	opts = append(opts, f.common...)
+
+	var cli http.Client
+	var err *multierror.Error
+
+	for _, opt := range opts {
+		err = multierror.Append(err, opt(&cli))
+	}
+
+	return &cli, err.ErrorOrNil()
 }
 
 // NewFactory returns a Factory that applies the given common
-// Opts after the ones provided on each invocation of New.
+// Opts after the ones provided on each invocation of Client or Doer.
 //
 // If the given Middleware stack is not nil, the final configured client
-// will be wrapped by it before being returned.
-func NewFactory(stack Middleware, common ...Opt) Factory {
-	return func(base ...Opt) (do Doer, _ error) {
-		opts := make([]Opt, 0, len(common)+len(base))
-		opts = append(opts, base...)
-		opts = append(opts, common...)
-
-		var cli http.Client
-		var err *multierror.Error
-
-		for _, opt := range opts {
-			err = multierror.Append(err, opt(&cli))
-		}
-
-		do = &cli
-		if stack != nil {
-			do = stack(do)
-		}
-
-		return do, err.ErrorOrNil()
-	}
+// will be wrapped by it before being returned from a call to Doer, but not Client.
+func NewFactory(stack Middleware, common ...Opt) *Factory {
+	return &Factory{stack: stack, common: common}
 }
 
 //
 // Common Middleware
 //
+
+// HeadersMiddleware returns a middleware that wraps a Doer
+// and sets the given headers.
+func HeadersMiddleware(headers ...string) Middleware {
+	if len(headers)%2 != 0 {
+		panic("missing header values")
+	}
+	return func(cli Doer) Doer {
+		return DoerFunc(func(req *http.Request) (*http.Response, error) {
+			for i := 0; i < len(headers); i += 2 {
+				req.Header.Add(headers[i], headers[i+1])
+			}
+			return cli.Do(req)
+		})
+	}
+}
 
 // ContextErrorMiddleware wraps a Doer with context.Context error
 // handling.  It checks if the request context is done, and if so,
@@ -115,6 +144,10 @@ func ContextErrorMiddleware(cli Doer) Doer {
 // transport.
 func NewCertPoolOpt(pool *x509.CertPool) Opt {
 	return func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
+
 		tr, ok := cli.Transport.(*http.Transport)
 		if !ok {
 			return errors.New("httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport")

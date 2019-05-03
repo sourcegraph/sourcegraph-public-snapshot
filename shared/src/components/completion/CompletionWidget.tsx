@@ -39,7 +39,7 @@ export interface CompletionWidgetClassProps {
     noResultsClassName?: string
 }
 
-interface Props extends CompletionWidgetClassProps {
+export interface CompletionWidgetProps extends CompletionWidgetClassProps {
     /**
      * A reference to the text box DOM node that this autocomplete instance is watching.
      */
@@ -56,7 +56,7 @@ interface Props extends CompletionWidgetClassProps {
     onSelectItem: (item: CompletionItem) => void
 }
 
-export class CompletionWidget extends React.Component<Props, State> {
+export class CompletionWidget extends React.Component<CompletionWidgetProps, State> {
     public state: State = {
         hidden: false,
 
@@ -225,17 +225,22 @@ export class CompletionWidget extends React.Component<Props, State> {
         caretCoordinates.top -= this.props.textArea.scrollTop
 
         return (
-            <div className={`completion-widget ${this.props.widgetContainerClassName || ''}`}>
-                <CompletionWidgetDropdown
-                    {...this.props}
-                    completionListOrError={completionListOrError}
-                    onItemSelected={this.onItemSelected}
-                    onClickOutside={this.hideDropdown}
-                    onDownshiftStateChange={this.onDownshiftStateChange}
-                    highlightedIndex={highlightedIndex}
-                    selectedItem={selectedItem}
-                    caretCoordinates={caretCoordinates}
-                />
+            <div className={`completion-widget ${this.props.widgetClassName || ''}`}>
+                <div
+                    className={`completion-widget__container ${this.props.widgetContainerClassName || ''}`}
+                    // tslint:disable-next-line: jsx-ban-props
+                    style={{ left: caretCoordinates.left, top: caretCoordinates.top }}
+                >
+                    <CompletionWidgetDropdown
+                        {...this.props}
+                        completionListOrError={completionListOrError}
+                        onItemSelected={this.onItemSelected}
+                        onClickOutside={this.hideDropdown}
+                        onDownshiftStateChange={this.onDownshiftStateChange}
+                        highlightedIndex={highlightedIndex}
+                        selectedItem={selectedItem}
+                    />
+                </div>
             </div>
         )
     }

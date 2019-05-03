@@ -39,7 +39,13 @@ for pkg in $server_pkg \
     github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
 
-    go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o "$bindir/$(basename "$pkg")" "$pkg"
+    go build \
+      -a \
+      -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION"  \
+      -buildmode exe \
+      -installsuffix netgo \
+      -tags "dist netgo" \
+      -o "$bindir/$(basename "$pkg")" "$pkg"
 done
 
 echo "--- build sqlite for symbols"

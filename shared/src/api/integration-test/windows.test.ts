@@ -1,10 +1,10 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, map, switchMap, take, toArray } from 'rxjs/operators'
-import { NotificationType, ViewComponent, Window } from 'sourcegraph'
+import { ViewComponent, Window } from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { TextModel } from '../client/services/modelService'
-import { assertToJSON } from '../extension/types/testHelpers'
-import { collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { NotificationType } from '../client/services/notifications'
+import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {

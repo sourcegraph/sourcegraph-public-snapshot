@@ -1,14 +1,7 @@
 BEGIN;
 
-DROP TABLE IF EXISTS "query_runner_state";
-DROP TABLE IF EXISTS "saved_searches";
-DROP TYPE IF EXISTS user_or_org;
+ALTER TABLE repo DROP CONSTRAINT IF EXISTS repo_name_unique;
 
--- Insert migration here. See README.md. Highlights:
---  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
---  * All migrations must be backward-compatible. Old versions of Sourcegraph
---    need to be able to read/write post migration.
---  * Historically we advised against transactions since we thought the
---    migrate library handled it. However, it does not! /facepalm
+CREATE UNIQUE INDEX repo_name_unique ON repo(name);
 
 COMMIT;

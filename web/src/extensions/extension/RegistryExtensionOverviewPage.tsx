@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject, truncate } from 'lodash'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
@@ -6,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { ExtensionCategory } from '../../../../shared/src/schema/extension.schema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
+import { isDefined } from '../../../../shared/src/util/types'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { EventLogger } from '../../tracking/eventLogger'
@@ -151,7 +153,9 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                                     [
                                                         this.props.extension.registryExtension.updatedAt,
                                                         this.props.extension.registryExtension.publishedAt,
-                                                    ].filter((v): v is string => !!v)
+                                                    ]
+                                                        .filter(isDefined)
+                                                        .map(date => parseISO(date))
                                                 )}
                                             />
                                         </dd>

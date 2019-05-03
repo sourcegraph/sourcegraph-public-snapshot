@@ -1,4 +1,4 @@
-import { Selection } from '../types/selection'
+import { Selection } from '@sourcegraph/extension-api-classes'
 import { ExtDocuments } from './documents'
 import { ExtWindow, ExtWindows } from './windows'
 

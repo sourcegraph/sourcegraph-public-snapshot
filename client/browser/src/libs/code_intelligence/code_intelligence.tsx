@@ -6,38 +6,24 @@ import {
     Hoverifier,
     HoverState,
 } from '@sourcegraph/codeintellify'
-import { Selection } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
-import { isEqual, uniqBy } from 'lodash'
+import { uniqBy } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
-import {
-    animationFrameScheduler,
-    EMPTY,
-    from,
-    fromEvent,
-    Observable,
-    of,
-    Subject,
-    Subscription,
-    Unsubscribable,
-} from 'rxjs'
+import { animationFrameScheduler, EMPTY, from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import {
     catchError,
     concatAll,
     concatMap,
-    distinctUntilChanged,
     filter,
     map,
     mergeMap,
     observeOn,
-    startWith,
     switchMap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { CodeEditorData, EditorId } from '../../../../../shared/src/api/client/services/editorService'
-import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
+import { CodeEditorData } from '../../../../../shared/src/api/client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../../shared/src/commandPalette/CommandList'
@@ -53,8 +39,6 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/tele
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../../shared/src/util/types'
 import {
     FileSpec,
-    lprToSelectionsZeroIndexed,
-    parseHash,
     PositionSpec,
     RepoSpec,
     ResolvedRevSpec,
@@ -63,7 +47,6 @@ import {
     toURIWithPath,
     ViewStateSpec,
 } from '../../../../../shared/src/util/url'
-import { sendMessage } from '../../browser/runtime'
 import { isInPage } from '../../context'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
@@ -76,7 +59,7 @@ import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
-import { CodeViewSpec, CodeViewSpecResolver, fetchFileContents, trackCodeViews } from './code_views'
+import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
@@ -144,19 +127,9 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     hoverOverlayClassProps?: HoverOverlayClassProps
 
     /**
-     * The list of types of code views to try to annotate.
-     *
-     * The set of code views tracked on a page is the union of all code views found using `codeViewSpecs` and `codeViewResolver`.
+     * Resolve {@link CodeView}s from the DOM.
      */
-    codeViewSpecs?: CodeViewSpec[]
-
-    /**
-     * Resolve `CodeView`s from the DOM. This is useful when each code view type
-     * doesn't have a distinct selector.
-     *
-     * The set of code views tracked on a page is the union of all code views found using `codeViewSpecs` and `codeViewResolver`.
-     */
-    codeViewSpecResolver?: ViewResolver<CodeViewSpecResolver>
+    codeViewResolvers: ViewResolver<CodeView>[]
 
     /**
      * Resolve {@link ContentView}s from the DOM.
@@ -188,9 +161,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     urlToFile?: (
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
-
-    /** Returns a stream representing the selections in the current code view */
-    selectionsChanges?: () => Observable<Selection[]>
 
     /**
      * CSS classes for the command palette to customize styling
@@ -314,6 +284,7 @@ export function initCodeIntelligence({
             ),
             getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
             getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+            pinningEnabled: true,
         }
     )
 
@@ -390,9 +361,7 @@ export function handleCodeHost({
             catchError(() => [false])
         )
 
-    const openOptionsMenu = () => {
-        sendMessage({ type: 'openOptionsPage' })
-    }
+    const openOptionsMenu = () => browser.runtime.sendMessage({ type: 'openOptionsPage' })
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -453,33 +422,24 @@ export function handleCodeHost({
         )
     }
 
-    // A stream of selections for the current code view. By default, selections
-    // are parsed from the location hash, but the codeHost can provide an alternative implementation.
-    const selectionsChanges: Observable<Selection[]> = codeHost.selectionsChanges
-        ? codeHost.selectionsChanges()
-        : fromEvent(window, 'hashchange').pipe(
-              map(() => lprToSelectionsZeroIndexed(parseHash(window.location.hash))),
-              distinctUntilChanged(isEqual),
-              startWith([])
-          )
-
     /** A stream of added or removed code views */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
-        mergeMap(codeViewEvent =>
-            codeViewEvent.type === 'added'
-                ? codeViewEvent.resolveFileInfo(codeViewEvent.element).pipe(
-                      mergeMap(fileInfo =>
-                          fetchFileContents(fileInfo).pipe(
-                              map(fileInfoWithContents => ({
-                                  fileInfo: fileInfoWithContents,
-                                  ...codeViewEvent,
-                              }))
-                          )
-                      )
-                  )
-                : [codeViewEvent]
-        ),
+        mergeMap(codeViewEvent => {
+            if (codeViewEvent.type === 'added') {
+                return codeViewEvent.resolveFileInfo(codeViewEvent.element).pipe(
+                    mergeMap(fileInfo =>
+                        fetchFileContents(fileInfo).pipe(
+                            map(fileInfoWithContents => ({
+                                fileInfo: fileInfoWithContents,
+                                ...codeViewEvent,
+                            }))
+                        )
+                    )
+                )
+            }
+            return [codeViewEvent]
+        }),
         catchError(err => {
             if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
                 return EMPTY
@@ -491,50 +451,51 @@ export function handleCodeHost({
 
     interface CodeViewState {
         subscriptions: Subscription
-        editors: EditorId[]
         roots: WorkspaceRootWithMetadata[]
     }
     /** Map from code view element to the state associated with it (to be updated or removed) */
     const codeViewStates = new Map<Element, CodeViewState>()
 
-    // Update code editors as selections change
     subscriptions.add(
-        selectionsChanges.subscribe(selections => {
-            for (const { editors } of codeViewStates.values()) {
-                for (const editor of editors) {
-                    // TODO(sqs): only set for the single relevant editor
-                    extensionsController.services.editor.setSelections(editor, selections)
-                }
-            }
-        })
-    )
-
-    subscriptions.add(
-        codeViews.pipe(withLatestFrom(selectionsChanges)).subscribe(([codeViewEvent, selections]) => {
+        codeViews.subscribe(codeViewEvent => {
             console.log(`Code view ${codeViewEvent.type}`)
 
             // Handle added or removed view component, workspace root and subscriptions
             if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
                 const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const uri = toURIWithPath(fileInfo)
-                const model: TextModel = {
-                    uri,
-                    languageId: getModeFromPath(fileInfo.filePath),
-                    text: fileInfo.content,
+                const languageId = getModeFromPath(fileInfo.filePath)
+                const model = { uri, languageId, text: fileInfo.content }
+                // Only add the model if it doesn't exist
+                // (there may be several code views on the page pointing to the same model)
+                if (!extensionsController.services.model.hasModel(uri)) {
+                    extensionsController.services.model.addModel(model)
                 }
-                extensionsController.services.model.addModel(model)
                 const editorData: CodeEditorData = {
                     type: 'CodeEditor' as const,
                     resource: uri,
-                    selections,
+                    selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
                     isActive: true,
                 }
+                const editorId = extensionsController.services.editor.addEditor(editorData)
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
-                    editors: [extensionsController.services.editor.addEditor(editorData)],
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
                 }
+                codeViewState.subscriptions.add(() => {
+                    extensionsController.services.editor.removeEditor(editorId)
+                })
                 codeViewStates.set(element, codeViewState)
+
+                if (codeViewEvent.observeSelections) {
+                    codeViewState.subscriptions.add(
+                        // This nested subscription is necessary, it is managed correctly through `codeViewState.subscriptions`
+                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
+                            extensionsController.services.editor.setSelections(editorId, selections)
+                        })
+                    )
+                }
 
                 // When codeView is a diff (and not an added file), add BASE too.
                 if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
@@ -543,20 +504,25 @@ export function handleCodeHost({
                         commitID: fileInfo.baseCommitID,
                         filePath: fileInfo.baseFilePath,
                     })
-                    extensionsController.services.model.addModel({
-                        uri,
-                        languageId: getModeFromPath(fileInfo.filePath),
-                        text: fileInfo.baseContent,
-                    })
-                    codeViewState.editors.push(
-                        extensionsController.services.editor.addEditor({
-                            type: 'CodeEditor' as const,
-                            resource: uri,
-                            // There is no notion of a selection on diff views yet, so this is empty.
-                            selections: [],
-                            isActive: true,
+                    // Only add the model if it doesn't exist
+                    // (there may be several code views on the page pointing to the same model)
+                    if (!extensionsController.services.model.hasModel(uri)) {
+                        extensionsController.services.model.addModel({
+                            uri,
+                            languageId: getModeFromPath(fileInfo.baseFilePath),
+                            text: fileInfo.baseContent,
                         })
-                    )
+                    }
+                    const editor = extensionsController.services.editor.addEditor({
+                        type: 'CodeEditor' as const,
+                        resource: uri,
+                        // There is no notion of a selection on diff views yet, so this is empty.
+                        selections: [],
+                        isActive: true,
+                    })
+                    codeViewState.subscriptions.add(() => {
+                        extensionsController.services.editor.removeEditor(editor)
+                    })
                     codeViewState.roots.push({
                         uri: toRootURI({
                             repoName: fileInfo.baseRepoName,
@@ -644,11 +610,6 @@ export function handleCodeHost({
                 if (codeViewState) {
                     codeViewState.subscriptions.unsubscribe()
                     codeViewStates.delete(codeViewEvent.element)
-
-                    // Remove editors.
-                    for (const editor of codeViewState.editors) {
-                        extensionsController.services.editor.removeEditor(editor)
-                    }
                 }
             }
 
@@ -686,7 +647,7 @@ export function handleCodeHost({
 
 const SHOW_DEBUG = () => localStorage.getItem('debug') !== null
 
-const CODE_HOSTS = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
+const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
 export async function injectCodeIntelligenceToCodeHost(

@@ -65,7 +65,7 @@ export function trackViews<V>(
                         mergeMap(addedElement =>
                             from(viewResolvers).pipe(
                                 mergeMap(spec =>
-                                    [...(querySelectorAllOrSelf(addedElement, spec.selector) as Iterable<HTMLElement>)]
+                                    [...querySelectorAllOrSelf<HTMLElement>(addedElement, spec.selector)]
                                         .map(element => {
                                             const view = spec.resolveView(element)
                                             return (

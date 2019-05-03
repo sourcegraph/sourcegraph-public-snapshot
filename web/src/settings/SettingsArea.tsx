@@ -145,7 +145,7 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         return (
-            <div className={this.props.className || ''}>
+            <div className={`h-100 d-flex flex-column ${this.props.className || ''}`}>
                 <h2>{term} settings</h2>
                 {this.props.extraHeader}
                 <Switch>

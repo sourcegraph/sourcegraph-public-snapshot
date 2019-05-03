@@ -1,5 +1,5 @@
 import { BehaviorSubject, NextObserver, Observable } from 'rxjs'
-import storage from './storage'
+import { observeStorageKey, storage } from './storage'
 import { StorageItems } from './types'
 
 /**
@@ -10,7 +10,7 @@ export class ExtensionStorageSubject<T extends keyof StorageItems> extends Obser
     constructor(private key: T, defaultValue: StorageItems[T]) {
         super(subscriber => {
             subscriber.next(this.value)
-            return storage.observeLocal(this.key).subscribe(item => {
+            return observeStorageKey('local', this.key).subscribe((item = defaultValue) => {
                 this.value = item
                 subscriber.next(item)
             })
@@ -18,8 +18,8 @@ export class ExtensionStorageSubject<T extends keyof StorageItems> extends Obser
         this.value = defaultValue
     }
 
-    public next(value: StorageItems[T]): void {
-        storage.setLocal({ [this.key]: value })
+    public async next(value: StorageItems[T]): Promise<void> {
+        await storage.local.set({ [this.key]: value })
     }
 
     public value: StorageItems[T]

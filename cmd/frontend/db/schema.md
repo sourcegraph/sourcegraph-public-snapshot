@@ -55,7 +55,7 @@ Indexes:
     "discussion_comments_thread_id_idx" btree (thread_id)
 Foreign-key constraints:
     "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
-    "discussion_comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+    "discussion_comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
 
 ```
 
@@ -72,7 +72,7 @@ Indexes:
     "discussion_mail_reply_tokens_token_idx" btree (token)
     "discussion_mail_reply_tokens_user_id_thread_id_idx" btree (user_id, thread_id)
 Foreign-key constraints:
-    "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+    "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
     "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 
 ```
@@ -95,11 +95,11 @@ Indexes:
     "discussion_threads_id_idx" btree (id)
 Foreign-key constraints:
     "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
-    "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE RESTRICT
+    "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE CASCADE
 Referenced by:
-    TABLE "discussion_comments" CONSTRAINT "discussion_comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
-    TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
-    TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+    TABLE "discussion_comments" CONSTRAINT "discussion_comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
+    TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
+    TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
 
 ```
 
@@ -124,10 +124,10 @@ Indexes:
     "discussion_threads_target_repo_pkey" PRIMARY KEY, btree (id)
     "discussion_threads_target_repo_repo_id_path_idx" btree (repo_id, path)
 Foreign-key constraints:
-    "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
-    "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+    "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
 Referenced by:
-    TABLE "discussion_threads" CONSTRAINT "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE RESTRICT
+    TABLE "discussion_threads" CONSTRAINT "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE CASCADE
 
 ```
 
@@ -262,7 +262,6 @@ Referenced by:
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_org_id_fkey" FOREIGN KEY (publisher_org_id) REFERENCES orgs(id)
-    TABLE "saved_searches" CONSTRAINT "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "settings" CONSTRAINT "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
 
 ```
@@ -315,17 +314,6 @@ Foreign-key constraints:
     "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
-
-```
-
-# Table "public.query_runner_state"
-```
-      Column      |           Type           | Collation | Nullable | Default 
-------------------+--------------------------+-----------+----------+---------
- query            | text                     |           |          | 
- last_executed    | timestamp with time zone |           |          | 
- latest_result    | timestamp with time zone |           |          | 
- exec_duration_ns | bigint                   |           |          | 
 
 ```
 
@@ -396,42 +384,38 @@ Referenced by:
 
 # Table "public.repo"
 ```
-         Column          |           Type           | Collation | Nullable |             Default              
--------------------------+--------------------------+-----------+----------+----------------------------------
- id                      | integer                  |           | not null | nextval('repo_id_seq'::regclass)
- name                    | citext                   |           | not null | 
- description             | text                     |           |          | 
- language                | text                     |           |          | 
- fork                    | boolean                  |           |          | 
- created_at              | timestamp with time zone |           | not null | now()
- updated_at              | timestamp with time zone |           |          | 
- pushed_at               | timestamp with time zone |           |          | 
- indexed_revision        | text                     |           |          | 
- freeze_indexed_revision | boolean                  |           |          | 
- external_id             | text                     |           |          | 
- external_service_type   | text                     |           |          | 
- external_service_id     | text                     |           |          | 
- enabled                 | boolean                  |           | not null | true
- archived                | boolean                  |           | not null | false
- uri                     | citext                   |           | not null | 
- deleted_at              | timestamp with time zone |           |          | 
- sources                 | jsonb                    |           | not null | '{}'::jsonb
- metadata                | jsonb                    |           | not null | '{}'::jsonb
+        Column         |           Type           | Collation | Nullable |             Default              
+-----------------------+--------------------------+-----------+----------+----------------------------------
+ id                    | integer                  |           | not null | nextval('repo_id_seq'::regclass)
+ name                  | citext                   |           | not null | 
+ description           | text                     |           |          | 
+ language              | text                     |           |          | 
+ fork                  | boolean                  |           |          | 
+ created_at            | timestamp with time zone |           | not null | now()
+ updated_at            | timestamp with time zone |           |          | 
+ external_id           | text                     |           |          | 
+ external_service_type | text                     |           |          | 
+ external_service_id   | text                     |           |          | 
+ enabled               | boolean                  |           | not null | true
+ archived              | boolean                  |           | not null | false
+ uri                   | citext                   |           |          | 
+ deleted_at            | timestamp with time zone |           |          | 
+ sources               | jsonb                    |           | not null | '{}'::jsonb
+ metadata              | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_service_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id) WHERE external_service_type IS NOT NULL AND external_service_id IS NOT NULL AND external_id IS NOT NULL
-    "repo_name_unique" UNIQUE, btree (name)
+    "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_sources_gin_idx" gin (sources)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
+    "deleted_at_unused" CHECK (deleted_at IS NULL)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
-    TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
-Triggers:
-    trig_set_repo_name BEFORE INSERT ON repo FOR EACH ROW EXECUTE PROCEDURE set_repo_name()
+    TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
@@ -445,29 +429,6 @@ Triggers:
  exec_duration_ns | bigint                   |           | not null | 
 Indexes:
     "saved_queries_query_unique" UNIQUE, btree (query)
-
-```
-
-# Table "public.saved_searches"
-```
-      Column       |           Type           | Collation | Nullable |                  Default                   
--------------------+--------------------------+-----------+----------+--------------------------------------------
- id                | integer                  |           | not null | nextval('saved_searches_id_seq'::regclass)
- description       | text                     |           | not null | 
- query             | text                     |           | not null | 
- created_at        | timestamp with time zone |           |          | now()
- updated_at        | timestamp with time zone |           |          | now()
- notify_owner      | boolean                  |           |          | 
- notify_slack      | boolean                  |           |          | 
- owner_kind        | user_or_org              |           | not null | 
- user_id           | integer                  |           |          | 
- org_id            | integer                  |           |          | 
- slack_webhook_url | text                     |           |          | 
-Indexes:
-    "saved_searches_pkey" PRIMARY KEY, btree (id)
-Foreign-key constraints:
-    "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
-    "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
 
@@ -614,7 +575,6 @@ Referenced by:
     TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
-    TABLE "saved_searches" CONSTRAINT "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)

@@ -1,3 +1,4 @@
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Observable, of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import * as sourcegraph from 'sourcegraph'
@@ -14,12 +15,12 @@ import { Entry } from './registry'
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_LINK_PREVIEW: sourcegraph.LinkPreview = {
-    content: { value: 'x', kind: sourcegraph.MarkupKind.PlainText },
-    hover: { value: 'y', kind: sourcegraph.MarkupKind.PlainText },
+    content: { value: 'x', kind: MarkupKind.PlainText },
+    hover: { value: 'y', kind: MarkupKind.PlainText },
 }
 const FIXTURE_LINK_PREVIEW_MERGED: LinkPreviewMerged = {
-    content: [{ value: 'x', kind: sourcegraph.MarkupKind.PlainText }],
-    hover: [{ value: 'y', kind: sourcegraph.MarkupKind.PlainText }],
+    content: [{ value: 'x', kind: MarkupKind.PlainText }],
+    hover: [{ value: 'y', kind: MarkupKind.PlainText }],
 }
 
 describe('LinkPreviewProviderRegistry', () => {
@@ -44,7 +45,7 @@ describe('LinkPreviewProviderRegistry', () => {
 
     describe('observeProvidersForLink', () => {
         const PROVIDER: ProvideLinkPreviewSignature = () =>
-            of<sourcegraph.LinkPreview>({ hover: { value: 'x', kind: sourcegraph.MarkupKind.PlainText } })
+            of<sourcegraph.LinkPreview>({ hover: { value: 'x', kind: MarkupKind.PlainText } })
 
         test('prefix match', () => {
             scheduler().run(({ cold, expectObservable }) => {
@@ -200,8 +201,8 @@ describe('renderMarkupContents', () => {
         expect(
             renderMarkupContents([
                 { value: '*a*' },
-                { kind: sourcegraph.MarkupKind.PlainText, value: 'b' },
-                { kind: sourcegraph.MarkupKind.Markdown, value: '*c*' },
+                { kind: MarkupKind.PlainText, value: 'b' },
+                { kind: MarkupKind.Markdown, value: '*c*' },
             ])
         ).toEqual([{ html: '<em>a</em>' }, 'b', { html: '<em>c</em>' }]))
 })

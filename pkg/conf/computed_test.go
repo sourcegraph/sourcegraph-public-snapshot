@@ -1,56 +1,52 @@
 package conf
 
 import (
+	"fmt"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestComputed(t *testing.T) {
+func TestSearchIndexEnabled(t *testing.T) {
 	tests := []struct {
 		name string
 		sc   *Unified
 		env  []string
-		fun  interface{}
 		want interface{}
 	}{{
 		name: "SearchIndex defaults to false in docker",
 		sc:   &Unified{},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
-		fun:  SearchIndexEnabled,
 		want: false,
 	}, {
 		name: "SearchIndex defaults to true in k8s",
 		sc:   &Unified{},
 		env:  []string{"DEPLOY_TYPE=k8s"},
-		fun:  SearchIndexEnabled,
 		want: true,
 	}, {
 		name: "SearchIndex enabled",
 		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(true)}},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
-		fun:  SearchIndexEnabled,
 		want: true,
 	}, {
 		name: "SearchIndex disabled",
 		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(false)}},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
-		fun:  SearchIndexEnabled,
 		want: false,
 	}, {
 		name: "SearchIndex INDEXED_SEARCH=f",
 		sc:   &Unified{},
 		env:  []string{"DEPLOY_TYPE=docker-container", "INDEXED_SEARCH=f"},
-		fun:  SearchIndexEnabled,
 		want: false,
 	}, {
 		name: "SearchIndex INDEXED_SEARCH=t",
 		sc:   &Unified{},
 		env:  []string{"DEPLOY_TYPE=docker-container", "INDEXED_SEARCH=t"},
-		fun:  SearchIndexEnabled,
 		want: true,
 	}}
 	for _, test := range tests {
@@ -60,9 +56,30 @@ func TestComputed(t *testing.T) {
 				defer cleanup()
 			}
 			Mock(test.sc)
-			got := reflect.ValueOf(test.fun).Call([]reflect.Value{})
-			if !reflect.DeepEqual(got[0].Interface(), test.want) {
-				t.Fatalf("got %v, want %v", got[0], test.want)
+			got := SearchIndexEnabled()
+			if got != test.want {
+				t.Fatalf("SearchIndexEnabled() = %v, want %v", got, test.want)
+			}
+		})
+	}
+
+	defaults := map[string]conftypes.RawUnified{
+		"Cluster":         confdefaults.Cluster,
+		"Default":         confdefaults.Default,
+		"DevAndTesting":   confdefaults.DevAndTesting,
+		"DockerContainer": confdefaults.DockerContainer,
+	}
+	for dStr, d := range defaults {
+		test := fmt.Sprintf("for %s defaults", dStr)
+		t.Run(test, func(t *testing.T) {
+			cfg, err := ParseConfig(d)
+			if err != nil {
+				t.Fatal(err)
+			}
+			Mock(cfg)
+			defer Mock(nil)
+			if !SearchIndexEnabled() {
+				t.Errorf("search indexing should be enabled by default for Docker deployments")
 			}
 		})
 	}

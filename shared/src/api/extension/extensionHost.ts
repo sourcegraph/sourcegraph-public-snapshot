@@ -1,4 +1,5 @@
 import * as comlink from '@sourcegraph/comlink'
+import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
@@ -17,10 +18,6 @@ import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
-import { Location } from './types/location'
-import { Position } from './types/position'
-import { Range } from './types/range'
-import { Selection } from './types/selection'
 
 /**
  * Required information when initializing an extension host.
@@ -168,15 +165,7 @@ function createExtensionAPI(
         Range,
         Selection,
         Location,
-        MarkupKind: {
-            // The const enum MarkupKind values can't be used because then the `sourcegraph` module import at the
-            // top of the file is emitted in the generated code. That is problematic because it hasn't been defined
-            // yet (in workerMain.ts). It seems that using const enums should *not* emit an import in the generated
-            // code; this is a known issue: https://github.com/Microsoft/TypeScript/issues/16671
-            // https://github.com/palantir/tslint/issues/1798 https://github.com/Microsoft/TypeScript/issues/18644.
-            PlainText: 'plaintext' as sourcegraph.MarkupKind.PlainText,
-            Markdown: 'markdown' as sourcegraph.MarkupKind.Markdown,
-        },
+        MarkupKind,
         NotificationType,
         app: {
             activeWindowChanges: windows.activeWindowChanges,

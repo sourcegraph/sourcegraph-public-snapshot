@@ -59,11 +59,10 @@ type FakeStore struct {
 	ListReposError              error // error to be returned in ListRepos
 	UpsertReposError            error // error to be returned in UpsertRepos
 
-	svcIDSeq   int64
-	repoIDSeq  uint32
-	svcByID    map[int64]*ExternalService
-	repoByName map[string]*Repo
-	repoByID   map[api.ExternalRepoSpec]*Repo
+	svcIDSeq  int64
+	repoIDSeq uint32
+	svcByID   map[int64]*ExternalService
+	repoByID  map[uint32]*Repo
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
@@ -73,12 +72,10 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		svcByID[id] = svc.Clone()
 	}
 
-	repoByName := make(map[string]*Repo, len(s.repoByName))
-	repoByID := make(map[api.ExternalRepoSpec]*Repo, len(s.repoByID))
-	for name, r := range s.repoByName {
+	repoByID := make(map[uint32]*Repo, len(s.repoByID))
+	for _, r := range s.repoByID {
 		clone := r.Clone()
-		repoByName[name] = clone
-		repoByID[r.ExternalRepo] = clone
+		repoByID[r.ID] = clone
 	}
 
 	return &FakeStore{
@@ -88,11 +85,10 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		ListReposError:              s.ListReposError,
 		UpsertReposError:            s.UpsertReposError,
 
-		svcIDSeq:   s.svcIDSeq,
-		svcByID:    svcByID,
-		repoIDSeq:  s.repoIDSeq,
-		repoByName: repoByName,
-		repoByID:   repoByID,
+		svcIDSeq:  s.svcIDSeq,
+		svcByID:   svcByID,
+		repoIDSeq: s.repoIDSeq,
+		repoByID:  repoByID,
 	}, nil
 }
 
@@ -168,26 +164,19 @@ func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error
 		return nil, s.GetRepoByNameError
 	}
 
-	if s.repoByName == nil {
-		s.repoByName = make(map[string]*Repo)
+	for _, r := range s.repoByID {
+		if r.Name == name {
+			return r, nil
+		}
 	}
 
-	r := s.repoByName[name]
-	if r == nil || !r.DeletedAt.IsZero() {
-		return nil, ErrNoResults
-	}
-
-	return r, nil
+	return nil, ErrNoResults
 }
 
 // ListRepos lists all repos in the store that match the given arguments.
 func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*Repo, error) {
 	if s.ListReposError != nil {
 		return nil, s.ListReposError
-	}
-
-	if s.repoByName == nil {
-		s.repoByName = make(map[string]*Repo)
 	}
 
 	kinds := make(map[string]bool, len(args.Kinds))
@@ -205,21 +194,25 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		ids[id] = true
 	}
 
-	set := make(map[*Repo]bool, len(s.repoByName))
-	repos := make(Repos, 0, len(s.repoByName))
-	for _, r := range s.repoByName {
+	set := make(map[*Repo]bool, len(s.repoByID))
+	repos := make(Repos, 0, len(s.repoByID))
+	for _, r := range s.repoByID {
 		if !set[r] &&
 			(len(kinds) == 0 || kinds[strings.ToLower(r.ExternalRepo.ServiceType)]) &&
 			(len(names) == 0 || names[r.Name]) &&
-			(len(ids) == 0 || ids[r.ID]) &&
-			(args.Deleted || !r.IsDeleted()) {
+			(len(ids) == 0 || ids[r.ID]) {
 
 			repos = append(repos, r)
 			set[r] = true
 		}
+
 	}
 
 	sort.Sort(repos)
+
+	if args.Limit > 0 && args.Limit <= int64(len(repos)) {
+		repos = repos[:args.Limit]
+	}
 
 	return repos, nil
 }
@@ -230,27 +223,38 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		return s.UpsertReposError
 	}
 
-	if s.repoByName == nil {
-		s.repoByName = make(map[string]*Repo, len(upserts))
-	}
-
 	if s.repoByID == nil {
-		s.repoByID = make(map[api.ExternalRepoSpec]*Repo, len(upserts))
+		s.repoByID = make(map[uint32]*Repo, len(upserts))
 	}
 
-	for _, upsert := range upserts {
-		if repo := s.repoByID[upsert.ExternalRepo]; repo != nil {
-			repo.Update(upsert)
-		} else if repo = s.repoByName[upsert.Name]; repo != nil {
-			repo.Update(upsert)
-		} else {
-			s.repoIDSeq++
-			upsert.ID = s.repoIDSeq
-			s.repoByName[upsert.Name] = upsert
-			if upsert.ExternalRepo != (api.ExternalRepoSpec{}) {
-				s.repoByID[upsert.ExternalRepo] = upsert
-			}
+	var deletes, updates, inserts []*Repo
+	for _, r := range upserts {
+		switch {
+		case r.IsDeleted():
+			deletes = append(deletes, r)
+		case r.ID != 0:
+			updates = append(updates, r)
+		default:
+			inserts = append(inserts, r)
 		}
+	}
+
+	for _, r := range deletes {
+		delete(s.repoByID, r.ID)
+	}
+
+	for _, r := range updates {
+		if repo := s.repoByID[r.ID]; repo == nil {
+			inserts = append(inserts, r)
+		} else {
+			repo.Update(r)
+		}
+	}
+
+	for _, r := range inserts {
+		s.repoIDSeq++
+		r.ID = s.repoIDSeq
+		s.repoByID[r.ID] = r
 	}
 
 	return nil
@@ -276,10 +280,12 @@ var Assert = struct {
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
 		want := append(Repos{}, rs...).With(Opt.RepoID(0))
+		sort.Sort(want)
 		return func(t testing.TB, have Repos) {
 			t.Helper()
 			have = append(Repos{}, have...)
 			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
+			sort.Sort(have)
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("repos: %s", cmp.Diff(have, want))
 			}

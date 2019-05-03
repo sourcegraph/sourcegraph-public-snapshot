@@ -300,7 +300,7 @@ func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnec
 // still have 50 API requests left-over to serve users.
 const rateLimitReservationSize = 250
 
-func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf httpcli.Factory) (*bitbucketServerConnection, error) {
+func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf *httpcli.Factory) (*bitbucketServerConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -320,12 +320,13 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf h
 		opts = append(opts, httpcli.NewCertPoolOpt(pool))
 	}
 
-	cli, err := cf.NewClient(opts...)
+	cli, err := cf.Doer(opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	exclude := make(map[string]bool, len(config.Exclude))
+	var excludePatterns []*regexp.Regexp
 	for _, r := range config.Exclude {
 		if r.Name != "" {
 			exclude[strings.ToLower(r.Name)] = true
@@ -333,6 +334,14 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf h
 
 		if r.Id != 0 {
 			exclude[strconv.Itoa(r.Id)] = true
+		}
+
+		if r.Pattern != "" {
+			re, err := regexp.Compile(r.Pattern)
+			if err != nil {
+				return nil, err
+			}
+			excludePatterns = append(excludePatterns, re)
 		}
 	}
 
@@ -342,16 +351,18 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection, cf h
 	client.Password = config.Password
 
 	return &bitbucketServerConnection{
-		config:  config,
-		exclude: exclude,
-		client:  client,
+		config:          config,
+		exclude:         exclude,
+		excludePatterns: excludePatterns,
+		client:          client,
 	}, nil
 }
 
 type bitbucketServerConnection struct {
-	config  *schema.BitbucketServerConnection
-	exclude map[string]bool
-	client  *bitbucketserver.Client
+	config          *schema.BitbucketServerConnection
+	exclude         map[string]bool
+	excludePatterns []*regexp.Regexp
+	client          *bitbucketserver.Client
 }
 
 func (c *bitbucketServerConnection) excludes(r *bitbucketserver.Repo) bool {
@@ -359,10 +370,19 @@ func (c *bitbucketServerConnection) excludes(r *bitbucketserver.Repo) bool {
 	if r.Project != nil {
 		name = r.Project.Key + "/" + name
 	}
-	return r.State == "AVAILABLE" &&
+	if r.State != "AVAILABLE" ||
 		c.exclude[strings.ToLower(name)] ||
 		c.exclude[strconv.Itoa(r.ID)] ||
-		(c.config.ExcludePersonalRepositories && r.IsPersonalRepository())
+		(c.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
+		return true
+	}
+
+	for _, re := range c.excludePatterns {
+		if re.MatchString(name) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) ([]*bitbucketserver.Repo, error) {

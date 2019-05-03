@@ -2,12 +2,72 @@ package httpcli
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
+
+	"github.com/kylelemons/godebug/pretty"
 )
+
+func TestHeadersMiddleware(t *testing.T) {
+	headers := []string{"X-Foo", "bar", "X-Bar", "foo"}
+	for _, tc := range []struct {
+		name    string
+		cli     Doer
+		headers []string
+		err     string
+	}{
+		{
+			name:    "odd number of headers panics",
+			headers: headers[:1],
+			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
+				t.Fatal("should not be called")
+				return nil, nil
+			}),
+			err: "missing header values",
+		},
+		{
+			name:    "even number of headers are set",
+			headers: headers,
+			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
+				for i := 0; i < len(headers); i += 2 {
+					name := headers[i]
+					if have, want := r.Header.Get(name), headers[i+1]; have != want {
+						t.Errorf("header %q: have: %q, want: %q", name, have, want)
+					}
+				}
+				return nil, nil
+			}),
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			defer func() {
+				if err := recover(); err != nil {
+					if have, want := fmt.Sprint(err), tc.err; have != want {
+						t.Fatalf("have error: %q\nwant error: %q", have, want)
+					}
+				}
+			}()
+
+			cli := HeadersMiddleware(tc.headers...)(tc.cli)
+			req, _ := http.NewRequest("GET", "http://dev/null", nil)
+
+			_, err := cli.Do(req)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			}
+		})
+	}
+}
 
 func TestContextErrorMiddleware(t *testing.T) {
 	cancelled, cancel := context.WithCancel(context.Background())
@@ -61,6 +121,69 @@ func TestContextErrorMiddleware(t *testing.T) {
 	}
 }
 
+func TestNewCertPool(t *testing.T) {
+	pool := x509.NewCertPool()
+	for _, tc := range []struct {
+		name   string
+		pool   *x509.CertPool
+		cli    *http.Client
+		assert func(testing.TB, *http.Client)
+		err    string
+	}{
+		{
+			name: "sets default transport if nil",
+			cli:  &http.Client{},
+			assert: func(t testing.TB, cli *http.Client) {
+				if cli.Transport == nil {
+					t.Fatal("transport wasn't set")
+				}
+			},
+		},
+		{
+			name: "fails if transport isn't an http.Transport",
+			cli:  &http.Client{Transport: bogusTransport{}},
+			err:  "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport",
+		},
+		{
+			name: "sets TLSClientConfig if nil",
+			cli:  &http.Client{Transport: &http.Transport{}},
+			assert: func(t testing.TB, cli *http.Client) {
+				if cli.Transport.(*http.Transport).TLSClientConfig == nil {
+					t.Fatal("TLSClientConfig wasn't set")
+				}
+			},
+		},
+		{
+			name: "pool is set to what is given",
+			cli:  &http.Client{Transport: &http.Transport{}},
+			pool: pool,
+			assert: func(t testing.TB, cli *http.Client) {
+				have := cli.Transport.(*http.Transport).TLSClientConfig.RootCAs
+				if want := pool; !reflect.DeepEqual(have, want) {
+					t.Fatal(pretty.Compare(have, want))
+				}
+			},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			err := NewCertPoolOpt(tc.pool)(tc.cli)
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, tc.cli)
+			}
+		})
+	}
+}
+
 func newFakeClient(code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()
@@ -68,4 +191,10 @@ func newFakeClient(code int, body []byte, err error) Doer {
 		rr.WriteHeader(code)
 		return rr.Result(), err
 	})
+}
+
+type bogusTransport struct{}
+
+func (t bogusTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	panic("should not be called")
 }

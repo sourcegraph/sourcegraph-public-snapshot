@@ -83,7 +83,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     filter(isSettingsValid)
                 )
                 .subscribe(settingsCascade => {
-                    const subject = settingsCascade.subjects.find(s => !!s.subject.id)
+                    const subject = settingsCascade.subjects.find(s => !!s.subject.id && s.subject.viewerCanAdminister)
 
                     this.setState(state => ({
                         subjectOptions: settingsCascade.subjects.map(({ subject }) => subject),

@@ -17,6 +17,10 @@ $body-color-dark: #f2f4f8;
     --text-muted: #{$color-light-text-2};
     --link-color: #566e9f;
     --link-hover-color: #1d2535;
+    --primary-opacity-2: #{transparentize($primary, 0.8)};
+    --dropdown-bg: #{$color-light-bg-1};
+    --extension-card-bg: #{lighten($color-light-bg-2, 2.5%)};
+    --dropdown-border-color: #{$color-light-border};
 }
 
 .command-palette-button {
@@ -75,23 +79,6 @@ $body-color-dark: #f2f4f8;
         text-transform: uppercase;
         margin: 0;
     }
-}
-
-:root {
-    --primary-opacity-2: #{transparentize($primary, 0.8)};
-    --dropdown-bg: #{$color-light-bg-1};
-    --extension-card-bg: #{lighten($color-light-bg-2, 2.5%)};
-    --dropdown-border-color: #{$color-light-border};
-}
-.toggle--off::-webkit-slider-runnable-track {
-    color: #eee;
-}
-.toggle--off::-webkit-slider-thumb {
-    background-color: black;
-    opacity: 0.2;
-}
-
-.configured-extensions-list {
     .btn.btn-sm {
         font-size: 12px;
     }
@@ -102,6 +89,14 @@ $body-color-dark: #f2f4f8;
             }
         }
     }
+}
+
+.toggle--off::-webkit-slider-runnable-track {
+    color: #eeeeee;
+}
+.toggle--off::-webkit-slider-thumb {
+    background-color: #000000;
+    opacity: 0.2;
 }
 
 .line-decoration-attachment {

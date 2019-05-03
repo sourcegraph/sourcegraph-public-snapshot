@@ -1,5 +1,5 @@
+import { Position } from '@sourcegraph/extension-api-classes'
 import { OFFSET_TO_POSITION_TESTS, POSITION_TO_OFFSET_TESTS } from '../../client/types/textDocument.test'
-import { Position } from '../types/position'
 import { ExtDocument, getEOL } from './textDocument'
 
 describe('ExtDocument', () => {

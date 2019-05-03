@@ -111,6 +111,9 @@ type Server struct {
 	// Janitor job runs.
 	DeleteStaleRepositories bool
 
+	// DesiredFreeDiskSpace is how much space we need to keep free in bytes.
+	DesiredFreeDiskSpace uint64
+
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
 

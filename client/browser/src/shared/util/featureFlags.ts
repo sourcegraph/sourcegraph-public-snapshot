@@ -1,5 +1,5 @@
-import storage from '../../browser/storage'
-import { FeatureFlags } from '../../browser/types'
+import { storage } from '../../browser/storage'
+import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { isInPage } from '../../context'
 
 interface FeatureFlagsStorage {
@@ -10,50 +10,47 @@ interface FeatureFlagsStorage {
     /**
      * Enable a feature flag.
      */
-    enable<K extends keyof FeatureFlags>(key: K): Promise<boolean>
+    enable<K extends keyof FeatureFlags>(key: K): Promise<void>
     /**
      * Disable a feature flag.
      */
-    disable<K extends keyof FeatureFlags>(key: K): Promise<boolean>
+    disable<K extends keyof FeatureFlags>(key: K): Promise<void>
     /**
      * Set a feature flag.
      */
-    set<K extends keyof FeatureFlags>(key: K, enabled: boolean): Promise<boolean>
+    set<K extends keyof FeatureFlags>(key: K, enabled: boolean): Promise<void>
     /** Toggle a feature flag. */
     toggle<K extends keyof FeatureFlags>(key: K): Promise<boolean>
 }
 
 interface FeatureFlagUtilities {
-    get<K extends keyof FeatureFlags>(key: K): Promise<boolean>
-    set<K extends keyof FeatureFlags>(key: K, enabled: boolean): Promise<boolean>
+    get(key: keyof FeatureFlags): Promise<boolean | undefined>
+    set(key: keyof FeatureFlags, enabled: boolean): Promise<void>
 }
 
 const createFeatureFlagStorage = ({ get, set }: FeatureFlagUtilities): FeatureFlagsStorage => ({
     set,
     enable: key => set(key, true),
     disable: key => set(key, false),
-    isEnabled<K extends keyof FeatureFlags>(key: K): Promise<boolean> {
-        return get(key).then(val => !!val)
+    async isEnabled<K extends keyof FeatureFlags>(key: K): Promise<boolean> {
+        const value = await get(key)
+        return typeof value === 'boolean' ? value : featureFlagDefaults[key]
     },
-    toggle<K extends keyof FeatureFlags>(key: K): Promise<FeatureFlags[K]> {
-        return get(key).then(val => set(key, !val))
+    async toggle<K extends keyof FeatureFlags>(key: K): Promise<boolean> {
+        const val = await get(key)
+        await set(key, !val)
+        return !val
     },
 })
 
-function bextGet<K extends keyof FeatureFlags>(key: K): Promise<FeatureFlags[K]> {
-    return new Promise(resolve =>
-        storage.getSync(({ featureFlags }) => {
-            resolve(featureFlags[key])
-        })
-    )
+async function bextGet<K extends keyof FeatureFlags>(key: K): Promise<boolean | undefined> {
+    const { featureFlags = {} } = await storage.sync.get()
+    return featureFlags[key]
 }
 
-function bextSet<K extends keyof FeatureFlags>(key: K, val: FeatureFlags[K]): Promise<FeatureFlags[K]> {
-    return new Promise(resolve =>
-        storage.getSync(({ featureFlags }) =>
-            storage.setSync({ featureFlags: { ...featureFlags, [key]: val } }, () => bextGet(key).then(resolve))
-        )
-    )
+async function bextSet<K extends keyof FeatureFlags>(key: K, val: FeatureFlags[K]): Promise<void> {
+    const { featureFlags } = await storage.sync.get('featureFlags')
+    await storage.sync.set({ featureFlags: { ...featureFlags, [key]: val } })
 }
 
 const browserExtensionFeatureFlags = createFeatureFlagStorage({
@@ -62,12 +59,13 @@ const browserExtensionFeatureFlags = createFeatureFlagStorage({
 })
 
 const inPageFeatureFlags = createFeatureFlagStorage({
-    get: key => new Promise(resolve => resolve(!!localStorage.getItem(key))),
-    set: (key, val) =>
-        new Promise(resolve => {
-            localStorage.setItem(key, val.toString())
-            resolve(val)
-        }),
+    get: async key => {
+        const value = localStorage.getItem(key)
+        return value === null ? undefined : value === 'true'
+    },
+    set: async (key, val) => {
+        localStorage.setItem(key, val.toString())
+    },
 })
 
 export const featureFlags: FeatureFlagsStorage = isInPage ? inPageFeatureFlags : browserExtensionFeatureFlags

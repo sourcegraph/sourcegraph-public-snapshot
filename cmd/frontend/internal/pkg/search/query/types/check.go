@@ -130,7 +130,7 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 		}
 		dst.Regexp = p
 	case BoolType:
-		b, err := ParseBool(valueString)
+		b, err := parseBool(valueString)
 		if err != nil {
 			return err
 		}
@@ -143,12 +143,14 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 
 var leftParenRx = regexp.MustCompile(`([^\\]|^)\($`)
 var squareBraceRx = regexp.MustCompile(`([^\\]|^)\[$`)
+var leftRightParenRx = regexp.MustCompile(`([^\\]|^)\(\)`)
 
 // autoFix escapes various patterns that are very likely not meant to be
 // treated as regular expressions.
 func autoFix(pat string) string {
 	pat = leftParenRx.ReplaceAllString(pat, `$1\(`)
 	pat = squareBraceRx.ReplaceAllString(pat, `$1\[`)
+	pat = leftRightParenRx.ReplaceAllString(pat, `$1\(\)`)
 	return pat
 }
 
@@ -167,7 +169,7 @@ func unquoteString(s string) (string, error) {
 
 // parseBool is like strconv.ParseBool except that it also accepts y, Y, yes,
 // YES, Yes, n, N, no, NO, No.
-func ParseBool(s string) (bool, error) {
+func parseBool(s string) (bool, error) {
 	switch s {
 	case "y", "Y", "yes", "YES", "Yes":
 		return true, nil

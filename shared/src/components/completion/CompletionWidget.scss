@@ -1,19 +1,15 @@
-// The actual styles for this component are set in CompletionWidgetClassProps.
+@import './CompletionWidgetDropdown';
+
+// The theme CSS for this component is set in CompletionWidgetClassProps.
 .completion-widget {
     position: relative;
-    z-index: 99999999;
+    z-index: 99999999; // should be higher than anything else on any code host
 
-    // Applies to .completion-widget-dropdown.
-    > * {
+    &__container {
         position: absolute;
         top: 0;
         left: 0;
         min-width: 12rem;
         max-width: 34rem;
-
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        max-height: 254.01px; // 7 items tall on Sourcegraph (approximate)
-
-        overflow-y: auto;
     }
 }

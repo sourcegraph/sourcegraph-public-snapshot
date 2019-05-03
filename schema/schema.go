@@ -101,6 +101,8 @@ type BrandAssets struct {
 }
 
 // Branding description: Customize Sourcegraph homepage logo and search icon.
+//
+// Only available in Sourcegraph Enterprise.
 type Branding struct {
 	Dark    *BrandAssets `json:"dark,omitempty"`
 	Favicon string       `json:"favicon,omitempty"`
@@ -146,8 +148,9 @@ type Discussions struct {
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
 }
 type ExcludedBitbucketServerRepo struct {
-	Id   int    `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
+	Id      int    `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
 	Id   string `json:"id,omitempty"`

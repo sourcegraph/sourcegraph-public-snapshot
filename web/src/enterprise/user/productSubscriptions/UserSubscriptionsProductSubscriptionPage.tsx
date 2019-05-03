@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { parseISO } from 'date-fns'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -121,8 +122,8 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                                 expiresAt={
                                     this.state.productSubscriptionOrError.activeLicense &&
                                     this.state.productSubscriptionOrError.activeLicense.info
-                                        ? this.state.productSubscriptionOrError.activeLicense.info.expiresAt
-                                        : this.state.productSubscriptionOrError.invoiceItem!.expiresAt
+                                        ? parseISO(this.state.productSubscriptionOrError.activeLicense.info.expiresAt)
+                                        : parseISO(this.state.productSubscriptionOrError.invoiceItem!.expiresAt)
                                 }
                                 licenseKey={
                                     this.state.productSubscriptionOrError.activeLicense &&

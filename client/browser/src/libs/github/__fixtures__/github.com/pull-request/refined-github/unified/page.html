@@ -1,3 +1,4 @@
+<!-- https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified -->
 <html lang="en" class="refined-github">
     <head>
         <meta charset="utf-8" />
@@ -12,17 +13,17 @@
         <link
             crossorigin="anonymous"
             media="all"
-            integrity="sha512-7uoDIEGQ8zTwUS9KjTP+/2I13FQPHvJ9EKoeUThfin5R1+27bcUC08VQzUo4CIjCdhvJM4zxuI+3HcSycAUTCg=="
+            integrity="sha512-iwkZZWcsyMNnn/6c9v2ab3e7h4ZiFTOEZ9R6jj75bN9JzYuYjQ/AC7ufEcfpqd4GcTwcM+p2OhPzRSyeKL7NMQ=="
             rel="stylesheet"
-            href="https://github.githubassets.com/assets/frameworks-abba74d6e28a6842788159fec056bf26.css"
+            href="https://github.githubassets.com/assets/frameworks-f331a618befc2bf99be870c538f9ac95.css"
         />
 
         <link
             crossorigin="anonymous"
             media="all"
-            integrity="sha512-g+ZfvjjCIOoCpOthSK44Ek7SRyeu17l998KBO0i+H/5VtAZHjfboXtxeVVs07nmao9jod5LTfqCbMS0xgy5xeQ=="
+            integrity="sha512-ldfIeD7fSpzY1dITL/BXG49OHh3m1O1s2j+XoPI9P3Av6p9JemeSfcu3mujtgyLjVfNumtGKMwBk1j7gB+wHGw=="
             rel="stylesheet"
-            href="https://github.githubassets.com/assets/github-da71b9633b0743368ac5d90730dbc826.css"
+            href="https://github.githubassets.com/assets/github-ff83680f35ef916271a72c9b55eda042.css"
         />
 
         <meta name="viewport" content="width=device-width" />
@@ -35,6 +36,14 @@
         <link rel="fluid-icon" href="https://github.com/fluidicon.png" title="GitHub" />
         <meta property="fb:app_id" content="1401488693436528" />
 
+        <meta name="twitter:image:src" content="https://avatars3.githubusercontent.com/u/187831?s=400&amp;v=4" />
+        <meta name="twitter:site" content="@github" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+            name="twitter:title"
+            content="gitserver: Use opentracing for exec endpoint by keegancsmith · Pull Request #3257 · sourcegraph/sourcegraph"
+        />
+        <meta name="twitter:description" content="Part of #3253" />
         <meta property="og:image" content="https://avatars3.githubusercontent.com/u/187831?s=400&amp;v=4" />
         <meta property="og:site_name" content="GitHub" />
         <meta property="og:type" content="object" />
@@ -48,10 +57,15 @@
         <link rel="assets" href="https://github.githubassets.com/" />
         <link
             rel="web-socket"
-            href="wss://live.github.com/_sockets/VjI6MzY2NzY5Nzc5OmRhZDU4MDk1ZDZhODkyMDI5YzgxYjRjNzIyZDc2N2Y5OWY3MzAzZDU5OTUwNmZlYWUxYTU1NGQ3OTIyZjM3NzY=--e1ed51ad887f1b129b22e34bd59e58ba6bc3b692"
+            href="wss://live.github.com/_sockets/VjI6MzY2NzY5Nzc5OjRjZDI2NjFlZThlYmQ5ZWQ4ZThlYTQ2ZmVmM2I3MGQxMDk4MWExYTYzOGI5MDQwNWUwY2U5MDFmMTkzMmUzZGE=--67bf8b82e3860594b398ef4668e5de222f530923"
         />
         <meta name="pjax-timeout" content="1000" />
         <link rel="sudo-modal" href="/sessions/sudo_modal" />
+        <meta name="request-id" content="F9A4:2AC2F:25C287C:390DA70:5CC224B6" data-pjax-transient="" />
+
+        <meta name="hovercard-subject-tag" content="pull_request:267881853" data-pjax-transient="" />
+
+        <meta name="selected-link" value="repo_pulls" data-pjax-transient="" />
 
         <meta name="google-site-verification" content="KT5gs8h0wvaagLKAVWq8bbeNwnZZK1r1XQysX3xurLU" />
         <meta name="google-site-verification" content="ZzhVyEFwb7w3e0-uOTltm8Jsck2F5StVihD0exw2fsA" />
@@ -60,12 +74,17 @@
         <meta name="octolytics-host" content="collector.githubapp.com" />
         <meta name="octolytics-app-id" content="github" />
         <meta name="octolytics-event-url" content="https://collector.githubapp.com/github-external/browser_event" />
-        <meta name="octolytics-dimension-request_id" content="DABA:4F10:828F04:E1CFC5:5CA7AE64" />
-        <meta name="octolytics-dimension-region_edge" content="iad" />
+        <meta name="octolytics-dimension-request_id" content="F9A4:2AC2F:25C287C:390DA70:5CC224B6" />
+        <meta name="octolytics-dimension-region_edge" content="ams" />
         <meta name="octolytics-dimension-region_render" content="iad" />
         <meta name="octolytics-actor-id" content="10532611" />
         <meta name="octolytics-actor-login" content="felixfbecker" />
         <meta name="octolytics-actor-hash" content="a0bf5739a312c3a4d600b1ddd462e3b3ac0c4c28370673f3b7aacd82b09f1fac" />
+        <meta
+            name="analytics-location"
+            content="/<user-name>/<repo-name>/pull_requests/show/files"
+            data-pjax-transient="true"
+        />
 
         <meta class="js-ga-set" name="userId" content="1b23c6f4348a524a9d5b520c80e3ee17" />
 
@@ -77,22 +96,36 @@
         <meta name="expected-hostname" content="github.com" />
         <meta
             name="js-proxy-site-detection-payload"
-            content="ODdiMDczN2RhN2E0YWJhMzBkZGZiMDkyNjEyMDI1MmJmODkyZjRiY2YxNTUxMjI0MThkMzBkM2MwNWQyZDUxZHx7InJlbW90ZV9hZGRyZXNzIjoiODQuMTg2LjIxMS4xMDIiLCJyZXF1ZXN0X2lkIjoiREFCQTo0RjEwOjgyOEYwNDpFMUNGQzU6NUNBN0FFNjQiLCJ0aW1lc3RhbXAiOjE1NTQ0OTMwNTYsImhvc3QiOiJnaXRodWIuY29tIn0="
+            content="OWJjYzFmMjY1ZDRkMDkwYmE3ZGJkZjBlNTgxNTI1NzdmMzc1ODFmZGIyMTk5ZjU3MmE2NjhjNDY0MmFkODFlY3x7InJlbW90ZV9hZGRyZXNzIjoiODQuMTg2LjIyMy45IiwicmVxdWVzdF9pZCI6IkY5QTQ6MkFDMkY6MjVDMjg3QzozOTBEQTcwOjVDQzIyNEI2IiwidGltZXN0YW1wIjoxNTU2MjI3MjY5LCJob3N0IjoiZ2l0aHViLmNvbSJ9"
         />
 
         <meta
             name="enabled-features"
-            content="UNIVERSE_BANNER,MARKETPLACE_SOCIAL_PROOF_CUSTOMERS,MARKETPLACE_TRENDING_SOCIAL_PROOF,MARKETPLACE_UNVERIFIED_LISTINGS,MARKETPLACE_RECOMMENDATIONS,NOTIFY_ON_BLOCK,RELATED_ISSUES"
+            content="UNIVERSE_BANNER,MARKETPLACE_INVOICED_BILLING,MARKETPLACE_SOCIAL_PROOF_CUSTOMERS,MARKETPLACE_TRENDING_SOCIAL_PROOF,MARKETPLACE_RECOMMENDATIONS,NOTIFY_ON_BLOCK,RELATED_ISSUES"
         />
 
         <meta name="html-safe-nonce" content="15f33ac754a0534c783366d330e3f83f9af14580" />
 
-        <meta http-equiv="x-pjax-version" content="e6daa074a803c4bbc321ed6691a873eb" />
+        <meta http-equiv="x-pjax-version" content="c6908ba9b37ca407401c94edb70af959" />
 
         <link
-            href="https://github.com/sourcegraph/sourcegraph/commits/core/gitserver-tracing.atom"
+            data-pjax-transient=""
             rel="alternate"
-            title="Recent Commits to sourcegraph:core/gitserver-tracing"
+            type="text/x-diff"
+            href="/sourcegraph/sourcegraph/pull/3257.diff"
+        />
+        <link
+            data-pjax-transient=""
+            rel="alternate"
+            type="text/x-patch"
+            href="/sourcegraph/sourcegraph/pull/3257.patch"
+        />
+
+        <meta name="diff-view" content="unified" data-pjax-transient="" />
+        <link
+            href="https://github.com/sourcegraph/sourcegraph/commits/a537a324138be6b8a47d544d9ce7ed0cd7bce7dd.atom"
+            rel="alternate"
+            title="Recent Commits to sourcegraph:a537a324138be6b8a47d544d9ce7ed0cd7bce7dd"
             type="application/atom+xml"
         />
 
@@ -128,47 +161,16 @@
         <meta name="u2f-enabled" content="true" />
 
         <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
-
-        <meta name="selected-link" value="repo_pulls" data-pjax-transient="" />
-        <meta
-            name="analytics-location"
-            content="/<user-name>/<repo-name>/pull_requests/show/files"
-            data-pjax-transient=""
-        />
-        <meta name="request-id" content="DC02:409E2:18EC6FA:25BD2FC:5CA7AE82" data-pjax-transient="" />
-        <meta name="hovercard-subject-tag" content="pull_request:267881853" data-pjax-transient="" />
-        <link
-            data-pjax-transient=""
-            rel="alternate"
-            type="text/x-diff"
-            href="/sourcegraph/sourcegraph/pull/3257.diff"
-        />
-        <link
-            data-pjax-transient=""
-            rel="alternate"
-            type="text/x-patch"
-            href="/sourcegraph/sourcegraph/pull/3257.patch"
-        />
-        <meta name="diff-view" content="unified" data-pjax-transient="" />
-        <link
-            href="https://github.com/sourcegraph/sourcegraph/commits/core/gitserver-tracing.atom"
-            rel="alternate"
-            title="Recent Commits to sourcegraph:core/gitserver-tracing"
-            type="application/atom+xml"
-            data-pjax-transient=""
-        />
     </head>
 
     <body
-        class="logged-in env-production emoji-size-boost rgh-no-navigation-highlight rgh-monospace-textareas rgh-remove-diff-signs rgh-hide-watch-and-fork-count intent-mouse"
+        class="logged-in env-production emoji-size-boost rgh-no-navigation-highlight rgh-monospace-textareas rgh-remove-diff-signs rgh-hide-watch-and-fork-count rgh-recently-pushed-branches"
     >
         <div class="position-relative js-header-wrapper ">
             <a href="#start-of-content" tabindex="1" class="p-3 bg-blue text-white show-on-focus js-skip-to-content"
                 >Skip to content</a
             >
-            <div id="js-pjax-loader-bar" class="pjax-loader-bar">
-                <div class="progress" style="transition: width 0.4s ease 0s; width: 100%;"></div>
-            </div>
+            <div id="js-pjax-loader-bar" class="pjax-loader-bar"><div class="progress"></div></div>
 
             <header class="Header" role="banner">
                 <div class="Header-item">
@@ -235,7 +237,7 @@
                                         aria-autocomplete="list"
                                         aria-controls="jump-to-results"
                                         aria-label="Search or jump to…"
-                                        data-jump-to-suggestions-path="/_graphql/GetSuggestedNavigationDestinations#csrf-token=69YKyZPCPS+AldYQnlvDfpzIJfnPVexOiSJgxJx2RRqy8Zs+t3Ksp2SMC3uVsrulO8wb3NndBO0m106VkUAgFw=="
+                                        data-jump-to-suggestions-path="/_graphql/GetSuggestedNavigationDestinations#csrf-token=VQLhIGU3Odu+k5hza67D0D8hbcxJS08BvVcaF1jV2P0MJXDXQYeoU1qKRRhgR7sLmCVT6V/Dp6ISojRGVeO98A=="
                                         spellcheck="false"
                                         autocomplete="off"
                                     />
@@ -625,7 +627,9 @@
                             Marketplace
                         </a>
 
-                        <a
+                        <a href="/trending" class="js-selected-navigation-item Header-link  mr-3" data-hotkey="g t"
+                            >Trending</a
+                        ><a
                             class="js-selected-navigation-item Header-link  mr-3"
                             data-ga-click="Header, click, Nav menu - item:explore"
                             data-selected-links="/explore /trending /trending/developers /integrations /integrations/feature/code /integrations/feature/collaborate /integrations/feature/ship showcases showcases_search showcases_landing /explore"
@@ -635,6 +639,13 @@
                         </a>
                     </nav>
                 </div>
+                <div
+                    class="js-socket-channel js-updatable-content"
+                    data-channel="repo:41288708:post-receive:10532611"
+                    data-url="/sourcegraph/sourcegraph/show_partial?partial=tree%2Frecently_touched_branches_list"
+                ></div>
+
+                <div class="Header-item position-relative"></div>
 
                 <div class="Header-item"></div>
 
@@ -695,7 +706,7 @@
                                 New organization
                             </a>
 
-                            <div class="dropdown-divider"></div>
+                            <div role="none" class="dropdown-divider"></div>
                             <div class="dropdown-header">
                                 <span title="sourcegraph/sourcegraph">This repository</span>
                             </div>
@@ -708,7 +719,11 @@
                             >
                                 New issue
                             </a>
-                        </details-menu>
+
+                            <a class="dropdown-item" href="/sourcegraph/sourcegraph/projects/new"
+                                >New project</a
+                            ></details-menu
+                        >
                     </details>
                 </div>
 
@@ -729,7 +744,7 @@
                             />
                             <span class="dropdown-caret"></span>
                         </summary>
-                        <details-menu class="dropdown-menu dropdown-menu-sw" role="menu">
+                        <details-menu class="dropdown-menu dropdown-menu-sw mt-2" style="width: 180px" role="menu">
                             <div class="header-nav-current-user css-truncate">
                                 <a
                                     role="menuitem"
@@ -742,47 +757,54 @@
                             <div role="none" class="dropdown-divider"></div>
 
                             <div
-                                class="px-3 f6 user-status-container js-user-status-context pb-1"
+                                class="pl-3 pr-5 f6 user-status-container js-user-status-context pb-1"
                                 data-url="/users/status?compact=1&amp;link_mentions=0&amp;truncate=1"
                             >
                                 <div
-                                    class="js-user-status-container user-status-compact"
+                                    class="js-user-status-container  user-status-compact rounded-1 px-2 py-1 mt-2 user-status-container-border-busy"
                                     data-team-hovercards-enabled=""
                                 >
                                     <details
                                         class="js-user-status-details details-reset details-overlay details-overlay-dark"
                                     >
                                         <summary
-                                            class="btn-link no-underline js-toggle-user-status-edit toggle-user-status-edit width-full"
+                                            class="btn-link no-underline js-toggle-user-status-edit toggle-user-status-edit width-full d-flex link-gray "
                                             aria-haspopup="dialog"
                                             role="menuitem"
-                                            data-hydro-click='{"event_type":"user_profile.click","payload":{"profile_user_id":3979584,"target":"EDIT_USER_STATUS","user_id":10532611,"client_id":"2008835310.1548448452","originating_request_id":"DABA:4F10:828F04:E1CFC5:5CA7AE64","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files","referrer":"https://github.com/sourcegraph/sourcegraph/pull/3257/files"}}'
-                                            data-hydro-click-hmac="862dfa85cc8b4fca8f0fac23ce120141b859cd9868dec068156f15a91a851b62"
+                                            data-hydro-click='{"event_type":"user_profile.click","payload":{"profile_user_id":3979584,"target":"EDIT_USER_STATUS","user_id":10532611,"client_id":"2008835310.1548448452","originating_request_id":"F9A4:2AC2F:25C287C:390DA70:5CC224B6","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified","referrer":null}}'
+                                            data-hydro-click-hmac="c0960f03f51519398f6ffbb3fd0b269efc032dfde5e1bda15f1846f1724bb57b"
                                         >
                                             <div
-                                                class="f6 d-inline-block v-align-middle  user-status-emoji-only-header pl-0 circle lh-condensed user-status-header "
-                                                style="max-width: 29px"
+                                                class="f6 d-inline-flex  lh-condensed user-status-header user-status-limited-availability"
                                             >
-                                                <div class="user-status-emoji-container flex-shrink-0 mr-1">
-                                                    <svg
-                                                        class="octicon octicon-smiley"
-                                                        viewBox="0 0 16 16"
-                                                        version="1.1"
-                                                        width="16"
-                                                        height="16"
-                                                        aria-hidden="true"
-                                                    >
-                                                        <path
-                                                            fill-rule="evenodd"
-                                                            d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm4.81 12.81a6.72 6.72 0 0 1-2.17 1.45c-.83.36-1.72.53-2.64.53-.92 0-1.81-.17-2.64-.53-.81-.34-1.55-.83-2.17-1.45a6.773 6.773 0 0 1-1.45-2.17A6.59 6.59 0 0 1 1.21 8c0-.92.17-1.81.53-2.64.34-.81.83-1.55 1.45-2.17.62-.62 1.36-1.11 2.17-1.45A6.59 6.59 0 0 1 8 1.21c.92 0 1.81.17 2.64.53.81.34 1.55.83 2.17 1.45.62.62 1.11 1.36 1.45 2.17.36.83.53 1.72.53 2.64 0 .92-.17 1.81-.53 2.64-.34.81-.83 1.55-1.45 2.17zM4 6.8v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2H5.2C4.53 8 4 7.47 4 6.8zm5 0v-.59c0-.66.53-1.19 1.2-1.19h.59c.66 0 1.19.53 1.19 1.19v.59c0 .67-.53 1.2-1.19 1.2h-.59C9.53 8 9 7.47 9 6.8zm4 3.2c-.72 1.88-2.91 3-5 3s-4.28-1.13-5-3c-.14-.39.23-1 .66-1h8.59c.41 0 .89.61.75 1z"
-                                                        ></path>
-                                                    </svg>
+                                                <div
+                                                    class="user-status-emoji-container flex-shrink-0 mr-1  "
+                                                    style="margin-top: 2px;"
+                                                >
+                                                    <div>
+                                                        <g-emoji
+                                                            class="g-emoji"
+                                                            alias="palm_tree"
+                                                            fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f334.png"
+                                                            title=":palm_tree:"
+                                                            >🌴</g-emoji
+                                                        >
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div
-                                                class="d-inline-block v-align-middle user-status-message-wrapper f6 lh-condensed ws-normal pt-1"
+                                                class="
+
+
+
+         css-truncate css-truncate-target
+         user-status-message-wrapper f6"
+                                                style="line-height: 20px;"
                                             >
-                                                <span class="link-gray">Set your status</span>
+                                                <div class="d-inline-block text-gray-dark v-align-text-top">
+                                                    <div class="d-block ws-normal text-gray-dark text-bold f6"></div>
+                                                    <div class="d-inline-block">On vacation</div>
+                                                </div>
                                             </div>
                                         </summary>
                                         <details-dialog
@@ -804,7 +826,7 @@
                                                 /><input
                                                     type="hidden"
                                                     name="authenticity_token"
-                                                    value="WV1PBNoWfiAyskexwyLXYwy72iIowP2mFDdKFzttgO2vM+Dfm5e3/Lfk4fXIbZxgEt4bIAbsUVeCeo74jIsjEQ=="
+                                                    value="BTYkg04pplfkU6zxUuqHXfZdcQP9A+8w2AXVdd8hoHfzWItYD6hvi2EFCrVZpcxe6DiwAdMvQ8FOSBGaaMcDiw=="
                                                 />
                                                 <div class="Box-header bg-gray border-bottom p-3">
                                                     <button
@@ -833,7 +855,7 @@
                                                     type="hidden"
                                                     name="emoji"
                                                     class="js-user-status-emoji-field"
-                                                    value=""
+                                                    value=":palm_tree:"
                                                 />
                                                 <input
                                                     type="hidden"
@@ -855,14 +877,36 @@
                                                                 <button
                                                                     type="button"
                                                                     aria-label="Choose an emoji"
-                                                                    class="btn-outline btn js-toggle-user-status-emoji-picker bg-white btn-open-emoji-picker"
+                                                                    class="btn-outline btn js-toggle-user-status-emoji-picker btn-open-emoji-picker p-0"
                                                                 >
                                                                     <span
                                                                         class="js-user-status-original-emoji"
                                                                         hidden=""
-                                                                    ></span>
-                                                                    <span class="js-user-status-custom-emoji"></span>
-                                                                    <span class="js-user-status-no-emoji-icon">
+                                                                        ><div>
+                                                                            <g-emoji
+                                                                                class="g-emoji"
+                                                                                alias="palm_tree"
+                                                                                fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f334.png"
+                                                                                title=":palm_tree:"
+                                                                                >🌴</g-emoji
+                                                                            >
+                                                                        </div></span
+                                                                    >
+                                                                    <span class="js-user-status-custom-emoji"
+                                                                        ><div>
+                                                                            <g-emoji
+                                                                                class="g-emoji"
+                                                                                alias="palm_tree"
+                                                                                fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f334.png"
+                                                                                title=":palm_tree:"
+                                                                                >🌴</g-emoji
+                                                                            >
+                                                                        </div></span
+                                                                    >
+                                                                    <span
+                                                                        class="js-user-status-no-emoji-icon"
+                                                                        hidden=""
+                                                                    >
                                                                         <svg
                                                                             class="octicon octicon-smiley"
                                                                             viewBox="0 0 16 16"
@@ -886,8 +930,7 @@
                                                                 class="js-suggester-field d-table-cell width-full form-control js-user-status-message-field js-characters-remaining-field"
                                                                 placeholder="What's happening?"
                                                                 name="message"
-                                                                required=""
-                                                                value=""
+                                                                value="On vacation"
                                                                 aria-label="What is your current status?"
                                                             />
                                                             <div class="error">
@@ -917,7 +960,7 @@
                                                         data-url="/users/status/emoji"
                                                     ></include-fragment>
                                                     <div
-                                                        class="overflow-auto border-bottom ml-n3 mr-n3 px-3"
+                                                        class="overflow-auto ml-n3 mr-n3 px-3"
                                                         style="max-height: 33vh"
                                                     >
                                                         <div
@@ -942,7 +985,7 @@
                                                                             >
                                                                         </div>
                                                                         <div
-                                                                            class="d-flex flex-items-center no-underline js-predefined-user-status-message"
+                                                                            class="d-flex flex-items-center no-underline js-predefined-user-status-message ws-normal text-left"
                                                                             style="border-left: 1px solid transparent"
                                                                         >
                                                                             On vacation
@@ -964,7 +1007,7 @@
                                                                             >
                                                                         </div>
                                                                         <div
-                                                                            class="d-flex flex-items-center no-underline js-predefined-user-status-message"
+                                                                            class="d-flex flex-items-center no-underline js-predefined-user-status-message ws-normal text-left"
                                                                             style="border-left: 1px solid transparent"
                                                                         >
                                                                             Out sick
@@ -988,7 +1031,7 @@
                                                                             >
                                                                         </div>
                                                                         <div
-                                                                            class="d-flex flex-items-center no-underline js-predefined-user-status-message"
+                                                                            class="d-flex flex-items-center no-underline js-predefined-user-status-message ws-normal text-left"
                                                                             style="border-left: 1px solid transparent"
                                                                         >
                                                                             Working from home
@@ -1010,7 +1053,7 @@
                                                                             >
                                                                         </div>
                                                                         <div
-                                                                            class="d-flex flex-items-center no-underline js-predefined-user-status-message"
+                                                                            class="d-flex flex-items-center no-underline js-predefined-user-status-message ws-normal text-left"
                                                                             style="border-left: 1px solid transparent"
                                                                         >
                                                                             Focusing
@@ -1029,6 +1072,7 @@
                                                                     data-default-message="I may be slow to respond."
                                                                     aria-describedby="limited-availability-help-text-truncate-true"
                                                                     id="limited-availability-truncate-true"
+                                                                    checked=""
                                                                 />
                                                                 <label
                                                                     class="d-block f5 text-gray-dark mb-1"
@@ -1048,7 +1092,7 @@
                                                         </div>
                                                     </div>
 
-                                                    <div class="d-inline-block f5 mr-2 pt-3 pb-2">
+                                                    <div class="d-inline-block f5 border-top mr-2 pt-3 pb-2">
                                                         <div class="d-inline-block mr-1">
                                                             Clear status
                                                         </div>
@@ -1087,13 +1131,13 @@
                                                                         </div>
                                                                     </button>
                                                                 </li>
-                                                                <li class="dropdown-divider" role="separator"></li>
+                                                                <li class="dropdown-divider" role="none"></li>
                                                                 <li>
                                                                     <button
                                                                         type="button"
                                                                         class="btn-link dropdown-item ws-normal js-user-status-expire-button"
                                                                         title="in 30 minutes"
-                                                                        value="2019-04-05T22:07:37+02:00"
+                                                                        value="2019-04-25T23:51:09+02:00"
                                                                     >
                                                                         in 30 minutes
                                                                     </button>
@@ -1103,7 +1147,7 @@
                                                                         type="button"
                                                                         class="btn-link dropdown-item ws-normal js-user-status-expire-button"
                                                                         title="in 1 hour"
-                                                                        value="2019-04-05T22:37:37+02:00"
+                                                                        value="2019-04-26T00:21:09+02:00"
                                                                     >
                                                                         in 1 hour
                                                                     </button>
@@ -1113,7 +1157,7 @@
                                                                         type="button"
                                                                         class="btn-link dropdown-item ws-normal js-user-status-expire-button"
                                                                         title="in 4 hours"
-                                                                        value="2019-04-06T01:37:37+02:00"
+                                                                        value="2019-04-26T03:21:09+02:00"
                                                                     >
                                                                         in 4 hours
                                                                     </button>
@@ -1123,7 +1167,7 @@
                                                                         type="button"
                                                                         class="btn-link dropdown-item ws-normal js-user-status-expire-button"
                                                                         title="today"
-                                                                        value="2019-04-05T23:59:59+02:00"
+                                                                        value="2019-04-25T23:59:59+02:00"
                                                                     >
                                                                         today
                                                                     </button>
@@ -1133,7 +1177,7 @@
                                                                         type="button"
                                                                         class="btn-link dropdown-item ws-normal js-user-status-expire-button"
                                                                         title="this week"
-                                                                        value="2019-04-07T23:59:59+02:00"
+                                                                        value="2019-04-28T23:59:59+02:00"
                                                                     >
                                                                         this week
                                                                     </button>
@@ -1158,15 +1202,13 @@
                                                 >
                                                     <button
                                                         type="submit"
-                                                        disabled=""
                                                         class="width-full btn btn-primary mr-2 js-user-status-submit"
                                                     >
                                                         Set status
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        disabled=""
-                                                        class="width-full js-clear-user-status-button btn ml-2 "
+                                                        class="width-full js-clear-user-status-button btn ml-2 js-user-status-exists"
                                                     >
                                                         Clear status
                                                     </button>
@@ -1236,7 +1278,7 @@
                                 <input name="utf8" type="hidden" value="✓" /><input
                                     type="hidden"
                                     name="authenticity_token"
-                                    value="LmNwQDmVaNxkF2cPwJs8k7yhAi7g1wcdZjI0UAQ/uKgprxN4kAs7cDQEdoFg71Rr0z3wdUK24uTDPx+s2SiG9A=="
+                                    value="WCC8WsnWokeyfW+HVQ92LyvBEo7m7mpo05vrvKaasrlf7N9iYEjx6+Jufgn1ex7XRF3g1USPj5F2lsBAe42M5Q=="
                                 />
 
                                 <button
@@ -1276,15 +1318,15 @@
                                         <input name="utf8" type="hidden" value="✓" /><input
                                             type="hidden"
                                             name="authenticity_token"
-                                            value="ctCIoY0YYDqOBqLWVXYatOAAGLjNGvT0xQ+BfXYrujzqpdXTF0No37lLETEHbb1vR6RMJYmkfxEVsEebGW8E1g=="
+                                            value="jtXLnMXGTISR0AeYL5vNJww8TTw3GDrF/l6CAQy4SpgWoJbuX51EYaadtH99gGr8q5gZoXOmsSAu4UTnY/z0cg=="
                                         />
                                         <input type="hidden" name="repository_id" value="41288708" />
 
                                         <details class="details-reset details-overlay select-menu float-left">
                                             <summary
                                                 class="select-menu-button float-left btn btn-sm btn-with-count"
-                                                data-hydro-click='{"event_type":"repository.click","payload":{"target":"WATCH_BUTTON","repository_id":41288708,"client_id":"2008835310.1548448452","originating_request_id":"DC02:409E2:18EC6FA:25BD2FC:5CA7AE82","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified&amp;_pjax=%23js-repo-pjax-container","referrer":"https://github.com/sourcegraph/sourcegraph/pull/3257/files","user_id":10532611}}'
-                                                data-hydro-click-hmac="410201e45cd35bc30bbd0b0136ed5a1caa707b94b42dc1a11e8ea075f888f2ee"
+                                                data-hydro-click='{"event_type":"repository.click","payload":{"target":"WATCH_BUTTON","repository_id":41288708,"client_id":"2008835310.1548448452","originating_request_id":"F9A4:2AC2F:25C287C:390DA70:5CC224B6","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified","referrer":null,"user_id":10532611}}'
+                                                data-hydro-click-hmac="a1db58c118efa4ed5a2879696cac389013dad99c2368ad1940def76a837a0330"
                                                 data-ga-click="Repository, click Watch settings, action:pull_requests#show"
                                                 aria-haspopup="menu"
                                             >
@@ -1307,7 +1349,7 @@
                                             </summary>
                                             <details-menu
                                                 class="select-menu-modal position-absolute mt-5"
-                                                style="z-index: 99; "
+                                                style="z-index: 99;"
                                                 role="menu"
                                             >
                                                 <div class="select-menu-header">
@@ -1511,9 +1553,9 @@
                                         <a
                                             class="social-count js-social-count"
                                             href="/sourcegraph/sourcegraph/watchers"
-                                            aria-label="39 users are watching this repository"
+                                            aria-label="42 users are watching this repository"
                                         >
-                                            39
+                                            42
                                         </a>
                                     </form>
                                 </li>
@@ -1530,7 +1572,7 @@
                                             <input name="utf8" type="hidden" value="✓" /><input
                                                 type="hidden"
                                                 name="authenticity_token"
-                                                value="wJtwFy84qhHRdMRltFgtxnKIb+kkvzhc2ZPocAwBpBRMOR+3MwYdIXydX7dNZu5o5iZgB30XJkiIayD9pcyjWg=="
+                                                value="brSx5E+rnEN6EQjmSxW36X2eygyjXfpdQ8fYcx3bMdfiFt5EU5Urc9f4kzSyK3RH6TDF4vr15EkSPxD+tBY2mQ=="
                                             />
                                             <input type="hidden" name="context" value="repository" />
                                             <button
@@ -1538,8 +1580,8 @@
                                                 class="btn btn-sm btn-with-count js-toggler-target"
                                                 aria-label="Unstar this repository"
                                                 title="Unstar sourcegraph/sourcegraph"
-                                                data-hydro-click='{"event_type":"repository.click","payload":{"target":"UNSTAR_BUTTON","repository_id":41288708,"client_id":"2008835310.1548448452","originating_request_id":"DC02:409E2:18EC6FA:25BD2FC:5CA7AE82","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified&amp;_pjax=%23js-repo-pjax-container","referrer":"https://github.com/sourcegraph/sourcegraph/pull/3257/files","user_id":10532611}}'
-                                                data-hydro-click-hmac="b43b3d2ae092fbe037041ba3e4ea3d038a11d7ffef2407e08c6abd669abb647d"
+                                                data-hydro-click='{"event_type":"repository.click","payload":{"target":"UNSTAR_BUTTON","repository_id":41288708,"client_id":"2008835310.1548448452","originating_request_id":"F9A4:2AC2F:25C287C:390DA70:5CC224B6","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified","referrer":null,"user_id":10532611}}'
+                                                data-hydro-click-hmac="d61a93703996c6c05fa5ed91e557d4d9f9aeaa4a0536fa88b028e68ae547df9d"
                                                 data-ga-click="Repository, click unstar button, action:pull_requests#show; text:Unstar"
                                                 data-hotkey="g s"
                                             >
@@ -1561,9 +1603,9 @@
                                             <a
                                                 class="social-count js-social-count"
                                                 href="/sourcegraph/sourcegraph/stargazers"
-                                                aria-label="1926 users starred this repository"
+                                                aria-label="2048 users starred this repository"
                                             >
-                                                1,926
+                                                2,048
                                             </a>
                                         </form>
                                         <!-- '"` --><!-- </textarea></xmp> -->
@@ -1576,7 +1618,7 @@
                                             <input name="utf8" type="hidden" value="✓" /><input
                                                 type="hidden"
                                                 name="authenticity_token"
-                                                value="wCygGzCYatwyoBh3WMCSSsMbjo4gUeqBMmBbdAlxsuB5F2Bquf3elQOCtG69YpWXhooN5F02UnlHuhFvG2GIcg=="
+                                                value="aOz/PXNV3a+fyHEaqv8rucvKDy5qYR81XG/MrbziUG/R1z9M+jBp5q7q3QNPXSxkjluMRBcGp80ptYa2rvJq/Q=="
                                             />
                                             <input type="hidden" name="context" value="repository" />
                                             <button
@@ -1584,8 +1626,8 @@
                                                 class="btn btn-sm btn-with-count js-toggler-target"
                                                 aria-label="Unstar this repository"
                                                 title="Star sourcegraph/sourcegraph"
-                                                data-hydro-click='{"event_type":"repository.click","payload":{"target":"STAR_BUTTON","repository_id":41288708,"client_id":"2008835310.1548448452","originating_request_id":"DC02:409E2:18EC6FA:25BD2FC:5CA7AE82","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified&amp;_pjax=%23js-repo-pjax-container","referrer":"https://github.com/sourcegraph/sourcegraph/pull/3257/files","user_id":10532611}}'
-                                                data-hydro-click-hmac="9492f33aa0902da0b259b88dfcae19f014ef600990939d296a60a81be835a241"
+                                                data-hydro-click='{"event_type":"repository.click","payload":{"target":"STAR_BUTTON","repository_id":41288708,"client_id":"2008835310.1548448452","originating_request_id":"F9A4:2AC2F:25C287C:390DA70:5CC224B6","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified","referrer":null,"user_id":10532611}}'
+                                                data-hydro-click-hmac="4493a77646720cc5079df3c64e9e0e6de5c1b1a5bdd2045ba8621785a9d20cc7"
                                                 data-ga-click="Repository, click star button, action:pull_requests#show; text:Star"
                                                 data-hotkey="g s"
                                             >
@@ -1607,9 +1649,9 @@
                                             <a
                                                 class="social-count js-social-count"
                                                 href="/sourcegraph/sourcegraph/stargazers"
-                                                aria-label="1926 users starred this repository"
+                                                aria-label="2048 users starred this repository"
                                             >
-                                                1,926
+                                                2,048
                                             </a>
                                         </form>
                                     </div>
@@ -1618,16 +1660,13 @@
                                 <li>
                                     <details
                                         class="details-reset details-overlay details-overlay-dark d-inline-block float-left"
-                                        data-deferred-details-content-url="/sourcegraph/sourcegraph/fork?fragment=1"
                                     >
                                         <summary
                                             class="btn btn-sm btn-with-count"
-                                            data-hydro-click='{"event_type":"repository.click","payload":{"target":"FORK_BUTTON","repository_id":41288708,"client_id":"2008835310.1548448452","originating_request_id":"DC02:409E2:18EC6FA:25BD2FC:5CA7AE82","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified&amp;_pjax=%23js-repo-pjax-container","referrer":"https://github.com/sourcegraph/sourcegraph/pull/3257/files","user_id":10532611}}'
-                                            data-hydro-click-hmac="024e3f829e4d23bcddcc1d7668bb78f9545ed9ae32a4e6ca3359fe92d4614bcb"
+                                            data-hydro-click='{"event_type":"repository.click","payload":{"target":"FORK_BUTTON","repository_id":41288708,"client_id":"2008835310.1548448452","originating_request_id":"F9A4:2AC2F:25C287C:390DA70:5CC224B6","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified","referrer":null,"user_id":10532611}}'
+                                            data-hydro-click-hmac="7a4b666bd8d36a158e09c24a15052b04d7b5fa3ca1e8001766c6cbbc883121a1"
                                             data-ga-click="Repository, show fork modal, action:pull_requests#show; text:Fork"
-                                            type="submit"
                                             title="Fork your own copy of sourcegraph/sourcegraph to your account"
-                                            aria-label="Fork your own copy of sourcegraph/sourcegraph to your account"
                                             aria-haspopup="dialog"
                                         >
                                             <svg
@@ -1647,6 +1686,8 @@
                                         </summary>
                                         <details-dialog
                                             class="anim-fade-in fast Box Box--overlay d-flex flex-column"
+                                            src="/sourcegraph/sourcegraph/fork?fragment=1"
+                                            preload=""
                                             role="dialog"
                                         >
                                             <div class="Box-header">
@@ -1688,9 +1729,9 @@
                                     <a
                                         href="/sourcegraph/sourcegraph/network/members"
                                         class="social-count"
-                                        aria-label="129 users forked this repository"
+                                        aria-label="138 users forked this repository"
                                     >
-                                        129
+                                        138
                                     </a>
                                 </li>
                             </ul>
@@ -1729,22 +1770,21 @@
 
                                 <details
                                     class="commit-build-statuses details-overlay details-reset js-dropdown-details rgh-ci-link"
-                                    data-deferred-details-content-url="/_render_node/MDE3OlN0YXR1c0NoZWNrUm9sbHVwNDEyODg3MDg6MTkzM2Q1NjE5ODQ4YjlmNzEyNWRmYmQ3ZmE3NWYwODJlMjQ4YzJhYQ==/statuses/combined_branch_status"
-                                    style="animation: 0s ease 0s 1 normal none running none;"
+                                    data-deferred-details-content-url="/_render_node/MDE3OlN0YXR1c0NoZWNrUm9sbHVwNDEyODg3MDg6YTNlMzMzMGJjYmY2MjQyZWYwNmQyYTMyZGY5NjU4ZWIwZDk0ZTk3ZQ==/statuses/combined_branch_status"
                                 >
-                                    <summary class="text-green">
+                                    <summary class="bg-pending">
                                         <svg
-                                            class="octicon octicon-check v-align-middle"
-                                            aria-label="2 / 2 checks OK"
-                                            viewBox="0 0 12 16"
+                                            class="octicon octicon-primitive-dot v-align-middle"
+                                            aria-label="0 / 1 checks OK"
+                                            viewBox="0 0 8 16"
                                             version="1.1"
-                                            width="12"
+                                            width="8"
                                             height="16"
                                             role="img"
                                         >
                                             <path
                                                 fill-rule="evenodd"
-                                                d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"
+                                                d="M0 8c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4z"
                                             ></path>
                                         </svg>
                                     </summary>
@@ -1827,7 +1867,7 @@
                                         ></path>
                                     </svg>
                                     <span itemprop="name">Issues</span>
-                                    <span class="Counter">655</span>
+                                    <span class="Counter">695</span>
                                     <meta itemprop="position" content="2" />
                                 </a>
                             </span>
@@ -1855,7 +1895,7 @@
                                         ></path>
                                     </svg>
                                     <span itemprop="name">Pull requests</span>
-                                    <span class="Counter">94</span>
+                                    <span class="Counter">82</span>
                                     <meta itemprop="position" content="3" />
                                 </a>
                             </span>
@@ -2032,13 +2072,7 @@
                     <div class="container new-discussion-timeline experiment-repo-nav  ">
                         <div class="repository-content ">
                             <div
-                                class="js-socket-channel js-updatable-content"
-                                data-channel="repo:41288708:post-receive:10532611"
-                                data-url="/sourcegraph/sourcegraph/show_partial?partial=tree%2Frecently_touched_branches_list"
-                            ></div>
-
-                            <div
-                                class="issues-listing js-review-state-classes  js-suggested-changes-files-tab "
+                                class="position-relative js-review-state-classes  js-suggested-changes-files-tab "
                                 data-pjax=""
                                 data-issue-and-pr-hovercards-enabled=""
                             >
@@ -2051,7 +2085,7 @@
                                         class="gh-header js-details-container Details js-socket-channel js-updatable-content pull request js-pull-header-details"
                                         data-channel="pull_request:267881853"
                                         data-url="/sourcegraph/sourcegraph/pull/3257/show_partial?partial=pull_requests%2Ftitle&amp;sticky=false"
-                                        data-pull-is-open="true"
+                                        data-pull-is-open="false"
                                         data-gid="MDExOlB1bGxSZXF1ZXN0MjY3ODgxODUz"
                                     >
                                         <div class="gh-header-show ">
@@ -2090,7 +2124,7 @@
                                                 /><input
                                                     type="hidden"
                                                     name="authenticity_token"
-                                                    value="CAusAHWDTfB9jbD+9K92qditRmkIu43iK49YfgXnn0SJ3xZuk62xKfjwXx6QxZcFnNa7lruAgoP3MbrNuUlugw=="
+                                                    value="5/dECoqPDJ3+zV9GpXZXhEFRyJEmZ0XIyXWN8ezhMuVmI/5kbKHwRHuwsKbBHLYoBSo1bpVcSqkVy29CUE/DIg=="
                                                 />
                                                 <input
                                                     class="form-control edit-issue-title js-quick-submit"
@@ -2122,10 +2156,10 @@
                                         </div>
                                         <div class="TableObject gh-header-meta">
                                             <div class="TableObject-item">
-                                                <span class="State State--green  " title="Status: Open">
+                                                <span class="State State--purple  " title="Status: Merged">
                                                     <svg
                                                         height="16"
-                                                        class="octicon octicon-git-pull-request"
+                                                        class="octicon octicon-git-merge"
                                                         viewBox="0 0 12 16"
                                                         version="1.1"
                                                         width="12"
@@ -2133,31 +2167,28 @@
                                                     >
                                                         <path
                                                             fill-rule="evenodd"
-                                                            d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0 0 10 15a1.993 1.993 0 0 0 1-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v6.56A1.993 1.993 0 0 0 2 15a1.993 1.993 0 0 0 1-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"
+                                                            d="M10 7c-.73 0-1.38.41-1.73 1.02V8C7.22 7.98 6 7.64 5.14 6.98c-.75-.58-1.5-1.61-1.89-2.44A1.993 1.993 0 0 0 2 .99C.89.99 0 1.89 0 3a2 2 0 0 0 1 1.72v6.56c-.59.35-1 .99-1 1.72 0 1.11.89 2 2 2a1.993 1.993 0 0 0 1-3.72V7.67c.67.7 1.44 1.27 2.3 1.69.86.42 2.03.63 2.97.64v-.02c.36.61 1 1.02 1.73 1.02 1.11 0 2-.89 2-2 0-1.11-.89-2-2-2zm-6.8 6c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm8 6c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"
                                                         ></path>
                                                     </svg>
-                                                    Open
+                                                    Merged
                                                 </span>
                                             </div>
                                             <div class="TableObject-item TableObject-item--primary">
                                                 <a
                                                     class="author link-gray text-bold css-truncate css-truncate-target expandable"
                                                     data-hovercard-type="user"
-                                                    data-hovercard-url="/hovercards?user_id=187831"
+                                                    data-hovercard-url="/hovercards?user_id=1646931"
                                                     data-octo-click="hovercard-link-click"
                                                     data-octo-dimensions="link_type:self"
-                                                    href="/keegancsmith"
-                                                    >keegancsmith</a
+                                                    href="/beyang"
+                                                    >beyang</a
                                                 >
-
-                                                wants to merge
-                                                <span class="js-updating-pull-request-commits-count">1</span>
-                                                commit into
+                                                merged 1 commit into
 
                                                 <a href="/sourcegraph/sourcegraph/tree/master"
                                                     ><span
                                                         title="sourcegraph/sourcegraph:master"
-                                                        class="commit-ref css-truncate user-select-contain expandable base-ref"
+                                                        class="commit-ref css-truncate user-select-contain expandable "
                                                         ><a
                                                             title="sourcegraph/sourcegraph:master"
                                                             class="no-underline"
@@ -2166,51 +2197,6 @@
                                                         ></span
                                                     ></a
                                                 ><span></span>
-
-                                                <div class="commit-ref-dropdown">
-                                                    <details
-                                                        class="details-reset details-overlay select-menu commitish-suggester"
-                                                    >
-                                                        <summary
-                                                            class="btn btn-sm select-menu-button branch"
-                                                            title="Choose a base branch"
-                                                            aria-haspopup="menu"
-                                                        >
-                                                            <i>base:</i>
-                                                            <span
-                                                                class="css-truncate css-truncate-target"
-                                                                title="master"
-                                                                >master</span
-                                                            >
-                                                        </summary>
-                                                        <details-menu
-                                                            class="select-menu-modal position-absolute"
-                                                            style="z-index: 90;"
-                                                            src="/sourcegraph/sourcegraph/pull/3257/show_partial?partial=pull_requests%2Fdescription_branches_dropdown"
-                                                            preload=""
-                                                            role="menu"
-                                                        >
-                                                            <include-fragment
-                                                                class="select-menu-loading-overlay anim-pulse"
-                                                                aria-label="Loading"
-                                                            >
-                                                                <svg
-                                                                    height="32"
-                                                                    class="octicon octicon-octoface"
-                                                                    viewBox="0 0 16 16"
-                                                                    version="1.1"
-                                                                    width="32"
-                                                                    aria-hidden="true"
-                                                                >
-                                                                    <path
-                                                                        fill-rule="evenodd"
-                                                                        d="M14.7 5.34c.13-.32.55-1.59-.13-3.31 0 0-1.05-.33-3.44 1.3-1-.28-2.07-.32-3.13-.32s-2.13.04-3.13.32c-2.39-1.64-3.44-1.3-3.44-1.3-.68 1.72-.26 2.99-.13 3.31C.49 6.21 0 7.33 0 8.69 0 13.84 3.33 15 7.98 15S16 13.84 16 8.69c0-1.36-.49-2.48-1.3-3.35zM8 14.02c-3.3 0-5.98-.15-5.98-3.35 0-.76.38-1.48 1.02-2.07 1.07-.98 2.9-.46 4.96-.46 2.07 0 3.88-.52 4.96.46.65.59 1.02 1.3 1.02 2.07 0 3.19-2.68 3.35-5.98 3.35zM5.49 9.01c-.66 0-1.2.8-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.54-1.78-1.2-1.78zm5.02 0c-.66 0-1.2.79-1.2 1.78s.54 1.79 1.2 1.79c.66 0 1.2-.8 1.2-1.79s-.53-1.78-1.2-1.78z"
-                                                                    ></path>
-                                                                </svg>
-                                                            </include-fragment>
-                                                        </details-menu>
-                                                    </details>
-                                                </div>
 
                                                 from
 
@@ -2259,6 +2245,12 @@
                                                                 d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"
                                                             ></path></svg></clipboard-copy
                                                 ></span>
+
+                                                <relative-time
+                                                    datetime="2019-04-08T00:40:04Z"
+                                                    title="8 Apr 2019, 02:40 CEST"
+                                                    >18 days ago</relative-time
+                                                >
                                             </div>
                                         </div>
                                     </div>
@@ -2288,7 +2280,7 @@
                                                 Conversation
 
                                                 <span id="conversation_tab_counter" class="Counter">
-                                                    1
+                                                    2
                                                 </span>
                                             </a>
 
@@ -2315,8 +2307,9 @@
                                                 <span
                                                     id="commits_tab_counter"
                                                     class="Counter js-updateable-pull-request-commits-count"
-                                                    >1</span
                                                 >
+                                                    1
+                                                </span>
                                             </a>
 
                                             <a
@@ -2375,10 +2368,10 @@
                                     <div class="pr-toolbar js-sticky js-sticky-offset-scroll" style="position: sticky;">
                                         <div class="diffbar details-collapse js-details-container Details">
                                             <div class="show-if-stuck float-left mr-2 mt-2">
-                                                <span class="State State--green  " title="Status: Open">
+                                                <span class="State State--purple  " title="Status: Merged">
                                                     <svg
                                                         height="16"
-                                                        class="octicon octicon-git-pull-request"
+                                                        class="octicon octicon-git-merge"
                                                         viewBox="0 0 12 16"
                                                         version="1.1"
                                                         width="12"
@@ -2386,10 +2379,10 @@
                                                     >
                                                         <path
                                                             fill-rule="evenodd"
-                                                            d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0 0 10 15a1.993 1.993 0 0 0 1-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v6.56A1.993 1.993 0 0 0 2 15a1.993 1.993 0 0 0 1-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"
+                                                            d="M10 7c-.73 0-1.38.41-1.73 1.02V8C7.22 7.98 6 7.64 5.14 6.98c-.75-.58-1.5-1.61-1.89-2.44A1.993 1.993 0 0 0 2 .99C.89.99 0 1.89 0 3a2 2 0 0 0 1 1.72v6.56c-.59.35-1 .99-1 1.72 0 1.11.89 2 2 2a1.993 1.993 0 0 0 1-3.72V7.67c.67.7 1.44 1.27 2.3 1.69.86.42 2.03.63 2.97.64v-.02c.36.61 1 1.02 1.73 1.02 1.11 0 2-.89 2-2 0-1.11-.89-2-2-2zm-6.8 6c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm8 6c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"
                                                         ></path>
                                                     </svg>
-                                                    Open
+                                                    Merged
                                                 </span>
                                             </div>
 
@@ -2483,7 +2476,7 @@
                                                                                 <relative-time
                                                                                     datetime="2019-04-05T16:05:51Z"
                                                                                     title="5 Apr 2019, 18:05 CEST"
-                                                                                    >4 hours ago</relative-time
+                                                                                    >20 days ago</relative-time
                                                                                 >
                                                                             </span>
                                                                         </div>
@@ -2740,7 +2733,7 @@
                                                                     <button
                                                                         type="button"
                                                                         class="btn btn-outline mt-2 text-bold js-dismiss-batched-suggested-changes-onboarding-notice"
-                                                                        data-url="/settings/dismiss-notice/batched_suggested_changes_onboarding_prompt#csrf-token=e8dSCjkUTz349sJWpRax8Aw0yjU8TYarz4rfaFSaAlMSM/+i8g81Kz8wtMvdqy38Med9sQzZcmepnAFfHTcQTQ=="
+                                                                        data-url="/settings/dismiss-notice/batched_suggested_changes_onboarding_prompt#csrf-token=dH6bo+SRT/zhpHKr3S/DiBfS3JsDv3vZpbHgGyEBPDAdijYLL4o16iZiBDalkl+EKgFrHzMrjxXDpz4saKwuLg=="
                                                                     >
                                                                         Got it
                                                                     </button>
@@ -2762,7 +2755,7 @@
                                                                 <input name="utf8" type="hidden" value="✓" /><input
                                                                     type="hidden"
                                                                     name="authenticity_token"
-                                                                    value="st5iufkd+LyeV9a//KPkO8BmDvnnixfv+i1L6SqH7ex0VNoaYFxA+msG5XL45TPDZ/0bQK2JaSieumXtEE9M8Q=="
+                                                                    value="mMfekM14gV9xtbIXnKakwV1XQxEh54bWe+HG7tNf9l1eTWYzVDk5GYTkgdqY4HM5+sxWqGvl+BEfdujq6ZdXQA=="
                                                                 />
                                                                 <input
                                                                     type="hidden"
@@ -2791,8 +2784,8 @@
                                                                     <button
                                                                         type="submit"
                                                                         class="btn btn-sm btn-primary float-left js-suggestion-batch-submit"
-                                                                        data-hydro-click='{"event_type":"suggested_changes.target.click","payload":{"user_id":10532611,"target_type":"commit_changes","pull_request_id":"MDExOlB1bGxSZXF1ZXN0MjY3ODgxODUz","relationship_to_suggestion":"reviewer","client_id":"2008835310.1548448452","originating_request_id":"DC02:409E2:18EC6FA:25BD2FC:5CA7AE82","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified&amp;_pjax=%23js-repo-pjax-container","referrer":"https://github.com/sourcegraph/sourcegraph/pull/3257/files"}}'
-                                                                        data-hydro-click-hmac="b49f8fcfbda5913863878eacad838c7568cf2729d423676eef0d4600f85f85c3"
+                                                                        data-hydro-click='{"event_type":"suggested_changes.target.click","payload":{"user_id":10532611,"target_type":"commit_changes","pull_request_id":"MDExOlB1bGxSZXF1ZXN0MjY3ODgxODUz","relationship_to_suggestion":"reviewer","client_id":"2008835310.1548448452","originating_request_id":"F9A4:2AC2F:25C287C:390DA70:5CC224B6","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified","referrer":null}}'
+                                                                        data-hydro-click-hmac="804e7136051a2b856c73087bef53854849d09f44e77df90146f6ac9ca1272f78"
                                                                         data-ga-click="Markdown Toolbar, click, insert code suggestion"
                                                                         data-disable-invalid="true"
                                                                         data-disable-with="Applying commits..."
@@ -2825,7 +2818,13 @@
                                                 <div class="diffbar-item dropdown js-reviews-container">
                                                     <details class="details-reset details-overlay js-dropdown-details">
                                                         <summary class="btn btn-sm btn-primary js-reviews-toggle">
-                                                            Review changes
+                                                            <span
+                                                                class="js-review-changes"
+                                                                data-pending-message="Finish your review"
+                                                                data-message="Review changes"
+                                                            >
+                                                                Review changes
+                                                            </span>
                                                             <span class="Counter js-pending-review-comment-count">
                                                                 0
                                                             </span>
@@ -2849,7 +2848,7 @@
                                                                 /><input
                                                                     type="hidden"
                                                                     name="authenticity_token"
-                                                                    value="HfyfDsdmyZ35ch1AQwtyP1m2z40V9f7ZGbZuT0L0yxCH56VdO1CKX+qP1oI7V0nlByrTN0ICTpfAnZS5GLZl2Q=="
+                                                                    value="QOdpPMHl0lntCxVqZbLaBPrxK6mCkWC0hMVEFTqVOgTa/FNvPdORm/723qgd7uHepG03E9Vm0Ppd7r7jYNeUzQ=="
                                                                 />
                                                                 <input
                                                                     type="hidden"
@@ -2861,7 +2860,7 @@
                                                                 <div
                                                                     class="js-previewable-comment-form previewable-comment-form write-selected"
                                                                     data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708&amp;subject=3257&amp;subject_type=PullRequest"
-                                                                    data-preview-authenticity-token="pwWNGt61yoIs6WdO6r2YooI/eAGC1IuPfvGRatBjS5FnFdBiXZnwaRPgcLtGfdmxwCx/SjhqvwwM7VTP/S6hvw=="
+                                                                    data-preview-authenticity-token="/g4V5r1ddWi50e23PaJ6gcMash21DWzKWaxGgW4/qZA+HkiePnFPg4bY+kKRYjuSgQm1Vg+zWEkrsIMkQ3JDvg=="
                                                                 >
                                                                     <div class="comment-form-head tabnav ">
                                                                         <markdown-toolbar
@@ -3209,7 +3208,7 @@
                                                                                     type="button"
                                                                                     class="toolbar-item rgh-upload-btn tooltipped tooltipped-nw"
                                                                                     aria-label="Upload attachments"
-                                                                                    hotkey="u"
+                                                                                    data-hotkey="u"
                                                                                 >
                                                                                     <svg
                                                                                         aria-hidden="true"
@@ -3255,7 +3254,7 @@
                                                                         class="js-upload-markdown-image is-default"
                                                                         data-upload-repository-id="41288708"
                                                                         data-upload-policy-url="/upload/policies/assets"
-                                                                        data-upload-policy-authenticity-token="ehwUarFZQFv9YLAmBbyDhSbk+PZZHw16nJtPQq8XOehIClj7/jS8EAhv5bUxaXT86anM4H2YQQhcUvqN3qtM2A=="
+                                                                        data-upload-policy-authenticity-token="6u2+NapYrAPeEcuxc8Jy9k8aVN52zk2d+EmIHEyzIkrY+/Kk5TVQSCseniJHF4WPgFdgyFJJAe84gD3TPQ9Xeg=="
                                                                     >
                                                                         <div
                                                                             class="write-content js-write-bucket upload-enabled  js-reaction-suggestion tooltipped tooltipped-ne tooltipped-no-delay tooltipped-align-left-1 hide-reaction-suggestion"
@@ -3280,7 +3279,9 @@
                                                                                 data-suggest-mention="/suggestions/pull_request/267881853?repository=sourcegraph&amp;user_id=sourcegraph&amp;mention_suggester=1"
                                                                             ></textarea>
 
-                                                                            <p class="drag-and-drop position-relative">
+                                                                            <p
+                                                                                class="drag-and-drop position-relative d-flex flex-justify-between"
+                                                                            >
                                                                                 <input
                                                                                     accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip"
                                                                                     type="file"
@@ -3422,6 +3423,32 @@
                                                                                         </span>
                                                                                     </span>
                                                                                 </span>
+                                                                                <span
+                                                                                    class="tooltipped tooltipped-nw"
+                                                                                    aria-label="Styling with Markdown is supported"
+                                                                                >
+                                                                                    <a
+                                                                                        class="tabnav-extra position-relative d-inline"
+                                                                                        href="https://guides.github.com/features/mastering-markdown/"
+                                                                                        target="_blank"
+                                                                                        data-ga-click="Markdown Toolbar, click, help"
+                                                                                        aria-label="Learn about styling with Markdown"
+                                                                                    >
+                                                                                        <svg
+                                                                                            class="octicon octicon-markdown v-align-bottom"
+                                                                                            viewBox="0 0 16 16"
+                                                                                            version="1.1"
+                                                                                            width="16"
+                                                                                            height="16"
+                                                                                            aria-hidden="true"
+                                                                                        >
+                                                                                            <path
+                                                                                                fill-rule="evenodd"
+                                                                                                d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"
+                                                                                            ></path>
+                                                                                        </svg>
+                                                                                    </a>
+                                                                                </span>
                                                                             </p>
                                                                         </div>
                                                                     </file-attachment>
@@ -3463,9 +3490,22 @@
                                                                     ></div>
                                                                 </div>
 
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="pull_request_review[event]"
+                                                                    value="comment"
+                                                                />
+
                                                                 <div
                                                                     class="form-actions p-2 m-0 bg-gray-light border-top"
                                                                 >
+                                                                    <button
+                                                                        type="submit"
+                                                                        class="btn btn-sm btn-primary float-left mr-1"
+                                                                        data-disable-with=""
+                                                                    >
+                                                                        Submit review
+                                                                    </button>
                                                                     <span
                                                                         class="review-title-with-count text-gray-light float-left mt-1 ml-1"
                                                                     >
@@ -3481,29 +3521,6 @@
                                                                             comments
                                                                         </span>
                                                                     </span>
-                                                                    <input
-                                                                        type="hidden"
-                                                                        name="pull_request_review[event]"
-                                                                        value="comment"
-                                                                    /><button
-                                                                        name="pull_request_review[event]"
-                                                                        value="approve"
-                                                                        class="btn btn-sm btn-primary "
-                                                                    >
-                                                                        Approve</button
-                                                                    ><button
-                                                                        name="pull_request_review[event]"
-                                                                        value="reject"
-                                                                        class="btn btn-sm btn-danger "
-                                                                    >
-                                                                        Request changes</button
-                                                                    ><button
-                                                                        name="pull_request_review[event]"
-                                                                        value="comment"
-                                                                        class="btn btn-sm  "
-                                                                    >
-                                                                        Comment
-                                                                    </button>
                                                                 </div>
                                                             </form>
                                                         </div>
@@ -3531,24 +3548,6 @@
                                                         <div
                                                             class="inline-comment-form-container js-inline-comment-form-container review-comment-form-container"
                                                         >
-                                                            <div class="inline-comment-form-actions">
-                                                                <button
-                                                                    type="button"
-                                                                    class="btn js-toggle-new-thread-form"
-                                                                    data-ga-click="Start a new conversation, click"
-                                                                    data-side=""
-                                                                >
-                                                                    Start a new conversation
-                                                                </button>
-
-                                                                <a
-                                                                    href="/sourcegraph/sourcegraph/pull/3257/files#submit-review"
-                                                                    class="finish-review-label btn ml-1"
-                                                                >
-                                                                    Finish your review
-                                                                </a>
-                                                            </div>
-
                                                             <div class="inline-comment-form">
                                                                 <!-- '"` --><!-- </textarea></xmp> -->
                                                                 <form
@@ -3560,7 +3559,7 @@
                                                                     <input name="utf8" type="hidden" value="✓" /><input
                                                                         type="hidden"
                                                                         name="authenticity_token"
-                                                                        value="nWplTX/mendSewxlhsbaMrnHeA6MN5h6LtAxCyxTg1OINcI4/nDTEkMIm3/VhC9lhLOEfLuCxYAyLi91/OAB3w=="
+                                                                        value="4/D2SI0DDr+spa33/nWBdAzGfrLAcOq8cHpEXcbH04P2r1E9DJWn2r3WOu2tN3QjMbKCwPfFt0ZshFojFnRRDw=="
                                                                     />
                                                                     <input
                                                                         type="hidden"
@@ -3597,40 +3596,15 @@
                                                                     <input type="hidden" name="position" value="" />
 
                                                                     <div
-                                                                        class="js-previewable-comment-form js-suggested-changes-container previewable-comment-form write-selected"
+                                                                        class="js-previewable-comment-form previewable-comment-form write-selected"
                                                                         data-preview-url="/preview?markdown_unsupported=false&amp;repository=41288708&amp;subject=3257&amp;subject_type=PullRequest"
-                                                                        data-preview-authenticity-token="Qs9eeUWOwhwbJ7dKFXrVXvQZ9+ww7bShdnTMwNv+nJKC3wMBxqL49yQuoL+5upRNtgrwp4pTgCIEaAll9rN2vA=="
+                                                                        data-preview-authenticity-token="PoPDN/YrTy8SDZm9iL3h22yUSJX4DugKuq43vS4HPv3+k55PdQd1xC0EjkgkfaDILodP3kKw3InIsvIYA0rU0w=="
                                                                     >
                                                                         <div class="comment-form-head tabnav ">
                                                                             <markdown-toolbar
-                                                                                for="r219673 new_inline_comment_diff_${anchor}_${position}"
+                                                                                for="r686287 new_inline_comment_diff_${anchor}_${position}"
                                                                                 class="toolbar-commenting "
                                                                             >
-                                                                                <div class="toolbar-group">
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        class="toolbar-item tooltipped tooltipped-n js-suggested-change-toolbar-item"
-                                                                                        aria-label="Insert a suggestion <cmd-g>"
-                                                                                        data-hydro-click='{"event_type":"suggested_changes.target.click","payload":{"user_id":10532611,"target_type":"insert_suggestion","pull_request_id":"MDExOlB1bGxSZXF1ZXN0MjY3ODgxODUz","relationship_to_suggestion":"reviewer","client_id":"2008835310.1548448452","originating_request_id":"DC02:409E2:18EC6FA:25BD2FC:5CA7AE82","originating_url":"https://github.com/sourcegraph/sourcegraph/pull/3257/files?diff=unified&amp;_pjax=%23js-repo-pjax-container","referrer":"https://github.com/sourcegraph/sourcegraph/pull/3257/files"}}'
-                                                                                        data-hydro-click-hmac="61668467dbdef47d55be78d6d9ec771c4e4ab38ed50ad2e4553eb917e6b80fd5"
-                                                                                        data-ga-click="Markdown Toolbar, click, insert code suggestion"
-                                                                                        hotkey="g"
-                                                                                    >
-                                                                                        <svg
-                                                                                            class="octicon octicon-diff"
-                                                                                            viewBox="0 0 13 16"
-                                                                                            version="1.1"
-                                                                                            width="13"
-                                                                                            height="16"
-                                                                                            aria-hidden="true"
-                                                                                        >
-                                                                                            <path
-                                                                                                fill-rule="evenodd"
-                                                                                                d="M6 7h2v1H6v2H5V8H3V7h2V5h1v2zm-3 6h5v-1H3v1zM7.5 2L11 5.5V15c0 .55-.45 1-1 1H1c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1h6.5zM10 6L7 3H1v12h9V6zM8.5 0H3v1h5l4 4v8h1V4.5L8.5 0z"
-                                                                                            ></path>
-                                                                                        </svg>
-                                                                                    </button>
-                                                                                </div>
                                                                                 <div class="toolbar-group">
                                                                                     <md-header
                                                                                         tabindex="-1"
@@ -3973,7 +3947,7 @@
                                                                                         type="button"
                                                                                         class="toolbar-item rgh-upload-btn tooltipped tooltipped-nw"
                                                                                         aria-label="Upload attachments"
-                                                                                        hotkey="u"
+                                                                                        data-hotkey="u"
                                                                                     >
                                                                                         <svg
                                                                                             aria-hidden="true"
@@ -4020,7 +3994,7 @@
                                                                             class="js-upload-markdown-image is-default"
                                                                             data-upload-repository-id="41288708"
                                                                             data-upload-policy-url="/upload/policies/assets"
-                                                                            data-upload-policy-authenticity-token="rTW6LYPTsAwZN4KgjqwRYfkaHd5Tc/2jZjXWTZgEK1yfI/a8zL5MR+w41zO6eeYYNlcpyHf0sdGm/GOC6bhebA=="
+                                                                            data-upload-policy-authenticity-token="s5+61s/mqoufN9s0rJTyLdGja+tKEseG21dvvpxlzuKBifZHgItWwGo4jqeYQQVUHu5f/W6Vi/Qbntpx7dm70g=="
                                                                         >
                                                                             <div
                                                                                 class="write-content js-write-bucket upload-enabled  js-reaction-suggestion tooltipped tooltipped-ne tooltipped-no-delay tooltipped-align-left-1 hide-reaction-suggestion"
@@ -4036,7 +4010,7 @@
 
                                                                                 <textarea
                                                                                     name="comment[body]"
-                                                                                    id="r219673 new_inline_comment_diff_${anchor}_${position}"
+                                                                                    id="r686287 new_inline_comment_diff_${anchor}_${position}"
                                                                                     placeholder="Leave a comment"
                                                                                     aria-label="Comment body"
                                                                                     class="form-control input-contrast comment-form-textarea js-comment-field js-paste-markdown js-task-list-field js-quick-submit js-session-resumable js-saved-reply-shortcut-comment-field"
@@ -4047,7 +4021,7 @@
                                                                                 ></textarea>
 
                                                                                 <p
-                                                                                    class="drag-and-drop position-relative"
+                                                                                    class="drag-and-drop position-relative d-flex flex-justify-between"
                                                                                 >
                                                                                     <input
                                                                                         accept=".gif,.jpeg,.jpg,.png,.docx,.gz,.log,.pdf,.pptx,.txt,.xlsx,.zip"
@@ -4197,6 +4171,32 @@
                                                                                             </span>
                                                                                         </span>
                                                                                     </span>
+                                                                                    <span
+                                                                                        class="tooltipped tooltipped-nw"
+                                                                                        aria-label="Styling with Markdown is supported"
+                                                                                    >
+                                                                                        <a
+                                                                                            class="tabnav-extra position-relative d-inline"
+                                                                                            href="https://guides.github.com/features/mastering-markdown/"
+                                                                                            target="_blank"
+                                                                                            data-ga-click="Markdown Toolbar, click, help"
+                                                                                            aria-label="Learn about styling with Markdown"
+                                                                                        >
+                                                                                            <svg
+                                                                                                class="octicon octicon-markdown v-align-bottom"
+                                                                                                viewBox="0 0 16 16"
+                                                                                                version="1.1"
+                                                                                                width="16"
+                                                                                                height="16"
+                                                                                                aria-hidden="true"
+                                                                                            >
+                                                                                                <path
+                                                                                                    fill-rule="evenodd"
+                                                                                                    d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"
+                                                                                                ></path>
+                                                                                            </svg>
+                                                                                        </a>
+                                                                                    </span>
                                                                                 </p>
                                                                             </div>
                                                                         </file-attachment>
@@ -4231,30 +4231,6 @@
                                                                                     <p>Nothing to preview</p>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
-
-                                                                        <div class="float-left ">
-                                                                            <a
-                                                                                class="tabnav-extra "
-                                                                                href="https://guides.github.com/features/mastering-markdown/"
-                                                                                target="_blank"
-                                                                                data-ga-click="Markdown Toolbar, click, help"
-                                                                            >
-                                                                                <svg
-                                                                                    class="octicon octicon-markdown v-align-bottom"
-                                                                                    viewBox="0 0 16 16"
-                                                                                    version="1.1"
-                                                                                    width="16"
-                                                                                    height="16"
-                                                                                    aria-hidden="true"
-                                                                                >
-                                                                                    <path
-                                                                                        fill-rule="evenodd"
-                                                                                        d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7V8L5.5 9.92 4 8v3H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"
-                                                                                    ></path>
-                                                                                </svg>
-                                                                                Styling with Markdown is supported
-                                                                            </a>
                                                                         </div>
 
                                                                         <div
@@ -4335,103 +4311,116 @@
                                                     data-file-deleted="false"
                                                 >
                                                     <div class="file-actions">
-                                                        <span class="show-file-notes pt-1">
-                                                            <label>
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked="checked"
-                                                                    class="js-toggle-file-notes"
-                                                                />
-                                                                Show comments
-                                                            </label>
-                                                        </span>
+                                                        <div class="mt-1">
+                                                            <details
+                                                                class="js-file-header-dropdown dropdown details-overlay details-reset d-inline-block pr-2 pl-2"
+                                                            >
+                                                                <summary
+                                                                    class="btn-link v-align-middle"
+                                                                    aria-haspopup="menu"
+                                                                >
+                                                                    <svg
+                                                                        class="octicon octicon-kebab-horizontal text-gray"
+                                                                        aria-label="Show options"
+                                                                        viewBox="0 0 13 16"
+                                                                        version="1.1"
+                                                                        width="13"
+                                                                        height="16"
+                                                                        role="img"
+                                                                    >
+                                                                        <path
+                                                                            fill-rule="evenodd"
+                                                                            d="M1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM13 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"
+                                                                        ></path>
+                                                                    </svg>
+                                                                </summary>
+                                                                <details-menu
+                                                                    class="dropdown-menu dropdown-menu-sw show-more-popover text-gray-dark position-absolute f5"
+                                                                    style="width:185px; z-index:99; right: -4px;"
+                                                                    role="menu"
+                                                                >
+                                                                    <label
+                                                                        role="menuitem"
+                                                                        class="dropdown-item btn-link text-normal d-block pl-5"
+                                                                        tabindex="0"
+                                                                    >
+                                                                        <span
+                                                                            class="file-notes-check position-absolute ml-n3"
+                                                                            ><svg
+                                                                                class="octicon octicon-check"
+                                                                                viewBox="0 0 12 16"
+                                                                                version="1.1"
+                                                                                width="12"
+                                                                                height="16"
+                                                                                aria-hidden="true"
+                                                                            >
+                                                                                <path
+                                                                                    fill-rule="evenodd"
+                                                                                    d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"
+                                                                                ></path></svg
+                                                                        ></span>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked="checked"
+                                                                            class="d-none js-toggle-file-notes"
+                                                                        />
+                                                                        Show comments
+                                                                    </label>
 
-                                                        <div class="BtnGroup">
-                                                            <clipboard-copy
-                                                                value="cmd/gitserver/server/server.go"
-                                                                class="btn btn-sm BtnGroup-item"
-                                                                tabindex="0"
-                                                                role="button"
-                                                            >
-                                                                Copy path
-                                                            </clipboard-copy>
-                                                            <a
-                                                                href="/sourcegraph/sourcegraph/blob/a537a324138be6b8a47d544d9ce7ed0cd7bce7dd/cmd/gitserver/server/server.go"
-                                                                class="btn btn-sm BtnGroup-item"
-                                                                rel="nofollow"
-                                                            >
-                                                                View file
-                                                            </a>
+                                                                    <div role="none" class="dropdown-divider"></div>
+
+                                                                    <a
+                                                                        href="/sourcegraph/sourcegraph/blob/a537a324138be6b8a47d544d9ce7ed0cd7bce7dd/cmd/gitserver/server/server.go"
+                                                                        class="pl-5 dropdown-item btn-link"
+                                                                        rel="nofollow"
+                                                                        role="menuitem"
+                                                                        data-ga-click="View file, click, location:files_changed_dropdown"
+                                                                    >
+                                                                        View file
+                                                                    </a>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled=""
+                                                                        role="menuitem"
+                                                                        class="pl-5 dropdown-item btn-link"
+                                                                        aria-label="You must be signed in and have push access to make changes."
+                                                                    >
+                                                                        Edit file
+                                                                    </button>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled=""
+                                                                        role="menuitem"
+                                                                        class="pl-5 dropdown-item btn-link"
+                                                                        aria-label="You must be signed in and have push access to delete this file."
+                                                                    >
+                                                                        Delete file
+                                                                    </button>
+
+                                                                    <div role="none" class="dropdown-divider"></div>
+
+                                                                    <a
+                                                                        class="pl-5 dropdown-item btn-link"
+                                                                        role="menuitem"
+                                                                        href="x-github-client://openRepo/https://github.com/sourcegraph/sourcegraph?branch=core%2Fgitserver-tracing&amp;filepath=cmd%2Fgitserver%2Fserver%2Fserver.go"
+                                                                        aria-label="Open this file in GitHub Desktop"
+                                                                        data-ga-click="Repository, open with desktop, type:mac"
+                                                                    >
+                                                                        Open in desktop
+                                                                    </a>
+                                                                </details-menu>
+                                                            </details>
                                                         </div>
-
-                                                        <a
-                                                            class="btn-octicon tooltipped tooltipped-w"
-                                                            href="x-github-client://openRepo/https://github.com/sourcegraph/sourcegraph?branch=core%2Fgitserver-tracing&amp;filepath=cmd%2Fgitserver%2Fserver%2Fserver.go"
-                                                            aria-label="Open this file in GitHub Desktop"
-                                                            data-ga-click="Repository, open with desktop, type:mac"
-                                                        >
-                                                            <svg
-                                                                class="octicon octicon-device-desktop"
-                                                                viewBox="0 0 16 16"
-                                                                version="1.1"
-                                                                width="16"
-                                                                height="16"
-                                                                aria-hidden="true"
-                                                            >
-                                                                <path
-                                                                    fill-rule="evenodd"
-                                                                    d="M15 2H1c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h5.34c-.25.61-.86 1.39-2.34 2h8c-1.48-.61-2.09-1.39-2.34-2H15c.55 0 1-.45 1-1V3c0-.55-.45-1-1-1zm0 9H1V3h14v8z"
-                                                                ></path>
-                                                            </svg>
-                                                        </a>
-
-                                                        <a
-                                                            href="/sourcegraph/sourcegraph/edit/core/gitserver-tracing/cmd/gitserver/server/server.go?pr=%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3257"
-                                                            class="btn-octicon tooltipped tooltipped-w"
-                                                            rel="nofollow"
-                                                            data-skip-pjax=""
-                                                            aria-label="Change this file using the online editor"
-                                                        >
-                                                            <svg
-                                                                class="octicon octicon-pencil"
-                                                                viewBox="0 0 14 16"
-                                                                version="1.1"
-                                                                width="14"
-                                                                height="16"
-                                                                aria-hidden="true"
-                                                            >
-                                                                <path
-                                                                    fill-rule="evenodd"
-                                                                    d="M0 12v3h3l8-8-3-3-8 8zm3 2H1v-2h1v1h1v1zm10.3-9.3L12 6 9 3l1.3-1.3a.996.996 0 0 1 1.41 0l1.59 1.59c.39.39.39 1.02 0 1.41z"
-                                                                ></path>
-                                                            </svg>
-                                                        </a>
-                                                        <a
-                                                            href="/sourcegraph/sourcegraph/delete/core/gitserver-tracing/cmd/gitserver/server/server.go?pr=%2Fsourcegraph%2Fsourcegraph%2Fpull%2F3257"
-                                                            class="btn-octicon btn-octicon-danger tooltipped tooltipped-w"
-                                                            rel="nofollow"
-                                                            data-skip-pjax=""
-                                                            aria-label="Delete this file"
-                                                        >
-                                                            <svg
-                                                                class="octicon octicon-trashcan"
-                                                                viewBox="0 0 12 16"
-                                                                version="1.1"
-                                                                width="12"
-                                                                height="16"
-                                                                aria-hidden="true"
-                                                            >
-                                                                <path
-                                                                    fill-rule="evenodd"
-                                                                    d="M11 2H9c0-.55-.45-1-1-1H5c-.55 0-1 .45-1 1H2c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1v9c0 .55.45 1 1 1h7c.55 0 1-.45 1-1V5c.55 0 1-.45 1-1V3c0-.55-.45-1-1-1zm-1 12H3V5h1v8h1V5h1v8h1V5h1v8h1V5h1v9zm1-10H2V3h9v1z"
-                                                                ></path>
-                                                            </svg>
-                                                        </a>
+                                                    </div>
+                                                    <div class="file-info">
                                                         <button
                                                             type="button"
-                                                            class="btn-octicon p-1 pr-2 js-details-target tooltipped tooltipped-w"
+                                                            class="btn-octicon js-details-target"
                                                             aria-label="Toggle diff contents"
                                                             aria-expanded="true"
+                                                            style="width: 22px;"
                                                         >
                                                             <svg
                                                                 class="octicon octicon-chevron-down Details-content--hidden"
@@ -4447,21 +4436,19 @@
                                                                 ></path>
                                                             </svg>
                                                             <svg
-                                                                class="octicon octicon-chevron-up Details-content--shown"
-                                                                viewBox="0 0 10 16"
+                                                                class="octicon octicon-chevron-right Details-content--shown"
+                                                                viewBox="0 0 8 16"
                                                                 version="1.1"
-                                                                width="10"
+                                                                width="8"
                                                                 height="16"
                                                                 aria-hidden="true"
                                                             >
                                                                 <path
                                                                     fill-rule="evenodd"
-                                                                    d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5 5 5z"
+                                                                    d="M7.5 8l-5 5L1 11.5 4.75 8 1 4.5 2.5 3l5 5z"
                                                                 ></path>
                                                             </svg>
                                                         </button>
-                                                    </div>
-                                                    <div class="file-info">
                                                         <span
                                                             class="diffstat tooltipped tooltipped-e"
                                                             aria-label="22 additions &amp; 16 deletions"
@@ -4478,6 +4465,41 @@
                                                             title="cmd/gitserver/server/server.go"
                                                             >cmd/gitserver/server/server.go</a
                                                         >
+
+                                                        <clipboard-copy
+                                                            value="cmd/gitserver/server/server.go"
+                                                            aria-label="Copied!"
+                                                            class="js-clipboard-copy zeroclipboard-link text-gray link-hover-blue"
+                                                            tabindex="0"
+                                                            role="button"
+                                                        >
+                                                            <svg
+                                                                class="octicon octicon-clippy d-inline-block mx-1 js-clipboard-clippy-icon"
+                                                                viewBox="0 0 14 16"
+                                                                version="1.1"
+                                                                width="14"
+                                                                height="16"
+                                                                aria-hidden="true"
+                                                            >
+                                                                <path
+                                                                    fill-rule="evenodd"
+                                                                    d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z"
+                                                                ></path>
+                                                            </svg>
+                                                            <svg
+                                                                class="octicon octicon-check js-clipboard-check-icon mx-1 d-inline-block d-none text-green"
+                                                                viewBox="0 0 12 16"
+                                                                version="1.1"
+                                                                width="12"
+                                                                height="16"
+                                                                aria-hidden="true"
+                                                            >
+                                                                <path
+                                                                    fill-rule="evenodd"
+                                                                    d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"
+                                                                ></path>
+                                                            </svg>
+                                                        </clipboard-copy>
                                                     </div>
                                                 </div>
                                                 <div class="js-file-content Details-content--hidden">
@@ -9313,7 +9335,9 @@
                 class="position-relative d-flex flex-justify-between pt-6 pb-2 mt-6 f6 text-gray border-top border-gray-light "
             >
                 <ul class="list-style-none d-flex flex-wrap ">
-                    <li class="mr-3">© 2019 <span title="0.53232s from unicorn-fd4b7c6d9-8pdjv">GitHub</span>, Inc.</li>
+                    <li class="mr-3">
+                        © 2019 <span title="0.39570s from unicorn-799fc566dd-rq62m">GitHub</span>, Inc.
+                    </li>
                     <li class="mr-3">
                         <a data-ga-click="Footer, go to terms, text:terms" href="https://github.com/site/terms"
                             >Terms</a
@@ -9416,17 +9440,17 @@
 
         <script
             crossorigin="anonymous"
-            integrity="sha512-bphhLbLcXwgzeVnBMcSG8SOa16cgriNbZcgA9uWXAlGEFY58lcBmENXevq9CR1d+61CN6gKopmvT9eMxqQAvdA=="
+            integrity="sha512-znYYMX+Ozti23C6Tyo0HKKjG0BPEZICHfEWMgOV7pBypdUmo42DBzCMKUgB80IiwSYIrZBO5F02NXRrZUIHy1Q=="
             type="application/javascript"
-            src="https://github.githubassets.com/assets/frameworks-bf3c39df.js"
+            src="https://github.githubassets.com/assets/frameworks-7404f2c3.js"
         ></script>
 
         <script
             crossorigin="anonymous"
             async="async"
-            integrity="sha512-XI/rhcvulwKFLPlHbYi81zUJQCq+F1v9dZElmEn84DLxovRUW/NhmTcF/buTFvUC7JhKWBFlTAoFvETEKevBgg=="
+            integrity="sha512-LNQ/6T+w3Smgq2vX5BgLuf6fUzzJMD7trUvysuob1CXIVO8W+T3VpGB6+nludzQgWBIYyr0OEdFuZnhV70+RXQ=="
             type="application/javascript"
-            src="https://github.githubassets.com/assets/github-bootstrap-cca2ad18.js"
+            src="https://github.githubassets.com/assets/github-bootstrap-54184628.js"
         ></script>
 
         <div class="js-stale-session-flash stale-session-flash flash flash-warn flash-banner" hidden="">

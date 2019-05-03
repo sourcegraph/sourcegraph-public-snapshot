@@ -1,12 +1,12 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
-import { of } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { Omit } from 'utility-types'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost } from '../code_intelligence'
-import { CodeViewSpec, CodeViewSpecResolver } from '../code_intelligence/code_views'
+import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
 import { ViewResolver } from '../code_intelligence/views'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
@@ -80,7 +80,7 @@ const adjustPosition: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedR
 const toolbarButtonProps = {
     className: 'button grey button-grey has-icon has-text phui-button-default msl',
 }
-const commitCodeView: CodeViewSpecResolver = {
+const commitCodeView: Omit<CodeView, 'element'> = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveRevisionFileInfo,
     adjustPosition,
@@ -99,7 +99,6 @@ const commitCodeView: CodeViewSpecResolver = {
         return mount
     },
     toolbarButtonProps,
-    isDiff: true,
 }
 
 export const diffCodeView = {
@@ -126,54 +125,48 @@ export const diffCodeView = {
     isDiff: true,
 }
 
-const codeViewSpecResolver: ViewResolver<CodeViewSpecResolver> = {
+const differentialChangesetCodeViewResolver: ViewResolver<CodeView> = {
     selector: '.differential-changeset',
-    resolveView: (codeView: HTMLElement): CodeViewSpecResolver => {
+    resolveView: (element: HTMLElement): CodeView => {
         if (window.location.pathname.match(/^\/r/)) {
-            return commitCodeView
+            return { element, ...commitCodeView }
         }
-        return diffCodeView
+        return { element, ...diffCodeView }
     },
 }
 
-const phabCodeViews: CodeViewSpec[] = [
-    {
-        // TODO this code view does not include the toolbar,
-        // which makes it not possible to test getToolbarMount()
-        // Fix after https://github.com/sourcegraph/sourcegraph/issues/3271
-        selector: '.diffusion-source',
-        dom: diffusionDOMFns,
-        resolveFileInfo: resolveDiffusionFileInfo,
-        getToolbarMount: () => {
-            const actions = document.querySelector<HTMLElement>('.phui-two-column-content .phui-header-action-links')
-            if (!actions) {
-                throw new Error('unable to find file actions')
-            }
+// TODO this code view does not include the toolbar,
+// which makes it not possible to test getToolbarMount()
+// Fix after https://github.com/sourcegraph/sourcegraph/issues/3271
+const diffusionSourceCodeViewResolver = toCodeViewResolver('.diffusion-source', {
+    dom: diffusionDOMFns,
+    resolveFileInfo: resolveDiffusionFileInfo,
+    getToolbarMount: () => {
+        const actions = document.querySelector<HTMLElement>('.phui-two-column-content .phui-header-action-links')
+        if (!actions) {
+            throw new Error('unable to find file actions')
+        }
 
-            const mount = document.createElement('div')
-            mount.style.display = 'inline-block'
-            mount.classList.add('sourcegraph-app-annotator')
+        const mount = document.createElement('div')
+        mount.style.display = 'inline-block'
+        mount.classList.add('sourcegraph-app-annotator')
 
-            actions.insertAdjacentElement('afterbegin', mount)
+        actions.insertAdjacentElement('afterbegin', mount)
 
-            return mount
-        },
-        toolbarButtonProps,
-        isDiff: false,
+        return mount
     },
-]
+    toolbarButtonProps,
+})
 
 export const checkIsPhabricator = () => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
-    codeViewSpecs: phabCodeViews,
-    codeViewSpecResolver,
+    codeViewResolvers: [differentialChangesetCodeViewResolver, diffusionSourceCodeViewResolver],
     name: 'phabricator',
     check: checkIsPhabricator,
 
     // TODO: handle parsing selected line number from Phabricator href,
     // and find a way to listen to changes (Phabricator does not emit popstate events).
-    selectionsChanges: () => of([]),
     codeViewToolbarClassProps: {
         actionItemClass: 'button grey action-item--phabricator',
         actionItemIconClass: 'action-item__icon--phabricator',

@@ -4,10 +4,7 @@
 
 ## Quickstart guide
 
-> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
-
-
-It takes less than 5 minutes to install Sourcegraph using Docker. If you've got [Docker installed](https://docs.docker.com/engine/installation/), you're ready to start the server which listens on port `7080` by default.
+It takes less than 5 minutes to run and install Sourcegraph using Docker:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
@@ -15,17 +12,22 @@ It takes less than 5 minutes to install Sourcegraph using Docker. If you've got 
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.2.2</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.3.7</code></pre>
 
-Access the server on port `7080`, then the below screencast will show you how to configure Sourcegraph to search public and private repositories, and enable code intelligence on Sourcegraph and GitHub.com.
+Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
+<!--
+TODO(ryan): Replace with updated screencast
 <p class="container">
   <div style="padding:56.25% 0 0 0;position:relative;">
     <iframe src="https://player.vimeo.com/video/314926561?color=0CB6F4&title=0&byline=0&portrait=0" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
   </div>
 </p>
+-->
 
-Once Sourcegraph has been configured, head to the [site administration documentation](admin/index.md) for next steps.
+For next steps and further configuration options, visit the [site administration documentation](admin/index.md).
+
+> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
 ## Upgrading Sourcegraph
 
@@ -34,6 +36,8 @@ All you need to do to upgrade Sourcegraph is to restart your Docker server with 
 We actively maintain the two most recent [monthly releases of Sourcegraph](dev/releases.md) and we support upgrading from the two previous monthly releases.
 
 For example, if you are running Sourcegraph 3.1, then you can upgrade directly to 3.2 and 3.3. If you want to upgrade to 3.4, then you first need to upgrade to 3.3 before you can upgrade to 3.4.
+
+> The Docker server image tags follow SemVer semantics, so version 3.3 can be found at `sourcegraph/server:3.3.7`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
 
 ## Documentation
 
