@@ -90,10 +90,10 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 }
 
 // NewFactory returns a Factory that applies the given common
-// Opts after the ones provided on each invocation of New.
+// Opts after the ones provided on each invocation of Client or Doer.
 //
 // If the given Middleware stack is not nil, the final configured client
-// will be wrapped by it before being returned.
+// will be wrapped by it before being returned from a call to Doer, but not Client.
 func NewFactory(stack Middleware, common ...Opt) *Factory {
 	return &Factory{stack: stack, common: common}
 }
