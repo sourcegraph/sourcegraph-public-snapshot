@@ -2355,10 +2355,10 @@
   resolved "https://registry.npmjs.org/@types/prop-types/-/prop-types-15.5.6.tgz#9c03d3fed70a8d517c191b7734da2879b50ca26c"
   integrity sha512-ZBFR7TROLVzCkswA3Fmqq+IIJt62/T7aY/Dmz+QkU7CaW2QFqAitCE8Ups7IzmGhcN1YWMBT4Qcoc07jU9hOJQ==
 
-"@types/puppeteer@*", "@types/puppeteer@1.12.3", "@types/puppeteer@^1.6.0":
-  version "1.12.3"
-  resolved "https://registry.npmjs.org/@types/puppeteer/-/puppeteer-1.12.3.tgz#1309882d368ed21004dfc4520864fdafcf126277"
-  integrity sha512-mJtUPdXqB8THRwiHPbx8pkGYi+8IPf3dMuwJS9hHpr59BwkuLDkkEJ4qMST0k6TbOUXp+wyMJii30ouSkoEtaw==
+"@types/puppeteer@*", "@types/puppeteer@1.12.4", "@types/puppeteer@^1.6.0":
+  version "1.12.4"
+  resolved "https://registry.npmjs.org/@types/puppeteer/-/puppeteer-1.12.4.tgz#8388efdb0b30a54a7e7c4831ca0d709191d77ff1"
+  integrity sha512-aaGbJaJ9TuF9vZfTeoh876sBa+rYJWPwtsmHmYr28pGr42ewJnkDTq2aeSKEmS39SqUdkwLj73y/d7rBSp7mDQ==
   dependencies:
     "@types/node" "*"
 
