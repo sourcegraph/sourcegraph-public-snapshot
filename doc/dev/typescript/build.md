@@ -8,7 +8,7 @@ We use TypeScript for two products:
 
 - [`web`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web): The main Sourcegraph web application
   - 2 different entrypoints: [OSS `main.tsx`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/main.tsx) and [Enterprise `main.tsx`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/enterprise/main.tsx)
-- [`client/browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/brower): The Sourcegraph browser extension
+- [`browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/brower): The Sourcegraph browser extension
 
 These both use shared TypeScript code in [`../shared`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/shared). Each product has its own separate Webpack configuration.
 

@@ -14,7 +14,7 @@
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "prettier-check": "npm run prettier -- --write=false",
     "all:tslint": "dev/foreach-ts-project.sh yarn -s run tslint",
-    "all:stylelint": "yarn --cwd web run stylelint && yarn --cwd client/browser run stylelint",
+    "all:stylelint": "yarn --cwd web run stylelint && yarn --cwd browser run stylelint",
     "all:typecheck": "gulp generate && dev/foreach-ts-project.sh ./node_modules/.bin/tsc -p tsconfig.json",
     "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
@@ -37,7 +37,7 @@
       "**/__fixtures__",
       "**/*.svg",
       "migrations",
-      "client/browser/build",
+      "browser/build",
       "ui",
       "**/assets"
     ]
