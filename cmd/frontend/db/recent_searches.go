@@ -10,6 +10,9 @@ type recentSearches struct{}
 
 // Add inserts the query q to the recentSearches table in the db.
 func (*recentSearches) Add(ctx context.Context, q string) error {
+	if Mocks.RecentSearches.Add != nil {
+		return Mocks.RecentSearches.Add(ctx, q)
+	}
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
 	if dbconn.Global == nil {
 		return errors.New("db connection is nil")
@@ -30,6 +33,9 @@ func (*recentSearches) Add(ctx context.Context, q string) error {
 
 // DeleteExcessRows keeps the row count in the recentSearches table below limit.
 func (*recentSearches) DeleteExcessRows(ctx context.Context, limit int) error {
+	if Mocks.RecentSearches.DeleteExcessRows != nil {
+		return Mocks.RecentSearches.DeleteExcessRows(ctx, limit)
+	}
 	enforceLimit := `
 DELETE FROM recent_searches
 	WHERE id <
@@ -49,6 +55,9 @@ DELETE FROM recent_searches
 
 // Get returns all the search queries in the recentSearches table.
 func (*recentSearches) Get(ctx context.Context) ([]string, error) {
+	if Mocks.RecentSearches.Get != nil {
+		return Mocks.RecentSearches.Get(ctx)
+	}
 	sel := `SELECT query FROM recent_searches`
 	rows, err := dbconn.Global.QueryContext(ctx, sel)
 	var qs []string
