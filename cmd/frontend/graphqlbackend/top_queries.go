@@ -9,7 +9,7 @@ import (
 )
 
 // TopQueries returns the top 1000 most frequent recent queries.
-func (s *schemaResolver) TopQueries(ctx context.Context) ([]*queryCountResolver, error) {
+func (s *schemaResolver) TopQueries(ctx context.Context) ([]queryCountResolver, error) {
 	searches, err := db.RecentSearches.Get(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting recent searches from database")
@@ -18,15 +18,32 @@ func (s *schemaResolver) TopQueries(ctx context.Context) ([]*queryCountResolver,
 	for _, s := range searches {
 		histo[s]++
 	}
-	sort.Slice(searches, func(i, j int) bool { return histo[searches[i]] > histo[searches[j]] })
-	wantLen := 1000
-	if len(searches) > wantLen {
-		searches = searches[:wantLen]
+
+	var uniques []string
+	for k := range histo {
+		uniques = append(uniques, k)
 	}
 
-	var qcrs []*queryCountResolver
-	for _, s := range searches {
-		tqr := &queryCountResolver{
+	sort.Slice(uniques, func(i, j int) bool {
+		hi := histo[uniques[i]]
+		hj := histo[uniques[j]]
+		switch {
+		case hi > hj:
+			return true
+		case hi < hj:
+			return false
+		default:
+			return uniques[i] < uniques[j]
+		}
+	})
+	wantLen := 1000
+	if len(uniques) > wantLen {
+		uniques = uniques[:wantLen]
+	}
+
+	var qcrs []queryCountResolver
+	for _, s := range uniques {
+		tqr := queryCountResolver{
 			query: s,
 			count: histo[s],
 		}
@@ -40,5 +57,5 @@ type queryCountResolver struct {
 	count int32
 }
 
-func (r *queryCountResolver) Query() string { return r.query }
-func (r *queryCountResolver) Count() int32  { return r.count }
+func (r queryCountResolver) Query() string { return r.query }
+func (r queryCountResolver) Count() int32  { return r.count }

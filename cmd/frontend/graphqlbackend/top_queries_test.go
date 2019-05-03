@@ -11,7 +11,7 @@ func Test_schemaResolver_TopQueries(t *testing.T) {
 	tests := []struct {
 		name    string
 		queries []string
-		want    []*queryCountResolver
+		want    []queryCountResolver
 	}{
 		{
 			name:    "empty case",
@@ -21,21 +21,21 @@ func Test_schemaResolver_TopQueries(t *testing.T) {
 		{
 			name:    "single query",
 			queries: []string{""},
-			want: []*queryCountResolver{
+			want: []queryCountResolver{
 				{query: "", count: 1},
 			},
 		},
 		{
 			name:    "two of the same query",
 			queries: []string{"", ""},
-			want: []*queryCountResolver{
+			want: []queryCountResolver{
 				{query: "", count: 2},
 			},
 		},
 		{
 			name:    "two different queries",
 			queries: []string{"a", "b"},
-			want: []*queryCountResolver{
+			want: []queryCountResolver{
 				{query: "a", count: 1},
 				{query: "b", count: 1},
 			},
