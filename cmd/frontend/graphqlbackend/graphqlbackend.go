@@ -52,7 +52,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 func init() {
 	var err error
 	sr := &schemaResolver{
-		recentSearches: &db.RecentSearches{dbconn.Global},
+		recentSearches: &db.RecentSearches{DB: dbconn.Global},
 	}
 	GraphQLSchema, err = graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
 	if err != nil {
