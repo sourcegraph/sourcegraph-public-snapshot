@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"strconv"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
