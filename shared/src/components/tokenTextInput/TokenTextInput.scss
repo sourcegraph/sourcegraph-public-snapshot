@@ -1,0 +1,109 @@
+// @import 'tokenizer.js/dist/tokenizer.css';
+
+.token-text-input {
+    position: relative;
+    display: flex;
+    // align-items: center;
+    flex-direction: row;
+    flex: 1 1;
+    flex-wrap: wrap;
+    word-wrap: break-word;
+
+    .no-animation {
+        transition: none !important;
+    }
+    .separator {
+        padding: 0 1px;
+        cursor: text;
+
+        &.bk-edited-node {
+            border-bottom: 2px solid transparent;
+            &:not(:empty) {
+                border-bottom: 2px dotted #bfbfbf;
+            }
+        }
+    }
+
+    .init-token {
+        position: relative;
+        background-color: transparent;
+
+        &:hover {
+            border-bottom: inherit;
+        }
+
+        &:not(:empty) {
+            border-bottom: 2px dotted #333333;
+            margin-bottom: -2px;
+        }
+    }
+
+    .token {
+        max-width: 100%;
+        text-overflow: ellipsis;
+        position: relative;
+        white-space: pre;
+
+        &:not(.bk-edited-node):hover:after {
+            display: block;
+        }
+
+        &.bk-edited-node {
+            background-color: inherit;
+            color: #4e515e;
+        }
+
+        &:hover {
+            background-color: inherit;
+            transition: background 0.1s ease-out;
+        }
+
+        &.removed {
+            max-width: 0;
+            transform: scale(0);
+            transition: transform 0.2s ease-out, max-width 0.2s ease-out 0.2s;
+        }
+
+        // This is the remove button.
+        &:after {
+            display: none;
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 900;
+            top: -8px;
+            right: -3px;
+            content: '\00d7';
+            border-radius: 10px;
+            cursor: pointer;
+            background: #616161;
+            z-index: 1;
+            line-height: 12px;
+            color: #fff;
+        }
+    }
+
+    .incomplete-token {
+        &.bk-edited-node {
+            border-bottom: 2px dotted #bfbfbf;
+        }
+    }
+}
+
+.token {
+    // padding: 1px !important;
+    display: flex;
+    align-items: center;
+}
+
+.token.fruit {
+    background-color: #ddd;
+    border-bottom: 2px solid #632b6c;
+}
+
+.token.veggie {
+    background: lightgreen;
+    border-bottom: 2px solid darkgreen;
+}

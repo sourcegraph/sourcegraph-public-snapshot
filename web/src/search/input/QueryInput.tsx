@@ -23,6 +23,15 @@ import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
 import { QueryInputInlineOptions } from './query/QueryInputInlineOptions'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
+import { TokenTextInput } from '../../../../shared/src/components/tokenTextInput/TokenTextInput'
+
+/**
+ * Whether the experimental token text query input field is enabled.
+ *
+ * To enable this, run `localStorage.tokenTextQueryInputExp=true;location.reload()` in your browser's JavaScript
+ * console.
+ */
+const USE_TOKEN_TEXT_QUERY_INPUT = localStorage.getItem('tokenTextQueryInputExp') !== null
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -279,24 +288,31 @@ export class QueryInput extends React.Component<Props, State> {
             !this.state.hideSuggestions &&
             this.state.suggestions.length !== 0
 
+        const inputClassName = 'form-control border-0 query-input2__input rounded-left e2e-query-input'
+        const inputPlaceholder = this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder
+
         return (
             <div className="query-input2">
                 <div className="input-group border">
-                    <input
-                        className="form-control border-0 query-input2__input rounded-left e2e-query-input"
-                        value={this.props.value}
-                        autoFocus={this.props.autoFocus === true}
-                        onChange={this.onInputChange}
-                        onKeyDown={this.onInputKeyDown}
-                        onFocus={this.onInputFocus}
-                        onBlur={this.onInputBlur}
-                        spellCheck={false}
-                        autoCapitalize="off"
-                        placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
-                        ref={ref => (this.inputElement = ref!)}
-                        name="query"
-                        autoComplete="off"
-                    />
+                    {USE_TOKEN_TEXT_QUERY_INPUT ? (
+                        <TokenTextInput className={inputClassName} value={this.props.value} />
+                    ) : (
+                        <input
+                            className={inputClassName}
+                            value={this.props.value}
+                            autoFocus={this.props.autoFocus === true}
+                            onChange={this.onInputChange}
+                            onKeyDown={this.onInputKeyDown}
+                            onFocus={this.onInputFocus}
+                            onBlur={this.onInputBlur}
+                            spellCheck={false}
+                            autoCapitalize="off"
+                            placeholder={inputPlaceholder}
+                            ref={ref => (this.inputElement = ref!)}
+                            name="query"
+                            autoComplete="off"
+                        />
+                    )}
                     <QueryInputInlineOptions className="input-group-append" />
                 </div>
                 {showSuggestions && (
