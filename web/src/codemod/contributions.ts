@@ -4,6 +4,14 @@ import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { TabsWithURLViewStatePersistence } from '../../../shared/src/components/Tabs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 
+/**
+ * Whether the experimental code modification feature is enabled.
+ *
+ * To enable this, run `localStorage.codemodExp=true;location.reload()` in your browser's JavaScript
+ * console.
+ */
+const USE_CODEMOD = localStorage.getItem('codemodExp') !== null
+
 export const CODEMOD_PANEL_VIEW_ID = 'codemod'
 
 const REPLACE_ID = 'codemod.search.replace'
@@ -16,6 +24,10 @@ export function registerCodemodContributions({
     location: H.Location
     history: H.History
 } & ExtensionsControllerProps<'services'>): Unsubscribable {
+    if (!USE_CODEMOD) {
+        return { unsubscribe: () => void 0 }
+    }
+
     const subscriptions = new Subscription()
 
     subscriptions.add(

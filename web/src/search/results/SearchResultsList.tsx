@@ -528,6 +528,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         } else {
             checkpoint = parseInt(at, 10)
         }
+        if (Number.isNaN(checkpoint)) {
+            checkpoint = 0
+        }
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {
@@ -545,14 +548,16 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
         const { hash, ...loc } = this.props.location
 
-        let newHash = ''
-        if (checkpoint > 0) {
-            newHash = `#${checkpoint}`
+        const hashParams = new URLSearchParams(hash.slice('#'.length))
+        if (checkpoint === 0) {
+            hashParams.delete('at')
+        } else {
+            hashParams.set('at', checkpoint.toString())
         }
 
         this.props.history.replace({
             ...loc,
-            hash: newHash,
+            hash: `#${hashParams}`,
         })
     }
 
