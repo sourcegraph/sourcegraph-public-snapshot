@@ -4,7 +4,13 @@ import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from 'react-testing-library'
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
-import { HIGHLIGHTED_FILE_LINES_REQUEST, MULTIPLE_SEARCH_REQUEST, SEARCH_REQUEST } from '../testHelpers'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import {
+    extensionsController,
+    HIGHLIGHTED_FILE_LINES_REQUEST,
+    MULTIPLE_SEARCH_REQUEST,
+    SEARCH_REQUEST,
+} from '../testHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 
 describe('SearchResultsList', () => {
@@ -44,6 +50,9 @@ describe('SearchResultsList', () => {
             subjects: null,
             final: null,
         },
+        extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
+        platformContext: { forceUpdateTooltip: sinon.spy() },
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 
     it('displays loading text when results is undefined', () => {

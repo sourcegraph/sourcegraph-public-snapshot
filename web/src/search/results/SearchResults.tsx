@@ -9,8 +9,11 @@ import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { Resizable } from '../../../../shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { CodemodPanelView } from '../../codemod/CodemodPanelView'
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../theme'
@@ -28,7 +31,12 @@ import { SearchResultsList } from './SearchResultsList'
 
 const UI_PAGE_SIZE = 75
 
-export interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
+export interface SearchResultsProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        SettingsCascadeProps,
+        TelemetryProps,
+        ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -166,6 +174,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
+                <CodemodPanelView
+                    navbarSearchQuery={this.props.navbarSearchQuery}
+                    location={this.props.location}
+                    extensionsController={this.props.extensionsController}
+                />
                 {!USE_SEARCH_EXP && (
                     <SearchResultsFilterBars
                         navbarSearchQuery={this.props.navbarSearchQuery}
@@ -188,7 +201,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         />
                     )}
                     <SearchResultsList
-                        className="flex-1 h-100"
+                        {...this.props}
                         resultsOrError={this.state.resultsOrError}
                         onShowMoreResultsClick={this.showMoreResults}
                         onExpandAllResultsToggle={this.onExpandAllResultsToggle}
@@ -198,14 +211,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         onSavedQueryModalClose={this.onModalClose}
                         onDidCreateSavedQuery={this.onDidCreateSavedQuery}
                         didSave={this.state.didSaveQuery}
-                        location={this.props.location}
-                        history={this.props.history}
-                        authenticatedUser={this.props.authenticatedUser}
-                        settingsCascade={this.props.settingsCascade}
-                        isLightTheme={this.props.isLightTheme}
-                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                        deployType={this.props.deployType}
                     />
                 </div>
             </div>
