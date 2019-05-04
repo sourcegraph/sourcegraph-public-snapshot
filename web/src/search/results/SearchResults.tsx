@@ -13,7 +13,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { CodemodPanelView } from '../../codemod/CodemodPanelView'
+import { CodemodPanelViewRegistration } from '../../codemod/CodemodPanelView'
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../theme'
@@ -174,7 +174,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                <CodemodPanelView
+                <CodemodPanelViewRegistration
                     navbarSearchQuery={this.props.navbarSearchQuery}
                     location={this.props.location}
                     extensionsController={this.props.extensionsController}

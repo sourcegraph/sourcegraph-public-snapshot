@@ -1,7 +1,7 @@
 import H from 'history'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { urlForOpenPanel } from '../../../shared/src/commands/commands'
+import { TabsWithURLViewStatePersistence } from '../../../shared/src/components/Tabs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 
 export const CODEMOD_PANEL_VIEW_ID = 'codemod'
@@ -24,7 +24,7 @@ export function registerCodemodContributions({
             run: async () => {
                 const text = prompt('Enter replacement text:')
                 if (text !== null) {
-                    history.push(urlForOpenPanel(CODEMOD_PANEL_VIEW_ID, location.hash))
+                    history.push(TabsWithURLViewStatePersistence.urlForTabID(location, CODEMOD_PANEL_VIEW_ID))
                 }
             },
         })
