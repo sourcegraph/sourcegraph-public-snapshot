@@ -174,11 +174,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                <CodemodPanelViewRegistration
-                    navbarSearchQuery={this.props.navbarSearchQuery}
-                    location={this.props.location}
-                    extensionsController={this.props.extensionsController}
-                />
+                <CodemodPanelViewRegistration {...this.props} />
                 {!USE_SEARCH_EXP && (
                     <SearchResultsFilterBars
                         navbarSearchQuery={this.props.navbarSearchQuery}

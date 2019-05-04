@@ -3,6 +3,7 @@ import { Subscription, Unsubscribable } from 'rxjs'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { TabsWithURLViewStatePersistence } from '../../../shared/src/components/Tabs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { queryWithReplacementText } from './query'
 
 /**
  * Whether the experimental code modification feature is enabled.
@@ -36,7 +37,12 @@ export function registerCodemodContributions({
             run: async () => {
                 const text = prompt('Enter replacement text:')
                 if (text !== null) {
-                    history.push(TabsWithURLViewStatePersistence.urlForTabID(location, CODEMOD_PANEL_VIEW_ID))
+                    const params = new URLSearchParams(history.location.search)
+                    params.set('q', queryWithReplacementText(params.get('q') || '', text))
+                    history.push({
+                        ...TabsWithURLViewStatePersistence.urlForTabID(location, CODEMOD_PANEL_VIEW_ID),
+                        search: `${params}`,
+                    })
                 }
             },
         })
