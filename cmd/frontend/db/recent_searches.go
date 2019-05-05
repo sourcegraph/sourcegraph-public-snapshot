@@ -12,7 +12,7 @@ type RecentSearches struct {
 }
 
 // Add inserts the query q to the recent_searches table in the db.
-func (rs *RecentSearches) Add(ctx context.Context, q string) error {
+func (rs *RecentSearches) Log(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
 	res, err := rs.DB().ExecContext(ctx, insert, q)
 	if err != nil {
