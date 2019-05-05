@@ -3,9 +3,9 @@ import * as React from 'react'
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 
-import '../global.scss'
+import '../../app.scss'
 
-import { OptionsMenu } from '../../src/libs/options/Menu'
+import { OptionsMenu } from './Menu'
 
 storiesOf('Options - OptionsMenu', module)
     .add('Default', () => (

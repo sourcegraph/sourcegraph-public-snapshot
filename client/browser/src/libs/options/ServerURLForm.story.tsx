@@ -3,10 +3,10 @@ import * as React from 'react'
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 
-import '../global.scss'
+import '../../app.scss'
 
 import { interval, Subscription } from 'rxjs'
-import { ConnectionErrors, ServerURLForm, ServerURLFormProps } from '../../src/libs/options/ServerURLForm'
+import { ConnectionErrors, ServerURLForm, ServerURLFormProps } from './ServerURLForm'
 
 class Container extends React.Component<{}, { value: string; status: ServerURLFormProps['status'] }> {
     public state = { value: 'https://sourcegraph.com', status: 'connected' as ServerURLFormProps['status'] }

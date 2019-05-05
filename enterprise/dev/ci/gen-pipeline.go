@@ -151,6 +151,9 @@ func main() {
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
+	// Storybook
+	pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
+
 	if !isBextReleaseBranch {
 		pipeline.AddStep(":postgres:",
 			bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
