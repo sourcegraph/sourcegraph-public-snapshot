@@ -29,7 +29,7 @@ const config: webpack.Configuration = {
     },
 
     plugins: [
-        new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }) as any, // @types package is incorrect
+        new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }),
         new OptimizeCssAssetsPlugin(),
         // Code splitting doesn't make sense/work in the browser extension, but we still want to use dynamic import()
         new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),

@@ -1,13 +1,13 @@
 // CSS for components shared with the webapp
 
-@import '../../../shared/src/actions/ActionItem';
-@import '../../../shared/src/commandPalette/CommandList';
-@import '../../../shared/src/components/completion/CompletionWidget.scss';
-@import '../../../shared/src/components/PopoverButton';
-@import '../../../shared/src/components/Toggle';
-@import '../../../shared/src/extensions/ExtensionStatus';
-@import '../../../shared/src/notifications/NotificationItem';
-@import '../../../shared/src/notifications/Notifications';
+@import '../../shared/src/actions/ActionItem';
+@import '../../shared/src/commandPalette/CommandList';
+@import '../../shared/src/components/completion/CompletionWidget.scss';
+@import '../../shared/src/components/PopoverButton';
+@import '../../shared/src/components/Toggle';
+@import '../../shared/src/extensions/ExtensionStatus';
+@import '../../shared/src/notifications/NotificationItem';
+@import '../../shared/src/notifications/Notifications';
 
 $body-color-light: #2b3750;
 $body-color-dark: #f2f4f8;

@@ -2,6 +2,16 @@
     Options page css
 */
 
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/type';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/custom-forms';
+
 $code-font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, monospace;
 
 .options {

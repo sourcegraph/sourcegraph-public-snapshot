@@ -1,4 +1,4 @@
-import extensionInfo from '../../src/extension/manifest.spec.json.js'
+import extensionInfo from '../../src/extension/manifest.spec.json'
 
 /**
  * Generates a unique bundle ID that is used to prevent the Phabricator extension
