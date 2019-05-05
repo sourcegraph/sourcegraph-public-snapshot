@@ -45,7 +45,7 @@ DELETE FROM recent_searches
 }
 
 // Get returns all the search queries in the recent_searches table.
-func (rs *RecentSearches) Get(ctx context.Context) ([]string, error) {
+func (rs *RecentSearches) List(ctx context.Context) ([]string, error) {
 	sel := `SELECT query FROM recent_searches`
 	rows, err := rs.DB().QueryContext(ctx, sel)
 	var qs []string

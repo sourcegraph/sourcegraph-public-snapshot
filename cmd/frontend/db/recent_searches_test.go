@@ -19,7 +19,7 @@ func TestRecentSearches_Add(t *testing.T) {
 	if err := rs.Log(ctx, q); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := rs.Get(ctx)
+	ss, err := rs.List(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 		if err := rs.Cleanup(ctx, 2); err != nil {
 			t.Error(err)
 		}
-		ss, err := rs.Get(ctx)
+		ss, err := rs.List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,7 +71,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 		if err := rs.Cleanup(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
-		ss, err := rs.Get(ctx)
+		ss, err := rs.List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,7 +95,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 		if err := rs.Cleanup(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
-		ss, err := rs.Get(ctx)
+		ss, err := rs.List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
