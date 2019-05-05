@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 
@@ -14,6 +15,21 @@ import (
 )
 
 type savedSearches struct{}
+
+func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
+	q := `SELECT true FROM saved_searches LIMIT 1`
+	var isNotEmpty bool
+	err := dbconn.Global.QueryRow(q).Scan(&isNotEmpty)
+	if err != nil && err == sql.ErrNoRows {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return false, nil
+
+}
 
 // ListAll lists all the saved searches on an instance.
 //
@@ -135,9 +151,11 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 	if err != nil {
 		return nil, err
 	}
+
 	if len(orgConditions) > 0 {
-		conds = sqlf.Sprintf("%v OR %v", conds, orgConditions)
+		conds = sqlf.Sprintf("%v OR %v", conds, sqlf.Join(orgConditions, " ) OR ("))
 	}
+
 	query := sqlf.Sprintf(`SELECT
 		id,
 		description,

@@ -32,8 +32,14 @@ type SavedQueryField struct {
 // This migration does NOT remove the existing "search.savedQueries" and "notifications.slack" values from the user or org's settings.
 // This is to be done in a future iteration after all customer instances have upgraded and ran the migration successfully.
 func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Context) {
-	if err := doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx); err != nil {
-		log15.Error(`Warning: unable to migrate "search.savedQueries" settings to database. Please report this issue.`, "error", err)
+	savedSearchTableIsEmpty, err := db.SavedSearches.IsEmpty(ctx)
+	if err != nil {
+		log15.Error(`Warning: unable to migrate search.savedQueries because cannot tell if saved searches table is empty. Please report this issue.`, err)
+	}
+	if savedSearchTableIsEmpty {
+		if err := doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx); err != nil {
+			log15.Error(`Warning: unable to migrate "search.savedQueries" settings to database. Please report this issue.`, "error", err)
+		}
 	}
 }
 
