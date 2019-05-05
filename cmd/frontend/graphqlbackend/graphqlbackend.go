@@ -143,15 +143,15 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-// RecentSearchesTracker describes a table containing strings.
-type RecentSearchesTracker interface {
+// StringLogger describes a table containing strings.
+type StringLogger interface {
 	Add(ctx context.Context, query string) error
 	DeleteExcessRows(ctx context.Context, limit int) error
 	Get(ctx context.Context) ([]string, error)
 }
 
 type schemaResolver struct {
-	recentSearches RecentSearchesTracker
+	recentSearches StringLogger
 }
 
 // DEPRECATED

@@ -79,7 +79,7 @@ type RecentSearchesMock struct {
 	queries []string
 
 	// Default unimplemented interface methods to nil panic.
-	RecentSearchesTracker
+	StringLogger
 }
 
 func (rsm *RecentSearchesMock) Get(ctx context.Context) ([]string, error) {
