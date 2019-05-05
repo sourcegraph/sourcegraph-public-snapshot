@@ -38,7 +38,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 	rs := &RecentSearches{dbconn.Global}
 	t.Run("empty case", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
-		if err := rs.DeleteExcessRows(ctx, 1); err != nil {
+		if err := rs.Cleanup(ctx, 1); err != nil {
 			t.Error(err)
 		}
 	})
@@ -48,7 +48,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 		if err := rs.Log(ctx, q); err != nil {
 			t.Fatal(err)
 		}
-		if err := rs.DeleteExcessRows(ctx, 2); err != nil {
+		if err := rs.Cleanup(ctx, 2); err != nil {
 			t.Error(err)
 		}
 		ss, err := rs.Get(ctx)
@@ -68,7 +68,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		if err := rs.DeleteExcessRows(ctx, limit); err != nil {
+		if err := rs.Cleanup(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
 		ss, err := rs.Get(ctx)
@@ -92,7 +92,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 			q := fmt.Sprintf("fake query for i = %d", i)
 			addQueryWithRandomId(q)
 		}
-		if err := rs.DeleteExcessRows(ctx, limit); err != nil {
+		if err := rs.Cleanup(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
 		ss, err := rs.Get(ctx)
@@ -114,7 +114,7 @@ func BenchmarkRecentSearches_AddAndDeleteExcessRows(b *testing.B) {
 		if err := rs.Log(ctx, q); err != nil {
 			b.Fatal(err)
 		}
-		if err := rs.DeleteExcessRows(ctx, b.N); err != nil {
+		if err := rs.Cleanup(ctx, b.N); err != nil {
 			b.Fatal(err)
 		}
 	}
