@@ -11,7 +11,7 @@ type RecentSearches struct {
 	DB func() *sql.DB
 }
 
-// Add inserts the query q to the recent_searches table in the db.
+// Log inserts the query q to the recent_searches table in the db.
 func (rs *RecentSearches) Log(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
 	res, err := rs.DB().ExecContext(ctx, insert, q)
@@ -28,7 +28,7 @@ func (rs *RecentSearches) Log(ctx context.Context, q string) error {
 	return nil
 }
 
-// DeleteExcessRows keeps the row count in the recent_searches table below limit.
+// Cleanup keeps the row count in the recent_searches table below limit.
 func (rs *RecentSearches) Cleanup(ctx context.Context, limit int) error {
 	enforceLimit := `
 DELETE FROM recent_searches
@@ -44,7 +44,7 @@ DELETE FROM recent_searches
 	return nil
 }
 
-// Get returns all the search queries in the recent_searches table.
+// List returns all the search queries in the recent_searches table.
 func (rs *RecentSearches) List(ctx context.Context) ([]string, error) {
 	sel := `SELECT query FROM recent_searches`
 	rows, err := rs.DB().QueryContext(ctx, sel)
