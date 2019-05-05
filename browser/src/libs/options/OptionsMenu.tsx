@@ -1,7 +1,7 @@
 import { lowerCase, upperFirst } from 'lodash'
 import * as React from 'react'
 
-import { OptionsHeader, OptionsHeaderProps } from './Header'
+import { OptionsHeader, OptionsHeaderProps } from './OptionsHeader'
 import { ServerURLForm, ServerURLFormProps } from './ServerURLForm'
 
 interface ConfigurableFeatureFlag {
