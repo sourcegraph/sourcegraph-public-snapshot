@@ -8,13 +8,13 @@ import (
 )
 
 type RecentSearches struct {
-	DB *sql.DB
+	DB func() *sql.DB
 }
 
 // Add inserts the query q to the recent_searches table in the db.
 func (rs *RecentSearches) Add(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
-	res, err := rs.DB.ExecContext(ctx, insert, q)
+	res, err := rs.DB().ExecContext(ctx, insert, q)
 	if err != nil {
 		return errors.Errorf("inserting %q into recent_searches table: %v", q, err)
 	}
@@ -38,7 +38,7 @@ DELETE FROM recent_searches
 		 OFFSET GREATEST(0, (SELECT (SELECT COUNT(*) FROM recent_searches) - $1))
 		 LIMIT 1)
 `
-	if _, err := rs.DB.ExecContext(ctx, enforceLimit, limit); err != nil {
+	if _, err := rs.DB().ExecContext(ctx, enforceLimit, limit); err != nil {
 		return errors.Errorf("deleting excess rows in recent_searches table: %v", err)
 	}
 	return nil
@@ -47,7 +47,7 @@ DELETE FROM recent_searches
 // Get returns all the search queries in the recent_searches table.
 func (rs *RecentSearches) Get(ctx context.Context) ([]string, error) {
 	sel := `SELECT query FROM recent_searches`
-	rows, err := rs.DB.QueryContext(ctx, sel)
+	rows, err := rs.DB().QueryContext(ctx, sel)
 	var qs []string
 	if err != nil {
 		return nil, errors.Errorf("running SELECT query: %v", err)

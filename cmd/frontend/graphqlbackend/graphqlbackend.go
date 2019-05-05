@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strconv"
 	"time"
@@ -52,7 +53,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 func init() {
 	var err error
 	sr := &schemaResolver{
-		recentSearches: &db.RecentSearches{DB: dbconn.Global},
+		recentSearches: &db.RecentSearches{DB: func() *sql.DB { return dbconn.Global }},
 	}
 	GraphQLSchema, err = graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
 	if err != nil {
@@ -142,8 +143,9 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
+// RecentSearchesTracker describes a table containing strings.
 type RecentSearchesTracker interface {
-	Add(ctx context.Context, q string) error
+	Add(ctx context.Context, query string) error
 	DeleteExcessRows(ctx context.Context, limit int) error
 	Get(ctx context.Context) ([]string, error)
 }
