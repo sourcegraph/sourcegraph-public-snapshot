@@ -143,11 +143,18 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-// StringLogger describes a table containing strings.
+// StringLogger describes something that can log strings, list them and also
+// clean up to make sure they don't use too much storage space.
 type StringLogger interface {
-	Add(ctx context.Context, query string) error
-	DeleteExcessRows(ctx context.Context, limit int) error
-	Get(ctx context.Context) ([]string, error)
+	// Log stores the given string s.
+	Log(ctx context.Context, s string) error
+
+	// List returns the logged entries in order from oldest to newest, except for
+	// ones that were removed during Cleanup.
+	List(ctx context.Context) ([]string, error)
+
+	// Cleanup removes old entries such that there are no more than limit remaining.
+	Cleanup(ctx context.Context, limit int) error
 }
 
 type schemaResolver struct {
