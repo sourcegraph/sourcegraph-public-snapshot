@@ -10024,10 +10024,10 @@ mockdate@^2.0.2:
   resolved "https://registry.npmjs.org/mockdate/-/mockdate-2.0.2.tgz#5ae0c0eaf8fe23e009cd01f9889b42c4f634af12"
   integrity sha1-WuDA6vj+I+AJzQH5iJtCxPY0rxI=
 
-monaco-editor@^0.16.2:
-  version "0.16.2"
-  resolved "https://registry.npmjs.org/monaco-editor/-/monaco-editor-0.16.2.tgz#950084ed82eeaef1c8c9d3c1bcab849fe11b2415"
-  integrity sha512-NtGrFzf54jADe7qsWh3lazhS7Kj0XHkJUGBq9fA/Jbwc+sgVcyfsYF6z2AQ7hPqDC+JmdOt/OwFjBnRwqXtx6w==
+monaco-editor@^0.17.0:
+  version "0.17.0"
+  resolved "https://registry.npmjs.org/monaco-editor/-/monaco-editor-0.17.0.tgz#d1d035c6f512ab88503cbee8213cab34b85ab954"
+  integrity sha512-8BQQHCFxy3DF0GYFOy5BmcCWlwm/XaTMPbPbN4gwItFGctZErSfX82uQSBpojJSlPNyudB5Q5qnukoorD3/UuA==
 
 move-concurrently@^1.0.1:
   version "1.0.1"

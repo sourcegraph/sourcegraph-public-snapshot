@@ -218,7 +218,7 @@
     "marked": "^0.6.2",
     "mdi-react": "^5.3.0",
     "minimatch": "^3.0.4",
-    "monaco-editor": "^0.16.2",
+    "monaco-editor": "^0.17.0",
     "open-color": "^1.6.3",
     "pretty-bytes": "^5.2.0",
     "react": "^16.8.2",
