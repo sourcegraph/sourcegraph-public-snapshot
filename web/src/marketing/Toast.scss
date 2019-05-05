@@ -5,7 +5,7 @@
     z-index: 50; // Overlay repository/blob contents
     padding: 1rem;
     display: flex;
-    align-items: start;
+    align-items: flex-start;
     border-radius: 0.25rem;
     background-color: $color-light-bg-2;
     color: $color-light-text-1;
