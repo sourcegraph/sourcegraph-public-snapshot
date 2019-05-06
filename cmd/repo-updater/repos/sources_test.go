@@ -285,6 +285,19 @@ func TestSources_ListRepos(t *testing.T) {
 				}),
 			},
 			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					Region:          os.Getenv("AWSCODECOMMIT_REGION"),
+					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
+						{Name: "stRIPE-gO"},
+						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
+						{Name: "test2", Id: "2686d63d-bff4-4a3e-a94f-3e6df904238d"}, // ID of `test2`
+					},
+				}),
+			},
+			{
 				Kind: "GITOLITE",
 				Config: marshalJSON(t, &schema.GitoliteConnection{
 					Prefix:    "gitolite.mycorp.com/",
@@ -329,6 +342,10 @@ func TestSources_ListRepos(t *testing.T) {
 					case *schema.BitbucketServerConnection:
 						for _, e := range cfg.Exclude {
 							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
+						}
+					case *schema.AWSCodeCommitConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name, id: e.Id})
 						}
 					case *schema.GitoliteConnection:
 						ex = append(ex, excluded{pattern: cfg.Blacklist})

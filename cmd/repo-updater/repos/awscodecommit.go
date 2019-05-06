@@ -229,9 +229,21 @@ func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection, cf *http
 	}
 	awsConfig.HTTPClient = cli
 
+	exclude := make(map[string]bool, len(config.Exclude))
+	for _, r := range config.Exclude {
+		if r.Name != "" {
+			exclude[strings.ToLower(r.Name)] = true
+		}
+
+		if r.Id != "" {
+			exclude[r.Id] = true
+		}
+	}
+
 	conn := &awsCodeCommitConnection{
 		config:    config,
 		awsConfig: awsConfig,
+		exclude:   exclude,
 	}
 	conn.client = awscodecommit.NewClient(conn.awsConfig)
 
@@ -256,6 +268,8 @@ type awsCodeCommitConnection struct {
 
 	mu           sync.Mutex
 	awsAccountID string
+
+	exclude map[string]bool
 }
 
 func (c *awsCodeCommitConnection) getServiceID() (string, error) {
@@ -363,7 +377,11 @@ func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) ([]*a
 			break
 		}
 
-		repos = append(repos, batch...)
+		for _, r := range batch {
+			if !c.excludes(r) {
+				repos = append(repos, r)
+			}
+		}
 
 		if len(batch) == 0 || token == "" {
 			break // last page
@@ -373,4 +391,8 @@ func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) ([]*a
 	}
 
 	return repos, errs.ErrorOrNil()
+}
+
+func (c *awsCodeCommitConnection) excludes(r *awscodecommit.Repository) bool {
+	return c.exclude[strings.ToLower(r.Name)] || c.exclude[r.ID]
 }
