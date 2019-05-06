@@ -10,11 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type savedSearchResolver struct {
-	id                  string
+	id                  int32
 	description         string
 	query               string
 	notify, notifySlack bool
@@ -23,7 +22,7 @@ type savedSearchResolver struct {
 	slackWebhookURL     *string
 }
 
-func marshalSavedSearchID(savedSearchID string) graphql.ID {
+func marshalSavedSearchID(savedSearchID int32) graphql.ID {
 	return relay.MarshalID("SavedSearch", savedSearchID)
 }
 
@@ -36,7 +35,7 @@ func (r savedSearchResolver) ID() graphql.ID {
 	return marshalSavedSearchID(r.id)
 }
 
-func (r savedSearchResolver) DatabaseID() string {
+func (r savedSearchResolver) DatabaseID() int32 {
 	return r.id
 }
 
@@ -57,9 +56,9 @@ func (r savedSearchResolver) UserID() *int32           { return r.userID }
 func (r savedSearchResolver) OrgID() *int32            { return r.orgID }
 func (r savedSearchResolver) SlackWebhookURL() *string { return r.slackWebhookURL }
 
-func toSavedSearchResolver(entry api.ConfigSavedQuery) *savedSearchResolver {
+func toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
 	return &savedSearchResolver{
-		id:              entry.Key,
+		id:              entry.ID,
 		description:     entry.Description,
 		query:           entry.Query,
 		notify:          entry.Notify,
@@ -85,15 +84,16 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 		return nil, err
 	}
 	for _, savedSearch := range allSavedSearches {
-		savedSearches = append(savedSearches, toSavedSearchResolver(api.ConfigSavedQuery{
-			Key:         string(savedSearch.ID),
-			Description: savedSearch.Description,
-			Query:       savedSearch.Query,
-			Notify:      savedSearch.Notify,
-			NotifySlack: savedSearch.NotifySlack,
-			OwnerKind:   savedSearch.OwnerKind,
-			UserID:      savedSearch.UserID,
-			OrgID:       savedSearch.OrgID,
+		savedSearches = append(savedSearches, toSavedSearchResolver(types.SavedSearch{
+			ID:              savedSearch.ID,
+			Description:     savedSearch.Description,
+			Query:           savedSearch.Query,
+			Notify:          savedSearch.Notify,
+			NotifySlack:     savedSearch.NotifySlack,
+			OwnerKind:       savedSearch.OwnerKind,
+			UserID:          savedSearch.UserID,
+			OrgID:           savedSearch.OrgID,
+			SlackWebhookURL: savedSearch.SlackWebhookURL,
 		}))
 	}
 
@@ -146,20 +146,21 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	}
 
 	sq := &savedSearchResolver{
-		id:          configSavedQuery.ID,
-		description: configSavedQuery.Description,
-		query:       configSavedQuery.Query,
-		notify:      configSavedQuery.Notify,
-		notifySlack: configSavedQuery.NotifySlack,
-		ownerKind:   configSavedQuery.OwnerKind,
-		userID:      configSavedQuery.UserID,
-		orgID:       configSavedQuery.OrgID,
+		id:              configSavedQuery.ID,
+		description:     configSavedQuery.Description,
+		query:           configSavedQuery.Query,
+		notify:          configSavedQuery.Notify,
+		notifySlack:     configSavedQuery.NotifySlack,
+		ownerKind:       configSavedQuery.OwnerKind,
+		userID:          configSavedQuery.UserID,
+		orgID:           configSavedQuery.OrgID,
+		slackWebhookURL: configSavedQuery.SlackWebhookURL,
 	}
 	return sq, nil
 }
 
 func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
-	ID          string
+	ID          graphql.ID
 	Description string
 	Query       string
 	NotifyOwner bool
@@ -179,19 +180,25 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		}
 	}
 
-	configSavedQuery, err := db.SavedSearches.Update(ctx, &types.SavedSearch{ID: args.ID, Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, OwnerKind: args.OwnerKind, UserID: args.UserID, OrgID: args.OrgID})
+	id, err := unmarshalSavedSearchID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	configSavedQuery, err := db.SavedSearches.Update(ctx, &types.SavedSearch{ID: id, Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, OwnerKind: args.OwnerKind, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, err
 	}
 	sq := &savedSearchResolver{
-		id:          configSavedQuery.ID,
-		description: configSavedQuery.Description,
-		query:       configSavedQuery.Query,
-		notify:      configSavedQuery.Notify,
-		notifySlack: configSavedQuery.NotifySlack,
-		ownerKind:   configSavedQuery.OwnerKind,
-		userID:      configSavedQuery.UserID,
-		orgID:       configSavedQuery.OrgID,
+		id:              configSavedQuery.ID,
+		description:     configSavedQuery.Description,
+		query:           configSavedQuery.Query,
+		notify:          configSavedQuery.Notify,
+		notifySlack:     configSavedQuery.NotifySlack,
+		ownerKind:       configSavedQuery.OwnerKind,
+		userID:          configSavedQuery.UserID,
+		orgID:           configSavedQuery.OrgID,
+		slackWebhookURL: configSavedQuery.SlackWebhookURL,
 	}
 	return sq, nil
 }

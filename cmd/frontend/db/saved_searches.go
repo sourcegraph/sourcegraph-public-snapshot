@@ -140,7 +140,10 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 	var orgIDs []int32
 	for orgIDRows.Next() {
 		var orgID int32
-		orgIDRows.Scan(&orgID)
+		err := orgIDRows.Scan(&orgID)
+		if err != nil {
+			return nil, err
+		}
 		orgIDs = append(orgIDs, orgID)
 	}
 	var orgConditions []*sqlf.Query
@@ -220,8 +223,8 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		return Mocks.SavedSearches.Create(ctx, newSavedSearch)
 	}
 
-	if newSavedSearch.ID != "" {
-		return nil, errors.New("newSavedSearch.ID must be empty string")
+	if newSavedSearch.ID != 0 {
+		return nil, errors.New("newSavedSearch.ID must be zero")
 	}
 
 	tr, ctx := trace.New(ctx, "db.SavedSearches.Create", "")

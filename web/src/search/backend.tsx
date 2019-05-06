@@ -323,7 +323,7 @@ export function createSavedSearch(
 }
 
 export function updateSavedSearch(
-    id: string,
+    id: GQL.ID,
     description: string,
     query: string,
     notify: boolean,
@@ -335,7 +335,7 @@ export function updateSavedSearch(
     return mutateGraphQL(
         gql`
             mutation UpdateSavedSearch(
-                $id: String!
+                $id: ID!
                 $description: String!
                 $query: String!
                 $notifyOwner: Boolean!
@@ -375,10 +375,10 @@ export function updateSavedSearch(
     )
 }
 
-export function deleteSavedSearch(id: string): Observable<void> {
+export function deleteSavedSearch(id: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation DeleteSavedSearch($id: String!) {
+            mutation DeleteSavedSearch($id: ID!) {
                 deleteSavedSearch(id: $id) {
                     alwaysNil
                 }

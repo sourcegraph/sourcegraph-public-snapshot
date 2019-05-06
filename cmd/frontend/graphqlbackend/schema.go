@@ -315,7 +315,7 @@ type Mutation {
     # Updates a saved search
     updateSavedSearch(
         # The database ID of the saved search
-        id: String!
+        id: ID!
         description: String!
         query: String!
         notifyOwner: Boolean!
@@ -967,7 +967,7 @@ type SavedSearch {
     # The unique ID of this saved query.
     id: ID!
     # The unique database ID of this saved query.
-    databaseID: String!
+    databaseID: Int!
     # The description.
     description: String!
     # The query.

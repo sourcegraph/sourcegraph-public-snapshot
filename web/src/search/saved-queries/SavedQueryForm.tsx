@@ -63,7 +63,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 subject: (defaultValues && defaultValues.subject) || '',
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
-                ownerKind: (defaultValues && defaultValues.ownerKind) || ('USER' as GQL.SavedSearchOwnerKind.USER),
+                ownerKind: (defaultValues && defaultValues.ownerKind) || GQL.SavedSearchOwnerKind.USER,
                 userID: (defaultValues && defaultValues.userID) || null,
                 orgID: (defaultValues && defaultValues.orgID) || null,
                 slackWebhookURL: (defaultValues && defaultValues.slackWebhookURL) || null,

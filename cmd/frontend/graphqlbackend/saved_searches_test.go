@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -21,7 +22,7 @@ func TestSavedSearches(t *testing.T) {
 	}
 
 	db.Mocks.SavedSearches.ListSavedSearchesByUserID = func(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
-		return []*types.SavedSearch{{ID: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &userID, OrgID: nil}}, nil
+		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &userID, OrgID: nil}}, nil
 	}
 
 	savedSearches, err := (&schemaResolver{}).SavedSearches(ctx)
@@ -29,7 +30,7 @@ func TestSavedSearches(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []*savedSearchResolver{{
-		id:          "1",
+		id:          key,
 		description: "test query",
 		query:       "test type:diff",
 		notify:      true,
@@ -54,7 +55,7 @@ func TestCreateSavedSearch(t *testing.T) {
 		newSavedSearch *types.SavedSearch,
 	) (*types.SavedSearch, error) {
 		createSavedSearchCalled = true
-		return &types.SavedSearch{ID: "1", Description: newSavedSearch.Description, Query: newSavedSearch.Query, Notify: newSavedSearch.Notify, NotifySlack: newSavedSearch.NotifySlack, OwnerKind: newSavedSearch.OwnerKind, UserID: newSavedSearch.UserID, OrgID: newSavedSearch.OrgID}, nil
+		return &types.SavedSearch{ID: key, Description: newSavedSearch.Description, Query: newSavedSearch.Query, Notify: newSavedSearch.Notify, NotifySlack: newSavedSearch.NotifySlack, OwnerKind: newSavedSearch.OwnerKind, UserID: newSavedSearch.UserID, OrgID: newSavedSearch.OrgID}, nil
 	}
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true, ID: key}, nil
@@ -74,7 +75,7 @@ func TestCreateSavedSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := &savedSearchResolver{
-		id:          "1",
+		id:          key,
 		description: "test query",
 		query:       "test type:diff",
 		notify:      true,
@@ -105,11 +106,11 @@ func TestUpdateSavedSearch(t *testing.T) {
 
 	db.Mocks.SavedSearches.Update = func(ctx context.Context, savedSearch *types.SavedSearch) (*types.SavedSearch, error) {
 		updateSavedSearchCalled = true
-		return &types.SavedSearch{ID: "1", Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, OwnerKind: savedSearch.OwnerKind, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
+		return &types.SavedSearch{ID: key, Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, OwnerKind: savedSearch.OwnerKind, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
 	}
 
 	savedSearches, err := (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
-		ID          string
+		ID          graphql.ID
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -117,13 +118,13 @@ func TestUpdateSavedSearch(t *testing.T) {
 		OwnerKind   string
 		OrgID       *int32
 		UserID      *int32
-	}{ID: "1", Description: "updated query description", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OwnerKind: "user", OrgID: nil, UserID: &key})
+	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OwnerKind: "user", OrgID: nil, UserID: &key})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := &savedSearchResolver{
-		id:          "1",
+		id:          key,
 		description: "updated query description",
 		query:       "test type:diff",
 		notify:      true,
@@ -161,9 +162,10 @@ func TestDeleteSavedSearch(t *testing.T) {
 		return nil
 	}
 
+	firstSavedSearchGraphqlID := graphql.ID("U2F2ZWRTZWFyY2g6NTI=")
 	_, err := (&schemaResolver{}).DeleteSavedSearch(ctx, &struct {
-		ID string
-	}{ID: "1"})
+		ID graphql.ID
+	}{ID: firstSavedSearchGraphqlID})
 	if err != nil {
 		t.Fatal(err)
 	}
