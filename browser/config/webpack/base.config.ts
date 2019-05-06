@@ -21,6 +21,7 @@ const config: webpack.Configuration = {
         phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.tsx'),
 
         style: path.join(__dirname, '../../src/app.scss'),
+        'options-style': path.join(__dirname, '../../src/options.scss'),
     },
     output: {
         path: path.join(__dirname, '../../build/dist/js'),
