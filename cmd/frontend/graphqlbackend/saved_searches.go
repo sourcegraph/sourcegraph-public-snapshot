@@ -101,13 +101,17 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 }
 
 func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, args *struct {
-	ID string
+	ID graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins should be able to send test notifications.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	savedSearch, err := db.SavedSearches.GetSavedSearchByID(ctx, args.ID)
+	id, err := unmarshalSavedSearchID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	savedSearch, err := db.SavedSearches.GetSavedSearchByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -193,9 +197,13 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 }
 
 func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
-	ID string
+	ID graphql.ID
 }) (*EmptyResponse, error) {
-	ss, err := db.SavedSearches.GetSavedSearchByID(ctx, args.ID)
+	id, err := unmarshalSavedSearchID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	ss, err := db.SavedSearches.GetSavedSearchByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +217,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 	}
-	err = db.SavedSearches.Delete(ctx, args.ID)
+	err = db.SavedSearches.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}

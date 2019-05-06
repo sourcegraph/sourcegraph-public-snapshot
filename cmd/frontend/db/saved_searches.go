@@ -20,10 +20,10 @@ func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
 	q := `SELECT true FROM saved_searches LIMIT 1`
 	var isNotEmpty bool
 	err := dbconn.Global.QueryRow(q).Scan(&isNotEmpty)
-	if err != nil && err == sql.ErrNoRows {
-		return true, nil
-	}
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return true, nil
+		}
 		return false, err
 	}
 
@@ -86,7 +86,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	return savedSearches, nil
 }
 
-func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id string) (*api.SavedQuerySpecAndConfig, error) {
+func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
 	if Mocks.SavedSearches.GetSavedSearchByID != nil {
 		return Mocks.SavedSearches.GetSavedSearchByID(ctx, id)
 	}
@@ -302,7 +302,7 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 	return savedQuery, nil
 }
 
-func (s *savedSearches) Delete(ctx context.Context, id string) (err error) {
+func (s *savedSearches) Delete(ctx context.Context, id int32) (err error) {
 	if Mocks.SavedSearches.Delete != nil {
 		return Mocks.SavedSearches.Delete(ctx, id)
 	}

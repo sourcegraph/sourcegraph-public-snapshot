@@ -254,7 +254,7 @@ type Mutation {
     # Only subscribers to this saved search may perform this action.
     sendSavedSearchTestNotification(
         # ID of the saved search.
-        id: String!
+        id: ID!
     ): EmptyResponse
     # All mutations that update settings (global, organization, and user settings) are under this field.
     #
@@ -334,7 +334,7 @@ type Mutation {
     # Deletes a saved search
     deleteSavedSearch(
         # The database ID of the saved search
-        id: String!
+        id: ID!
     ): EmptyResponse
 }
 

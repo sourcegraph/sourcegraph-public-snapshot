@@ -59,10 +59,14 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 
 	t.Run("do not throw error for an invalid settings JSON and properly migrate saved queries from valid settings", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u4"})
+		if err != nil {
+			t.Fatal(err)
+		}
 		u2, err := db.Users.Create(ctx, db.NewUser{Username: "u5"})
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if _, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`); err != nil {
 			t.Fatal(err)
 		}
@@ -76,6 +80,9 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 		ss, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, u.ID)
 		if len(ss) == 0 {
 			t.Fatal("Error: user saved query not created")
+		}
+		if err != nil {
+			t.Fatal(err)
 		}
 		allSaved, err := db.SavedSearches.ListAll(ctx)
 		if err != nil {
@@ -161,6 +168,10 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 			t.Fatal(err)
 		}
 		settings, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if err := insertSavedQueryIntoDB(ctx, settings, &SavedQueryField{SavedQueries: []SavedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
 			t.Fatal(err)
 		}
