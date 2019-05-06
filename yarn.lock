@@ -2666,10 +2666,10 @@
   resolved "https://registry.npmjs.org/@types/webpack-env/-/webpack-env-1.13.6.tgz#128d1685a7c34d31ed17010fc87d6a12c1de6976"
   integrity sha512-5Th3OsZ4gTRdr9Mho83BQ23cex4sRhOR4XTG+m+cJc0FhtUBK9Vn62hBJ+pnQYnSxoPOsKoAPOx6FcphxBC8ng==
 
-"@types/webpack@*", "@types/webpack@4.4.30":
-  version "4.4.30"
-  resolved "https://registry.npmjs.org/@types/webpack/-/webpack-4.4.30.tgz#a44b68591f3d11a773802096138b36f516a316b3"
-  integrity sha512-difiaOkRiML1O8ci19CVsC6kyqn+2zpeGYjeDY6waZo/kwF72tk6RIM7SaMeO83fqbIWZYp33DfOy8xW99rtcA==
+"@types/webpack@*", "@types/webpack@4.4.31":
+  version "4.4.31"
+  resolved "https://registry.npmjs.org/@types/webpack/-/webpack-4.4.31.tgz#f59b9d8210cf4d2fd254fe6d1f5ba86e557867f5"
+  integrity sha512-WNALmv/wxy2+OoF7A5GD8BVotXnkuMHlojVWKj/neFHU3Ut2Azbu1A7Yi2Vr6eX3z+31XgR/dJ5NpX4pQZ7ieQ==
   dependencies:
     "@types/anymatch" "*"
     "@types/node" "*"
