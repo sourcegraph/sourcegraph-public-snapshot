@@ -5,7 +5,7 @@ import { storiesOf } from '@storybook/react'
 
 import '../../app.scss'
 
-import { OptionsMenu } from './Menu'
+import { OptionsMenu } from './OptionsMenu'
 
 // tslint:disable: jsx-no-lambda
 
