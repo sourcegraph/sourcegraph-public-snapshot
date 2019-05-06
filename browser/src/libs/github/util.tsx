@@ -1,5 +1,5 @@
-import { GitHubBlobUrl, GitHubMode, GitHubPullUrl, GitHubRepositoryUrl, GitHubURL } from '../github'
 import { DiffResolvedRevSpec } from '../../shared/repo'
+import { GitHubBlobUrl, GitHubMode, GitHubPullUrl, GitHubRepositoryUrl, GitHubURL } from '../github'
 
 /**
  * getFileContainers returns the elements on the page which should be marked

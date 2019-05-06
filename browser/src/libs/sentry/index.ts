@@ -39,7 +39,7 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
 
         // Don't initialize if user hasn't allowed us to report errors or in Phabricator.
         if (!allowed || isInPage) {
-            const client = Sentry.getCurrentHub().getClient() as Sentry.BrowserClient | undefined
+            const client = Sentry.getCurrentHub().getClient()
             if (client) {
                 client.getOptions().enabled = false
             }

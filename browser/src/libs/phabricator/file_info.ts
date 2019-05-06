@@ -1,7 +1,7 @@
 import { from, Observable, zip } from 'rxjs'
 import { catchError, filter, map, switchMap } from 'rxjs/operators'
-import { DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '../phabricator'
 import { FileInfo } from '../code_intelligence'
+import { DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '../phabricator'
 import { resolveDiffRev } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'
 import { getPhabricatorState } from './util'

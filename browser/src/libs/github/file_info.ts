@@ -1,9 +1,9 @@
 import { isDefined, propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { Observable, of, throwError, zip } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
-import { GitHubBlobUrl } from '../github'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
+import { GitHubBlobUrl } from '../github'
 import { getCommitIDFromPermalink } from './scrape'
 import { getDeltaFileName, getDiffResolvedRev, getGitHubState, parseURL } from './util'
 
