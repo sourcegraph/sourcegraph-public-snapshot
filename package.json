@@ -121,7 +121,7 @@
     "@types/textarea-caret": "3.0.0",
     "@types/tmp": "0.1.0",
     "@types/uuid": "3.4.4",
-    "@types/webpack": "4.4.30",
+    "@types/webpack": "4.4.31",
     "@types/webpack-dev-server": "3.1.1",
     "@types/whatwg-url": "6.4.0",
     "autoprefixer": "^9.5.1",
