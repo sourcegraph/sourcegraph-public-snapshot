@@ -32,7 +32,7 @@ export interface Settings {
  * A settings subject is something that can have settings associated with it, such as a site ("global
  * settings"), an organization ("organization settings"), a user ("user settings"), etc.
  */
-export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'settingsURL' | 'viewerCanAdminister'> &
+export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> &
     (
         | Pick<IClient, '__typename' | 'displayName'>
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>

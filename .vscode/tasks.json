@@ -38,7 +38,7 @@
       "isBackground": true,
       "option": "watch",
       "problemMatcher": "$tsc-watch",
-      "tsconfig": "client/browser/tsconfig.json",
+      "tsconfig": "browser/tsconfig.json",
       "presentation": {
         "reveal": "never"
       },

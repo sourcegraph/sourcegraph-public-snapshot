@@ -33,13 +33,13 @@ const config = {
   globals: {
     'ts-jest': {
       diagnostics: {
-        pathRegex: '(client/browser|shared|web)/src',
+        pathRegex: '(browser|shared|web)/src',
         warnOnly: true,
       },
     },
   },
 
-  setupFiles: [path.join(__dirname, 'shared/dev/mockDate.js')],
+  setupFiles: [path.join(__dirname, 'shared/dev/mockDate.js'), path.join(__dirname, 'shared/dev/globalThis.js')],
 }
 
 module.exports = config

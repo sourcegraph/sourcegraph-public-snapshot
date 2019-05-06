@@ -59,7 +59,7 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 			}
 
 			golden := filepath.Join("testdata", "bitbucketserver-repos-"+name+".golden")
-			if *update {
+			if update(name) {
 				err := ioutil.WriteFile(golden, actual, 0644)
 				if err != nil {
 					t.Fatal(err)
@@ -162,7 +162,7 @@ func TestBitbucketServerExclude(t *testing.T) {
 			}
 
 			golden := filepath.Join("testdata", "bitbucketserver-repos-exclude-"+name+".golden")
-			if *update {
+			if update(name) {
 				err := ioutil.WriteFile(golden, actual, 0644)
 				if err != nil {
 					t.Fatal(err)

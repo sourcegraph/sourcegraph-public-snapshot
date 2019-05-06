@@ -1,5 +1,5 @@
 import gulp from 'gulp'
-import { phabricator, watchPhabricator } from './client/browser/gulpfile'
+import { phabricator, watchPhabricator } from './browser/gulpfile'
 import { graphQLTypes, schema, watchGraphQLTypes, watchSchema } from './shared/gulpfile'
 import { webpack as webWebpack, webpackDevServer as webWebpackDevServer } from './web/gulpfile'
 

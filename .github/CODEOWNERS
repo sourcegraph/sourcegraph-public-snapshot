@@ -43,7 +43,7 @@ README.md @sqs
 /web/src/enterprise/dotcom/welcome/ @sqs
 
 # Browser extensions
-/client/browser/ @felixfbecker @lguychard
+/browser/ @felixfbecker @lguychard
 
 # Sourcegraph extension API
 /packages/sourcegraph-extension-api/ @lguychard
