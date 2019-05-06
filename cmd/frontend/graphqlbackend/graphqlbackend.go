@@ -141,15 +141,11 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-// StringLogger describes something that can log strings, list them and also
+// stringLogger describes something that can log strings, list them and also
 // clean up to make sure they don't use too much storage space.
-type StringLogger interface {
+type stringLogger interface {
 	// Log stores the given string s.
 	Log(ctx context.Context, s string) error
-
-	// List returns the logged entries in order from oldest to newest, except for
-	// ones that were removed during Cleanup.
-	List(ctx context.Context) ([]string, error)
 
 	// Top returns the top n most frequently occurring strings.
 	// The returns are parallel slices for the unique strings and their associated counts.
@@ -164,7 +160,7 @@ type StringLogger interface {
 // schemaResolver. Eventually, they should all be fields (i.e., dependency
 // injected), but that is being done gradually. Currently, only `recentSearches` is dependency-injected.
 type schemaResolver struct {
-	recentSearches StringLogger
+	recentSearches stringLogger
 }
 
 // DEPRECATED
