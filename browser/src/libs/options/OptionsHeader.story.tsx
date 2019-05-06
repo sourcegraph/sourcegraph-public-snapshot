@@ -5,7 +5,7 @@ import { storiesOf } from '@storybook/react'
 import '../../app.scss'
 
 import { action } from '@storybook/addon-actions'
-import { OptionsHeader } from './Header'
+import { OptionsHeader } from './OptionsHeader'
 
 storiesOf('Options - OptionsHeader', module).add('Default', () => (
     <div style={{ maxWidth: 400 }}>
