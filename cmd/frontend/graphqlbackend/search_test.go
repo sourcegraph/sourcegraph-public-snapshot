@@ -114,8 +114,8 @@ func (m *RecentSearchesIgnorer) Log(ctx context.Context, s string) error { retur
 func (m *RecentSearchesIgnorer) Top(ctx context.Context, n int32) (map[string]int32, error) {
 	return nil, nil
 }
-func (m *RecentSearchesIgnorer) List(ctx context.Context) ([]string, error)   { return nil, nil }
-func (m *RecentSearchesIgnorer) Cleanup(ctx context.Context, limit int) error { return nil }
+func (m *RecentSearchesIgnorer) List(ctx context.Context) ([]string, error)     { return nil, nil }
+func (m *RecentSearchesIgnorer) Cleanup(ctx context.Context, limit int32) error { return nil }
 
 var testSearchGQLQuery = `
 		fragment FileMatchFields on FileMatch {

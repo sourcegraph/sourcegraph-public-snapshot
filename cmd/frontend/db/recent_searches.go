@@ -28,7 +28,7 @@ func (rs *RecentSearches) Log(ctx context.Context, q string) error {
 }
 
 // Cleanup keeps the row count in the recent_searches table below limit.
-func (rs *RecentSearches) Cleanup(ctx context.Context, limit int) error {
+func (rs *RecentSearches) Cleanup(ctx context.Context, limit int32) error {
 	enforceLimit := `
 DELETE FROM recent_searches
 	WHERE id <

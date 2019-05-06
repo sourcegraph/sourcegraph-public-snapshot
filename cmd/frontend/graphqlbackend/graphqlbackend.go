@@ -155,7 +155,7 @@ type StringLogger interface {
 	Top(ctx context.Context, n int32) (map[string]int32, error)
 
 	// Cleanup removes old entries such that there are no more than limit remaining.
-	Cleanup(ctx context.Context, limit int) error
+	Cleanup(ctx context.Context, limit int32) error
 }
 
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
