@@ -21,7 +21,7 @@ func TestSavedSearches(t *testing.T) {
 	}
 
 	db.Mocks.SavedSearches.ListSavedSearchesByUserID = func(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
-		return []*types.SavedSearch{&types.SavedSearch{ID: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &userID, OrgID: nil}}, nil
+		return []*types.SavedSearch{{ID: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, OwnerKind: "user", UserID: &userID, OrgID: nil}}, nil
 	}
 
 	savedSearches, err := (&schemaResolver{}).SavedSearches(ctx)
