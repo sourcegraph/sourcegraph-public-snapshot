@@ -91,6 +91,87 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
+			kind: "AWSCODECOMMIT",
+			desc: "valid exclude",
+			config: `
+			{
+				"region": "eu-west-1",
+				"accessKeyID": "bar",
+				"secretAccessKey": "baz",
+				"exclude": [
+					{
+					  "name": "git-codecommit.eu-central-3.amazonaws.com/foobar-barfoo_bazbar",
+					  "id": "arn:aws:codecommit:eu-central-3:999999999999:foobar-barfoo_bazbar"
+					},
+					{
+					  "name": "git-codecommit-fips.us-west-1.amazonaws.com/foobar-barfoo_bazbar",
+					  "id": "arn:aws:codecommit:us-west-1:999999999999:foobar-barfoo_bazbar"
+					},
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid empty exclude",
+			config: `{"exclude": []}`,
+			assert: includes(`exclude: Array must have at least 1 items`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": "bar"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^(git-codecommit-fips|git-codecommit)\.[\w.\d-]+\.amazonaws\.com/[\w.-]+$'`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid exclude item id",
+			config: `{"exclude": [{"id": "bar"}]}`,
+			assert: includes(`exclude.0.id: Does not match pattern '^arn:aws:codecommit:[\w\d-]+:\d+:[\w.-]+$'`),
+		},
+		{
+			kind: "AWSCODECOMMIT",
+			desc: "invalid additional exclude item properties",
+			config: `{"exclude": [{
+				"id": "arn:aws:codecommit:us-west-1:999999999999:foobar",
+				"bar": "baz"
+			}]}`,
+			assert: includes(`bar: Additional property bar is not allowed`),
+		},
+		{
+			kind: "AWSCODECOMMIT",
+			desc: "both name and id can be specified in exclude",
+			config: `
+			{
+				"region": "eu-west-1",
+				"accessKeyID": "bar",
+				"secretAccessKey": "baz",
+				"exclude": [
+					{
+					  "name": "git-codecommit.eu-central-3.amazonaws.com/foobar",
+					  "id": "arn:aws:codecommit:eu-central-3:999999999999:foobar"
+					},
+					{
+					  "name": "git-codecommit-fips.us-west-1.amazonaws.com/foobar",
+					  "id": "arn:aws:codecommit:us-west-1:999999999999:foobar"
+					},
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
 			kind:   "GITOLITE",
 			desc:   "witout prefix nor host",
 			config: `{}`,

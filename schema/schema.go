@@ -10,11 +10,12 @@ import (
 
 // AWSCodeCommitConnection description: Configuration for a connection to AWS CodeCommit.
 type AWSCodeCommitConnection struct {
-	AccessKeyID                 string `json:"accessKeyID"`
-	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
-	Region                      string `json:"region"`
-	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
-	SecretAccessKey             string `json:"secretAccessKey"`
+	AccessKeyID                 string                       `json:"accessKeyID"`
+	Exclude                     []*ExcludedAWSCodeCommitRepo `json:"exclude,omitempty"`
+	InitialRepositoryEnablement bool                         `json:"initialRepositoryEnablement,omitempty"`
+	Region                      string                       `json:"region"`
+	RepositoryPathPattern       string                       `json:"repositoryPathPattern,omitempty"`
+	SecretAccessKey             string                       `json:"secretAccessKey"`
 }
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -146,6 +147,10 @@ type CriticalConfiguration struct {
 type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
+}
+type ExcludedAWSCodeCommitRepo struct {
+	Id   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 type ExcludedBitbucketServerRepo struct {
 	Id      int    `json:"id,omitempty"`

@@ -51,6 +51,33 @@ const AWSCodeCommitSchemaJSON = `{
     "initialRepositoryEnablement": {
       "description": "Defines whether repositories from AWS CodeCommit should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable AWS CodeCommit repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by AWS); site admins can still disable them explicitly, and they'll remain disabled.",
       "type": "boolean"
+    },
+    "exclude": {
+      "description": "A list of repositories to never mirror from AWS CodeCommit. \n\nSupports excluding by name ({\"name\": \"git-codecommit.us-west-1.amazonaws.com\/repo-name\"}) or by ARN ({\"id\": \"arn:aws:codecommit:us-west-1:999999999999:name\"}).",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedAWSCodeCommitRepo",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "properties": {
+          "name": {
+            "description": "The name of an AWS CodeCommit repository including the path (\"git-codecommit.us-west-1.amazonaws.com\/repo-name\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^(git-codecommit-fips|git-codecommit)\\.[\\w.\\d-]+\\.amazonaws\\.com/[\\w.-]+$"
+          },
+          "id": {
+            "description": "The ARN (Amazon Resource Name) of an AWS Code Commit repository to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^arn:aws:codecommit:[\\w\\d-]+:\\d+:[\\w.-]+$"
+          }
+        }
+      },
+      "examples": [
+        [{ "name": "go-monorepo" }, { "id": "arn:aws:codecommit:us-west-1:999999999999:dotfiles" }],
+        [{ "name": "go-monorepo" }, { "name": "go-client" }]
+      ]
     }
   }
 }
