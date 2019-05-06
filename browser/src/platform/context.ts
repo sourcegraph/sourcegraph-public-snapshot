@@ -50,7 +50,7 @@ export function createPlatformContext({
                 if (isInPage) {
                     return requestGraphQLCommon<T>({
                         request,
-                        variables: {},
+                        variables,
                         baseUrl: window.SOURCEGRAPH_URL,
                         headers: {},
                         requestOptions: {
