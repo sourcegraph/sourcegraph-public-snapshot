@@ -160,6 +160,10 @@ type ExcludedGitLabProject struct {
 	Id   int    `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 }
+type ExcludedGitoliteRepo struct {
+	Name    string `json:"name,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
+}
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
@@ -243,11 +247,12 @@ type GitLabProject struct {
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
 type GitoliteConnection struct {
-	Blacklist                  string       `json:"blacklist,omitempty"`
-	Host                       string       `json:"host"`
-	Phabricator                *Phabricator `json:"phabricator,omitempty"`
-	PhabricatorMetadataCommand string       `json:"phabricatorMetadataCommand,omitempty"`
-	Prefix                     string       `json:"prefix"`
+	Blacklist                  string                  `json:"blacklist,omitempty"`
+	Exclude                    []*ExcludedGitoliteRepo `json:"exclude,omitempty"`
+	Host                       string                  `json:"host"`
+	Phabricator                *Phabricator            `json:"phabricator,omitempty"`
+	PhabricatorMetadataCommand string                  `json:"phabricatorMetadataCommand,omitempty"`
+	Prefix                     string                  `json:"prefix"`
 }
 
 // HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
