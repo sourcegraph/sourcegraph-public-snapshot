@@ -1,5 +1,5 @@
 import { Observable, of } from 'rxjs'
-import { storage } from '../../browser/storage'
+import { observeStorageKey, storage } from '../../browser/storage'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
@@ -15,9 +15,9 @@ if (window.SG_ENV === 'EXTENSION' && globalThis.browser) {
     })
 }
 
-export function observeSourcegraphURL(): Observable<string> {
+export function observeSourcegraphURL(): Observable<string | undefined> {
     if (window.SG_ENV === 'EXTENSION') {
-        return storage.observeSync('sourcegraphURL')
+        return observeStorageKey('sync', 'sourcegraphURL')
     }
     return of(sourcegraphUrl)
 }
