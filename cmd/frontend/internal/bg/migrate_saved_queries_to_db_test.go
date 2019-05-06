@@ -195,6 +195,10 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 			t.Fatal(err)
 		}
 		settings, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{Org: &org.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if err := insertSavedQueryIntoDB(ctx, settings, &SavedQueryField{SavedQueries: []SavedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
 			t.Fatal(err)
 		}
@@ -215,7 +219,14 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 	t.Run("global saved search inserted into db table under site admin user", func(t *testing.T) {
 		// The site-admin is the first user we created in this DB, and will have an ID of 1.
 		user, err := db.Users.GetByID(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
 		settings, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if err := insertSavedQueryIntoDB(ctx, settings, &SavedQueryField{SavedQueries: []SavedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
 			t.Fatal(err)
 		}
