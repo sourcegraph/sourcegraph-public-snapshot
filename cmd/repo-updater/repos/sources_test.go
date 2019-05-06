@@ -190,10 +190,9 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:           os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey:       os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
-					Region:                os.Getenv("AWSCODECOMMIT_REGION"),
-					RepositoryPathPattern: "git-codecommit.us-west-1.amazonaws.com/{name}",
+					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					Region:          os.Getenv("AWSCODECOMMIT_REGION"),
 				}),
 			},
 			{
@@ -426,10 +425,9 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:           os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey:       os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
-					Region:                os.Getenv("AWSCODECOMMIT_REGION"),
-					RepositoryPathPattern: "git-codecommit.us-west-1.amazonaws.com/{name}",
+					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					Region:          os.Getenv("AWSCODECOMMIT_REGION"),
 				}),
 			},
 		}
@@ -464,11 +462,11 @@ func TestSources_ListRepos(t *testing.T) {
 						}
 					case "AWSCODECOMMIT":
 						want = []string{
-							"git-codecommit.us-west-1.amazonaws.com/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
-							"git-codecommit.us-west-1.amazonaws.com/empty-repo",
-							"git-codecommit.us-west-1.amazonaws.com/stripe-go",
-							"git-codecommit.us-west-1.amazonaws.com/test",
-							"git-codecommit.us-west-1.amazonaws.com/test2",
+							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"empty-repo",
+							"stripe-go",
+							"test",
+							"test2",
 						}
 					case "OTHER":
 						want = []string{
@@ -520,6 +518,15 @@ func TestSources_ListRepos(t *testing.T) {
 				}),
 			},
 			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:           os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey:       os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					Region:                os.Getenv("AWSCODECOMMIT_REGION"),
+					RepositoryPathPattern: "a/b/c/{name}",
+				}),
+			},
+			{
 				Kind: "GITOLITE",
 				Config: marshalJSON(t, &schema.GitoliteConnection{
 					// Prefix serves as a sort of repositoryPathPattern for Gitolite
@@ -551,6 +558,14 @@ func TestSources_ListRepos(t *testing.T) {
 					case "BITBUCKETSERVER":
 						want = []string{
 							"127.0.0.1/a/b/c/ORG/baz",
+						}
+					case "AWSCODECOMMIT":
+						want = []string{
+							"a/b/c/empty-repo",
+							"a/b/c/stripe-go",
+							"a/b/c/test2",
+							"a/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"a/b/c/test",
 						}
 					case "GITOLITE":
 						want = []string{
