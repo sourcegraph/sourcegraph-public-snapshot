@@ -2,19 +2,18 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 
 	"github.com/pkg/errors"
 )
 
-type RecentSearches struct {
-	DB func() *sql.DB
-}
+type RecentSearches struct{}
 
 // Log inserts the query q to the recent_searches table in the db.
 func (rs *RecentSearches) Log(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
-	res, err := rs.DB().ExecContext(ctx, insert, q)
+	res, err := dbconn.Global.ExecContext(ctx, insert, q)
 	if err != nil {
 		return errors.Errorf("inserting %q into recent_searches table: %v", q, err)
 	}
@@ -38,7 +37,7 @@ DELETE FROM recent_searches
 		 OFFSET GREATEST(0, (SELECT (SELECT COUNT(*) FROM recent_searches) - $1))
 		 LIMIT 1)
 `
-	if _, err := rs.DB().ExecContext(ctx, enforceLimit, limit); err != nil {
+	if _, err := dbconn.Global.ExecContext(ctx, enforceLimit, limit); err != nil {
 		return errors.Errorf("deleting excess rows in recent_searches table: %v", err)
 	}
 	return nil
@@ -47,7 +46,7 @@ DELETE FROM recent_searches
 // List returns all the search queries in the recent_searches table.
 func (rs *RecentSearches) List(ctx context.Context) ([]string, error) {
 	sel := `SELECT query FROM recent_searches`
-	rows, err := rs.DB().QueryContext(ctx, sel)
+	rows, err := dbconn.Global.QueryContext(ctx, sel)
 	var qs []string
 	if err != nil {
 		return nil, errors.Errorf("running SELECT query: %v", err)
@@ -67,7 +66,7 @@ func (rs *RecentSearches) List(ctx context.Context) ([]string, error) {
 
 func (rs *RecentSearches) Top(ctx context.Context, n int32) (map[string]int32, error) {
 	sel := `SELECT query, COUNT(*) FROM recent_searches GROUP BY query ORDER BY 2 DESC, query ASC LIMIT $1`
-	rows, err := rs.DB().QueryContext(ctx, sel, n)
+	rows, err := dbconn.Global.QueryContext(ctx, sel, n)
 	if err != nil {
 		return nil, errors.Wrap(err, "running db query to get top search queries")
 	}

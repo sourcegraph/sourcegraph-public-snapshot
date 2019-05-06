@@ -19,7 +19,7 @@ func TestRecentSearches_Log(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 	q := fmt.Sprintf("fake query with random number %d", rand.Int())
-	rs := &RecentSearches{globalDB}
+	rs := &RecentSearches{}
 	if err := rs.Log(ctx, q); err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestRecentSearches_Cleanup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	rs := &RecentSearches{globalDB}
+	rs := &RecentSearches{}
 	t.Run("empty case", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
 		if err := rs.Cleanup(ctx, 1); err != nil {
@@ -110,7 +110,7 @@ func TestRecentSearches_Cleanup(t *testing.T) {
 }
 
 func BenchmarkRecentSearches_LogAndCleanup(b *testing.B) {
-	rs := &RecentSearches{globalDB}
+	rs := &RecentSearches{}
 	ctx := dbtesting.TestContext(b)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -142,7 +142,7 @@ func TestRecentSearches_Top(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rs := &RecentSearches{globalDB}
+			rs := &RecentSearches{}
 			ctx := dbtesting.TestContext(t)
 			for _, q := range tt.queries {
 				if err := rs.Log(ctx, q); err != nil {

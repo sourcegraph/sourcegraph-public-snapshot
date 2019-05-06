@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"strconv"
 	"time"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -53,7 +51,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 func init() {
 	var err error
 	sr := &schemaResolver{
-		recentSearches: &db.RecentSearches{DB: func() *sql.DB { return dbconn.Global }},
+		recentSearches: &db.RecentSearches{},
 	}
 	GraphQLSchema, err = graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
 	if err != nil {
