@@ -69,8 +69,7 @@ func (r *schemaResolver) Search(args *struct {
 		return newSearcherResolver(query2)
 	}
 
-	// TODO(ijt): remove this goroutine leak. One simple approach would be to issue a separate, concurrent query
-	// from the typescript frontend to a new graphql mutation that adds a query to the recent_searches table.
+	// TODO(ijt): remove this potential goroutine leak.
 	go r.addQueryToSearchesTable(args.Query)
 
 	query, err := query.ParseAndCheck(args.Query)
