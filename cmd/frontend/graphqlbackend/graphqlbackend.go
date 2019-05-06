@@ -157,6 +157,10 @@ type StringLogger interface {
 	Cleanup(ctx context.Context, limit int) error
 }
 
+// schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
+// uses subresolvers, some of which are globals and some of which are fields on
+// schemaResolver. Eventually, they should all be fields (i.e., dependency
+// injected), but that is being done gradually.
 type schemaResolver struct {
 	recentSearches StringLogger
 }
