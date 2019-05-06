@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -9,13 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
+func globalDB() *sql.DB { return dbconn.Global }
+
 func TestRecentSearches_Add(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := dbtesting.TestContext(t)
 	q := fmt.Sprintf("fake query with random number %d", rand.Int())
-	rs := &RecentSearches{dbconn.Global}
+	rs := &RecentSearches{globalDB}
 	if err := rs.Log(ctx, q); err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +38,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	rs := &RecentSearches{dbconn.Global}
+	rs := &RecentSearches{globalDB}
 	t.Run("empty case", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
 		if err := rs.Cleanup(ctx, 1); err != nil {
@@ -106,7 +109,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 }
 
 func BenchmarkRecentSearches_AddAndDeleteExcessRows(b *testing.B) {
-	rs := &RecentSearches{dbconn.Global}
+	rs := &RecentSearches{globalDB}
 	ctx := dbtesting.TestContext(b)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

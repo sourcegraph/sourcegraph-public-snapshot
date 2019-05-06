@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"github.com/graph-gophers/graphql-go"
 	"reflect"
 	"testing"
 
@@ -40,7 +41,14 @@ func TestSearch(t *testing.T) {
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery}
 			db.Mocks.Repos.List = tc.reposListMock
-			result := GraphQLSchema.Exec(context.Background(), testSearchGQLQuery, "", vars)
+			sr := &schemaResolver{
+				recentSearches: &RecentSearchesIgnorer{},
+			}
+			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			result := schema.Exec(context.Background(), testSearchGQLQuery, "", vars)
 			if len(result.Errors) > 0 {
 				t.Fatalf("graphQL query returned errors: %+v", result.Errors)
 			}
@@ -57,6 +65,12 @@ func TestSearch(t *testing.T) {
 		})
 	}
 }
+
+type RecentSearchesIgnorer struct{}
+
+func (m *RecentSearchesIgnorer) Log(ctx context.Context, s string) error      { return nil }
+func (m *RecentSearchesIgnorer) List(ctx context.Context) ([]string, error)   { return nil, nil }
+func (m *RecentSearchesIgnorer) Cleanup(ctx context.Context, limit int) error { return nil }
 
 var testSearchGQLQuery = `
 		fragment FileMatchFields on FileMatch {

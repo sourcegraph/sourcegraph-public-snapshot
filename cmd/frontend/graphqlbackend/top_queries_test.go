@@ -58,7 +58,7 @@ func Test_schemaResolver_TopQueries(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rsm := &RecentSearchesMock{
+			rsm := &RecentSearchesFake{
 				queries: tt.queries,
 			}
 			s := &schemaResolver{
@@ -75,13 +75,20 @@ func Test_schemaResolver_TopQueries(t *testing.T) {
 	}
 }
 
-type RecentSearchesMock struct {
+type RecentSearchesFake struct {
 	queries []string
-
-	// Default unimplemented interface methods to nil panic.
-	StringLogger
 }
 
-func (rsm *RecentSearchesMock) Get(ctx context.Context) ([]string, error) {
-	return rsm.queries, nil
+func (r *RecentSearchesFake) Log(ctx context.Context, s string) error {
+	r.queries = append(r.queries, s)
+	return nil
+}
+
+func (r *RecentSearchesFake) List(ctx context.Context) ([]string, error) {
+	return r.queries, nil
+}
+
+func (r *RecentSearchesFake) Cleanup(ctx context.Context, limit int) error {
+	panic("RecentSearchesFake.Cleanup is not yet implemented")
+	return nil
 }
