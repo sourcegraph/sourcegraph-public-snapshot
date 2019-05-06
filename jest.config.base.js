@@ -33,7 +33,7 @@ const config = {
   globals: {
     'ts-jest': {
       diagnostics: {
-        pathRegex: '(client/browser|shared|web)/src',
+        pathRegex: '(browser|shared|web)/src',
         warnOnly: true,
       },
     },
