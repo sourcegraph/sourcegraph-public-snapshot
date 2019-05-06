@@ -1,5 +1,5 @@
-import { IGraphQLResponseRoot } from '../../../../shared/src/graphql/schema'
-import { GraphQLRequestArgs } from '../shared/backend/graphql'
+import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context'
 
 interface RepoLocations {
@@ -94,5 +94,8 @@ export const defaultStorageItems: StorageItems = {
 export interface BackgroundMessageHandlers {
     openOptionsPage(): Promise<void>
     createBlobURL(bundleUrl: string): Promise<string>
-    requestGraphQL<T extends IGraphQLResponseRoot>(params: GraphQLRequestArgs): Promise<T>
+    requestGraphQL<T extends GQL.IQuery | GQL.IMutation>(options: {
+        request: string
+        variables: { [k: string]: any }
+    }): Promise<GraphQLResult<T>>
 }

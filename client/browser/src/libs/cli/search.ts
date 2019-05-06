@@ -1,5 +1,6 @@
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
+import { storage } from '../../browser/storage'
 import { createSuggestionFetcher } from '../../shared/backend/search'
 import { sourcegraphUrl } from '../../shared/util/context'
 

@@ -7,13 +7,19 @@ import { noop, Observable } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import * as domainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
-import { IGraphQLResponseRoot } from '../../../../../shared/src/graphql/schema'
-import { storage } from '../../browser/storage'
+import {
+    gql,
+    GraphQLDocument,
+    GraphQLResult,
+    requestGraphQL as requestGraphQLCommon,
+} from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { observeStorageKey, storage } from '../../browser/storage'
 import { BackgroundMessageHandlers, defaultStorageItems } from '../../browser/types'
 import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
-import { GraphQLRequestArgs, requestGraphQL } from '../../shared/backend/graphql'
+import { requestOptions } from '../../shared/backend/graphql'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { fromBrowserEvent } from '../../shared/util/browser'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, setSourcegraphUrl } from '../../shared/util/context'
@@ -46,9 +52,8 @@ const configureOmnibox = (serverUrl: string): void => {
     })
 }
 
-initializeOmniboxInterface()
 const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(request: GraphQLDocument, variables: {}) =>
-    storage.observeSync('sourcegraphURL').pipe(
+    observeStorageKey('sync', 'sourcegraphURL').pipe(
         take(1),
         switchMap(baseUrl =>
             requestGraphQLCommon<T>({
@@ -61,6 +66,8 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(request: GraphQLDo
             })
         )
     )
+
+initializeOmniboxInterface(requestGraphQL)
 
 async function main(): Promise<void> {
     let { sourcegraphURL } = await storage.sync.get()
@@ -179,8 +186,19 @@ async function main(): Promise<void> {
             return await createBlobURLForBundle(bundleUrl)
         },
 
-        async requestGraphQL<T extends IGraphQLResponseRoot>(params: GraphQLRequestArgs): Promise<T> {
-            return await requestGraphQL<T>(params).toPromise()
+        async requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
+            request,
+            variables,
+        }: {
+            request: string
+            variables: {}
+        }): Promise<GraphQLResult<T>> {
+            return await requestGraphQL<T>(
+                gql`
+                    ${request}
+                `,
+                variables
+            ).toPromise()
         },
     }
 

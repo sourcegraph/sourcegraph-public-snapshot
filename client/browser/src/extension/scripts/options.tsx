@@ -4,13 +4,14 @@ import '../../config/polyfill'
 
 import * as React from 'react'
 import { render } from 'react-dom'
-import { noop, Subscription } from 'rxjs'
+import { from, noop, Subscription } from 'rxjs'
+import { graphQLContent } from '../../../../../shared/src/graphql/graphql'
+import { background } from '../../browser/runtime'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsMenuProps } from '../../libs/options/Menu'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { initSentry } from '../../libs/sentry'
-import { requestGraphQLFromBackground } from '../../shared/backend/graphql'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
@@ -52,7 +53,10 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
     return { host, protocol, hasPermissions }
 }
 
-const ensureValidSite = () => fetchSite(requestGraphQLFromBackground)
+const ensureValidSite = () =>
+    fetchSite(
+        (request, variables) => from(background.requestGraphQL({ request: request[graphQLContent], variables })) as any
+    )
 
 class Options extends React.Component<{}, State> {
     public state: State = {
