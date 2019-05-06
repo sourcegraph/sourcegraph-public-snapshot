@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -10,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
-
-func globalDB() *sql.DB { return dbconn.Global }
 
 func TestRecentSearches_Log(t *testing.T) {
 	if testing.Short() {
