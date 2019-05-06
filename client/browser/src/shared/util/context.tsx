@@ -1,32 +1,19 @@
 import { Observable, of } from 'rxjs'
-import { observeStorageKey, storage } from '../../browser/storage'
+import { map } from 'rxjs/operators'
+import { observeStorageKey } from '../../browser/storage'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
-export let sourcegraphUrl =
-    window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || DEFAULT_SOURCEGRAPH_URL
-
-if (window.SG_ENV === 'EXTENSION' && globalThis.browser) {
-    // tslint:disable-next-line: no-floating-promises TODO just get rid of the global sourcegraphUrl
-    storage.sync.get().then(items => {
-        if (items.sourcegraphURL) {
-            sourcegraphUrl = items.sourcegraphURL
-        }
-    })
-}
-
-export function observeSourcegraphURL(): Observable<string | undefined> {
+export function observeSourcegraphURL(): Observable<string> {
     if (window.SG_ENV === 'EXTENSION') {
-        return observeStorageKey('sync', 'sourcegraphURL')
+        return observeStorageKey('sync', 'sourcegraphURL').pipe(
+            map(sourcegraphURL => sourcegraphURL || DEFAULT_SOURCEGRAPH_URL)
+        )
     }
-    return of(sourcegraphUrl)
+    return of(window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL') || DEFAULT_SOURCEGRAPH_URL)
 }
 
-export function setSourcegraphUrl(url: string): void {
-    sourcegraphUrl = url
-}
-
-export function isSourcegraphDotCom(url: string = sourcegraphUrl): boolean {
+export function isSourcegraphDotCom(url: string): boolean {
     return url === DEFAULT_SOURCEGRAPH_URL
 }
 

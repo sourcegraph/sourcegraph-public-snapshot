@@ -13,7 +13,7 @@ import { observeStorageKey } from '../browser/storage'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
 import { PrivateRepoPublicSourcegraphComError } from '../shared/backend/errors'
-import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL, sourcegraphUrl } from '../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { createBlobURLForBundle } from './worker'
@@ -21,10 +21,10 @@ import { createBlobURLForBundle } from './worker'
 /**
  * Creates the {@link PlatformContext} for the browser extension.
  */
-export function createPlatformContext({
-    urlToFile,
-    getContext,
-}: Pick<CodeHost, 'urlToFile' | 'getContext'>): PlatformContext {
+export function createPlatformContext(
+    { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
+    sourcegraphURL: string
+): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
     const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>({
         request,
@@ -136,12 +136,12 @@ export function createPlatformContext({
         urlToFile: location => {
             if (urlToFile) {
                 // Construct URL to file on code host, if possible.
-                return urlToFile(location)
+                return urlToFile(sourcegraphURL, location)
             }
             // Otherwise fall back to linking to Sourcegraph (with an absolute URL).
-            return `${sourcegraphUrl}${toPrettyBlobURL(location)}`
+            return `${sourcegraphURL}${toPrettyBlobURL(location)}`
         },
-        sourcegraphURL: sourcegraphUrl,
+        sourcegraphURL,
         clientApplication: 'other',
         sideloadedExtensionURL: isInPage
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)

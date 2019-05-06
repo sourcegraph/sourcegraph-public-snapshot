@@ -4,10 +4,13 @@ import { initializeExtensions } from './extensions'
 describe('Extensions controller', () => {
     it('Blocks GraphQL requests from extensions if they risk leaking private information to the public sourcegraph.com instance', () => {
         window.SOURCEGRAPH_URL = DEFAULT_SOURCEGRAPH_URL
-        const { extensionsController } = initializeExtensions({
-            urlToFile: () => '',
-            getContext: () => ({ repoName: 'foo', privateRepository: true }),
-        })
+        const { extensionsController } = initializeExtensions(
+            {
+                urlToFile: () => '',
+                getContext: () => ({ repoName: 'foo', privateRepository: true }),
+            },
+            DEFAULT_SOURCEGRAPH_URL
+        )
         return expect(
             extensionsController.executeCommand({
                 command: 'queryGraphQL',

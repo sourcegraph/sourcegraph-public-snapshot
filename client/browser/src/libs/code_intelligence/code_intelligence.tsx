@@ -20,6 +20,7 @@ import {
     mergeMap,
     observeOn,
     switchMap,
+    take,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
@@ -52,7 +53,7 @@ import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
-import { sourcegraphUrl } from '../../shared/util/context'
+import { observeSourcegraphURL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
@@ -159,6 +160,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
 
     /** Construct the URL to the specified file. */
     urlToFile?: (
+        sourcegraphURL: string,
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
 
@@ -350,7 +352,8 @@ export function handleCodeHost({
     extensionsController,
     platformContext,
     showGlobalDebug,
-}: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
+    sourcegraphURL,
+}: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]>; sourcegraphURL: string }): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
@@ -399,7 +402,7 @@ export function handleCodeHost({
     // so we don't need to subscribe to mutations.
     if (showGlobalDebug) {
         const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history })(mount)
+        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL })(mount)
     }
 
     // Render view on Sourcegraph button
@@ -413,7 +416,7 @@ export function handleCodeHost({
                 )
                 .subscribe(
                     renderViewContextOnSourcegraph({
-                        sourcegraphUrl,
+                        sourcegraphURL,
                         getContext,
                         viewOnSourcegraphButtonClassProps,
                         ensureRepoExists,
@@ -597,6 +600,7 @@ export function handleCodeHost({
                         <CodeViewToolbar
                             {...fileInfo}
                             {...codeHost.codeViewToolbarClassProps}
+                            sourcegraphURL={sourcegraphURL}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
@@ -658,7 +662,10 @@ export async function injectCodeIntelligenceToCodeHost(
     showGlobalDebug = SHOW_DEBUG()
 ): Promise<Subscription> {
     const subscriptions = new Subscription()
-    const { platformContext, extensionsController } = initializeExtensions(codeHost)
+    const sourcegraphURL = await observeSourcegraphURL()
+        .pipe(take(1))
+        .toPromise()
+    const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL)
     subscriptions.add(extensionsController)
     subscriptions.add(
         handleCodeHost({
@@ -667,6 +674,7 @@ export async function injectCodeIntelligenceToCodeHost(
             extensionsController,
             platformContext,
             showGlobalDebug,
+            sourcegraphURL,
         })
     )
     return subscriptions

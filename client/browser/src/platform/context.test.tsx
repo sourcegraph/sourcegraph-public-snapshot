@@ -6,10 +6,13 @@ describe('Platform Context', () => {
     describe('requestGraphQL()', () => {
         it('throws if the request risks leaking private information to the public sourcegraph.com', () => {
             window.SOURCEGRAPH_URL = DEFAULT_SOURCEGRAPH_URL
-            const { requestGraphQL } = createPlatformContext({
-                urlToFile: () => '',
-                getContext: () => ({ repoName: 'foo', privateRepository: true }),
-            })
+            const { requestGraphQL } = createPlatformContext(
+                {
+                    urlToFile: () => '',
+                    getContext: () => ({ repoName: 'foo', privateRepository: true }),
+                },
+                DEFAULT_SOURCEGRAPH_URL
+            )
             return expect(
                 requestGraphQL({
                     request: gql`

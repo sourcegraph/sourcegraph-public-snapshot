@@ -15,7 +15,7 @@ export interface ViewOnSourcegraphButtonClassProps {
 
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
     context: CodeHostContext
-    sourcegraphUrl: string
+    sourcegraphURL: string
     ensureRepoExists: (context: CodeHostContext, sourcegraphUrl: string) => Observable<boolean>
     onConfigureSourcegraphClick?: () => void
 }
@@ -37,7 +37,7 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    map(({ context, sourcegraphUrl, ensureRepoExists }) => ({
+                    map(({ context, sourcegraphURL: sourcegraphUrl, ensureRepoExists }) => ({
                         context,
                         sourcegraphUrl,
                         ensureRepoExists,
@@ -74,7 +74,7 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         // user to configure Sourcegraph.
         if (
             !this.state.repoExists &&
-            this.props.sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL &&
+            this.props.sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
             this.props.onConfigureSourcegraphClick
         ) {
             return (
@@ -101,18 +101,18 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
     private getURL(): string {
         const rev = this.props.context.rev ? `@${this.props.context.rev}` : ''
 
-        return `${this.props.sourcegraphUrl}/${this.props.context.repoName}${rev}`
+        return `${this.props.sourcegraphURL}/${this.props.context.repoName}${rev}`
     }
 }
 
 export const renderViewContextOnSourcegraph = ({
-    sourcegraphUrl,
+    sourcegraphURL,
     getContext,
     ensureRepoExists,
     viewOnSourcegraphButtonClassProps,
     onConfigureSourcegraphClick,
 }: {
-    sourcegraphUrl: string
+    sourcegraphURL: string
     ensureRepoExists: ViewOnSourcegraphButtonProps['ensureRepoExists']
     onConfigureSourcegraphClick?: ViewOnSourcegraphButtonProps['onConfigureSourcegraphClick']
 } & Required<Pick<CodeHost, 'getContext'>> &
@@ -121,7 +121,7 @@ export const renderViewContextOnSourcegraph = ({
         <ViewOnSourcegraphButton
             {...viewOnSourcegraphButtonClassProps}
             context={getContext()}
-            sourcegraphUrl={sourcegraphUrl}
+            sourcegraphURL={sourcegraphURL}
             ensureRepoExists={ensureRepoExists}
             onConfigureSourcegraphClick={onConfigureSourcegraphClick}
         />,

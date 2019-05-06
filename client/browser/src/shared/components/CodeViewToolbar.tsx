@@ -36,8 +36,8 @@ export interface CodeViewToolbarProps
         FileInfoWithContents,
         TelemetryProps,
         CodeViewToolbarClassProps {
+    sourcegraphURL: string
     onEnabledChange?: (enabled: boolean) => void
-
     buttonProps?: ButtonProps
     location: H.Location
 }
@@ -87,6 +87,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}
                             openProps={{
+                                sourcegraphURL: this.props.sourcegraphURL,
                                 repoName: this.props.baseRepoName || this.props.repoName,
                                 filePath: this.props.baseFilePath || this.props.filePath,
                                 rev: this.props.baseRev || this.props.baseCommitID,
@@ -112,6 +113,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}
                             openProps={{
+                                sourcegraphURL: this.props.sourcegraphURL,
                                 repoName: this.props.repoName,
                                 filePath: this.props.filePath,
                                 rev: this.props.rev || this.props.commitID,

@@ -17,6 +17,7 @@ import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
 import { IMutation, IQuery } from '../../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
+import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
@@ -139,6 +140,7 @@ describe('code_intelligence', () => {
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
                     platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -163,6 +165,7 @@ describe('code_intelligence', () => {
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
                     platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -182,6 +185,7 @@ describe('code_intelligence', () => {
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const globalDebugMount = document.body.querySelector('.global-debug')
@@ -218,11 +222,11 @@ describe('code_intelligence', () => {
                                 getToolbarMount: () => toolbarMount,
                             }),
                         ],
-                        selectionsChanges: () => of([]),
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const editors = await from(services.editor.editors)
@@ -284,6 +288,7 @@ describe('code_intelligence', () => {
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const activeEditor = await from(extensionAPI.app.activeWindowChanges)
@@ -369,6 +374,7 @@ describe('code_intelligence', () => {
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             let editors = await from(services.editor.editors)

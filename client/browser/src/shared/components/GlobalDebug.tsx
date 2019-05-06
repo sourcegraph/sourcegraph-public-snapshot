@@ -3,16 +3,16 @@ import * as React from 'react'
 import { Controller as ClientController } from '../../../../../shared/src/extensions/controller'
 import { ExtensionStatusPopover } from '../../../../../shared/src/extensions/ExtensionStatus'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { sourcegraphUrl } from '../util/context'
 import { ShortcutProvider } from './ShortcutProvider'
 
 interface Props extends PlatformContextProps<'sideloadedExtensionURL'> {
     location: H.Location
     extensionsController: ClientController
+    sourcegraphURL: string
 }
 
-const ExtensionLink: React.FunctionComponent<{ id: string }> = props => {
-    const extensionURL = new URL(sourcegraphUrl)
+const makeExtensionLink = (sourcegraphURL: string): React.FunctionComponent<{ id: string }> => props => {
+    const extensionURL = new URL(sourcegraphURL)
     extensionURL.pathname = `extensions/${props.id}`
     return <a href={extensionURL.href}>{props.id}</a>
 }
@@ -28,7 +28,7 @@ export const GlobalDebug: React.FunctionComponent<Props> = props => (
                     <ExtensionStatusPopover
                         location={props.location}
                         extensionsController={props.extensionsController}
-                        link={ExtensionLink}
+                        link={makeExtensionLink(props.sourcegraphURL)}
                         platformContext={props.platformContext}
                     />
                 </ShortcutProvider>

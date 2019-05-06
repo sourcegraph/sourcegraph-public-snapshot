@@ -5,7 +5,6 @@ import React from 'react'
 import { Observable } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../../shared/src/components/Link'
-import { setSourcegraphUrl } from '../../shared/util/context'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
@@ -57,24 +56,19 @@ function init(): void {
         }
 
         getSourcegraphURLFromConduit()
-            .then(sourcegraphUrl => {
-                getPhabricatorCSS()
-                    .then(css => {
-                        const style = document.createElement('style')
-                        style.setAttribute('type', 'text/css')
-                        style.id = 'sourcegraph-styles'
-                        style.textContent = css
-                        document.getElementsByTagName('head')[0].appendChild(style)
-                        window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphUrl)
-                        window.SOURCEGRAPH_URL = sourcegraphUrl
-                        setSourcegraphUrl(sourcegraphUrl)
-                        metaClickOverride()
-                        injectModules().catch(err => console.error('Unable to inject modules', err))
-                    })
-                    .catch(e => {
-                        console.error(e)
-                    })
-            })
+            .then(sourcegraphURL =>
+                getPhabricatorCSS(sourcegraphURL).then(css => {
+                    const style = document.createElement('style')
+                    style.setAttribute('type', 'text/css')
+                    style.id = 'sourcegraph-styles'
+                    style.textContent = css
+                    document.getElementsByTagName('head')[0].appendChild(style)
+                    window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
+                    window.SOURCEGRAPH_URL = sourcegraphURL
+                    metaClickOverride()
+                    injectModules().catch(err => console.error('Unable to inject modules', err))
+                })
+            )
             .catch(e => console.error(e))
     } else {
         console.log(
@@ -85,8 +79,4 @@ function init(): void {
     }
 }
 
-const url = window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL')
-if (url) {
-    setSourcegraphUrl(url)
-}
 init()

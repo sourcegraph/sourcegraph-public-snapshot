@@ -7,7 +7,6 @@ import { memoizeObservable } from '../../../../../shared/src/util/memoizeObserva
 import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../shared/repo/backend'
-import { sourcegraphUrl } from '../../shared/util/context'
 import { normalizeRepoName } from './util'
 
 interface PhabEntity {
@@ -117,18 +116,14 @@ function createConduitRequestForm(): FormData {
  * Native installation of the Phabricator extension does not allow for us to fetch the style.bundle from a script element.
  * To get around this we fetch the bundled CSS contents and append it to the DOM.
  */
-export function getPhabricatorCSS(): Promise<string> {
+export async function getPhabricatorCSS(sourcegraphURL: string): Promise<string> {
     const bundleUID = process.env.BUNDLE_UID
-    return new Promise((resolve, reject) => {
-        fetch(sourcegraphUrl + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: new Headers({ Accept: 'text/html' }),
-        })
-            .then(resp => resp.text())
-            .then(resolve)
-            .catch(reject)
+    const resp = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: new Headers({ Accept: 'text/html' }),
     })
+    return resp.text()
 }
 
 function getDiffDetailsFromConduit(diffID: number, differentialID: number): Promise<ConduitDiffDetails> {

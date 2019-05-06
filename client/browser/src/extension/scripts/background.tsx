@@ -17,7 +17,7 @@ import { createBlobURLForBundle } from '../../platform/worker'
 import { getHeaders } from '../../shared/backend/headers'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { fromBrowserEvent } from '../../shared/util/browser'
-import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, setSourcegraphUrl } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
@@ -78,7 +78,6 @@ async function main(): Promise<void> {
     // If no sourcegraphURL is set ensure we default back to https://sourcegraph.com.
     if (!sourcegraphURL) {
         await storage.sync.set({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
-        setSourcegraphUrl(DEFAULT_SOURCEGRAPH_URL)
         sourcegraphURL = DEFAULT_SOURCEGRAPH_URL
     }
 
@@ -120,7 +119,6 @@ async function main(): Promise<void> {
         }
 
         if (changes.sourcegraphURL && changes.sourcegraphURL.newValue) {
-            setSourcegraphUrl(changes.sourcegraphURL.newValue)
             await syncClientConfiguration()
             configureOmnibox(changes.sourcegraphURL.newValue)
         }

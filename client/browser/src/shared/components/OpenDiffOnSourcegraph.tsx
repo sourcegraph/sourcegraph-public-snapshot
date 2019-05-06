@@ -5,7 +5,7 @@ import { IFileDiffConnection } from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
-import { getPlatformName, sourcegraphUrl } from '../util/context'
+import { getPlatformName } from '../util/context'
 import { SourcegraphIconButton } from './Button'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {
@@ -81,7 +81,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
     }
 
     private getOpenInSourcegraphUrl(props: OpenDiffInSourcegraphProps): string {
-        const baseUrl = sourcegraphUrl
+        const baseUrl = props.sourcegraphURL
         const url = `${baseUrl}/${props.repoName}`
         const urlToCommit = `${url}/-/compare/${props.commit.baseRev}...${
             props.commit.headRev
