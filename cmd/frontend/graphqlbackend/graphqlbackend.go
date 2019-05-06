@@ -162,7 +162,7 @@ type StringLogger interface {
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver. Eventually, they should all be fields (i.e., dependency
-// injected), but that is being done gradually.
+// injected), but that is being done gradually. Currently, only `recentSearches` is dependency-injected.
 type schemaResolver struct {
 	recentSearches StringLogger
 }
