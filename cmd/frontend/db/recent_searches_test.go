@@ -131,14 +131,14 @@ func TestRecentSearches_Top(t *testing.T) {
 	tests := []struct {
 		name    string
 		queries []string
-		n 		int32
+		n       int32
 		want    map[string]int32
 		wantErr bool
 	}{
-		{name: "empty case", queries: nil, n:10, want: map[string]int32{}, wantErr: false},
-		{name: "a", queries: []string{"a"}, n:10, want: map[string]int32{"a": 1}, wantErr: false},
-		{name: "a a", queries: []string{"a", "a"}, n:10, want: map[string]int32{"a": 2}, wantErr: false},
-		{name: "b a", queries: []string{"b", "a"}, n:10, want: map[string]int32{"a": 1, "b": 1}, wantErr: false},
+		{name: "empty case", queries: nil, n: 10, want: map[string]int32{}, wantErr: false},
+		{name: "a", queries: []string{"a"}, n: 10, want: map[string]int32{"a": 1}, wantErr: false},
+		{name: "a a", queries: []string{"a", "a"}, n: 10, want: map[string]int32{"a": 2}, wantErr: false},
+		{name: "b a", queries: []string{"b", "a"}, n: 10, want: map[string]int32{"a": 1, "b": 1}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
