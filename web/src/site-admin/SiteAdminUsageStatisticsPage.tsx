@@ -10,7 +10,7 @@ import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchSiteUsageStatistics, fetchUserUsageStatistics, fetchTopQueries } from './backend'
+import { fetchSiteUsageStatistics, fetchTopQueries, fetchUserUsageStatistics } from './backend'
 import { SearchUsageStats } from './SearchUsageStats'
 
 interface ChartData {
