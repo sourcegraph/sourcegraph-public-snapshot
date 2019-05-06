@@ -95,25 +95,28 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
         return (
             // tslint:disable-next-line:jsx-ban-elements
             <form className={`server-url-form ${this.props.className || ''}`} onSubmit={this.handleSubmit}>
-                <label className="server-url-form__label">Sourcegraph URL</label>
-                <div className="server-url-form__input-container">
-                    <div className="server-url-form__status">
-                        <span
-                            className={
-                                'server-url-form__status-indicator ' +
-                                'server-url-form__status-indicator--' +
-                                (this.isUpdating ? 'default' : statusClassNames[this.props.status])
-                            }
-                        />
-                        <span className="server-url-form__status-text">
-                            {this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}
+                <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
+                <div className="input-group">
+                    <div className="input-group-prepend">
+                        <span className="input-group-text">
+                            <span>
+                                <span
+                                    className={
+                                        'server-url-form__status-indicator ' +
+                                        'bg-' +
+                                        (this.isUpdating ? 'secondary' : statusClassNames[this.props.status])
+                                    }
+                                />{' '}
+                                <span>{this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}</span>
+                            </span>
                         </span>
                     </div>
                     <input
                         type="text"
+                        className="form-control"
+                        id="sourcegraph-url"
                         ref={this.inputElement}
                         value={this.props.value}
-                        className="server-url-form__input"
                         onChange={this.handleChange}
                         spellCheck={false}
                         autoCapitalize="off"
@@ -121,7 +124,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                     />
                 </div>
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
-                    <div className="server-url-form__error">
+                    <div className="mt-1">
                         Authentication to Sourcegraph failed.{' '}
                         <a href={this.props.value} target="_blank">
                             Sign in to your instance
@@ -130,7 +133,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                     </div>
                 )}
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.UnableToConnect && (
-                    <div className="server-url-form__error">
+                    <div className="mt-1">
                         <p>
                             Unable to connect to{' '}
                             <a href={this.props.value} target="_blank">

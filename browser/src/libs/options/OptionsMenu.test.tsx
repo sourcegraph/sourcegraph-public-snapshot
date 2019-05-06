@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render } from 'react-testing-library'
 import sinon from 'sinon'
 
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
-import { OptionsMenu, OptionsMenuProps } from './Menu'
+import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 
 describe('ServerURLForm', () => {
     afterAll(cleanup)
