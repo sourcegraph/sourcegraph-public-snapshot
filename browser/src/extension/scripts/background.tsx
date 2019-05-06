@@ -19,7 +19,7 @@ import { BackgroundMessageHandlers, defaultStorageItems } from '../../browser/ty
 import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
-import { requestOptions } from '../../shared/backend/graphql'
+import { getHeaders } from '../../shared/backend/headers'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { fromBrowserEvent } from '../../shared/util/browser'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, setSourcegraphUrl } from '../../shared/util/context'
@@ -62,7 +62,12 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(request: GraphQLDo
                 `,
                 variables,
                 baseUrl,
-                ...requestOptions,
+                headers: getHeaders(),
+                requestOptions: {
+                    crossDomain: true,
+                    withCredentials: true,
+                    async: true,
+                },
             })
         )
     )
