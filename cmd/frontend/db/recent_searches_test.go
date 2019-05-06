@@ -126,16 +126,53 @@ func TestRecentSearches_Top(t *testing.T) {
 		t.Skip()
 	}
 	tests := []struct {
-		name    string
-		queries []string
-		n       int32
-		want    map[string]int32
-		wantErr bool
+		name              string
+		queries           []string
+		n                 int32
+		wantUniqueQueries []string
+		wantCounts        []int32
+		wantErr           bool
 	}{
-		{name: "empty case", queries: nil, n: 10, want: map[string]int32{}, wantErr: false},
-		{name: "a", queries: []string{"a"}, n: 10, want: map[string]int32{"a": 1}, wantErr: false},
-		{name: "a a", queries: []string{"a", "a"}, n: 10, want: map[string]int32{"a": 2}, wantErr: false},
-		{name: "b a", queries: []string{"b", "a"}, n: 10, want: map[string]int32{"a": 1, "b": 1}, wantErr: false},
+		{
+			name:              "empty case",
+			queries:           nil,
+			n:                 10,
+			wantUniqueQueries: nil,
+			wantCounts:        nil,
+			wantErr:           false,
+		},
+		{
+			name:              "a",
+			queries:           []string{"a"},
+			n:                 10,
+			wantUniqueQueries: []string{"a"},
+			wantCounts:        []int32{1},
+			wantErr:           false,
+		},
+		{
+			name:              "a a",
+			queries:           []string{"a", "a"},
+			n:                 10,
+			wantUniqueQueries: []string{"a"},
+			wantCounts:        []int32{2},
+			wantErr:           false,
+		},
+		{
+			name:              "a b",
+			queries:           []string{"a", "b"},
+			n:                 10,
+			wantUniqueQueries: []string{"a", "b"},
+			wantCounts:        []int32{1, 1},
+			wantErr:           false,
+		},
+		{
+			name:              "c c b a a",
+			queries:           []string{"c", "c", "b", "a", "a"},
+			n:                 10,
+			wantUniqueQueries: []string{"a", "c", "b"},
+			wantCounts:        []int32{2, 2, 1},
+			wantErr:           false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -146,13 +183,16 @@ func TestRecentSearches_Top(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			got, err := rs.Top(ctx, tt.n)
+			gotUniqueQueries, gotCounts, err := rs.Top(ctx, tt.n)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RecentSearches.Top() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("RecentSearches.Top() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(gotUniqueQueries, tt.wantUniqueQueries) {
+				t.Errorf("RecentSearches.Top() queries = %v, want %v", gotUniqueQueries, tt.wantUniqueQueries)
+			}
+			if !reflect.DeepEqual(gotCounts, tt.wantCounts) {
+				t.Errorf("RecentSearches.Top() counts = %v, want %v", gotCounts, tt.wantCounts)
 			}
 		})
 	}

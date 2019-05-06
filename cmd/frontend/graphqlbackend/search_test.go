@@ -111,8 +111,8 @@ func TestSearch(t *testing.T) {
 type RecentSearchesIgnorer struct{}
 
 func (m *RecentSearchesIgnorer) Log(ctx context.Context, s string) error { return nil }
-func (m *RecentSearchesIgnorer) Top(ctx context.Context, n int32) (map[string]int32, error) {
-	return nil, nil
+func (m *RecentSearchesIgnorer) Top(ctx context.Context, n int32) ([]string, []int32, error) {
+	return nil, nil, nil
 }
 func (m *RecentSearchesIgnorer) List(ctx context.Context) ([]string, error)   { return nil, nil }
 func (m *RecentSearchesIgnorer) Cleanup(ctx context.Context, limit int) error { return nil }

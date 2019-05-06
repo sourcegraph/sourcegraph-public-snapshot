@@ -8,12 +8,13 @@ import (
 
 // TopQueries returns the top most frequent recent queries.
 func (s *schemaResolver) TopQueries(ctx context.Context, args *struct{ Limit int32 }) ([]queryCountResolver, error) {
-	queriesCounts, err := s.recentSearches.Top(ctx, args.Limit)
+	queries, counts, err := s.recentSearches.Top(ctx, args.Limit)
 	if err != nil {
 		return nil, errors.Wrapf(err, "asking table for top %d search queries", args.Limit)
 	}
 	var qcrs []queryCountResolver
-	for q, c := range queriesCounts {
+	for i, q := range queries {
+		c := counts[i]
 		tqr := queryCountResolver{
 			query: q,
 			count: c,
