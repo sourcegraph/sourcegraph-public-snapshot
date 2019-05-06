@@ -376,6 +376,23 @@ export function fetchSiteUsageStatistics(): Observable<GQL.ISiteUsageStatistics>
     )
 }
 
+export function fetchTopQueries(count: number): Observable<GQL.IQueryCount[]> {
+    return queryGraphQL(
+        gql`
+            query TopQueries($count: Int!) {
+                topQueries(limit: $count) {
+                    query
+                    count
+                }
+            }
+        `,
+        { count }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.topQueries)
+    )
+}
+
 /**
  * Fetches the site and its configuration.
  *

@@ -10,7 +10,8 @@ import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
+import { fetchSiteUsageStatistics, fetchUserUsageStatistics, fetchTopQueries } from './backend'
+import { SearchUsageStats } from './SearchUsageStats'
 
 interface ChartData {
     label: string
@@ -251,6 +252,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                         <UsageChart {...this.props} chartID={this.state.chartID} stats={this.state.stats} />
                     </>
                 )}
+                <SearchUsageStats fetchTopQueries={fetchTopQueries} />
                 <h3 className="mt-4">All registered users</h3>
                 {!this.state.error && (
                     <FilteredUserConnection
