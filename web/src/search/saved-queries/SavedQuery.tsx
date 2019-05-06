@@ -6,15 +6,14 @@ import { Subject, Subscription } from 'rxjs'
 import { mapTo, startWith, switchMap, withLatestFrom } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { getLastIDForSubject } from '../../settings/configuration'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createSavedQuery, deleteSavedQuery } from '../backend'
+import { createSavedSearch, deleteSavedSearch } from '../backend'
 import { SavedQueryRow } from './SavedQueryRow'
 import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
 interface Props extends SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
-    savedQuery: GQL.ISavedQuery
+    savedQuery: GQL.ISavedSearch
     onDidUpdate?: () => void
     onDidDuplicate?: () => void
     onDidDelete?: () => void
@@ -35,7 +34,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
     public state: State = { isEditing: false, isSaving: false, loading: true, refreshedAt: 0, redirect: false }
 
     private componentUpdates = new Subject<Props>()
-    private refreshRequested = new Subject<GQL.ISavedQuery>()
+    private refreshRequested = new Subject<GQL.ISavedSearch>()
     private duplicateRequested = new Subject<void>()
     private deleteRequested = new Subject<void>()
     private subscriptions = new Subscription()
@@ -48,13 +47,14 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                 .pipe(
                     withLatestFrom(propsChanges),
                     switchMap(([, props]) =>
-                        createSavedQuery(
-                            props.savedQuery.subject,
-                            getLastIDForSubject(props.settingsCascade, props.savedQuery.subject.id),
-                            duplicate(props.savedQuery.description),
+                        createSavedSearch(
+                            props.savedQuery.description,
                             props.savedQuery.query,
                             props.savedQuery.notify,
-                            props.savedQuery.notifySlack
+                            props.savedQuery.notifySlack,
+                            props.savedQuery.ownerKind,
+                            props.savedQuery.userID,
+                            props.savedQuery.orgID
                         )
                     ),
                     mapTo(void 0)
@@ -78,13 +78,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             this.deleteRequested
                 .pipe(
                     withLatestFrom(propsChanges),
-                    switchMap(([, props]) =>
-                        deleteSavedQuery(
-                            props.savedQuery.subject,
-                            getLastIDForSubject(props.settingsCascade, props.savedQuery.subject.id),
-                            props.savedQuery.id
-                        )
-                    ),
+                    switchMap(([, props]) => deleteSavedSearch(props.savedQuery.id)),
                     mapTo(void 0)
                 )
                 .subscribe(
@@ -120,26 +114,24 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                 eventName="SavedQueryClick"
                 isLightTheme={this.props.isLightTheme}
                 actions={
-                    this.props.savedQuery.subject.viewerCanAdminister && (
-                        <div className="saved-query-row__actions">
-                            {!this.state.isEditing && (
-                                <button className="btn btn-icon action" onClick={this.toggleEditing}>
-                                    <PencilIcon className="icon-inline" />
-                                    Edit
-                                </button>
-                            )}
-                            {!this.state.isEditing && (
-                                <button className="btn btn-icon action" onClick={this.duplicate}>
-                                    <ContentCopyIcon className="icon-inline" />
-                                    Duplicate
-                                </button>
-                            )}
-                            <button className="btn btn-icon action" onClick={this.confirmDelete}>
-                                <DeleteIcon className="icon-inline" />
-                                Delete
+                    <div className="saved-query-row__actions">
+                        {!this.state.isEditing && (
+                            <button className="btn btn-icon action" onClick={this.toggleEditing}>
+                                <PencilIcon className="icon-inline" />
+                                Edit
                             </button>
-                        </div>
-                    )
+                        )}
+                        {!this.state.isEditing && (
+                            <button className="btn btn-icon action" onClick={this.duplicate}>
+                                <ContentCopyIcon className="icon-inline" />
+                                Duplicate
+                            </button>
+                        )}
+                        <button className="btn btn-icon action" onClick={this.confirmDelete}>
+                            <DeleteIcon className="icon-inline" />
+                            Delete
+                        </button>
+                    </div>
                 }
                 form={
                     this.state.isEditing && (
@@ -193,15 +185,4 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             eventLogger.log('SavedQueryDeletedCanceled')
         }
     }
-}
-
-function duplicate(s: string): string {
-    const m = s.match(/ \(copy(?: (\d+))?\)$/)
-    if (m && m[1]) {
-        return `${s.slice(0, m.index)} (copy ${parseInt(m[1], 10) + 1})`
-    }
-    if (m) {
-        return `${s.slice(0, m.index)} (copy 2)`
-    }
-    return `${s} (copy)`
 }

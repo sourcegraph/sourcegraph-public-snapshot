@@ -185,8 +185,6 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return gitCommitByID(ctx, id)
 	case "RegistryExtension":
 		return RegistryExtensionByID(ctx, id)
-	case "SavedQuery":
-		return savedQueryByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
 	default:

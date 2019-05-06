@@ -3,8 +3,7 @@ import { Observable } from 'rxjs'
 import { mapTo } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { getLastIDForSubject } from '../../settings/configuration'
-import { createSavedQuery } from '../backend'
+import { createSavedSearch } from '../backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
 interface Props extends SettingsCascadeProps {
@@ -26,13 +25,14 @@ export const SavedQueryCreateForm: React.FunctionComponent<Props> = props => (
         settingsCascade={props.settingsCascade}
         // tslint:disable-next-line:jsx-no-lambda
         onSubmit={(fields: SavedQueryFields): Observable<void> =>
-            createSavedQuery(
-                { id: fields.subject },
-                getLastIDForSubject(props.settingsCascade, fields.subject),
+            createSavedSearch(
                 fields.description,
                 fields.query,
                 fields.notify,
-                fields.notifySlack
+                fields.notifySlack,
+                fields.ownerKind,
+                fields.userID,
+                fields.orgID
             ).pipe(mapTo(void 0))
         }
     />

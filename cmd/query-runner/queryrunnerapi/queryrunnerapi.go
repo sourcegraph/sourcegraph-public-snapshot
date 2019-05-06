@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -77,13 +78,16 @@ func (c *client) SavedQueryWasDeleted(ctx context.Context, spec api.SavedQueryID
 }
 
 type TestNotificationArgs struct {
-	Spec api.SavedQueryIDSpec
+	SavedSearch api.SavedQuerySpecAndConfig
 }
 
 // TestNotification is called to send a test notification for a saved search. Users may perform this
 // action to test that the configured notifications are working.
-func (c *client) TestNotification(ctx context.Context, spec api.SavedQueryIDSpec) error {
-	return c.post(PathTestNotification, &TestNotificationArgs{Spec: spec})
+func (c *client) TestNotification(ctx context.Context, savedSearch api.SavedQuerySpecAndConfig) {
+	err := c.post(PathTestNotification, &TestNotificationArgs{SavedSearch: savedSearch})
+	if err != nil {
+		log15.Error("Unable to send test notification, POST failed.", err)
+	}
 }
 
 func (c *client) post(path string, data interface{}) error {

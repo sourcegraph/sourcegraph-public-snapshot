@@ -38,12 +38,14 @@ export function refreshAuthenticatedUser(): Observable<never> {
                         displayName
                         url
                         settingsURL
+                        databaseID
                     }
                 }
                 session {
                     canSignOut
                 }
                 viewerCanAdminister
+                databaseID
             }
         }
     `).pipe(

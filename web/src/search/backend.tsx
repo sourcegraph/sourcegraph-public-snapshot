@@ -242,78 +242,67 @@ export function fetchReposByQuery(query: string): Observable<{ name: string; url
 }
 
 const savedQueryFragment = gql`
-    fragment SavedQueryFields on SavedQuery {
+    fragment SavedQueryFields on SavedSearch {
         id
-        subject {
-            ... on Site {
-                id
-                viewerCanAdminister
-            }
-            ... on Org {
-                id
-                viewerCanAdminister
-            }
-            ... on User {
-                id
-                viewerCanAdminister
-            }
-        }
-        index
         description
         notify
         notifySlack
         query
+        ownerKind
+        userID
+        orgID
+        slackWebhookURL
     }
 `
 
-export function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
+export function fetchSavedQueries(): Observable<GQL.ISavedSearch[]> {
     return queryGraphQL(gql`
-        query SavedQueries {
-            savedQueries {
+        query savedSearches {
+            savedSearches {
                 ...SavedQueryFields
             }
         }
         ${savedQueryFragment}
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.savedQueries) {
+            if (!data || !data.savedSearches) {
                 throw createAggregateError(errors)
             }
-            return data.savedQueries
+            return data.savedSearches
         })
     )
 }
 
-export function createSavedQuery(
-    subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
-    settingsLastID: number | null,
+export function createSavedSearch(
     description: string,
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    disableSubscriptionNotifications?: boolean
-): Observable<GQL.ISavedQuery> {
+    ownerKind: GQL.SavedSearchOwnerKind,
+    userId: number | null,
+    orgId: number | null
+): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation CreateSavedQuery(
-                $subject: ID!
-                $lastID: Int
+            mutation CreateSavedSearch(
                 $description: String!
                 $query: String!
-                $notify: Boolean
-                $notifySlack: Boolean
-                $disableSubscriptionNotifications: Boolean
+                $notifyOwner: Boolean!
+                $notifySlack: Boolean!
+                $ownerKind: SavedSearchOwnerKind!
+                $userID: Int
+                $orgID: Int
             ) {
-                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                    createSavedQuery(
-                        description: $description
-                        query: $query
-                        notify: $notify
-                        notifySlack: $notifySlack
-                        disableSubscriptionNotifications: $disableSubscriptionNotifications
-                    ) {
-                        ...SavedQueryFields
-                    }
+                createSavedSearch(
+                    description: $description
+                    query: $query
+                    notifyOwner: $notifyOwner
+                    notifySlack: $notifySlack
+                    ownerKind: $ownerKind
+                    userID: $userID
+                    orgID: $orgID
+                ) {
+                    ...SavedQueryFields
                 }
             }
             ${savedQueryFragment}
@@ -321,100 +310,84 @@ export function createSavedQuery(
         {
             description,
             query,
-            notify,
+            notifyOwner: notify,
             notifySlack,
-            disableSubscriptionNotifications: disableSubscriptionNotifications || false,
-            subject: subject.id,
-            lastID: settingsLastID,
+            ownerKind,
+            userID: userId,
+            orgID: orgId,
         }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.settingsMutation || !data.settingsMutation.createSavedQuery) {
-                throw createAggregateError(errors)
-            }
-            return data.settingsMutation.createSavedQuery
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
-export function updateSavedQuery(
-    subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
-    settingsLastID: number | null,
+export function updateSavedSearch(
     id: GQL.ID,
     description: string,
     query: string,
     notify: boolean,
-    notifySlack: boolean
-): Observable<GQL.ISavedQuery> {
+    notifySlack: boolean,
+    ownerKind: GQL.SavedSearchOwnerKind,
+    userId: number | null,
+    orgId: number | null
+): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation UpdateSavedQuery(
-                $subject: ID!
-                $lastID: Int
+            mutation UpdateSavedSearch(
                 $id: ID!
-                $description: String
-                $query: String
-                $notify: Boolean
-                $notifySlack: Boolean
+                $description: String!
+                $query: String!
+                $notifyOwner: Boolean!
+                $notifySlack: Boolean!
+                $ownerKind: SavedSearchOwnerKind!
+                $userID: Int
+                $orgID: Int
             ) {
-                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                    updateSavedQuery(
-                        id: $id
-                        description: $description
-                        query: $query
-                        notify: $notify
-                        notifySlack: $notifySlack
-                    ) {
-                        ...SavedQueryFields
-                    }
+                updateSavedSearch(
+                    id: $id
+                    description: $description
+                    query: $query
+                    notifyOwner: $notifyOwner
+                    notifySlack: $notifySlack
+                    ownerKind: $ownerKind
+                    userID: $userID
+                    orgID: $orgID
+                ) {
+                    ...SavedQueryFields
                 }
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, notify, notifySlack, subject: subject.id, lastID: settingsLastID }
+        {
+            id,
+            description,
+            query,
+            notifyOwner: notify,
+            notifySlack,
+            ownerKind,
+            userID: userId,
+            orgID: orgId,
+        }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.settingsMutation || !data.settingsMutation.updateSavedQuery) {
-                throw createAggregateError(errors)
-            }
-            return data.settingsMutation.updateSavedQuery
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
-export function deleteSavedQuery(
-    subject: GQL.SettingsSubject | GQL.ISettingsSubject | { id: GQL.ID },
-    settingsLastID: number | null,
-    id: GQL.ID,
-    disableSubscriptionNotifications?: boolean
-): Observable<void> {
+export function deleteSavedSearch(id: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation DeleteSavedQuery(
-                $subject: ID!
-                $lastID: Int
-                $id: ID!
-                $disableSubscriptionNotifications: Boolean
-            ) {
-                settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                    deleteSavedQuery(id: $id, disableSubscriptionNotifications: $disableSubscriptionNotifications) {
-                        alwaysNil
-                    }
+            mutation DeleteSavedSearch($id: ID!) {
+                deleteSavedSearch(id: $id) {
+                    alwaysNil
                 }
             }
         `,
-        {
-            id,
-            disableSubscriptionNotifications: disableSubscriptionNotifications || false,
-            subject: subject.id,
-            lastID: settingsLastID,
-        }
+        { id }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.settingsMutation || !data.settingsMutation.deleteSavedQuery) {
-                throw createAggregateError(errors)
-            }
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
