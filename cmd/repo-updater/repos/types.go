@@ -104,6 +104,8 @@ func (e *ExternalService) Exclude(rs ...*Repo) error {
 		return e.excludeGitLabRepos(rs...)
 	case "bitbucketserver":
 		return e.excludeBitbucketServerRepos(rs...)
+	case "gitolite":
+		return e.excludeGitoliteRepos(rs...)
 	case "other":
 		return e.excludeOtherRepos(rs...)
 	default:
@@ -272,6 +274,40 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 					set[name] = true
 				}
 			}
+		}
+
+		return "exclude", c.Exclude, nil
+	})
+}
+
+// excludeGitoliteRepos changes the configuration of a Gitolite external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("gitolite", func(v interface{}) (string, interface{}, error) {
+		c := v.(*schema.GitoliteConnection)
+		set := make(map[string]bool, len(c.Exclude))
+		for _, ex := range c.Exclude {
+			if ex.Name != "" {
+				set[ex.Name] = true
+			}
+		}
+
+		for _, r := range rs {
+			if strings.ToLower(r.ExternalRepo.ServiceType) != "gitolite" {
+				continue
+			}
+
+			name := strings.TrimPrefix(r.Name, c.Prefix)
+			if name == "" || set[name] {
+				continue
+			}
+
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: name})
+			set[name] = true
 		}
 
 		return "exclude", c.Exclude, nil

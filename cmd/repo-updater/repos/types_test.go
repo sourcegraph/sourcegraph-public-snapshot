@@ -61,6 +61,18 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
+	gitolite := ExternalService{
+		Kind:        "GITOLITE",
+		DisplayName: "Gitolite",
+		Config: `{
+			// Some comment
+			"host": "git@gitolite.mycorp.com",
+			"prefix": "gitolite.mycorp.com/"
+		}`,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
 	otherService := ExternalService{
 		Kind:        "OTHER",
 		DisplayName: "Other code hosts",
@@ -131,6 +143,14 @@ func TestExternalService_Exclude(t *testing.T) {
 				ServiceID:   "https://git-host.mycorp.com/",
 			},
 		},
+		{
+			Name: "gitolite.mycorp.com/foo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1",
+				ServiceType: "gitolite",
+				ServiceID:   "git@gitolite.mycorp.com",
+			},
+		},
 	}
 
 	var testCases []testCase
@@ -173,6 +193,17 @@ func TestExternalService_Exclude(t *testing.T) {
 					"exclude": [
 						{"id": 1},
 						{"name": "org/baz"}
+					]
+				}`)
+			}),
+			gitolite.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"host": "git@gitolite.mycorp.com",
+					"prefix": "gitolite.mycorp.com/",
+					"exclude": [
+						{"name": "foo"}
 					]
 				}`)
 			}),
@@ -222,6 +253,17 @@ func TestExternalService_Exclude(t *testing.T) {
 					"repositoryQuery": ["none"],
 					"exclude": [
 						{"name": "org/boo"},
+					]
+				}`)
+			}),
+			gitolite.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"host": "git@gitolite.mycorp.com",
+					"prefix": "gitolite.mycorp.com/",
+					"exclude": [
+						{"name": "boo"}
 					]
 				}`)
 			}),
@@ -283,6 +325,18 @@ func TestExternalService_Exclude(t *testing.T) {
 							{"name": "org/boo"},
 							{"id": 1, "name": "org/foo"},
 							{"name": "org/baz"}
+						]
+					}`)
+				}),
+				gitolite.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"host": "git@gitolite.mycorp.com",
+						"prefix": "gitolite.mycorp.com/",
+						"exclude": [
+							{"name": "boo"},
+							{"name": "foo"}
 						]
 					}`)
 				}),
