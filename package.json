@@ -180,7 +180,7 @@
     "stylelint": "^10.0.1",
     "terser-webpack-plugin": "^1.2.0",
     "ts-jest": "^24.0.2",
-    "ts-loader": "^5.4.5",
+    "ts-loader": "^6.0.0",
     "ts-node": "^8.1.0",
     "tslint": "^5.16.0",
     "typedoc": "^0.14.2",
