@@ -18,12 +18,12 @@ import {
     toArray,
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
+import { TokenTextInput } from '../../../../shared/src/components/tokenTextInput/TokenTextInput'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
 import { QueryInputInlineOptions } from './query/QueryInputInlineOptions'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
-import { TokenTextInput } from '../../../../shared/src/components/tokenTextInput/TokenTextInput'
 
 /**
  * Whether the experimental token text query input field is enabled.
@@ -295,7 +295,11 @@ export class QueryInput extends React.Component<Props, State> {
             <div className="query-input2">
                 <div className="input-group border">
                     {USE_TOKEN_TEXT_QUERY_INPUT ? (
-                        <TokenTextInput className={inputClassName} value={this.props.value} />
+                        <TokenTextInput
+                            className={inputClassName}
+                            value={this.props.value}
+                            onChange={this.onInputValueChange}
+                        />
                     ) : (
                         <input
                             className={inputClassName}
@@ -371,11 +375,15 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        this.onInputValueChange(event.currentTarget.value)
+    }
+
+    private onInputValueChange = (value: string) => {
         if (!this.hasLoggedFirstInput) {
             eventLogger.log('SearchInitiated')
             this.hasLoggedFirstInput = true
         }
-        this.inputValues.next(event.currentTarget.value)
+        this.inputValues.next(value)
     }
 
     private onInputFocus: React.FocusEventHandler<HTMLInputElement> = event => {

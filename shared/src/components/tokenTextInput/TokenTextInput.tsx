@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DisplayToken, Tokenizer } from 'tokenizer.js'
+// import { DisplayToken, Tokenizer } from 'tokenizer.js'
 
 interface Props {
     className?: string

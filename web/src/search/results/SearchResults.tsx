@@ -189,7 +189,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 <div className="d-flex flex-wrap flex-1 overflow-hidden">
                     {USE_SEARCH_EXP && (
                         <Resizable
-                            className="h-100"
+                            className="h-100 search-results__resizable"
                             handlePosition="right"
                             storageKey="search-context-bar-resizable"
                             defaultSize={200}
@@ -198,6 +198,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     )}
                     <SearchResultsList
                         {...this.props}
+                        className="flex-1"
                         resultsOrError={this.state.resultsOrError}
                         onShowMoreResultsClick={this.showMoreResults}
                         onExpandAllResultsToggle={this.onExpandAllResultsToggle}

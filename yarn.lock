@@ -2492,6 +2492,13 @@
   dependencies:
     "@types/react" "*"
 
+"@types/react-textarea-autosize@^4.3.4":
+  version "4.3.4"
+  resolved "https://registry.npmjs.org/@types/react-textarea-autosize/-/react-textarea-autosize-4.3.4.tgz#9a93f751c91ad5e86387bce75e3b7e11ed195813"
+  integrity sha512-LLqG27BJGt8ja9x4umQXbnK9pRd0dI23X/GXBcuf476feOZ+e5QiKJYmWOHwAJC3YLl3YixDSigzfF4gzVQZ5w==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-visibility-sensor@5.0.1":
   version "5.0.1"
   resolved "https://registry.npmjs.org/@types/react-visibility-sensor/-/react-visibility-sensor-5.0.1.tgz#614cf7c68a1e5a0ad8685d4ddcf47646e16a3cab"
@@ -12536,6 +12543,14 @@ react-textarea-autosize@^7.0.4:
   resolved "https://registry.npmjs.org/react-textarea-autosize/-/react-textarea-autosize-7.0.4.tgz#4e4be649b544a88713e7b5043f76950f35d3d503"
   integrity sha512-1cC8pFSrIVH92aE+UKxGQ2Gqq43qdIcMscJKScEFeBNemn6gHa+NwKqdXkHxxg5H6uuvW+cPpJPTes6zh90M+A==
   dependencies:
+    prop-types "^15.6.0"
+
+react-textarea-autosize@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/react-textarea-autosize/-/react-textarea-autosize-7.1.0.tgz#3132cb77e65d94417558d37c0bfe415a5afd3445"
+  integrity sha512-c2FlR/fP0qbxmlrW96SdrbgP/v0XZMTupqB90zybvmDVDutytUgPl7beU35klwcTeMepUIQEpQUn3P3bdshGPg==
+  dependencies:
+    "@babel/runtime" "^7.1.2"
     prop-types "^15.6.0"
 
 react-transition-group@^2.2.1, react-transition-group@^2.3.1:
