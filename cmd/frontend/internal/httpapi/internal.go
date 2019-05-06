@@ -265,7 +265,7 @@ func serveSavedQueriesGetInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	info, err := db.SavedQueries.Get(r.Context(), query)
+	info, err := db.QueryRunnerState.Get(r.Context(), query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueries.Get")
 	}
@@ -281,7 +281,7 @@ func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	err = db.SavedQueries.Set(r.Context(), &db.SavedQueryInfo{
+	err = db.QueryRunnerState.Set(r.Context(), &db.SavedQueryInfo{
 		Query:        info.Query,
 		LastExecuted: info.LastExecuted,
 		LatestResult: info.LatestResult,
@@ -301,7 +301,7 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	err = db.SavedQueries.Delete(r.Context(), query)
+	err = db.QueryRunnerState.Delete(r.Context(), query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueries.Delete")
 	}

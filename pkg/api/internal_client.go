@@ -78,11 +78,15 @@ type SavedQueryIDSpec struct {
 // ConfigSavedQuery is the JSON shape of a saved query entry in the JSON configuration
 // (i.e., an entry in the {"search.savedQueries": [...]} array).
 type ConfigSavedQuery struct {
-	Key         string `json:"key,omitempty"`
-	Description string `json:"description"`
-	Query       string `json:"query"`
-	Notify      bool   `json:"notify,omitempty"`
-	NotifySlack bool   `json:"notifySlack,omitempty"`
+	Key             string  `json:"key,omitempty"`
+	Description     string  `json:"description"`
+	Query           string  `json:"query"`
+	Notify          bool    `json:"notify,omitempty"`
+	NotifySlack     bool    `json:"notifySlack,omitempty"`
+	OwnerKind       string  `json:"ownerKind,omitempty"`
+	UserID          *int32  `json:"userID"`
+	OrgID           *int32  `json:"orgID"`
+	SlackWebhookURL *string `json:"slackWebhookURL"`
 }
 
 func (sq ConfigSavedQuery) Equals(other ConfigSavedQuery) bool {
@@ -104,15 +108,15 @@ type SavedQuerySpecAndConfig struct {
 }
 
 // SavedQueriesListAll lists all saved queries, from every user, org, etc.
-func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[SavedQueryIDSpec]ConfigSavedQuery, error) {
+func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[SavedQueryIDSpec]SavedQuerySpecAndConfig, error) {
 	var result []SavedQuerySpecAndConfig
 	err := c.postInternal(ctx, "saved-queries/list-all", nil, &result)
 	if err != nil {
 		return nil, err
 	}
-	m := map[SavedQueryIDSpec]ConfigSavedQuery{}
+	m := map[SavedQueryIDSpec]SavedQuerySpecAndConfig{}
 	for _, r := range result {
-		m[r.Spec] = r.Config
+		m[r.Spec] = SavedQuerySpecAndConfig{Spec: r.Spec, Config: r.Config}
 	}
 	return m, nil
 }

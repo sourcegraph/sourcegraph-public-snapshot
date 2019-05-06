@@ -262,6 +262,7 @@ Referenced by:
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_org_id_fkey" FOREIGN KEY (publisher_org_id) REFERENCES orgs(id)
+    TABLE "saved_searches" CONSTRAINT "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "settings" CONSTRAINT "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
 
 ```
@@ -314,6 +315,17 @@ Foreign-key constraints:
     "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
+
+```
+
+# Table "public.query_runner_state"
+```
+      Column      |           Type           | Modifiers 
+------------------+--------------------------+-----------
+ query            | text                     | 
+ last_executed    | timestamp with time zone | 
+ latest_result    | timestamp with time zone | 
+ exec_duration_ns | bigint                   | 
 
 ```
 
@@ -429,6 +441,29 @@ Referenced by:
  exec_duration_ns | bigint                   | not null
 Indexes:
     "saved_queries_query_unique" UNIQUE, btree (query)
+
+```
+
+# Table "public.saved_searches"
+```
+      Column       |           Type           |                          Modifiers                          
+-------------------+--------------------------+-------------------------------------------------------------
+ id                | integer                  | not null default nextval('saved_searches_id_seq'::regclass)
+ description       | text                     | not null
+ query             | text                     | not null
+ created_at        | timestamp with time zone | default now()
+ updated_at        | timestamp with time zone | default now()
+ notify_owner      | boolean                  | 
+ notify_slack      | boolean                  | 
+ owner_kind        | user_or_org              | not null
+ user_id           | integer                  | 
+ org_id            | integer                  | 
+ slack_webhook_url | text                     | 
+Indexes:
+    "saved_searches_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
+    "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
 
@@ -575,6 +610,7 @@ Referenced by:
     TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
+    TABLE "saved_searches" CONSTRAINT "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
