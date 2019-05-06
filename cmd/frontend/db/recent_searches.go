@@ -10,7 +10,7 @@ import (
 
 type RecentSearches struct{}
 
-// Log inserts the query q to the recent_searches table in the db.
+// Log inserts the query q into to the recent_searches table in the db.
 func (rs *RecentSearches) Log(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
 	res, err := dbconn.Global.ExecContext(ctx, insert, q)
@@ -64,6 +64,7 @@ func (rs *RecentSearches) List(ctx context.Context) ([]string, error) {
 	return qs, nil
 }
 
+// Top returns the top n queries in the recent_searches table.
 func (rs *RecentSearches) Top(ctx context.Context, n int32) (map[string]int32, error) {
 	sel := `SELECT query, COUNT(*) FROM recent_searches GROUP BY query ORDER BY 2 DESC, query ASC LIMIT $1`
 	rows, err := dbconn.Global.QueryContext(ctx, sel, n)
