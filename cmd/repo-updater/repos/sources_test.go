@@ -188,6 +188,15 @@ func TestSources_ListRepos(t *testing.T) {
 				}),
 			},
 			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:           os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey:       os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					Region:                os.Getenv("AWSCODECOMMIT_REGION"),
+					RepositoryPathPattern: "git-codecommit.us-west-1.amazonaws.com/{name}",
+				}),
+			},
+			{
 				Kind: "OTHER",
 				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
 					Url: "https://github.com",
@@ -414,6 +423,15 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:           os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey:       os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					Region:                os.Getenv("AWSCODECOMMIT_REGION"),
+					RepositoryPathPattern: "git-codecommit.us-west-1.amazonaws.com/{name}",
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -443,6 +461,14 @@ func TestSources_ListRepos(t *testing.T) {
 						want = []string{
 							"gitlab.com/gitlab-org/gitlab-ce",
 							"gitlab.com/gnachman/iterm2",
+						}
+					case "AWSCODECOMMIT":
+						want = []string{
+							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"empty-repo",
+							"stripe-go",
+							"test",
+							"test2",
 						}
 					case "OTHER":
 						want = []string{

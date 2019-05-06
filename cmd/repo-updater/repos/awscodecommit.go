@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
@@ -16,12 +17,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/defaults"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -54,7 +57,7 @@ func SyncAWSCodeCommitConnections(ctx context.Context) {
 
 		var conns []*awsCodeCommitConnection
 		for _, c := range config {
-			conn, err := newAWSCodeCommitConnection(c)
+			conn, err := newAWSCodeCommitConnection(c, nil)
 			if err != nil {
 				log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)
 				continue
@@ -175,12 +178,15 @@ func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awsc
 
 // updateAWSCodeCommitRepositories ensures that all provided repositories have been added and updated on Sourcegraph.
 func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitConnection) {
-	repos := conn.listAllRepositories(ctx)
+	repos, err := conn.listAllRepositories(ctx)
+	if err != nil {
+		log15.Error("failed to list some AWS CodeCommit repos", "error", err.Error())
+	}
 
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("aws:%s", conn.config.AccessKeyID), repoChan)
-	for repo := range repos {
+	for _, repo := range repos {
 		// log15.Debug("awscodecommit sync: create/enable/update repo", "repo", repo.Name)
 		remoteURL, err := conn.authenticatedRemoteURL(repo)
 		if err != nil {
@@ -199,7 +205,7 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 	}
 }
 
-func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection) (*awsCodeCommitConnection, error) {
+func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*awsCodeCommitConnection, error) {
 	awsConfig := defaults.Config()
 	awsConfig.Region = config.Region
 	awsConfig.Credentials = aws.StaticCredentialsProvider{
@@ -209,6 +215,20 @@ func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection) (*awsCod
 			Source:          "sourcegraph-site-configuration",
 		},
 	}
+
+	if cf == nil {
+		cf = NewHTTPClientFactory()
+	}
+
+	cli, err := cf.Client(func(c *http.Client) error {
+		*c = *awsConfig.HTTPClient
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	awsConfig.HTTPClient = cli
+
 	conn := &awsCodeCommitConnection{
 		config:    config,
 		awsConfig: awsConfig,
@@ -331,25 +351,26 @@ func makeSHA256(data []byte) []byte {
 	return hash.Sum(nil)
 }
 
-func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) <-chan *awscodecommit.Repository {
-	ch := make(chan *awscodecommit.Repository, awscodecommit.MaxMetadataBatch)
-	go func() {
-		defer close(ch)
-		var nextToken string
-		for {
-			repos, token, err := c.client.ListRepositories(ctx, nextToken)
-			if err != nil {
-				log15.Error("Error listing AWS CodeCommit repositories", "error", err)
-				return
-			}
-			for _, r := range repos {
-				ch <- r
-			}
-			if len(repos) == 0 || token == "" {
-				return // last page
-			}
-			nextToken = token
+func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) ([]*awscodecommit.Repository, error) {
+	repos := []*awscodecommit.Repository{}
+	errs := new(multierror.Error)
+
+	var nextToken string
+	for {
+		batch, token, err := c.client.ListRepositories(ctx, nextToken)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			break
 		}
-	}()
-	return ch
+
+		repos = append(repos, batch...)
+
+		if len(batch) == 0 || token == "" {
+			break // last page
+		}
+
+		nextToken = token
+	}
+
+	return repos, errs.ErrorOrNil()
 }
