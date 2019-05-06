@@ -2,48 +2,21 @@ package graphqlbackend
 
 import (
 	"context"
-	"sort"
 
 	"github.com/pkg/errors"
 )
 
 // TopQueries returns the top most frequent recent queries.
 func (s *schemaResolver) TopQueries(ctx context.Context, args *struct{ Limit int32 }) ([]queryCountResolver, error) {
-	searches, err := s.recentSearches.List(ctx)
+	queriesCounts, err := s.recentSearches.Top(ctx, args.Limit)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting recent searches from database")
+		return nil, errors.Wrapf(err, "asking table for top %d search queries", args.Limit)
 	}
-	histo := make(map[string]int32)
-	for _, s := range searches {
-		histo[s]++
-	}
-
-	var uniques []string
-	for k := range histo {
-		uniques = append(uniques, k)
-	}
-
-	sort.Slice(uniques, func(i, j int) bool {
-		hi := histo[uniques[i]]
-		hj := histo[uniques[j]]
-		switch {
-		case hi > hj:
-			return true
-		case hi < hj:
-			return false
-		default:
-			return uniques[i] < uniques[j]
-		}
-	})
-	if int32(len(uniques)) > args.Limit {
-		uniques = uniques[:args.Limit]
-	}
-
 	var qcrs []queryCountResolver
-	for _, s := range uniques {
+	for q, c := range queriesCounts {
 		tqr := queryCountResolver{
-			query: s,
-			count: histo[s],
+			query: q,
+			count: c,
 		}
 		qcrs = append(qcrs, tqr)
 	}

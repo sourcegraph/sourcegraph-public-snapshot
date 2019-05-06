@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
@@ -12,7 +13,7 @@ import (
 
 func globalDB() *sql.DB { return dbconn.Global }
 
-func TestRecentSearches_Add(t *testing.T) {
+func TestRecentSearches_Log(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -34,7 +35,7 @@ func TestRecentSearches_Add(t *testing.T) {
 	}
 }
 
-func TestRecentSearches_DeleteExcessRows(t *testing.T) {
+func TestRecentSearches_Cleanup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -108,7 +109,7 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 	})
 }
 
-func BenchmarkRecentSearches_AddAndDeleteExcessRows(b *testing.B) {
+func BenchmarkRecentSearches_LogAndCleanup(b *testing.B) {
 	rs := &RecentSearches{globalDB}
 	ctx := dbtesting.TestContext(b)
 	b.ResetTimer()
@@ -120,5 +121,42 @@ func BenchmarkRecentSearches_AddAndDeleteExcessRows(b *testing.B) {
 		if err := rs.Cleanup(ctx, b.N); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestRecentSearches_Top(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	tests := []struct {
+		name    string
+		queries []string
+		n 		int32
+		want    map[string]int32
+		wantErr bool
+	}{
+		{name: "empty case", queries: nil, n:10, want: map[string]int32{}, wantErr: false},
+		{name: "a", queries: []string{"a"}, n:10, want: map[string]int32{"a": 1}, wantErr: false},
+		{name: "a a", queries: []string{"a", "a"}, n:10, want: map[string]int32{"a": 2}, wantErr: false},
+		{name: "b a", queries: []string{"b", "a"}, n:10, want: map[string]int32{"a": 1, "b": 1}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rs := &RecentSearches{globalDB}
+			ctx := dbtesting.TestContext(t)
+			for _, q := range tt.queries {
+				if err := rs.Log(ctx, q); err != nil {
+					t.Fatal(err)
+				}
+			}
+			got, err := rs.Top(ctx, tt.n)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RecentSearches.Top() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RecentSearches.Top() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

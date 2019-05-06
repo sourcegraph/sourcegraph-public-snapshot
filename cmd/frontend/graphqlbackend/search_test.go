@@ -3,9 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"github.com/graph-gophers/graphql-go"
 	"reflect"
 	"testing"
+
+	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -68,7 +69,10 @@ func TestSearch(t *testing.T) {
 
 type RecentSearchesIgnorer struct{}
 
-func (m *RecentSearchesIgnorer) Log(ctx context.Context, s string) error      { return nil }
+func (m *RecentSearchesIgnorer) Log(ctx context.Context, s string) error { return nil }
+func (m *RecentSearchesIgnorer) Top(ctx context.Context, n int32) (map[string]int32, error) {
+	return nil, nil
+}
 func (m *RecentSearchesIgnorer) List(ctx context.Context) ([]string, error)   { return nil, nil }
 func (m *RecentSearchesIgnorer) Cleanup(ctx context.Context, limit int) error { return nil }
 

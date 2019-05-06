@@ -153,6 +153,9 @@ type StringLogger interface {
 	// ones that were removed during Cleanup.
 	List(ctx context.Context) ([]string, error)
 
+	// Top returns the top n most frequently occurring strings.
+	Top(ctx context.Context, n int32) (map[string]int32, error)
+
 	// Cleanup removes old entries such that there are no more than limit remaining.
 	Cleanup(ctx context.Context, limit int) error
 }

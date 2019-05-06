@@ -64,3 +64,21 @@ func (rs *RecentSearches) List(ctx context.Context) ([]string, error) {
 	}
 	return qs, nil
 }
+
+func (rs *RecentSearches) Top(ctx context.Context, n int32) (map[string]int32, error) {
+	sel := `SELECT query, COUNT(*) FROM recent_searches GROUP BY query ORDER BY 2 DESC, query ASC LIMIT $1`
+	rows, err := rs.DB().QueryContext(ctx, sel, n)
+	if err != nil {
+		return nil, errors.Wrap(err, "running db query to get top search queries")
+	}
+	topn := make(map[string]int32)
+	for rows.Next() {
+		var query string
+		var count int32
+		if err := rows.Scan(&query, &count); err != nil {
+			return nil, errors.Wrap(err, "scanning row")
+		}
+		topn[query] = count
+	}
+	return topn, nil
+}
