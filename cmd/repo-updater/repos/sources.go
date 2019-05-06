@@ -741,7 +741,7 @@ func awscodecommitRepoToRepo(
 	serviceID := awscodecommit.ServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)
 
 	return &Repo{
-		Name:         repo.Name,
+		Name:         string(awsCodeCommitRepositoryToRepoPath(conn, repo)),
 		ExternalRepo: *awscodecommit.ExternalRepoSpec(repo, serviceID),
 		Description:  repo.Description,
 		Fork:         false,

@@ -464,11 +464,11 @@ func TestSources_ListRepos(t *testing.T) {
 						}
 					case "AWSCODECOMMIT":
 						want = []string{
-							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
-							"empty-repo",
-							"stripe-go",
-							"test",
-							"test2",
+							"git-codecommit.us-west-1.amazonaws.com/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"git-codecommit.us-west-1.amazonaws.com/empty-repo",
+							"git-codecommit.us-west-1.amazonaws.com/stripe-go",
+							"git-codecommit.us-west-1.amazonaws.com/test",
+							"git-codecommit.us-west-1.amazonaws.com/test2",
 						}
 					case "OTHER":
 						want = []string{
