@@ -58,12 +58,7 @@ func Test_schemaResolver_TopQueries(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rsm := &RecentSearchesFake{
-				queries: tt.queries,
-			}
-			s := &schemaResolver{
-				recentSearches: rsm,
-			}
+			s := &schemaResolver{ recentSearches: &RecentSearchesFake{ queries: tt.queries } }
 			got, err := s.TopQueries(context.Background(), (*struct{ Limit int32 })(&tt.args))
 			if err != nil {
 				t.Fatal(err)
