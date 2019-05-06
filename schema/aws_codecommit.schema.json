@@ -41,7 +41,11 @@
     "repositoryPathPattern": {
       "description": "The pattern used to generate a the corresponding Sourcegraph repository name for an AWS CodeCommit repository. In the pattern, the variable \"{name}\" is replaced with the repository's name.\n\nFor example, if your Sourcegraph instance is at https://src.example.com, then a repositoryPathPattern of \"awsrepos/{name}\" would mean that a AWS CodeCommit repository named \"myrepo\" is available on Sourcegraph at https://src.example.com/awsrepos/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
       "type": "string",
-      "default": "{name}"
+      "default": "{name}",
+      "examples": [
+        "git-codecommit.us-west-1.amazonaws.com/{name}",
+        "git-codecommit.eu-central-1.amazonaws.com/{name}"
+      ]
     },
     "initialRepositoryEnablement": {
       "description": "Defines whether repositories from AWS CodeCommit should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable AWS CodeCommit repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by AWS); site admins can still disable them explicitly, and they'll remain disabled.",
@@ -58,19 +62,19 @@
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
           "name": {
-            "description": "The name of an AWS CodeCommit repository including the path (\"git-codecommit.us-west-1.amazonaws.com\/repo-name\") to exclude from mirroring.",
+            "description": "The name of an AWS CodeCommit repository (\"repo-name\") to exclude from mirroring.",
             "type": "string",
-            "pattern": "^(git-codecommit-fips|git-codecommit)\\.[\\w.\\d-]+\\.amazonaws\\.com/[\\w.-]+$"
+            "pattern": "^[\\w.-]+$"
           },
           "id": {
-            "description": "The ARN (Amazon Resource Name) of an AWS Code Commit repository to exclude from mirroring.",
+            "description": "The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.",
             "type": "string",
-            "pattern": "^arn:aws:codecommit:[\\w\\d-]+:\\d+:[\\w.-]+$"
+            "pattern": "^[\\w-]+$"
           }
         }
       },
       "examples": [
-        [{ "name": "go-monorepo" }, { "id": "arn:aws:codecommit:us-west-1:999999999999:dotfiles" }],
+        [{ "name": "go-monorepo" }, { "id": "f001337a-3450-46fd-b7d2-650c0EXAMPLE" }],
         [{ "name": "go-monorepo" }, { "name": "go-client" }]
       ]
     }

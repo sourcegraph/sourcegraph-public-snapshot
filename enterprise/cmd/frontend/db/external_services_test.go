@@ -99,14 +99,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"accessKeyID": "bar",
 				"secretAccessKey": "baz",
 				"exclude": [
-					{
-					  "name": "git-codecommit.eu-central-3.amazonaws.com/foobar-barfoo_bazbar",
-					  "id": "arn:aws:codecommit:eu-central-3:999999999999:foobar-barfoo_bazbar"
-					},
-					{
-					  "name": "git-codecommit-fips.us-west-1.amazonaws.com/foobar-barfoo_bazbar",
-					  "id": "arn:aws:codecommit:us-west-1:999999999999:foobar-barfoo_bazbar"
-					},
+					{"name": "foobar-barfoo_bazbar"},
+					{"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb"},
 				]
 			}`,
 			assert: equals(`<nil>`),
@@ -132,20 +126,20 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		{
 			kind:   "AWSCODECOMMIT",
 			desc:   "invalid exclude item name",
-			config: `{"exclude": [{"name": "bar"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^(git-codecommit-fips|git-codecommit)\.[\w.\d-]+\.amazonaws\.com/[\w.-]+$'`),
+			config: `{"exclude": [{"name": "f o o b a r"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w.-]+$'`),
 		},
 		{
 			kind:   "AWSCODECOMMIT",
 			desc:   "invalid exclude item id",
-			config: `{"exclude": [{"id": "bar"}]}`,
-			assert: includes(`exclude.0.id: Does not match pattern '^arn:aws:codecommit:[\w\d-]+:\d+:[\w.-]+$'`),
+			config: `{"exclude": [{"id": "b$a$r"}]}`,
+			assert: includes(`exclude.0.id: Does not match pattern '^[\w-]+$'`),
 		},
 		{
 			kind: "AWSCODECOMMIT",
 			desc: "invalid additional exclude item properties",
 			config: `{"exclude": [{
-				"id": "arn:aws:codecommit:us-west-1:999999999999:foobar",
+				"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb",
 				"bar": "baz"
 			}]}`,
 			assert: includes(`bar: Additional property bar is not allowed`),
@@ -160,12 +154,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"secretAccessKey": "baz",
 				"exclude": [
 					{
-					  "name": "git-codecommit.eu-central-3.amazonaws.com/foobar",
-					  "id": "arn:aws:codecommit:eu-central-3:999999999999:foobar"
+					  "name": "foobar",
+					  "id": "f000ba44-3450-46fd-b7d2-a0ae41f1c5bb"
 					},
 					{
-					  "name": "git-codecommit-fips.us-west-1.amazonaws.com/foobar",
-					  "id": "arn:aws:codecommit:us-west-1:999999999999:foobar"
+					  "name": "barfoo",
+					  "id": "13337a11-3450-46fd-b7d2-a0ae41f1c5bb"
 					},
 				]
 			}`,
