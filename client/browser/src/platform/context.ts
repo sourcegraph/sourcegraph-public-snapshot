@@ -18,7 +18,6 @@ import { observeStorageKey } from '../browser/storage'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
 import { PrivateRepoPublicSourcegraphComError } from '../shared/backend/errors'
-import { requestOptions } from '../shared/backend/graphql'
 import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL, sourcegraphUrl } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
@@ -53,7 +52,12 @@ export function createPlatformContext({
                         request,
                         variables: {},
                         baseUrl: window.SOURCEGRAPH_URL,
-                        ...requestOptions,
+                        headers: {},
+                        requestOptions: {
+                            crossDomain: true,
+                            withCredentials: true,
+                            async: true,
+                        },
                     })
                 }
                 // In the browser extension, send all GraphQL requests from the background page.
