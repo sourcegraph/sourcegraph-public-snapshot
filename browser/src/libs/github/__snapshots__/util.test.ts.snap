@@ -1,0 +1,119 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`util parseURL() blob page 1`] = `
+Object {
+  "filePath": "shared/src/hover/HoverOverlay.tsx",
+  "ghRepoName": "sourcegraph",
+  "isCodePage": true,
+  "isCommit": false,
+  "isCompare": false,
+  "isDelta": false,
+  "isPullRequest": false,
+  "position": undefined,
+  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rev": "3.3",
+  "user": "sourcegraph",
+}
+`;
+
+exports[`util parseURL() commit page 1`] = `
+Object {
+  "filePath": undefined,
+  "ghRepoName": "sourcegraph",
+  "isCodePage": false,
+  "isCommit": true,
+  "isCompare": false,
+  "isDelta": true,
+  "isPullRequest": false,
+  "position": undefined,
+  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rev": "fb054666c12b40f180c794db4829cbfd1a5fabae",
+  "user": "sourcegraph",
+}
+`;
+
+exports[`util parseURL() compare page 1`] = `
+Object {
+  "filePath": undefined,
+  "ghRepoName": "sourcegraph-basic-code-intel",
+  "isCodePage": false,
+  "isCommit": false,
+  "isCompare": true,
+  "isDelta": true,
+  "isPullRequest": false,
+  "position": undefined,
+  "repoName": "github.com/sourcegraph/sourcegraph-basic-code-intel",
+  "rev": undefined,
+  "user": "sourcegraph",
+}
+`;
+
+exports[`util parseURL() pull request page 1`] = `
+Object {
+  "filePath": undefined,
+  "ghRepoName": "sourcegraph",
+  "isCodePage": false,
+  "isCommit": false,
+  "isCompare": false,
+  "isDelta": true,
+  "isPullRequest": true,
+  "position": undefined,
+  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rev": undefined,
+  "user": "sourcegraph",
+}
+`;
+
+exports[`util parseURL() selections - range 1`] = `
+Object {
+  "filePath": "jest.config.base.js",
+  "ghRepoName": "sourcegraph",
+  "isCodePage": true,
+  "isCommit": false,
+  "isCompare": false,
+  "isDelta": false,
+  "isPullRequest": false,
+  "position": Object {
+    "character": 0,
+    "line": 5,
+  },
+  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rev": "master",
+  "user": "sourcegraph",
+}
+`;
+
+exports[`util parseURL() selections - single line 1`] = `
+Object {
+  "filePath": "jest.config.base.js",
+  "ghRepoName": "sourcegraph",
+  "isCodePage": true,
+  "isCommit": false,
+  "isCompare": false,
+  "isDelta": false,
+  "isPullRequest": false,
+  "position": Object {
+    "character": 0,
+    "line": 5,
+  },
+  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rev": "master",
+  "user": "sourcegraph",
+}
+`;
+
+exports[`util parseURL() tree page 1`] = `
+Object {
+  "filePath": undefined,
+  "ghRepoName": "sourcegraph",
+  "isCodePage": true,
+  "isCommit": false,
+  "isCompare": false,
+  "isDelta": false,
+  "isPullRequest": false,
+  "position": undefined,
+  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rev": "master",
+  "user": "sourcegraph",
+}
+`;
