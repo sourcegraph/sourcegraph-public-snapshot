@@ -57,7 +57,7 @@ type fileMatchResolver struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
-	symbols      []*symbolResolver
+	symbols      []*searchSymbolResult
 	uri          string
 	repo         *types.Repo
 	commitID     api.CommitID // or empty for default branch
@@ -95,7 +95,11 @@ func (fm *fileMatchResolver) Resource() string {
 }
 
 func (fm *fileMatchResolver) Symbols() []*symbolResolver {
-	return fm.symbols
+	symbols := make([]*symbolResolver, len(fm.symbols))
+	for i, s := range fm.symbols {
+		symbols[i] = toSymbolResolver(s.symbol, s.baseURI, s.lang, s.commit)
+	}
+	return symbols
 }
 
 func (fm *fileMatchResolver) LineMatches() []*lineMatch {

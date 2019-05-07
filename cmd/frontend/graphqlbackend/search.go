@@ -620,8 +620,11 @@ func (r *searchSuggestionResolver) ToGitTree() (*gitTreeEntryResolver, bool) {
 }
 
 func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
-	res, ok := r.result.(*symbolResolver)
-	return res, ok
+	s, ok := r.result.(*searchSymbolResult)
+	if !ok {
+		return nil, false
+	}
+	return toSymbolResolver(s.symbol, s.baseURI, s.lang, s.commit), true
 }
 
 // newSearchResultResolver returns a new searchResultResolver wrapping the
@@ -637,7 +640,7 @@ func newSearchResultResolver(result interface{}, score int) *searchSuggestionRes
 	case *gitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
 
-	case *symbolResolver:
+	case *searchSymbolResult:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
 
 	default:
