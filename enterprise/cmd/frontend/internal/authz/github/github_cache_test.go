@@ -26,11 +26,13 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 	})
 	github.GetRepositoryByNodeIDMock = githubMock.GetRepositoryByNodeID
 	defer func() { github.GetRepositoryByNodeIDMock = nil }()
+	github.GetRepositoriesByNodeIDFromAPIMock = githubMock.GetRepositoriesByNodeIDFromAPI
+	defer func() { github.GetRepositoriesByNodeIDFromAPIMock = nil }()
 
 	provider := NewProvider(mustURL(t, "https://github.com"), "base-token", 3*time.Hour, make(authz.MockCache))
 	ctx := context.Background()
 
-	githubMock.getRepositoryByNodeIDCount = 0
+	githubMock.getRepositoriesByNodeIDCount = 0
 	userAccount := ua("u0", "t0")
 	repos := map[authz.Repo]struct{}{
 		rp("r0", "u0/r0", "https://github.com/"):     {},
@@ -52,10 +54,10 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 			t.Errorf("wantPerms != gotPerms:\n%s",
 				dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(wantPerms), spew.Sdump(gotPerms), false)))
 		}
-		if want, got := 3, githubMock.getRepositoryByNodeIDCount; want != got {
+		if want, got := 1, githubMock.getRepositoriesByNodeIDCount; want != got {
 			t.Errorf("expected %d cache misses, but got %d", want, got)
 		}
-		githubMock.getRepositoryByNodeIDCount = 0
+		githubMock.getRepositoriesByNodeIDCount = 0
 	}
 	{
 		gotPerms, gotErr := provider.RepoPerms(ctx, userAccount, repos)
@@ -67,10 +69,10 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 			t.Errorf("wantPerms != gotPerms:\n%s",
 				dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(wantPerms), spew.Sdump(gotPerms), false)))
 		}
-		if want, got := 0, githubMock.getRepositoryByNodeIDCount; want != got {
+		if want, got := 0, githubMock.getRepositoriesByNodeIDCount; want != got {
 			t.Errorf("expected %d cache misses, but got %d", want, got)
 		}
-		githubMock.getRepositoryByNodeIDCount = 0
+		githubMock.getRepositoriesByNodeIDCount = 0
 	}
 
 	provider.cacheTTL = 1 * time.Hour // lower cache TTL
@@ -84,9 +86,9 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 			t.Errorf("wantPerms != gotPerms:\n%s",
 				dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(wantPerms), spew.Sdump(gotPerms), false)))
 		}
-		if want, got := 3, githubMock.getRepositoryByNodeIDCount; want != got {
+		if want, got := 1, githubMock.getRepositoriesByNodeIDCount; want != got {
 			t.Errorf("expected %d cache misses, but got %d", want, got)
 		}
-		githubMock.getRepositoryByNodeIDCount = 0
+		githubMock.getRepositoriesByNodeIDCount = 0
 	}
 }

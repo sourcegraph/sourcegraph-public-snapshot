@@ -46,6 +46,8 @@ func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 	})
 	github.GetRepositoryByNodeIDMock = githubMock.GetRepositoryByNodeID
 	defer func() { github.GetRepositoryByNodeIDMock = nil }()
+	github.GetRepositoriesByNodeIDFromAPIMock = githubMock.GetRepositoriesByNodeIDFromAPI
+	defer func() { github.GetRepositoriesByNodeIDFromAPIMock = nil }()
 
 	provider := NewProvider(p.githubURL, "base-token", p.cacheTTL, make(authz.MockCache))
 	for j := 0; j < 2; j++ { // run twice for cache coherency
@@ -283,6 +285,9 @@ type mockGitHub struct {
 
 	// getRepositoryByNodeIDCount tracks the number of times GetRepositoryByNodeID is called
 	getRepositoryByNodeIDCount int
+
+	// getRepositoriesByNodeIDCount tracks the number of times GetRepositoriesByNodeIDFromAPI is called
+	getRepositoriesByNodeIDCount int
 }
 
 func newMockGitHub(repos []*github.Repository, tokenRepos map[string][]string) *mockGitHub {
@@ -339,6 +344,8 @@ func (m *mockGitHub) GetRepositoryByNodeID(ctx context.Context, token, id string
 }
 
 func (m *mockGitHub) GetRepositoriesByNodeIDFromAPI(ctx context.Context, token string, nodeIDs []string) (map[string]*github.Repository, error) {
+	m.getRepositoriesByNodeIDCount++
+
 	repos := make(map[string]*github.Repository)
 	for rid := range m.PublicRepos {
 		repos[rid] = m.Repos[rid]
