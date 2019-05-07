@@ -18,4 +18,5 @@ CREATE TABLE IF NOT EXISTS "saved_searches" (
     "slack_webhook_url" text
 );
 
+ALTER TABLE saved_searches ADD CONSTRAINT user_or_org_id_not_null CHECK ((user_id IS NOT NULL AND org_id IS NULL) OR (org_id IS NOT NULL AND user_id is NULL));
 COMMIT;

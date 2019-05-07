@@ -461,6 +461,8 @@ Indexes:
  slack_webhook_url | text                     | 
 Indexes:
     "saved_searches_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "user_or_org_id_not_null" CHECK (user_id IS NOT NULL AND org_id IS NULL OR org_id IS NOT NULL AND user_id IS NULL)
 Foreign-key constraints:
     "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
