@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
@@ -129,6 +130,33 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		},
 	}
 
+	gitoliteService := repos.ExternalService{
+		ID:          4,
+		Kind:        "GITOLITE",
+		DisplayName: "Gitolite - Test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"prefix": "/",
+			"host": "git@gitolite.mycorp.com"
+		}`),
+	}
+
+	gitoliteRepo := repos.Repo{
+		Name:    "gitolite.mycorp.com/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "gitolite",
+			ServiceID:   "git@gitolite.mycorp.com",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &gitolite.Repo{
+			Name: "bar",
+			URL:  "git@gitolite.mycorp.com:bar.git",
+		},
+	}
+
 	var testCases []testCase
 	for _, k := range []struct {
 		svc  repos.ExternalService
@@ -137,6 +165,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		{svc: githubService, repo: githubRepo},
 		{svc: gitlabService, repo: gitlabRepo},
 		{svc: bitbucketServerService, repo: bitbucketServerRepo},
+		{svc: gitoliteService, repo: gitoliteRepo},
 	} {
 		repo, svc := k.repo, k.svc
 		testCases = append(testCases,
