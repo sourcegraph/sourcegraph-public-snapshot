@@ -130,7 +130,7 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
-	svcs, err := externalServiceKinds()
+	svcs, err := externalServiceKinds(ctx)
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
@@ -147,8 +147,8 @@ func authProviderTypes() []string {
 	return types
 }
 
-func externalServiceKinds() ([]string, error) {
-	services, err := db.ExternalServices.List(context.Background(), db.ExternalServicesListOptions{Kinds: []string{}})
+func externalServiceKinds(ctx context.Context) ([]string, error) {
+	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
 	if err != nil {
 		return nil, err
 	}
