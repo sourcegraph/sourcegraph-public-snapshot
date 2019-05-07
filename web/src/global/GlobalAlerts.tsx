@@ -2,6 +2,7 @@ import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+import { major, minor, parse } from 'semver'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { isSettingsValid, SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
@@ -59,9 +60,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             !this.state.siteFlags.updateCheck.errorMessage &&
                             this.state.siteFlags.updateCheck.updateVersionAvailable &&
                             ((isSettingsValid<Settings>(this.props.settingsCascade) &&
-                                (this.props.settingsCascade.final['alerts.showMinorUpdates'] === undefined ||
-                                    this.props.settingsCascade.final['alerts.showMinorUpdates'])) ||
-                                isMajorUpdateAvailable(
+                                (this.props.settingsCascade.final['alerts.showPatchUpdates'] === undefined ||
+                                    this.props.settingsCascade.final['alerts.showPatchUpdates'])) ||
+                                isMinorUpdateAvailable(
                                     this.state.siteFlags.productVersion,
                                     this.state.siteFlags.updateCheck.updateVersionAvailable
                                 )) && (
@@ -122,13 +123,13 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
     }
 }
 
-function isMajorUpdateAvailable(currentVersion: string, updateVersion: string): boolean {
-    const cv = currentVersion.split('.')
-    const uv = updateVersion.split('.')
+function isMinorUpdateAvailable(currentVersion: string, updateVersion: string): boolean {
+    const cv = parse(currentVersion, { loose: false })
+    const uv = parse(updateVersion, { loose: false })
     // If either current or update versions aren't semvers (e.g., a user is on a date-based build version),
     // always return true.
-    if (cv.length !== 3 || uv.length !== 3) {
+    if (cv === null || uv === null) {
         return true
     }
-    return parseInt(uv[0], 10) !== parseInt(cv[0], 10)
+    return major(cv) !== major(uv) || minor(cv) !== minor(uv)
 }

@@ -99,8 +99,8 @@ const SettingsSchemaJSON = `{
         }
       }
     },
-    "alerts.showMinorUpdates": {
-      "description": "Whether to show alerts for minor version updates.",
+    "alerts.showPatchUpdates": {
+      "description": "Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.",
       "type": "boolean",
       "default": true
     },
