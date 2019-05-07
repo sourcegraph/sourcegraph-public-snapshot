@@ -139,6 +139,49 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes("phabricator.url: Does not match format 'uri'"),
 		},
 		{
+			kind:   "GITOLITE",
+			desc:   "invalid empty exclude",
+			config: `{"exclude": []}`,
+			assert: includes(`exclude: Array must have at least 1 items`),
+		},
+		{
+			kind:   "GITOLITE",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "GITOLITE",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "GITOLITE",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": ""}]}`,
+			assert: includes(`exclude.0.name: String length must be greater than or equal to 1`),
+		},
+		{
+			kind:   "GITOLITE",
+			desc:   "invalid additional exclude item properties",
+			config: `{"exclude": [{"name": "foo", "bar": "baz"}]}`,
+			assert: includes(`bar: Additional property bar is not allowed`),
+		},
+		{
+			kind: "GITOLITE",
+			desc: "name can be specified in exclude",
+			config: `
+			{
+				"prefix": "/",
+				"host": "gitolite.mycorp.com",
+				"exclude": [
+					{"name": "bar"},
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
 			kind:   "BITBUCKETSERVER",
 			desc:   "without url, username nor repositoryQuery",
 			config: `{}`,

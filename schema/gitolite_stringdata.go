@@ -43,17 +43,12 @@ const GitoliteSchemaJSON = `{
         "type": "object",
         "title": "ExcludedGitoliteRepo",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["pattern"] }],
+        "anyOf": [{ "required": ["name"] }],
         "properties": {
           "name": {
             "description": "The name of a Gitolite repo (\"my-repo\") to exclude from mirroring.",
             "type": "string",
             "minLength": 1
-          },
-          "pattern": {
-            "description": "Regular expression which matches against the name of a Gitolite repo.",
-            "type": "string",
-            "format": "regex"
           }
         }
       },

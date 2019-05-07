@@ -161,8 +161,7 @@ type ExcludedGitLabProject struct {
 	Name string `json:"name,omitempty"`
 }
 type ExcludedGitoliteRepo struct {
-	Name    string `json:"name,omitempty"`
-	Pattern string `json:"pattern,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
