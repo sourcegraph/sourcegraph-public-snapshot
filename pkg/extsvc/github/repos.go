@@ -325,7 +325,12 @@ query Repository($id: ID!) {
 	return result.Node, nil
 }
 
-const MaxNodeIDs = 100
+// MaxNodeIDs is the maximum number of repository nodes that can be queried in one call to the
+// GitHub GraphQL API.
+var MaxNodeIDs = 100
+
+// GetRepositoryByNodeIDMock is set by tests to mock (*Client).GetRepositoryByNodeID.
+var GetRepositoriesByNodeIDFromAPIMock func(ctx context.Context, token string, nodeIDs []string) (map[string]*Repository, error)
 
 // GetRepositoriesByNodeIDFromAPI fetches the specified repositories (nodeIDs) and returns a map
 // from node ID to repository metadata. If a repository is not found, it will not be present in the
@@ -333,6 +338,10 @@ const MaxNodeIDs = 100
 // time of writing, is 100 (if the caller does not respect this match, this method will return an
 // error). This method does not cache.
 func (c *Client) GetRepositoriesByNodeIDFromAPI(ctx context.Context, token string, nodeIDs []string) (map[string]*Repository, error) {
+	if GetRepositoriesByNodeIDFromAPIMock != nil {
+		return GetRepositoriesByNodeIDFromAPIMock(ctx, token, nodeIDs)
+	}
+
 	var result struct {
 		Nodes []*Repository
 	}
