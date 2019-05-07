@@ -23,6 +23,34 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 		t.Errorf("want %v, got %v", want, isEmpty)
 	}
 
+	_, err = Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	if err != nil {
+		t.Fatal("can't create user", err)
+	}
+	userID := int32(1)
+	fake := &types.SavedSearch{
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		OwnerKind:   "user",
+		UserID:      &userID,
+		OrgID:       nil,
+	}
+	_, err = SavedSearches.Create(ctx, fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	isEmpty, err = SavedSearches.IsEmpty(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = false
+	if want != isEmpty {
+		t.Errorf("want %v, got %v", want, isEmpty)
+	}
+
 }
 
 func TestSavedSearchesCreate(t *testing.T) {
