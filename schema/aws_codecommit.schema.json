@@ -42,10 +42,7 @@
       "description": "The pattern used to generate a the corresponding Sourcegraph repository name for an AWS CodeCommit repository. In the pattern, the variable \"{name}\" is replaced with the repository's name.\n\nFor example, if your Sourcegraph instance is at https://src.example.com, then a repositoryPathPattern of \"awsrepos/{name}\" would mean that a AWS CodeCommit repository named \"myrepo\" is available on Sourcegraph at https://src.example.com/awsrepos/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
       "type": "string",
       "default": "{name}",
-      "examples": [
-        "git-codecommit.us-west-1.amazonaws.com/{name}",
-        "git-codecommit.eu-central-1.amazonaws.com/{name}"
-      ]
+      "examples": ["git-codecommit.us-west-1.amazonaws.com/{name}", "git-codecommit.eu-central-1.amazonaws.com/{name}"]
     },
     "initialRepositoryEnablement": {
       "description": "Deprecated and ignored field which will be removed entirely in the next release. AWS CodeCommit repositories can no longer be enabled or disabled explicitly. Configure which repositories should not be mirrored via \"exclude\" instead.",
@@ -53,7 +50,7 @@
       "default": false
     },
     "exclude": {
-      "description": "A list of repositories to never mirror from AWS CodeCommit. \n\nSupports excluding by name ({\"name\": \"git-codecommit.us-west-1.amazonaws.com\/repo-name\"}) or by ARN ({\"id\": \"arn:aws:codecommit:us-west-1:999999999999:name\"}).",
+      "description": "A list of repositories to never mirror from AWS CodeCommit. \n\nSupports excluding by name ({\"name\": \"git-codecommit.us-west-1.amazonaws.com/repo-name\"}) or by ARN ({\"id\": \"arn:aws:codecommit:us-west-1:999999999999:name\"}).",
       "type": "array",
       "minItems": 1,
       "items": {
