@@ -325,6 +325,48 @@ query Repository($id: ID!) {
 	return result.Node, nil
 }
 
+const MaxNodeIDs = 100
+
+// GetRepositoriesByNodeIDFromAPI fetches the specified repositories (nodeIDs) and returns a map
+// from node ID to repository metadata. If a repository is not found, it will not be present in the
+// return map. The caller should respect the max nodeID count limit of the GitHub API, which at the
+// time of writing, is 100 (if the caller does not respect this match, this method will return an
+// error). This method does not cache.
+func (c *Client) GetRepositoriesByNodeIDFromAPI(ctx context.Context, token string, nodeIDs []string) (map[string]*Repository, error) {
+	var result struct {
+		Nodes []*Repository
+	}
+	err := c.requestGraphQL(ctx, token, `
+query Repositories($ids: [ID!]!) {
+	nodes(ids: $ids) {
+		... on Repository {
+			...RepositoryFields
+		}
+	}
+}
+`+c.repositoryFieldsGraphQLFragment(), map[string]interface{}{"ids": nodeIDs}, &result)
+	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok {
+			for _, err2 := range gqlErrs {
+				if err2.Type == graphqlErrTypeNotFound {
+					continue
+				}
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	repos := make(map[string]*Repository)
+	for _, r := range result.Nodes {
+		if r != nil {
+			repos[r.ID] = r
+		}
+	}
+	return repos, nil
+}
+
 func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
 	repos, err := c.getPublicRepositories(ctx, sinceRepoID)
 	if err != nil {

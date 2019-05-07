@@ -130,6 +130,67 @@ func TestClient_GetRepository(t *testing.T) {
 	}
 }
 
+func TestClient_GetRepositoriesByNodeFromAPI(t *testing.T) {
+	mock := mockHTTPResponseBody{
+		responseBody: `
+{
+  "data": {
+    "nodes": [
+      {
+		"id": "i0",
+		"nameWithOwner": "o/r0",
+		"description": "d0",
+		"url": "https://github.example.com/o/r0",
+		"isFork": false
+      },
+      {
+		"id": "i1",
+		"nameWithOwner": "o/r1",
+		"description": "d1",
+		"url": "https://github.example.com/o/r1",
+		"isFork": false
+      },
+      {
+		"id": "i2",
+		"nameWithOwner": "o/r2",
+		"description": "d2",
+		"url": "https://github.example.com/o/r2",
+		"isFork": false
+      }
+    ]
+  }
+}
+`}
+	c := newTestClient(t, &mock)
+	want := map[string]*Repository{
+		"i0": {
+			ID:            "i0",
+			NameWithOwner: "o/r0",
+			Description:   "d0",
+			URL:           "https://github.example.com/o/r0",
+		},
+		"i1": {
+			ID:            "i1",
+			NameWithOwner: "o/r1",
+			Description:   "d1",
+			URL:           "https://github.example.com/o/r1",
+		},
+		"i2": {
+			ID:            "i2",
+			NameWithOwner: "o/r2",
+			Description:   "d2",
+			URL:           "https://github.example.com/o/r2",
+		},
+	}
+	gotRepos, err := c.GetRepositoriesByNodeIDFromAPI(context.Background(), "", []string{"i0", "i1", "i2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(gotRepos, want) {
+		t.Errorf("got repos %+v, want %+v", gotRepos, want)
+	}
+}
+
 // TestClient_GetRepository_nonexistent tests the behavior of GetRepository when called
 // on a repository that does not exist.
 func TestClient_GetRepository_nonexistent(t *testing.T) {
