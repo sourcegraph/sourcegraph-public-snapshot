@@ -3,7 +3,7 @@
   "private": true,
   "dependencies": {
     "deasync": "^0.1.14",
-    "react": "^16.6.3",
+    "react": "^16.8.6",
     "rxjs": "^6.3.3"
   },
   "scripts": {
