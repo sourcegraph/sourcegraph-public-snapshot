@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -82,11 +83,20 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 		UpdatedAt:   now,
 	}
 
+	gitoliteService := repos.ExternalService{
+		Kind:        "GITOLITE",
+		DisplayName: "Gitolite Server - Test",
+		Config:      `{"prefix": "/", "host": "git@gitolite.mycorp.com"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
 	svcs := repos.ExternalServices{
 		&github,
 		&gitlab,
 		&bitbucketServer,
 		&otherService,
+		&gitoliteService,
 	}
 
 	type testCase struct {
@@ -217,11 +227,20 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 			UpdatedAt:   now,
 		}
 
+		gitoliteService := repos.ExternalService{
+			Kind:        "GITOLITE",
+			DisplayName: "Gitolite Server - Test",
+			Config:      `{"prefix": "/", "host": "git@gitolite.mycorp.com"}`,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+
 		svcs := repos.ExternalServices{
 			&github,
 			&gitlab,
 			&bitbucketServer,
 			&otherService,
+			&gitoliteService,
 		}
 
 		ctx := context.Background()
@@ -304,6 +323,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			"gitlab",
 			"bitbucketserver",
 			"other",
+			"gitolite",
 		}
 
 		github := repos.Repo{
@@ -381,11 +401,30 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			},
 		}
 
+		gitoliteRepo := repos.Repo{
+			Name:      "gitolite.mycorp.com/bar",
+			Enabled:   true,
+			CreatedAt: now,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "bar",
+				ServiceType: "gitolite",
+				ServiceID:   "git@gitolite.mycorp.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:5": {
+					ID:       "extsvc:5",
+					CloneURL: "git@gitolite.mycorp.com:bar.git",
+				},
+			},
+			Metadata: new(gitolite.Repo),
+		}
+
 		repositories := repos.Repos{
 			&github,
 			&gitlab,
 			&bitbucketServer,
 			&otherRepo,
+			&gitoliteRepo,
 		}
 
 		ctx := context.Background()
@@ -530,11 +569,30 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		},
 	}
 
+	gitoliteRepo := repos.Repo{
+		Name:      "gitolite.mycorp.com/bar",
+		Enabled:   true,
+		CreatedAt: now,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "gitolite",
+			ServiceID:   "git@gitolite.mycorp.com",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:5": {
+				ID:       "extsvc:5",
+				CloneURL: "git@gitolite.mycorp.com:bar.git",
+			},
+		},
+		Metadata: new(gitolite.Repo),
+	}
+
 	repositories := repos.Repos{
 		&github,
 		&gitlab,
 		&bitbucketServer,
 		&otherRepo,
+		&gitoliteRepo,
 	}
 
 	kinds := []string{
@@ -542,6 +600,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		"gitlab",
 		"bitbucketserver",
 		"other",
+		"gitolite",
 	}
 
 	type testCase struct {
