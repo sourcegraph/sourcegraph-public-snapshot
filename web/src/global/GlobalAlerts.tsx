@@ -57,7 +57,14 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {this.props.isSiteAdmin &&
                             this.state.siteFlags.updateCheck &&
                             !this.state.siteFlags.updateCheck.errorMessage &&
-                            this.state.siteFlags.updateCheck.updateVersionAvailable && (
+                            this.state.siteFlags.updateCheck.updateVersionAvailable &&
+                            ((isSettingsValid<Settings>(this.props.settingsCascade) &&
+                                (this.props.settingsCascade.final['alerts.showMinorUpdates'] === undefined ||
+                                    this.props.settingsCascade.final['alerts.showMinorUpdates'])) ||
+                                isMajorUpdateAvailable(
+                                    this.state.siteFlags.productVersion,
+                                    this.state.siteFlags.updateCheck.updateVersionAvailable
+                                )) && (
                                 <UpdateAvailableAlert
                                     className="global-alerts__alert"
                                     updateVersionAvailable={this.state.siteFlags.updateCheck.updateVersionAvailable}
@@ -113,4 +120,15 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             </div>
         )
     }
+}
+
+function isMajorUpdateAvailable(currentVersion: string, updateVersion: string): boolean {
+    const cv = currentVersion.split('.')
+    const uv = updateVersion.split('.')
+    // If either current or update versions aren't semvers (e.g., a user is on a date-based build version),
+    // always return true.
+    if (cv.length !== 3 || uv.length !== 3) {
+        return true
+    }
+    return parseInt(uv[0], 10) !== parseInt(cv[0], 10)
 }

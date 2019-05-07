@@ -402,6 +402,7 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
+	AlertsShowMinorUpdates bool                      `json:"alerts.showMinorUpdates,omitempty"`
 	Extensions             map[string]bool           `json:"extensions,omitempty"`
 	Motd                   []string                  `json:"motd,omitempty"`
 	Notices                []*Notice                 `json:"notices,omitempty"`
