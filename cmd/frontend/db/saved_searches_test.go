@@ -211,7 +211,7 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 		t.Fatalf("no saved search returned, create failed")
 	}
 	savedSearch, err := SavedSearches.ListSavedSearchesByUserID(ctx, 1)
-	want := []*types.SavedSearch{&types.SavedSearch{
+	want := []*types.SavedSearch{{
 		ID:          1,
 		Query:       "test",
 		Description: "test",
