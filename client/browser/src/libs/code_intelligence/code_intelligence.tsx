@@ -578,9 +578,7 @@ export function handleCodeHost({
                             ? fileInfo.baseRev || fileInfo.baseCommitID!
                             : fileInfo.rev || fileInfo.commitID,
                 })
-                const adjustPosition = getPositionAdjuster
-                    ? getPositionAdjuster(platformContext.requestGraphQL)
-                    : undefined
+                const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
                 codeViewState.subscriptions.add(
                     hoverifier.hoverify({
                         dom: domFunctions,
