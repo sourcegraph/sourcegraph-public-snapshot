@@ -60,8 +60,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             !this.state.siteFlags.updateCheck.errorMessage &&
                             this.state.siteFlags.updateCheck.updateVersionAvailable &&
                             ((isSettingsValid<Settings>(this.props.settingsCascade) &&
-                                (this.props.settingsCascade.final['alerts.showPatchUpdates'] === undefined ||
-                                    this.props.settingsCascade.final['alerts.showPatchUpdates'])) ||
+                                this.props.settingsCascade.final['alerts.showPatchUpdates'] !== false) ||
                                 isMinorUpdateAvailable(
                                     this.state.siteFlags.productVersion,
                                     this.state.siteFlags.updateCheck.updateVersionAvailable
