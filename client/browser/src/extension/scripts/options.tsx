@@ -4,7 +4,9 @@ import '../../config/polyfill'
 
 import * as React from 'react'
 import { render } from 'react-dom'
-import { from, noop, Subscription } from 'rxjs'
+import { from, noop, Observable, Subscription } from 'rxjs'
+import { GraphQLResult } from '../../../../../shared/src/graphql/graphql'
+import { IMutation, IQuery } from '../../../../../shared/src/graphql/schema'
 import { background } from '../../browser/runtime'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
@@ -52,8 +54,12 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
     return { host, protocol, hasPermissions }
 }
 
-const ensureValidSite = () =>
-    fetchSite((request, variables) => from(background.requestGraphQL({ request, variables })) as any)
+// Make GraphQL requests from background page
+function requestGraphQL<T extends IQuery | IMutation>(request: string, variables: {}): Observable<GraphQLResult<T>> {
+    return from(background.requestGraphQL<T>({ request, variables }))
+}
+
+const ensureValidSite = () => fetchSite(requestGraphQL)
 
 class Options extends React.Component<{}, State> {
     public state: State = {

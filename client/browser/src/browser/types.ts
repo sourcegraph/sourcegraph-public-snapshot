@@ -96,6 +96,6 @@ export interface BackgroundMessageHandlers {
     createBlobURL(bundleUrl: string): Promise<string>
     requestGraphQL<T extends GQL.IQuery | GQL.IMutation>(options: {
         request: string
-        variables: { [k: string]: any }
+        variables: {}
     }): Promise<GraphQLResult<T>>
 }

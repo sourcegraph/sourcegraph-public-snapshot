@@ -32,7 +32,7 @@ export const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export const queryGraphQL = (request: string, variables?: any): Observable<GraphQLResult<GQL.IQuery>> =>
+export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IQuery>> =>
     requestGraphQLCommon({
         request,
         variables,
@@ -46,7 +46,7 @@ export const queryGraphQL = (request: string, variables?: any): Observable<Graph
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export const mutateGraphQL = (request: string, variables?: any): Observable<GraphQLResult<GQL.IMutation>> =>
+export const mutateGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IMutation>> =>
     requestGraphQLCommon({
         request,
         variables,
