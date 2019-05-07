@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Kinds of external services in use are now included in server pings (https://docs.sourcegraph.com/admin/pings).
+
 ### Removed
 
 ### Fixed

@@ -130,6 +130,11 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
+	svcs, err := externalServiceKinds(ctx)
+	if err != nil {
+		logFunc("externalServicesKinds failed", "error", err)
+	}
+	q.Set("extsvcs", strings.Join(svcs, ","))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
 
@@ -142,6 +147,18 @@ func authProviderTypes() []string {
 	return types
 }
 
+func externalServiceKinds(ctx context.Context) ([]string, error) {
+	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	kinds := make([]string, len(services))
+	for i, s := range services {
+		kinds[i] = s.Kind
+	}
+	return kinds, nil
+}
+
 // check performs an update check. It returns the result and updates the global state
 // (returned by Last and IsPending).
 func check(ctx context.Context) (*Status, error) {
@@ -151,7 +168,6 @@ func check(ctx context.Context) (*Status, error) {
 			return "", err
 		}
 		defer resp.Body.Close()
-
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 			var description string
 			if body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 30)); err != nil {

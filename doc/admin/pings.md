@@ -7,7 +7,8 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 - Whether the instance is deployed on localhost (true/false)
 - Randomly generated site identifier
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, and policy updates
-- Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, or SAML)
+- Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
+- Which categories of external service are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
 - Whether new user signup is allowed (true/false)
 - Whether a repository has ever been added (true/false)
 - Whether a code search has ever been executed (true/false)
