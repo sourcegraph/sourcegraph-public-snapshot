@@ -47,8 +47,8 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                         know who to contact regarding sales, product updates, and policy updates
                     </li>
                     <li>
-                        Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, or
-                        SAML)
+                        Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy,
+                        SAML, GitHub, GitLab)
                     </li>
                     <li>
                         Which categories of external service are in use (GitHub, Bitbucket Server, GitLab, Phabricator,
