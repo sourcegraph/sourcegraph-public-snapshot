@@ -10,8 +10,8 @@ Saved searches can be an early warning system for common problems in your code--
 
 | Description                                                                 | Query                                                                                                                              |
 |:----------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|
-| Recent security-related changes on all branches                             | <code>type:diff repo:@*refs/heads/ after:"5 days ago" \b(auth[^o][^r]&#124;security\b&#124;cve&#124;password&#124;secure&#124;unsafe&#124;perms&#124;permissions)</code>  |
-| Admitted hacks and TODOs in app code                                        | <code>-file:\.(json&#124;md&#124;txt)$ hack&#124;todo&#124;kludge&#124;fixme</code> |
+| Recent security-related changes on all branches                             | `type:diff repo:@*refs/heads/ after:"5 days ago" \b(auth[^o][^r]|security\b|cve|password|secure|unsafe|perms|permissions)`  |
+| Admitted hacks and TODOs in app code                                        | `-file:\.(json|md|txt)$ hack|todo|kludge|fixme`                                                                               |
 | New usages of a function                                                    | `type:diff after:"1 week ago" onDidAddNewMethod\(`                                                                                 |
 | Recent quality related changes on all branches (customize for your linters) | `repo:@*refs/heads/:^master type:diff after:"1 week ago" (tslint:disable)`                                                         |
 | Recent dependency changes                                                   | `file:package.json type:diff after:"1 week ago"`                                                                                   |
