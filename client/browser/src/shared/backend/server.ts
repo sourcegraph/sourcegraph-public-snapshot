@@ -54,13 +54,15 @@ export const fetchCurrentUser = (
 
 export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<GQL.ISite> =>
     requestGraphQL<GQL.IQuery>(
-        gql`query SiteProductVersion() {
-            site {
-                productVersion
-                buildVersion
-                hasCodeIntelligence
+        gql`
+            query SiteProductVersion {
+                site {
+                    productVersion
+                    buildVersion
+                    hasCodeIntelligence
+                }
             }
-        }`,
+        `,
         {},
         false
     ).pipe(
