@@ -107,6 +107,7 @@ func main() {
 			"GITLAB",
 			"BITBUCKETSERVER",
 			"OTHER",
+			"GITOLITE",
 		)
 		migrations = append(migrations,
 			repos.EnabledStateDeprecationMigration(src, clock, kinds...),
