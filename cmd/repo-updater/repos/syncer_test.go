@@ -192,7 +192,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
 				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
-					r.ExternalRepo = api.ExternalRepoSpec{}
+					r.ExternalRepo.ID = ""
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
@@ -475,7 +475,9 @@ func TestDiff(t *testing.T) {
 
 	eid := func(id string) api.ExternalRepoSpec {
 		return api.ExternalRepoSpec{
-			ID: id,
+			ID:          id,
+			ServiceType: "fake",
+			ServiceID:   "https://fake.com",
 		}
 	}
 	now := time.Now()
