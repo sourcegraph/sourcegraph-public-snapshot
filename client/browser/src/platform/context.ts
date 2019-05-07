@@ -1,11 +1,6 @@
 import { combineLatest, merge, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
-import {
-    graphQLContent,
-    GraphQLDocument,
-    GraphQLResult,
-    requestGraphQL as requestGraphQLCommon,
-} from '../../../../shared/src/graphql/graphql'
+import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../../shared/src/settings/edit'
@@ -32,7 +27,7 @@ export function createPlatformContext({
 }: Pick<CodeHost, 'urlToFile' | 'getContext'>): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
     const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>(
-        request: GraphQLDocument,
+        request: string,
         variables: {},
         mightContainPrivateInfo: boolean
     ): Observable<GraphQLResult<T>> =>
@@ -43,7 +38,7 @@ export function createPlatformContext({
                     // If we can't determine the code host context, assume the current repository is private.
                     const privateRepository = getContext ? getContext().privateRepository : true
                     if (privateRepository) {
-                        const nameMatch = request[graphQLContent].match(/^\s*(?:query|mutation)\s+(\w+)/)
+                        const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
                         throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
                     }
                 }
@@ -61,7 +56,7 @@ export function createPlatformContext({
                     })
                 }
                 // In the browser extension, send all GraphQL requests from the background page.
-                return background.requestGraphQL<T>({ request: request[graphQLContent], variables })
+                return background.requestGraphQL<T>({ request, variables })
             })
         )
 

@@ -1,7 +1,7 @@
 import { Endpoint, isEndpoint } from '@sourcegraph/comlink'
 import { NextObserver, Observable, Subscribable } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
-import { GraphQLDocument, GraphQLResult } from '../graphql/graphql'
+import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { FileSpec, PositionSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
@@ -60,7 +60,7 @@ export interface PlatformContext {
      * @return Observable that emits the result or an error if the HTTP request failed
      */
     requestGraphQL<R extends GQL.IQuery | GQL.IMutation>(
-        request: GraphQLDocument,
+        request: string,
         variables: { [name: string]: any },
         mightContainPrivateInfo: boolean
     ): Observable<GraphQLResult<R>>

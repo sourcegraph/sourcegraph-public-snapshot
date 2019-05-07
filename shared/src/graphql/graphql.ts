@@ -4,17 +4,12 @@ import { catchError, map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { createAggregateError, normalizeAjaxError } from '../util/errors'
 import * as GQL from './schema'
-export const graphQLContent = Symbol('graphQLContent')
-export interface GraphQLDocument {
-    [graphQLContent]: string
-}
 
 /**
  * Use this template string tag for all GraphQL queries.
  */
-export const gql = (template: TemplateStringsArray, ...substitutions: any[]): GraphQLDocument => ({
-    [graphQLContent]: String.raw(template, ...substitutions.map(s => s[graphQLContent] || s)),
-})
+export const gql = (template: TemplateStringsArray, ...substitutions: any[]): string =>
+    String.raw(template, ...substitutions)
 
 export interface SuccessGraphQLResult<T extends GQL.IQuery | GQL.IMutation> {
     data: T
@@ -68,15 +63,15 @@ export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
     requestOptions = {},
     baseUrl = '',
 }: GraphQLRequestOptions & {
-    request: GraphQLDocument
-    variables: any
+    request: string
+    variables?: {}
 }): Observable<GraphQLResult<T>> {
-    const nameMatch = request[graphQLContent].match(/^\s*(?:query|mutation)\s+(\w+)/)
+    const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     return ajax({
         method: 'POST',
         url: `${baseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
         headers,
-        body: JSON.stringify({ query: request[graphQLContent], variables }),
+        body: JSON.stringify({ query: request, variables }),
         ...requestOptions,
     }).pipe(
         catchError<AjaxResponse, never>(err => {
