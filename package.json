@@ -182,7 +182,7 @@
     "socket.io-client": "^2.2.0",
     "style-loader": "^0.23.1",
     "stylelint": "^10.0.1",
-    "terser-webpack-plugin": "^1.2.0",
+    "terser-webpack-plugin": "^1.2.3",
     "ts-jest": "^24.0.2",
     "ts-loader": "^6.0.0",
     "ts-node": "^8.1.0",
