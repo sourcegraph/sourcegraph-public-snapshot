@@ -53,8 +53,9 @@ const AWSCodeCommitSchemaJSON = `{
       ]
     },
     "initialRepositoryEnablement": {
-      "description": "Defines whether repositories from AWS CodeCommit should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable AWS CodeCommit repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by AWS); site admins can still disable them explicitly, and they'll remain disabled.",
-      "type": "boolean"
+      "description": "Deprecated and ignored field which will be removed entirely in the next release. AWS CodeCommit repositories can no longer be enabled or disabled explicitly. Configure which repositories should not be mirrored via \"exclude\" instead.",
+      "type": "boolean",
+      "default": false
     },
     "exclude": {
       "description": "A list of repositories to never mirror from AWS CodeCommit. \n\nSupports excluding by name ({\"name\": \"git-codecommit.us-west-1.amazonaws.com\/repo-name\"}) or by ARN ({\"id\": \"arn:aws:codecommit:us-west-1:999999999999:name\"}).",
