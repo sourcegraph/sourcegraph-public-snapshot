@@ -86,45 +86,6 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	return savedSearches, nil
 }
 
-func (s *savedSearches) GetSavedSearchByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
-	if Mocks.SavedSearches.GetSavedSearchByID != nil {
-		return Mocks.SavedSearches.GetSavedSearchByID(ctx, id)
-	}
-	var savedSearch api.SavedQuerySpecAndConfig
-
-	err := dbconn.Global.QueryRowContext(ctx, `SELECT
-		id,
-		description,
-		query,
-		notify_owner,
-		notify_slack,
-		owner_kind,
-		user_id,
-		org_id,
-		slack_webhook_url
-		FROM saved_searches WHERE id=$1`, id).Scan(
-		&savedSearch.Config.Key,
-		&savedSearch.Config.Description,
-		&savedSearch.Config.Query,
-		&savedSearch.Config.Notify,
-		&savedSearch.Config.NotifySlack,
-		&savedSearch.Config.OwnerKind,
-		&savedSearch.Config.UserID,
-		&savedSearch.Config.OrgID,
-		&savedSearch.Config.SlackWebhookURL)
-	savedSearch.Spec.Key = savedSearch.Config.Key
-	if savedSearch.Config.UserID != nil {
-		savedSearch.Spec.Subject = api.SettingsSubject{User: savedSearch.Config.UserID}
-	} else if savedSearch.Config.OrgID != nil {
-		savedSearch.Spec.Subject = api.SettingsSubject{Org: savedSearch.Config.OrgID}
-	}
-
-	if err != nil {
-		return nil, err
-	}
-	return &savedSearch, err
-}
-
 // ListSavedSearchesByUserID lists all the saved searches associated with a user,
 // including saved searches in organizations the user is a member of.
 //
@@ -278,13 +239,14 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 	}()
 
 	savedQuery = &types.SavedSearch{
-		Description: savedSearch.Description,
-		Query:       savedSearch.Query,
-		Notify:      savedSearch.Notify,
-		NotifySlack: savedSearch.NotifySlack,
-		OwnerKind:   savedSearch.OwnerKind,
-		UserID:      savedSearch.UserID,
-		OrgID:       savedSearch.OrgID,
+		Description:     savedSearch.Description,
+		Query:           savedSearch.Query,
+		Notify:          savedSearch.Notify,
+		NotifySlack:     savedSearch.NotifySlack,
+		OwnerKind:       savedSearch.OwnerKind,
+		UserID:          savedSearch.UserID,
+		OrgID:           savedSearch.OrgID,
+		SlackWebhookURL: savedSearch.SlackWebhookURL,
 	}
 
 	fieldUpdates := []*sqlf.Query{
@@ -296,6 +258,7 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 		sqlf.Sprintf("owner_kind=%s", strings.ToLower(savedSearch.OwnerKind)),
 		sqlf.Sprintf("user_id=%v", savedSearch.UserID),
 		sqlf.Sprintf("org_id=%v", savedSearch.OrgID),
+		sqlf.Sprintf("slack_webhook_url=%v", savedSearch.SlackWebhookURL),
 	}
 
 	updateQuery := sqlf.Sprintf(`UPDATE saved_searches SET %s WHERE ID=%v RETURNING id`, sqlf.Join(fieldUpdates, ", "), savedSearch.ID)
