@@ -5,7 +5,6 @@ import '../../config/polyfill'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { from, noop, Subscription } from 'rxjs'
-import { graphQLContent } from '../../../../../shared/src/graphql/graphql'
 import { background } from '../../browser/runtime'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
@@ -54,9 +53,7 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
 }
 
 const ensureValidSite = () =>
-    fetchSite(
-        (request, variables) => from(background.requestGraphQL({ request: request[graphQLContent], variables })) as any
-    )
+    fetchSite((request, variables) => from(background.requestGraphQL({ request, variables })) as any)
 
 class Options extends React.Component<{}, State> {
     public state: State = {
