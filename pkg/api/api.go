@@ -72,6 +72,11 @@ type ExternalRepoSpec struct {
 	ServiceID string
 }
 
+// IsSet returns true if all fields of the external repo spec are set.
+func (r ExternalRepoSpec) IsSet() bool {
+	return r.ID != "" && r.ServiceType != "" && r.ServiceID != ""
+}
+
 // Equal returns true if r is equal to s.
 func (r *ExternalRepoSpec) Equal(s *ExternalRepoSpec) bool {
 	if r == s { // handles the case when r and s are both nil
@@ -94,7 +99,7 @@ func (r ExternalRepoSpec) Compare(s ExternalRepoSpec) int {
 	return cmp(r.ID, s.ID)
 }
 
-func (r *ExternalRepoSpec) String() string {
+func (r ExternalRepoSpec) String() string {
 	return fmt.Sprintf("ExternalRepoSpec{%s %s %s}", r.ServiceID, r.ServiceType, r.ID)
 }
 
