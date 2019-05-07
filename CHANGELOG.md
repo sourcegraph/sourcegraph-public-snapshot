@@ -15,6 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Added topQueries to the GraphQL API.
 - Admins can now turn off site alerts for minor and patch version updates using the `alerts.showMinorUpdates` setting. Alerts will still be shown for major version updates.
+- The new `gitolite.exclude` setting in [Gitolite external service config](https://docs.sourcegraph.com/admin/external_service/gitolite#configuration) allows you to exclude specific repositories by their Gitolite name so that they won't be mirrored. Upon upgrading, previously "disabled" repositories will be automatically migrated to this exclusion list.
 
 ### Changed
 
