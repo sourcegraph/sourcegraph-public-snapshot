@@ -106,6 +106,7 @@ func main() {
 			"GITHUB",
 			"GITLAB",
 			"BITBUCKETSERVER",
+			"AWSCODECOMMIT",
 			"OTHER",
 			"GITOLITE",
 		)
