@@ -59,7 +59,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
 - [Query syntax reference](user/search/queries.md)
-- [GraphQL API](api/graphql.md)
+- [GraphQL API](api/graphql/index.md)
 - [Sourcegraph Enterprise](admin/subscriptions/index.md)
 
 <!-- TODO(sqs): Add link to ./graphbook when it has more content. -->

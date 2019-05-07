@@ -1,0 +1,129 @@
+@import './global-styles/colors';
+
+// Bootstrap configuration before Bootstrap is imported
+$border-radius: 2px;
+$border-radius-sm: 1px;
+$border-radius-lg: 4px;
+$font-size-base: 0.875rem;
+$line-height-base: (20/14);
+
+// Tell Bootstrap to use colors from OpenColor
+$blue: $oc-blue-7;
+$indigo: $oc-indigo-7;
+$purple: $oc-violet-7;
+$pink: $oc-pink-7;
+$red: $oc-red-7;
+$orange: $oc-orange-7;
+$yellow: $oc-yellow-7;
+$green: $oc-green-7;
+$teal: $oc-teal-7;
+$cyan: $oc-cyan-7;
+
+$primary: $blue;
+$secondary: #2b3750;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+$secondary-light: #f2f4f8;
+
+// Media breakpoints
+$media-sm: 576px;
+$media-md: 768px;
+$media-lg: 992px;
+$media-xl: 1200px;
+
+$theme-colors-light: (
+    'secondary': $secondary-light,
+);
+
+:root {
+    --border-color: rgba(0, 0, 0, 0.125);
+}
+
+.sg-icon .icon {
+    @extend .icon-inline;
+    display: flex;
+}
+
+.selection-highlight,
+.selection-highlight span,
+.selection-highlight-sticky,
+.selection-highlight-sticky span {
+    background-color: rgba(255, 192, 120, 0.5);
+}
+
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/card';
+@import 'bootstrap/scss/utilities/text';
+@import 'bootstrap/scss/utilities/screenreaders';
+@import './global-styles/card';
+@import './global-styles/icons';
+@import './highlight';
+@import './shared/components/CodeViewToolbar.scss';
+@import './libs/bitbucket/style.scss';
+@import './libs/gitlab/style.scss';
+@import './libs/github/style.scss';
+@import './libs/phabricator/style.scss';
+@import './libs/code_intelligence/HoverOverlay.scss';
+@import './libs/code_intelligence/external_links';
+@import './shared';
+
+.sourcegraph-options-menu {
+    .list-group-item.active {
+        background-color: $blue;
+    }
+    .btn-primary {
+        background-color: $blue;
+        &:hover {
+            background-color: #1862ab;
+        }
+    }
+    .btn-secondary {
+        color: #2b3750;
+        background-color: #f2f4f8;
+        border-top-color: #f2f4f8;
+        border-bottom-color: #f2f4f8;
+        border-left-color: #f2f4f8;
+        border-right-color: #f2f4f8;
+
+        &:hover,
+        &:active,
+        &:focus {
+            color: #2b3750 !important;
+            background-color: #e4e9f1 !important;
+            border-color: #e4e9f1 !important;
+            border-top-color: #e4e9f1 !important;
+            border-bottom-color: #e4e9f1 !important;
+            border-left-color: #e4e9f1 !important;
+            border-right-color: #e4e9f1 !important;
+        }
+    }
+    // A .btn-outline-link button class that displays an unsaturated outline around a link.
+    .btn.btn-outline-link {
+        color: $link-color !important;
+        @include button-outline-variant(#ced4da);
+    }
+    .input-group {
+        .form-control {
+            margin-right: 1rem;
+        }
+        button {
+            margin-left: 0.25rem;
+        }
+    }
+    .input-group > .form-control:not(:last-child) {
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+    }
+
+    .command-palette-button {
+        display: flex;
+        align-items: center;
+    }
+}

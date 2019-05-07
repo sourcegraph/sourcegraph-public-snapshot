@@ -22,8 +22,7 @@
     "graphql": "gulp graphQLTypes",
     "schema": "gulp schema",
     "watch-schema": "gulp watchSchema",
-    "prepublish": "yarn run tslint:build-rules",
-    "storybook": "start-storybook -p 9001 -c .storybook"
+    "prepublish": "yarn run tslint:build-rules"
   },
   "sideEffects": true
 }

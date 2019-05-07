@@ -779,6 +779,11 @@ type Query {
         # Returns the first n survey responses from the list.
         first: Int
     ): SurveyResponseConnection!
+    # The most frequently occurring recent queries.
+    topQueries(
+        # Maximum number of unique queries to return.
+        limit: Int!
+    ): [QueryCount!]!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
     # Queries which are for internal use only.
@@ -789,6 +794,15 @@ type Query {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
+}
+
+# A query and an associated number of times it occurred.
+type QueryCount {
+    # The search query.
+    query: String!
+
+    # The number of times the search query was made.
+    count: Int!
 }
 
 # Queries which are for internal use only.

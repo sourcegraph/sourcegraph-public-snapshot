@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added topQueries to the GraphQL API.
+
 ### Changed
 
 ### Removed
@@ -345,7 +347,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migrat
 ### Fixed
 
 - Fixed an issue that would cause the frontend health check endpoint `/healthz` to not respond. This only impacts Kubernetes deployments.
-- Fixed a CORS policy issue that caused requests to be rejected when they come from origins not in our [manifest.json](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/browser/src/extension/manifest.spec.json#L72) (i.e. requested via optional permissions by the user).
+- Fixed a CORS policy issue that caused requests to be rejected when they come from origins not in our [manifest.json](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/browser/src/extension/manifest.spec.json#L72) (i.e. requested via optional permissions by the user).
 - Fixed an issue that prevented `repositoryQuery` from working correctly on GitHub enterprise instances.
 
 ## 2.13.2

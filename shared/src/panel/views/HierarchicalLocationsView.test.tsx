@@ -36,7 +36,7 @@ describe('<HierarchicalLocationsView />', () => {
         }
         const location: H.Location = {
             hash: '#L36:18&tab=references',
-            pathname: '/github.com/sourcegraph/sourcegraph/-/blob/client/browser/src/libs/phabricator/index.tsx',
+            pathname: '/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx',
             search: '',
             state: {},
         }

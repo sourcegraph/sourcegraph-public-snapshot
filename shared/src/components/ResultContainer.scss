@@ -1,8 +1,12 @@
 .result-container {
     position: relative;
-    margin-bottom: 1rem;
-    border-radius: 2px;
-    border: 1px solid #2b3750;
+
+    border-width: 0 0 1px 0;
+    border-style: solid;
+    border-color: #2b3750;
+    &:first-child {
+        border-top-width: 1px;
+    }
 
     &__header {
         padding: 0.5rem 0.5rem;
@@ -59,7 +63,7 @@
 
 .theme-light {
     .result-container {
-        border: 1px solid $color-light-border;
+        border-color: $color-light-border;
         &__header {
             background-color: $color-light-bg-2;
 

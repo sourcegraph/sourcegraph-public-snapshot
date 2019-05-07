@@ -2,22 +2,25 @@ package db
 
 import (
 	"fmt"
+	"math/rand"
+	"reflect"
+	"testing"
+
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"math/rand"
-	"testing"
 )
 
-func TestRecentSearches_Add(t *testing.T) {
+func TestRecentSearches_Log(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := dbtesting.TestContext(t)
 	q := fmt.Sprintf("fake query with random number %d", rand.Int())
-	if err := RecentSearches.Add(ctx, q); err != nil {
+	rs := &RecentSearches{}
+	if err := rs.Log(ctx, q); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := RecentSearches.Get(ctx)
+	ss, err := rs.List(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,26 +32,27 @@ func TestRecentSearches_Add(t *testing.T) {
 	}
 }
 
-func TestRecentSearches_DeleteExcessRows(t *testing.T) {
+func TestRecentSearches_Cleanup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	rs := &RecentSearches{}
 	t.Run("empty case", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
-		if err := RecentSearches.DeleteExcessRows(ctx, 1); err != nil {
+		if err := rs.Cleanup(ctx, 1); err != nil {
 			t.Error(err)
 		}
 	})
 	t.Run("single case", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
 		q := "fake query"
-		if err := RecentSearches.Add(ctx, q); err != nil {
+		if err := rs.Log(ctx, q); err != nil {
 			t.Fatal(err)
 		}
-		if err := RecentSearches.DeleteExcessRows(ctx, 2); err != nil {
+		if err := rs.Cleanup(ctx, 2); err != nil {
 			t.Error(err)
 		}
-		ss, err := RecentSearches.Get(ctx)
+		ss, err := rs.List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -61,14 +65,14 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 		limit := 10
 		for i := 1; i <= limit+1; i++ {
 			q := fmt.Sprintf("fake query for i = %d", i)
-			if err := RecentSearches.Add(ctx, q); err != nil {
+			if err := rs.Log(ctx, q); err != nil {
 				t.Fatal(err)
 			}
 		}
-		if err := RecentSearches.DeleteExcessRows(ctx, limit); err != nil {
+		if err := rs.Cleanup(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
-		ss, err := RecentSearches.Get(ctx)
+		ss, err := rs.List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,30 +93,107 @@ func TestRecentSearches_DeleteExcessRows(t *testing.T) {
 			q := fmt.Sprintf("fake query for i = %d", i)
 			addQueryWithRandomId(q)
 		}
-		if err := RecentSearches.DeleteExcessRows(ctx, limit); err != nil {
+		if err := rs.Cleanup(ctx, limit); err != nil {
 			t.Fatal(err)
 		}
-		ss, err := RecentSearches.Get(ctx)
+		ss, err := rs.List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(ss) != limit {
 			t.Errorf("recent_searches table has %d rows, want %d", len(ss), limit)
 		}
-
 	})
 }
 
-func BenchmarkRecentSearches_AddAndDeleteExcessRows(b *testing.B) {
+func BenchmarkRecentSearches_LogAndCleanup(b *testing.B) {
+	rs := &RecentSearches{}
 	ctx := dbtesting.TestContext(b)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		q := fmt.Sprintf("fake query for i = %d", i)
-		if err := RecentSearches.Add(ctx, q); err != nil {
+		if err := rs.Log(ctx, q); err != nil {
 			b.Fatal(err)
 		}
-		if err := RecentSearches.DeleteExcessRows(ctx, b.N); err != nil {
+		if err := rs.Cleanup(ctx, b.N); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestRecentSearches_Top(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	tests := []struct {
+		name              string
+		queries           []string
+		n                 int32
+		wantUniqueQueries []string
+		wantCounts        []int32
+		wantErr           bool
+	}{
+		{
+			name:              "empty case",
+			queries:           nil,
+			n:                 10,
+			wantUniqueQueries: nil,
+			wantCounts:        nil,
+			wantErr:           false,
+		},
+		{
+			name:              "a",
+			queries:           []string{"a"},
+			n:                 10,
+			wantUniqueQueries: []string{"a"},
+			wantCounts:        []int32{1},
+			wantErr:           false,
+		},
+		{
+			name:              "a a",
+			queries:           []string{"a", "a"},
+			n:                 10,
+			wantUniqueQueries: []string{"a"},
+			wantCounts:        []int32{2},
+			wantErr:           false,
+		},
+		{
+			name:              "a b",
+			queries:           []string{"a", "b"},
+			n:                 10,
+			wantUniqueQueries: []string{"a", "b"},
+			wantCounts:        []int32{1, 1},
+			wantErr:           false,
+		},
+		{
+			name:              "c c b a a",
+			queries:           []string{"c", "c", "b", "a", "a"},
+			n:                 10,
+			wantUniqueQueries: []string{"a", "c", "b"},
+			wantCounts:        []int32{2, 2, 1},
+			wantErr:           false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rs := &RecentSearches{}
+			ctx := dbtesting.TestContext(t)
+			for _, q := range tt.queries {
+				if err := rs.Log(ctx, q); err != nil {
+					t.Fatal(err)
+				}
+			}
+			gotUniqueQueries, gotCounts, err := rs.Top(ctx, tt.n)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RecentSearches.Top() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotUniqueQueries, tt.wantUniqueQueries) {
+				t.Errorf("RecentSearches.Top() queries = %v, want %v", gotUniqueQueries, tt.wantUniqueQueries)
+			}
+			if !reflect.DeepEqual(gotCounts, tt.wantCounts) {
+				t.Errorf("RecentSearches.Top() counts = %v, want %v", gotCounts, tt.wantCounts)
+			}
+		})
 	}
 }

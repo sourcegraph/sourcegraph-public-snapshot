@@ -245,7 +245,7 @@ func newClient(t testing.TB, name string) (*phabricator.Client, func()) {
 		t.Fatal(err)
 	}
 
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).NewClient()
+	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
 		t.Fatal(err)
 	}

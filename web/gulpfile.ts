@@ -2,7 +2,7 @@ import log from 'fancy-log'
 import gulp from 'gulp'
 import createWebpackCompiler, { Stats } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
-import { phabricator, watchPhabricator } from '../client/browser/gulpfile'
+import { phabricator, watchPhabricator } from '../browser/gulpfile'
 import { graphQLTypes, schema, watchGraphQLTypes, watchSchema } from '../shared/gulpfile'
 import webpackConfig from './webpack.config'
 

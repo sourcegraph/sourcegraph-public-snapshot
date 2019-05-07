@@ -120,7 +120,7 @@ func main() {
 
 	// Browser extension build
 	pipeline.AddStep(":webpack::chrome:",
-		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
+		bk.Cmd("dev/ci/yarn-build.sh browser"))
 
 	if !isBextReleaseBranch {
 		// Webapp build
@@ -143,13 +143,16 @@ func main() {
 
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
-		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
-		bk.ArtifactPaths("client/browser/coverage/coverage-final.json"))
+		bk.Cmd("dev/ci/yarn-test.sh browser"),
+		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 
 	// Shared tests
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
+
+	// Storybook
+	pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
 
 	if !isBextReleaseBranch {
 		pipeline.AddStep(":postgres:",
@@ -265,7 +268,7 @@ func main() {
 		pipeline.AddStep(":chromium:",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd client/browser"),
+			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
 			bk.Cmd("yarn -s run test-e2e"),
 			bk.Cmd("popd"),
@@ -277,7 +280,7 @@ func main() {
 		pipeline.AddStep(":chrome:",
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd client/browser"),
+			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
 			bk.Cmd("yarn release:chrome"),
 			bk.Cmd("popd"))
@@ -286,7 +289,7 @@ func main() {
 		pipeline.AddStep(":firefox:",
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd client/browser"),
+			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn release:ff"),
 			bk.Cmd("popd"))
 	}

@@ -130,7 +130,6 @@ func TestNewSourcer(t *testing.T) {
 }
 
 func TestSources_ListRepos(t *testing.T) {
-
 	// NOTE(tsenart): Updating this test's testdata with the `-update` flag requires
 	// setting up a local instance of Bitbucket Server and populating it.
 	// $ docker run \
@@ -143,7 +142,7 @@ func TestSources_ListRepos(t *testing.T) {
 		name   string
 		ctx    context.Context
 		svcs   ExternalServices
-		assert ReposAssertion
+		assert func(*ExternalService) ReposAssertion
 		err    string
 	}
 
@@ -199,29 +198,23 @@ func TestSources_ListRepos(t *testing.T) {
 			},
 		}
 
-		kinds := make(map[string]struct{})
-		for _, s := range svcs {
-			kinds[strings.ToLower(s.Kind)] = struct{}{}
-		}
-
 		testCases = append(testCases, testCase{
 			name: "yielded repos are always enabled",
 			svcs: svcs,
-			assert: func(t testing.TB, rs Repos) {
-				t.Helper()
+			assert: func(e *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
 
-				set := make(map[string]bool)
-
-				for _, r := range rs {
-					set[strings.ToLower(r.ExternalRepo.ServiceType)] = true
-					if !r.Enabled {
-						t.Errorf("repo %q is not enabled", r.Name)
+					set := make(map[string]bool)
+					for _, r := range rs {
+						set[strings.ToUpper(r.ExternalRepo.ServiceType)] = true
+						if !r.Enabled {
+							t.Errorf("repo %q is not enabled", r.Name)
+						}
 					}
-				}
 
-				for kind := range kinds {
-					if !set[kind] {
-						t.Errorf("external service of kind %q didn't yield any repos", kind)
+					if !set[e.Kind] {
+						t.Errorf("external service of kind %q didn't yield any repos", e.Kind)
 					}
 				}
 			},
@@ -288,12 +281,13 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "excluded repos are never yielded",
 			svcs: svcs,
-			assert: func(t testing.TB, rs Repos) {
-				t.Helper()
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
 
-				set := make(map[string]bool)
-				var patterns []*regexp.Regexp
-				for _, s := range svcs {
+					set := make(map[string]bool)
+					var patterns []*regexp.Regexp
+
 					c, err := s.Configuration()
 					if err != nil {
 						t.Fatal(err)
@@ -338,15 +332,15 @@ func TestSources_ListRepos(t *testing.T) {
 							patterns = append(patterns, re)
 						}
 					}
-				}
 
-				for _, r := range rs {
-					if set[r.Name] || set[r.ExternalRepo.ID] {
-						t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
-					}
-					for _, re := range patterns {
-						if re.MatchString(r.Name) {
-							t.Errorf("excluded repo{name=%s} matching %q was yielded", r.Name, re.String())
+					for _, r := range rs {
+						if set[r.Name] || set[r.ExternalRepo.ID] {
+							t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
+						}
+						for _, re := range patterns {
+							if re.MatchString(r.Name) {
+								t.Errorf("excluded repo{name=%s} matching %q was yielded", r.Name, re.String())
+							}
 						}
 					}
 				}
@@ -409,25 +403,40 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "included repos that exist are yielded",
 			svcs: svcs,
-			assert: func(t testing.TB, rs Repos) {
-				t.Helper()
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
 
-				have := rs.Names()
-				sort.Strings(have)
+					have := rs.Names()
+					sort.Strings(have)
 
-				want := []string{
-					"127.0.0.1/ORG/bar",
-					"127.0.0.1/ORG/baz",
-					"127.0.0.1/ORG/foo",
-					"github.com/google/go-cmp",
-					"github.com/sourcegraph/sourcegraph",
-					"github.com/tsenart/vegeta",
-					"gitlab.com/gitlab-org/gitlab-ce",
-					"gitlab.com/gnachman/iterm2",
-				}
+					var want []string
+					switch s.Kind {
+					case "GITHUB":
+						want = []string{
+							"github.com/sourcegraph/sourcegraph",
+							"github.com/tsenart/vegeta",
+						}
+					case "BITBUCKETSERVER":
+						want = []string{
+							"127.0.0.1/ORG/bar",
+							"127.0.0.1/ORG/baz",
+							"127.0.0.1/ORG/foo",
+						}
+					case "GITLAB":
+						want = []string{
+							"gitlab.com/gitlab-org/gitlab-ce",
+							"gitlab.com/gnachman/iterm2",
+						}
+					case "OTHER":
+						want = []string{
+							"github.com/google/go-cmp",
+						}
+					}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Error(cmp.Diff(have, want))
+					if !reflect.DeepEqual(have, want) {
+						t.Error(cmp.Diff(have, want))
+					}
 				}
 			},
 			err: "<nil>",
@@ -473,20 +482,31 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "repositoryPathPattern determines the repo name",
 			svcs: svcs,
-			assert: func(t testing.TB, rs Repos) {
-				t.Helper()
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
 
-				have := rs.Names()
-				sort.Strings(have)
+					have := rs.Names()
 
-				want := []string{
-					"127.0.0.1/a/b/c/ORG/baz",
-					"github.com/a/b/c/tsenart/vegeta",
-					"gitlab.com/a/b/c/gnachman/iterm2",
-				}
+					var want []string
+					switch s.Kind {
+					case "GITHUB":
+						want = []string{
+							"github.com/a/b/c/tsenart/vegeta",
+						}
+					case "GITLAB":
+						want = []string{
+							"gitlab.com/a/b/c/gnachman/iterm2",
+						}
+					case "BITBUCKETSERVER":
+						want = []string{
+							"127.0.0.1/a/b/c/ORG/baz",
+						}
+					}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Error(cmp.Diff(have, want))
+					if !reflect.DeepEqual(have, want) {
+						t.Error(cmp.Diff(have, want))
+					}
 				}
 			},
 			err: "<nil>",
@@ -507,39 +527,41 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "phabricator",
 			svcs: svcs,
-			assert: func(t testing.TB, rs Repos) {
-				t.Helper()
+			assert: func(*ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
 
-				if len(rs) == 0 {
-					t.Fatalf("no repos yielded")
-				}
-
-				for _, r := range rs {
-					repo := r.Metadata.(*phabricator.Repo)
-					if repo.VCS != "git" {
-						t.Fatalf("non git repo yielded: %+v", repo)
+					if len(rs) == 0 {
+						t.Fatalf("no repos yielded")
 					}
 
-					if repo.Status == "inactive" {
-						t.Fatalf("inactive repo yielded: %+v", repo)
-					}
+					for _, r := range rs {
+						repo := r.Metadata.(*phabricator.Repo)
+						if repo.VCS != "git" {
+							t.Fatalf("non git repo yielded: %+v", repo)
+						}
 
-					if repo.Name == "" {
-						t.Fatalf("empty repo name: %+v", repo)
-					}
+						if repo.Status == "inactive" {
+							t.Fatalf("inactive repo yielded: %+v", repo)
+						}
 
-					if !r.Enabled {
-						t.Fatalf("repo disabled: %+v", repo)
-					}
+						if repo.Name == "" {
+							t.Fatalf("empty repo name: %+v", repo)
+						}
 
-					ext := api.ExternalRepoSpec{
-						ID:          repo.PHID,
-						ServiceType: "phabricator",
-						ServiceID:   "https://secure.phabricator.com",
-					}
+						if !r.Enabled {
+							t.Fatalf("repo disabled: %+v", repo)
+						}
 
-					if have, want := r.ExternalRepo, ext; have != want {
-						t.Fatal(cmp.Diff(have, want))
+						ext := api.ExternalRepoSpec{
+							ID:          repo.PHID,
+							ServiceType: "phabricator",
+							ServiceID:   "https://secure.phabricator.com",
+						}
+
+						if have, want := r.ExternalRepo, ext; have != want {
+							t.Fatal(cmp.Diff(have, want))
+						}
 					}
 				}
 			},
@@ -549,39 +571,42 @@ func TestSources_ListRepos(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			cf, save := newClientFactory(t, tc.name)
-			defer save(t)
+		for _, svc := range tc.svcs {
+			name := svc.Kind + "/" + tc.name
+			t.Run(name, func(t *testing.T) {
+				cf, save := newClientFactory(t, name)
+				defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
+				lg := log15.New()
+				lg.SetHandler(log15.DiscardHandler())
 
-			obs := ObservedSource(lg, NewSourceMetrics())
-			srcs, err := NewSourcer(cf, obs)(tc.svcs...)
-			if err != nil {
-				t.Fatal(err)
-			}
+				obs := ObservedSource(lg, NewSourceMetrics())
+				srcs, err := NewSourcer(cf, obs)(svc)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			ctx := tc.ctx
-			if ctx == nil {
-				ctx = context.Background()
-			}
+				ctx := tc.ctx
+				if ctx == nil {
+					ctx = context.Background()
+				}
 
-			repos, err := srcs.ListRepos(ctx)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
+				repos, err := srcs.ListRepos(ctx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				}
 
-			if tc.assert != nil {
-				tc.assert(t, repos)
-			}
-		})
+				if tc.assert != nil {
+					tc.assert(svc)(t, repos)
+				}
+			})
+		}
 	}
 }
 
-func newClientFactory(t testing.TB, name string) (httpcli.Factory, func(testing.TB)) {
+func newClientFactory(t testing.TB, name string) (*httpcli.Factory, func(testing.TB)) {
 	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
-	rec := newRecorder(t, cassete, *update)
+	rec := newRecorder(t, cassete, update(name))
 	mw := httpcli.NewMiddleware(
 		githubProxyRedirectMiddleware,
 		gitserverRedirectMiddleware,
