@@ -50,6 +50,10 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                         Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, or
                         SAML)
                     </li>
+                    <li>
+                        Which categories of external service are in use (GitHub, Bitbucket Server, GitLab, Phabricator,
+                        Gitolite, AWS CodeCommit, Other)
+                    </li>
                     <li>Whether new user signup is allowed (true/false)</li>
                     <li>Whether a repository has ever been added (true/false)</li>
                     <li>Whether a code search has ever been executed (true/false)</li>
