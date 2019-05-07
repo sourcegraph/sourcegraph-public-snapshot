@@ -152,7 +152,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 		},
 		Sources: map[string]*repos.SourceInfo{},
-		Metadata: awscodecommit.Repository{
+		Metadata: &awscodecommit.Repository{
 			ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 			Name: "stripe-go",
 		},

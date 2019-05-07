@@ -387,12 +387,12 @@ func (e *ExternalService) excludeAWSCodeCommitRepos(rs ...*Repo) error {
 			}
 
 			var (
-				metadata awscodecommit.Repository
+				metadata *awscodecommit.Repository
 				ok       bool
 			)
-			metadata, ok = r.Metadata.(awscodecommit.Repository)
+			metadata, ok = r.Metadata.(*awscodecommit.Repository)
 			if !ok {
-				metadata = awscodecommit.Repository{}
+				metadata = new(awscodecommit.Repository)
 			}
 			name := metadata.Name
 
