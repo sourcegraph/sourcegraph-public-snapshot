@@ -276,6 +276,16 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					Host: "ssh://git@127.0.0.1:2222",
+					Exclude: []*schema.ExcludedGitoliteRepo{
+						{Name: "foo"},
+						{Name: "bar"},
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -310,6 +320,10 @@ func TestSources_ListRepos(t *testing.T) {
 					case *schema.BitbucketServerConnection:
 						for _, e := range cfg.Exclude {
 							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
+						}
+					case *schema.GitoliteConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name})
 						}
 					}
 

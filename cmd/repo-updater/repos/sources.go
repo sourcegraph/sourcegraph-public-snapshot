@@ -420,6 +420,7 @@ type GitoliteSource struct {
 	// required for authentication.
 	cli       *gitserver.Client
 	blacklist *regexp.Regexp
+	exclude   map[string]bool
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
@@ -447,11 +448,19 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 		}
 	}
 
+	exclude := make(map[string]bool, len(c.Exclude))
+	for _, r := range c.Exclude {
+		if r.Name != "" {
+			exclude[r.Name] = true
+		}
+	}
+
 	return &GitoliteSource{
 		svc:       svc,
 		conn:      &c,
 		cli:       gitserver.NewClient(hc),
 		blacklist: blacklist,
+		exclude:   exclude,
 	}, nil
 }
 
@@ -465,7 +474,7 @@ func (s *GitoliteSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 
 	repos := make([]*Repo, 0, len(all))
 	for _, r := range all {
-		if repo := gitoliteRepoToRepo(s.svc, r, s.conn); !s.exclude(repo) {
+		if repo := gitoliteRepoToRepo(s.svc, r, s.conn); !s.excludes(repo) {
 			repos = append(repos, repo)
 		}
 	}
@@ -478,8 +487,9 @@ func (s GitoliteSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
-func (s GitoliteSource) exclude(r *Repo) bool {
+func (s GitoliteSource) excludes(r *Repo) bool {
 	return strings.ContainsAny(r.Name, "\\^$|()[]*?{},") ||
+		s.exclude[r.Name] ||
 		(s.blacklist != nil && s.blacklist.MatchString(r.Name))
 }
 
