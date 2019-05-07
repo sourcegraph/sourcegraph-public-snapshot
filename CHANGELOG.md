@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added topQueries to the GraphQL API.
+
 ### Changed
 
 ### Removed

@@ -2,21 +2,20 @@ package db
 
 import (
 	"context"
-	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+
+	"github.com/pkg/errors"
 )
 
-type recentSearches struct{}
+type RecentSearches struct{}
 
-// Add inserts the query q to the recentSearches table in the db.
-func (*recentSearches) Add(ctx context.Context, q string) error {
+// Log inserts the query q into to the recent_searches table in the db.
+func (rs *RecentSearches) Log(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
-	if dbconn.Global == nil {
-		return errors.New("db connection is nil")
-	}
 	res, err := dbconn.Global.ExecContext(ctx, insert, q)
 	if err != nil {
-		return errors.Errorf("inserting %q into recentSearches table: %v", q, err)
+		return errors.Errorf("inserting %q into recent_searches table: %v", q, err)
 	}
 	nrows, err := res.RowsAffected()
 	if err != nil {
@@ -28,8 +27,8 @@ func (*recentSearches) Add(ctx context.Context, q string) error {
 	return nil
 }
 
-// DeleteExcessRows keeps the row count in the recentSearches table below limit.
-func (*recentSearches) DeleteExcessRows(ctx context.Context, limit int) error {
+// Cleanup keeps the row count in the recent_searches table below limit.
+func (rs *RecentSearches) Cleanup(ctx context.Context, limit int) error {
 	enforceLimit := `
 DELETE FROM recent_searches
 	WHERE id <
@@ -38,17 +37,14 @@ DELETE FROM recent_searches
 		 OFFSET GREATEST(0, (SELECT (SELECT COUNT(*) FROM recent_searches) - $1))
 		 LIMIT 1)
 `
-	if dbconn.Global == nil {
-		return errors.New("db connection is nil")
-	}
 	if _, err := dbconn.Global.ExecContext(ctx, enforceLimit, limit); err != nil {
-		return errors.Errorf("deleting excess rows in recentSearches table: %v", err)
+		return errors.Errorf("deleting excess rows in recent_searches table: %v", err)
 	}
 	return nil
 }
 
-// Get returns all the search queries in the recentSearches table.
-func (*recentSearches) Get(ctx context.Context) ([]string, error) {
+// List returns all the search queries in the recent_searches table.
+func (rs *RecentSearches) List(ctx context.Context) ([]string, error) {
 	sel := `SELECT query FROM recent_searches`
 	rows, err := dbconn.Global.QueryContext(ctx, sel)
 	var qs []string
@@ -66,4 +62,25 @@ func (*recentSearches) Get(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return qs, nil
+}
+
+// Top returns the top n queries in the recent_searches table.
+func (rs *RecentSearches) Top(ctx context.Context, n int32) ([]string, []int32, error) {
+	sel := `SELECT query, COUNT(*) FROM recent_searches GROUP BY query ORDER BY count DESC, query ASC LIMIT $1`
+	rows, err := dbconn.Global.QueryContext(ctx, sel, n)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "running db query to get top search queries")
+	}
+	var queries []string
+	var counts []int32
+	for rows.Next() {
+		var query string
+		var count int32
+		if err := rows.Scan(&query, &count); err != nil {
+			return nil, nil, errors.Wrap(err, "scanning row")
+		}
+		queries = append(queries, query)
+		counts = append(counts, count)
+	}
+	return queries, counts, nil
 }
