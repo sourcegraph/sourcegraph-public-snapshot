@@ -12,6 +12,7 @@ All notable changes to Sourcegraph are documented in this file.
 ## 3.4.0 (unreleased)
 
 ### Added
+
 - Added topQueries to the GraphQL API.
 
 ### Changed
