@@ -14,7 +14,7 @@ const ServiceType = "awscodecommit"
 // CodeCommit repository.
 func ExternalRepoSpec(repo *Repository, serviceID string) *api.ExternalRepoSpec {
 	return &api.ExternalRepoSpec{
-		ID:          repo.ARN,
+		ID:          repo.ID,
 		ServiceType: ServiceType,
 		ServiceID:   serviceID,
 	}
