@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
@@ -18,7 +21,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		assert ExternalServicesAssertion
 	}
 
-	github := ExternalService{
+	githubService := ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github",
 		Config: `{
@@ -31,7 +34,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitlab := ExternalService{
+	gitlabService := ExternalService{
 		Kind:        "GITLAB",
 		DisplayName: "GitLab",
 		Config: `{
@@ -44,7 +47,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	bitbucketServer := ExternalService{
+	bitbucketServerService := ExternalService{
 		Kind:        "BITBUCKETSERVER",
 		DisplayName: "Bitbucket Server",
 		Config: `{
@@ -71,48 +74,46 @@ func TestExternalService_Exclude(t *testing.T) {
 
 	repos := Repos{
 		{
-			Name: "github.com/org/foo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
-				ID:          "foo",
+			Metadata: &github.Repository{
+				ID:            "foo",
+				NameWithOwner: "org/foo",
 			},
 		},
 		{
-			Name: "gitlab.com/org/foo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: "gitlab",
-				ServiceID:   "https://gitlab.com/",
-				ID:          "1",
+			Metadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					ID:                1,
+					PathWithNamespace: "org/foo",
+				},
 			},
 		},
 		{
-			Name: "github.com/org/baz",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: "github",
-				ServiceID:   "https://github.mycorp.com/",
+			Metadata: &github.Repository{
+				NameWithOwner: "org/baz",
 			},
 		},
 		{
-			Name: "gitlab.com/org/baz",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: "gitlab",
-				ServiceID:   "https://gitlab.mycorp.com/",
+			Metadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					PathWithNamespace: "org/baz",
+				},
 			},
 		},
 		{
-			Name: "bitbucketserver.mycorp.com/org/foo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "1",
-				ServiceType: "bitbucketServer",
-				ServiceID:   "https://bitbucketserver.mycorp.com/",
+			Metadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "foo",
+				Project: &bitbucketserver.Project{
+					Key: "org",
+				},
 			},
 		},
 		{
-			Name: "bitbucketserver.mycorp.com/org/baz",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: "bitbucketServer",
-				ServiceID:   "https://bitbucketserver.mycorp.com/",
+			Metadata: &bitbucketserver.Repo{
+				Slug: "baz",
+				Project: &bitbucketserver.Project{
+					Key: "org",
+				},
 			},
 		},
 		{
@@ -135,7 +136,7 @@ func TestExternalService_Exclude(t *testing.T) {
 	var testCases []testCase
 	{
 		svcs := ExternalServices{
-			github.With(func(e *ExternalService) {
+			githubService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -148,7 +149,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitlab.With(func(e *ExternalService) {
+			gitlabService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -161,7 +162,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			bitbucketServer.With(func(e *ExternalService) {
+			bitbucketServerService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -187,7 +188,7 @@ func TestExternalService_Exclude(t *testing.T) {
 	}
 	{
 		svcs := ExternalServices{
-			github.With(func(e *ExternalService) {
+			githubService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -199,7 +200,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitlab.With(func(e *ExternalService) {
+			gitlabService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -211,7 +212,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			bitbucketServer.With(func(e *ExternalService) {
+			bitbucketServerService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -242,7 +243,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			svcs:  svcs,
 			repos: repos,
 			assert: Assert.ExternalServicesEqual(
-				github.With(func(e *ExternalService) {
+				githubService.With(func(e *ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -256,7 +257,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				gitlab.With(func(e *ExternalService) {
+				gitlabService.With(func(e *ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -270,7 +271,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				bitbucketServer.With(func(e *ExternalService) {
+				bitbucketServerService.With(func(e *ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment

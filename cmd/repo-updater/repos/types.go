@@ -13,6 +13,9 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -192,18 +195,18 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.ExternalRepo.ServiceType != "gitlab" {
+			p, ok := r.Metadata.(*gitlab.Project)
+			if !ok {
 				continue
 			}
 
-			id := r.ExternalRepo.ID
-			name := nameWithOwner(r.Name)
+			name := p.PathWithNamespace
+			id := strconv.Itoa(p.ID)
 
 			if !set[name] && !set[id] {
-				n, _ := strconv.Atoi(id)
 				c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{
 					Name: name,
-					Id:   n,
+					Id:   p.ID,
 				})
 
 				if id != "" {
@@ -241,18 +244,24 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if strings.ToLower(r.ExternalRepo.ServiceType) != "bitbucketserver" {
+			repo, ok := r.Metadata.(*bitbucketserver.Repo)
+			if !ok {
 				continue
 			}
 
-			id := r.ExternalRepo.ID
-			name := nameWithOwner(r.Name)
+			id := strconv.Itoa(repo.ID)
+
+			// The names in the exclude list do not abide by the
+			// repositoryPathPattern setting. They have a fixed format.
+			name := repo.Slug
+			if repo.Project != nil {
+				name = repo.Project.Key + "/" + name
+			}
 
 			if !set[name] && !set[id] {
-				n, _ := strconv.Atoi(id)
 				c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{
 					Name: name,
-					Id:   n,
+					Id:   repo.ID,
 				})
 
 				if id != "" {
@@ -290,12 +299,13 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.ExternalRepo.ServiceType != "github" {
+			repo, ok := r.Metadata.(*github.Repository)
+			if !ok {
 				continue
 			}
 
-			id := r.ExternalRepo.ID
-			name := nameWithOwner(r.Name)
+			id := repo.ID
+			name := repo.NameWithOwner
 
 			if !set[name] && !set[id] {
 				c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{
