@@ -126,7 +126,7 @@
     "@types/tmp": "0.1.0",
     "@types/uuid": "3.4.4",
     "@types/webpack": "4.4.31",
-    "@types/webpack-dev-server": "3.1.1",
+    "@types/webpack-dev-server": "3.1.5",
     "@types/whatwg-url": "6.4.0",
     "autoprefixer": "^9.5.1",
     "babel-loader": "^8.0.5",
@@ -191,7 +191,7 @@
     "typescript": "3.5.0-dev.20190406",
     "utc-version": "^1.1.0",
     "webpack": "^4.30.0",
-    "webpack-dev-server": "^3.1.13",
+    "webpack-dev-server": "^3.3.1",
     "worker-loader": "^2.0.0",
     "yarn-deduplicate": "^1.1.1"
   },
