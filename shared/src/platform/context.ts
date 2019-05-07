@@ -61,7 +61,7 @@ export interface PlatformContext {
      */
     requestGraphQL<R extends GQL.IQuery | GQL.IMutation>(
         request: string,
-        variables: { [name: string]: any },
+        variables: {},
         mightContainPrivateInfo: boolean
     ): Observable<GraphQLResult<R>>
 
