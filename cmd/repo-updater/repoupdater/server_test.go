@@ -18,6 +18,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
@@ -745,6 +746,36 @@ func TestRepoLookup_syncer(t *testing.T) {
 		},
 	})
 
+	_ = store.UpsertRepos(ctx, &repos.Repo{
+		Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+		Description: "The stripe-go lib",
+		Language:    "barlang",
+		Enabled:     true,
+		Archived:    false,
+		Fork:        false,
+		CreatedAt:   now,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			ServiceType: awscodecommit.ServiceType,
+			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:456": {
+				ID:       "extsvc:456",
+				CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+			},
+		},
+		Metadata: &awscodecommit.Repository{
+			ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
+			AccountID:    "999999999999",
+			ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			Name:         "stripe-go",
+			Description:  "The stripe-go lib",
+			HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+			LastModified: &now,
+		},
+	})
+
 	s := Server{
 		Syncer:      &repos.Syncer{},
 		Store:       store,
@@ -762,9 +793,15 @@ func TestRepoLookup_syncer(t *testing.T) {
 		}
 	})
 
-	t.Run("found", func(t *testing.T) {
-		want := &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{
+	testCases := []struct {
+		name         string
+		repoName     string
+		wantRepoInfo *protocol.RepoInfo
+	}{
+		{
+			name:     "found - GitHub",
+			repoName: "github.com/foo/bar",
+			wantRepoInfo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
@@ -780,16 +817,42 @@ func TestRepoLookup_syncer(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			},
-		}
+		},
+		{
+			name:     "found - AWS CodeCommit",
+			repoName: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+			wantRepoInfo: &protocol.RepoInfo{
+				ExternalRepo: &api.ExternalRepoSpec{
+					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+					ServiceType: awscodecommit.ServiceType,
+					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+				},
+				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+				Description: "The stripe-go lib",
+				VCS:         protocol.VCSInfo{URL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"},
+				Links: &protocol.RepoLinks{
+					Root:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go",
+					Tree:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/browse/{rev}/--/{path}",
+					Blob:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/browse/{rev}/--/{path}",
+					Commit: "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/commit/{commit}",
+				},
+			},
+		},
+	}
 
-		result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/foo/bar"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if diff := pretty.Compare(result, want); diff != "" {
-			t.Fatalf("ListRepos:\n%s", diff)
-		}
-	})
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			want := &protocol.RepoLookupResult{Repo: tc.wantRepoInfo}
+			result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: api.RepoName(tc.repoName)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := pretty.Compare(result, want); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+		})
+	}
 }
 
 type internalAPIFake struct {

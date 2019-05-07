@@ -459,6 +459,24 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
 		}
+	case "awscodecommit":
+		repo := r.Metadata.(*awscodecommit.Repository)
+		if repo.ARN == "" {
+			break
+		}
+
+		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
+		if len(splittedARN) == 0 {
+			break
+		}
+		region := splittedARN[0]
+		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", region, repo.Name)
+		info.Links = &protocol.RepoLinks{
+			Root:   webURL,
+			Tree:   webURL + "/browse/{rev}/--/{path}",
+			Blob:   webURL + "/browse/{rev}/--/{path}",
+			Commit: webURL + "/commit/{commit}",
+		}
 	}
 
 	return &info, nil
