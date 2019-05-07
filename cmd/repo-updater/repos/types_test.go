@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
@@ -61,7 +62,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitolite := ExternalService{
+	gitoliteService := ExternalService{
 		Kind:        "GITOLITE",
 		DisplayName: "Gitolite",
 		Config: `{
@@ -144,12 +145,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			},
 		},
 		{
-			Name: "gitolite.mycorp.com/foo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "1",
-				ServiceType: "gitolite",
-				ServiceID:   "git@gitolite.mycorp.com",
-			},
+			Metadata: &gitolite.Repo{Name: "foo"},
 		},
 	}
 
@@ -196,7 +192,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitolite.With(func(e *ExternalService) {
+			gitoliteService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -256,7 +252,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitolite.With(func(e *ExternalService) {
+			gitoliteService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -328,7 +324,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				gitolite.With(func(e *ExternalService) {
+				gitoliteService.With(func(e *ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment

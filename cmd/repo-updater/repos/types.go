@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -297,17 +298,11 @@ func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if strings.ToLower(r.ExternalRepo.ServiceType) != "gitolite" {
-				continue
+			repo, ok := r.Metadata.(*gitolite.Repo)
+			if ok && repo.Name != "" && !set[repo.Name] {
+				c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: repo.Name})
+				set[repo.Name] = true
 			}
-
-			name := strings.TrimPrefix(r.Name, c.Prefix)
-			if name == "" || set[name] {
-				continue
-			}
-
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: name})
-			set[name] = true
 		}
 
 		return "exclude", c.Exclude, nil
