@@ -716,7 +716,11 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 func (s AWSCodeCommitSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
 	rs, err := s.conn.listAllRepositories(ctx)
 	for _, r := range rs {
-		repos = append(repos, awsCodeCommitRepoToRepo(s.svc, r, s.conn))
+		awsRepo, err := awsCodeCommitRepoToRepo(s.svc, r, s.conn)
+		if err != nil {
+			return repos, err
+		}
+		repos = append(repos, awsRepo)
 	}
 	return repos, err
 }
@@ -730,17 +734,17 @@ func awsCodeCommitRepoToRepo(
 	svc *ExternalService,
 	repo *awscodecommit.Repository,
 	conn *awsCodeCommitConnection,
-) *Repo {
+) (*Repo, error) {
 	urn := svc.URN()
 	cloneURL, err := conn.authenticatedRemoteURL(repo)
 	if err != nil {
 		log15.Warn("Error adding authentication to AWS Code Commit repository Git remote URL.", "error", err)
-		return nil
+		return nil, errors.Wrap(err, "failed to add authentication to AWS CodeCommit remote URL")
 	}
 
 	serviceID := awscodecommit.ServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)
 
-	return &Repo{
+	awsRepo := &Repo{
 		Name:         string(awsCodeCommitRepositoryToRepoPath(conn, repo)),
 		ExternalRepo: *awscodecommit.ExternalRepoSpec(repo, serviceID),
 		Description:  repo.Description,
@@ -753,6 +757,8 @@ func awsCodeCommitRepoToRepo(
 		},
 		Metadata: repo,
 	}
+
+	return awsRepo, nil
 }
 
 // A OtherSource yields repositories from a single Other connection configured
