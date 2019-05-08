@@ -232,7 +232,7 @@ func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection, cf *http
 	exclude := make(map[string]bool, len(config.Exclude))
 	for _, r := range config.Exclude {
 		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
+			exclude[r.Name] = true
 		}
 
 		if r.Id != "" {
@@ -394,5 +394,5 @@ func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) ([]*a
 }
 
 func (c *awsCodeCommitConnection) excludes(r *awscodecommit.Repository) bool {
-	return c.exclude[strings.ToLower(r.Name)] || c.exclude[r.ID]
+	return c.exclude[r.Name] || c.exclude[r.ID]
 }
