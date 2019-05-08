@@ -20,6 +20,7 @@ export interface SavedQueryFields {
     userID: number | null
     orgID: number | null
     slackWebhookURL: string | null
+    orgName: string
 }
 
 interface Props extends SettingsCascadeProps {
@@ -64,9 +65,15 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
                 ownerKind: (defaultValues && defaultValues.ownerKind) || GQL.SavedSearchOwnerKind.USER,
-                userID: (defaultValues && defaultValues.userID) || null,
+                userID:
+                    (defaultValues && defaultValues.userID) ||
+                    (defaultValues && defaultValues.orgID
+                        ? null
+                        : this.props.authenticatedUser && this.props.authenticatedUser.databaseID) ||
+                    null,
                 orgID: (defaultValues && defaultValues.orgID) || null,
                 slackWebhookURL: (defaultValues && defaultValues.slackWebhookURL) || null,
+                orgName: (defaultValues && defaultValues.orgName) || '',
             },
             subjectOptions: [],
             isSubmitting: false,
@@ -76,25 +83,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            from(this.componentUpdates)
-                .pipe(
-                    map(({ settingsCascade }) => settingsCascade),
-                    filter(isSettingsValid)
-                )
-                .subscribe(settingsCascade => {
-                    const subject = settingsCascade.subjects.find(s => !!s.subject.id && s.subject.viewerCanAdminister)
-
-                    this.setState(state => ({
-                        subjectOptions: settingsCascade.subjects.map(({ subject }) => subject),
-                        values: {
-                            ...state.values,
-                            subject: state.values.subject || (subject && subject.subject.id) || '',
-                        },
-                    }))
-                })
-        )
-
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 .pipe(filter(event => !this.state.isFocused && event.key === Key.Escape && !this.state.isSubmitting))
@@ -115,7 +103,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
-            values: { query, description, subject, notify, notifySlack, userID, orgID },
+            values: { query, description, notify, notifySlack, userID, orgID },
             isSubmitting,
             error,
         } = this.state
@@ -185,7 +173,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                                 <label className="saved-query-form__save-location-options" key={i}>
                                     <input
                                         className="saved-query-form__save-location-input"
-                                        onChange={this.orgOwnerChangeHandler(org.databaseID)}
+                                        onChange={this.orgOwnerChangeHandler(org)}
                                         type="radio"
                                         value={org.name}
                                         checked={org.databaseID === orgID}
@@ -206,19 +194,21 @@ export class SavedQueryForm extends React.Component<Props, State> {
                                 Email notifications
                             </label>
                         </span>
-                        <span className="saved-query-form__save-location-options">
-                            <label
-                                data-tooltip={`Send Slack notifications to webhook defined in configuration for ${this.saveTargetName()}`}
-                            >
-                                <input
-                                    className="saved-query-form__save-location-input"
-                                    type="checkbox"
-                                    defaultChecked={notifySlack}
-                                    onChange={this.handleNotifySlackChange}
-                                />{' '}
-                                Slack notifications
-                            </label>
-                        </span>
+                        {notifySlack && (
+                            <span className="saved-query-form__save-location-options">
+                                <label
+                                    data-tooltip={`Send Slack notifications to webhook defined in configuration for ${this.saveTargetName()}`}
+                                >
+                                    <input
+                                        className="saved-query-form__save-location-input"
+                                        type="checkbox"
+                                        defaultChecked={notifySlack}
+                                        onChange={this.handleNotifySlackChange}
+                                    />{' '}
+                                    Slack notifications
+                                </label>
+                            </span>
+                        )}
                     </div>
                 </div>
                 {this.isUnsupportedNotifyQuery(this.state.values) && (
@@ -250,7 +240,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     </div>
                 )}
                 <div>
-                    <button type="submit" className="btn btn-primary" disabled={!subject || isSubmitting}>
+                    <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                         {submitLabel}
                     </button>{' '}
                     <button type="reset" className="btn btn-secondary" disabled={isSubmitting} onClick={onDidCancel}>
@@ -287,13 +277,11 @@ export class SavedQueryForm extends React.Component<Props, State> {
     }
 
     private saveTargetName = () => {
-        const chosen = this.state.subjectOptions
-            .filter(
-                (subjectOption: SettingsSubject): subjectOption is GQL.IOrg | GQL.IUser =>
-                    subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
-            )
-            .find(subjectOption => subjectOption.id === this.state.values.subject)
-        return chosen && settingsSubjectLabel(chosen, true)
+        const chosen = this.state.values.ownerKind
+        if (chosen === 'USER') {
+            return (this.props.authenticatedUser && this.props.authenticatedUser.username) || '(user)'
+        }
+        return this.state.values.orgName
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -360,14 +348,15 @@ export class SavedQueryForm extends React.Component<Props, State> {
         }
     }
 
-    private orgOwnerChangeHandler(id: number): React.FormEventHandler<HTMLInputElement> {
+    private orgOwnerChangeHandler(org: GQL.IOrg): React.FormEventHandler<HTMLInputElement> {
         return event => {
             this.setState(state => ({
                 values: {
                     ...state.values,
                     ownerKind: GQL.SavedSearchOwnerKind.ORG,
-                    orgID: id,
+                    orgID: org.databaseID,
                     userID: null,
+                    orgName: org.displayName || org.name,
                 },
             }))
         }
@@ -384,14 +373,5 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 },
             }))
         }
-    }
-}
-
-function settingsSubjectLabel(s: GQL.IUser | GQL.IOrg, short?: boolean): string {
-    switch (s.__typename) {
-        case 'User':
-            return short ? s.username : `${s.username} (user settings)`
-        case 'Org':
-            return short ? s.name : `${s.name} (org settings)`
     }
 }
