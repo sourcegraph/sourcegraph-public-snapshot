@@ -208,12 +208,15 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*awsCodeCommitConnection, error) {
 	awsConfig := defaults.Config()
 	awsConfig.Region = config.Region
-	awsConfig.Credentials = aws.StaticCredentialsProvider{
-		Value: aws.Credentials{
-			AccessKeyID:     config.AccessKeyID,
-			SecretAccessKey: config.SecretAccessKey,
-			Source:          "sourcegraph-site-configuration",
-		},
+
+	if config.AccessKeyID != "" && config.SecretAccessKey != "" {
+		awsConfig.Credentials = aws.StaticCredentialsProvider{
+			Value: aws.Credentials{
+				AccessKeyID:     config.AccessKeyID,
+				SecretAccessKey: config.SecretAccessKey,
+				Source:          "sourcegraph-site-configuration",
+			},
+		}
 	}
 
 	if cf == nil {
