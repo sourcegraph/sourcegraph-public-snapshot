@@ -8,7 +8,7 @@ type SavedSearch struct {
 	Notify          bool // whether or not to notify the owner(s) of this saved search via email
 	NotifySlack     bool // whether or not to notify the owner(s) of this saved search via Slack
 	OwnerKind       string
-	UserID          *int32
+	UserID          *int32 // if non-nil, the owner is this user. UserID/OrgID are mutually exclusive.
 	OrgID           *int32
 	SlackWebhookURL *string
 }
