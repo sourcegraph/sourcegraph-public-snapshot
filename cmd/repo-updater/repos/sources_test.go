@@ -279,7 +279,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "GITOLITE",
 				Config: marshalJSON(t, &schema.GitoliteConnection{
-					Host: "ssh://git@127.0.0.1:2222",
+					Prefix: "gitolite.mycorp.com/",
+					Host:   "ssh://git@127.0.0.1:2222",
 					Exclude: []*schema.ExcludedGitoliteRepo{
 						{Name: "foo"},
 						{Name: "bar"},
