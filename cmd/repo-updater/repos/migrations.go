@@ -147,19 +147,6 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			return errors.Wrapf(err, "%s upsert-external-services", prefix)
 		}
 
-		var deleted Repos
-		for _, r := range stored {
-			if !r.Enabled {
-				r.DeletedAt = now
-				r.Enabled = true
-				deleted = append(deleted, r)
-			}
-		}
-
-		if err = s.UpsertRepos(ctx, deleted...); err != nil {
-			return errors.Wrapf(err, "%s upsert-repos", prefix)
-		}
-
 		return nil
 	})
 }

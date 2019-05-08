@@ -263,13 +263,6 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				),
 				err: "<nil>",
 			},
-			testCase{
-				name:    "disabled: repos are deleted",
-				stored:  repos.Repos{&repo},
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				repos:   repos.Assert.ReposEqual(),
-				err:     "<nil>",
-			},
 		)
 	}
 
