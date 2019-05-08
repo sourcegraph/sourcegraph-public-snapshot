@@ -2,7 +2,7 @@ import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { major, minor, parse } from 'semver'
+import * as semver from 'semver'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { isSettingsValid, SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
@@ -123,13 +123,13 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 }
 
 function isMinorUpdateAvailable(currentVersion: string, updateVersion: string): boolean {
-    const cv = parse(currentVersion, { loose: false })
-    const uv = parse(updateVersion, { loose: false })
+    const cv = semver.parse(currentVersion, { loose: false })
+    const uv = semver.parse(updateVersion, { loose: false })
     // If either current or update versions aren't semvers (e.g., a user is on a date-based build version, or "dev"),
     // always return true and allow any alerts to be shown. This has the effect of simply deferring to the response
     // from Sourcegraph.com about whether an update alert is needed.
     if (cv === null || uv === null) {
         return true
     }
-    return major(cv) !== major(uv) || minor(cv) !== minor(uv)
+    return semver.major(cv) !== semver.major(uv) || semver.minor(cv) !== semver.minor(uv)
 }
