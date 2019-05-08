@@ -716,7 +716,7 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 func (s AWSCodeCommitSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
 	rs, err := s.conn.listAllRepositories(ctx)
 	for _, r := range rs {
-		repos = append(repos, awscodecommitRepoToRepo(s.svc, r, s.conn))
+		repos = append(repos, awsCodeCommitRepoToRepo(s.svc, r, s.conn))
 	}
 	return repos, err
 }
@@ -726,7 +726,7 @@ func (s AWSCodeCommitSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
-func awscodecommitRepoToRepo(
+func awsCodeCommitRepoToRepo(
 	svc *ExternalService,
 	repo *awscodecommit.Repository,
 	conn *awsCodeCommitConnection,
