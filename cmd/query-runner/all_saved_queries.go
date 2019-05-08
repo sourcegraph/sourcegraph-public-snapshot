@@ -69,7 +69,7 @@ func (sq *allSavedQueriesCached) fetchInitialListFromFrontend() {
 		for spec, config := range allSavedQueries {
 			sq.allSavedQueries[savedQueryIDSpecKey(spec)] = api.SavedQuerySpecAndConfig{
 				Spec:   spec,
-				Config: config.Config,
+				Config: config,
 			}
 		}
 		log15.Debug("existing saved queries detected", "total_saved_queries", len(sq.allSavedQueries))
