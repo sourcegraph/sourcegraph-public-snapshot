@@ -34,7 +34,7 @@ type SavedQueryField struct {
 func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Context) {
 	savedSearchTableIsEmpty, err := db.SavedSearches.IsEmpty(ctx)
 	if err != nil {
-		log15.Error(`Warning: unable to migrate search.savedQueries because cannot tell if saved searches table is empty. Please report this issue.`, err)
+		log15.Error("Warning: unable to migrate search.savedQueries because cannot tell if saved searches table is empty. Please report this issue.", "error", err)
 	}
 	if savedSearchTableIsEmpty {
 		if err := doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx); err != nil {
