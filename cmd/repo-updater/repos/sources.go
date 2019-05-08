@@ -685,7 +685,7 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 	return s.cli, err
 }
 
-// A AWSCodeCommitSource yields repositories from a single AWS Code Commit
+// An AWSCodeCommitSource yields repositories from a single AWS Code Commit
 // connection configured in Sourcegraph via the external services
 // configuration.
 type AWSCodeCommitSource struct {
