@@ -109,7 +109,7 @@
     "@types/react-visibility-sensor": "5.0.1",
     "@types/reactstrap": "8.0.1",
     "@types/sanitize-html": "1.18.3",
-    "@types/semver": "^6.0.0",
+    "@types/semver": "6.0.0",
     "@types/shelljs": "0.8.5",
     "@types/shelljs-exec-proxy": "0.1.0",
     "@types/signale": "1.2.1",
