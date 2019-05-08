@@ -4,7 +4,7 @@ package types
 type SavedSearch struct {
 	ID              int32 // the globally unique DB ID
 	Description     string
-	Query           string
+	Query           string // the literal search query to be ran
 	Notify          bool
 	NotifySlack     bool
 	OwnerKind       string
