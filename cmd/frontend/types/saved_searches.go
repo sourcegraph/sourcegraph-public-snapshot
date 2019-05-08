@@ -6,7 +6,7 @@ type SavedSearch struct {
 	Description     string
 	Query           string // the literal search query to be ran
 	Notify          bool // whether or not to notify the owner(s) of this saved search via email
-	NotifySlack     bool
+	NotifySlack     bool // whether or not to notify the owner(s) of this saved search via Slack
 	OwnerKind       string
 	UserID          *int32
 	OrgID           *int32
