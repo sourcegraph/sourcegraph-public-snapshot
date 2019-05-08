@@ -16,7 +16,6 @@ export interface SavedQueryFields {
     subject: GQL.ID
     notify: boolean
     notifySlack: boolean
-    ownerKind: GQL.SavedSearchOwnerKind
     userID: number | null
     orgID: number | null
     slackWebhookURL: string | null
@@ -64,7 +63,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 subject: (defaultValues && defaultValues.subject) || '',
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
-                ownerKind: (defaultValues && defaultValues.ownerKind) || GQL.SavedSearchOwnerKind.USER,
                 userID:
                     (defaultValues && defaultValues.userID) ||
                     (defaultValues && defaultValues.orgID
@@ -277,8 +275,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
     }
 
     private saveTargetName = () => {
-        const chosen = this.state.values.ownerKind
-        if (chosen === 'USER') {
+        const chosen: 'user' | 'org' = this.state.values.userID === null ? 'user' : 'org'
+        if (chosen === 'user') {
             return (this.props.authenticatedUser && this.props.authenticatedUser.username) || '(user)'
         }
         return this.state.values.orgName
@@ -353,7 +351,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    ownerKind: GQL.SavedSearchOwnerKind.ORG,
                     orgID: org.databaseID,
                     userID: null,
                     orgName: org.displayName || org.name,
@@ -367,7 +364,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    ownerKind: GQL.SavedSearchOwnerKind.USER,
                     userID: id,
                     orgID: null,
                 },

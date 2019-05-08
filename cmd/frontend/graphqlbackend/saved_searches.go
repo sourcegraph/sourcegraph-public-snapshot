@@ -17,7 +17,6 @@ type savedSearchResolver struct {
 	description         string
 	query               string
 	notify, notifySlack bool
-	ownerKind           string
 	userID, orgID       *int32
 	slackWebhookURL     *string
 }
@@ -51,7 +50,6 @@ func (r savedSearchResolver) Description() string { return r.description }
 
 func (r savedSearchResolver) Query() string { return r.query }
 
-func (r savedSearchResolver) OwnerKind() string        { return r.ownerKind }
 func (r savedSearchResolver) UserID() *int32           { return r.userID }
 func (r savedSearchResolver) OrgID() *int32            { return r.orgID }
 func (r savedSearchResolver) SlackWebhookURL() *string { return r.slackWebhookURL }
@@ -63,7 +61,6 @@ func toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
 		query:           entry.Query,
 		notify:          entry.Notify,
 		notifySlack:     entry.NotifySlack,
-		ownerKind:       entry.OwnerKind,
 		userID:          entry.UserID,
 		orgID:           entry.OrgID,
 		slackWebhookURL: entry.SlackWebhookURL,
@@ -90,7 +87,6 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 			Query:           savedSearch.Query,
 			Notify:          savedSearch.Notify,
 			NotifySlack:     savedSearch.NotifySlack,
-			OwnerKind:       savedSearch.OwnerKind,
 			UserID:          savedSearch.UserID,
 			OrgID:           savedSearch.OrgID,
 			SlackWebhookURL: savedSearch.SlackWebhookURL,
@@ -125,7 +121,6 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	Query       string
 	NotifyOwner bool
 	NotifySlack bool
-	OwnerKind   string
 	OrgID       *int32
 	UserID      *int32
 }) (*savedSearchResolver, error) {
@@ -140,7 +135,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		}
 	}
 
-	configSavedQuery, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, OwnerKind: args.OwnerKind, UserID: args.UserID, OrgID: args.OrgID})
+	configSavedQuery, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +146,6 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		query:           configSavedQuery.Query,
 		notify:          configSavedQuery.Notify,
 		notifySlack:     configSavedQuery.NotifySlack,
-		ownerKind:       configSavedQuery.OwnerKind,
 		userID:          configSavedQuery.UserID,
 		orgID:           configSavedQuery.OrgID,
 		slackWebhookURL: configSavedQuery.SlackWebhookURL,
@@ -165,7 +159,6 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	Query       string
 	NotifyOwner bool
 	NotifySlack bool
-	OwnerKind   string
 	OrgID       *int32
 	UserID      *int32
 }) (*savedSearchResolver, error) {
@@ -185,7 +178,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	configSavedQuery, err := db.SavedSearches.Update(ctx, &types.SavedSearch{ID: id, Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, OwnerKind: args.OwnerKind, UserID: args.UserID, OrgID: args.OrgID})
+	configSavedQuery, err := db.SavedSearches.Update(ctx, &types.SavedSearch{ID: id, Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +188,6 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		query:           configSavedQuery.Query,
 		notify:          configSavedQuery.Notify,
 		notifySlack:     configSavedQuery.NotifySlack,
-		ownerKind:       configSavedQuery.OwnerKind,
 		userID:          configSavedQuery.UserID,
 		orgID:           configSavedQuery.OrgID,
 		slackWebhookURL: configSavedQuery.SlackWebhookURL,

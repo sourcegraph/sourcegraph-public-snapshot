@@ -93,7 +93,7 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 		}
 		got := ss[0]
 		t.Logf("%v+", ss)
-		want := &types.SavedSearch{ID: 5, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}
+		want := &types.SavedSearch{ID: 5, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -183,7 +183,7 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 			t.Fatal("Error: user saved query not created")
 		}
 		got := ss[0]
-		want := &types.SavedSearch{ID: 1, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}
+		want := &types.SavedSearch{ID: 1, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -210,7 +210,7 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 			t.Fatal("Error: organization saved query not created")
 		}
 		got := ss[0]
-		want := &types.SavedSearch{ID: 2, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "org", UserID: nil, OrgID: &org.ID, SlackWebhookURL: nil}
+		want := &types.SavedSearch{ID: 2, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: nil, OrgID: &org.ID, SlackWebhookURL: nil}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %+v, want %+v", got, want)
 		}
@@ -238,7 +238,7 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 			t.Fatal("Error: global saved query not created")
 		}
 		got := ss[0]
-		want := &types.SavedSearch{ID: 1, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &user.ID, OrgID: nil, SlackWebhookURL: nil}
+		want := &types.SavedSearch{ID: 1, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &user.ID, OrgID: nil, SlackWebhookURL: nil}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -289,7 +289,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 
 		got := ss[0]
 		webhookURL := "https://test.slackwebhook.com"
-		want := &types.SavedSearch{ID: 1, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u.ID, OrgID: nil, SlackWebhookURL: &webhookURL}
+		want := &types.SavedSearch{ID: 1, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &u.ID, OrgID: nil, SlackWebhookURL: &webhookURL}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -330,7 +330,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 		}
 
 		got := ss[0]
-		want := &types.SavedSearch{ID: 2, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}
+		want := &types.SavedSearch{ID: 2, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -372,7 +372,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 
 		got := ss[0]
 		webhookURL := "https://test.slackwebhook.com"
-		want := &types.SavedSearch{ID: 3, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "org", UserID: nil, OrgID: &org.ID, SlackWebhookURL: &webhookURL}
+		want := &types.SavedSearch{ID: 3, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: nil, OrgID: &org.ID, SlackWebhookURL: &webhookURL}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -406,7 +406,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 
 		got := ss[0]
 		webhookURL := "https://test.slackwebhook.com"
-		want := &types.SavedSearch{ID: 1, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &user.ID, OrgID: nil, SlackWebhookURL: &webhookURL}
+		want := &types.SavedSearch{ID: 1, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &user.ID, OrgID: nil, SlackWebhookURL: &webhookURL}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -458,7 +458,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 
 		got := ss[0]
 		webhookURL := "https://test.slackwebhook.com"
-		want := &types.SavedSearch{ID: 4, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u.ID, OrgID: nil, SlackWebhookURL: &webhookURL}
+		want := &types.SavedSearch{ID: 4, Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &u.ID, OrgID: nil, SlackWebhookURL: &webhookURL}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
@@ -469,7 +469,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 		}
 
 		got2 := ss2[0]
-		want2 := &types.SavedSearch{ID: 5, Description: "test query2", Query: "test2 type:diff", Notify: false, NotifySlack: false, OwnerKind: "user", UserID: &u2.ID, OrgID: nil, SlackWebhookURL: nil}
+		want2 := &types.SavedSearch{ID: 5, Description: "test query2", Query: "test2 type:diff", Notify: false, NotifySlack: false, UserID: &u2.ID, OrgID: nil, SlackWebhookURL: nil}
 		if !reflect.DeepEqual(got2, want2) {
 			t.Fatalf("got2 %v, want2 %v", got2, want2)
 		}

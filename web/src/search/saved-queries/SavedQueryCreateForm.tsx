@@ -30,7 +30,6 @@ export const SavedQueryCreateForm: React.FunctionComponent<Props> = props => (
                 fields.query,
                 fields.notify,
                 fields.notifySlack,
-                fields.ownerKind,
                 fields.userID,
                 fields.orgID
             ).pipe(mapTo(void 0))

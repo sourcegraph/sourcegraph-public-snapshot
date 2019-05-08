@@ -241,9 +241,9 @@ func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
 	for _, s := range settings {
 		var spec api.SavedQueryIDSpec
-		if s.Config.OwnerKind == "user" {
+		if s.Config.UserID != nil {
 			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
-		} else if s.Config.OwnerKind == "org" {
+		} else if s.Config.OrgID != nil {
 			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
 		}
 

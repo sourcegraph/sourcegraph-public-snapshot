@@ -100,18 +100,18 @@ func insertSavedQueryIntoDB(ctx context.Context, s *api.Settings, sq *SavedQuery
 	for _, query := range sq.SavedQueries {
 		// Add case for global settings. It should make a site admin user the owner of that saved search.
 		if s.Subject.User != nil {
-			_, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: query.Description, Query: query.Query, Notify: query.Notify, NotifySlack: query.NotifySlack, OwnerKind: "user", UserID: s.Subject.User})
+			_, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: query.Description, Query: query.Query, Notify: query.Notify, NotifySlack: query.NotifySlack, UserID: s.Subject.User})
 			if err != nil {
 				return errors.WithMessagef(err, `Warning: unable to insert user saved query into database.`)
 			}
 		} else if s.Subject.Org != nil {
-			_, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: query.Description, Query: query.Query, Notify: query.Notify, NotifySlack: query.NotifySlack, OwnerKind: "org", OrgID: s.Subject.Org})
+			_, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: query.Description, Query: query.Query, Notify: query.Notify, NotifySlack: query.NotifySlack, OrgID: s.Subject.Org})
 			if err != nil {
 				return errors.WithMessagef(err, `Warning: unable to migrate org saved query into database.`)
 			}
 		} else if s.Subject.Site || s.Subject.Default {
 			siteAdminID := getFirstSiteAdminID(ctx)
-			_, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: query.Description, Query: query.Query, Notify: query.Notify, NotifySlack: query.NotifySlack, OwnerKind: "user", UserID: siteAdminID})
+			_, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: query.Description, Query: query.Query, Notify: query.Notify, NotifySlack: query.NotifySlack, UserID: siteAdminID})
 			if err != nil {
 				return errors.WithMessagef(err, `Warning: unable to migrate global saved query into database.`)
 			}
@@ -162,12 +162,12 @@ func MigrateSlackWebhookUrlsToSavedSearches(ctx context.Context) error {
 // saved_searches table.
 func insertSlackWebhookURLIntoSavedSearchesTable(ctx context.Context, location string, id *int32, webhookURL string) {
 	if location == "org" {
-		_, err := dbconn.Global.ExecContext(ctx, "UPDATE saved_searches SET slack_webhook_url=$1 WHERE org_id=$2 AND owner_kind=$3", webhookURL, *id, "org")
+		_, err := dbconn.Global.ExecContext(ctx, "UPDATE saved_searches SET slack_webhook_url=$1 WHERE org_id=$2", webhookURL, *id)
 		if err != nil {
 			log15.Error("`Warning: unable to migrate Slack webhook URL into saved search table. Error inserting webhook URL.", err)
 		}
 	} else if location == "user" {
-		_, err := dbconn.Global.ExecContext(ctx, "UPDATE saved_searches SET slack_webhook_url=$1 WHERE user_id=$2 AND owner_kind=$3", webhookURL, *id, "user")
+		_, err := dbconn.Global.ExecContext(ctx, "UPDATE saved_searches SET slack_webhook_url=$1 WHERE user_id=$2", webhookURL, *id)
 		if err != nil {
 			log15.Error("`Warning: unable to migrate Slack webhook URL into saved search table. Error inserting webhook URL.", err)
 		}

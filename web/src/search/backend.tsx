@@ -248,7 +248,6 @@ const savedQueryFragment = gql`
         notify
         notifySlack
         query
-        ownerKind
         userID
         orgID
         slackWebhookURL
@@ -278,7 +277,6 @@ export function createSavedSearch(
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    ownerKind: GQL.SavedSearchOwnerKind,
     userId: number | null,
     orgId: number | null
 ): Observable<void> {
@@ -289,7 +287,6 @@ export function createSavedSearch(
                 $query: String!
                 $notifyOwner: Boolean!
                 $notifySlack: Boolean!
-                $ownerKind: SavedSearchOwnerKind!
                 $userID: Int
                 $orgID: Int
             ) {
@@ -298,7 +295,6 @@ export function createSavedSearch(
                     query: $query
                     notifyOwner: $notifyOwner
                     notifySlack: $notifySlack
-                    ownerKind: $ownerKind
                     userID: $userID
                     orgID: $orgID
                 ) {
@@ -312,7 +308,6 @@ export function createSavedSearch(
             query,
             notifyOwner: notify,
             notifySlack,
-            ownerKind,
             userID: userId,
             orgID: orgId,
         }
@@ -328,7 +323,6 @@ export function updateSavedSearch(
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    ownerKind: GQL.SavedSearchOwnerKind,
     userId: number | null,
     orgId: number | null
 ): Observable<void> {
@@ -340,7 +334,6 @@ export function updateSavedSearch(
                 $query: String!
                 $notifyOwner: Boolean!
                 $notifySlack: Boolean!
-                $ownerKind: SavedSearchOwnerKind!
                 $userID: Int
                 $orgID: Int
             ) {
@@ -350,7 +343,6 @@ export function updateSavedSearch(
                     query: $query
                     notifyOwner: $notifyOwner
                     notifySlack: $notifySlack
-                    ownerKind: $ownerKind
                     userID: $userID
                     orgID: $orgID
                 ) {
@@ -365,7 +357,6 @@ export function updateSavedSearch(
             query,
             notifyOwner: notify,
             notifySlack,
-            ownerKind,
             userID: userId,
             orgID: orgId,
         }

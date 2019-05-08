@@ -455,7 +455,6 @@ Indexes:
  updated_at        | timestamp with time zone | default now()
  notify_owner      | boolean                  | 
  notify_slack      | boolean                  | 
- owner_kind        | user_or_org              | not null
  user_id           | integer                  | 
  org_id            | integer                  | 
  slack_webhook_url | text                     | 

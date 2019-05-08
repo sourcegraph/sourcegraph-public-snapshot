@@ -22,7 +22,6 @@ export const SavedQueryUpdateForm: React.FunctionComponent<Props> = props => (
             query: props.savedQuery.query,
             notify: props.savedQuery.notify,
             notifySlack: props.savedQuery.notifySlack,
-            ownerKind: props.savedQuery.ownerKind,
             userID: props.savedQuery.userID,
             orgID: props.savedQuery.orgID,
             slackWebhookURL: props.savedQuery.slackWebhookURL,
@@ -45,7 +44,6 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
         fields.query,
         fields.notify,
         fields.notifySlack,
-        fields.ownerKind,
         fields.userID,
         fields.orgID
     ).pipe(mapTo(void 0))

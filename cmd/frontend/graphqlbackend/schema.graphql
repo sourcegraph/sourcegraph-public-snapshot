@@ -315,7 +315,6 @@ type Mutation {
         query: String!
         notifyOwner: Boolean!
         notifySlack: Boolean!
-        ownerKind: SavedSearchOwnerKind!
         orgID: Int
         userID: Int
     ): SavedSearch!
@@ -327,7 +326,6 @@ type Mutation {
         query: String!
         notifyOwner: Boolean!
         notifySlack: Boolean!
-        ownerKind: SavedSearchOwnerKind!
         orgID: Int
         userID: Int
     ): SavedSearch!
@@ -963,12 +961,6 @@ type SearchAlert {
     proposedQueries: [SearchQueryDescription!]
 }
 
-# All possible types of saved query owners.
-enum SavedSearchOwnerKind {
-    USER
-    ORG
-}
-
 # A saved search query, defined in settings.
 type SavedSearch {
     # The unique ID of this saved query.
@@ -984,8 +976,6 @@ type SavedSearch {
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
-    # Whether the owner of this saved search is a user or organization.
-    ownerKind: SavedSearchOwnerKind!
     # The user ID of the owner if the owner is a user.
     userID: Int
     # The organization ID of the owner if the owner is an org.

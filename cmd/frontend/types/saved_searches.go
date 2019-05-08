@@ -7,7 +7,6 @@ type SavedSearch struct {
 	Query           string
 	Notify          bool
 	NotifySlack     bool
-	OwnerKind       string
 	UserID          *int32
 	OrgID           *int32
 	SlackWebhookURL *string
