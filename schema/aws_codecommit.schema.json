@@ -5,7 +5,7 @@
   "description": "Configuration for a connection to AWS CodeCommit.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["region", "accessKeyID", "secretAccessKey"],
+  "required": ["region", "accessKeyID", "secretAccessKey", "gitCredentials"],
   "properties": {
     "region": {
       "description": "The AWS region in which to access AWS CodeCommit. See the list of supported regions at https://docs.aws.amazon.com/codecommit/latest/userguide/regions.html#regions-git.",
@@ -37,6 +37,22 @@
     "secretAccessKey": {
       "description": "The AWS secret access key (that corresponds to the AWS access key ID set in `accessKeyID`).",
       "type": "string"
+    },
+    "gitCredentials": {
+      "title": "AWSCodeCommitGitCredentials",
+      "description": "The Git credentials used for authentication when cloning an AWS CodeCommit repository over HTTPS.\n\nSee the AWS CodeCommit documentation on Git credentials for CodeCommit: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_ssh-keys.html#git-credentials-code-commit.\nFor detailed instructions on how to create the credentials in IAM, see this page: https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html",
+      "type": "object",
+      "required": ["username", "password"],
+      "properties": {
+        "username": {
+          "description": "The Git username",
+          "type": "string"
+        },
+        "password": {
+          "description": "The Git password",
+          "type": "string"
+        }
+      }
     },
     "repositoryPathPattern": {
       "description": "The pattern used to generate a the corresponding Sourcegraph repository name for an AWS CodeCommit repository. In the pattern, the variable \"{name}\" is replaced with the repository's name.\n\nFor example, if your Sourcegraph instance is at https://src.example.com, then a repositoryPathPattern of \"awsrepos/{name}\" would mean that a AWS CodeCommit repository named \"myrepo\" is available on Sourcegraph at https://src.example.com/awsrepos/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
