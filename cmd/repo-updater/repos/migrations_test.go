@@ -60,8 +60,11 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceType: "github",
 			ServiceID:   "http://github.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(github.Repository),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &github.Repository{
+			ID:            "bar",
+			NameWithOwner: "foo/bar",
+		},
 	}
 
 	gitlabService := repos.ExternalService{
@@ -85,8 +88,13 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceType: "gitlab",
 			ServiceID:   "http://gitlab.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(gitlab.Project),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				ID:                1,
+				PathWithNamespace: "foo/bar",
+			},
+		},
 	}
 
 	bitbucketServerService := repos.ExternalService{
@@ -111,8 +119,14 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceType: "bitbucketServer",
 			ServiceID:   "http://bitbucketserver.mycorp.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(bitbucketserver.Repo),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &bitbucketserver.Repo{
+			ID:   1,
+			Slug: "bar",
+			Project: &bitbucketserver.Project{
+				Key: "foo",
+			},
+		},
 	}
 
 	var testCases []testCase

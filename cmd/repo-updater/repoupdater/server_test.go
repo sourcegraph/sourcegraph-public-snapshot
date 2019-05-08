@@ -269,8 +269,11 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			ServiceType: "github",
 			ServiceID:   "http://github.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(github.Repository),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &github.Repository{
+			ID:            "bar",
+			NameWithOwner: "foo/bar",
+		},
 	}).With(repos.Opt.RepoSources(githubService.URN()))
 
 	gitlabService := &repos.ExternalService{
@@ -294,8 +297,13 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			ServiceType: "gitlab",
 			ServiceID:   "http://gitlab.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(gitlab.Project),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				ID:                1,
+				PathWithNamespace: "foo/bar",
+			},
+		},
 	}).With(repos.Opt.RepoSources(gitlabService.URN()))
 
 	bitbucketServerService := &repos.ExternalService{
@@ -320,8 +328,14 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			ServiceType: "bitbucketServer",
 			ServiceID:   "http://bitbucketserver.mycorp.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(bitbucketserver.Repo),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &bitbucketserver.Repo{
+			ID:   1,
+			Slug: "bar",
+			Project: &bitbucketserver.Project{
+				Key: "foo",
+			},
+		},
 	}).With(repos.Opt.RepoSources(bitbucketServerService.URN()))
 
 	type testCase struct {
