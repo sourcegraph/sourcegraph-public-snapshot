@@ -33,7 +33,6 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 		Description: "test",
 		Notify:      true,
 		NotifySlack: true,
-		OwnerKind:   "user",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -69,7 +68,6 @@ func TestSavedSearchesCreate(t *testing.T) {
 		Description: "test",
 		Notify:      true,
 		NotifySlack: true,
-		OwnerKind:   "user",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -87,7 +85,6 @@ func TestSavedSearchesCreate(t *testing.T) {
 		Description: "test",
 		Notify:      true,
 		NotifySlack: true,
-		OwnerKind:   "user",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -112,7 +109,6 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		Description: "test",
 		Notify:      true,
 		NotifySlack: true,
-		OwnerKind:   "user",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -127,7 +123,6 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		Description: "test2",
 		Notify:      true,
 		NotifySlack: true,
-		OwnerKind:   "user",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -158,7 +153,6 @@ func TestSavedSearchesDelete(t *testing.T) {
 		Description: "test",
 		Notify:      true,
 		NotifySlack: true,
-		OwnerKind:   "user",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -198,7 +192,6 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 		Description: "test",
 		Notify:      true,
 		NotifySlack: true,
-		OwnerKind:   "user",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -217,7 +210,6 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 		Description: "test",
 		Notify:      true,
 		NotifySlack: true,
-		OwnerKind:   "user",
 		UserID:      &userID,
 		OrgID:       nil,
 	}}
