@@ -190,8 +190,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
 				}),
 			},
@@ -287,8 +287,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
 					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
 						{Name: "stRIPE-gO"},
@@ -442,8 +442,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
 				}),
 			},
@@ -537,8 +537,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:           os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey:       os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					AccessKeyID:           getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey:       getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:                "us-west-1",
 					RepositoryPathPattern: "a/b/c/{name}",
 				}),
@@ -778,4 +778,12 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	}
 
 	return string(bs)
+}
+
+func getAWSEnv(envVar string) string {
+	s := os.Getenv(envVar)
+	if s == "" {
+		s = fmt.Sprintf("BOGUS-%s", envVar)
+	}
+	return s
 }
