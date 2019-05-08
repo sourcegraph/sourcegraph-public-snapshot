@@ -46,11 +46,13 @@
       "properties": {
         "username": {
           "description": "The Git username",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "password": {
           "description": "The Git password",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       }
     },

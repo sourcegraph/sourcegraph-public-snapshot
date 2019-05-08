@@ -193,6 +193,10 @@ func TestSources_ListRepos(t *testing.T) {
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
 				}),
 			},
 			{
@@ -290,6 +294,10 @@ func TestSources_ListRepos(t *testing.T) {
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
 					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
 						{Name: "stRIPE-gO"},
 						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
@@ -445,6 +453,10 @@ func TestSources_ListRepos(t *testing.T) {
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
 				}),
 			},
 		}
@@ -537,9 +549,13 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:           getAWSEnv("AWS_ACCESS_KEY_ID"),
-					SecretAccessKey:       getAWSEnv("AWS_SECRET_ACCESS_KEY"),
-					Region:                "us-west-1",
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
 					RepositoryPathPattern: "a/b/c/{name}",
 				}),
 			},
@@ -596,6 +612,60 @@ func TestSources_ListRepos(t *testing.T) {
 
 					if !reflect.DeepEqual(have, want) {
 						t.Error(cmp.Diff(have, want))
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "yielded repos have authenticated CloneURLs",
+			svcs: svcs,
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
+
+					for _, r := range rs {
+						for _, cloneURL := range r.CloneURLs() {
+							u, err := url.Parse(cloneURL)
+							if err != nil {
+								t.Fatalf("cloneURL is not parseable: %+v", cloneURL)
+							}
+							if u.User.Username() == "" {
+								t.Fatal("cloneURL has empty User")
+							}
+
+							switch s.Kind {
+							case "AWSCODECOMMIT":
+								if have, want := u.User.Username(), "git-username"; have != want {
+									t.Errorf("cloneURL has wrong Username. want=%q, have=%q", want, have)
+								}
+								have, ok := u.User.Password()
+								if !ok {
+									t.Fatalf("cloneURL has no Password")
+								}
+								if want := "git-password"; have != want {
+									t.Errorf("cloneURL has wrong Password. want=%q, have=%q", want, have)
+								}
+							}
+						}
+
 					}
 				}
 			},

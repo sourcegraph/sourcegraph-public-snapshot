@@ -70,7 +70,8 @@ func TestExternalService_Exclude(t *testing.T) {
 		Config: `{
 			"region": "us-west-1",
 			"accessKeyID": "secret-accessKeyID",
-			"secretAccessKey": "secret-secretAccessKey"
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"username": "user", "password": "pw"},
 		}`,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -225,6 +226,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					"region": "us-west-1",
 					"accessKeyID": "secret-accessKeyID",
 					"secretAccessKey": "secret-secretAccessKey",
+					"gitCredentials": {"username": "user", "password": "pw"},
 					"exclude": [
 						{"id": "f001337a-3450-46fd-b7d2-650c0EXAMPLE"},
 						{"name": "baz"}
@@ -298,6 +300,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					"region": "us-west-1",
 					"accessKeyID": "secret-accessKeyID",
 					"secretAccessKey": "secret-secretAccessKey",
+					"gitCredentials": {"username": "user", "password": "pw"},
 					"exclude": [
 						{"name": "boo"}
 					]
@@ -382,6 +385,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						"region": "us-west-1",
 						"accessKeyID": "secret-accessKeyID",
 						"secretAccessKey": "secret-secretAccessKey",
+						"gitCredentials": {"username": "user", "password": "pw"},
 						"exclude": [
 							{"name": "boo"},
 							{"id": "f001337a-3450-46fd-b7d2-650c0EXAMPLE", "name": "foo"},

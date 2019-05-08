@@ -4,12 +4,10 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
-	"strings"
 	"sync"
 	"time"
 
@@ -308,49 +306,24 @@ func (c *awsCodeCommitConnection) tryPopulateAWSAccountID() (string, error) {
 	return c.awsAccountID, nil
 }
 
-// authenticatedRemoteURL returns the repository's Git remote URL with the configured AWS CodeCommit
-// credentials inserted in the URL userinfo, for repositories needing authentication.
+// authenticatedRemoteURL returns the repository's Git remote URL with the
+// configured AWS CodeCommit Git credentials inserted in the URL userinfo, for
+// repositories needing authentication.
 func (c *awsCodeCommitConnection) authenticatedRemoteURL(repo *awscodecommit.Repository) (string, error) {
-	// Mimic what `aws codecommit credential-helper` does (to create Git credentials). See
-	// https://github.com/aws/aws-cli/blob/2e3fb985e21968abb09bba5bf439245fccb02a9f/awscli/customizations/codecommit.py.
 	u, err := url.Parse(repo.HTTPCloneURL)
 	if err != nil {
 		return "", err
 	}
 
-	cred, err := c.awsConfig.Credentials.Retrieve()
-	if err != nil {
-		return "", err
+	username := c.config.GitCredentials.Username
+	if username == "" {
+		return "", errors.New("Username in Git credentials is empty")
 	}
 
-	// Need to reimplement some of the AWS v4 signing because the Go SDK does not expose the ability
-	// to sign a specific canonical request string (it always adds headers like X-Amz-... that must
-	// not exist when creating credentials for AWS CodeCommit git cloning).
-	const (
-		authHeaderPrefix = "AWS4-HMAC-SHA256"
-		serviceName      = "codecommit"
-		shortTimeFormat  = "20060102"
-		timeFormat       = "20060102T150405"
-	)
-	signTime := time.Now().UTC()
-	formattedShortTime := signTime.Format(shortTimeFormat)
-	canonicalRequest := fmt.Sprintf("GIT\n%s\n\nhost:%s\n\nhost\n", u.Path, u.Host)
-	// fmt.Printf("=============\nCanonicalRequest:\n%s\n", canonicalRequest)
-	stringToSign := strings.Join([]string{
-		authHeaderPrefix,
-		signTime.Format(timeFormat),
-		strings.Join([]string{formattedShortTime, c.awsRegion.ID(), serviceName, "aws4_request"}, "/"),
-		hex.EncodeToString(makeSHA256([]byte(canonicalRequest))),
-	}, "\n")
-	// fmt.Printf("=============\nStringToSign:\n%s\n", stringToSign)
-	date := makeHMAC([]byte("AWS4"+cred.SecretAccessKey), []byte(formattedShortTime))
-	region := makeHMAC(date, []byte(c.awsRegion.ID()))
-	service := makeHMAC(region, []byte(serviceName))
-	credentials := makeHMAC(service, []byte("aws4_request"))
-	signature := hex.EncodeToString(makeHMAC(credentials, []byte(stringToSign)))
-
-	password := signTime.Format(timeFormat) + "Z" + signature
-	username := c.config.AccessKeyID
+	password := c.config.GitCredentials.Password
+	if password == "" {
+		return "", errors.New("Password in Git credentials is empty")
+	}
 
 	u.User = url.UserPassword(username, password)
 	return u.String(), nil

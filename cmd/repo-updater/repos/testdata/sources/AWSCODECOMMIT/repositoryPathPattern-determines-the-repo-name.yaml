@@ -12,7 +12,7 @@ interactions:
       User-Agent:
       - aws-sdk-go/0.7.0 (go1.12.4; darwin; amd64)
       X-Amz-Date:
-      - 20190506T122905Z
+      - 20190508T142252Z
       X-Amz-Target:
       - CodeCommit_20150413.ListRepositories
     url: https://codecommit.us-west-1.amazonaws.com/
@@ -25,9 +25,9 @@ interactions:
       Content-Type:
       - application/x-amz-json-1.1
       Date:
-      - Mon, 06 May 2019 12:29:04 GMT
+      - Wed, 08 May 2019 14:22:52 GMT
       X-Amzn-Requestid:
-      - d3bd8119-725c-4582-aa76-1375866ba3fd
+      - 15965ff8-27b2-476f-bb77-7f4bdd283d54
     status: '200 '
     code: 200
     duration: ""
@@ -42,7 +42,7 @@ interactions:
       User-Agent:
       - aws-sdk-go/0.7.0 (go1.12.4; darwin; amd64)
       X-Amz-Date:
-      - 20190506T122905Z
+      - 20190508T142252Z
       X-Amz-Target:
       - CodeCommit_20150413.BatchGetRepositories
     url: https://codecommit.us-west-1.amazonaws.com/
@@ -59,9 +59,9 @@ interactions:
       Content-Type:
       - application/x-amz-json-1.1
       Date:
-      - Mon, 06 May 2019 12:29:04 GMT
+      - Wed, 08 May 2019 14:22:52 GMT
       X-Amzn-Requestid:
-      - 35ce026d-d354-4b6b-8694-b4360d879f65
+      - d4a6afbd-8dfc-4e40-adeb-cecebefffab2
     status: '200 '
     code: 200
     duration: ""
