@@ -144,24 +144,12 @@ func TestExternalService_Exclude(t *testing.T) {
 			},
 		},
 		{
-			Name: "git-codecommit.us-west-1.amazonaws.com/foo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-				ServiceType: "awscodecommit",
-				ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
-			},
 			Metadata: &awscodecommit.Repository{
 				ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 				Name: "foo",
 			},
 		},
 		{
-			Name: "git-codecommit.us-west-1.amazonaws.com/baz",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "b4455554-4444-5555-b7d2-888c9EXAMPLE",
-				ServiceType: "awscodecommit",
-				ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
-			},
 			Metadata: &awscodecommit.Repository{
 				ID:   "b4455554-4444-5555-b7d2-888c9EXAMPLE",
 				Name: "baz",

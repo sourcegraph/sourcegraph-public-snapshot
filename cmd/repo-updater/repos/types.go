@@ -382,21 +382,13 @@ func (e *ExternalService) excludeAWSCodeCommitRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.ExternalRepo.ServiceType != "awscodecommit" {
+			repo, ok := r.Metadata.(*awscodecommit.Repository)
+			if !ok {
 				continue
 			}
 
-			var (
-				metadata *awscodecommit.Repository
-				ok       bool
-			)
-			metadata, ok = r.Metadata.(*awscodecommit.Repository)
-			if !ok {
-				metadata = new(awscodecommit.Repository)
-			}
-			name := metadata.Name
-
-			id := r.ExternalRepo.ID
+			id := repo.ID
+			name := repo.Name
 
 			if !set[name] && !set[id] {
 				c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{
