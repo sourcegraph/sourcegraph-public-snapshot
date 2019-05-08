@@ -153,7 +153,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+					Token: getenvOrFallback("GITHUB_ACCESS_TOKEN"),
 					RepositoryQuery: []string{
 						"user:tsenart in:name patrol",
 					},
@@ -164,7 +164,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITLAB",
 				Config: marshalJSON(t, &schema.GitLabConnection{
 					Url:   "https://gitlab.com",
-					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
+					Token: getenvOrFallback("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{
 						"?search=gokulkarthick",
 					},
@@ -174,7 +174,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   "http://127.0.0.1:7990",
-					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					Token: getenvOrFallback("BITBUCKET_SERVER_TOKEN"),
 					RepositoryQuery: []string{
 						"?visibility=private",
 						"?visibility=public",
@@ -190,8 +190,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					AccessKeyID:     getenvOrFallback("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey: getenvOrFallback("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
 				}),
 			},
@@ -236,7 +236,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+					Token: getenvOrFallback("GITHUB_ACCESS_TOKEN"),
 					RepositoryQuery: []string{
 						"user:tsenart in:name patrol",
 					},
@@ -254,7 +254,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITLAB",
 				Config: marshalJSON(t, &schema.GitLabConnection{
 					Url:   "https://gitlab.com",
-					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
+					Token: getenvOrFallback("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{
 						"?search=gokulkarthick",
 						"?search=dotfiles-vegetableman",
@@ -269,7 +269,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   "http://127.0.0.1:7990",
-					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					Token: getenvOrFallback("BITBUCKET_SERVER_TOKEN"),
 					Repos: []string{
 						"ORG/foo",
 						"org/BAZ",
@@ -287,8 +287,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					AccessKeyID:     getenvOrFallback("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey: getenvOrFallback("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
 					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
 						{Name: "stRIPE-gO"},
@@ -396,7 +396,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+					Token: getenvOrFallback("GITHUB_ACCESS_TOKEN"),
 					Repos: []string{
 						"sourcegraph/Sourcegraph",
 						"tsenart/Vegeta",
@@ -408,7 +408,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITLAB",
 				Config: marshalJSON(t, &schema.GitLabConnection{
 					Url:          "https://gitlab.com",
-					Token:        os.Getenv("GITLAB_ACCESS_TOKEN"),
+					Token:        getenvOrFallback("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{"none"},
 					Projects: []*schema.GitLabProject{
 						{Name: "gnachman/iterm2"},
@@ -421,7 +421,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:             "http://127.0.0.1:7990",
-					Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					Token:           getenvOrFallback("BITBUCKET_SERVER_TOKEN"),
 					RepositoryQuery: []string{"none"},
 					Repos: []string{
 						"Org/foO",
@@ -442,8 +442,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					AccessKeyID:     getenvOrFallback("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey: getenvOrFallback("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
 				}),
 			},
@@ -506,7 +506,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:                   "https://github.com",
-					Token:                 os.Getenv("GITHUB_ACCESS_TOKEN"),
+					Token:                 getenvOrFallback("GITHUB_ACCESS_TOKEN"),
 					RepositoryPathPattern: "{host}/a/b/c/{nameWithOwner}",
 					RepositoryQuery:       []string{"none"},
 					Repos:                 []string{"tsenart/vegeta"},
@@ -516,7 +516,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITLAB",
 				Config: marshalJSON(t, &schema.GitLabConnection{
 					Url:                   "https://gitlab.com",
-					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					Token:                 getenvOrFallback("GITLAB_ACCESS_TOKEN"),
 					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
 					ProjectQuery:          []string{"none"},
 					Projects: []*schema.GitLabProject{
@@ -528,7 +528,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:                   "http://127.0.0.1:7990",
-					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					Token:                 getenvOrFallback("BITBUCKET_SERVER_TOKEN"),
 					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
 					RepositoryQuery:       []string{"none"},
 					Repos:                 []string{"org/baz"},
@@ -537,8 +537,8 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:           os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
-					SecretAccessKey:       os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
+					AccessKeyID:           getenvOrFallback("AWSCODECOMMIT_ACCESS_KEY_ID"),
+					SecretAccessKey:       getenvOrFallback("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
 					Region:                "us-west-1",
 					RepositoryPathPattern: "a/b/c/{name}",
 				}),
@@ -609,7 +609,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "PHABRICATOR",
 				Config: marshalJSON(t, &schema.PhabricatorConnection{
 					Url:   "https://secure.phabricator.com",
-					Token: os.Getenv("PHABRICATOR_TOKEN"),
+					Token: getenvOrFallback("PHABRICATOR_TOKEN"),
 				}),
 			},
 		}
@@ -778,4 +778,12 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	}
 
 	return string(bs)
+}
+
+func getenvOrFallback(envVar string) string {
+	s := os.Getenv(envVar)
+	if s == "" {
+		s = fmt.Sprintf("%s-is-missing", strings.ToLower(envVar))
+	}
+	return s
 }
