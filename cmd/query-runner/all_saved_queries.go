@@ -51,7 +51,7 @@ func (sq *allSavedQueriesCached) get() map[string]api.SavedQuerySpecAndConfig {
 // new value, i.e. a map of the saved query in the oldList and what its new
 // value is in the newList for each respective category. For deleted, the new
 // value will be an empty struct.
-func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) (deleted, updated, created map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig) {
+func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.ConfigSavedQuery) (deleted, updated, created map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig) {
 	deleted = map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig{}
 	updated = map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig{}
 	created = map[api.SavedQuerySpecAndConfig]api.SavedQuerySpecAndConfig{}
@@ -64,11 +64,11 @@ func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQu
 	// be easy to do once we move query runner to frontend later.)
 	oldByKey := make(map[string]api.SavedQuerySpecAndConfig, len(oldList))
 	for k, v := range oldList {
-		oldByKey[k.Key] = v
+		oldByKey[k.Key] = api.SavedQuerySpecAndConfig{Spec: k, Config: v}
 	}
 	newByKey := make(map[string]api.SavedQuerySpecAndConfig, len(newList))
 	for k, v := range newList {
-		newByKey[k.Key] = v
+		newByKey[k.Key] = api.SavedQuerySpecAndConfig{Spec: k, Config: v}
 	}
 	// Detect deleted entries
 	for k, oldVal := range oldByKey {
@@ -92,7 +92,7 @@ func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.SavedQu
 	return deleted, updated, created
 }
 
-func sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, newList map[api.SavedQueryIDSpec]api.SavedQuerySpecAndConfig) {
+func sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, newList map[api.SavedQueryIDSpec]api.ConfigSavedQuery) {
 	deleted, updated, created := diffSavedQueryConfigs(oldList, newList)
 	for oldVal, newVal := range deleted {
 		oldVal := oldVal

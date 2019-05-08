@@ -108,15 +108,15 @@ type SavedQuerySpecAndConfig struct {
 }
 
 // SavedQueriesListAll lists all saved queries, from every user, org, etc.
-func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[SavedQueryIDSpec]SavedQuerySpecAndConfig, error) {
+func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[SavedQueryIDSpec]ConfigSavedQuery, error) {
 	var result []SavedQuerySpecAndConfig
 	err := c.postInternal(ctx, "saved-queries/list-all", nil, &result)
 	if err != nil {
 		return nil, err
 	}
-	m := map[SavedQueryIDSpec]SavedQuerySpecAndConfig{}
+	m := map[SavedQueryIDSpec]ConfigSavedQuery{}
 	for _, r := range result {
-		m[r.Spec] = SavedQuerySpecAndConfig{Spec: r.Spec, Config: r.Config}
+		m[r.Spec] = r.Config
 	}
 	return m, nil
 }
