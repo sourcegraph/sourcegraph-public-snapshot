@@ -192,7 +192,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
 					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
-					Region:          os.Getenv("AWSCODECOMMIT_REGION"),
+					Region:          "us-west-1",
 				}),
 			},
 			{
@@ -289,7 +289,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
 					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
-					Region:          os.Getenv("AWSCODECOMMIT_REGION"),
+					Region:          "us-west-1",
 					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
 						{Name: "stRIPE-gO"},
 						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
@@ -444,7 +444,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
 					SecretAccessKey: os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
-					Region:          os.Getenv("AWSCODECOMMIT_REGION"),
+					Region:          "us-west-1",
 				}),
 			},
 		}
@@ -539,7 +539,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:           os.Getenv("AWSCODECOMMIT_ACCESS_KEY_ID"),
 					SecretAccessKey:       os.Getenv("AWSCODECOMMIT_SECRET_ACCESS_KEY"),
-					Region:                os.Getenv("AWSCODECOMMIT_REGION"),
+					Region:                "us-west-1",
 					RepositoryPathPattern: "a/b/c/{name}",
 				}),
 			},
