@@ -744,9 +744,7 @@ func awsCodeCommitRepoToRepo(
 		Name:         string(awsCodeCommitRepositoryToRepoPath(conn, repo)),
 		ExternalRepo: *awscodecommit.ExternalRepoSpec(repo, serviceID),
 		Description:  repo.Description,
-		Fork:         false,
 		Enabled:      true,
-		Archived:     false,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
