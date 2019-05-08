@@ -38,7 +38,7 @@ func MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.Co
 	}
 	if savedSearchTableIsEmpty {
 		if err := doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx); err != nil {
-			log15.Error(`Warning: unable to migrate "search.savedQueries" settings to database. Please report this issue.`, "error", err)
+			log15.Error(`migrate.saved-queries: unable to migrate "search.savedQueries" settings to database. Please report this issue.`, "error", err)
 		}
 	}
 }
