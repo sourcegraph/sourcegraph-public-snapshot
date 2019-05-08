@@ -48,7 +48,7 @@ func doMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx context.
 	settings, err := db.Settings.ListAll(ctx, "search.savedQueries")
 	if err != nil {
 		// Don't continue the migration if we can't list settings.
-		return errors.WithMessagef(err, `Warning: unable to migrate saved queries to database. Error listing settings. Please report this issue`)
+		return errors.WithMessagef(err, "Warning: unable to migrate saved queries to database. Error listing settings. Please report this issue")
 	}
 
 	for _, s := range settings {
