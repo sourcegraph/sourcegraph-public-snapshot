@@ -63,7 +63,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	awsCodeCommit := ExternalService{
+	awsCodeCommitService := ExternalService{
 		ID:          9,
 		Kind:        "AWSCODECOMMIT",
 		DisplayName: "AWS CodeCommit",
@@ -218,7 +218,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			awsCodeCommit.With(func(e *ExternalService) {
+			awsCodeCommitService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -291,7 +291,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			awsCodeCommit.With(func(e *ExternalService) {
+			awsCodeCommitService.With(func(e *ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -375,7 +375,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				awsCodeCommit.With(func(e *ExternalService) {
+				awsCodeCommitService.With(func(e *ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
