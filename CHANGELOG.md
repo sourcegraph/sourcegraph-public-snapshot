@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added topQueries to the GraphQL API.
+- Admins can now turn off site alerts for minor and patch version updates using the `alerts.showMinorUpdates` setting. Alerts will still be shown for major version updates.
 
 ### Changed
 

@@ -11,4 +11,5 @@ export type SiteFlags = Pick<
     | 'sendsEmailVerificationEmails'
     | 'updateCheck'
     | 'productSubscription'
+    | 'productVersion'
 >
