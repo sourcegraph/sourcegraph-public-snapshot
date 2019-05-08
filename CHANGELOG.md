@@ -26,6 +26,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
 
+## 3.3.8
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed a bug where all BitbucketServer repositories would be deleted temporarily and then added back on first startup in 3.3.7 (#3850 and #3897).
+
 ## 3.3.7
 
 ### Added
