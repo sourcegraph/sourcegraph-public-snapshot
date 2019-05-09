@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/keegancsmith/sqlf"
@@ -34,7 +35,7 @@ func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
 //
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
 // It is the caller's responsibility to make sure this response never makes it to a user.
-func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndConfig, err error) {
+func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
 	if Mocks.SavedSearches.ListAll != nil {
 		return Mocks.SavedSearches.ListAll(ctx)
 	}
@@ -42,6 +43,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	tr, ctx := trace.New(ctx, "db.SavedSearches.ListAll", "")
 	defer func() {
 		tr.SetError(err)
+		tr.LogFields(otlog.Int("count", len(savedSearches)))
 		tr.Finish()
 	}()
 
@@ -58,7 +60,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (_ []api.SavedQuerySpecAndC
 	if err != nil {
 		return nil, err
 	}
-	var savedSearches []api.SavedQuerySpecAndConfig
+
 	for rows.Next() {
 		var sq api.SavedQuerySpecAndConfig
 		if err := rows.Scan(
