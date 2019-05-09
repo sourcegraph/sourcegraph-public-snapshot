@@ -95,10 +95,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 			if serviceID != "" && args.ExternalRepo.ServiceID == serviceID {
 				ccrepo, err := conn.client.GetRepository(ctx, args.ExternalRepo.ID)
 				if ccrepo != nil {
-					remoteURL, err := conn.authenticatedRemoteURL(ccrepo)
-					if err != nil {
-						return nil, true, errors.Wrap(err, "authenticatedRemoteURL")
-					}
+					remoteURL := conn.authenticatedRemoteURL(ccrepo)
 					webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", conn.awsRegion.ID(), ccrepo.Name)
 					repo = &protocol.RepoInfo{
 						Name:         awsCodeCommitRepositoryToRepoPath(conn, ccrepo),
@@ -186,11 +183,7 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("aws:%s", conn.config.AccessKeyID), repoChan)
 	for _, repo := range repos {
 		// log15.Debug("awscodecommit sync: create/enable/update repo", "repo", repo.Name)
-		remoteURL, err := conn.authenticatedRemoteURL(repo)
-		if err != nil {
-			log15.Error("Error generating remote URL for AWS CodeCommit repository. Skipping.", "repo", repo.ARN, "error", err)
-			continue
-		}
+		remoteURL := conn.authenticatedRemoteURL(repo)
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoName:     awsCodeCommitRepositoryToRepoPath(conn, repo),
@@ -309,24 +302,18 @@ func (c *awsCodeCommitConnection) tryPopulateAWSAccountID() (string, error) {
 // authenticatedRemoteURL returns the repository's Git remote URL with the
 // configured AWS CodeCommit Git credentials inserted in the URL userinfo, for
 // repositories needing authentication.
-func (c *awsCodeCommitConnection) authenticatedRemoteURL(repo *awscodecommit.Repository) (string, error) {
+func (c *awsCodeCommitConnection) authenticatedRemoteURL(repo *awscodecommit.Repository) string {
 	u, err := url.Parse(repo.HTTPCloneURL)
 	if err != nil {
-		return "", err
+		log15.Warn("Error adding authentication to AWS CodeCommit repository Git remote URL.", "url", repo.HTTPCloneURL, "error", err)
+		return repo.HTTPCloneURL
 	}
 
 	username := c.config.GitCredentials.Username
-	if username == "" {
-		return "", errors.New("Username in Git credentials is empty")
-	}
-
 	password := c.config.GitCredentials.Password
-	if password == "" {
-		return "", errors.New("Password in Git credentials is empty")
-	}
 
 	u.User = url.UserPassword(username, password)
-	return u.String(), nil
+	return u.String()
 }
 
 func makeHMAC(key []byte, data []byte) []byte {

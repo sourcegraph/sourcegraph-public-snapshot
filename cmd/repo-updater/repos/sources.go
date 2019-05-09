@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -736,12 +735,7 @@ func awsCodeCommitRepoToRepo(
 	conn *awsCodeCommitConnection,
 ) (*Repo, error) {
 	urn := svc.URN()
-	cloneURL, err := conn.authenticatedRemoteURL(repo)
-	if err != nil {
-		log15.Warn("Error adding authentication to AWS Code Commit repository Git remote URL.", "error", err)
-		return nil, errors.Wrap(err, "failed to add authentication to AWS CodeCommit remote URL")
-	}
-
+	cloneURL := conn.authenticatedRemoteURL(repo)
 	serviceID := awscodecommit.ServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)
 
 	awsRepo := &Repo{
