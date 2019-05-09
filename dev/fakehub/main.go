@@ -19,7 +19,7 @@ import (
 func main() {
 	log.SetPrefix("")
 	n := flag.Int("n", 1, "number of instances of each repo to make")
-	addr := flag.String("addr", "127.0.0.1:", "address on which to serve (default picks an unused port)")
+	addr := flag.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 	flag.Parse()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] path/to/dir/containing/git/dirs

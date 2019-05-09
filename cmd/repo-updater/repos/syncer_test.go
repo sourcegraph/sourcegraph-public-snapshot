@@ -13,9 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 )
 
 func TestSyncer_Sync(t *testing.T) {
@@ -131,8 +133,26 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(bitbucketServerService.URN()),
 	)
 
-	otherService := &repos.ExternalService{
+	awsCodeCommitService := &repos.ExternalService{
 		ID:   30,
+		Kind: "AWSCODECOMMIT",
+	}
+
+	awsCodeCommitRepo := (&repos.Repo{
+		Name:     "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+		Metadata: &awscodecommit.Repository{},
+		Enabled:  true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+			ServiceType: "awscodecommit",
+		},
+	}).With(
+		repos.Opt.RepoSources(awsCodeCommitService.URN()),
+	)
+
+	otherService := &repos.ExternalService{
+		ID:   40,
 		Kind: "OTHER",
 	}
 
@@ -146,6 +166,24 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		},
 	}).With(
 		repos.Opt.RepoSources(otherService.URN()),
+	)
+
+	gitoliteService := &repos.ExternalService{
+		ID:   50,
+		Kind: "GITOLITE",
+	}
+
+	gitoliteRepo := (&repos.Repo{
+		Name:     "gitolite.mycorp.com/foo",
+		Metadata: &gitolite.Repo{},
+		Enabled:  true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "foo",
+			ServiceID:   "git@gitolite.mycorp.com",
+			ServiceType: "gitolite",
+		},
+	}).With(
+		repos.Opt.RepoSources(gitoliteService.URN()),
 	)
 
 	clock := repos.NewFakeClock(time.Now(), 0)
@@ -169,7 +207,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{repo: githubRepo, svc: githubService},
 		{repo: gitlabRepo, svc: gitlabService},
 		{repo: bitbucketServerRepo, svc: bitbucketServerService},
+		{repo: awsCodeCommitRepo, svc: awsCodeCommitService},
 		{repo: otherRepo, svc: otherService},
+		{repo: gitoliteRepo, svc: gitoliteService},
 	} {
 		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
 		testCases = append(testCases,
@@ -192,7 +232,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
 				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
-					r.ExternalRepo = api.ExternalRepoSpec{}
+					r.ExternalRepo.ID = ""
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Modified: repos.Repos{
@@ -379,7 +419,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &gitlab.Project{Archived: true}
 				case "bitbucketserver":
 					update = &bitbucketserver.Repo{Public: true}
-				case "other":
+				case "awscodecommit":
+					update = &awscodecommit.Repository{Description: "new description"}
+				case "other", "gitolite":
 					return testCase{}
 				default:
 					panic("test must be extended with new external service kind")
@@ -475,7 +517,9 @@ func TestDiff(t *testing.T) {
 
 	eid := func(id string) api.ExternalRepoSpec {
 		return api.ExternalRepoSpec{
-			ID: id,
+			ID:          id,
+			ServiceType: "fake",
+			ServiceID:   "https://fake.com",
 		}
 	}
 	now := time.Now()

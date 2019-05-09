@@ -18,9 +18,7 @@
     "stylelint": "stylelint 'src/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "test": "jest --testPathIgnorePatterns e2e",
-    "test-e2e": "jest --coverage=false e2e",
-    "storybook": "start-storybook -s ./src/extension/assets -c ./config/storybook -p 6006",
-    "build-storybook": "build-storybook -c ./config/storybook"
+    "test-e2e": "jest --coverage=false e2e"
   },
   "browserslist": [
     "last 3 Chrome versions",

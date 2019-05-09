@@ -9,7 +9,7 @@ import { storage } from '../../browser/storage'
 import { determineCodeHost as detectCodeHost, injectCodeIntelligenceToCodeHost } from '../../libs/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { checkIsSourcegraph, injectSourcegraphApp } from '../../libs/sourcegraph/inject'
-import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
@@ -26,6 +26,8 @@ setLinkComponent(({ to, children, ...props }) => (
         {children}
     </a>
 ))
+
+const IS_EXTENSION = true
 
 /**
  * Main entry point into browser extension.
@@ -60,7 +62,6 @@ async function main(): Promise<void> {
     }
 
     const sourcegraphServerUrl = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
-    setSourcegraphUrl(sourcegraphServerUrl)
 
     const isSourcegraphServer = checkIsSourcegraph(sourcegraphServerUrl)
 
@@ -86,7 +87,7 @@ async function main(): Promise<void> {
     // For the life time of the content script, add features in reaction to DOM changes
     if (codeHost) {
         console.log('Detected code host', codeHost.name)
-        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost))
+        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION))
     }
 }
 

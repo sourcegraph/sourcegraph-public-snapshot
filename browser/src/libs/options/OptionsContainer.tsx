@@ -3,7 +3,7 @@ import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
 import { ERAUTHREQUIRED, ErrorLike, isErrorLike } from '../../shared/backend/errors'
 import { getExtensionVersion } from '../../shared/util/context'
-import { OptionsMenu, OptionsMenuProps } from './Menu'
+import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerURLForm'
 
 export interface OptionsContainerProps {

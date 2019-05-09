@@ -10,9 +10,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -759,6 +761,10 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(gitlab.Project)
 	case "bitbucketserver":
 		r.Metadata = new(bitbucketserver.Repo)
+	case "awscodecommit":
+		r.Metadata = new(awscodecommit.Repository)
+	case "gitolite":
+		r.Metadata = new(gitolite.Repo)
 	default:
 		return nil
 	}

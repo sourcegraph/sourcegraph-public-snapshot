@@ -14,10 +14,10 @@ import {
     take,
     toArray,
 } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { getContext } from './context'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { createAggregateError } from './errors'
-import { queryGraphQL } from './graphql'
 
 interface BaseSuggestion {
     title: string
@@ -125,7 +125,7 @@ function createSuggestion(item: GQL.SearchSuggestion): Suggestion | null {
     }
 }
 
-const symbolsFragment = `
+const symbolsFragment = gql`
     fragment SymbolFields on Symbol {
         __typename
         name
@@ -144,10 +144,9 @@ const symbolsFragment = `
     }
 `
 
-const fetchSuggestions = (query: string, first: number) =>
-    queryGraphQL({
-        ctx: getContext({ repoKey: '', isRepoSpecific: false }),
-        request: `
+const fetchSuggestions = (query: string, first: number, requestGraphQL: PlatformContext['requestGraphQL']) =>
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
             query SearchSuggestions($query: String!, $first: Int!) {
                 search(query: $query) {
                     suggestions(first: $first) {
@@ -176,16 +175,16 @@ const fetchSuggestions = (query: string, first: number) =>
         `,
         variables: {
             query,
-            // The browser extension API only takes 5 suggestions
             first,
         },
-        retry: false,
+        mightContainPrivateInfo: true,
     }).pipe(
-        mergeMap(({ data, errors }) => {
-            if (!data || !data.search || !data.search.suggestions) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        mergeMap(({ search }) => {
+            if (!search || !search.suggestions) {
+                throw new Error('No search suggestions')
             }
-            return data.search.suggestions
+            return search.suggestions
         })
     )
 
@@ -194,7 +193,7 @@ interface SuggestionInput {
     handler: (suggestion: Suggestion[]) => void
 }
 
-export const createSuggestionFetcher = (first = 5) => {
+export const createSuggestionFetcher = (first = 5, requestGraphQL: PlatformContext['requestGraphQL']) => {
     const fetcher = new Subject<SuggestionInput>()
 
     fetcher
@@ -202,7 +201,7 @@ export const createSuggestionFetcher = (first = 5) => {
             distinctUntilChanged(),
             debounceTime(200),
             switchMap(({ query, handler }) =>
-                fetchSuggestions(query, first).pipe(
+                fetchSuggestions(query, first, requestGraphQL).pipe(
                     take(first),
                     map(createSuggestion),
                     // createSuggestion will return null if we get a type we don't recognize
@@ -224,10 +223,12 @@ export const createSuggestionFetcher = (first = 5) => {
     return (input: SuggestionInput) => fetcher.next(input)
 }
 
-export const fetchSymbols = (query: string): Observable<GQL.ISymbol[]> =>
-    queryGraphQL({
-        ctx: getContext({ isRepoSpecific: true }),
-        request: `
+export const fetchSymbols = (
+    query: string,
+    requestGraphQL: PlatformContext['requestGraphQL']
+): Observable<GQL.ISymbol[]> =>
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
             query SearchResults($query: String!) {
                 search(query: $query) {
                     results {
@@ -246,16 +247,18 @@ export const fetchSymbols = (query: string): Observable<GQL.ISymbol[]> =>
         variables: {
             query,
         },
-        retry: false,
+        mightContainPrivateInfo: true,
     }).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.results || !data.search.results.results) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(({ search }) => {
+            if (!search) {
+                throw new Error('fetchSymbols: empty search')
+            }
+            if (!search.results) {
+                throw new Error('fetchSymbols: empty search.results')
             }
 
-            const symbolsResults = flatten(
-                (data.search.results.results as GQL.IFileMatch[]).map(match => match.symbols)
-            )
+            const symbolsResults = flatten((search.results.results as GQL.IFileMatch[]).map(match => match.symbols))
 
             return symbolsResults
         }),

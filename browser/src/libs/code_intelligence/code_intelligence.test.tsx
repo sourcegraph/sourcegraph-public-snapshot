@@ -8,13 +8,16 @@ jest.mock('react-dom', () => ({
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, from, NEVER, of, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, from, NEVER, Observable, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
+import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
+import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
@@ -36,14 +39,54 @@ const createMockController = (services: Services): Controller => ({
 })
 
 const createMockPlatformContext = (
-    partialMocks?: Partial<PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'>>
-): PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'> => ({
-    platformContext: {
-        forceUpdateTooltip: jest.fn(),
-        urlToFile: jest.fn(),
-        sideloadedExtensionURL: new Subject<string | null>(),
-        ...partialMocks,
+    partialMocks?: Partial<Pick<PlatformContext, 'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'>>
+): Pick<PlatformContext, 'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile' | 'requestGraphQL'> => ({
+    forceUpdateTooltip: jest.fn(),
+    urlToFile: jest.fn(),
+    // Mock implementation of `requestGraphQL()` that returns successful
+    // responses for `ResolveRev` and `BlobContent` queries, so that
+    // code views can be resolved
+    requestGraphQL: <R extends IQuery | IMutation>({
+        request,
+    }: {
+        request: string
+    }): Observable<SuccessGraphQLResult<R>> => {
+        if (request.trim().startsWith('query ResolveRev')) {
+            return of({
+                data: {
+                    repository: {
+                        mirrorInfo: {
+                            cloneInProgress: false,
+                        },
+                        commit: {
+                            oid: 'foo',
+                        },
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
+        if (request.trim().startsWith('query BlobContent')) {
+            return of({
+                data: {
+                    repository: {
+                        mirrorInfo: {
+                            cloneInProgress: false,
+                        },
+                        commit: {
+                            file: {
+                                content: '',
+                            },
+                        },
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
+        return throwError(new Error('GraphQL request failed'))
     },
+    sideloadedExtensionURL: new Subject<string | null>(),
+    ...partialMocks,
 })
 
 describe('code_intelligence', () => {
@@ -96,7 +139,8 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -120,7 +164,8 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -139,7 +184,8 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const globalDebugMount = document.body.querySelector('.global-debug')
@@ -176,11 +222,11 @@ describe('code_intelligence', () => {
                                 getToolbarMount: () => toolbarMount,
                             }),
                         ],
-                        selectionsChanges: () => of([]),
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const editors = await from(services.editor.editors)
@@ -196,7 +242,7 @@ describe('code_intelligence', () => {
                     resource: 'git://foo?1#/bar.ts',
                     model: {
                         uri: 'git://foo?1#/bar.ts',
-                        text: undefined,
+                        text: '',
                         languageId: 'typescript',
                     },
                     selections: [],
@@ -238,11 +284,11 @@ describe('code_intelligence', () => {
                                 resolveFileInfo: codeView => of(fileInfo),
                             }),
                         ],
-                        selectionsChanges: () => of([]),
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             const activeEditor = await from(extensionAPI.app.activeWindowChanges)
@@ -324,11 +370,11 @@ describe('code_intelligence', () => {
                                 resolveFileInfo: codeView => of(fileInfo),
                             }),
                         ],
-                        selectionsChanges: () => of([]),
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 })
             )
             let editors = await from(services.editor.editors)
@@ -343,7 +389,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: undefined,
+                        text: '',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
@@ -355,7 +401,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: undefined,
+                        text: '',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
@@ -379,7 +425,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: undefined,
+                        text: '',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',

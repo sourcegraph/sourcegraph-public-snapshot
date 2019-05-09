@@ -1,65 +1,9 @@
 .server-url-form {
-    &__error {
-        margin-top: 0.5rem;
-    }
-
-    &__label {
-        font-weight: 600;
-    }
-
-    &__input-container {
-        display: flex;
-        border: solid 1px $color-light-border-2;
-        border-radius: 2px;
-    }
-
-    &__input {
-        width: 100%;
-        border: none;
-        padding-left: 5px;
-        background-color: $color-light-bg-1;
-    }
-
-    &__status {
-        display: flex;
-        align-items: center;
-
-        background-color: #f2f4f8;
-        padding: 0.5rem;
-    }
-
-    &__status-text {
-        font-size: 14px;
-        font-weight: 600;
-        font-style: normal;
-        font-stretch: normal;
-        line-height: normal;
-        letter-spacing: normal;
-        min-height: 14px;
-
-        margin-left: 0.25rem;
-    }
-
     &__status-indicator {
+        display: inline-block;
         height: 0.5rem;
         width: 0.5rem;
-
+        margin-bottom: 0.1em;
         border-radius: 50%;
-
-        &--default {
-            background-color: #cbd7e1;
-        }
-
-        &--success {
-            background-color: $green;
-        }
-
-        &--warning {
-            background-color: $yellow;
-        }
-
-        &--error {
-            background-color: $red;
-        }
     }
 }

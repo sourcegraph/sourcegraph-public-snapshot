@@ -1,31 +1,19 @@
-import { storage } from '../../browser/storage'
-import { isPhabricator, isPublicCodeHost } from '../../context'
+import { Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
+import { observeStorageKey } from '../../browser/storage'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
-export let sourcegraphUrl =
-    window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || DEFAULT_SOURCEGRAPH_URL
-
-interface UrlCache {
-    [key: string]: string
+export function observeSourcegraphURL(isExtension: boolean): Observable<string> {
+    if (isExtension) {
+        return observeStorageKey('sync', 'sourcegraphURL').pipe(
+            map(sourcegraphURL => sourcegraphURL || DEFAULT_SOURCEGRAPH_URL)
+        )
+    }
+    return of(window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL') || DEFAULT_SOURCEGRAPH_URL)
 }
 
-export const repoUrlCache: UrlCache = {}
-
-if (window.SG_ENV === 'EXTENSION' && globalThis.browser) {
-    // tslint:disable-next-line: no-floating-promises TODO just get rid of the global sourcegraphUrl
-    storage.sync.get().then(items => {
-        if (items.sourcegraphURL) {
-            sourcegraphUrl = items.sourcegraphURL
-        }
-    })
-}
-
-export function setSourcegraphUrl(url: string): void {
-    sourcegraphUrl = url
-}
-
-export function isSourcegraphDotCom(url: string = sourcegraphUrl): boolean {
+export function isSourcegraphDotCom(url: string): boolean {
     return url === DEFAULT_SOURCEGRAPH_URL
 }
 
@@ -48,22 +36,4 @@ export function getExtensionVersion(): string {
 
 function isFirefoxExtension(): boolean {
     return window.navigator.userAgent.indexOf('Firefox') !== -1
-}
-
-/**
- * Check the DOM to see if we can determine if a repository is private or public.
- */
-export function isPrivateRepository(): boolean {
-    if (isPhabricator) {
-        return true
-    }
-    if (!isPublicCodeHost) {
-        return true
-    }
-    // @TODO(lguychard) this is github-specific and should not be in /shared
-    const header = document.querySelector('.repohead-details-container')
-    if (!header) {
-        return false
-    }
-    return !!header.querySelector('.private')
 }

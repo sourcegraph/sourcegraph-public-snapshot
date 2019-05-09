@@ -1,6 +1,6 @@
 import { combineLatest, merge, Observable, ReplaySubject } from 'rxjs'
-import { map, mergeMap, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
-import { GraphQLResult } from '../../../shared/src/graphql/graphql'
+import { map, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
+import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
@@ -10,12 +10,10 @@ import { toPrettyBlobURL } from '../../../shared/src/util/url'
 import { ExtensionStorageSubject } from '../browser/ExtensionStorageSubject'
 import { background } from '../browser/runtime'
 import { observeStorageKey } from '../browser/storage'
-import { defaultStorageItems } from '../browser/types'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
-import { getContext } from '../shared/backend/context'
-import { requestGraphQL } from '../shared/backend/graphql'
-import { sourcegraphUrl } from '../shared/util/context'
+import { PrivateRepoPublicSourcegraphComError } from '../shared/backend/errors'
+import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { createBlobURLForBundle } from './worker'
@@ -23,8 +21,49 @@ import { createBlobURLForBundle } from './worker'
 /**
  * Creates the {@link PlatformContext} for the browser extension.
  */
-export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>): PlatformContext {
+export function createPlatformContext(
+    { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
+    sourcegraphURL: string,
+    isExtension: boolean
+): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
+    const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>({
+        request,
+        variables,
+        mightContainPrivateInfo,
+    }: {
+        request: string
+        variables: {}
+        mightContainPrivateInfo: boolean
+    }): Observable<GraphQLResult<T>> =>
+        observeSourcegraphURL(isExtension).pipe(
+            take(1),
+            switchMap(sourcegraphURL => {
+                if (mightContainPrivateInfo && sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+                    // If we can't determine the code host context, assume the current repository is private.
+                    const privateRepository = getContext ? getContext().privateRepository : true
+                    if (privateRepository) {
+                        const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+                        throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
+                    }
+                }
+                if (isExtension) {
+                    // In the browser extension, send all GraphQL requests from the background page.
+                    return background.requestGraphQL<T>({ request, variables })
+                }
+                return requestGraphQLCommon<T>({
+                    request,
+                    variables,
+                    baseUrl: window.SOURCEGRAPH_URL,
+                    headers: {},
+                    requestOptions: {
+                        crossDomain: true,
+                        withCredentials: true,
+                        async: true,
+                    },
+                })
+            })
+        )
 
     const context: PlatformContext = {
         /**
@@ -38,8 +77,10 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
         settings: combineLatest(
             merge(
                 isInPage
-                    ? fetchViewerSettings()
-                    : observeStorageKey('sync', 'sourcegraphURL').pipe(switchMap(() => fetchViewerSettings())),
+                    ? fetchViewerSettings(requestGraphQL)
+                    : observeStorageKey('sync', 'sourcegraphURL').pipe(
+                          switchMap(() => fetchViewerSettings(requestGraphQL))
+                      ),
                 updatedViewerSettings
             ).pipe(
                 publishReplay(1),
@@ -70,38 +111,13 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
                 if ('message' in error && /version mismatch/.test(error.message)) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
-                    updatedViewerSettings.next(await fetchViewerSettings().toPromise())
+                    updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
                     await updateSettings(context, subject, edit, mutateSettings)
                 }
             }
-
-            updatedViewerSettings.next(await fetchViewerSettings().toPromise())
+            updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
         },
-        queryGraphQL: (request, variables, requestMightContainPrivateInfo) => {
-            if (isInPage) {
-                return requestGraphQL({
-                    ctx: getContext({ repoKey: '', isRepoSpecific: false }),
-                    request,
-                    variables,
-                    url: window.SOURCEGRAPH_URL,
-                    requestMightContainPrivateInfo,
-                })
-            }
-
-            return observeStorageKey('sync', 'sourcegraphURL').pipe(
-                take(1),
-                mergeMap(
-                    (url: string = defaultStorageItems.sourcegraphURL): Observable<GraphQLResult<any>> =>
-                        requestGraphQL({
-                            ctx: getContext({ repoKey: '', isRepoSpecific: false }),
-                            request,
-                            variables,
-                            url,
-                            requestMightContainPrivateInfo,
-                        })
-                )
-            )
-        },
+        requestGraphQL,
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
@@ -110,7 +126,6 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
             if (isInPage) {
                 return await createBlobURLForBundle(bundleURL)
             }
-
             // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
             // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
             // with a CSP that allowlists https://* in script-src (see
@@ -122,12 +137,12 @@ export function createPlatformContext({ urlToFile }: Pick<CodeHost, 'urlToFile'>
         urlToFile: location => {
             if (urlToFile) {
                 // Construct URL to file on code host, if possible.
-                return urlToFile(location)
+                return urlToFile(sourcegraphURL, location)
             }
             // Otherwise fall back to linking to Sourcegraph (with an absolute URL).
-            return `${sourcegraphUrl}${toPrettyBlobURL(location)}`
+            return `${sourcegraphURL}${toPrettyBlobURL(location)}`
         },
-        sourcegraphURL: sourcegraphUrl,
+        sourcegraphURL,
         clientApplication: 'other',
         sideloadedExtensionURL: isInPage
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
