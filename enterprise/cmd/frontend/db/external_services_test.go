@@ -68,26 +68,36 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 	}{
 		{
 			kind:   "AWSCODECOMMIT",
-			desc:   "without region, accessKeyID, secretAccessKey",
+			desc:   "without region, accessKeyID, secretAccessKey, gitCredentials",
 			config: `{}`,
 			assert: includes(
 				"region: region is required",
 				"accessKeyID: accessKeyID is required",
 				"secretAccessKey: secretAccessKey is required",
+				"gitCredentials: gitCredentials is required",
 			),
 		},
 		{
 			kind:   "AWSCODECOMMIT",
 			desc:   "invalid region",
-			config: `{"region": "foo", "accessKeyID": "bar", "secretAccessKey": "baz"}`,
+			config: `{"region": "foo", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "user", "password": "pw"}}`,
 			assert: includes(
 				`region: region must be one of the following: "ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2", "ca-central-1", "eu-central-1", "eu-west-1", "eu-west-2", "eu-west-3", "sa-east-1", "us-east-1", "us-east-2", "us-west-1", "us-west-2"`,
 			),
 		},
 		{
 			kind:   "AWSCODECOMMIT",
+			desc:   "invalid gitCredentials",
+			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "", "password": ""}}`,
+			assert: includes(
+				`gitCredentials.username: String length must be greater than or equal to 1`,
+				`gitCredentials.password: String length must be greater than or equal to 1`,
+			),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
 			desc:   "valid",
-			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz"}`,
+			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "user", "password": "pw"}}`,
 			assert: equals("<nil>"),
 		},
 		{
@@ -98,6 +108,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"region": "eu-west-1",
 				"accessKeyID": "bar",
 				"secretAccessKey": "baz",
+				"gitCredentials": {"username": "user", "password": "pw"},
 				"exclude": [
 					{"name": "foobar-barfoo_bazbar"},
 					{"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb"},
@@ -152,6 +163,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"region": "eu-west-1",
 				"accessKeyID": "bar",
 				"secretAccessKey": "baz",
+				"gitCredentials": {"username": "user", "password": "pw"},
 				"exclude": [
 					{
 					  "name": "foobar",
