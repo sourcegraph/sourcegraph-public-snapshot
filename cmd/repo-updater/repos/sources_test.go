@@ -641,31 +641,25 @@ func TestSources_ListRepos(t *testing.T) {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
+					urls := []string{}
 					for _, r := range rs {
-						for _, cloneURL := range r.CloneURLs() {
-							u, err := url.Parse(cloneURL)
-							if err != nil {
-								t.Fatalf("cloneURL is not parseable: %+v", cloneURL)
-							}
-							if u.User.Username() == "" {
-								t.Fatal("cloneURL has empty User")
-							}
+						urls = append(urls, r.CloneURLs()...)
+					}
 
-							switch s.Kind {
-							case "AWSCODECOMMIT":
-								if have, want := u.User.Username(), "git-username"; have != want {
-									t.Errorf("cloneURL has wrong Username. want=%q, have=%q", want, have)
-								}
-								have, ok := u.User.Password()
-								if !ok {
-									t.Fatalf("cloneURL has no Password")
-								}
-								if want := "git-password"; have != want {
-									t.Errorf("cloneURL has wrong Password. want=%q, have=%q", want, have)
-								}
-							}
+					switch s.Kind {
+					case "AWSCODECOMMIT":
+						want := []string{
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/empty-repo",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/test2",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/test",
 						}
 
+						if have := urls; !reflect.DeepEqual(have, want) {
+							fmt.Printf("have=%q\n", have)
+							t.Error(cmp.Diff(have, want))
+						}
 					}
 				}
 			},
