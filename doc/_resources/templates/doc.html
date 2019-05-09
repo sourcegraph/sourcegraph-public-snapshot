@@ -1,8 +1,8 @@
 {{define "root"}}
 <html>
     <head>
-        <title>{{with .Content}}{{.Doc.Title}}
-            {{else}}Error{{end}} - Sourcegraph docs</title>
+        <title>{{with .Content}}{{.Doc.Title}}{{if gt (len .Breadcrumbs ) 0}} - Sourcegraph docs{{end}}{{else}}Error{{end}}</title>
+        <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png"/>
         <link rel="stylesheet" href="{{asset "sourcegraph.css"}}?9" />
         <link rel="stylesheet" href="{{asset "layout.css"}}?9" />
         <link rel="stylesheet" href="{{asset "content.css"}}?9" />
