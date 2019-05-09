@@ -49,7 +49,7 @@ export class EventLogger implements TelemetryService {
         }
 
         let { sourcegraphAnonymousUid } = await storage.sync.get()
-        if (!sourcegraphAnonymousUid || sourcegraphAnonymousUid === '') {
+        if (!sourcegraphAnonymousUid) {
             sourcegraphAnonymousUid = this.generateAnonUserID()
             await storage.sync.set({ sourcegraphAnonymousUid })
         }
