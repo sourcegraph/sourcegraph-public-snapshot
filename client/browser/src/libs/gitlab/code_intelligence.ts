@@ -96,7 +96,7 @@ export const gitlabCodeHost: CodeHost = {
     getCommandPaletteMount,
     getContext: () => ({
         ...getPageInfo(),
-        privateRepository: window.location.hostname === 'gitlab.com',
+        privateRepository: window.location.hostname !== 'gitlab.com',
     }),
     commandPaletteClassProps: {
         popoverClassName: 'dropdown-menu command-list-popover--gitlab',
