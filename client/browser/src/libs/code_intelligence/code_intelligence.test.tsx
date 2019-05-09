@@ -14,7 +14,7 @@ import { Services } from '../../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
-import { IQuery } from '../../../../../shared/src/graphql/schema'
+import { IMutation, IQuery } from '../../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -45,7 +45,11 @@ const createMockPlatformContext = (
     // Mock implementation of `requestGraphQL()` that returns successful
     // responses for `ResolveRev` and `BlobContent` queries, so that
     // code views can be resolved
-    requestGraphQL: ({ request }): Observable<SuccessGraphQLResult<any>> => {
+    requestGraphQL: <R extends IQuery | IMutation>({
+        request,
+    }: {
+        request: string
+    }): Observable<SuccessGraphQLResult<R>> => {
         if (request.trim().startsWith('query ResolveRev')) {
             return of({
                 data: {
@@ -59,7 +63,7 @@ const createMockPlatformContext = (
                     },
                 },
                 errors: undefined,
-            } as SuccessGraphQLResult<IQuery>)
+            } as SuccessGraphQLResult<R>)
         }
         if (request.trim().startsWith('query BlobContent')) {
             return of({
@@ -76,7 +80,7 @@ const createMockPlatformContext = (
                     },
                 },
                 errors: undefined,
-            } as SuccessGraphQLResult<IQuery>)
+            } as SuccessGraphQLResult<R>)
         }
         return throwError(new Error('GraphQL request failed'))
     },
