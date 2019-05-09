@@ -77,12 +77,12 @@ export class EventLogger implements TelemetryService {
      *
      * @todo Handle arbitrary action IDs.
      *
-     * @param _eventName The ID of the action executed.
+     * @param eventName The ID of the action executed.
      */
-    public log(_eventName: string): void {
-        if (_eventName === 'goToDefinition' || _eventName === 'goToDefinition.preloaded' || _eventName === 'hover') {
+    public log(eventName: string): void {
+        if (eventName === 'goToDefinition' || eventName === 'goToDefinition.preloaded' || eventName === 'hover') {
             this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATION)
-        } else if (_eventName === 'findReferences') {
+        } else if (eventName === 'findReferences') {
             this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATIONREFS)
         }
     }
