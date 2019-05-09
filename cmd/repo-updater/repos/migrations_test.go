@@ -21,25 +21,8 @@ func TestEnabledStateDeprecationMigration(t *testing.T) {
 }
 
 func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
-	excluded := func(rs ...*repos.Repo) func(*repos.ExternalService) {
-		return func(e *repos.ExternalService) {
-			if err := e.Exclude(rs...); err != nil {
-				panic(err)
-			}
-		}
-	}
-
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
-
-	type testCase struct {
-		name    string
-		sourcer repos.Sourcer
-		stored  repos.Repos
-		svcs    repos.ExternalServicesAssertion
-		repos   repos.ReposAssertion
-		err     string
-	}
 
 	githubService := repos.ExternalService{
 		ID:          1,
@@ -100,7 +83,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 	}
 
 	bitbucketServerService := repos.ExternalService{
-		ID:          2,
+		ID:          3,
 		Kind:        "BITBUCKETSERVER",
 		DisplayName: "Bitbucket Server - Test",
 		Config: formatJSON(`
@@ -132,7 +115,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 	}
 
 	awsCodeCommitService := repos.ExternalService{
-		ID:          9,
+		ID:          4,
 		Kind:        "AWSCODECOMMIT",
 		DisplayName: "AWS CodeCommit - Test",
 		Config: formatJSON(`
@@ -160,7 +143,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 	}
 
 	gitoliteService := repos.ExternalService{
-		ID:          4,
+		ID:          5,
 		Kind:        "GITOLITE",
 		DisplayName: "Gitolite - Test",
 		Config: formatJSON(`
@@ -186,151 +169,109 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		},
 	}
 
-	var testCases []testCase
-	for _, k := range []struct {
-		svc  repos.ExternalService
-		repo repos.Repo
-	}{
-		{svc: githubService, repo: githubRepo},
-		{svc: gitlabService, repo: gitlabRepo},
-		{svc: bitbucketServerService, repo: bitbucketServerRepo},
-		{svc: awsCodeCommitService, repo: awsCodeCommitRepo},
-		{svc: gitoliteService, repo: gitoliteRepo},
-	} {
-		repo, svc := k.repo, k.svc
-		testCases = append(testCases,
-			testCase{
-				name:   "enabled: was deleted, got added (enabled), not excluded",
-				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(svc.Clone(), nil, repo.With(repos.Opt.RepoEnabled(true))),
-				),
-				svcs: repos.Assert.ExternalServicesEqual(svc.Clone()),
-				err:  "<nil>",
-			},
-			testCase{
-				name:   "disabled: was not deleted and was not modified, got excluded",
-				stored: repos.Repos{&repo},
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
-				),
-				svcs: repos.Assert.ExternalServicesEqual(svc.With(
-					repos.Opt.ExternalServiceModifiedAt(now),
-					excluded(&repo),
-				)),
-				err: "<nil>",
-			},
-			testCase{
-				name:   "disabled: was not deleted, got modified, then excluded",
-				stored: repos.Repos{&repo},
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
-					repo.With(func(r *repos.Repo) {
-						r.Description = "some updated description"
-					})),
-				),
-				svcs: repos.Assert.ExternalServicesEqual(svc.With(
-					repos.Opt.ExternalServiceModifiedAt(now),
-					excluded(&repo),
-				)),
-				err: "<nil>",
-			},
-			testCase{
-				name: "enabled: was not deleted and is still not deleted, not included",
-				stored: repos.Repos{repo.With(func(r *repos.Repo) {
-					r.Enabled = true
-				})},
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
-					repo.With(func(r *repos.Repo) {
-						r.Enabled = true
-					})),
-				),
-				svcs: repos.Assert.ExternalServicesEqual(svc.Clone()),
-				err:  "<nil>",
-			},
-			testCase{
-				name: "enabled: was not deleted and got deleted, not included",
-				stored: repos.Repos{repo.With(func(r *repos.Repo) {
-					r.Enabled = true
-				})},
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				svcs:    repos.Assert.ExternalServicesEqual(svc.Clone()),
-				err:     "<nil>",
-			},
-			testCase{
-				name:   "enabled: got added for the first time, so not included",
-				stored: repos.Repos{},
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
-					repo.With(func(r *repos.Repo) {
-						r.Enabled = true
-					})),
-				),
-				svcs: repos.Assert.ExternalServicesEqual(svc.Clone()),
-				err:  "<nil>",
-			},
-			testCase{
-				name: "initialRepositoryEnablement gets deleted",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(
-					svc.With(func(e *repos.ExternalService) {
-						var err error
-						e.Config, err = jsonc.Edit(e.Config, false, "initialRepositoryEnablement")
-						if err != nil {
-							panic(err)
-						}
-					}), nil,
-				)),
-				svcs: repos.Assert.ExternalServicesEqual(svc.With(
-					repos.Opt.ExternalServiceModifiedAt(now),
-				)),
-				err: "<nil>",
-			},
-			testCase{
-				name:   "disabled: repo is excluded in all of its sources",
-				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
-					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil, repo.Clone()),
-				),
-				svcs: repos.Assert.ExternalServicesEqual(
-					svc.With(
-						repos.Opt.ExternalServiceModifiedAt(now),
-						excluded(&repo),
-					),
-					svc.With(
-						repos.Opt.ExternalServiceID(23),
-						repos.Opt.ExternalServiceModifiedAt(now),
-						excluded(&repo),
-					),
-				),
-				err: "<nil>",
-			},
-			testCase{
-				name: "enabled: deleted repo is not included in any of its sources",
-				stored: repos.Repos{repo.With(
-					repos.Opt.RepoSources(
-						svc.URN(),
-						svc.With(repos.Opt.ExternalServiceID(23)).URN(),
-					),
-					func(r *repos.Repo) { r.Enabled = true },
-				)},
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(svc.Clone(), nil),
-					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil),
-				),
-				svcs: repos.Assert.ExternalServicesEqual(
-					svc.Clone(),
-					svc.With(repos.Opt.ExternalServiceID(23)),
-				),
-				err: "<nil>",
-			},
-			testCase{
-				name:    "disabled: repos are deleted",
-				stored:  repos.Repos{&repo},
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil)),
-				repos:   repos.Assert.ReposEqual(),
-				err:     "<nil>",
-			},
-		)
+	services := repos.ExternalServices{
+		&githubService,
+		&gitlabService,
+		&bitbucketServerService,
+		&awsCodeCommitService,
+		&gitoliteService,
 	}
+
+	repositories := repos.Repos{
+		&githubRepo,
+		&gitlabRepo,
+		&bitbucketServerRepo,
+		&awsCodeCommitRepo,
+		&gitoliteRepo,
+	}
+
+	type stored struct {
+		services repos.ExternalServices
+		repos    repos.Repos
+	}
+
+	type assert struct {
+		services repos.ExternalServicesAssertion
+		repos    repos.ReposAssertion
+	}
+
+	type testCase struct {
+		name   string
+		stored stored
+		assert assert
+	}
+
+	testCases := []testCase{{
+		name: "initialRepositoryEnablement gets deleted",
+		stored: stored{
+			services: services.With(func(e *repos.ExternalService) {
+				var err error
+				e.Config, err = jsonc.Edit(e.Config, false, "initialRepositoryEnablement")
+				if err != nil {
+					panic(err)
+				}
+			}),
+		},
+		assert: assert{
+			services: repos.Assert.ExternalServicesEqual(services.With(
+				repos.Opt.ExternalServiceModifiedAt(now),
+			)...),
+		},
+	}, {
+		// When the repos don't have any sources, we exclude them from
+		// all external services of the same kind.
+		name: "disabled repos are excluded from all sources",
+		stored: stored{
+			repos:    repositories,
+			services: services,
+		},
+		assert: assert{
+			repos: repos.Assert.ReposEqual(), // All disabled repos are deleted.
+			services: repos.Assert.ExternalServicesEqual(services.With(
+				repos.Opt.ExternalServiceModifiedAt(now),
+				func(e *repos.ExternalService) {
+					if err := e.Exclude(repositories...); err != nil {
+						panic(err)
+					}
+				},
+			)...),
+		},
+	}, {
+		name: "disabled repos are excluded in all of its existing sources",
+		stored: stored{
+			repos: repos.Repos{
+				githubRepo.With(repos.Opt.RepoSources(githubService.URN())),
+				gitlabRepo.With(repos.Opt.RepoSources(gitlabService.URN())),
+				bitbucketServerRepo.With(repos.Opt.RepoSources(bitbucketServerService.URN())),
+				awsCodeCommitRepo.With(repos.Opt.RepoSources(awsCodeCommitService.URN())),
+				gitoliteRepo.With(repos.Opt.RepoSources(gitoliteService.URN())),
+			},
+			services: services,
+		},
+		assert: assert{
+			repos: repos.Assert.ReposEqual(), // All disabled repos are deleted.
+			services: repos.Assert.ExternalServicesEqual(services.With(
+				repos.Opt.ExternalServiceModifiedAt(now),
+				func(e *repos.ExternalService) {
+					if err := e.Exclude(repositories...); err != nil {
+						panic(err)
+					}
+				},
+			)...),
+		},
+	}, {
+		name: "enabled repos are ignored",
+		stored: stored{
+			repos:    repositories.With(repos.Opt.RepoEnabled(true)),
+			services: services,
+		},
+		assert: assert{
+			repos: repos.Assert.ReposEqual(
+				repositories.With(repos.Opt.RepoEnabled(true))...,
+			),
+			services: repos.Assert.ExternalServicesEqual(services...),
+		},
+	}}
 
 	return func(t *testing.T) {
 		t.Helper()
@@ -340,29 +281,33 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ctx := context.Background()
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
-				if err := tx.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
+				if err := tx.UpsertRepos(ctx, tc.stored.repos.Clone()...); err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
 				}
 
-				err := repos.EnabledStateDeprecationMigration(tc.sourcer, clock.Now).Run(ctx, tx)
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Fatalf("error:\nhave: %v\nwant: %v", have, want)
+				if err := tx.UpsertExternalServices(ctx, tc.stored.services.Clone()...); err != nil {
+					t.Fatalf("failed to prepare store: %v", err)
 				}
 
-				if tc.svcs != nil {
+				err := repos.EnabledStateDeprecationMigration(clock.Now).Run(ctx, tx)
+				if err != nil {
+					t.Fatalf("error: %v", err)
+				}
+
+				if tc.assert.services != nil {
 					svcs, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
 					if err != nil {
 						t.Fatal(err)
 					}
-					tc.svcs(t, svcs)
+					tc.assert.services(t, svcs)
 				}
 
-				if tc.repos != nil {
+				if tc.assert.repos != nil {
 					rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
 					if err != nil {
 						t.Fatal(err)
 					}
-					tc.repos(t, rs)
+					tc.assert.repos(t, rs)
 				}
 			}))
 		}

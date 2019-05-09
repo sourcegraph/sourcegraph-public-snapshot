@@ -28,12 +28,12 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 // without recourse to the now deprecated enabled column of a repository.
 //
 // This is done by:
-//  1. Explicitly adding disabled repos that would have been added to an explicit exclude list.
+//  1. Explicitly deleting all disabled repos and adding them to an exclude list.
 //  2. Removing the deprecated initialRepositoryEnablement field.
 //
 // This migration must be rolled-out together with the UI changes that remove the admin's
 // ability to explicitly enabled / disable individual repos.
-func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, kinds ...string) Migration {
+func EnabledStateDeprecationMigration(clock func() time.Time, kinds ...string) Migration {
 	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.repos-enabled-state-deprecation:"
 
@@ -43,22 +43,6 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 
 		if err != nil {
 			return errors.Wrapf(err, "%s list-external-services", prefix)
-		}
-
-		srcs, err := sourcer(es...)
-		if err != nil {
-			return errors.Wrapf(err, "%s list-sources", prefix)
-		}
-
-		var sourced Repos
-		{
-			ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
-			sourced, err = srcs.ListRepos(ctx)
-			cancel()
-		}
-
-		if err != nil {
-			return errors.Wrapf(err, "%s sources.list-repos", prefix)
 		}
 
 		stored, err := s.ListRepos(ctx, StoreListReposArgs{
@@ -74,60 +58,42 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			exclude Repos
 		}
 
-		all := srcs.ExternalServices()
-		svcs := make(map[int64]*service, len(all))
-		upserts := make(ExternalServices, 0, len(all))
-
-		for _, e := range all {
+		svcs := make(map[int64]*service, len(es))
+		for _, e := range es {
 			// Skip any injected sources that are not persisted.
 			if e.ID != 0 {
 				svcs[e.ID] = &service{svc: e}
-				upserts = append(upserts, e)
 			}
-		}
-
-		group := func(pred func(*Repo) bool, bucket func(*service) *Repos, repos ...Repos) error {
-			for _, rs := range repos {
-				for _, r := range rs {
-					if !pred(r) {
-						continue
-					}
-
-					es := make(map[int64]*service, len(r.Sources))
-					for _, si := range r.Sources {
-						id := si.ExternalServiceID()
-						if e := svcs[id]; e != nil {
-							es[id] = e
-						}
-					}
-
-					if len(es) == 0 {
-						es = svcs
-					}
-
-					for _, e := range es {
-						b := bucket(e)
-						*b = append(*b, r)
-					}
-				}
-			}
-
-			return nil
-		}
-
-		diff := NewDiff(sourced, stored)
-
-		err = group(
-			func(r *Repo) bool { return !r.Enabled },
-			func(s *service) *Repos { return &s.exclude },
-			diff.Added, diff.Modified, diff.Unmodified,
-		)
-
-		if err != nil {
-			return err
 		}
 
 		now := clock()
+
+		var deleted Repos
+		for _, r := range stored {
+			if r.Enabled {
+				continue
+			}
+
+			r.DeletedAt = now
+			deleted = append(deleted, r)
+
+			es := make(map[int64]*service, len(r.Sources))
+			for _, si := range r.Sources {
+				id := si.ExternalServiceID()
+				if e := svcs[id]; e != nil {
+					es[id] = e
+				}
+			}
+
+			if len(es) == 0 {
+				es = svcs
+			}
+
+			for _, e := range es {
+				e.exclude = append(e.exclude, r)
+			}
+		}
+
 		for _, e := range svcs {
 			if err = removeInitalRepositoryEnablement(e.svc, now); err != nil {
 				return errors.Wrapf(err, "%s remove-initial-repository-enablement", prefix)
@@ -143,17 +109,8 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			}
 		}
 
-		if err = s.UpsertExternalServices(ctx, upserts...); err != nil {
+		if err = s.UpsertExternalServices(ctx, es...); err != nil {
 			return errors.Wrapf(err, "%s upsert-external-services", prefix)
-		}
-
-		var deleted Repos
-		for _, r := range stored {
-			if !r.Enabled {
-				r.DeletedAt = now
-				r.Enabled = true
-				deleted = append(deleted, r)
-			}
 		}
 
 		if err = s.UpsertRepos(ctx, deleted...); err != nil {

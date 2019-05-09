@@ -111,7 +111,7 @@ func main() {
 			"GITOLITE",
 		)
 		migrations = append(migrations,
-			repos.EnabledStateDeprecationMigration(src, clock, kinds...),
+			repos.EnabledStateDeprecationMigration(clock, kinds...),
 		)
 	}
 
