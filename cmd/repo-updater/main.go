@@ -107,6 +107,7 @@ func main() {
 			"GITLAB",
 			"BITBUCKETSERVER",
 			"OTHER",
+			"GITOLITE",
 		)
 		migrations = append(migrations,
 			repos.EnabledStateDeprecationMigration(src, clock, kinds...),
@@ -172,6 +173,8 @@ func main() {
 		log15.Info("starting new syncer", "external service kinds", kinds)
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval(), kinds...)) }()
 
+		gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
+
 		// Start new repo syncer updates scheduler relay thread.
 		go func() {
 			for diff := range diffs {
@@ -187,8 +190,17 @@ func main() {
 					log15.Debug("syncer.sync", "diff.deleted", diff.Deleted.Names())
 				}
 
+				rs := diff.Repos()
 				if !conf.Get().DisableAutoGitUpdates {
-					repos.Scheduler.Update(diff.Repos()...)
+					repos.Scheduler.Update(rs...)
+				}
+
+				if newSyncerEnabled["GITOLITE"] {
+					go func() {
+						if err := gps.Sync(ctx, rs); err != nil {
+							log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
+						}
+					}()
 				}
 			}
 		}()

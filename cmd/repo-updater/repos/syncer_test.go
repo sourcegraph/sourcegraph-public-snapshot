@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 )
 
 func TestSyncer_Sync(t *testing.T) {
@@ -148,6 +149,24 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(otherService.URN()),
 	)
 
+	gitoliteService := &repos.ExternalService{
+		ID:   50,
+		Kind: "GITOLITE",
+	}
+
+	gitoliteRepo := (&repos.Repo{
+		Name:     "gitolite.mycorp.com/foo",
+		Metadata: &gitolite.Repo{},
+		Enabled:  true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "foo",
+			ServiceID:   "git@gitolite.mycorp.com",
+			ServiceType: "gitolite",
+		},
+	}).With(
+		repos.Opt.RepoSources(gitoliteService.URN()),
+	)
+
 	clock := repos.NewFakeClock(time.Now(), 0)
 
 	type testCase struct {
@@ -170,6 +189,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{repo: gitlabRepo, svc: gitlabService},
 		{repo: bitbucketServerRepo, svc: bitbucketServerService},
 		{repo: otherRepo, svc: otherService},
+		{repo: gitoliteRepo, svc: gitoliteService},
 	} {
 		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
 		testCases = append(testCases,
@@ -379,7 +399,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &gitlab.Project{Archived: true}
 				case "bitbucketserver":
 					update = &bitbucketserver.Repo{Public: true}
-				case "other":
+				case "other", "gitolite":
 					return testCase{}
 				default:
 					panic("test must be extended with new external service kind")

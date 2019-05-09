@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
@@ -56,6 +57,18 @@ func TestExternalService_Exclude(t *testing.T) {
 			"username: "admin",
 			"token": "secret",
 			"repositoryQuery": ["none"]
+		}`,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	gitoliteService := ExternalService{
+		Kind:        "GITOLITE",
+		DisplayName: "Gitolite",
+		Config: `{
+			// Some comment
+			"host": "git@gitolite.mycorp.com",
+			"prefix": "gitolite.mycorp.com/"
 		}`,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -131,6 +144,9 @@ func TestExternalService_Exclude(t *testing.T) {
 				ServiceID:   "https://git-host.mycorp.com/",
 			},
 		},
+		{
+			Metadata: &gitolite.Repo{Name: "foo"},
+		},
 	}
 
 	var testCases []testCase
@@ -173,6 +189,17 @@ func TestExternalService_Exclude(t *testing.T) {
 					"exclude": [
 						{"id": 1},
 						{"name": "org/baz"}
+					]
+				}`)
+			}),
+			gitoliteService.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"host": "git@gitolite.mycorp.com",
+					"prefix": "gitolite.mycorp.com/",
+					"exclude": [
+						{"name": "foo"}
 					]
 				}`)
 			}),
@@ -222,6 +249,17 @@ func TestExternalService_Exclude(t *testing.T) {
 					"repositoryQuery": ["none"],
 					"exclude": [
 						{"name": "org/boo"},
+					]
+				}`)
+			}),
+			gitoliteService.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"host": "git@gitolite.mycorp.com",
+					"prefix": "gitolite.mycorp.com/",
+					"exclude": [
+						{"name": "boo"}
 					]
 				}`)
 			}),
@@ -283,6 +321,18 @@ func TestExternalService_Exclude(t *testing.T) {
 							{"name": "org/boo"},
 							{"id": 1, "name": "org/foo"},
 							{"name": "org/baz"}
+						]
+					}`)
+				}),
+				gitoliteService.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"host": "git@gitolite.mycorp.com",
+						"prefix": "gitolite.mycorp.com/",
+						"exclude": [
+							{"name": "boo"},
+							{"name": "foo"}
 						]
 					}`)
 				}),

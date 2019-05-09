@@ -30,6 +30,25 @@
       "type": "string",
       "format": "regex"
     },
+    "exclude": {
+      "description": "A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({\"name\": \"foo\"}) or by regular expression ({\"pattern\": \"secret-.*\"}).",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedGitoliteRepo",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a Gitolite repo (\"my-repo\") to exclude from mirroring.",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "examples": [[{ "name": "myrepo" }, { "pattern": "^topsecretproject/.*" }]]
+    },
     "phabricatorMetadataCommand": {
       "description": "This is DEPRECATED. Use the `phabricator` field instead.",
       "type": "string"

@@ -276,6 +276,17 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					Prefix:    "gitolite.mycorp.com/",
+					Host:      "ssh://git@127.0.0.1:2222",
+					Blacklist: `gitolite\.mycorp\.com\/foo`,
+					Exclude: []*schema.ExcludedGitoliteRepo{
+						{Name: "bar"},
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -310,6 +321,11 @@ func TestSources_ListRepos(t *testing.T) {
 					case *schema.BitbucketServerConnection:
 						for _, e := range cfg.Exclude {
 							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
+						}
+					case *schema.GitoliteConnection:
+						ex = append(ex, excluded{pattern: cfg.Blacklist})
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name})
 						}
 					}
 
@@ -477,6 +493,14 @@ func TestSources_ListRepos(t *testing.T) {
 					Repos:                 []string{"org/baz"},
 				}),
 			},
+			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					// Prefix serves as a sort of repositoryPathPattern for Gitolite
+					Prefix: "gitolite.mycorp.com/",
+					Host:   "ssh://git@127.0.0.1:2222",
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -501,6 +525,14 @@ func TestSources_ListRepos(t *testing.T) {
 					case "BITBUCKETSERVER":
 						want = []string{
 							"127.0.0.1/a/b/c/ORG/baz",
+						}
+					case "GITOLITE":
+						want = []string{
+							"gitolite.mycorp.com/bar",
+							"gitolite.mycorp.com/baz",
+							"gitolite.mycorp.com/foo",
+							"gitolite.mycorp.com/gitolite-admin",
+							"gitolite.mycorp.com/testing",
 						}
 					}
 

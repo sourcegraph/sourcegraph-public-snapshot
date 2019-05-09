@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -104,6 +105,8 @@ func (e *ExternalService) Exclude(rs ...*Repo) error {
 		return e.excludeGitLabRepos(rs...)
 	case "bitbucketserver":
 		return e.excludeBitbucketServerRepos(rs...)
+	case "gitolite":
+		return e.excludeGitoliteRepos(rs...)
 	case "other":
 		return e.excludeOtherRepos(rs...)
 	default:
@@ -271,6 +274,34 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 				if name != "" {
 					set[name] = true
 				}
+			}
+		}
+
+		return "exclude", c.Exclude, nil
+	})
+}
+
+// excludeGitoliteRepos changes the configuration of a Gitolite external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("gitolite", func(v interface{}) (string, interface{}, error) {
+		c := v.(*schema.GitoliteConnection)
+		set := make(map[string]bool, len(c.Exclude))
+		for _, ex := range c.Exclude {
+			if ex.Name != "" {
+				set[ex.Name] = true
+			}
+		}
+
+		for _, r := range rs {
+			repo, ok := r.Metadata.(*gitolite.Repo)
+			if ok && repo.Name != "" && !set[repo.Name] {
+				c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: repo.Name})
+				set[repo.Name] = true
 			}
 		}
 
