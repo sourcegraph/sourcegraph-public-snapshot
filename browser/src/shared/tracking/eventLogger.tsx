@@ -1,30 +1,28 @@
+import { noop } from 'lodash'
+import { switchMap, take } from 'rxjs/operators'
 import uuid from 'uuid'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../shared/src/platform/context';
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
 import { storage } from '../../browser/storage'
 import { isInPage } from '../../context'
 import { logUserEvent } from '../backend/userEvents'
+import { observeSourcegraphURL } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
-    private sourcegraphURL: string
+    private sourcegraphURL: string | undefined
     private requestGraphQL: PlatformContext['requestGraphQL']
 
-    constructor(sourcegraphURL: string, requestGraphQL: PlatformContext['requestGraphQL']) {
-        this.sourcegraphURL = sourcegraphURL
+    constructor(isExtension: boolean, requestGraphQL: PlatformContext['requestGraphQL']) {
+        observeSourcegraphURL(isExtension)
+            .pipe(take(1))
+            .subscribe(sourcegraphURL => (this.sourcegraphURL = sourcegraphURL))
         this.requestGraphQL = requestGraphQL
         // Fetch user ID on initial load.
-        this.getAnonUserID().then(
-            () => {
-                /* noop */
-            },
-            () => {
-                /* noop */
-            }
-        )
+        this.getAnonUserID().catch(noop)
     }
 
     /**
@@ -68,13 +66,11 @@ export class EventLogger implements TelemetryService {
      *
      * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
      */
-    public logCodeIntelligenceEvent(event: GQL.UserEvent): void {
-        this.getAnonUserID().then(
-            anonUserId => logUserEvent(event, anonUserId, this.sourcegraphURL, this.requestGraphQL),
-            () => {
-                /* noop */
-            }
-        )
+    public async logCodeIntelligenceEvent(event: GQL.UserEvent): Promise<void> {
+        if (this.sourcegraphURL) {
+            const anonUserId = await this.getAnonUserID()
+            logUserEvent(event, anonUserId, this.sourcegraphURL, this.requestGraphQL)
+        }
     }
 
     /**

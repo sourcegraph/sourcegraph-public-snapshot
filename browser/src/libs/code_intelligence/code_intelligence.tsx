@@ -53,7 +53,7 @@ import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
-import { EventLogger } from '../../shared/tracking/eventLogger';
+import { EventLogger } from '../../shared/tracking/eventLogger'
 import { observeSourcegraphURL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
@@ -677,7 +677,7 @@ export async function injectCodeIntelligenceToCodeHost(
         .pipe(take(1))
         .toPromise()
     const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
-    const telemetryService = new EventLogger(sourcegraphURL, platformContext.requestGraphQL)
+    const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
     subscriptions.add(extensionsController)
     subscriptions.add(
         handleCodeHost({
