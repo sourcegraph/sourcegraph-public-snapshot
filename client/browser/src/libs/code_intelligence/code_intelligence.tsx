@@ -659,13 +659,14 @@ export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(cod
 export async function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
+    isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
 ): Promise<Subscription> {
     const subscriptions = new Subscription()
-    const sourcegraphURL = await observeSourcegraphURL()
+    const sourcegraphURL = await observeSourcegraphURL(isExtension)
         .pipe(take(1))
         .toPromise()
-    const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL)
+    const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
     subscriptions.add(extensionsController)
     subscriptions.add(
         handleCodeHost({

@@ -25,7 +25,7 @@ export class SearchCommand {
             this.suggestionFetcher({
                 query,
                 handler: async suggestions => {
-                    const sourcegraphURL = await observeSourcegraphURL()
+                    const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
                         .pipe(take(1))
                         .toPromise()
                     const built = suggestions.map(({ title, url, urlLabel }) => ({
@@ -44,7 +44,7 @@ export class SearchCommand {
         })
 
     public action = async (query: string, disposition?: string): Promise<void> => {
-        const sourcegraphURL = await observeSourcegraphURL()
+        const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
             .pipe(take(1))
             .toPromise()
         const props = {

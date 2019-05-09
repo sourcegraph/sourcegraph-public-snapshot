@@ -85,7 +85,8 @@ async function main(): Promise<void> {
     // For the life time of the content script, add features in reaction to DOM changes
     if (codeHost) {
         console.log('Detected code host', codeHost.name)
-        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost))
+        const isExtension = true
+        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, isExtension))
     }
 }
 

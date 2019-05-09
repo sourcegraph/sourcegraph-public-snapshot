@@ -11,7 +11,8 @@ describe('Platform Context', () => {
                     urlToFile: () => '',
                     getContext: () => ({ repoName: 'foo', privateRepository: true }),
                 },
-                DEFAULT_SOURCEGRAPH_URL
+                DEFAULT_SOURCEGRAPH_URL,
+                false
             )
             return expect(
                 requestGraphQL({

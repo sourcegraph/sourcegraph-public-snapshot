@@ -31,7 +31,8 @@ async function injectModules(): Promise<void> {
     // TODO handle subscription
     const codeHost = await determineCodeHost()
     if (codeHost) {
-        await injectCodeIntelligenceToCodeHost(mutations, codeHost)
+        const isExtension = false
+        await injectCodeIntelligenceToCodeHost(mutations, codeHost, isExtension)
     }
 }
 

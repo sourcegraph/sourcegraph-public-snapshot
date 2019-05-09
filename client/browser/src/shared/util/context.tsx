@@ -4,8 +4,8 @@ import { observeStorageKey } from '../../browser/storage'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
-export function observeSourcegraphURL(): Observable<string> {
-    if (window.SG_ENV === 'EXTENSION') {
+export function observeSourcegraphURL(isExtension: boolean): Observable<string> {
+    if (isExtension) {
         return observeStorageKey('sync', 'sourcegraphURL').pipe(
             map(sourcegraphURL => sourcegraphURL || DEFAULT_SOURCEGRAPH_URL)
         )

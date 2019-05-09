@@ -9,7 +9,8 @@ describe('Extensions controller', () => {
                 urlToFile: () => '',
                 getContext: () => ({ repoName: 'foo', privateRepository: true }),
             },
-            DEFAULT_SOURCEGRAPH_URL
+            DEFAULT_SOURCEGRAPH_URL,
+            false
         )
         return expect(
             extensionsController.executeCommand({

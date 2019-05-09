@@ -23,7 +23,8 @@ import { createBlobURLForBundle } from './worker'
  */
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
-    sourcegraphURL: string
+    sourcegraphURL: string,
+    isExtension: boolean
 ): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
     const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>({
@@ -35,7 +36,7 @@ export function createPlatformContext(
         variables: {}
         mightContainPrivateInfo: boolean
     }): Observable<GraphQLResult<T>> =>
-        observeSourcegraphURL().pipe(
+        observeSourcegraphURL(isExtension).pipe(
             take(1),
             switchMap(sourcegraphURL => {
                 if (mightContainPrivateInfo && sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
@@ -46,21 +47,21 @@ export function createPlatformContext(
                         throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
                     }
                 }
-                if (isInPage) {
-                    return requestGraphQLCommon<T>({
-                        request,
-                        variables,
-                        baseUrl: window.SOURCEGRAPH_URL,
-                        headers: {},
-                        requestOptions: {
-                            crossDomain: true,
-                            withCredentials: true,
-                            async: true,
-                        },
-                    })
+                if (isExtension) {
+                    // In the browser extension, send all GraphQL requests from the background page.
+                    return background.requestGraphQL<T>({ request, variables })
                 }
-                // In the browser extension, send all GraphQL requests from the background page.
-                return background.requestGraphQL<T>({ request, variables })
+                return requestGraphQLCommon<T>({
+                    request,
+                    variables,
+                    baseUrl: window.SOURCEGRAPH_URL,
+                    headers: {},
+                    requestOptions: {
+                        crossDomain: true,
+                        withCredentials: true,
+                        async: true,
+                    },
+                })
             })
         )
 
