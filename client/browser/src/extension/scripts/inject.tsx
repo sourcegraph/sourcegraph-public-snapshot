@@ -27,6 +27,8 @@ setLinkComponent(({ to, children, ...props }) => (
     </a>
 ))
 
+const IS_EXTENSION = true
+
 /**
  * Main entry point into browser extension.
  */
@@ -85,8 +87,7 @@ async function main(): Promise<void> {
     // For the life time of the content script, add features in reaction to DOM changes
     if (codeHost) {
         console.log('Detected code host', codeHost.name)
-        const isExtension = true
-        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, isExtension))
+        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION))
     }
 }
 

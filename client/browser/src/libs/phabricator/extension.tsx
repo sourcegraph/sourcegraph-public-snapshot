@@ -13,6 +13,8 @@ import { metaClickOverride } from './util'
 // Just for informational purposes (see getPlatformContext())
 window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
 
+const IS_EXTENSION = false
+
 // NOT idempotent.
 async function injectModules(): Promise<void> {
     // This is added so that the browser extension doesn't
@@ -31,8 +33,7 @@ async function injectModules(): Promise<void> {
     // TODO handle subscription
     const codeHost = await determineCodeHost()
     if (codeHost) {
-        const isExtension = false
-        await injectCodeIntelligenceToCodeHost(mutations, codeHost, isExtension)
+        await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION)
     }
 }
 
