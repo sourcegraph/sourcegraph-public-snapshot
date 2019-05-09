@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
+- Fixed settings editors only having a few pixels height.
 
 ## 3.3.7
 
