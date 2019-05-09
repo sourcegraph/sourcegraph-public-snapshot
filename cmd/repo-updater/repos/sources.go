@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
@@ -86,6 +87,8 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 		return NewGitoliteSource(svc, cf)
 	case "phabricator":
 		return NewPhabricatorSource(svc, cf)
+	case "awscodecommit":
+		return NewAWSCodeCommitSource(svc, cf)
 	case "other":
 		return NewOtherSource(svc)
 	default:
@@ -679,6 +682,77 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 
 	s.cli, err = phabricator.NewClient(ctx, s.conn.Url, s.conn.Token, hc)
 	return s.cli, err
+}
+
+// An AWSCodeCommitSource yields repositories from a single AWS Code Commit
+// connection configured in Sourcegraph via the external services
+// configuration.
+type AWSCodeCommitSource struct {
+	svc  *ExternalService
+	conn *awsCodeCommitConnection
+}
+
+// NewAWSCodeCommitSource returns a new AWSCodeCommitSourceSource from the given external service.
+func NewAWSCodeCommitSource(svc *ExternalService, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
+	var c schema.AWSCodeCommitConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newAWSCodeCommitSource(svc, &c, cf)
+}
+
+func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
+	conn, err := newAWSCodeCommitConnection(c, cf)
+	if err != nil {
+		return nil, err
+	}
+	return &AWSCodeCommitSource{svc: svc, conn: conn}, nil
+}
+
+// ListRepos returns all AWS Code Commit repositories accessible to all
+// connections configured in Sourcegraph via the external services
+// configuration.
+func (s AWSCodeCommitSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+	rs, err := s.conn.listAllRepositories(ctx)
+	for _, r := range rs {
+		awsRepo, err := awsCodeCommitRepoToRepo(s.svc, r, s.conn)
+		if err != nil {
+			return repos, err
+		}
+		repos = append(repos, awsRepo)
+	}
+	return repos, err
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s AWSCodeCommitSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
+func awsCodeCommitRepoToRepo(
+	svc *ExternalService,
+	repo *awscodecommit.Repository,
+	conn *awsCodeCommitConnection,
+) (*Repo, error) {
+	urn := svc.URN()
+	cloneURL := conn.authenticatedRemoteURL(repo)
+	serviceID := awscodecommit.ServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)
+
+	awsRepo := &Repo{
+		Name:         string(awsCodeCommitRepositoryToRepoPath(conn, repo)),
+		ExternalRepo: *awscodecommit.ExternalRepoSpec(repo, serviceID),
+		Description:  repo.Description,
+		Enabled:      true,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: cloneURL,
+			},
+		},
+		Metadata: repo,
+	}
+
+	return awsRepo, nil
 }
 
 // A OtherSource yields repositories from a single Other connection configured

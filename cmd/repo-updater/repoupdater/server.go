@@ -359,13 +359,10 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			getfn{"GITHUB", repos.GetGitHubRepository},
 			getfn{"GITLAB", repos.GetGitLabRepository},
 			getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
+			getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
 			getfn{"GITOLITE", repos.GetGitoliteRepository},
 		)
 	}
-
-	fns = append(fns,
-		getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
-	)
 
 	var (
 		repo          *protocol.RepoInfo
@@ -461,6 +458,24 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
+		}
+	case "awscodecommit":
+		repo := r.Metadata.(*awscodecommit.Repository)
+		if repo.ARN == "" {
+			break
+		}
+
+		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
+		if len(splittedARN) == 0 {
+			break
+		}
+		region := splittedARN[0]
+		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", region, repo.Name)
+		info.Links = &protocol.RepoLinks{
+			Root:   webURL,
+			Tree:   webURL + "/browse/{rev}/--/{path}",
+			Blob:   webURL + "/browse/{rev}/--/{path}",
+			Commit: webURL + "/commit/{commit}",
 		}
 	}
 

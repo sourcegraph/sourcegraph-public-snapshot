@@ -68,27 +68,114 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 	}{
 		{
 			kind:   "AWSCODECOMMIT",
-			desc:   "without region, accessKeyID, secretAccessKey",
+			desc:   "without region, accessKeyID, secretAccessKey, gitCredentials",
 			config: `{}`,
 			assert: includes(
 				"region: region is required",
 				"accessKeyID: accessKeyID is required",
 				"secretAccessKey: secretAccessKey is required",
+				"gitCredentials: gitCredentials is required",
 			),
 		},
 		{
 			kind:   "AWSCODECOMMIT",
 			desc:   "invalid region",
-			config: `{"region": "foo", "accessKeyID": "bar", "secretAccessKey": "baz"}`,
+			config: `{"region": "foo", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "user", "password": "pw"}}`,
 			assert: includes(
 				`region: region must be one of the following: "ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2", "ca-central-1", "eu-central-1", "eu-west-1", "eu-west-2", "eu-west-3", "sa-east-1", "us-east-1", "us-east-2", "us-west-1", "us-west-2"`,
 			),
 		},
 		{
 			kind:   "AWSCODECOMMIT",
+			desc:   "invalid gitCredentials",
+			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "", "password": ""}}`,
+			assert: includes(
+				`gitCredentials.username: String length must be greater than or equal to 1`,
+				`gitCredentials.password: String length must be greater than or equal to 1`,
+			),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
 			desc:   "valid",
-			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz"}`,
+			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "user", "password": "pw"}}`,
 			assert: equals("<nil>"),
+		},
+		{
+			kind: "AWSCODECOMMIT",
+			desc: "valid exclude",
+			config: `
+			{
+				"region": "eu-west-1",
+				"accessKeyID": "bar",
+				"secretAccessKey": "baz",
+				"gitCredentials": {"username": "user", "password": "pw"},
+				"exclude": [
+					{"name": "foobar-barfoo_bazbar"},
+					{"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb"},
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid empty exclude",
+			config: `{"exclude": []}`,
+			assert: includes(`exclude: Array must have at least 1 items`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": "f o o b a r"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w.-]+$'`),
+		},
+		{
+			kind:   "AWSCODECOMMIT",
+			desc:   "invalid exclude item id",
+			config: `{"exclude": [{"id": "b$a$r"}]}`,
+			assert: includes(`exclude.0.id: Does not match pattern '^[\w-]+$'`),
+		},
+		{
+			kind: "AWSCODECOMMIT",
+			desc: "invalid additional exclude item properties",
+			config: `{"exclude": [{
+				"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb",
+				"bar": "baz"
+			}]}`,
+			assert: includes(`bar: Additional property bar is not allowed`),
+		},
+		{
+			kind: "AWSCODECOMMIT",
+			desc: "both name and id can be specified in exclude",
+			config: `
+			{
+				"region": "eu-west-1",
+				"accessKeyID": "bar",
+				"secretAccessKey": "baz",
+				"gitCredentials": {"username": "user", "password": "pw"},
+				"exclude": [
+					{
+					  "name": "foobar",
+					  "id": "f000ba44-3450-46fd-b7d2-a0ae41f1c5bb"
+					},
+					{
+					  "name": "barfoo",
+					  "id": "13337a11-3450-46fd-b7d2-a0ae41f1c5bb"
+					},
+				]
+			}`,
+			assert: equals(`<nil>`),
 		},
 		{
 			kind:   "GITOLITE",

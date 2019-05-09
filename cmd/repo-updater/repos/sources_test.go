@@ -188,6 +188,18 @@ func TestSources_ListRepos(t *testing.T) {
 				}),
 			},
 			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+				}),
+			},
+			{
 				Kind: "OTHER",
 				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
 					Url: "https://github.com",
@@ -277,6 +289,23 @@ func TestSources_ListRepos(t *testing.T) {
 				}),
 			},
 			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
+						{Name: "stRIPE-gO"},
+						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
+						{Name: "test2", Id: "2686d63d-bff4-4a3e-a94f-3e6df904238d"}, // ID of `test2`
+					},
+				}),
+			},
+			{
 				Kind: "GITOLITE",
 				Config: marshalJSON(t, &schema.GitoliteConnection{
 					Prefix:    "gitolite.mycorp.com/",
@@ -321,6 +350,10 @@ func TestSources_ListRepos(t *testing.T) {
 					case *schema.BitbucketServerConnection:
 						for _, e := range cfg.Exclude {
 							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
+						}
+					case *schema.AWSCodeCommitConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name, id: e.Id})
 						}
 					case *schema.GitoliteConnection:
 						ex = append(ex, excluded{pattern: cfg.Blacklist})
@@ -414,6 +447,18 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -443,6 +488,14 @@ func TestSources_ListRepos(t *testing.T) {
 						want = []string{
 							"gitlab.com/gitlab-org/gitlab-ce",
 							"gitlab.com/gnachman/iterm2",
+						}
+					case "AWSCODECOMMIT":
+						want = []string{
+							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"empty-repo",
+							"stripe-go",
+							"test",
+							"test2",
 						}
 					case "OTHER":
 						want = []string{
@@ -494,6 +547,19 @@ func TestSources_ListRepos(t *testing.T) {
 				}),
 			},
 			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+					RepositoryPathPattern: "a/b/c/{name}",
+				}),
+			},
+			{
 				Kind: "GITOLITE",
 				Config: marshalJSON(t, &schema.GitoliteConnection{
 					// Prefix serves as a sort of repositoryPathPattern for Gitolite
@@ -526,6 +592,14 @@ func TestSources_ListRepos(t *testing.T) {
 						want = []string{
 							"127.0.0.1/a/b/c/ORG/baz",
 						}
+					case "AWSCODECOMMIT":
+						want = []string{
+							"a/b/c/empty-repo",
+							"a/b/c/stripe-go",
+							"a/b/c/test2",
+							"a/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"a/b/c/test",
+						}
 					case "GITOLITE":
 						want = []string{
 							"gitolite.mycorp.com/bar",
@@ -538,6 +612,53 @@ func TestSources_ListRepos(t *testing.T) {
 
 					if !reflect.DeepEqual(have, want) {
 						t.Error(cmp.Diff(have, want))
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "yielded repos have authenticated CloneURLs",
+			svcs: svcs,
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
+
+					urls := []string{}
+					for _, r := range rs {
+						urls = append(urls, r.CloneURLs()...)
+					}
+
+					switch s.Kind {
+					case "AWSCODECOMMIT":
+						want := []string{
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/empty-repo",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/test2",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/test",
+						}
+
+						if have := urls; !reflect.DeepEqual(have, want) {
+							t.Error(cmp.Diff(have, want))
+						}
 					}
 				}
 			},
@@ -720,4 +841,12 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	}
 
 	return string(bs)
+}
+
+func getAWSEnv(envVar string) string {
+	s := os.Getenv(envVar)
+	if s == "" {
+		s = fmt.Sprintf("BOGUS-%s", envVar)
+	}
+	return s
 }

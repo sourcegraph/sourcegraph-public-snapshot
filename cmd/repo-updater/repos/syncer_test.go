@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
@@ -132,8 +133,26 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(bitbucketServerService.URN()),
 	)
 
-	otherService := &repos.ExternalService{
+	awsCodeCommitService := &repos.ExternalService{
 		ID:   30,
+		Kind: "AWSCODECOMMIT",
+	}
+
+	awsCodeCommitRepo := (&repos.Repo{
+		Name:     "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+		Metadata: &awscodecommit.Repository{},
+		Enabled:  true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+			ServiceType: "awscodecommit",
+		},
+	}).With(
+		repos.Opt.RepoSources(awsCodeCommitService.URN()),
+	)
+
+	otherService := &repos.ExternalService{
+		ID:   40,
 		Kind: "OTHER",
 	}
 
@@ -188,6 +207,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{repo: githubRepo, svc: githubService},
 		{repo: gitlabRepo, svc: gitlabService},
 		{repo: bitbucketServerRepo, svc: bitbucketServerService},
+		{repo: awsCodeCommitRepo, svc: awsCodeCommitService},
 		{repo: otherRepo, svc: otherService},
 		{repo: gitoliteRepo, svc: gitoliteService},
 	} {
@@ -399,6 +419,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &gitlab.Project{Archived: true}
 				case "bitbucketserver":
 					update = &bitbucketserver.Repo{Public: true}
+				case "awscodecommit":
+					update = &awscodecommit.Repository{Description: "new description"}
 				case "other", "gitolite":
 					return testCase{}
 				default:
