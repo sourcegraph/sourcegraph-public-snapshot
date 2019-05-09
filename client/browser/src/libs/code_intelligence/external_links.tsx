@@ -37,14 +37,14 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    map(({ context, sourcegraphURL: sourcegraphUrl, ensureRepoExists }) => ({
+                    map(({ context, sourcegraphURL, ensureRepoExists }) => ({
                         context,
-                        sourcegraphUrl,
+                        sourcegraphURL,
                         ensureRepoExists,
                     })),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(({ context, sourcegraphUrl, ensureRepoExists }) =>
-                        ensureRepoExists(context, sourcegraphUrl)
+                    switchMap(({ context, sourcegraphURL, ensureRepoExists }) =>
+                        ensureRepoExists(context, sourcegraphURL)
                     )
                 )
                 .subscribe(repoExists => {
