@@ -1,6 +1,7 @@
-import { DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
-import { getContext } from './context'
-import { mutateGraphQL } from './graphql'
+import { gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
+import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 
 /**
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
@@ -8,23 +9,26 @@ import { mutateGraphQL } from './graphql'
  *
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  */
-export const logUserEvent = (event: string, uid: string): void => {
-    const ctx = getContext({ isRepoSpecific: true })
-    const url = repoUrlCache[ctx.repoKey] || sourcegraphUrl
+export const logUserEvent = (
+    event: string,
+    uid: string,
+    url: string,
+    requestGraphQL: PlatformContext['requestGraphQL']
+): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
-    if (!url || url === DEFAULT_SOURCEGRAPH_URL) {
+    if (url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
-    mutateGraphQL({
-        ctx,
-        request: `mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
-            logUserEvent(event: $event, userCookieID: $userCookieID) {
-                alwaysNil
+    requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
+                logUserEvent(event: $event, userCookieID: $userCookieID) {
+                    alwaysNil
+                }
             }
-        }`,
+        `,
         variables: { event, userCookieID: uid },
-        retry: false,
-        // tslint:disable-next-line: rxjs-no-ignored-subscription
+        mightContainPrivateInfo: false,
     }).subscribe({
         error: error => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail

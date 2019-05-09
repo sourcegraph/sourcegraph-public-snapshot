@@ -13,8 +13,8 @@ describe('<ViewOnSourcegraphButton />', () => {
 
     it('renders a link', () => {
         renderViewContextOnSourcegraph({
-            sourcegraphUrl: 'https://test.com',
-            getContext: () => ({ repoName: 'test' }),
+            sourcegraphURL: 'https://test.com',
+            getContext: () => ({ repoName: 'test', privateRepository: false }),
             viewOnSourcegraphButtonClassProps: {
                 className: 'test',
             },
@@ -28,10 +28,11 @@ describe('<ViewOnSourcegraphButton />', () => {
 
     it('renders a link with the rev when provided', () => {
         renderViewContextOnSourcegraph({
-            sourcegraphUrl: 'https://test.com',
+            sourcegraphURL: 'https://test.com',
             getContext: () => ({
                 repoName: 'test',
                 rev: 'test',
+                privateRepository: false,
             }),
             viewOnSourcegraphButtonClassProps: {
                 className: 'test',
@@ -48,10 +49,11 @@ describe('<ViewOnSourcegraphButton />', () => {
         const configureClickSpy = sinon.spy()
 
         renderViewContextOnSourcegraph({
-            sourcegraphUrl: 'https://sourcegraph.com',
+            sourcegraphURL: 'https://sourcegraph.com',
             getContext: () => ({
                 repoName: 'test',
                 rev: 'test',
+                privateRepository: false,
             }),
             viewOnSourcegraphButtonClassProps: {
                 className: 'test',
@@ -72,10 +74,11 @@ describe('<ViewOnSourcegraphButton />', () => {
         const configureClickSpy = sinon.spy()
 
         renderViewContextOnSourcegraph({
-            sourcegraphUrl: 'https://test.com',
+            sourcegraphURL: 'https://test.com',
             getContext: () => ({
                 repoName: 'test',
                 rev: 'test',
+                privateRepository: false,
             }),
             viewOnSourcegraphButtonClassProps: {
                 className: 'test',

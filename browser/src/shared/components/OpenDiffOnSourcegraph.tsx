@@ -2,12 +2,13 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { IFileDiffConnection } from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
-import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { getPlatformName } from '../util/context'
 import { SourcegraphIconButton } from './Button'
 
-interface Props {
+interface Props extends PlatformContextProps<'requestGraphQL'> {
     openProps: OpenDiffInSourcegraphProps
     className?: string
     iconClassName?: string
@@ -29,6 +30,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
+        const { requestGraphQL } = this.props.platformContext
         this.subscriptions.add(
             // Fetch all fileDiffs in a given comparison. We rely on queryRepositoryComparisonFileDiffs
             // being memoized so that there is at most one network request when viewing
@@ -41,6 +43,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
                             repo: this.props.openProps.repoName,
                             base: this.props.openProps.commit.baseRev,
                             head: this.props.openProps.commit.headRev,
+                            requestGraphQL,
                         }).pipe(
                             map(fileDiff => ({
                                 ...fileDiff,
@@ -78,7 +81,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
     }
 
     private getOpenInSourcegraphUrl(props: OpenDiffInSourcegraphProps): string {
-        const baseUrl = repoUrlCache[props.repoName] || sourcegraphUrl
+        const baseUrl = props.sourcegraphURL
         const url = `${baseUrl}/${props.repoName}`
         const urlToCommit = `${url}/-/compare/${props.commit.baseRev}...${
             props.commit.headRev

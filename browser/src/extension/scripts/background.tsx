@@ -4,19 +4,20 @@ import '../../config/polyfill'
 import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
 import { noop, Observable } from 'rxjs'
-import { bufferCount, filter, groupBy, map, mergeMap } from 'rxjs/operators'
+import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import * as domainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
-import { IGraphQLResponseRoot } from '../../../../shared/src/graphql/schema'
-import { storage } from '../../browser/storage'
+import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { observeStorageKey, storage } from '../../browser/storage'
 import { BackgroundMessageHandlers, defaultStorageItems } from '../../browser/types'
 import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
-import { GraphQLRequestArgs, requestGraphQL } from '../../shared/backend/graphql'
+import { getHeaders } from '../../shared/backend/headers'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { fromBrowserEvent } from '../../shared/util/browser'
-import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, setSourcegraphUrl } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
@@ -46,19 +47,42 @@ const configureOmnibox = (serverUrl: string): void => {
     })
 }
 
-initializeOmniboxInterface()
+const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
+    request,
+    variables,
+}: {
+    request: string
+    variables: {}
+}) =>
+    observeStorageKey('sync', 'sourcegraphURL').pipe(
+        take(1),
+        switchMap(baseUrl =>
+            requestGraphQLCommon<T>({
+                request,
+                variables,
+                baseUrl,
+                headers: getHeaders(),
+                requestOptions: {
+                    crossDomain: true,
+                    withCredentials: true,
+                    async: true,
+                },
+            })
+        )
+    )
+
+initializeOmniboxInterface(requestGraphQL)
 
 async function main(): Promise<void> {
     let { sourcegraphURL } = await storage.sync.get()
     // If no sourcegraphURL is set ensure we default back to https://sourcegraph.com.
     if (!sourcegraphURL) {
         await storage.sync.set({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
-        setSourcegraphUrl(DEFAULT_SOURCEGRAPH_URL)
         sourcegraphURL = DEFAULT_SOURCEGRAPH_URL
     }
 
     async function syncClientConfiguration(): Promise<void> {
-        const config = await resolveClientConfiguration().toPromise()
+        const config = await resolveClientConfiguration(requestGraphQL).toPromise()
         // ClientConfiguration is the new storage option.
         // Request permissions for the urls.
         await storage.sync.set({
@@ -95,7 +119,6 @@ async function main(): Promise<void> {
         }
 
         if (changes.sourcegraphURL && changes.sourcegraphURL.newValue) {
-            setSourcegraphUrl(changes.sourcegraphURL.newValue)
             await syncClientConfiguration()
             configureOmnibox(changes.sourcegraphURL.newValue)
         }
@@ -165,8 +188,14 @@ async function main(): Promise<void> {
             return await createBlobURLForBundle(bundleUrl)
         },
 
-        async requestGraphQL<T extends IGraphQLResponseRoot>(params: GraphQLRequestArgs): Promise<T> {
-            return await requestGraphQL<T>(params).toPromise()
+        async requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
+            request,
+            variables,
+        }: {
+            request: string
+            variables: {}
+        }): Promise<GraphQLResult<T>> {
+            return await requestGraphQL<T>({ request, variables }).toPromise()
         },
     }
 
