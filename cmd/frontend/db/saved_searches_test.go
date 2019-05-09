@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
@@ -218,5 +219,50 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 	}}
 	if !reflect.DeepEqual(savedSearch, want) {
 		t.Errorf("query is '%v+', want '%v+'", savedSearch, want)
+	}
+}
+
+func TestSavedSearchesGetByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := dbtesting.TestContext(t)
+	_, err := Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	if err != nil {
+		t.Fatal("can't create user", err)
+	}
+	userID := int32(1)
+	fake := &types.SavedSearch{
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		UserID:      &userID,
+		OrgID:       nil,
+	}
+	ss, err := SavedSearches.Create(ctx, fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ss == nil {
+		t.Fatalf("no saved search returned, create failed")
+	}
+	savedSearch, err := SavedSearches.GetByID(ctx, ss.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := &api.SavedQuerySpecAndConfig{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &userID}, Key: "1"}, Config: api.ConfigSavedQuery{
+		Key:         "1",
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		UserID:      &userID,
+		OrgID:       nil}}
+
+	if !reflect.DeepEqual(savedSearch, want) {
+		t.Errorf("query is '%v+', want '%v+'", *savedSearch, *want)
 	}
 }

@@ -13,4 +13,5 @@ type MockSavedSearches struct {
 	Create                    func(ctx context.Context, newSavedSearch *types.SavedSearch) (*types.SavedSearch, error)
 	Update                    func(ctx context.Context, savedSearch *types.SavedSearch) (*types.SavedSearch, error)
 	Delete                    func(ctx context.Context, id int32) error
+	GetByID                   func(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error)
 }
