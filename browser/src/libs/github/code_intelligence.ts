@@ -309,12 +309,13 @@ export const githubCodeHost: CodeHost = {
     setElementTooltip,
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
     urlToFile: (
+        sourcegraphURL: string,
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => {
         if (location.viewState) {
             // A view state means that a panel must be shown, and panels are currently only supported on
             // Sourcegraph (not code hosts).
-            return toAbsoluteBlobURL(location)
+            return toAbsoluteBlobURL(sourcegraphURL, location)
         }
 
         const rev = location.rev || 'HEAD'

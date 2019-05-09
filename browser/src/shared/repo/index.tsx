@@ -4,6 +4,7 @@ export interface DiffResolvedRevSpec {
 }
 
 export interface OpenInSourcegraphProps {
+    sourcegraphURL: string
     repoName: string
     rev: string
     filePath?: string
