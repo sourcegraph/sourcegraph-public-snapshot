@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 )
@@ -36,4 +37,32 @@ Use "src extsvc [command] -h" for more information about a command.
 			fmt.Println(usage)
 		},
 	})
+}
+
+func lookupExternalServiceByName(name string) (id string, err error) {
+	var result struct {
+		ExternalServices struct {
+			Nodes []struct {
+				DisplayName string
+				ID          string
+			}
+		}
+	}
+	err = (&apiRequest{
+		query: externalServicesListQuery,
+		vars: map[string]interface{}{
+			"first": 99999,
+		},
+		result: &result,
+	}).do()
+	for _, svc := range result.ExternalServices.Nodes {
+		if svc.DisplayName == name {
+			id = svc.ID
+			break
+		}
+	}
+	if id == "" {
+		return "", errors.New("no such external service")
+	}
+	return
 }
