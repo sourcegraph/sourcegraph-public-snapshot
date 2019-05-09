@@ -57,6 +57,9 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 
 	t.Run("migrate global saved query", func(t *testing.T) {
 		u, err := db.Users.GetByUsername(ctx, "u")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if _, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query global", "query": "test type:diff"}]}`); err != nil {
 			t.Fatal(err)
 		}
