@@ -5,6 +5,7 @@ import React from 'react'
 import { Observable } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
+import { EventLogger } from '../../shared/tracking/eventLogger'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
@@ -30,10 +31,12 @@ async function injectModules(): Promise<void> {
         subtree: true,
     }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
 
+    const telemetryService = new EventLogger()
+
     // TODO handle subscription
     const codeHost = await determineCodeHost()
     if (codeHost) {
-        await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION)
+        await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION, telemetryService)
     }
 }
 

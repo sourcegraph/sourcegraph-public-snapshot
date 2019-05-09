@@ -9,6 +9,7 @@ import { storage } from '../../browser/storage'
 import { determineCodeHost as detectCodeHost, injectCodeIntelligenceToCodeHost } from '../../libs/code_intelligence'
 import { initSentry } from '../../libs/sentry'
 import { checkIsSourcegraph, injectSourcegraphApp } from '../../libs/sourcegraph/inject'
+import { EventLogger } from '../../shared/tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
@@ -84,10 +85,12 @@ async function main(): Promise<void> {
     // Add a marker to the DOM that the extension is loaded
     injectSourcegraphApp(extensionMarker)
 
+    const telemetryService = new EventLogger()
+
     // For the life time of the content script, add features in reaction to DOM changes
     if (codeHost) {
         console.log('Detected code host', codeHost.name)
-        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION))
+        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION, telemetryService))
     }
 }
 

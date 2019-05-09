@@ -16,6 +16,7 @@ import { Controller } from '../../../../shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -141,6 +142,7 @@ describe('code_intelligence', () => {
                     showGlobalDebug: false,
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -166,6 +168,7 @@ describe('code_intelligence', () => {
                     showGlobalDebug: false,
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
                 })
             )
             const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -186,6 +189,7 @@ describe('code_intelligence', () => {
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
                 })
             )
             const globalDebugMount = document.body.querySelector('.global-debug')
@@ -227,6 +231,7 @@ describe('code_intelligence', () => {
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
                 })
             )
             const editors = await from(services.editor.editors)
@@ -289,6 +294,7 @@ describe('code_intelligence', () => {
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
                 })
             )
             const activeEditor = await from(extensionAPI.app.activeWindowChanges)
@@ -375,6 +381,7 @@ describe('code_intelligence', () => {
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
                 })
             )
             let editors = await from(services.editor.editors)
