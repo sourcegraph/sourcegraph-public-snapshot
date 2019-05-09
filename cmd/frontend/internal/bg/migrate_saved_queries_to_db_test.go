@@ -17,6 +17,68 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 
 	ctx := dbtesting.TestContext(t)
 
+	t.Run("migrate user saved query", func(t *testing.T) {
+		u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`); err != nil {
+			t.Fatal(err)
+		}
+		MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx)
+		ss, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, u.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []api.SavedQuerySpecAndConfig{{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &u.ID}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}}}
+		if reflect.DeepEqual(want, ss) {
+			t.Errorf("want %v, got %v", want, ss)
+		}
+	})
+
+	t.Run("migrate org saved query", func(t *testing.T) {
+		o, err := db.Orgs.Create(ctx, "test-org", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{Org: &o.ID}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query", "query": "test type:diff"}]}`); err != nil {
+			t.Fatal(err)
+		}
+		MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx)
+		ss, err := db.SavedSearches.ListSavedSearchesByOrgID(ctx, o.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []api.SavedQuerySpecAndConfig{{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: &o.ID}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: nil, OrgID: &o.ID, SlackWebhookURL: nil}}}
+		if reflect.DeepEqual(want, ss) {
+			t.Errorf("want %v, got %v", want, ss)
+		}
+	})
+
+	t.Run("migrate global saved query", func(t *testing.T) {
+		u, err := db.Users.GetByUsername(ctx, "u")
+		if _, err := db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{}, nil, nil, `{"search.savedQueries": [{"key": "1a2b3c", "description": "test query global", "query": "test type:diff"}]}`); err != nil {
+			t.Fatal(err)
+		}
+		MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(ctx)
+		ss, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, u.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []api.SavedQuerySpecAndConfig{{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &u.ID}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}}, {Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query global", Query: "test type:diff", Notify: false, NotifySlack: false, UserID: &u.ID, OrgID: nil, SlackWebhookURL: nil}}}
+		if reflect.DeepEqual(want, ss) {
+			t.Errorf("want %v, got %v", want, ss)
+		}
+	})
+}
+
+func TestDoMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := dbtesting.TestContext(t)
+
 	t.Run("valid", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u1"})
 		if err != nil {
@@ -83,13 +145,6 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 		}
 		if err != nil {
 			t.Fatal(err)
-		}
-		allSaved, err := db.SavedSearches.ListAll(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, a := range allSaved {
-			t.Logf("%v+", a)
 		}
 		got := ss[0]
 		t.Logf("%v+", ss)
@@ -172,7 +227,7 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := insertSavedQueryIntoDB(ctx, settings, &SavedQueryField{SavedQueries: []SavedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
+		if err := insertSavedQueryIntoDB(ctx, settings, &savedQueryField{SavedQueries: []savedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
 			t.Fatal(err)
 		}
 		ss, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, u.ID)
@@ -199,7 +254,7 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := insertSavedQueryIntoDB(ctx, settings, &SavedQueryField{SavedQueries: []SavedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
+		if err := insertSavedQueryIntoDB(ctx, settings, &savedQueryField{SavedQueries: []savedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
 			t.Fatal(err)
 		}
 		ss, err := db.SavedSearches.ListSavedSearchesByOrgID(ctx, org.ID)
@@ -227,7 +282,7 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := insertSavedQueryIntoDB(ctx, settings, &SavedQueryField{SavedQueries: []SavedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
+		if err := insertSavedQueryIntoDB(ctx, settings, &savedQueryField{SavedQueries: []savedQuery{{Key: "1a2b3c", Description: "test query", Query: "test type:diff"}}}); err != nil {
 			t.Fatal(err)
 		}
 		ss, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, user.ID)
@@ -274,7 +329,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = MigrateSlackWebhookUrlsToSavedSearches(ctx)
+		err = migrateSlackWebhookUrlsToSavedSearches(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -316,7 +371,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = MigrateSlackWebhookUrlsToSavedSearches(ctx)
+		err = migrateSlackWebhookUrlsToSavedSearches(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -357,7 +412,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = MigrateSlackWebhookUrlsToSavedSearches(ctx)
+		err = migrateSlackWebhookUrlsToSavedSearches(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -391,7 +446,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = MigrateSlackWebhookUrlsToSavedSearches(ctx)
+		err = migrateSlackWebhookUrlsToSavedSearches(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -446,7 +501,7 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = MigrateSlackWebhookUrlsToSavedSearches(ctx)
+		err = migrateSlackWebhookUrlsToSavedSearches(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
