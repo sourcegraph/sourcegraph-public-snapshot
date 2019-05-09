@@ -279,10 +279,10 @@ func TestSources_ListRepos(t *testing.T) {
 			{
 				Kind: "GITOLITE",
 				Config: marshalJSON(t, &schema.GitoliteConnection{
-					Prefix: "gitolite.mycorp.com/",
-					Host:   "ssh://git@127.0.0.1:2222",
+					Prefix:    "gitolite.mycorp.com/",
+					Host:      "ssh://git@127.0.0.1:2222",
+					Blacklist: `gitolite\.mycorp\.com\/foo`,
 					Exclude: []*schema.ExcludedGitoliteRepo{
-						{Name: "foo"},
 						{Name: "bar"},
 					},
 				}),
@@ -323,6 +323,7 @@ func TestSources_ListRepos(t *testing.T) {
 							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
 						}
 					case *schema.GitoliteConnection:
+						ex = append(ex, excluded{pattern: cfg.Blacklist})
 						for _, e := range cfg.Exclude {
 							ex = append(ex, excluded{name: e.Name})
 						}

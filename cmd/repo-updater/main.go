@@ -196,9 +196,11 @@ func main() {
 				}
 
 				if newSyncerEnabled["GITOLITE"] {
-					if err := gps.Sync(ctx, rs); err != nil {
-						log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
-					}
+					go func() {
+						if err := gps.Sync(ctx, rs); err != nil {
+							log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
+						}
+					}()
 				}
 			}
 		}()

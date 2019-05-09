@@ -474,8 +474,9 @@ func (s *GitoliteSource) ListRepos(ctx context.Context) ([]*Repo, error) {
 
 	repos := make([]*Repo, 0, len(all))
 	for _, r := range all {
-		if !s.excludes(r) {
-			repos = append(repos, gitoliteRepoToRepo(s.svc, r, s.conn))
+		repo := gitoliteRepoToRepo(s.svc, r, s.conn)
+		if !s.excludes(r, repo) {
+			repos = append(repos, repo)
 		}
 	}
 
@@ -487,9 +488,9 @@ func (s GitoliteSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
-func (s GitoliteSource) excludes(r *gitolite.Repo) bool {
-	return strings.ContainsAny(r.Name, "\\^$|()[]*?{},") ||
-		s.exclude[r.Name] ||
+func (s GitoliteSource) excludes(gr *gitolite.Repo, r *Repo) bool {
+	return s.exclude[gr.Name] ||
+		strings.ContainsAny(r.Name, "\\^$|()[]*?{},") ||
 		(s.blacklist != nil && s.blacklist.MatchString(r.Name))
 }
 

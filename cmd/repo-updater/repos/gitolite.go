@@ -135,6 +135,11 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 		}
 	}
 
+	if len(ids) == 0 {
+		log15.Info("phabricator metadata: nothing to sync")
+		return nil
+	}
+
 	es, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "gitolite-phabricator-metadata-syncer.store.list-external-services")
