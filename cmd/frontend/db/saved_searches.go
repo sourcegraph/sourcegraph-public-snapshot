@@ -85,6 +85,43 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 	return savedSearches, nil
 }
 
+func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
+	if Mocks.SavedSearches.GetByID != nil {
+		return Mocks.SavedSearches.GetByID(ctx, id)
+	}
+	var savedSearch api.SavedQuerySpecAndConfig
+
+	err := dbconn.Global.QueryRowContext(ctx, `SELECT
+		id,
+		description,
+		query,
+		notify_owner,
+		notify_slack,
+		user_id,
+		org_id,
+		slack_webhook_url
+		FROM saved_searches WHERE id=$1`, id).Scan(
+		&savedSearch.Config.Key,
+		&savedSearch.Config.Description,
+		&savedSearch.Config.Query,
+		&savedSearch.Config.Notify,
+		&savedSearch.Config.NotifySlack,
+		&savedSearch.Config.UserID,
+		&savedSearch.Config.OrgID,
+		&savedSearch.Config.SlackWebhookURL)
+	savedSearch.Spec.Key = savedSearch.Config.Key
+	if savedSearch.Config.UserID != nil {
+		savedSearch.Spec.Subject = api.SettingsSubject{User: savedSearch.Config.UserID}
+	} else if savedSearch.Config.OrgID != nil {
+		savedSearch.Spec.Subject = api.SettingsSubject{Org: savedSearch.Config.OrgID}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	return &savedSearch, err
+}
+
 // ListSavedSearchesByUserID lists all the saved searches associated with a user,
 // including saved searches in organizations the user is a member of.
 //
