@@ -657,7 +657,6 @@ func TestSources_ListRepos(t *testing.T) {
 						}
 
 						if have := urls; !reflect.DeepEqual(have, want) {
-							fmt.Printf("have=%q\n", have)
 							t.Error(cmp.Diff(have, want))
 						}
 					}
