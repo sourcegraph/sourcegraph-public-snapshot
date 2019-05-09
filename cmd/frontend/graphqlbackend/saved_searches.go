@@ -107,7 +107,7 @@ func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
-	savedSearch, err := db.SavedSearches.GetSavedSearchByID(ctx, id)
+	savedSearch, err := db.SavedSearches.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	ss, err := db.SavedSearches.GetSavedSearchByID(ctx, id)
+	ss, err := db.SavedSearches.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

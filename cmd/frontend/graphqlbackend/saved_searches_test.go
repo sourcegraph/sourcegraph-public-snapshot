@@ -146,7 +146,7 @@ func TestDeleteSavedSearch(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true, ID: key}, nil
 	}
-	db.Mocks.SavedSearches.GetSavedSearchByID = func(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
+	db.Mocks.SavedSearches.GetByID = func(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
 		return &api.SavedQuerySpecAndConfig{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &key}, Key: "1"}, Config: api.ConfigSavedQuery{Key: "1", Description: "test query", Query: "test type:diff", Notify: true, NotifySlack: false, UserID: &key, OrgID: nil}}, nil
 	}
 
