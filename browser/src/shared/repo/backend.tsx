@@ -16,7 +16,7 @@ export const resolveRepo = memoizeObservable(
             ctx: getContext({ repoKey: ctx.repoName }),
             request: `query ResolveRepo($repoName: String!) {
                 repository(name: $repoName) {
-                    url
+                    name
                 }
             }`,
             variables: { ...ctx },
@@ -26,7 +26,7 @@ export const resolveRepo = memoizeObservable(
                     throw new RepoNotFoundError(ctx.repoName)
                 }
 
-                return result.data.repository.url
+                return result.data.repository.name
             }, catchError((err, caught) => caught))
         ),
     makeRepoURI
