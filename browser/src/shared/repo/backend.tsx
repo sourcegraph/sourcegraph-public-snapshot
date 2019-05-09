@@ -7,11 +7,11 @@ import { CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundEr
 import { queryGraphQL } from '../backend/graphql'
 
 /**
- * @return Observable that emits the repo URL
+ * @return Observable that emits if the repo exists on the instance.
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
 export const resolveRepo = memoizeObservable(
-    (ctx: { repoName: string }): Observable<string> =>
+    (ctx: { repoName: string }): Observable<void> =>
         queryGraphQL({
             ctx: getContext({ repoKey: ctx.repoName }),
             request: `query ResolveRepo($repoName: String!) {
@@ -25,8 +25,6 @@ export const resolveRepo = memoizeObservable(
                 if (!result.data || !result.data.repository) {
                     throw new RepoNotFoundError(ctx.repoName)
                 }
-
-                return result.data.repository.name
             }, catchError((err, caught) => caught))
         ),
     makeRepoURI
