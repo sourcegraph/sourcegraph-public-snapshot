@@ -7,7 +7,7 @@ import { noop, Observable } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import * as domainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../../shared/src/api/extension/worker'
-import { gql, GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../../shared/src/graphql/graphql'
+import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { BackgroundMessageHandlers, defaultStorageItems } from '../../browser/types'
@@ -47,7 +47,13 @@ const configureOmnibox = (serverUrl: string): void => {
     })
 }
 
-const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(request: string, variables: {}) =>
+const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
+    request,
+    variables,
+}: {
+    request: string
+    variables: {}
+}) =>
     observeStorageKey('sync', 'sourcegraphURL').pipe(
         take(1),
         switchMap(baseUrl =>
@@ -191,7 +197,7 @@ async function main(): Promise<void> {
             request: string
             variables: {}
         }): Promise<GraphQLResult<T>> {
-            return await requestGraphQL<T>(request, variables).toPromise()
+            return await requestGraphQL<T>({ request, variables }).toPromise()
         },
     }
 

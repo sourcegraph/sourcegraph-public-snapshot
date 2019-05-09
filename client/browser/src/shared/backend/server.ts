@@ -11,8 +11,8 @@ import { PlatformContext } from '../../../../../shared/src/platform/context'
 export const resolveClientConfiguration = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<GQL.IClientConfigurationDetails> =>
-    requestGraphQL<GQL.IQuery>(
-        gql`query ClientConfiguration() {
+    requestGraphQL<GQL.IQuery>({
+        request: gql`query ClientConfiguration() {
             clientConfiguration {
                 contentScriptUrls
                 parentSourcegraph {
@@ -20,9 +20,9 @@ export const resolveClientConfiguration = (
                 }
             }
         }`,
-        {},
-        false
-    ).pipe(
+        variables: {},
+        mightContainPrivateInfo: false,
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ clientConfiguration }) => clientConfiguration, catchError((err, caught) => caught))
     )
@@ -30,8 +30,8 @@ export const resolveClientConfiguration = (
 export const fetchCurrentUser = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<GQL.IUser | undefined> =>
-    requestGraphQL<GQL.IQuery>(
-        gql`query CurrentUser() {
+    requestGraphQL<GQL.IQuery>({
+        request: gql`query CurrentUser() {
             currentUser {
                 id
                 displayName
@@ -45,16 +45,16 @@ export const fetchCurrentUser = (
                 siteAdmin
             }
         }`,
-        {},
-        false
-    ).pipe(
+        variables: {},
+        mightContainPrivateInfo: false,
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ currentUser }) => currentUser || undefined, catchError((err, caught) => caught))
     )
 
 export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<GQL.ISite> =>
-    requestGraphQL<GQL.IQuery>(
-        gql`
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
             query SiteProductVersion {
                 site {
                     productVersion
@@ -63,9 +63,9 @@ export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Ob
                 }
             }
         `,
-        {},
-        false
-    ).pipe(
+        variables: {},
+        mightContainPrivateInfo: false,
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ site }) => site, catchError((err, caught) => caught))
     )

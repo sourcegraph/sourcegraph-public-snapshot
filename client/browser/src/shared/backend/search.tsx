@@ -145,8 +145,8 @@ const symbolsFragment = gql`
 `
 
 const fetchSuggestions = (query: string, first: number, requestGraphQL: PlatformContext['requestGraphQL']) =>
-    requestGraphQL<GQL.IQuery>(
-        gql`
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
             query SearchSuggestions($query: String!, $first: Int!) {
                 search(query: $query) {
                     suggestions(first: $first) {
@@ -173,14 +173,12 @@ const fetchSuggestions = (query: string, first: number, requestGraphQL: Platform
             }
             ${symbolsFragment}
         `,
-        {
+        variables: {
             query,
-            // The browser extension API only takes 5 suggestions
             first,
         },
-        // This request may leak private repository names
-        true
-    ).pipe(
+        mightContainPrivateInfo: true,
+    }).pipe(
         map(dataOrThrowErrors),
         mergeMap(({ search }) => {
             if (!search || !search.suggestions) {
@@ -229,8 +227,8 @@ export const fetchSymbols = (
     query: string,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<GQL.ISymbol[]> =>
-    requestGraphQL<GQL.IQuery>(
-        gql`
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
             query SearchResults($query: String!) {
                 search(query: $query) {
                     results {
@@ -246,12 +244,11 @@ export const fetchSymbols = (
             }
             ${symbolsFragment}
         `,
-        {
+        variables: {
             query,
         },
-        // This request may leak private repository names
-        true
-    ).pipe(
+        mightContainPrivateInfo: true,
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ search }) => {
             if (!search) {

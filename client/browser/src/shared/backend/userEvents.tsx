@@ -19,17 +19,17 @@ export const logUserEvent = (
     if (url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
-    requestGraphQL<GQL.IMutation>(
-        gql`
+    requestGraphQL<GQL.IMutation>({
+        request: gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
                 logUserEvent(event: $event, userCookieID: $userCookieID) {
                     alwaysNil
                 }
             }
         `,
-        { event, userCookieID: uid },
-        false
-    ).subscribe({
+        variables: { event, userCookieID: uid },
+        mightContainPrivateInfo: false,
+    }).subscribe({
         error: error => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
             // (e.g., if CODEINTELINTEGRATION user events aren't yet supported).

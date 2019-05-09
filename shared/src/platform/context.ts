@@ -53,17 +53,24 @@ export interface PlatformContext {
      * Sends a request to the Sourcegraph GraphQL API and returns the response.
      *
      * @template R The GraphQL result type
-     * @param request The GraphQL request (query or mutation)
-     * @param variables An object whose properties are GraphQL query name-value variable pairs
-     * @param mightContainPrivateInfo 🚨 SECURITY: Whether or not sending the GraphQL request to Sourcegraph.com
      * could leak private information such as repository names.
      * @return Observable that emits the result or an error if the HTTP request failed
      */
-    requestGraphQL<R extends GQL.IQuery | GQL.IMutation>(
-        request: string,
-        variables: {},
+    requestGraphQL<R extends GQL.IQuery | GQL.IMutation>(options: {
+        /**
+         * The GraphQL request (query or mutation)
+         */
+        request: string
+        /**
+         * An object whose properties are GraphQL query name-value variable pairs
+         */
+        variables: {}
+        /**
+         * 🚨 SECURITY: Whether or not sending the GraphQL request to Sourcegraph.com
+         * could leak private information such as repository names.
+         */
         mightContainPrivateInfo: boolean
-    ): Observable<GraphQLResult<R>>
+    }): Observable<GraphQLResult<R>>
 
     /**
      * Forces the currently displayed tooltip, if any, to update its contents.

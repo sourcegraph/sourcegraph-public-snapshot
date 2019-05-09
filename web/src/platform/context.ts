@@ -52,7 +52,7 @@ export function createPlatformContext(): PlatformContext {
             }
             updatedSettings.next(await fetchViewerSettings().toPromise())
         },
-        requestGraphQL: (request, variables) =>
+        requestGraphQL: ({ request, variables }) =>
             requestGraphQL(
                 gql`
                     ${request}

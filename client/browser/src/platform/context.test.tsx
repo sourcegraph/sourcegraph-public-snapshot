@@ -11,17 +11,17 @@ describe('Platform Context', () => {
                 getContext: () => ({ repoName: 'foo', privateRepository: true }),
             })
             return expect(
-                requestGraphQL(
-                    gql`
+                requestGraphQL({
+                    request: gql`
                         query ResolveRepo($repoName: String!) {
                             repository(name: $repoName) {
                                 url
                             }
                         }
                     `,
-                    { repoName: 'foo' },
-                    true
-                ).toPromise()
+                    variables: { repoName: 'foo' },
+                    mightContainPrivateInfo: true,
+                }).toPromise()
             ).rejects.toMatchObject({
                 message:
                     'A ResolveRepo GraphQL request to the public Sourcegraph.com was blocked because the current repository is private.',

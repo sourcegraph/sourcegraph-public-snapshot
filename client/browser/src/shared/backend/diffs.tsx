@@ -16,8 +16,8 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
         head: string | null
         first?: number
     } & Pick<PlatformContext, 'requestGraphQL'>): Observable<GQL.IFileDiffConnection> =>
-        requestGraphQL<GQL.IQuery>(
-            gql`
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
                 query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
                     repository(name: $repo) {
                         comparison(base: $base, head: $head) {
@@ -37,10 +37,9 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
                     internalID
                 }
             `,
-            { repo: args.repo, base: args.base, head: args.head, first: args.first },
-            // This request may leak private repository names
-            true
-        ).pipe(
+            variables: { repo: args.repo, base: args.base, head: args.head, first: args.first },
+            mightContainPrivateInfo: true,
+        }).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {

@@ -43,7 +43,7 @@ const createMockPlatformContext = (
     // Mock implementation of `requestGraphQL()` that returns successful
     // responses for `ResolveRev` and `BlobContent` queries, so that
     // code views can be resolved
-    requestGraphQL: (request): Observable<any> => {
+    requestGraphQL: ({ request }): Observable<any> => {
         if (request.trim().startsWith('query ResolveRev')) {
             return of({
                 data: {

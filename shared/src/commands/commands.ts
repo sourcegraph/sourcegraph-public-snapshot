@@ -89,13 +89,13 @@ export function registerBuiltinClientCommands(
                 // extension) to check that parameter and prevent the request
                 // from being sent to Sourcegraph.com.
                 from(
-                    context.requestGraphQL(
-                        gql`
+                    context.requestGraphQL({
+                        request: gql`
                             ${query}
                         `,
                         variables,
-                        true
-                    )
+                        mightContainPrivateInfo: true,
+                    })
                 ).toPromise(),
         })
     )
