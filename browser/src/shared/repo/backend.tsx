@@ -19,18 +19,18 @@ import {
  */
 export const resolveRepo = memoizeObservable(
     ({ repoName, requestGraphQL }: RepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
-        requestGraphQL<GQL.IQuery>(
-            gql`
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
                 query ResolveRepo($repoName: String!) {
                     repository(name: $repoName) {
                         url
                     }
                 }
             `,
-            { repoName },
+            variables: { repoName },
             // This request may leak private repository names
-            true
-        ).pipe(
+            mightContainPrivateInfo: true,
+        }).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {
@@ -53,8 +53,8 @@ export const resolveRev = memoizeObservable(
         ...ctx
     }: RepoSpec & Partial<RevSpec> & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
         from(
-            requestGraphQL<GQL.IQuery>(
-                gql`
+            requestGraphQL<GQL.IQuery>({
+                request: gql`
                     query ResolveRev($repoName: String!, $rev: String!) {
                         repository(name: $repoName) {
                             mirrorInfo {
@@ -66,10 +66,9 @@ export const resolveRev = memoizeObservable(
                         }
                     }
                 `,
-                { ...ctx, rev: ctx.rev || '' },
-                // This request may leak private repository names
-                true
-            )
+                variables: { ...ctx, rev: ctx.rev || '' },
+                mightContainPrivateInfo: true,
+            })
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
@@ -119,8 +118,8 @@ export const fetchBlobContentLines = memoizeObservable(
         ...ctx
     }: RepoSpec & ResolvedRevSpec & FileSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string[]> =>
         from(
-            requestGraphQL<GQL.IQuery>(
-                gql`
+            requestGraphQL<GQL.IQuery>({
+                request: gql`
                     query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
                         repository(name: $repoName) {
                             commit(rev: $commitID) {
@@ -131,10 +130,9 @@ export const fetchBlobContentLines = memoizeObservable(
                         }
                     }
                 `,
-                ctx,
-                // This request may leak private repository names
-                true
-            )
+                variables: ctx,
+                mightContainPrivateInfo: true,
+            })
         ).pipe(
             map(({ data, errors }) => {
                 if (!data) {

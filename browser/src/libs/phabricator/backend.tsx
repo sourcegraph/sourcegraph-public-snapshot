@@ -257,19 +257,18 @@ interface CreatePhabricatorRepoOptions extends Pick<PlatformContext, 'requestGra
 }
 
 const createPhabricatorRepo = memoizeObservable(
-    ({ requestGraphQL, ...options }: CreatePhabricatorRepoOptions): Observable<void> =>
-        requestGraphQL<GQL.IMutation>(
-            gql`
+    ({ requestGraphQL, ...variables }: CreatePhabricatorRepoOptions): Observable<void> =>
+        requestGraphQL<GQL.IMutation>({
+            request: gql`
                 mutation addPhabricatorRepo($callsign: String!, $repoName: String!, $phabricatorURL: String!) {
                     addPhabricatorRepo(callsign: $callsign, uri: $repoName, url: $phabricatorURL) {
                         alwaysNil
                     }
                 }
             `,
-            options,
-            // This request may leak private repo names
-            true
-        ).pipe(mapTo(undefined)),
+            variables,
+            mightContainPrivateInfo: true,
+        }).pipe(mapTo(undefined)),
     ({ callsign }) => callsign
 )
 
@@ -478,9 +477,9 @@ interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'> 
 }
 
 const resolveStagingRev = memoizeObservable(
-    ({ requestGraphQL, ...options }: ResolveStagingOptions): Observable<string | null> =>
-        requestGraphQL<GQL.IMutation>(
-            gql`
+    ({ requestGraphQL, ...variables }: ResolveStagingOptions): Observable<string | null> =>
+        requestGraphQL<GQL.IMutation>({
+            request: gql`
                 mutation ResolveStagingRev(
                     $repoName: String!
                     $diffID: ID!
@@ -505,10 +504,9 @@ const resolveStagingRev = memoizeObservable(
                     }
                 }
             `,
-            options,
-            // This request may leak private repo names
-            true
-        ).pipe(
+            variables,
+            mightContainPrivateInfo: true,
+        }).pipe(
             map(dataOrThrowErrors),
             map(result => {
                 if (!result.resolvePhabricatorDiff) {

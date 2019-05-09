@@ -26,11 +26,15 @@ export function createPlatformContext({
     getContext,
 }: Pick<CodeHost, 'urlToFile' | 'getContext'>): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
-    const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>(
-        request: string,
-        variables: {},
+    const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>({
+        request,
+        variables,
+        mightContainPrivateInfo,
+    }: {
+        request: string
+        variables: {}
         mightContainPrivateInfo: boolean
-    ): Observable<GraphQLResult<T>> =>
+    }): Observable<GraphQLResult<T>> =>
         observeSourcegraphURL().pipe(
             take(1),
             switchMap(sourcegraphURL => {

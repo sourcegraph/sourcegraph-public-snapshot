@@ -93,8 +93,8 @@ function editSettings(
     edit: GQL.IConfigurationEdit
 ): Promise<void> {
     return from(
-        requestGraphQL(
-            gql`
+        requestGraphQL({
+            request: gql`
                 mutation EditSettings($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
                     configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                         editConfiguration(edit: $edit) {
@@ -105,9 +105,9 @@ function editSettings(
                     }
                 }
             `,
-            { subject, lastID, edit },
-            false
-        )
+            variables: { subject, lastID, edit },
+            mightContainPrivateInfo: false,
+        })
     )
         .pipe(
             map(dataOrThrowErrors),
@@ -131,8 +131,8 @@ export function overwriteSettings(
     contents: string
 ): Promise<void> {
     return from(
-        requestGraphQL(
-            gql`
+        requestGraphQL({
+            request: gql`
                 mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
                     settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                         overwriteSettings(contents: $contents) {
@@ -143,9 +143,9 @@ export function overwriteSettings(
                     }
                 }
             `,
-            { subject, lastID, contents },
-            false
-        )
+            variables: { subject, lastID, contents },
+            mightContainPrivateInfo: false,
+        })
     )
         .pipe(
             map(dataOrThrowErrors),

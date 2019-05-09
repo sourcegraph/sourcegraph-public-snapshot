@@ -42,8 +42,8 @@ export function queryConfiguredRegistryExtensions(
         prioritizeExtensionIDs: extensionIDs,
     }
     return from(
-        requestGraphQL<GQL.IQuery>(
-            gql`
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
                 query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                     extensionRegistry {
                         extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
@@ -61,8 +61,8 @@ export function queryConfiguredRegistryExtensions(
                 }
             `,
             variables,
-            false
-        )
+            mightContainPrivateInfo: false,
+        })
     ).pipe(
         map(({ data, errors }) => {
             if (
