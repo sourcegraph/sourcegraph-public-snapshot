@@ -42,7 +42,7 @@ const createMockPlatformContext = (
     platformContext: {
         forceUpdateTooltip: jest.fn(),
         urlToFile: jest.fn(),
-        requestGraphQL: jest.fn(() => throwError(new PrivateRepoPublicSourcegraphComError(''))),
+        requestGraphQL: () => throwError(new Error('graphQL request failed')),
         sideloadedExtensionURL: new Subject<string | null>(),
         ...partialMocks,
     },
