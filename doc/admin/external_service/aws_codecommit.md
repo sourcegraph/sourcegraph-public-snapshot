@@ -14,7 +14,7 @@ To set this up, add AWS CodeCommit as an external service to Sourcegraph:
 
 ## AWS CodeCommit Git credentials
 
-The AWS CodeCommit service **requires** [Git credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_ssh-keys.html#git-credentials-code-commit) in order to clone repositories via HTTPS. Git credentials consist of a username and a password that you can create in AWS IAM. 
+Since version **3.4** of Sourcegraph, the AWS CodeCommit service **requires** [Git credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_ssh-keys.html#git-credentials-code-commit) in order to clone repositories via HTTPS. Git credentials consist of a username and a password that you can create in AWS IAM. 
 
 For detailed instructions on how to create the credentials in IAM, see: [Setup for HTTPS Users Using Git Credentials](https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html)
 
