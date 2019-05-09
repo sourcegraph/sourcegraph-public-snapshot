@@ -20,6 +20,7 @@ import {
     mergeMap,
     observeOn,
     switchMap,
+    take,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
@@ -52,7 +53,7 @@ import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
-import { sourcegraphUrl } from '../../shared/util/context'
+import { observeSourcegraphURL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
@@ -89,7 +90,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 /**
  * The context the code host is in on the current page.
  */
-export type CodeHostContext = RepoSpec & Partial<RevSpec>
+export type CodeHostContext = RepoSpec & Partial<RevSpec> & { privateRepository: boolean }
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
@@ -159,6 +160,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
 
     /** Construct the URL to the specified file. */
     urlToFile?: (
+        sourcegraphURL: string,
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
 
@@ -218,7 +220,7 @@ export interface FileInfo {
 }
 
 interface CodeIntelligenceProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL'> {
+    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'> {
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
@@ -350,12 +352,14 @@ export function handleCodeHost({
     extensionsController,
     platformContext,
     showGlobalDebug,
-}: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
+    sourcegraphURL,
+}: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]>; sourcegraphURL: string }): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
+    const { requestGraphQL } = platformContext
 
     const ensureRepoExists = (context: CodeHostContext) =>
-        resolveRev(context).pipe(
+        resolveRev({ ...context, requestGraphQL }).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
             catchError(() => [false])
@@ -398,7 +402,7 @@ export function handleCodeHost({
     // so we don't need to subscribe to mutations.
     if (showGlobalDebug) {
         const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history })(mount)
+        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL })(mount)
     }
 
     // Render view on Sourcegraph button
@@ -412,7 +416,7 @@ export function handleCodeHost({
                 )
                 .subscribe(
                     renderViewContextOnSourcegraph({
-                        sourcegraphUrl,
+                        sourcegraphURL,
                         getContext,
                         viewOnSourcegraphButtonClassProps,
                         ensureRepoExists,
@@ -427,9 +431,9 @@ export function handleCodeHost({
         trackCodeViews(codeHost),
         mergeMap(codeViewEvent => {
             if (codeViewEvent.type === 'added') {
-                return codeViewEvent.resolveFileInfo(codeViewEvent.element).pipe(
+                return codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
                     mergeMap(fileInfo =>
-                        fetchFileContents(fileInfo).pipe(
+                        fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
                             map(fileInfoWithContents => ({
                                 fileInfo: fileInfoWithContents,
                                 ...codeViewEvent,
@@ -462,7 +466,7 @@ export function handleCodeHost({
 
             // Handle added or removed view component, workspace root and subscriptions
             if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
-                const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
+                const { element, fileInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const uri = toURIWithPath(fileInfo)
                 const languageId = getModeFromPath(fileInfo.filePath)
                 const model = { uri, languageId, text: fileInfo.content }
@@ -577,6 +581,7 @@ export function handleCodeHost({
                             ? fileInfo.baseRev || fileInfo.baseCommitID!
                             : fileInfo.rev || fileInfo.commitID,
                 })
+                const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
                 codeViewState.subscriptions.add(
                     hoverifier.hoverify({
                         dom: domFunctions,
@@ -595,6 +600,7 @@ export function handleCodeHost({
                         <CodeViewToolbar
                             {...fileInfo}
                             {...codeHost.codeViewToolbarClassProps}
+                            sourcegraphURL={sourcegraphURL}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
@@ -653,10 +659,14 @@ export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(cod
 export async function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
+    isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
 ): Promise<Subscription> {
     const subscriptions = new Subscription()
-    const { platformContext, extensionsController } = initializeExtensions(codeHost)
+    const sourcegraphURL = await observeSourcegraphURL(isExtension)
+        .pipe(take(1))
+        .toPromise()
+    const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
     subscriptions.add(extensionsController)
     subscriptions.add(
         handleCodeHost({
@@ -665,6 +675,7 @@ export async function injectCodeIntelligenceToCodeHost(
             extensionsController,
             platformContext,
             showGlobalDebug,
+            sourcegraphURL,
         })
     )
     return subscriptions

@@ -29,10 +29,12 @@ import { CodeHost } from './code_intelligence'
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
  *
  */
-export function initializeExtensions({
-    urlToFile,
-}: Pick<CodeHost, 'urlToFile'>): PlatformContextProps & ExtensionsControllerProps {
-    const platformContext = createPlatformContext({ urlToFile })
+export function initializeExtensions(
+    { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
+    sourcegraphURL: string,
+    isExtension: boolean
+): PlatformContextProps & ExtensionsControllerProps {
+    const platformContext = createPlatformContext({ urlToFile, getContext }, sourcegraphURL, isExtension)
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }
@@ -69,12 +71,14 @@ export const renderGlobalDebug = ({
     extensionsController,
     platformContext,
     history,
-}: InjectProps & { showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
+    sourcegraphURL,
+}: InjectProps & { sourcegraphURL: string; showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
     render(
         <GlobalDebug
             extensionsController={extensionsController}
             location={history.location}
             platformContext={platformContext}
+            sourcegraphURL={sourcegraphURL}
         />,
         mount
     )

@@ -4,11 +4,14 @@ import '../../config/polyfill'
 
 import * as React from 'react'
 import { render } from 'react-dom'
-import { noop, Subscription } from 'rxjs'
+import { from, noop, Observable, Subscription } from 'rxjs'
+import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
+import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
+import { background } from '../../browser/runtime'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
-import { OptionsMenuProps } from '../../libs/options/Menu'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
+import { OptionsMenuProps } from '../../libs/options/OptionsMenu'
 import { initSentry } from '../../libs/sentry'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
@@ -50,6 +53,17 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
     })
     return { host, protocol, hasPermissions }
 }
+
+// Make GraphQL requests from background page
+function requestGraphQL<T extends IQuery | IMutation>(options: {
+    request: string
+    variables: {}
+}): Observable<GraphQLResult<T>> {
+    return from(background.requestGraphQL<T>(options))
+}
+
+const ensureValidSite = () => fetchSite(requestGraphQL)
+
 class Options extends React.Component<{}, State> {
     public state: State = {
         sourcegraphURL: null,
@@ -92,7 +106,7 @@ class Options extends React.Component<{}, State> {
         const props: OptionsContainerProps = {
             sourcegraphURL: this.state.sourcegraphURL,
 
-            ensureValidSite: fetchSite,
+            ensureValidSite,
             fetchCurrentTabStatus,
             hasPermissions: url =>
                 browser.permissions.contains({

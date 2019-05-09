@@ -1,3 +1,4 @@
+// Command query-runner runs saved queries and notifies subscribers when the queries have new results.
 package main
 
 import (
@@ -15,7 +16,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/pkg/api"

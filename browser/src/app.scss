@@ -1,4 +1,3 @@
-@import 'open-color/open-color.scss';
 @import './global-styles/colors';
 
 // Bootstrap configuration before Bootstrap is imported
@@ -64,9 +63,7 @@ $theme-colors-light: (
 @import './global-styles/card';
 @import './global-styles/icons';
 @import './highlight';
-@import './options';
 @import './shared/components/CodeViewToolbar.scss';
-@import './libs/options/styles.scss';
 @import './libs/bitbucket/style.scss';
 @import './libs/gitlab/style.scss';
 @import './libs/github/style.scss';

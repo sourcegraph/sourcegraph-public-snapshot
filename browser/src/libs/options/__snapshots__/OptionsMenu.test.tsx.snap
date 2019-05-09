@@ -41,29 +41,35 @@ exports[`ServerURLForm doesn't render the permissions alert on about://addons 1`
     onSubmit={[Function]}
   >
     <label
-      className="server-url-form__label"
+      htmlFor="sourcegraph-url"
     >
       Sourcegraph URL
     </label>
     <div
-      className="server-url-form__input-container"
+      className="input-group"
     >
       <div
-        className="server-url-form__status"
+        className="input-group-prepend"
       >
         <span
-          className="server-url-form__status-indicator server-url-form__status-indicator--success"
-        />
-        <span
-          className="server-url-form__status-text"
+          className="input-group-text"
         >
-          Connected
+          <span>
+            <span
+              className="server-url-form__status-indicator bg-success"
+            />
+             
+            <span>
+              Connected
+            </span>
+          </span>
         </span>
       </div>
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input"
+        className="form-control"
+        id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -115,29 +121,35 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://extensio
     onSubmit={[Function]}
   >
     <label
-      className="server-url-form__label"
+      htmlFor="sourcegraph-url"
     >
       Sourcegraph URL
     </label>
     <div
-      className="server-url-form__input-container"
+      className="input-group"
     >
       <div
-        className="server-url-form__status"
+        className="input-group-prepend"
       >
         <span
-          className="server-url-form__status-indicator server-url-form__status-indicator--success"
-        />
-        <span
-          className="server-url-form__status-text"
+          className="input-group-text"
         >
-          Connected
+          <span>
+            <span
+              className="server-url-form__status-indicator bg-success"
+            />
+             
+            <span>
+              Connected
+            </span>
+          </span>
         </span>
       </div>
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input"
+        className="form-control"
+        id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -189,29 +201,35 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://newtab 1
     onSubmit={[Function]}
   >
     <label
-      className="server-url-form__label"
+      htmlFor="sourcegraph-url"
     >
       Sourcegraph URL
     </label>
     <div
-      className="server-url-form__input-container"
+      className="input-group"
     >
       <div
-        className="server-url-form__status"
+        className="input-group-prepend"
       >
         <span
-          className="server-url-form__status-indicator server-url-form__status-indicator--success"
-        />
-        <span
-          className="server-url-form__status-text"
+          className="input-group-text"
         >
-          Connected
+          <span>
+            <span
+              className="server-url-form__status-indicator bg-success"
+            />
+             
+            <span>
+              Connected
+            </span>
+          </span>
         </span>
       </div>
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input"
+        className="form-control"
+        id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -263,29 +281,35 @@ exports[`ServerURLForm renders a default state 1`] = `
     onSubmit={[Function]}
   >
     <label
-      className="server-url-form__label"
+      htmlFor="sourcegraph-url"
     >
       Sourcegraph URL
     </label>
     <div
-      className="server-url-form__input-container"
+      className="input-group"
     >
       <div
-        className="server-url-form__status"
+        className="input-group-prepend"
       >
         <span
-          className="server-url-form__status-indicator server-url-form__status-indicator--success"
-        />
-        <span
-          className="server-url-form__status-text"
+          className="input-group-text"
         >
-          Connected
+          <span>
+            <span
+              className="server-url-form__status-indicator bg-success"
+            />
+             
+            <span>
+              Connected
+            </span>
+          </span>
         </span>
       </div>
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input"
+        className="form-control"
+        id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -337,29 +361,35 @@ exports[`ServerURLForm renders the current tab permissions alert 1`] = `
     onSubmit={[Function]}
   >
     <label
-      className="server-url-form__label"
+      htmlFor="sourcegraph-url"
     >
       Sourcegraph URL
     </label>
     <div
-      className="server-url-form__input-container"
+      className="input-group"
     >
       <div
-        className="server-url-form__status"
+        className="input-group-prepend"
       >
         <span
-          className="server-url-form__status-indicator server-url-form__status-indicator--success"
-        />
-        <span
-          className="server-url-form__status-text"
+          className="input-group-text"
         >
-          Connected
+          <span>
+            <span
+              className="server-url-form__status-indicator bg-success"
+            />
+             
+            <span>
+              Connected
+            </span>
+          </span>
         </span>
       </div>
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input"
+        className="form-control"
+        id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
         type="text"
@@ -434,29 +464,35 @@ exports[`ServerURLForm renders the feature flags 1`] = `
     onSubmit={[Function]}
   >
     <label
-      className="server-url-form__label"
+      htmlFor="sourcegraph-url"
     >
       Sourcegraph URL
     </label>
     <div
-      className="server-url-form__input-container"
+      className="input-group"
     >
       <div
-        className="server-url-form__status"
+        className="input-group-prepend"
       >
         <span
-          className="server-url-form__status-indicator server-url-form__status-indicator--success"
-        />
-        <span
-          className="server-url-form__status-text"
+          className="input-group-text"
         >
-          Connected
+          <span>
+            <span
+              className="server-url-form__status-indicator bg-success"
+            />
+             
+            <span>
+              Connected
+            </span>
+          </span>
         </span>
       </div>
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="server-url-form__input"
+        className="form-control"
+        id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
         type="text"

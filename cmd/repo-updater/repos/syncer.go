@@ -162,8 +162,8 @@ func (d Diff) Repos() Repos {
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
 	for _, r := range sourced {
-		if r.ExternalRepo == (api.ExternalRepoSpec{}) {
-			panic(fmt.Errorf("%s has no external repo spec", r.Name))
+		if !r.ExternalRepo.IsSet() {
+			panic(fmt.Errorf("%s has no valid external repo spec: %s", r.Name, r.ExternalRepo))
 		} else if old := byID[r.ExternalRepo]; old != nil {
 			merge(old, r)
 		} else {
@@ -189,7 +189,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
-		if src == nil && old.ExternalRepo == (api.ExternalRepoSpec{}) && !seenName[old.Name] {
+		if src == nil && old.ExternalRepo.ID == "" && !seenName[old.Name] {
 			src = byName[old.Name]
 		}
 
@@ -285,8 +285,8 @@ type byExternalRepoSpecSet []*Repo
 func (rs byExternalRepoSpecSet) Len() int      { return len(rs) }
 func (rs byExternalRepoSpecSet) Swap(i, j int) { rs[i], rs[j] = rs[j], rs[i] }
 func (rs byExternalRepoSpecSet) Less(i, j int) bool {
-	iSet := rs[i].ExternalRepo != (api.ExternalRepoSpec{})
-	jSet := rs[j].ExternalRepo != (api.ExternalRepoSpec{})
+	iSet := rs[i].ExternalRepo.IsSet()
+	jSet := rs[j].ExternalRepo.IsSet()
 	if iSet == jSet {
 		return false
 	}

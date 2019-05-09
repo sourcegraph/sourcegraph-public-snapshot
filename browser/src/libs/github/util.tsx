@@ -283,9 +283,8 @@ function getRevOrBranch(revAndPath: string): string | null {
     return branch
 }
 
-export function parseURL(loc: Location = window.location): GitHubURL {
+export function parseURL(loc: Pick<Location, 'host' | 'hash' | 'pathname'> = window.location): GitHubURL {
     // TODO(john): this method has problems handling branch revisions with "/" character.
-    // TODO(john): this all needs unit testing!
 
     let user: string | undefined
     let ghRepoName: string | undefined // in "github.com/foo/bar", just "bar"
@@ -309,7 +308,7 @@ export function parseURL(loc: Location = window.location): GitHubURL {
         filePath = urlsplit.slice(3 + revParts).join('/')
     }
     if (user && ghRepoName) {
-        repoName = `${window.location.host}/${user}/${ghRepoName}`
+        repoName = `${loc.host}/${user}/${ghRepoName}`
     } else {
         repoName = ''
     }

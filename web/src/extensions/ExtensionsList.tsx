@@ -56,7 +56,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'queryGraphQL'> {
+interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     location: H.Location
     history: H.History

@@ -5,6 +5,7 @@ import React from 'react'
 import { setLinkComponent } from '../components/Link'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemComponentProps } from './ActionItem'
+import './ActionItem.scss'
 
 setLinkComponent(({ to, children, ...props }) => (
     <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
@@ -92,27 +93,23 @@ add('executing', () => {
     )
 })
 
-add(
-    'error',
-    () => {
-        class ActionItemWithError extends ActionItem {
-            constructor(props: ActionItem['props']) {
-                super(props)
-                this.state.actionOrError = new Error('e')
-            }
+add('error', () => {
+    class ActionItemWithError extends ActionItem {
+        constructor(props: ActionItem['props']) {
+            super(props)
+            this.state.actionOrError = new Error('e')
         }
-        return (
-            <ActionItemWithError
-                action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                disabledDuringExecution={true}
-                showLoadingSpinnerDuringExecution={true}
-                showInlineError={true}
-                location={LOCATION}
-                extensionsController={EXTENSIONS_CONTROLLER}
-                platformContext={PLATFORM_CONTEXT}
-            />
-        )
-    },
-    { notes: 'The error is shown in a tooltip, which is not yet visible in the storybook.' }
-)
+    }
+    return (
+        <ActionItemWithError
+            action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            disabledDuringExecution={true}
+            showLoadingSpinnerDuringExecution={true}
+            showInlineError={true}
+            location={LOCATION}
+            extensionsController={EXTENSIONS_CONTROLLER}
+            platformContext={PLATFORM_CONTEXT}
+        />
+    )
+})
