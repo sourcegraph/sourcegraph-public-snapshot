@@ -92,7 +92,7 @@ func GetGitoliteRepository(ctx context.Context, args protocol.RepoLookupArgs) (r
 type GitolitePhabricatorMetadataSyncer struct {
 	sem     *semaphore.Weighted // Only one sync at a time, like it was done before.
 	counter int64               // Only sync every 10th time, like it was done before.
-	store   Store               // Use to load the external services that yielded a give repo.
+	store   Store               // Use to load the external services that yielded a given repo.
 }
 
 // NewGitolitePhabricatorMetadataSyncer returns a GitolitePhabricatorMetadataSyncer with
