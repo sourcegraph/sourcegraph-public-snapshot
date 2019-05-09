@@ -44,7 +44,7 @@ const createMockPlatformContext = (
     // responses for `ResolveRev` and `BlobContent` queries, so that
     // code views can be resolved
     requestGraphQL: (request): Observable<any> => {
-        if (request.includes('ResolveRev')) {
+        if (request.trim().startsWith('query ResolveRev')) {
             return of({
                 data: {
                     repository: {
@@ -59,7 +59,7 @@ const createMockPlatformContext = (
                 errors: undefined,
             })
         }
-        if (request.includes('BlobContent')) {
+        if (request.trim().startsWith('query BlobContent')) {
             return of({
                 data: {
                     repository: {
