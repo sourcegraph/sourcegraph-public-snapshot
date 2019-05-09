@@ -31,12 +31,10 @@ async function injectModules(): Promise<void> {
         subtree: true,
     }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
 
-    const telemetryService = new EventLogger()
-
     // TODO handle subscription
     const codeHost = await determineCodeHost()
     if (codeHost) {
-        await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION, telemetryService)
+        await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION)
     }
 }
 

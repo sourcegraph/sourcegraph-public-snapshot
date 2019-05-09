@@ -85,12 +85,10 @@ async function main(): Promise<void> {
     // Add a marker to the DOM that the extension is loaded
     injectSourcegraphApp(extensionMarker)
 
-    const telemetryService = new EventLogger()
-
     // For the life time of the content script, add features in reaction to DOM changes
     if (codeHost) {
         console.log('Detected code host', codeHost.name)
-        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION, telemetryService))
+        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION))
     }
 }
 
