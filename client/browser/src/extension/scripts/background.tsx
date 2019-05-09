@@ -191,12 +191,7 @@ async function main(): Promise<void> {
             request: string
             variables: {}
         }): Promise<GraphQLResult<T>> {
-            return await requestGraphQL<T>(
-                gql`
-                    ${request}
-                `,
-                variables
-            ).toPromise()
+            return await requestGraphQL<T>(request, variables).toPromise()
         },
     }
 
