@@ -1,4 +1,4 @@
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql } from '../../../shared/src/graphql/graphql'
 import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context'
 import { createPlatformContext } from './context'
 

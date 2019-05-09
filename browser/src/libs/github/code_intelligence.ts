@@ -2,7 +2,7 @@ import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/co
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import {
     FileSpec,
     PositionSpec,

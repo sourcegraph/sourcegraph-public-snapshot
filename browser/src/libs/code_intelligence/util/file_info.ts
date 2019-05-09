@@ -1,7 +1,7 @@
 import { Observable, zip } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { PlatformContext } from '../../../../../../shared/src/platform/context'
+import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { resolveRev, retryWhenCloneInProgressError } from '../../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 
