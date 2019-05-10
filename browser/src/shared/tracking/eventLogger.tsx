@@ -1,5 +1,5 @@
 import { noop } from 'lodash'
-import { switchMap, take } from 'rxjs/operators'
+import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -8,18 +8,17 @@ import { storage } from '../../browser/storage'
 import { isInPage } from '../../context'
 import { logUserEvent } from '../backend/userEvents'
 import { observeSourcegraphURL } from '../util/context'
+import { take, tap } from 'rxjs/operators'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
-    private sourcegraphURL: string | undefined
     private requestGraphQL: PlatformContext['requestGraphQL']
+    private sourcegraphURLs: Observable<string>
 
     constructor(isExtension: boolean, requestGraphQL: PlatformContext['requestGraphQL']) {
-        observeSourcegraphURL(isExtension)
-            .pipe(take(1))
-            .subscribe(sourcegraphURL => (this.sourcegraphURL = sourcegraphURL))
+        this.sourcegraphURLs = observeSourcegraphURL(isExtension)
         this.requestGraphQL = requestGraphQL
         // Fetch user ID on initial load.
         this.getAnonUserID().catch(noop)
@@ -67,10 +66,11 @@ export class EventLogger implements TelemetryService {
      * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
      */
     public async logCodeIntelligenceEvent(event: GQL.UserEvent): Promise<void> {
-        if (this.sourcegraphURL) {
-            const anonUserId = await this.getAnonUserID()
-            logUserEvent(event, anonUserId, this.sourcegraphURL, this.requestGraphQL)
-        }
+        const anonUserId = await this.getAnonUserID()
+        this.sourcegraphURLs.pipe(
+            take(1),
+            tap(sourcegraphURL => logUserEvent(event, anonUserId, sourcegraphURL, this.requestGraphQL))
+        )
     }
 
     /**
