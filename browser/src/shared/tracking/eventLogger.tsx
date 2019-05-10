@@ -83,11 +83,16 @@ export class EventLogger implements TelemetryService {
      *
      * @param eventName The ID of the action executed.
      */
-    public log(eventName: string): void {
-        if (eventName === 'goToDefinition' || eventName === 'goToDefinition.preloaded' || eventName === 'hover') {
-            this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATION)
-        } else if (eventName === 'findReferences') {
-            this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATIONREFS)
+    public async log(eventName: string): Promise<void> {
+        switch (eventName) {
+            case 'goToDefinition':
+            case 'goToDefinition.preloaded':
+            case 'hover':
+                await this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATION)
+                break
+            case 'findReferences':
+                await this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATIONREFS)
+                break
         }
     }
 }
