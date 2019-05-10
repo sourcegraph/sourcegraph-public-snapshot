@@ -116,16 +116,16 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		&sq.Config.UserID,
 		&sq.Config.OrgID,
 		&sq.Config.SlackWebhookURL)
-		if err != nil {
-			return nil, err
-		}
-		sq.Spec.Key = sq.Config.Key
+	if err != nil {
+		return nil, err
+	}
+	sq.Spec.Key = sq.Config.Key
 	if sq.Config.UserID != nil {
 		sq.Spec.Subject.User = sq.Config.UserID
 	} else if sq.Config.OrgID != nil {
 		sq.Spec.Subject.Org = sq.Config.OrgID
 	}
-	return &savedSearch, err
+	return &sq, err
 }
 
 // ListSavedSearchesByUserID lists all the saved searches associated with a
