@@ -163,7 +163,7 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
         if (embeddedBlobWrapper) {
             // This is a snippet embedded in a comment.
             // Resolve to `.blob-wrapper-embedded`'s parent element,
-            // the smallest elemebt that contains both the code and
+            // the smallest element that contains both the code and
             // the HTML anchor allowing to resolve the file info.
             const element = embeddedBlobWrapper.parentElement!
             return {
