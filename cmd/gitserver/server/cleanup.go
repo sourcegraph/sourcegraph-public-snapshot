@@ -193,13 +193,21 @@ func (s *Server) cleanupRepos() {
 		log15.Error("cleanup: error iterating over repositories", "error", err)
 	}
 
+	// Check how much disk space is available.
 	actualFreeBytes, err := s.bytesFreeOnDisk()
 	if err != nil {
 		log15.Error("cleanup: finding the amount of space free on disk", "error", err)
 		return
 	}
 	G := float64(1024 * 1024 * 1024)
-	log15.Info("cleanup: checking free disk space", "free space in GiB", float64(actualFreeBytes)/G, "desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G)
+	mp, err := findMountPoint(s.ReposDir)
+	if err != nil {
+		log15.Error("finding mount point for dir containing repos", "error", err)
+		mp = "<not found>"
+	}
+	log15.Info("cleanup: checking free disk space", "free space in GiB", float64(actualFreeBytes)/G, "desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G, "mount point", mp)
+
+	// Free up space if necessary.
 	howManyBytesToFree := int64(s.DesiredFreeDiskSpace) - int64(actualFreeBytes)
 	if err := s.freeUpSpace(howManyBytesToFree); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
@@ -217,7 +225,6 @@ func (s *Server) bytesFreeOnDisk() (uint64, error) {
 		return 0, errors.Wrap(err, "finding out how much disk space is free")
 	}
 	free := fs.Bavail * uint64(fs.Bsize)
-	log15.Info("computed free space", "repo dir", s.ReposDir, "mount point", mp, "free space bytes", free)
 	return free, nil
 }
 
