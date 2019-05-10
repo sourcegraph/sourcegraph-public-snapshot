@@ -58,13 +58,13 @@ Consult `src -h` and `src api -h` for usage information.
 Some Sourcegraph instances will be configured to require authentication. You can do so via the environment:
 
 ```sh
-SRC_ACCESS_TOKEN="secret" src ...
+SRC_ENDPOINT=https://sourcegraph.example.com SRC_ACCESS_TOKEN="secret" src ...
 ```
 
 Or via the configuration file (`~/src-config.json`):
 
 ```sh
-	{"accessToken": "secret"}
+	{"accessToken": "secret", "endpoint": "https://sourcegraph.example.com"}
 ```
 
 See `src -h` for more information on specifying access tokens.
