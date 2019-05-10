@@ -1,6 +1,6 @@
 import { noop } from 'lodash'
-import { Observable } from 'rxjs'
-import { publishReplay, take } from 'rxjs/operators'
+import { Observable, ReplaySubject } from 'rxjs'
+import { take } from 'rxjs/operators'
 import uuid from 'uuid'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -21,10 +21,10 @@ export class EventLogger implements TelemetryService {
     private sourcegraphURLs: Observable<string>
 
     constructor(isExtension: boolean, private requestGraphQL: PlatformContext['requestGraphQL']) {
-        // publishReplay(1) instantly subscribes (turns the Observable hot)
-        // and replays the latest value for every new subscriber
+        const replaySubject = new ReplaySubject<string>(1)
+        this.sourcegraphURLs = replaySubject.asObservable()
         // TODO pass this Observable as a parameter
-        this.sourcegraphURLs = observeSourcegraphURL(isExtension).pipe(publishReplay(1))
+        observeSourcegraphURL(isExtension).subscribe(replaySubject)
         // Fetch user ID on initial load.
         this.getAnonUserID().catch(noop)
     }
