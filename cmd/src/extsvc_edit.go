@@ -1,13 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	isatty "github.com/mattn/go-isatty"
+	"github.com/sourcegraph/jsonx"
 )
 
 func init() {
@@ -23,6 +26,9 @@ Examples:
 
     	$ src extsvc edit -name 'My GitHub connection' -rename 'New name'
 
+  Add some repositories to the exclusion list of the external service:
+
+    	$ src extsvc edit -name 'My GitHub connection' -exclude-repos 'github.com/foo/one' 'github.com/foo/two'
 `
 
 	flagSet := flag.NewFlagSet("edit", flag.ExitOnError)
@@ -32,10 +38,11 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		nameFlag   = flagSet.String("name", "", "exact name of the external service to edit")
-		idFlag     = flagSet.String("id", "", "ID of the external service to edit")
-		renameFlag = flagSet.String("rename", "", "when specified, renames the external service")
-		apiFlags   = newAPIFlags(flagSet)
+		nameFlag                = flagSet.String("name", "", "exact name of the external service to edit")
+		idFlag                  = flagSet.String("id", "", "ID of the external service to edit")
+		renameFlag              = flagSet.String("rename", "", "when specified, renames the external service")
+		excludeRepositoriesFlag = flagSet.String("exclude-repos", "", "when specified, add these repositories to the exclusion list")
+		apiFlags                = newAPIFlags(flagSet)
 	)
 
 	handler := func(args []string) (err error) {
@@ -47,10 +54,11 @@ Examples:
 		}
 		id := *idFlag
 		if id == "" {
-			id, err = lookupExternalServiceByName(*nameFlag)
+			svc, err := lookupExternalService("", *nameFlag)
 			if err != nil {
 				return err
 			}
+			id = svc.ID
 		}
 
 		// Determine if we are updating the JSON configuration or not.
@@ -67,6 +75,22 @@ Examples:
 			if err != nil {
 				return err
 			}
+		}
+
+		if *excludeRepositoriesFlag != "" {
+			if len(updateJSON) == 0 {
+				// We need to fetch the current JSON then.
+				svc, err := lookupExternalService(id, "")
+				if err != nil {
+					return err
+				}
+				updateJSON = []byte(svc.Config)
+			}
+			updated, err := appendExcludeRepositories(string(updateJSON), strings.Fields(*excludeRepositoriesFlag))
+			if err != nil {
+				return err
+			}
+			updateJSON = []byte(updated)
 		}
 
 		updateExternalServiceInput := map[string]interface{}{
@@ -86,7 +110,7 @@ Examples:
 			"input": updateExternalServiceInput,
 		}
 		var result struct{} // TODO: future: allow formatting resulting external service
-		return (&apiRequest{
+		err = (&apiRequest{
 			query:  externalServicesUpdateMutation,
 			vars:   queryVars,
 			result: &result,
@@ -96,6 +120,10 @@ Examples:
 			},
 			flags: apiFlags,
 		}).do()
+		if err != nil && strings.Contains(err.Error(), "Additional property exclude is not allowed") {
+			return errors.New(`specified external service does not support repository "exclude" list`)
+		}
+		return err
 	}
 
 	// Register the command.
@@ -113,3 +141,86 @@ mutation ($input: UpdateExternalServiceInput!) {
 	}
 }
 `
+
+// appendExcludeRepositories appends to the ".exclude" field of the given jsonx
+// the input list of repo names to exclude. It creates the exclude field if it
+// doesn't exist.
+func appendExcludeRepositories(input string, excludeRepoNames []string) (string, error) {
+	// Known issue: Comments are not retained in the existing array value.
+	var m interface{}
+	if err := jsonxUnmarshal(input, &m); err != nil {
+		return "", err
+	}
+	root, ok := m.(map[string]interface{})
+	if !ok {
+		return "", errors.New("existing JSONx external service configuration is invalid (not an object)")
+	}
+	var exclude []interface{}
+	alreadyExcludedNames := map[string]struct{}{}
+	if existing, ok := root["exclude"]; ok {
+		exclude, ok = existing.([]interface{})
+		if !ok {
+			return "", errors.New("existing JSONx external service configuration is invalid (exclude is not an array)")
+		}
+		for i, exclude := range exclude {
+			obj, ok := exclude.(map[string]interface{})
+			if !ok {
+				return "", fmt.Errorf("existing JSONx external service configuration is invalid (exclude.%d is not object)", i)
+			}
+			name, ok := obj["name"]
+			if !ok {
+				continue
+			}
+			nameStr, ok := name.(string)
+			if !ok {
+				continue
+			}
+			alreadyExcludedNames[nameStr] = struct{}{}
+		}
+	}
+	for _, repoName := range excludeRepoNames {
+		if strings.TrimSpace(repoName) == "" {
+			continue
+		}
+		if _, already := alreadyExcludedNames[repoName]; already {
+			continue
+		}
+		exclude = append(exclude, map[string]interface{}{
+			"name": repoName,
+		})
+	}
+	edits, _, err := jsonx.ComputePropertyEdit(
+		input,
+		jsonx.PropertyPath("exclude"),
+		exclude,
+		nil,
+		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
+	)
+	if err != nil {
+		return "", err
+	}
+	return jsonx.ApplyEdits(input, edits...)
+}
+
+// jsonxToJSON converts jsonx to plain JSON.
+func jsonxToJSON(text string) ([]byte, error) {
+	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(errs) > 0 {
+		return data, fmt.Errorf("failed to parse JSON: %v", errs)
+	}
+	return data, nil
+}
+
+// jsonxUnmarshal unmarshals jsonx into Go data.
+//
+// This process loses comments, trailing commas, formatting, etc.
+func jsonxUnmarshal(text string, v interface{}) error {
+	data, err := jsonxToJSON(text)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(text) == "" {
+		return nil
+	}
+	return json.Unmarshal(data, v)
+}

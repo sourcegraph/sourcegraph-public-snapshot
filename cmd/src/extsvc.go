@@ -18,6 +18,7 @@ Usage:
 The commands are:
 
 	list      lists the external services on the Sourcegraph instance
+	edit      edits external services on the Sourcegraph instance
 
 Use "src extsvc [command] -h" for more information about a command.
 `
@@ -39,30 +40,37 @@ Use "src extsvc [command] -h" for more information about a command.
 	})
 }
 
-func lookupExternalServiceByName(name string) (id string, err error) {
+type externalService struct {
+	ID                   string
+	Kind                 string
+	DisplayName          string
+	Config               string
+	CreatedAt, UpdatedAt string
+}
+
+func lookupExternalService(byID, byName string) (*externalService, error) {
 	var result struct {
 		ExternalServices struct {
-			Nodes []struct {
-				DisplayName string
-				ID          string
-			}
+			Nodes []*externalService
 		}
 	}
-	err = (&apiRequest{
+	err := (&apiRequest{
 		query: externalServicesListQuery,
 		vars: map[string]interface{}{
 			"first": 99999,
 		},
 		result: &result,
 	}).do()
+	if err != nil {
+		return nil, err
+	}
 	for _, svc := range result.ExternalServices.Nodes {
-		if svc.DisplayName == name {
-			id = svc.ID
-			break
+		if byID != "" && svc.ID == byID {
+			return svc, nil
+		}
+		if byName != "" && svc.DisplayName == byName {
+			return svc, nil
 		}
 	}
-	if id == "" {
-		return "", errors.New("no such external service")
-	}
-	return
+	return nil, errors.New("no such external service")
 }
