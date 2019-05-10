@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/pkg/errors"
 )
 
 type savedSearches struct{}
@@ -28,9 +29,7 @@ func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
 		}
 		return false, err
 	}
-
 	return false, nil
-
 }
 
 // ListAll lists all the saved searches on an instance.
@@ -61,7 +60,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 	`)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "QueryContext")
 	}
 
 	for rows.Next() {
@@ -75,7 +74,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 			&sq.Config.UserID,
 			&sq.Config.OrgID,
 			&sq.Config.SlackWebhookURL); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Scan")
 		}
 		sq.Spec.Key = sq.Config.Key
 		if sq.Config.UserID != nil {
@@ -143,12 +142,15 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 	}
 	var savedSearches []*types.SavedSearch
 	orgIDRows, err := dbconn.Global.QueryContext(ctx, `SELECT org_id FROM org_members WHERE user_id=$1`, userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryContext")
+	}
 	var orgIDs []int32
 	for orgIDRows.Next() {
 		var orgID int32
 		err := orgIDRows.Scan(&orgID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Scan")
 		}
 		orgIDs = append(orgIDs, orgID)
 	}
@@ -157,9 +159,6 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 		orgConditions = append(orgConditions, sqlf.Sprintf("org_id=%d", orgID))
 	}
 	conds := sqlf.Sprintf("WHERE user_id=%d", userID)
-	if err != nil {
-		return nil, err
-	}
 
 	if len(orgConditions) > 0 {
 		conds = sqlf.Sprintf("%v OR %v", conds, sqlf.Join(orgConditions, " ) OR ("))
@@ -178,16 +177,16 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "QueryContext(2)")
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
 		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Scan(2)")
 		}
 		savedSearches = append(savedSearches, &ss)
 	}
-	return savedSearches, err
+	return savedSearches, nil
 }
 
 // ListSavedSearchesByUserID lists all the saved searches associated with an
@@ -213,16 +212,16 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "QueryContext")
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
 		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Scan")
 		}
 		savedSearches = append(savedSearches, &ss)
 	}
-	return savedSearches, err
+	return savedSearches, nil
 }
 
 // Create creates a new saved search with the specified parameters. The ID
