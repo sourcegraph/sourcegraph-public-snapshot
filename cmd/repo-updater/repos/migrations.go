@@ -50,17 +50,6 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			return errors.Wrapf(err, "%s list-sources", prefix)
 		}
 
-		var sourced Repos
-		{
-			ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
-			sourced, err = srcs.ListRepos(ctx)
-			cancel()
-		}
-
-		if err != nil {
-			return errors.Wrapf(err, "%s sources.list-repos", prefix)
-		}
-
 		stored, err := s.ListRepos(ctx, StoreListReposArgs{
 			Kinds: kinds,
 		})
@@ -69,31 +58,43 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			return errors.Wrapf(err, "%s store.list-repos", prefix)
 		}
 
-		type service struct {
-			svc     *ExternalService
-			exclude Repos
-		}
-
-		all := srcs.ExternalServices()
-		svcs := make(map[int64]*service, len(all))
-		upserts := make(ExternalServices, 0, len(all))
-
-		for _, e := range all {
-			// Skip any injected sources that are not persisted.
-			if e.ID != 0 {
-				svcs[e.ID] = &service{svc: e}
-				upserts = append(upserts, e)
+		var disabled Repos
+		for _, r := range stored {
+			if !r.Enabled {
+				disabled = append(disabled, r)
 			}
 		}
 
-		group := func(pred func(*Repo) bool, bucket func(*service) *Repos, repos ...Repos) error {
-			for _, rs := range repos {
+		all := srcs.ExternalServices()
+		svcs := make(map[int64]*Repos, len(all))
+
+		for _, e := range all {
+			if e.ID != 0 {
+				var excluded Repos
+				svcs[e.ID] = &excluded
+			}
+		}
+
+		if len(disabled) > 0 { // Only source and diff if there are disabled repos stored.
+			var sourced Repos
+			{
+				ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
+				sourced, err = srcs.ListRepos(ctx)
+				cancel()
+			}
+
+			if err != nil {
+				return errors.Wrapf(err, "%s sources.list-repos", prefix)
+			}
+
+			diff := NewDiff(sourced, stored)
+			for _, rs := range []Repos{diff.Added, diff.Modified, diff.Unmodified} {
 				for _, r := range rs {
-					if !pred(r) {
+					if r.Enabled {
 						continue
 					}
 
-					es := make(map[int64]*service, len(r.Sources))
+					es := make(map[int64]*Repos, len(r.Sources))
 					for _, si := range r.Sources {
 						id := si.ExternalServiceID()
 						if e := svcs[id]; e != nil {
@@ -106,57 +107,37 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 					}
 
 					for _, e := range es {
-						b := bucket(e)
-						*b = append(*b, r)
+						*e = append(*e, r)
 					}
 				}
 			}
-
-			return nil
-		}
-
-		diff := NewDiff(sourced, stored)
-
-		err = group(
-			func(r *Repo) bool { return !r.Enabled },
-			func(s *service) *Repos { return &s.exclude },
-			diff.Added, diff.Modified, diff.Unmodified,
-		)
-
-		if err != nil {
-			return err
 		}
 
 		now := clock()
-		for _, e := range svcs {
-			if err = removeInitalRepositoryEnablement(e.svc, now); err != nil {
+		for _, e := range all {
+			if err = removeInitalRepositoryEnablement(e, now); err != nil {
 				return errors.Wrapf(err, "%s remove-initial-repository-enablement", prefix)
 			}
 
-			if len(e.exclude) > 0 {
-				if err = e.svc.Exclude(e.exclude...); err != nil {
+			if exclude := svcs[e.ID]; exclude != nil && len(*exclude) > 0 {
+				if err = e.Exclude(*exclude...); err != nil {
 					return errors.Wrapf(err, "%s exclude", prefix)
 				}
-				e.svc.UpdatedAt = now
+				e.UpdatedAt = now
 
-				log15.Info(prefix+" exclude", "service", e.svc.DisplayName, "repos", len(e.exclude))
+				log15.Info(prefix+" exclude", "service", e.DisplayName, "repos", len(*exclude))
 			}
 		}
 
-		if err = s.UpsertExternalServices(ctx, upserts...); err != nil {
+		if err = s.UpsertExternalServices(ctx, all...); err != nil {
 			return errors.Wrapf(err, "%s upsert-external-services", prefix)
 		}
 
-		var deleted Repos
-		for _, r := range stored {
-			if !r.Enabled {
-				r.DeletedAt = now
-				r.Enabled = true
-				deleted = append(deleted, r)
-			}
+		for _, r := range disabled {
+			r.DeletedAt = now
 		}
 
-		if err = s.UpsertRepos(ctx, deleted...); err != nil {
+		if err = s.UpsertRepos(ctx, disabled...); err != nil {
 			return errors.Wrapf(err, "%s upsert-repos", prefix)
 		}
 
