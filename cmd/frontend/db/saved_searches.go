@@ -49,7 +49,8 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 		tr.Finish()
 	}()
 
-	q := sqlf.Sprintf(`SELECT id,
+	q := sqlf.Sprintf(`SELECT
+		id,
 		description,
 		query,
 		notify_owner,
