@@ -197,12 +197,9 @@ func TestRepoLookup(t *testing.T) {
 }
 
 func TestRepoLookup_found(t *testing.T) {
-	fa := &internalAPIFake{
-		metadataUpdate: make(chan *api.ReposUpdateMetadataRequest, 1),
-	}
 	s := Server{
 		Store:       new(repos.FakeStore),
-		InternalAPI: fa,
+		InternalAPI: &internalAPIFake{},
 	}
 
 	want := &protocol.RepoLookupResult{
@@ -230,21 +227,6 @@ func TestRepoLookup_found(t *testing.T) {
 	}
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("got %+v, want %+v", result, want)
-	}
-
-	select {
-	case got := <-fa.metadataUpdate:
-		want2 := &api.ReposUpdateMetadataRequest{
-			RepoName:    want.Repo.Name,
-			Description: want.Repo.Description,
-			Fork:        want.Repo.Fork,
-			Archived:    want.Repo.Archived,
-		}
-		if !reflect.DeepEqual(got, want2) {
-			t.Errorf("got %+v, want %+v", got, want2)
-		}
-	case <-time.After(5 * time.Second):
-		t.Error("ReposUpdateMetadata was not called")
 	}
 }
 
@@ -856,18 +838,9 @@ func TestRepoLookup_syncer(t *testing.T) {
 }
 
 type internalAPIFake struct {
-	metadataUpdate chan *api.ReposUpdateMetadataRequest
 }
 
 func (a *internalAPIFake) ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error {
-	if a.metadataUpdate != nil {
-		a.metadataUpdate <- &api.ReposUpdateMetadataRequest{
-			RepoName:    repo,
-			Description: description,
-			Fork:        fork,
-			Archived:    archived,
-		}
-	}
 	return nil
 }
 

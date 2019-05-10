@@ -393,17 +393,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		if err != nil {
 			return nil, err
 		}
-		if repo != nil {
-			go func() {
-				err := s.InternalAPI.ReposUpdateMetadata(context.Background(), repo.Name, repo.Description, repo.Fork, repo.Archived)
-				if err != nil {
-					log15.Warn("Error updating repo metadata", "repo", repo.Name, "err", err)
-				}
-			}()
-		}
-		if err != nil {
-			return nil, err
-		}
 		result.Repo = repo
 		return result, nil
 	}
