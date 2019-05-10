@@ -102,6 +102,25 @@ Object {
 }
 `;
 
+exports[`util parseURL() snippet permalink 1`] = `
+Object {
+  "filePath": "client/browser/src/shared/repo/backend.tsx",
+  "ghRepoName": "sourcegraph",
+  "isCodePage": true,
+  "isCommit": false,
+  "isCompare": false,
+  "isDelta": false,
+  "isPullRequest": false,
+  "position": Object {
+    "character": 0,
+    "line": 128,
+  },
+  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rev": "6a91ccec97a46bfb511b7ff58d790554a7d075c8",
+  "user": "sourcegraph",
+}
+`;
+
 exports[`util parseURL() tree page 1`] = `
 Object {
   "filePath": undefined,

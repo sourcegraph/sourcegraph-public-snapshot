@@ -1,12 +1,10 @@
-import { isDefined, propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { Observable, of, throwError, zip } from 'rxjs'
-import { filter, map, switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
-import { GitHubBlobUrl } from '../github'
 import { getCommitIDFromPermalink } from './scrape'
-import { getDeltaFileName, getDiffResolvedRev, getGitHubState, parseURL } from './util'
+import { getDeltaFileName, getDiffResolvedRev, parseURL } from './util'
 
 export const resolveDiffFileInfo = (
     codeView: HTMLElement,
@@ -98,37 +96,28 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
     }
 }
 
-export const resolveSnippetFileInfo = (
-    codeView: HTMLElement,
-    requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<FileInfo> =>
-    of(codeView).pipe(
-        map(codeView => {
-            const anchors = codeView.getElementsByTagName('a')
-            let githubState: GitHubBlobUrl | undefined
-            for (const anchor of anchors) {
-                const anchorState = getGitHubState(anchor.href) as GitHubBlobUrl
-                if (anchorState) {
-                    githubState = anchorState
-                    break
-                }
-            }
+const COMMIT_HASH_REGEX = /^[0-9a-f]{40}$/i
 
-            return githubState
-        }),
-        filter(isDefined),
-        filter(propertyIsDefined('owner')),
-        filter(propertyIsDefined('ghRepoName')),
-        filter(propertyIsDefined('rev')),
-        filter(propertyIsDefined('filePath')),
-        map(({ owner, ghRepoName, ...rest }) => ({
-            repoName: `${window.location.host}/${owner}/${ghRepoName}`,
-            ...rest,
-        })),
-        switchMap(({ repoName, rev, ...rest }) =>
-            resolveRev({ repoName, rev, requestGraphQL }).pipe(
-                retryWhenCloneInProgressError(),
-                map(commitID => ({ ...rest, repoName, commitID, rev: rev || commitID }))
-            )
-        )
-    )
+export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileInfo> => {
+    try {
+        const selector = 'a:not(.commit-tease-sha)'
+        const anchors = codeView.querySelectorAll(selector)
+        const snippetPermalinkURL = new URL((anchors[0] as HTMLAnchorElement).href)
+        if (anchors.length !== 1) {
+            throw new Error(`Found ${anchors.length} matching ${selector} in snippet code view`)
+        }
+        const { repoName, filePath, rev } = parseURL(snippetPermalinkURL)
+        if (!filePath || !rev || !rev.match(COMMIT_HASH_REGEX)) {
+            throw new Error(`Could not determine snippet FileInfo from permalink href ${snippetPermalinkURL}`)
+        }
+        return of({
+            repoName,
+            filePath,
+            // The rev in a snippet permalink is a 40-character commit sha
+            commitID: rev,
+            rev,
+        })
+    } catch (err) {
+        return throwError(err)
+    }
+}
