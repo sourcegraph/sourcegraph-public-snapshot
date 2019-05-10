@@ -1,5 +1,5 @@
 import { DiffResolvedRevSpec } from '../../shared/repo'
-import { GitHubURL } from '../github'
+import { RepoSpec, RevSpec, FileSpec } from '../../../../shared/src/util/url'
 
 /**
  * getFileContainers returns the elements on the page which should be marked
@@ -41,8 +41,8 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
  * getDiffResolvedRev returns the base and head revision SHA, or null for non-diff views.
  */
 export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec | null {
-    const { isDelta, isCommit, isPullRequest, isCompare } = parseURL()
-    if (!isDelta) {
+    const { pageType } = parseURL()
+    if (!isDeltaPageType(pageType)) {
         return null
     }
 
@@ -52,7 +52,7 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
         'js-socket-channel js-updatable-content js-pull-refresh-on-pjax'
     )
     const isCommentedSnippet = codeView.classList.contains('js-comment-container')
-    if (isPullRequest) {
+    if (pageType === 'pull') {
         if (fetchContainers && fetchContainers.length === 1) {
             // tslint:disable-next-line
             for (let i = 0; i < fetchContainers.length; ++i) {
@@ -94,7 +94,7 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
                 headCommitID = (headInput as HTMLInputElement).value
             }
         }
-    } else if (isCommit) {
+    } else if (pageType === 'commit') {
         // Refined GitHub adds a `.patch-diff-links` element
         const shaContainers = document.querySelectorAll('.sha-block:not(.patch-diff-links)')
         if (shaContainers && shaContainers.length === 2) {
@@ -108,7 +108,7 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
                 headCommitID = headShaEl.innerHTML
             }
         }
-    } else if (isCompare) {
+    } else if (pageType === 'compare') {
         const resolvedDiffSpec = getResolvedDiffForCompare()
         if (resolvedDiffSpec) {
             return resolvedDiffSpec
@@ -116,7 +116,7 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
     }
 
     if (baseCommitID === '' || headCommitID === '') {
-        return getDiffResolvedRevFromPageSource(document.documentElement.innerHTML, isPullRequest!)
+        return getDiffResolvedRevFromPageSource(document.documentElement.innerHTML, pageType === 'pull')
     }
     return { baseCommitID, headCommitID }
 }
@@ -181,93 +181,70 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
     }
 }
 
-function getBranchName(): string | null {
-    const branchButtons = document.getElementsByClassName('btn btn-sm select-menu-button js-menu-target css-truncate')
-    if (branchButtons.length === 0) {
-        return null
-    }
-    // if the branch is a long name, it appears in the title of this element
-    // I'm not kidding, so dumb...
-    if ((branchButtons[0] as HTMLElement).title) {
-        return (branchButtons[0] as HTMLElement).title
-    }
-    const innerButtonEls = (branchButtons[0] as HTMLElement).getElementsByClassName(
-        'js-select-button css-truncate-target'
-    )
-    if (innerButtonEls.length === 0) {
-        return null
-    }
-    // otherwise, the branch name is fully rendered in the button
-    return (innerButtonEls[0] as HTMLElement).innerText
-}
-
-export function parseURL(loc: Pick<Location, 'host' | 'hash' | 'pathname'> = window.location): GitHubURL {
-    // TODO(john): this method has problems handling branch revisions with "/" character.
-
-    let user: string | undefined
-    let ghRepoName: string | undefined // in "github.com/foo/bar", just "bar"
-    let repoName: string | undefined
-    let rev: string | undefined
-    let filePath: string | undefined
-
-    const urlsplit = loc.pathname.slice(1).split('/')
-    user = urlsplit[0]
-    ghRepoName = urlsplit[1]
-
-    let revParts = 1 // a revision may have "/" chars, in which case we consume multiple parts;
-    if ((urlsplit[3] && (urlsplit[2] === 'tree' || urlsplit[2] === 'blob')) || urlsplit[2] === 'commit') {
-        const currBranch = getBranchName()
-        if (currBranch) {
-            revParts = currBranch.split('/').length
-        }
-        rev = urlsplit.slice(3, 3 + revParts).join('/')
-    }
-    if (urlsplit[2] === 'blob') {
-        filePath = urlsplit.slice(3 + revParts).join('/')
-    }
-    if (user && ghRepoName) {
-        repoName = `${loc.host}/${user}/${ghRepoName}`
-    } else {
-        repoName = ''
-    }
-
-    const isCompare = urlsplit[2] === 'compare'
-    const isPullRequest = urlsplit[2] === 'pull'
-    const isCommit = urlsplit[2] === 'commit'
-    const isDelta = isPullRequest || isCommit || isCompare
-    const isCodePage = urlsplit[2] === 'blob' || urlsplit[2] === 'tree'
-
-    const hash = parseGitHubHash(loc.hash)
-    const position = hash ? { line: hash.startLine, character: 0 } : undefined
-
-    return {
-        user,
-        repoName,
-        rev,
-        filePath,
-        ghRepoName,
-        isDelta,
-        isPullRequest,
-        position,
-        isCommit,
-        isCodePage,
-        isCompare,
-    }
-}
-
 /**
- * Parses the GitHub URL hash, such as "#L23-L28" in
- * https://github.com/ReactTraining/react-router/blob/master/packages/react-router/modules/Router.js#L23-L28.
- *
- * This hash has a slightly different format from Sourcegraph URL hashes. GitHub hashes do not support specifying
- * the character on a line, and GitHub hashes duplicate the "L" before the range end line number.
+ * Scrapes the branch name from the branch select menu element
+ * present on GitHub blob pages.
  */
-export function parseGitHubHash(hash: string): { startLine: number; endLine?: number } | undefined {
-    const m = hash.match(/^#?L(\d+)(?:-L(\d+))?/)
-    if (!m) {
-        return undefined
+export function getBranchName(): string {
+    const branchSelectMenu = document.querySelector('.branch-select-menu') as HTMLElement
+    if (!branchSelectMenu) {
+        throw new Error('Could not find .branch-select-menu')
     }
-    const startLine = parseInt(m[1], 10)
-    const endLine = m[2] ? parseInt(m[2], 10) : undefined
-    return { startLine, endLine }
+    const cssTruncateTarget = branchSelectMenu.querySelector('span.css-truncate-target') as HTMLElement
+    if (!cssTruncateTarget) {
+        throw new Error('Could not find span.css-truncate-target')
+    }
+    if (!cssTruncateTarget.innerText.endsWith('…')) {
+        // The branch name is not truncated
+        return cssTruncateTarget.innerText
+    }
+    // When the branch name is truncated, it is stored in full
+    // in the select menu button's title attribute.
+    const selectButton = cssTruncateTarget.closest('.select-menu-button') as HTMLElement
+    if (!selectButton) {
+        throw new Error('Could not find .select-menu-button')
+    }
+    return selectButton.title
+}
+
+type GitHubURL =
+    | ({ pageType: 'tree' | 'commit' | 'pull' | 'compare' | 'other' } & RepoSpec)
+    | ({ pageType: 'blob'; revAndFilePath: string } & RepoSpec)
+
+export function isDeltaPageType(pageType: GitHubURL['pageType']): boolean {
+    switch (pageType) {
+        case 'commit':
+        case 'pull':
+        case 'compare':
+            return true
+        default:
+            return false
+    }
+}
+
+export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.location): GitHubURL {
+    const { host, pathname } = loc
+    const [user, ghRepoName, pageType, ...rest] = pathname.slice(1).split('/')
+    if (!user || !ghRepoName) {
+        throw new Error(`Could not parse repoName from GitHub url: ${window.location}`)
+    }
+    const repoName = `${host}/${user}/${ghRepoName}`
+    switch (pageType) {
+        case 'blob':
+            return {
+                pageType,
+                repoName,
+                revAndFilePath: rest.join('/'),
+            }
+        case 'tree':
+        case 'pull':
+        case 'commit':
+        case 'compare':
+            return {
+                pageType,
+                repoName,
+            }
+        default:
+            return { pageType: 'other', repoName }
+    }
 }

@@ -1,17 +1,6 @@
-import { parseGitHubHash, parseURL } from './util'
+import { parseURL } from './util'
 
 describe('util', () => {
-    describe('parseGitHubHash()', () => {
-        test('parses nonexistent', () => expect(parseGitHubHash('')).toBe(undefined))
-        test('parses empty', () => expect(parseGitHubHash('#')).toBe(undefined))
-        test('parses single line', () =>
-            expect(parseGitHubHash('#L123')).toEqual({ startLine: 123, endLine: undefined }))
-        test('parses range', () => expect(parseGitHubHash('#L123-L456')).toEqual({ startLine: 123, endLine: 456 }))
-        test('handles invalid value', () => expect(parseGitHubHash('#Lfoo')).toBe(undefined))
-        test('allows extra after', () =>
-            expect(parseGitHubHash('#L123-L456-foo')).toEqual({ startLine: 123, endLine: 456 }))
-    })
-
     describe('parseURL()', () => {
         const testcases: {
             name: string
@@ -50,6 +39,18 @@ describe('util', () => {
                 name: 'snippet permalink',
                 url:
                     'https://github.com/sourcegraph/sourcegraph/blob/6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser/src/shared/repo/backend.tsx#L128-L151',
+            },
+            {
+                name: 'pull request list',
+                url: 'https://github.com/sourcegraph/sourcegraph/pulls',
+            },
+            {
+                name: 'wiki page',
+                url: 'https://github.com/sourcegraph/sourcegraph/pulls',
+            },
+            {
+                name: 'branch name with forward slashes',
+                url: 'http://ghe.sgdev.org/beyang/mux/blob/jr/branch/mux.go',
             },
         ]
         for (const { name, url } of testcases) {

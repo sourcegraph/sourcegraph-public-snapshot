@@ -171,8 +171,8 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
                 ...snippetCodeView,
             }
         }
-        const { filePath } = parseURL()
-        if (!filePath) {
+        const { pageType } = parseURL()
+        if (pageType !== 'blob') {
             // this is not a single-file code view
             return null
         }
@@ -202,9 +202,9 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
         }
 
         const files = document.getElementsByClassName('file')
-        const { filePath } = parseURL()
+        const { pageType } = parseURL()
         const isSingleCodeFile =
-            files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
+            files.length === 1 && pageType === 'blob' && document.getElementsByClassName('diff-view').length === 0
 
         if (isSingleCodeFile) {
             return { element: elem, ...singleFileCodeView }

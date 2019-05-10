@@ -1,5 +1,5 @@
 import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
-import { parseURL } from './util'
+import { isDeltaPageType, parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     const td = codeElement.closest('td')!
@@ -199,8 +199,8 @@ export const searchCodeSnippetDOMFunctions: DOMFunctions = {
  * @param element, either an element contained in a code view or the code view itself
  */
 export function isDomSplitDiff(element: HTMLElement): boolean {
-    const { isDelta } = parseURL()
-    if (!isDelta) {
+    const { pageType } = parseURL()
+    if (!isDeltaPageType(pageType)) {
         return false
     }
     const codeView = element.classList.contains('file') ? element : element.closest('.file')
