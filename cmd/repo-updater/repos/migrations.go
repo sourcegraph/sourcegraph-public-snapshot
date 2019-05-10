@@ -411,7 +411,7 @@ func AWSCodeCommitSetBogusGitCredentialsMigration(clock func() time.Time) Migrat
 		for _, svc := range svcs {
 			var c schema.AWSCodeCommitConnection
 			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-				return errors.Errorf("%s  external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+				return errors.Errorf("%s external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
 			}
 
 			gitCredentials := c.GitCredentials
