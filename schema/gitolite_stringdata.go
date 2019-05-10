@@ -22,13 +22,13 @@ const GitoliteSchemaJSON = `{
       "examples": ["gitolite.example.com/"]
     },
     "host": {
-      "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com).",
+      "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).",
       "not": {
         "type": "string",
         "pattern": "example\\.com"
       },
       "type": "string",
-      "examples": ["git@gitolite.example.com"]
+      "examples": ["git@gitolite.example.com", "ssh://git@gitolite.example.com:2222/"]
     },
     "blacklist": {
       "description": "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
