@@ -1,3 +1,4 @@
+import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
@@ -38,6 +39,14 @@ export const OrgHeader: React.FunctionComponent<Props> = (props: Props) => (
                                 activeClassName="area-header__nav-link--active"
                             >
                                 <UserIcon className="icon-inline" /> Members
+                            </NavLink>
+                            <NavLink
+                                to={`${props.match.url}/searches`}
+                                exact={false}
+                                className="btn area-header__nav-link"
+                                activeClassName="area-header__nav-link--active"
+                            >
+                                <FeatureSearchOutlineIcon className="icon-inline" /> Searches
                             </NavLink>
                             {props.org.viewerCanAdminister && (
                                 <NavLink

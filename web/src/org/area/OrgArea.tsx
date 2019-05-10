@@ -20,6 +20,10 @@ import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
 import { OrgOverviewPage } from './OrgOverviewPage'
+import { OrgSavedSearchesPage } from './OrgSavedSearchesPage'
+import { SavedSearchForm } from '../../search/saved-searches/SavedSearchForm'
+import { SavedQueryFields } from '../../search/saved-queries/SavedQueryForm'
+import { OrgSavedSearchesCreateForm } from '../saved-searches/OrgSavedSearchesCreateForm'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
     return queryGraphQL(
@@ -32,6 +36,7 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
                     displayName
                     url
                     settingsURL
+                    databaseID
                     viewerPendingInvitation {
                         id
                         sender {
@@ -187,6 +192,28 @@ export class OrgArea extends React.Component<Props> {
                                         // tslint:disable-next-line:jsx-no-lambda
                                         render={routeComponentProps => (
                                             <OrgMembersPage {...routeComponentProps} {...transferProps} />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${this.props.match.url}/searches`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <OrgSavedSearchesPage
+                                                {...routeComponentProps}
+                                                {...transferProps}
+                                                isLightTheme={this.props.isLightTheme}
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${this.props.match.url}/searches/add`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <OrgSavedSearchesCreateForm {...routeComponentProps} {...transferProps} />
                                         )}
                                     />
                                     <Route

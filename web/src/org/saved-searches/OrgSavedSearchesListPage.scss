@@ -1,0 +1,22 @@
+.org-saved-searches-list-page {
+    padding: 0 0.75rem;
+
+    &__title {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border-top: solid 1px #cfd6e4;
+        border-bottom: solid 1px #cfd6e4;
+        font-weight: bold;
+
+        &--icon {
+            margin-right: 0.5rem;
+        }
+    }
+}
