@@ -330,51 +330,23 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	type getfn struct {
-		kind string
-		fn   func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
-	}
-
-	var fns []getfn
-
-	if s.Syncer != nil {
-		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-				Names: []string{string(args.Repo)},
-			})
-
-			if err != nil || len(repos) != 1 {
-				return nil, false, err
-			}
-
-			info, err := newRepoInfo(repos[0])
-			if err != nil {
-				return nil, false, err
-			}
-
-			return info, true, nil
-		}})
-	} else {
-		fns = append(fns,
-			getfn{"GITHUB", repos.GetGitHubRepository},
-			getfn{"GITLAB", repos.GetGitLabRepository},
-			getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
-			getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
-			getfn{"GITOLITE", repos.GetGitoliteRepository},
-		)
-	}
-
 	var (
 		repo          *protocol.RepoInfo
 		authoritative bool
 	)
 
-	// Find the authoritative source of the repository being looked up.
-	for _, get := range fns {
-		if repo, authoritative, err = get.fn(ctx, args); authoritative {
-			log15.Debug("repoupdater.lookup-repo", "source", get.kind)
-			tr.LazyPrintf("authorative: %s", get.kind)
-			break
+	repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+		Names: []string{string(args.Repo)},
+	})
+
+	if err != nil || len(repos) != 1 {
+		authoritative = false
+	} else {
+		repo, err = newRepoInfo(repos[0])
+		if err != nil {
+			authoritative = false
+		} else {
+			authoritative = true
 		}
 	}
 
