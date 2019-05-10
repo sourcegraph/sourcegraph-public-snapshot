@@ -205,7 +205,7 @@ func (s *Server) cleanupRepos() {
 		log15.Error("finding mount point for dir containing repos", "error", err)
 		mp = "<not found>"
 	}
-	log15.Info("cleanup: checking free disk space", "free space in GiB", float64(actualFreeBytes)/G, "desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G, "mount point", mp)
+	log15.Info("cleanup", "free space in GiB", float64(actualFreeBytes)/G, "desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G, "mount point", mp)
 
 	// Free up space if necessary.
 	howManyBytesToFree := int64(s.DesiredFreeDiskSpace) - int64(actualFreeBytes)
