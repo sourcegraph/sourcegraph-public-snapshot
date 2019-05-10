@@ -280,12 +280,10 @@ var Assert = struct {
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
 		want := append(Repos{}, rs...).With(Opt.RepoID(0))
-		sort.Sort(want)
 		return func(t testing.TB, have Repos) {
 			t.Helper()
-			have = append(Repos{}, have...)
-			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
-			sort.Sort(have)
+			// Exclude auto-generated IDs from equality tests
+			have = append(Repos{}, have...).With(Opt.RepoID(0))
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("repos: %s", cmp.Diff(have, want))
 			}
@@ -307,8 +305,8 @@ var Assert = struct {
 		want := append(ExternalServices{}, es...).With(Opt.ExternalServiceID(0))
 		return func(t testing.TB, have ExternalServices) {
 			t.Helper()
-			have = append(ExternalServices{}, have...)
-			have.Apply(Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
+			// Exclude auto-generated IDs from equality tests
+			have = append(ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("external services: %s", cmp.Diff(have, want))
 			}
