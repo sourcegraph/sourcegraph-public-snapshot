@@ -131,105 +131,6 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	})
 }
 
-func TestRepoLookup(t *testing.T) {
-	s := Server{
-		Store:       new(repos.FakeStore),
-		InternalAPI: &internalAPIFake{},
-	}
-
-	t.Run("no args", func(t *testing.T) {
-		if _, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
-			t.Error()
-		}
-	})
-
-	t.Run("github", func(t *testing.T) {
-		t.Run("not authoritative", func(t *testing.T) {
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, false, errors.New("x")
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "example.com/a/b"})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
-				t.Errorf("got result %+v, want nil", result)
-			}
-		})
-
-		t.Run("not found", func(t *testing.T) {
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, true, github.ErrNotFound
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
-				t.Errorf("got result %+v, want nil", result)
-			}
-		})
-
-		t.Run("unexpected error", func(t *testing.T) {
-			wantErr := errors.New("x")
-
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, true, wantErr
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
-			if err != wantErr {
-				t.Fatal(err)
-			}
-			if result != nil {
-				t.Errorf("got result %+v, want nil", result)
-			}
-		})
-	})
-}
-
-func TestRepoLookup_found(t *testing.T) {
-	s := Server{
-		Store:       new(repos.FakeStore),
-		InternalAPI: &internalAPIFake{},
-	}
-
-	want := &protocol.RepoLookupResult{
-		Repo: &protocol.RepoInfo{
-			ExternalRepo: &api.ExternalRepoSpec{
-				ID:          "a",
-				ServiceType: github.ServiceType,
-				ServiceID:   "https://github.com/",
-			},
-			Name:        "github.com/c/d",
-			Description: "b",
-			Fork:        true,
-		},
-	}
-
-	orig := repos.GetGitHubRepositoryMock
-	repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-		return want.Repo, true, nil
-	}
-	defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-	result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(result, want) {
-		t.Errorf("got %+v, want %+v", result, want)
-	}
-}
-
 func TestServer_SetRepoEnabled(t *testing.T) {
 	githubService := &repos.ExternalService{
 		ID:          1,
@@ -695,12 +596,10 @@ func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 	return svcs
 }
 
-func TestRepoLookup_syncer(t *testing.T) {
+func TestRepoLookup(t *testing.T) {
 	now := time.Now().UTC()
-	ctx := context.Background()
 
-	store := new(repos.FakeStore)
-	_ = store.UpsertRepos(ctx, &repos.Repo{
+	githubRepository := &repos.Repo{
 		Name:        "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
@@ -726,9 +625,9 @@ func TestRepoLookup_syncer(t *testing.T) {
 			Description:   "The description",
 			NameWithOwner: "foo/bar",
 		},
-	})
+	}
 
-	_ = store.UpsertRepos(ctx, &repos.Repo{
+	awsCodeCommitRepository := &repos.Repo{
 		Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 		Description: "The stripe-go lib",
 		Language:    "barlang",
@@ -756,7 +655,13 @@ func TestRepoLookup_syncer(t *testing.T) {
 			HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
 			LastModified: &now,
 		},
-	})
+	}
+
+	ctx := context.Background()
+
+	store := new(repos.FakeStore)
+	store.UpsertRepos(ctx, githubRepository)
+	store.UpsertRepos(ctx, awsCodeCommitRepository)
 
 	s := Server{
 		Syncer:      &repos.Syncer{},
@@ -764,26 +669,20 @@ func TestRepoLookup_syncer(t *testing.T) {
 		InternalAPI: &internalAPIFake{},
 	}
 
-	t.Run("not found", func(t *testing.T) {
-		have, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/a/b"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := &protocol.RepoLookupResult{ErrorNotFound: true}
-		if !reflect.DeepEqual(have, want) {
-			t.Error(cmp.Diff(have, want))
-		}
-	})
-
 	testCases := []struct {
-		name         string
-		repoName     string
-		wantRepoInfo *protocol.RepoInfo
+		name              string
+		lookupArgRepoName string
+		want              *protocol.RepoLookupResult
 	}{
 		{
-			name:     "found - GitHub",
-			repoName: "github.com/foo/bar",
-			wantRepoInfo: &protocol.RepoInfo{
+			name:              "not found",
+			lookupArgRepoName: "github.com/a/b",
+			want:              &protocol.RepoLookupResult{ErrorNotFound: true},
+		},
+		{
+			name:              "found - GitHub",
+			lookupArgRepoName: "github.com/foo/bar",
+			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
@@ -798,12 +697,12 @@ func TestRepoLookup_syncer(t *testing.T) {
 					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
-			},
+			}},
 		},
 		{
-			name:     "found - AWS CodeCommit",
-			repoName: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
-			wantRepoInfo: &protocol.RepoInfo{
+			name:              "found - AWS CodeCommit",
+			lookupArgRepoName: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: awscodecommit.ServiceType,
@@ -818,20 +717,20 @@ func TestRepoLookup_syncer(t *testing.T) {
 					Blob:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/browse/{rev}/--/{path}",
 					Commit: "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/commit/{commit}",
 				},
-			},
+			}},
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			want := &protocol.RepoLookupResult{Repo: tc.wantRepoInfo}
-			result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: api.RepoName(tc.repoName)})
+			args := protocol.RepoLookupArgs{Repo: api.RepoName(tc.lookupArgRepoName)}
+			result, err := s.repoLookup(ctx, args)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := pretty.Compare(result, want); diff != "" {
-				t.Fatalf("ListRepos:\n%s", diff)
+			if diff := pretty.Compare(result, tc.want); diff != "" {
+				t.Fatalf("RepoLookup:\n%s", diff)
 			}
 		})
 	}
