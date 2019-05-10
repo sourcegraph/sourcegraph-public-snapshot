@@ -14,16 +14,16 @@ import {
 } from '../backend/errors'
 
 /**
- * @return Observable that emits the repo URL
+ * @return Observable that emits if the repo exists on the instance.
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
 export const resolveRepo = memoizeObservable(
-    ({ repoName, requestGraphQL }: RepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
+    ({ repoName, requestGraphQL }: RepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<void> =>
         requestGraphQL<GQL.IQuery>({
             request: gql`
                 query ResolveRepo($repoName: String!) {
                     repository(name: $repoName) {
-                        url
+                        name
                     }
                 }
             `,
@@ -36,8 +36,6 @@ export const resolveRepo = memoizeObservable(
                 if (!repository) {
                     throw new RepoNotFoundError(repoName)
                 }
-
-                return repository.url
             }, catchError((err, caught) => caught))
         ),
     makeRepoURI
