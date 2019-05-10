@@ -15,11 +15,14 @@ import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
+import { OrgSavedSearchesCreateForm } from '../saved-searches/OrgSavedSearchesCreateForm'
+import { OrgSavedSearchesUpdateForm } from '../saved-searches/OrgSavedSearchesUpdateForm'
 import { OrgSettingsArea } from '../settings/OrgSettingsArea'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
 import { OrgOverviewPage } from './OrgOverviewPage'
+import { OrgSavedSearchesPage } from './OrgSavedSearchesPage'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
     return queryGraphQL(
@@ -187,6 +190,37 @@ export class OrgArea extends React.Component<Props> {
                                         // tslint:disable-next-line:jsx-no-lambda
                                         render={routeComponentProps => (
                                             <OrgMembersPage {...routeComponentProps} {...transferProps} />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${this.props.match.url}/searches`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <OrgSavedSearchesPage
+                                                {...routeComponentProps}
+                                                {...transferProps}
+                                                isLightTheme={this.props.isLightTheme}
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${this.props.match.url}/searches/add`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <OrgSavedSearchesCreateForm {...routeComponentProps} {...transferProps} />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${this.props.match.url}/searches/:id`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <OrgSavedSearchesUpdateForm {...routeComponentProps} {...transferProps} />
                                         )}
                                     />
                                     <Route

@@ -63,7 +63,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             Discussions
                         </Link>
                     )}
-                    <Link to="/search/searches" className="dropdown-item">
+                    <Link to={`/users/${this.props.authenticatedUser.username}/searches`} className="dropdown-item">
                         Saved searches
                     </Link>
                     <DropdownItem divider={true} />
