@@ -3,12 +3,12 @@ package db
 import (
 	"context"
 	"database/sql"
-	"errors"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -16,6 +16,8 @@ import (
 
 type savedSearches struct{}
 
+// IsEmpty tells if there are no saved searches (at all) on this Sourcegraph
+// instance.
 func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
 	q := `SELECT true FROM saved_searches LIMIT 1`
 	var isNotEmpty bool
@@ -26,15 +28,14 @@ func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
 		}
 		return false, err
 	}
-
 	return false, nil
-
 }
 
 // ListAll lists all the saved searches on an instance.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
-// It is the caller's responsibility to make sure this response never makes it to a user.
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure that only users
+// with the proper permissions can access the returned saved searches.
 func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
 	if Mocks.SavedSearches.ListAll != nil {
 		return Mocks.SavedSearches.ListAll(ctx)
@@ -47,7 +48,8 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 		tr.Finish()
 	}()
 
-	q := sqlf.Sprintf(`SELECT id,
+	q := sqlf.Sprintf(`SELECT
+		id,
 		description,
 		query,
 		notify_owner,
@@ -58,7 +60,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 	`)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "QueryContext")
 	}
 
 	for rows.Next() {
@@ -72,7 +74,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 			&sq.Config.UserID,
 			&sq.Config.OrgID,
 			&sq.Config.SlackWebhookURL); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Scan")
 		}
 		sq.Spec.Key = sq.Config.Key
 		if sq.Config.UserID != nil {
@@ -85,11 +87,16 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 	return savedSearches, nil
 }
 
+// GetByID returns the saved search with the given ID.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure this response
+// only makes it to users with proper permissions to access the saved search.
 func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
 	if Mocks.SavedSearches.GetByID != nil {
 		return Mocks.SavedSearches.GetByID(ctx, id)
 	}
-	var savedSearch api.SavedQuerySpecAndConfig
+	var sq api.SavedQuerySpecAndConfig
 
 	err := dbconn.Global.QueryRowContext(ctx, `SELECT
 		id,
@@ -101,56 +108,51 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		org_id,
 		slack_webhook_url
 		FROM saved_searches WHERE id=$1`, id).Scan(
-		&savedSearch.Config.Key,
-		&savedSearch.Config.Description,
-		&savedSearch.Config.Query,
-		&savedSearch.Config.Notify,
-		&savedSearch.Config.NotifySlack,
-		&savedSearch.Config.UserID,
-		&savedSearch.Config.OrgID,
-		&savedSearch.Config.SlackWebhookURL)
-	savedSearch.Spec.Key = savedSearch.Config.Key
-	if savedSearch.Config.UserID != nil {
-		savedSearch.Spec.Subject = api.SettingsSubject{User: savedSearch.Config.UserID}
-	} else if savedSearch.Config.OrgID != nil {
-		savedSearch.Spec.Subject = api.SettingsSubject{Org: savedSearch.Config.OrgID}
-	}
-
+		&sq.Config.Key,
+		&sq.Config.Description,
+		&sq.Config.Query,
+		&sq.Config.Notify,
+		&sq.Config.NotifySlack,
+		&sq.Config.UserID,
+		&sq.Config.OrgID,
+		&sq.Config.SlackWebhookURL)
 	if err != nil {
 		return nil, err
 	}
-	return &savedSearch, err
+	sq.Spec.Key = sq.Config.Key
+	if sq.Config.UserID != nil {
+		sq.Spec.Subject.User = sq.Config.UserID
+	} else if sq.Config.OrgID != nil {
+		sq.Spec.Subject.Org = sq.Config.OrgID
+	}
+	return &sq, err
 }
 
-// ListSavedSearchesByUserID lists all the saved searches associated with a user,
-// including saved searches in organizations the user is a member of.
+// ListSavedSearchesByUserID lists all the saved searches associated with a
+// user, including saved searches in organizations the user is a member of.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
-// It is the caller's responsibility to make sure this method returns only saved searches associated with
-// the current user.
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure that only the
+// specified user or users with proper permissions can access the returned
+// saved searches.
 func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
 	if Mocks.SavedSearches.ListSavedSearchesByUserID != nil {
 		return Mocks.SavedSearches.ListSavedSearchesByUserID(ctx, userID)
 	}
 	var savedSearches []*types.SavedSearch
-	orgIDRows, err := dbconn.Global.QueryContext(ctx, `SELECT org_id FROM org_members WHERE user_id=$1`, userID)
+	orgs, err := Orgs.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 	var orgIDs []int32
-	for orgIDRows.Next() {
-		var orgID int32
-		err := orgIDRows.Scan(&orgID)
-		if err != nil {
-			return nil, err
-		}
-		orgIDs = append(orgIDs, orgID)
+	for _, org := range orgs {
+		orgIDs = append(orgIDs, org.ID)
 	}
 	var orgConditions []*sqlf.Query
 	for _, orgID := range orgIDs {
 		orgConditions = append(orgConditions, sqlf.Sprintf("org_id=%d", orgID))
 	}
 	conds := sqlf.Sprintf("WHERE user_id=%d", userID)
-	if err != nil {
-		return nil, err
-	}
 
 	if len(orgConditions) > 0 {
 		conds = sqlf.Sprintf("%v OR %v", conds, sqlf.Join(orgConditions, " ) OR ("))
@@ -169,22 +171,25 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "QueryContext(2)")
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
 		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Scan(2)")
 		}
 		savedSearches = append(savedSearches, &ss)
 	}
-	return savedSearches, err
+	return savedSearches, nil
 }
 
-// ListSavedSearchesByUserID lists all the saved searches associated with an organization.
+// ListSavedSearchesByUserID lists all the saved searches associated with an
+// organization.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the user is an admin.
-// It is the caller's responsibility to make sure this method returns only saved searches from organizations the user is a part of.
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure only admins or
+// members of the specified organization can access the returned saved
+// searches.
 func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error) {
 	var savedSearches []*types.SavedSearch
 	conds := sqlf.Sprintf("WHERE org_id=%d", orgID)
@@ -201,18 +206,24 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "QueryContext")
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
 		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Scan")
 		}
 		savedSearches = append(savedSearches, &ss)
 	}
-	return savedSearches, err
+	return savedSearches, nil
 }
 
+// Create creates a new saved search with the specified parameters. The ID
+// field must be zero, or an error will be returned.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure the user has
+// proper permissions to create the saved search.
 func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	if Mocks.SavedSearches.Create != nil {
 		return Mocks.SavedSearches.Create(ctx, newSavedSearch)
@@ -258,6 +269,11 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 	return savedQuery, nil
 }
 
+// Update updates an existing saved search.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure the user has
+// proper permissions to perform the update.
 func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	if Mocks.SavedSearches.Update != nil {
 		return Mocks.SavedSearches.Update(ctx, savedSearch)
@@ -297,6 +313,11 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 	return savedQuery, nil
 }
 
+// Delete hard-deletes an existing saved search.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure the user has
+// proper permissions to perform the delete.
 func (s *savedSearches) Delete(ctx context.Context, id int32) (err error) {
 	if Mocks.SavedSearches.Delete != nil {
 		return Mocks.SavedSearches.Delete(ctx, id)
