@@ -24,7 +24,7 @@
 
 [38;5;239m--------------------------------------------------------------------------------
 [0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/088f8e1d436e8d636f13cd83a345b3d6ff2f04ae[0m[38;5;239m)
-[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mGuillaume J. Charmes[0m [38;5;68m"oauth2: Add support for custom params in Exchange"[0m [38;5;23m(N months ago)[0m
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mGuillaume J. Charmes[0m [38;5;68m"oauth2: Add support for custom params in Exchange"[0m [38;5;23m(1 year ago)[0m
 [38;5;239m--------------------------------------------------------------------------------
 [0m  diff --git oauth2.go oauth2.go
   index 10299d2..16775d0 100644
