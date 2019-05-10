@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 )
 
 func init() {
@@ -41,16 +42,17 @@ Examples:
 		firstFlag = flagSet.Int("first", 1000, "Returns the first n repositories from the list. (use -1 for unlimited)")
 		queryFlag = flagSet.String("query", "", `Returns repositories whose names match the query. (e.g. "myorg/")`)
 		// TODO: add support for "names" field.
-		enabledFlag         = flagSet.Bool("enabled", true, "Include enabled repositories.")
-		disabledFlag        = flagSet.Bool("disabled", false, "Include disabled repositories.")
-		clonedFlag          = flagSet.Bool("cloned", true, "Include cloned repositories.")
-		cloneInProgressFlag = flagSet.Bool("clone-in-progress", true, "Include repositories that are currently being cloned.")
-		notClonedFlag       = flagSet.Bool("not-cloned", true, "Include repositories that are not yet cloned and for which cloning is not in progress.")
-		indexedFlag         = flagSet.Bool("indexed", true, "Include repositories that have a text search index.")
-		notIndexedFlag      = flagSet.Bool("not-indexed", true, "Include repositories that do not have a text search index.")
-		orderByFlag         = flagSet.String("order-by", "name", `How to order the results; possible choices are: "name", "created-at"`)
-		descendingFlag      = flagSet.Bool("descending", false, "Whether or not results should be in descending order.")
-		apiFlags            = newAPIFlags(flagSet)
+		enabledFlag          = flagSet.Bool("enabled", true, "Include enabled repositories.")
+		disabledFlag         = flagSet.Bool("disabled", false, "Include disabled repositories.")
+		clonedFlag           = flagSet.Bool("cloned", true, "Include cloned repositories.")
+		cloneInProgressFlag  = flagSet.Bool("clone-in-progress", true, "Include repositories that are currently being cloned.")
+		notClonedFlag        = flagSet.Bool("not-cloned", true, "Include repositories that are not yet cloned and for which cloning is not in progress.")
+		indexedFlag          = flagSet.Bool("indexed", true, "Include repositories that have a text search index.")
+		notIndexedFlag       = flagSet.Bool("not-indexed", true, "Include repositories that do not have a text search index.")
+		orderByFlag          = flagSet.String("order-by", "name", `How to order the results; possible choices are: "name", "created-at"`)
+		descendingFlag       = flagSet.Bool("descending", false, "Whether or not results should be in descending order.")
+		namesWithoutHostFlag = flagSet.Bool("names-without-host", false, "Whether or not repository names should be printed without the code host (new form)")
+		apiFlags             = newAPIFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -123,6 +125,11 @@ Examples:
 			result: &result,
 			done: func() error {
 				for _, repo := range result.Repositories.Nodes {
+					if *namesWithoutHostFlag {
+						firstSlash := strings.Index(repo.Name, "/")
+						fmt.Println(repo.Name[firstSlash+len("/"):])
+						continue
+					}
 					fmt.Println(repo.Name)
 				}
 				return nil
