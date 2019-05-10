@@ -9,10 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/pkg/errors"
 )
 
 type savedSearches struct{}
@@ -96,7 +96,7 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 	if Mocks.SavedSearches.GetByID != nil {
 		return Mocks.SavedSearches.GetByID(ctx, id)
 	}
-	var savedSearch api.SavedQuerySpecAndConfig
+	var sq api.SavedQuerySpecAndConfig
 
 	err := dbconn.Global.QueryRowContext(ctx, `SELECT
 		id,
@@ -108,23 +108,22 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		org_id,
 		slack_webhook_url
 		FROM saved_searches WHERE id=$1`, id).Scan(
-		&savedSearch.Config.Key,
-		&savedSearch.Config.Description,
-		&savedSearch.Config.Query,
-		&savedSearch.Config.Notify,
-		&savedSearch.Config.NotifySlack,
-		&savedSearch.Config.UserID,
-		&savedSearch.Config.OrgID,
-		&savedSearch.Config.SlackWebhookURL)
-	savedSearch.Spec.Key = savedSearch.Config.Key
-	if savedSearch.Config.UserID != nil {
-		savedSearch.Spec.Subject = api.SettingsSubject{User: savedSearch.Config.UserID}
-	} else if savedSearch.Config.OrgID != nil {
-		savedSearch.Spec.Subject = api.SettingsSubject{Org: savedSearch.Config.OrgID}
-	}
-
-	if err != nil {
-		return nil, err
+		&sq.Config.Key,
+		&sq.Config.Description,
+		&sq.Config.Query,
+		&sq.Config.Notify,
+		&sq.Config.NotifySlack,
+		&sq.Config.UserID,
+		&sq.Config.OrgID,
+		&sq.Config.SlackWebhookURL)
+		if err != nil {
+			return nil, err
+		}
+		sq.Spec.Key = sq.Config.Key
+	if sq.Config.UserID != nil {
+		sq.Spec.Subject.User = sq.Config.UserID
+	} else if sq.Config.OrgID != nil {
+		sq.Spec.Subject.Org = sq.Config.OrgID
 	}
 	return &savedSearch, err
 }
