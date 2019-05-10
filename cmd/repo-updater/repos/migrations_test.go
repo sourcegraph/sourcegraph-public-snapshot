@@ -967,7 +967,6 @@ func testAWSCodeCommitSetBogusGitCredentialsMigration(store repos.Store) func(*t
 						func(e *repos.ExternalService) {
 							var err error
 
-							fmt.Printf("without-credentials -- e.Config=%q\n", e.Config)
 							e.Config, err = jsonc.Edit(e.Config,
 								schema.AWSCodeCommitGitCredentials{
 									Username: "insert-git-credentials-username-here",
