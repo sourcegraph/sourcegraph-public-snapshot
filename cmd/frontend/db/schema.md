@@ -451,10 +451,10 @@ Indexes:
  id                | integer                  | not null default nextval('saved_searches_id_seq'::regclass)
  description       | text                     | not null
  query             | text                     | not null
- created_at        | timestamp with time zone | default now()
- updated_at        | timestamp with time zone | default now()
- notify_owner      | boolean                  | 
- notify_slack      | boolean                  | 
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+ notify_owner      | boolean                  | not null
+ notify_slack      | boolean                  | not null
  user_id           | integer                  | 
  org_id            | integer                  | 
  slack_webhook_url | text                     | 
