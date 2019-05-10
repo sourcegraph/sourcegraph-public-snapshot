@@ -61,6 +61,8 @@ func TestIntegration(t *testing.T) {
 			testBitbucketServerSetDefaultRepositoryQueryMigration(store)},
 		{"Migrations/BitbucketServerUsername",
 			testBitbucketServerUsernameMigration(store)},
+		{"Migrations/AWSCodeCommitSetBogusGitCredentialsMigration",
+			testAWSCodeCommitSetBogusGitCredentialsMigration(store)},
 		{"Migrations/EnabledStateDeprecationMigration",
 			testEnabledStateDeprecationMigration(store)},
 	} {

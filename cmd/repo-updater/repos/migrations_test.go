@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestEnabledStateDeprecationMigration(t *testing.T) {
@@ -872,6 +873,193 @@ func testBitbucketServerUsernameMigration(store repos.Store) func(*testing.T) {
 
 	}
 }
+
+func TestAWSCodeCommitSetBogusGitCredentialsMigration(t *testing.T) {
+	t.Parallel()
+	testAWSCodeCommitSetBogusGitCredentialsMigration(new(repos.FakeStore))(t)
+}
+
+func testAWSCodeCommitSetBogusGitCredentialsMigration(store repos.Store) func(*testing.T) {
+	awsCodeCommitServiceWithCredentials := repos.ExternalService{
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: formatJSON(`{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"username": "user", "password": "pw"},
+		}`),
+	}
+
+	awsCodeCommitServiceWithoutCredentials := repos.ExternalService{
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: formatJSON(`{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey"
+		}`),
+	}
+
+	awsCodeCommitServiceWithCredentialsMissingUsername := repos.ExternalService{
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: formatJSON(`{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"password": "pw"},
+		}`),
+	}
+
+	awsCodeCommitServiceWithCredentialsMissingPassword := repos.ExternalService{
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: formatJSON(`{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"username": "username"},
+		}`),
+	}
+
+	gitlab := repos.ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "Gitlab - Test",
+		Config:      formatJSON(`{"url": "https://gitlab.com"}`),
+	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name   string
+			stored repos.ExternalServices
+			assert repos.ExternalServicesAssertion
+			err    string
+		}{
+			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
+			{
+				name:   "non-awsCodeCommit services are left unchanged",
+				stored: repos.ExternalServices{&gitlab},
+				assert: repos.Assert.ExternalServicesEqual(&gitlab),
+				err:    "<nil>",
+			},
+			{
+				name:   "awsCodeCommit services with gitCredentials set are left unchanged",
+				stored: repos.ExternalServices{&awsCodeCommitServiceWithCredentials},
+				assert: repos.Assert.ExternalServicesEqual(&awsCodeCommitServiceWithCredentials),
+				err:    "<nil>",
+			},
+			{
+				name:   "awsCodeCommit services without credentials are migrated",
+				stored: repos.ExternalServices{&awsCodeCommitServiceWithoutCredentials},
+				assert: repos.Assert.ExternalServicesEqual(
+					awsCodeCommitServiceWithoutCredentials.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+
+							fmt.Printf("without-credentials -- e.Config=%q\n", e.Config)
+							e.Config, err = jsonc.Edit(e.Config,
+								schema.AWSCodeCommitGitCredentials{
+									Username: "insert-git-credentials-username-here",
+									Password: "insert-git-credentials-password-here",
+								},
+								"gitCredentials",
+							)
+
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+			{
+				name:   "awsCodeCommit services with only username in credentials are migrated",
+				stored: repos.ExternalServices{&awsCodeCommitServiceWithCredentialsMissingPassword},
+				assert: repos.Assert.ExternalServicesEqual(
+					awsCodeCommitServiceWithCredentialsMissingPassword.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+							e.Config, err = jsonc.Edit(e.Config,
+								schema.AWSCodeCommitGitCredentials{
+									Username: "username",
+									Password: "insert-git-credentials-password-here",
+								},
+								"gitCredentials",
+							)
+
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+			{
+				name:   "awsCodeCommit services with only password in credentials are migrated",
+				stored: repos.ExternalServices{&awsCodeCommitServiceWithCredentialsMissingUsername},
+				assert: repos.Assert.ExternalServicesEqual(
+					awsCodeCommitServiceWithCredentialsMissingUsername.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+							e.Config, err = jsonc.Edit(e.Config,
+								schema.AWSCodeCommitGitCredentials{
+									Username: "insert-git-credentials-username-here",
+									Password: "pw",
+								},
+								"gitCredentials",
+							)
+
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+					t.Fatalf("failed to prepare store: %v", err)
+				}
+
+				err := repos.AWSCodeCommitSetBogusGitCredentialsMigration(clock.Now).Run(ctx, tx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, es)
+				}
+			}))
+		}
+
+	}
+}
+
 func formatJSON(s string) string {
 	formatted, err := jsonc.Format(s, true, 2)
 	if err != nil {
