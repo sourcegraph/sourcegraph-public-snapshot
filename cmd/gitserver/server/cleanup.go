@@ -198,6 +198,8 @@ func (s *Server) cleanupRepos() {
 		log15.Error("cleanup: finding the amount of space free on disk", "error", err)
 		return
 	}
+	G := float64(1024 * 1024 * 1024)
+	log15.Info("cleanup: checking free disk space", "free space in GiB", float64(actualFreeBytes)/G, "desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G)
 	howManyBytesToFree := int64(s.DesiredFreeDiskSpace) - int64(actualFreeBytes)
 	if err := s.freeUpSpace(howManyBytesToFree); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
@@ -275,7 +277,6 @@ func device(f string) (int64, error) {
 // recently to most recently used, until it has freed howManyBytesToFree.
 func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	if howManyBytesToFree <= 0 {
-		log15.Info("cleanup: skipping repository cleanup, don't need to free disk space", "howManyBytesToFree", howManyBytesToFree)
 		return nil
 	}
 
@@ -306,11 +307,25 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 			return errors.Wrapf(err, "computing size of directory %s", d)
 		}
 		gitDirParent := filepath.Dir(d)
-		log15.Info("cleanup: removing repo dir that hasn't been used in a while", "repodir", d, "howlong", time.Since(dirModTimes[d]))
 		if err := os.RemoveAll(gitDirParent); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
 		spaceFreed += delta
+
+		// Report the new disk usage situation after removing this repo.
+		actualFreeBytes, err := s.bytesFreeOnDisk()
+		if err != nil {
+			return errors.Wrap(err, "finding the amount of space free on disk")
+		}
+		G := float64(1024 * 1024 * 1024)
+		log15.Info("cleanup: removed least recently used repo",
+			"repo", d,
+			"how old", time.Since(dirModTimes[d]),
+			"free space in GiB", float64(actualFreeBytes)/G,
+			"desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G,
+			"space freed in GiB", float64(spaceFreed)/G,
+			"how much space to free in GiB", float64(howManyBytesToFree)/G)
+
 		if spaceFreed >= howManyBytesToFree {
 			return nil
 		}
