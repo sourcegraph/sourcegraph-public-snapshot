@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -330,47 +329,25 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	var (
-		repo          *protocol.RepoInfo
-		authoritative bool
-	)
-
 	repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
 		Names: []string{string(args.Repo)},
 	})
-
-	if err != nil || len(repos) != 1 {
-		authoritative = false
-	} else {
-		repo, err = newRepoInfo(repos[0])
-		if err != nil {
-			authoritative = false
-		} else {
-			authoritative = true
-		}
+	if err != nil {
+		return nil, err
 	}
 
 	result = &protocol.RepoLookupResult{}
-	if authoritative {
-		if isNotFound(err) {
-			result.ErrorNotFound = true
-			err = nil
-		} else if isUnauthorized(err) {
-			result.ErrorUnauthorized = true
-			err = nil
-		} else if isTemporarilyUnavailable(err) {
-			result.ErrorTemporarilyUnavailable = true
-			err = nil
-		}
-		if err != nil {
-			return nil, err
-		}
-		result.Repo = repo
+	if len(repos) != 1 {
+		result.ErrorNotFound = true
 		return result, nil
 	}
 
-	// No configured code hosts are authoritative for this repository.
-	result.ErrorNotFound = true
+	repo, err := newRepoInfo(repos[0])
+	if err != nil {
+		return nil, err
+	}
+
+	result.Repo = repo
 	return result, nil
 }
 
@@ -441,27 +418,6 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 	}
 
 	return &info, nil
-}
-
-func isNotFound(err error) bool {
-	// TODO(sqs): reduce duplication
-	return github.IsNotFound(err) || gitlab.IsNotFound(err) || awscodecommit.IsNotFound(err) || errcode.IsNotFound(err)
-}
-
-func isUnauthorized(err error) bool {
-	// TODO(sqs): reduce duplication
-	if awscodecommit.IsUnauthorized(err) || errcode.IsUnauthorized(err) {
-		return true
-	}
-	code := github.HTTPErrorCode(err)
-	if code == 0 {
-		code = gitlab.HTTPErrorCode(err)
-	}
-	return code == http.StatusUnauthorized || code == http.StatusForbidden
-}
-
-func isTemporarilyUnavailable(err error) bool {
-	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
 }
 
 func pathAppend(base, p string) string {
