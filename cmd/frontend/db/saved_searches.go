@@ -140,18 +140,13 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 		return Mocks.SavedSearches.ListSavedSearchesByUserID(ctx, userID)
 	}
 	var savedSearches []*types.SavedSearch
-	orgIDRows, err := dbconn.Global.QueryContext(ctx, `SELECT org_id FROM org_members WHERE user_id=$1`, userID)
+	orgs, err := Orgs.GetByUserID(ctx, userID)
 	if err != nil {
-		return nil, errors.Wrap(err, "QueryContext")
+		return nil, err
 	}
 	var orgIDs []int32
-	for orgIDRows.Next() {
-		var orgID int32
-		err := orgIDRows.Scan(&orgID)
-		if err != nil {
-			return nil, errors.Wrap(err, "Scan")
-		}
-		orgIDs = append(orgIDs, orgID)
+	for _, org := range orgs {
+		orgIDs = append(orgIDs, org.ID)
 	}
 	var orgConditions []*sqlf.Query
 	for _, orgID := range orgIDs {
