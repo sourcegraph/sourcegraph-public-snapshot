@@ -10,11 +10,22 @@ import (
 
 // AWSCodeCommitConnection description: Configuration for a connection to AWS CodeCommit.
 type AWSCodeCommitConnection struct {
-	AccessKeyID                 string `json:"accessKeyID"`
-	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
-	Region                      string `json:"region"`
-	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
-	SecretAccessKey             string `json:"secretAccessKey"`
+	AccessKeyID                 string                       `json:"accessKeyID"`
+	Exclude                     []*ExcludedAWSCodeCommitRepo `json:"exclude,omitempty"`
+	GitCredentials              AWSCodeCommitGitCredentials  `json:"gitCredentials"`
+	InitialRepositoryEnablement bool                         `json:"initialRepositoryEnablement,omitempty"`
+	Region                      string                       `json:"region"`
+	RepositoryPathPattern       string                       `json:"repositoryPathPattern,omitempty"`
+	SecretAccessKey             string                       `json:"secretAccessKey"`
+}
+
+// AWSCodeCommitGitCredentials description: The Git credentials used for authentication when cloning an AWS CodeCommit repository over HTTPS.
+//
+// See the AWS CodeCommit documentation on Git credentials for CodeCommit: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_ssh-keys.html#git-credentials-code-commit.
+// For detailed instructions on how to create the credentials in IAM, see this page: https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html
+type AWSCodeCommitGitCredentials struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
 }
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -147,6 +158,10 @@ type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
 }
+type ExcludedAWSCodeCommitRepo struct {
+	Id   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
 type ExcludedBitbucketServerRepo struct {
 	Id      int    `json:"id,omitempty"`
 	Name    string `json:"name,omitempty"`
@@ -158,6 +173,9 @@ type ExcludedGitHubRepo struct {
 }
 type ExcludedGitLabProject struct {
 	Id   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+type ExcludedGitoliteRepo struct {
 	Name string `json:"name,omitempty"`
 }
 
@@ -243,11 +261,12 @@ type GitLabProject struct {
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
 type GitoliteConnection struct {
-	Blacklist                  string       `json:"blacklist,omitempty"`
-	Host                       string       `json:"host"`
-	Phabricator                *Phabricator `json:"phabricator,omitempty"`
-	PhabricatorMetadataCommand string       `json:"phabricatorMetadataCommand,omitempty"`
-	Prefix                     string       `json:"prefix"`
+	Blacklist                  string                  `json:"blacklist,omitempty"`
+	Exclude                    []*ExcludedGitoliteRepo `json:"exclude,omitempty"`
+	Host                       string                  `json:"host"`
+	Phabricator                *Phabricator            `json:"phabricator,omitempty"`
+	PhabricatorMetadataCommand string                  `json:"phabricatorMetadataCommand,omitempty"`
+	Prefix                     string                  `json:"prefix"`
 }
 
 // HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).

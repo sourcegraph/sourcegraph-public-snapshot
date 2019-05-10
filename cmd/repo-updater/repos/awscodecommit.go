@@ -4,11 +4,10 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
+	"net/http"
 	"net/url"
 	"reflect"
-	"strings"
 	"sync"
 	"time"
 
@@ -16,12 +15,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/defaults"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -54,7 +55,7 @@ func SyncAWSCodeCommitConnections(ctx context.Context) {
 
 		var conns []*awsCodeCommitConnection
 		for _, c := range config {
-			conn, err := newAWSCodeCommitConnection(c)
+			conn, err := newAWSCodeCommitConnection(c, nil)
 			if err != nil {
 				log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)
 				continue
@@ -94,10 +95,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 			if serviceID != "" && args.ExternalRepo.ServiceID == serviceID {
 				ccrepo, err := conn.client.GetRepository(ctx, args.ExternalRepo.ID)
 				if ccrepo != nil {
-					remoteURL, err := conn.authenticatedRemoteURL(ccrepo)
-					if err != nil {
-						return nil, true, errors.Wrap(err, "authenticatedRemoteURL")
-					}
+					remoteURL := conn.authenticatedRemoteURL(ccrepo)
 					webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", conn.awsRegion.ID(), ccrepo.Name)
 					repo = &protocol.RepoInfo{
 						Name:         awsCodeCommitRepositoryToRepoPath(conn, ccrepo),
@@ -175,18 +173,17 @@ func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awsc
 
 // updateAWSCodeCommitRepositories ensures that all provided repositories have been added and updated on Sourcegraph.
 func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitConnection) {
-	repos := conn.listAllRepositories(ctx)
+	repos, err := conn.listAllRepositories(ctx)
+	if err != nil {
+		log15.Error("failed to list some AWS CodeCommit repos", "error", err.Error())
+	}
 
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("aws:%s", conn.config.AccessKeyID), repoChan)
-	for repo := range repos {
+	for _, repo := range repos {
 		// log15.Debug("awscodecommit sync: create/enable/update repo", "repo", repo.Name)
-		remoteURL, err := conn.authenticatedRemoteURL(repo)
-		if err != nil {
-			log15.Error("Error generating remote URL for AWS CodeCommit repository. Skipping.", "repo", repo.ARN, "error", err)
-			continue
-		}
+		remoteURL := conn.authenticatedRemoteURL(repo)
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoName:     awsCodeCommitRepositoryToRepoPath(conn, repo),
@@ -199,7 +196,7 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 	}
 }
 
-func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection) (*awsCodeCommitConnection, error) {
+func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*awsCodeCommitConnection, error) {
 	awsConfig := defaults.Config()
 	awsConfig.Region = config.Region
 	awsConfig.Credentials = aws.StaticCredentialsProvider{
@@ -209,9 +206,35 @@ func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection) (*awsCod
 			Source:          "sourcegraph-site-configuration",
 		},
 	}
+
+	if cf == nil {
+		cf = NewHTTPClientFactory()
+	}
+
+	cli, err := cf.Client(func(c *http.Client) error {
+		*c = *awsConfig.HTTPClient
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	awsConfig.HTTPClient = cli
+
+	exclude := make(map[string]bool, len(config.Exclude))
+	for _, r := range config.Exclude {
+		if r.Name != "" {
+			exclude[r.Name] = true
+		}
+
+		if r.Id != "" {
+			exclude[r.Id] = true
+		}
+	}
+
 	conn := &awsCodeCommitConnection{
 		config:    config,
 		awsConfig: awsConfig,
+		exclude:   exclude,
 	}
 	conn.client = awscodecommit.NewClient(conn.awsConfig)
 
@@ -236,6 +259,8 @@ type awsCodeCommitConnection struct {
 
 	mu           sync.Mutex
 	awsAccountID string
+
+	exclude map[string]bool
 }
 
 func (c *awsCodeCommitConnection) getServiceID() (string, error) {
@@ -271,52 +296,21 @@ func (c *awsCodeCommitConnection) tryPopulateAWSAccountID() (string, error) {
 	return c.awsAccountID, nil
 }
 
-// authenticatedRemoteURL returns the repository's Git remote URL with the configured AWS CodeCommit
-// credentials inserted in the URL userinfo, for repositories needing authentication.
-func (c *awsCodeCommitConnection) authenticatedRemoteURL(repo *awscodecommit.Repository) (string, error) {
-	// Mimic what `aws codecommit credential-helper` does (to create Git credentials). See
-	// https://github.com/aws/aws-cli/blob/2e3fb985e21968abb09bba5bf439245fccb02a9f/awscli/customizations/codecommit.py.
+// authenticatedRemoteURL returns the repository's Git remote URL with the
+// configured AWS CodeCommit Git credentials inserted in the URL userinfo, for
+// repositories needing authentication.
+func (c *awsCodeCommitConnection) authenticatedRemoteURL(repo *awscodecommit.Repository) string {
 	u, err := url.Parse(repo.HTTPCloneURL)
 	if err != nil {
-		return "", err
+		log15.Warn("Error adding authentication to AWS CodeCommit repository Git remote URL.", "url", repo.HTTPCloneURL, "error", err)
+		return repo.HTTPCloneURL
 	}
 
-	cred, err := c.awsConfig.Credentials.Retrieve()
-	if err != nil {
-		return "", err
-	}
-
-	// Need to reimplement some of the AWS v4 signing because the Go SDK does not expose the ability
-	// to sign a specific canonical request string (it always adds headers like X-Amz-... that must
-	// not exist when creating credentials for AWS CodeCommit git cloning).
-	const (
-		authHeaderPrefix = "AWS4-HMAC-SHA256"
-		serviceName      = "codecommit"
-		shortTimeFormat  = "20060102"
-		timeFormat       = "20060102T150405"
-	)
-	signTime := time.Now().UTC()
-	formattedShortTime := signTime.Format(shortTimeFormat)
-	canonicalRequest := fmt.Sprintf("GIT\n%s\n\nhost:%s\n\nhost\n", u.Path, u.Host)
-	// fmt.Printf("=============\nCanonicalRequest:\n%s\n", canonicalRequest)
-	stringToSign := strings.Join([]string{
-		authHeaderPrefix,
-		signTime.Format(timeFormat),
-		strings.Join([]string{formattedShortTime, c.awsRegion.ID(), serviceName, "aws4_request"}, "/"),
-		hex.EncodeToString(makeSHA256([]byte(canonicalRequest))),
-	}, "\n")
-	// fmt.Printf("=============\nStringToSign:\n%s\n", stringToSign)
-	date := makeHMAC([]byte("AWS4"+cred.SecretAccessKey), []byte(formattedShortTime))
-	region := makeHMAC(date, []byte(c.awsRegion.ID()))
-	service := makeHMAC(region, []byte(serviceName))
-	credentials := makeHMAC(service, []byte("aws4_request"))
-	signature := hex.EncodeToString(makeHMAC(credentials, []byte(stringToSign)))
-
-	password := signTime.Format(timeFormat) + "Z" + signature
-	username := c.config.AccessKeyID
+	username := c.config.GitCredentials.Username
+	password := c.config.GitCredentials.Password
 
 	u.User = url.UserPassword(username, password)
-	return u.String(), nil
+	return u.String()
 }
 
 func makeHMAC(key []byte, data []byte) []byte {
@@ -331,25 +325,34 @@ func makeSHA256(data []byte) []byte {
 	return hash.Sum(nil)
 }
 
-func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) <-chan *awscodecommit.Repository {
-	ch := make(chan *awscodecommit.Repository, awscodecommit.MaxMetadataBatch)
-	go func() {
-		defer close(ch)
-		var nextToken string
-		for {
-			repos, token, err := c.client.ListRepositories(ctx, nextToken)
-			if err != nil {
-				log15.Error("Error listing AWS CodeCommit repositories", "error", err)
-				return
-			}
-			for _, r := range repos {
-				ch <- r
-			}
-			if len(repos) == 0 || token == "" {
-				return // last page
-			}
-			nextToken = token
+func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) ([]*awscodecommit.Repository, error) {
+	repos := []*awscodecommit.Repository{}
+	errs := new(multierror.Error)
+
+	var nextToken string
+	for {
+		batch, token, err := c.client.ListRepositories(ctx, nextToken)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			break
 		}
-	}()
-	return ch
+
+		for _, r := range batch {
+			if !c.excludes(r) {
+				repos = append(repos, r)
+			}
+		}
+
+		if len(batch) == 0 || token == "" {
+			break // last page
+		}
+
+		nextToken = token
+	}
+
+	return repos, errs.ErrorOrNil()
+}
+
+func (c *awsCodeCommitConnection) excludes(r *awscodecommit.Repository) bool {
+	return c.exclude[r.Name] || c.exclude[r.ID]
 }

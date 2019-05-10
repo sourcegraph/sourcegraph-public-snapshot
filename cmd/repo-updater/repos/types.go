@@ -13,9 +13,11 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -104,6 +106,10 @@ func (e *ExternalService) Exclude(rs ...*Repo) error {
 		return e.excludeGitLabRepos(rs...)
 	case "bitbucketserver":
 		return e.excludeBitbucketServerRepos(rs...)
+	case "awscodecommit":
+		return e.excludeAWSCodeCommitRepos(rs...)
+	case "gitolite":
+		return e.excludeGitoliteRepos(rs...)
 	case "other":
 		return e.excludeOtherRepos(rs...)
 	default:
@@ -278,6 +284,34 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 	})
 }
 
+// excludeGitoliteRepos changes the configuration of a Gitolite external service to exclude the
+// given repos from being synced.
+func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("gitolite", func(v interface{}) (string, interface{}, error) {
+		c := v.(*schema.GitoliteConnection)
+		set := make(map[string]bool, len(c.Exclude))
+		for _, ex := range c.Exclude {
+			if ex.Name != "" {
+				set[ex.Name] = true
+			}
+		}
+
+		for _, r := range rs {
+			repo, ok := r.Metadata.(*gitolite.Repo)
+			if ok && repo.Name != "" && !set[repo.Name] {
+				c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: repo.Name})
+				set[repo.Name] = true
+			}
+		}
+
+		return "exclude", c.Exclude, nil
+	})
+}
+
 // excludeGithubRepos changes the configuration of a Github external service to exclude the
 // given repos from being synced.
 func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
@@ -309,6 +343,55 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 
 			if !set[name] && !set[id] {
 				c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{
+					Name: name,
+					Id:   id,
+				})
+
+				if id != "" {
+					set[id] = true
+				}
+
+				if name != "" {
+					set[name] = true
+				}
+			}
+		}
+
+		return "exclude", c.Exclude, nil
+	})
+}
+
+// excludeAWSCodeCommitRepos changes the configuration of a AWS CodeCommit
+// external service to exclude the given repos from being synced.
+func (e *ExternalService) excludeAWSCodeCommitRepos(rs ...*Repo) error {
+	if len(rs) == 0 {
+		return nil
+	}
+
+	return e.config("awscodecommit", func(v interface{}) (string, interface{}, error) {
+		c := v.(*schema.AWSCodeCommitConnection)
+		set := make(map[string]bool, len(c.Exclude)*2)
+		for _, ex := range c.Exclude {
+			if ex.Id != "" {
+				set[ex.Id] = true
+			}
+
+			if ex.Name != "" {
+				set[strings.ToLower(ex.Name)] = true
+			}
+		}
+
+		for _, r := range rs {
+			repo, ok := r.Metadata.(*awscodecommit.Repository)
+			if !ok {
+				continue
+			}
+
+			id := repo.ID
+			name := repo.Name
+
+			if !set[name] && !set[id] {
+				c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{
 					Name: name,
 					Id:   id,
 				})

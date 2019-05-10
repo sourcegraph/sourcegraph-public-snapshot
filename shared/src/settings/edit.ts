@@ -1,7 +1,7 @@
 import { from } from 'rxjs'
 import { first, map, switchMap } from 'rxjs/operators'
 import { SettingsEdit } from '../api/client/services/settings'
-import { dataOrThrowErrors, gql, graphQLContent } from '../graphql/graphql'
+import { dataOrThrowErrors, gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { isErrorLike } from '../util/errors'
@@ -12,11 +12,11 @@ import { isErrorLike } from '../util/errors'
  * @param applySettingsEdit A function that is called to actually apply and persist the update.
  */
 export function updateSettings(
-    { settings, queryGraphQL }: Pick<PlatformContext, 'settings' | 'queryGraphQL'>,
+    { settings, requestGraphQL }: Pick<PlatformContext, 'settings' | 'requestGraphQL'>,
     subject: GQL.ID,
     args: SettingsEdit | string,
     applySettingsEdit: (
-        { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
+        { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
         subject: GQL.ID,
         lastID: number | null,
         edit: GQL.ISettingsEdit | string
@@ -42,7 +42,7 @@ export function updateSettings(
                 const lastID = subjectSettings.settings ? subjectSettings.lastID : null
 
                 return applySettingsEdit(
-                    { queryGraphQL },
+                    { requestGraphQL },
                     subject,
                     lastID,
                     typeof args === 'string'
@@ -68,14 +68,14 @@ function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
  * settings.
  */
 export function mutateSettings(
-    { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     subject: GQL.ID,
     lastID: number | null,
     edit: GQL.IConfigurationEdit | string
 ): Promise<void> {
     return typeof edit === 'string'
-        ? overwriteSettings({ queryGraphQL }, subject, lastID, edit)
-        : editSettings({ queryGraphQL }, subject, lastID, edit)
+        ? overwriteSettings({ requestGraphQL }, subject, lastID, edit)
+        : editSettings({ requestGraphQL }, subject, lastID, edit)
 }
 
 /**
@@ -87,14 +87,14 @@ export function mutateSettings(
  * @param edit An edit to a specific value in the settings.
  */
 function editSettings(
-    { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     subject: GQL.ID,
     lastID: number | null,
     edit: GQL.IConfigurationEdit
 ): Promise<void> {
     return from(
-        queryGraphQL(
-            gql`
+        requestGraphQL({
+            request: gql`
                 mutation EditSettings($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
                     configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                         editConfiguration(edit: $edit) {
@@ -104,10 +104,10 @@ function editSettings(
                         }
                     }
                 }
-            `[graphQLContent],
-            { subject, lastID, edit },
-            false
-        )
+            `,
+            variables: { subject, lastID, edit },
+            mightContainPrivateInfo: false,
+        })
     )
         .pipe(
             map(dataOrThrowErrors),
@@ -125,14 +125,14 @@ function editSettings(
  * @param contents A stringified JSON value to overwrite the entire settings with.
  */
 export function overwriteSettings(
-    { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     subject: GQL.ID,
     lastID: number | null,
     contents: string
 ): Promise<void> {
     return from(
-        queryGraphQL(
-            gql`
+        requestGraphQL({
+            request: gql`
                 mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
                     settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                         overwriteSettings(contents: $contents) {
@@ -142,10 +142,10 @@ export function overwriteSettings(
                         }
                     }
                 }
-            `[graphQLContent],
-            { subject, lastID, contents },
-            false
-        )
+            `,
+            variables: { subject, lastID, contents },
+            mightContainPrivateInfo: false,
+        })
     )
         .pipe(
             map(dataOrThrowErrors),

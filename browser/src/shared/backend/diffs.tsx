@@ -1,50 +1,54 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { createAggregateError } from './errors'
-import { queryGraphQL } from './graphql'
+import { RepoNotFoundError } from './errors'
 
 export const queryRepositoryComparisonFileDiffs = memoizeObservable(
-    (args: {
+    ({
+        requestGraphQL,
+        ...args
+    }: {
         repo: string
         base: string | null
         head: string | null
         first?: number
-    }): Observable<GQL.IFileDiffConnection> =>
-        queryGraphQL({
-            ctx: { repoKey: '', isRepoSpecific: false },
-            request: `
-            query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
-                repository(name: $repo) {
-                    comparison(base: $base, head: $head) {
-                        fileDiffs(first: $first) {
-                            nodes {
-                                ...FileDiffFields
+    } & Pick<PlatformContext, 'requestGraphQL'>): Observable<GQL.IFileDiffConnection> =>
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
+                query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
+                    repository(name: $repo) {
+                        comparison(base: $base, head: $head) {
+                            fileDiffs(first: $first) {
+                                nodes {
+                                    ...FileDiffFields
+                                }
+                                totalCount
                             }
-                            totalCount
                         }
                     }
                 }
-            }
 
-            fragment FileDiffFields on FileDiff {
-                oldPath
-                newPath
-                internalID
-            }
-        `,
+                fragment FileDiffFields on FileDiff {
+                    oldPath
+                    newPath
+                    internalID
+                }
+            `,
             variables: { repo: args.repo, base: args.base, head: args.head, first: args.first },
+            mightContainPrivateInfo: true,
         }).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.repository) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(({ repository }) => {
+                if (!repository) {
+                    throw new RepoNotFoundError(args.repo)
                 }
-                const repo = data.repository
-                if (!repo.comparison || !repo.comparison.fileDiffs || errors) {
-                    throw createAggregateError(errors)
+                if (!repository.comparison || !repository.comparison.fileDiffs) {
+                    throw new Error('empty fileDiffs')
                 }
-                return repo.comparison.fileDiffs
+                return repository.comparison.fileDiffs
             })
         ),
     ({ repo, base, head, first }) => `${repo}:${base}:${head}:${first}`

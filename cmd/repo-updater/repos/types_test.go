@@ -5,9 +5,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
@@ -56,6 +58,32 @@ func TestExternalService_Exclude(t *testing.T) {
 			"username: "admin",
 			"token": "secret",
 			"repositoryQuery": ["none"]
+		}`,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	awsCodeCommitService := ExternalService{
+		ID:          9,
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: `{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"username": "user", "password": "pw"},
+		}`,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	gitoliteService := ExternalService{
+		Kind:        "GITOLITE",
+		DisplayName: "Gitolite",
+		Config: `{
+			// Some comment
+			"host": "git@gitolite.mycorp.com",
+			"prefix": "gitolite.mycorp.com/"
 		}`,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -117,6 +145,18 @@ func TestExternalService_Exclude(t *testing.T) {
 			},
 		},
 		{
+			Metadata: &awscodecommit.Repository{
+				ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+				Name: "foo",
+			},
+		},
+		{
+			Metadata: &awscodecommit.Repository{
+				ID:   "b4455554-4444-5555-b7d2-888c9EXAMPLE",
+				Name: "baz",
+			},
+		},
+		{
 			Name: "git-host.mycorp.com/org/foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1",
@@ -130,6 +170,9 @@ func TestExternalService_Exclude(t *testing.T) {
 				ServiceType: "other",
 				ServiceID:   "https://git-host.mycorp.com/",
 			},
+		},
+		{
+			Metadata: &gitolite.Repo{Name: "foo"},
 		},
 	}
 
@@ -173,6 +216,31 @@ func TestExternalService_Exclude(t *testing.T) {
 					"exclude": [
 						{"id": 1},
 						{"name": "org/baz"}
+					]
+				}`)
+			}),
+			awsCodeCommitService.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"region": "us-west-1",
+					"accessKeyID": "secret-accessKeyID",
+					"secretAccessKey": "secret-secretAccessKey",
+					"gitCredentials": {"username": "user", "password": "pw"},
+					"exclude": [
+						{"id": "f001337a-3450-46fd-b7d2-650c0EXAMPLE"},
+						{"name": "baz"}
+					]
+				}`)
+			}),
+			gitoliteService.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"host": "git@gitolite.mycorp.com",
+					"prefix": "gitolite.mycorp.com/",
+					"exclude": [
+						{"name": "foo"}
 					]
 				}`)
 			}),
@@ -222,6 +290,30 @@ func TestExternalService_Exclude(t *testing.T) {
 					"repositoryQuery": ["none"],
 					"exclude": [
 						{"name": "org/boo"},
+					]
+				}`)
+			}),
+			awsCodeCommitService.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"region": "us-west-1",
+					"accessKeyID": "secret-accessKeyID",
+					"secretAccessKey": "secret-secretAccessKey",
+					"gitCredentials": {"username": "user", "password": "pw"},
+					"exclude": [
+						{"name": "boo"}
+					]
+				}`)
+			}),
+			gitoliteService.With(func(e *ExternalService) {
+				e.Config = formatJSON(t, `
+				{
+					// Some comment
+					"host": "git@gitolite.mycorp.com",
+					"prefix": "gitolite.mycorp.com/",
+					"exclude": [
+						{"name": "boo"}
 					]
 				}`)
 			}),
@@ -283,6 +375,33 @@ func TestExternalService_Exclude(t *testing.T) {
 							{"name": "org/boo"},
 							{"id": 1, "name": "org/foo"},
 							{"name": "org/baz"}
+						]
+					}`)
+				}),
+				awsCodeCommitService.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"region": "us-west-1",
+						"accessKeyID": "secret-accessKeyID",
+						"secretAccessKey": "secret-secretAccessKey",
+						"gitCredentials": {"username": "user", "password": "pw"},
+						"exclude": [
+							{"name": "boo"},
+							{"id": "f001337a-3450-46fd-b7d2-650c0EXAMPLE", "name": "foo"},
+							{"id": "b4455554-4444-5555-b7d2-888c9EXAMPLE", "name": "baz"}
+						]
+					}`)
+				}),
+				gitoliteService.With(func(e *ExternalService) {
+					e.Config = formatJSON(t, `
+					{
+						// Some comment
+						"host": "git@gitolite.mycorp.com",
+						"prefix": "gitolite.mycorp.com/",
+						"exclude": [
+							{"name": "boo"},
+							{"name": "foo"}
 						]
 					}`)
 				}),

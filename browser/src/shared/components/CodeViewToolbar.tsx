@@ -31,13 +31,13 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
 }
 
 export interface CodeViewToolbarProps
-    extends PlatformContextProps<'forceUpdateTooltip'>,
+    extends PlatformContextProps<'forceUpdateTooltip' | 'requestGraphQL'>,
         ExtensionsControllerProps,
         FileInfoWithContents,
         TelemetryProps,
         CodeViewToolbarClassProps {
+    sourcegraphURL: string
     onEnabledChange?: (enabled: boolean) => void
-
     buttonProps?: ButtonProps
     location: H.Location
 }
@@ -53,8 +53,14 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(fetchSite().subscribe(site => this.setState(() => ({ site }))))
-        this.subscriptions.add(fetchCurrentUser().subscribe(currentUser => this.setState(() => ({ currentUser }))))
+        this.subscriptions.add(
+            fetchSite(this.props.platformContext.requestGraphQL).subscribe(site => this.setState(() => ({ site })))
+        )
+        this.subscriptions.add(
+            fetchCurrentUser(this.props.platformContext.requestGraphQL).subscribe(currentUser =>
+                this.setState(() => ({ currentUser }))
+            )
+        )
     }
 
     public componentWillUnmount(): void {
@@ -77,9 +83,11 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     <li className={classNames('code-view-toolbar__item', this.props.listItemClass)}>
                         <OpenDiffOnSourcegraph
                             ariaLabel="View file diff on Sourcegraph"
+                            platformContext={this.props.platformContext}
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}
                             openProps={{
+                                sourcegraphURL: this.props.sourcegraphURL,
                                 repoName: this.props.baseRepoName || this.props.repoName,
                                 filePath: this.props.baseFilePath || this.props.filePath,
                                 rev: this.props.baseRev || this.props.baseCommitID,
@@ -105,6 +113,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                             className={this.props.actionItemClass}
                             iconClassName={this.props.actionItemIconClass}
                             openProps={{
+                                sourcegraphURL: this.props.sourcegraphURL,
                                 repoName: this.props.repoName,
                                 filePath: this.props.filePath,
                                 rev: this.props.rev || this.props.commitID,
