@@ -9,7 +9,7 @@ import {
 import * as H from 'history'
 import { uniqBy } from 'lodash'
 import * as React from 'react'
-import { render } from 'react-dom'
+import { render as reactDOMRender } from 'react-dom'
 import { animationFrameScheduler, EMPTY, from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import {
     catchError,
@@ -252,8 +252,11 @@ export function initCodeIntelligence({
     codeHost,
     platformContext,
     extensionsController,
+    render,
     telemetryService,
-}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'>): {
+}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
+    render: typeof reactDOMRender
+}): {
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
@@ -357,7 +360,12 @@ export function handleCodeHost({
     showGlobalDebug,
     sourcegraphURL,
     telemetryService,
-}: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]>; sourcegraphURL: string }): Subscription {
+    render,
+}: CodeIntelligenceProps & {
+    mutations: Observable<MutationRecordLike[]>
+    sourcegraphURL: string
+    render: typeof reactDOMRender
+}): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
@@ -382,6 +390,7 @@ export function handleCodeHost({
         extensionsController,
         platformContext,
         telemetryService,
+        render,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
@@ -401,6 +410,7 @@ export function handleCodeHost({
                         history,
                         platformContext,
                         telemetryService,
+                        render,
                         ...codeHost.commandPaletteClassProps,
                     })
                 )
@@ -412,7 +422,7 @@ export function handleCodeHost({
     // so we don't need to subscribe to mutations.
     if (showGlobalDebug) {
         const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL })(mount)
+        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
 
     // Render view on Sourcegraph button
@@ -688,6 +698,7 @@ export async function injectCodeIntelligenceToCodeHost(
             showGlobalDebug,
             sourcegraphURL,
             telemetryService,
+            render: reactDOMRender,
         })
     )
     return subscriptions
