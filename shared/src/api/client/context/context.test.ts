@@ -184,7 +184,6 @@ describe('getComputedContextProperty', () => {
                         model: {
                             uri: 'file:///a/b.c',
                             languageId: 'l',
-                            text: 't',
                         },
                         selections: [],
                         isActive: true,
