@@ -10,6 +10,7 @@ const config = {
         modules: false,
         targets: require('../package.json').browserslist,
         useBuiltIns: 'entry',
+        corejs: 3,
       },
     ],
   ],
