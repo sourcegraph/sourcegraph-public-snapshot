@@ -12,45 +12,43 @@ export interface HoverMerged {
     range?: Range
 }
 
-export namespace HoverMerged {
-    /** Create a merged hover from the given individual hovers. */
-    export function from(values: (Hover | PlainHover | null | undefined)[]): HoverMerged | null {
-        const contents: HoverMerged['contents'] = []
-        let range: Range | undefined
-        for (const result of values) {
-            if (result) {
-                if (result.contents && result.contents.value) {
-                    contents.push({
-                        value: result.contents.value,
-                        kind: result.contents.kind || MarkupKind.PlainText,
-                    })
-                }
-                const __backcompatContents = result.__backcompatContents // tslint:disable-line deprecation
-                if (__backcompatContents) {
-                    for (const content of Array.isArray(__backcompatContents)
-                        ? __backcompatContents
-                        : [__backcompatContents]) {
-                        if (typeof content === 'string') {
-                            if (content) {
-                                contents.push({ value: content, kind: MarkupKind.Markdown })
-                            }
-                        } else if ('language' in content) {
-                            if (content.language && content.value) {
-                                contents.push({
-                                    value: toMarkdownCodeBlock(content.language, content.value),
-                                    kind: MarkupKind.Markdown,
-                                })
-                            }
+/** Create a merged hover from the given individual hovers. */
+export function fromHoverMerged(values: (Hover | PlainHover | null | undefined)[]): HoverMerged | null {
+    const contents: HoverMerged['contents'] = []
+    let range: Range | undefined
+    for (const result of values) {
+        if (result) {
+            if (result.contents && result.contents.value) {
+                contents.push({
+                    value: result.contents.value,
+                    kind: result.contents.kind || MarkupKind.PlainText,
+                })
+            }
+            const __backcompatContents = result.__backcompatContents // tslint:disable-line deprecation
+            if (__backcompatContents) {
+                for (const content of Array.isArray(__backcompatContents)
+                    ? __backcompatContents
+                    : [__backcompatContents]) {
+                    if (typeof content === 'string') {
+                        if (content) {
+                            contents.push({ value: content, kind: MarkupKind.Markdown })
+                        }
+                    } else if ('language' in content) {
+                        if (content.language && content.value) {
+                            contents.push({
+                                value: toMarkdownCodeBlock(content.language, content.value),
+                                kind: MarkupKind.Markdown,
+                            })
                         }
                     }
                 }
-                if (result.range && !range) {
-                    range = result.range
-                }
+            }
+            if (result.range && !range) {
+                range = result.range
             }
         }
-        return contents.length === 0 ? null : range ? { contents, range } : { contents }
     }
+    return contents.length === 0 ? null : range ? { contents, range } : { contents }
 }
 
 function toMarkdownCodeBlock(language: string, value: string): string {
