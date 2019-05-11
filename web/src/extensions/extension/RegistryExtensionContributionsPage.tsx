@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
-import { ExtensionManifest } from '../../../../shared/src/schema/extension.schema'
+import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { ThemeProps } from '../../theme'
