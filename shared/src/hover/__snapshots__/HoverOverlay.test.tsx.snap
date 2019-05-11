@@ -288,7 +288,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
     <div
       className="hover-overlay__row hover-overlay__loader-row"
     >
-      <Unknown
+      <LoadingSpinner
         className="icon-inline"
       />
     </div>
