@@ -1,7 +1,7 @@
 import log from 'fancy-log'
 import gulp from 'gulp'
 import createWebpackCompiler, { Stats } from 'webpack'
-import WebpackDevServer from 'webpack-dev-server'
+import WebpackDevServer, { addDevServerEntrypoints } from 'webpack-dev-server'
 import { phabricator, watchPhabricator } from '../browser/gulpfile'
 import { graphQLTypes, schema, watchGraphQLTypes, watchSchema } from '../shared/gulpfile'
 import webpackConfig from './webpack.config'
@@ -30,9 +30,12 @@ export async function webpack(): Promise<void> {
 }
 
 export async function webpackDevServer(): Promise<void> {
-    const compiler = createWebpackCompiler(webpackConfig)
-    const server = new WebpackDevServer(compiler as any, {
+    const options: WebpackDevServer.Configuration = {
+        hot: true,
+        inline: true,
         allowedHosts: ['.host.docker.internal'],
+        host: 'localhost',
+        port: 3080,
         publicPath: '/.assets/',
         contentBase: './ui/assets',
         stats: WEBPACK_STATS_OPTIONS,
@@ -41,14 +44,16 @@ export async function webpackDevServer(): Promise<void> {
         proxy: {
             '/': {
                 target: 'http://localhost:3081',
-                ws: true,
+                // ws: true,
                 // Avoid crashing on "read ECONNRESET".
                 onError: err => console.error(err),
                 onProxyReqWs: (_proxyReq, _req, socket) =>
                     socket.on('error', err => console.error('WebSocket proxy error:', err)),
             },
         },
-    })
+    }
+    addDevServerEntrypoints(webpackConfig, options)
+    const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
     return new Promise<void>((resolve, reject) => {
         server.listen(3080, '0.0.0.0', (err?: Error) => {
             if (err) {

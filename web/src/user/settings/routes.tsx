@@ -3,7 +3,11 @@ import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { asyncComponent } from '../../util/asyncComponent'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
 
-const SettingsArea = asyncComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
+const SettingsArea = asyncComponent(
+    () => import('../../settings/SettingsArea'),
+    'SettingsArea',
+    require.resolveWeak('../../settings/SettingsArea')
+)
 
 export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     {
@@ -31,22 +35,38 @@ export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     {
         path: '/profile',
         exact: true,
-        render: asyncComponent(() => import('./profile/UserSettingsProfilePage'), 'UserSettingsProfilePage'),
+        render: asyncComponent(
+            () => import('./profile/UserSettingsProfilePage'),
+            'UserSettingsProfilePage',
+            require.resolveWeak('./profile/UserSettingsProfilePage')
+        ),
     },
     {
         path: '/password',
         exact: true,
-        render: asyncComponent(() => import('./auth/UserSettingsPasswordPage'), 'UserSettingsPasswordPage'),
+        render: asyncComponent(
+            () => import('./auth/UserSettingsPasswordPage'),
+            'UserSettingsPasswordPage',
+            require.resolveWeak('./auth/UserSettingsPasswordPage')
+        ),
     },
     {
         path: '/emails',
         exact: true,
-        render: asyncComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage'),
+        render: asyncComponent(
+            () => import('./emails/UserSettingsEmailsPage'),
+            'UserSettingsEmailsPage',
+            require.resolveWeak('./emails/UserSettingsEmailsPage')
+        ),
     },
     {
         path: '/tokens',
         exact: true,
-        render: asyncComponent(() => import('./accessTokens/UserSettingsTokensPage'), 'UserSettingsTokensPage'),
+        render: asyncComponent(
+            () => import('./accessTokens/UserSettingsTokensPage'),
+            'UserSettingsTokensPage',
+            require.resolveWeak('./accessTokens/UserSettingsTokensPage')
+        ),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
     {

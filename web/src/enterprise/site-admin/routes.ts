@@ -62,12 +62,20 @@ export const enterpriseSiteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = 
     },
     {
         path: '/auth/external-accounts',
-        render: asyncComponent(() => import('./SiteAdminExternalAccountsPage'), 'SiteAdminExternalAccountsPage'),
+        render: asyncComponent(
+            () => import('./SiteAdminExternalAccountsPage'),
+            'SiteAdminExternalAccountsPage',
+            require.resolveWeak('./SiteAdminExternalAccountsPage')
+        ),
         exact: true,
     },
     {
         path: '/registry/extensions',
-        render: asyncComponent(() => import('./SiteAdminRegistryExtensionsPage'), 'SiteAdminRegistryExtensionsPage'),
+        render: asyncComponent(
+            () => import('./SiteAdminRegistryExtensionsPage'),
+            'SiteAdminRegistryExtensionsPage',
+            require.resolveWeak('./SiteAdminRegistryExtensionsPage')
+        ),
         exact: true,
     },
 ]

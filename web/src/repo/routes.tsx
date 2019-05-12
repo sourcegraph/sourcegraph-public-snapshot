@@ -7,11 +7,23 @@ import { formatHash } from '../util/url'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainerContext, RepoRevContainerRoute } from './RepoRevContainer'
 
-const BlobPage = asyncComponent(() => import('./blob/BlobPage'), 'BlobPage')
-const RepositoryCommitsPage = asyncComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
-const FilePathBreadcrumb = asyncComponent(() => import('./FilePathBreadcrumb'), 'FilePathBreadcrumb')
-const RepoRevSidebar = asyncComponent(() => import('./RepoRevSidebar'), 'RepoRevSidebar')
-const TreePage = asyncComponent(() => import('./TreePage'), 'TreePage')
+const BlobPage = asyncComponent(() => import('./blob/BlobPage'), 'BlobPage', require.resolveWeak('./blob/BlobPage'))
+const RepositoryCommitsPage = asyncComponent(
+    () => import('./commits/RepositoryCommitsPage'),
+    'RepositoryCommitsPage',
+    require.resolveWeak('./commits/RepositoryCommitsPage')
+)
+const FilePathBreadcrumb = asyncComponent(
+    () => import('./FilePathBreadcrumb'),
+    'FilePathBreadcrumb',
+    require.resolveWeak('./FilePathBreadcrumb')
+)
+const RepoRevSidebar = asyncComponent(
+    () => import('./RepoRevSidebar'),
+    'RepoRevSidebar',
+    require.resolveWeak('./RepoRevSidebar')
+)
+const TreePage = asyncComponent(() => import('./TreePage'), 'TreePage', require.resolveWeak('./TreePage'))
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')

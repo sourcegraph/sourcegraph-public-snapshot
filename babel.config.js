@@ -20,6 +20,7 @@ module.exports = api => {
       '@babel/preset-react',
     ],
     plugins: [
+      'react-hot-loader/babel',
       '@babel/plugin-syntax-dynamic-import',
       'babel-plugin-lodash',
 

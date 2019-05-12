@@ -203,16 +203,16 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                                 <Switch>
                                     {this.props.userAreaRoutes.map(
-                                        ({ path, exact, render, condition = () => true }) =>
+                                        ({ path, exact, render: C, condition = () => true }) =>
                                             condition(context) && (
                                                 <Route
                                                     path={this.props.match.url + path}
                                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                     exact={exact}
                                                     // tslint:disable-next-line:jsx-no-lambda
-                                                    render={routeComponentProps =>
-                                                        render({ ...context, ...routeComponentProps })
-                                                    }
+                                                    render={routeComponentProps => (
+                                                        <C {...context} {...routeComponentProps} />
+                                                    )}
                                                 />
                                             )
                                     )}

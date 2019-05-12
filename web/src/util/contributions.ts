@@ -27,7 +27,7 @@ export interface RouteDescriptor<C extends object = {}> extends Conditional<C> {
     /** Path of this route (appended to the current match) */
     readonly path: string
     readonly exact?: boolean
-    readonly render: (props: C & RouteComponentProps<any>) => React.ReactNode
+    readonly render: React.ComponentType<C & RouteComponentProps<any>>
 }
 
 export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {

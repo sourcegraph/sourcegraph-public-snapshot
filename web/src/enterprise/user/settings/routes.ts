@@ -9,7 +9,11 @@ export const enterpriseUserSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRou
     {
         path: '/external-accounts',
         exact: true,
-        render: asyncComponent(() => import('./UserSettingsExternalAccountsPage'), 'UserSettingsExternalAccountsPage'),
+        render: asyncComponent(
+            () => import('./UserSettingsExternalAccountsPage'),
+            'UserSettingsExternalAccountsPage',
+            require.resolveWeak('./UserSettingsExternalAccountsPage')
+        ),
         condition: () => authExp,
     },
     {

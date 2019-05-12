@@ -44,7 +44,10 @@ const config: webpack.Configuration = {
         // Enterprise vs. OSS builds use different entrypoints. For app (TypeScript), a single entrypoint is used
         // (enterprise or OSS). For style (SCSS), the OSS entrypoint is always used, and the enterprise entrypoint
         // is appended for enterprise builds.
-        app: isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+        app: [
+            'react-hot-loader/patch',
+            isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+        ],
         style: [
             path.join(__dirname, 'src', 'main.scss'),
             isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,

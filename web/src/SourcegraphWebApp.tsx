@@ -1,6 +1,7 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
+import { hot } from 'react-hot-loader/root' // tslint:disable-line: no-submodule-imports as recommended by https://github.com/gaearon/react-hot-loader#getting-started
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
@@ -116,7 +117,8 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
 /**
  * The root component
  */
-export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+// tslint:disable-next-line: class-name
+class _SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private subscriptions = new Subscription()
     private darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
 
@@ -278,3 +280,5 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.setState({ navbarSearchQuery })
     }
 }
+
+export const SourcegraphWebApp = hot(_SourcegraphWebApp)

@@ -4,5 +4,9 @@ import { asyncComponent } from '../../util/asyncComponent'
 
 export const enterpriseSiteAdminOverviewComponents: ReadonlyArray<React.ComponentType<any>> = [
     ...siteAdminOverviewComponents,
-    asyncComponent(() => import('./productSubscription/ProductSubscriptionStatus'), 'ProductSubscriptionStatus'),
+    asyncComponent(
+        () => import('./productSubscription/ProductSubscriptionStatus'),
+        'ProductSubscriptionStatus',
+        require.resolveWeak('./productSubscription/ProductSubscriptionStatus')
+    ),
 ]

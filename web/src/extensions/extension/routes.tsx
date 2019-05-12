@@ -18,7 +18,11 @@ export const extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = [
     {
         path: `/-/manifest`,
         exact: true,
-        render: asyncComponent(() => import('./RegistryExtensionManifestPage'), 'RegistryExtensionManifestPage'),
+        render: asyncComponent(
+            () => import('./RegistryExtensionManifestPage'),
+            'RegistryExtensionManifestPage',
+            require.resolveWeak('./RegistryExtensionManifestPage')
+        ),
     },
     {
         path: `/-/contributions`,

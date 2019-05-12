@@ -7,11 +7,19 @@ export const enterpriseExtensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = 
     {
         path: `/-/manage`,
         exact: true,
-        render: asyncComponent(() => import('./RegistryExtensionManagePage'), 'RegistryExtensionManagePage'),
+        render: asyncComponent(
+            () => import('./RegistryExtensionManagePage'),
+            'RegistryExtensionManagePage',
+            require.resolveWeak('./RegistryExtensionManagePage')
+        ),
     },
     {
         path: `/-/releases/new`,
         exact: true,
-        render: asyncComponent(() => import('./RegistryExtensionNewReleasePage'), 'RegistryExtensionNewReleasePage'),
+        render: asyncComponent(
+            () => import('./RegistryExtensionNewReleasePage'),
+            'RegistryExtensionNewReleasePage',
+            require.resolveWeak('./RegistryExtensionNewReleasePage')
+        ),
     },
 ]
