@@ -36,7 +36,7 @@ import { getHoverActions, registerHoverContributions } from '../../../../shared/
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
@@ -53,6 +53,7 @@ import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
+import { EventLogger } from '../../shared/tracking/eventLogger'
 import { observeSourcegraphURL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
@@ -220,7 +221,8 @@ export interface FileInfo {
 }
 
 interface CodeIntelligenceProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'> {
+    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'>,
+        TelemetryProps {
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
@@ -250,7 +252,8 @@ export function initCodeIntelligence({
     codeHost,
     platformContext,
     extensionsController,
-}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController'>): {
+    telemetryService,
+}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'>): {
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
@@ -316,7 +319,7 @@ export function initCodeIntelligence({
                 <HoverOverlay
                     {...hoverOverlayProps}
                     {...codeHost.hoverOverlayClassProps}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryService={telemetryService}
                     hoverRef={nextOverlayElement}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
@@ -353,6 +356,7 @@ export function handleCodeHost({
     platformContext,
     showGlobalDebug,
     sourcegraphURL,
+    telemetryService,
 }: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]>; sourcegraphURL: string }): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
@@ -373,7 +377,12 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
-    const { hoverifier, subscription } = initCodeIntelligence({ codeHost, extensionsController, platformContext })
+    const { hoverifier, subscription } = initCodeIntelligence({
+        codeHost,
+        extensionsController,
+        platformContext,
+        telemetryService,
+    })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
 
@@ -391,6 +400,7 @@ export function handleCodeHost({
                         extensionsController,
                         history,
                         platformContext,
+                        telemetryService,
                         ...codeHost.commandPaletteClassProps,
                     })
                 )
@@ -601,7 +611,7 @@ export function handleCodeHost({
                             {...fileInfo}
                             {...codeHost.codeViewToolbarClassProps}
                             sourcegraphURL={sourcegraphURL}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                            telemetryService={telemetryService}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
@@ -667,6 +677,7 @@ export async function injectCodeIntelligenceToCodeHost(
         .pipe(take(1))
         .toPromise()
     const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
+    const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
     subscriptions.add(extensionsController)
     subscriptions.add(
         handleCodeHost({
@@ -676,6 +687,7 @@ export async function injectCodeIntelligenceToCodeHost(
             platformContext,
             showGlobalDebug,
             sourcegraphURL,
+            telemetryService,
         })
     )
     return subscriptions
