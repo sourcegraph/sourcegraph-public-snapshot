@@ -103,18 +103,7 @@ const config: webpack.Configuration = {
     resolve: {
         extensions: ['.mjs', '.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
-        alias: {
-            ...rxPaths(),
-
-            // HACK: This is required because the codeintellify package has a hardcoded import that assumes that
-            // ../node_modules/@sourcegraph/react-loading-spinner is a valid path. This is not a correct assumption
-            // in general, and it also breaks in this build because CSS imports URLs are not resolved (we would
-            // need to use resolve-url-loader). There are many possible fixes that are more complex, but this hack
-            // works fine for now.
-            '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css': require.resolve(
-                '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css'
-            ),
-        },
+        alias: { ...rxPaths() },
     },
     module: {
         rules: [
