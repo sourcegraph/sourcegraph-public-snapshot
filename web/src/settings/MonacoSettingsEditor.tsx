@@ -1,5 +1,6 @@
 import * as jsonc from '@sqs/jsonc-parser'
-import * as monaco from 'monaco-editor'
+// tslint:disable-next-line: no-submodule-imports as recommended by https://github.com/Microsoft/monaco-editor-webpack-plugin#using
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'

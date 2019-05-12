@@ -381,6 +381,70 @@ func BitbucketServerUsernameMigration(clock func() time.Time) Migration {
 	})
 }
 
+// AWSCodeCommitSetBogusGitCredentialsMigration returns a Migration that
+// changes all configurations of AWS CodeCommit external services to have the
+// `gitCredentials` setting set to bogus defaults. This will only happen if the
+// `gitCredentials` fields is empty or missing either `username` or `password`.
+//
+// This is done so that repo-updater can boot up without an "invalid config"
+// error and accept new external service configuration syncs, which allows the
+// user to fix the wrong credentials.
+func AWSCodeCommitSetBogusGitCredentialsMigration(clock func() time.Time) Migration {
+
+	return migrate(func(ctx context.Context, s Store) error {
+		const (
+			prefix = "migrate.aws-codecommit-set-bogus-git-credentials:"
+
+			defaultUsername = "insert-git-credentials-username-here"
+			defaultPassword = "insert-git-credentials-password-here"
+		)
+
+		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: []string{"awscodecommit"},
+		})
+
+		if err != nil {
+			return errors.Wrapf(err, "%s list-external-services", prefix)
+		}
+
+		now := clock()
+		for _, svc := range svcs {
+			var c schema.AWSCodeCommitConnection
+			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+				return errors.Errorf("%s external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+			}
+
+			gitCredentials := c.GitCredentials
+
+			if gitCredentials.Username != "" && gitCredentials.Password != "" {
+				continue
+			}
+
+			if gitCredentials.Username == "" {
+				gitCredentials.Username = defaultUsername
+			}
+
+			if gitCredentials.Password == "" {
+				gitCredentials.Password = defaultPassword
+			}
+
+			edited, err := jsonc.Edit(svc.Config, gitCredentials, "gitCredentials")
+			if err != nil {
+				return errors.Wrapf(err, "%s edit-json", prefix)
+			}
+
+			svc.Config = edited
+			svc.UpdatedAt = now
+		}
+
+		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
+			return errors.Wrapf(err, "%s upsert-external-services", prefix)
+		}
+
+		return nil
+	})
+}
+
 // ErrNoTransactor is returned by a Migration returned by
 // NewTxMigration when it takes in a Store that can't be
 // interface upgraded to a Transactor.

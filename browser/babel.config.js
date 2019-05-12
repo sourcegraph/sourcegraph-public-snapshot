@@ -9,6 +9,7 @@ const config = {
       {
         modules: false,
         useBuiltIns: 'entry',
+        corejs: 3,
       },
     ],
   ],
