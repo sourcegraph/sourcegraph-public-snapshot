@@ -3,14 +3,12 @@ import { asyncComponent } from '../util/asyncComponent'
 import { ExtensionsAreaRoute } from './ExtensionsArea'
 
 const ExtensionArea = asyncComponent(() => import('./extension/ExtensionArea'), 'ExtensionArea')
-const ExtensionsOverviewPage = asyncComponent(() => import('./ExtensionsOverviewPage'), 'ExtensionsOverviewPage')
 
 export const extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute> = [
     {
         path: '',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <ExtensionsOverviewPage {...props} />,
+        render: asyncComponent(() => import('./ExtensionsOverviewPage'), 'ExtensionsOverviewPage'),
     },
     {
         path: `/:extensionID(.*)/-/`,

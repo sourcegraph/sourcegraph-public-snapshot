@@ -8,59 +8,27 @@ const SiteAdminAddExternalServicesPage = asyncComponent(
     () => import('./SiteAdminAddExternalServicesPage'),
     'SiteAdminAddExternalServicesPage'
 )
-const SiteAdminAllUsersPage = asyncComponent(() => import('./SiteAdminAllUsersPage'), 'SiteAdminAllUsersPage')
-const SiteAdminConfigurationPage = asyncComponent(
-    () => import('./SiteAdminConfigurationPage'),
-    'SiteAdminConfigurationPage'
-)
-const SiteAdminCreateUserPage = asyncComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage')
-const SiteAdminExternalServicePage = asyncComponent(
-    () => import('./SiteAdminExternalServicePage'),
-    'SiteAdminExternalServicePage'
-)
-const SiteAdminExternalServicesPage = asyncComponent(
-    () => import('./SiteAdminExternalServicesPage'),
-    'SiteAdminExternalServicesPage'
-)
-const SiteAdminOrgsPage = asyncComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage')
-const SiteAdminOverviewPage = asyncComponent(() => import('./SiteAdminOverviewPage'), 'SiteAdminOverviewPage')
-const SiteAdminPingsPage = asyncComponent(() => import('./SiteAdminPingsPage'), 'SiteAdminPingsPage')
-const SiteAdminRepositoriesPage = asyncComponent(
-    () => import('./SiteAdminRepositoriesPage'),
-    'SiteAdminRepositoriesPage'
-)
-const SiteAdminSettingsPage = asyncComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
-const SiteAdminSurveyResponsesPage = asyncComponent(
-    () => import('./SiteAdminSurveyResponsesPage'),
-    'SiteAdminSurveyResponsesPage'
-)
-const SiteAdminTokensPage = asyncComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage')
-const SiteAdminUpdatesPage = asyncComponent(() => import('./SiteAdminUpdatesPage'), 'SiteAdminUpdatesPage')
-const SiteAdminUsageStatisticsPage = asyncComponent(
-    () => import('./SiteAdminUsageStatisticsPage'),
-    'SiteAdminUsageStatisticsPage'
-)
 
 export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     {
         // Render empty page if no page selected
         path: '',
-        render: props => <SiteAdminOverviewPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminOverviewPage'), 'SiteAdminOverviewPage'),
         exact: true,
     },
     {
         path: '/configuration',
         exact: true,
-        render: props => <SiteAdminConfigurationPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminConfigurationPage'), 'SiteAdminConfigurationPage'),
     },
     {
         path: '/global-settings',
         exact: true,
-        render: props => <SiteAdminSettingsPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage'),
     },
     {
         path: '/external-services',
-        render: props => <SiteAdminExternalServicesPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminExternalServicesPage'), 'SiteAdminExternalServicesPage'),
         exact: true,
     },
     {
@@ -75,52 +43,52 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     },
     {
         path: '/external-services/:id',
-        render: props => <SiteAdminExternalServicePage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminExternalServicePage'), 'SiteAdminExternalServicePage'),
         exact: true,
     },
     {
         path: '/repositories',
-        render: props => <SiteAdminRepositoriesPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminRepositoriesPage'), 'SiteAdminRepositoriesPage'),
         exact: true,
     },
     {
         path: '/organizations',
-        render: props => <SiteAdminOrgsPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage'),
         exact: true,
     },
     {
         path: '/users',
         exact: true,
-        render: props => <SiteAdminAllUsersPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminAllUsersPage'), 'SiteAdminAllUsersPage'),
     },
     {
         path: '/users/new',
-        render: props => <SiteAdminCreateUserPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage'),
         exact: true,
     },
     {
         path: '/tokens',
         exact: true,
-        render: props => <SiteAdminTokensPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage'),
     },
     {
         path: '/usage-statistics',
         exact: true,
-        render: props => <SiteAdminUsageStatisticsPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminUsageStatisticsPage'), 'SiteAdminUsageStatisticsPage'),
     },
     {
         path: '/updates',
-        render: props => <SiteAdminUpdatesPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminUpdatesPage'), 'SiteAdminUpdatesPage'),
         exact: true,
     },
     {
         path: '/pings',
-        render: props => <SiteAdminPingsPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminPingsPage'), 'SiteAdminPingsPage'),
         exact: true,
     },
     {
         path: '/surveys',
         exact: true,
-        render: props => <SiteAdminSurveyResponsesPage {...props} />,
+        render: asyncComponent(() => import('./SiteAdminSurveyResponsesPage'), 'SiteAdminSurveyResponsesPage'),
     },
 ]

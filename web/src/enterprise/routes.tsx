@@ -5,10 +5,6 @@ import { asyncComponent } from '../util/asyncComponent'
 import { welcomeAreaRoutes } from './dotcom/welcome/routes'
 
 const WelcomeArea = asyncComponent(() => import('./dotcom/welcome/WelcomeArea'), 'WelcomeArea')
-const NewProductSubscriptionPageOrRedirectUser = asyncComponent(
-    () => import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'),
-    'NewProductSubscriptionPageOrRedirectUser'
-)
 
 export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     {
@@ -16,7 +12,10 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
         // of just dumping them on a sign-in page).
         path: '/subscriptions/new',
         exact: true,
-        render: props => <NewProductSubscriptionPageOrRedirectUser {...props} />,
+        render: asyncComponent(
+            () => import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'),
+            'NewProductSubscriptionPageOrRedirectUser'
+        ),
     },
     {
         // Redirect from old /user/subscriptions/new -> /subscriptions/new.

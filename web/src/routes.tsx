@@ -6,28 +6,8 @@ import { asyncComponent } from './util/asyncComponent'
 
 const SearchPage = asyncComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = asyncComponent(() => import('./search/results/SearchResults'), 'SearchResults')
-const SavedQueriesPage = asyncComponent(() => import('./search/saved-queries/SavedQueries'), 'SavedQueriesPage')
 const SiteAdminArea = asyncComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
-const UserArea = asyncComponent(() => import('./user/area/UserArea'), 'UserArea')
-const APIConsole = asyncComponent(() => import('./api/APIConsole'), 'APIConsole')
-const ResetPasswordPage = asyncComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage')
-const SignInPage = asyncComponent(() => import('./auth/SignInPage'), 'SignInPage')
-const SignUpPage = asyncComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
-const DiscussionsPage = asyncComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage')
-const ExploreArea = asyncComponent(() => import('./explore/ExploreArea'), 'ExploreArea')
 const ExtensionsArea = asyncComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
-const SurveyPage = asyncComponent(() => import('./marketing/SurveyPage'), 'SurveyPage')
-const OpenPage = asyncComponent(() => import('./open/OpenPage'), 'OpenPage')
-const OrgsArea = asyncComponent(() => import('./org/OrgsArea'), 'OrgsArea')
-const RepoContainer = asyncComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
-const ScopePage = asyncComponent(() => import('./search/input/ScopePage'), 'ScopePage')
-const SiteInitPage = asyncComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage')
-const RedirectToUserPage = asyncComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage')
-const RedirectToUserSettings = asyncComponent(
-    () => import('./user/settings/RedirectToUserSettings'),
-    'RedirectToUserSettings'
-)
-const SnippetsPage = asyncComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage')
 
 export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
 
@@ -47,7 +27,7 @@ export interface LayoutRouteProps {
  */
 export const repoRevRoute: LayoutRouteProps = {
     path: '/:repoRevAndRest+',
-    render: props => <RepoContainer {...props} />,
+    render: asyncComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
 }
 
 /**
@@ -79,39 +59,42 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/search/searches',
-        render: props => <SavedQueriesPage {...props} />,
+        render: asyncComponent(() => import('./search/saved-queries/SavedQueries'), 'SavedQueriesPage'),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/open',
-        render: props => <OpenPage {...props} />,
+        render: asyncComponent(() => import('./open/OpenPage'), 'OpenPage'),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/sign-in',
-        render: props => <SignInPage {...props} />,
+        render: asyncComponent(() => import('./auth/SignInPage'), 'SignInPage'),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/sign-up',
-        render: props => <SignUpPage {...props} />,
+        render: asyncComponent(
+            async () => ({ SignUpPage: (await import('./auth/SignUpPage')).SignUpPage }),
+            'SignUpPage'
+        ),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/settings',
-        render: props => <RedirectToUserSettings {...props} />,
+        render: asyncComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
     {
         path: '/user',
-        render: props => <RedirectToUserPage {...props} />,
+        render: asyncComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
     },
     {
         path: '/organizations',
-        render: props => <OrgsArea {...props} />,
+        render: asyncComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
     },
     {
         path: '/search',
@@ -121,7 +104,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/site-admin/init',
         exact: true,
-        render: props => <SiteInitPage {...props} />,
+        render: asyncComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage'),
         forceNarrowWidth: false,
     },
     {
@@ -137,37 +120,37 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/password-reset',
-        render: props => <ResetPasswordPage {...props} />,
+        render: asyncComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/explore',
-        render: props => <ExploreArea {...props} />,
+        render: asyncComponent(() => import('./explore/ExploreArea'), 'ExploreArea'),
         exact: true,
     },
     {
         path: '/discussions',
-        render: props => <DiscussionsPage {...props} />,
+        render: asyncComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage'),
         exact: true,
     },
     {
         path: '/search/scope/:id',
-        render: props => <ScopePage {...props} />,
+        render: asyncComponent(() => import('./search/input/ScopePage'), 'ScopePage'),
         exact: true,
     },
     {
         path: '/api/console',
-        render: props => <APIConsole {...props} />,
+        render: asyncComponent(() => import('./api/APIConsole'), 'APIConsole'),
         exact: true,
     },
     {
         path: '/users/:username',
-        render: props => <UserArea {...props} />,
+        render: asyncComponent(() => import('./user/area/UserArea'), 'UserArea'),
     },
     {
         path: '/survey/:score?',
-        render: props => <SurveyPage {...props} />,
+        render: asyncComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
     },
     {
         path: '/extensions',
@@ -190,7 +173,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/snippets',
-        render: props => <SnippetsPage {...props} />,
+        render: asyncComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },
     repoRevRoute,
 ]

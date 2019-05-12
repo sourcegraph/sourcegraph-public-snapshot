@@ -4,23 +4,6 @@ import { asyncComponent } from '../../util/asyncComponent'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
 
 const SettingsArea = asyncComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
-const UserSettingsCreateAccessTokenPage = asyncComponent(
-    () => import('./accessTokens/UserSettingsCreateAccessTokenPage'),
-    'UserSettingsCreateAccessTokenPage'
-)
-const UserSettingsEmailsPage = asyncComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage')
-const UserSettingsPasswordPage = asyncComponent(
-    () => import('./auth/UserSettingsPasswordPage'),
-    'UserSettingsPasswordPage'
-)
-const UserSettingsProfilePage = asyncComponent(
-    () => import('./profile/UserSettingsProfilePage'),
-    'UserSettingsProfilePage'
-)
-const UserSettingsTokensPage = asyncComponent(
-    () => import('./accessTokens/UserSettingsTokensPage'),
-    'UserSettingsTokensPage'
-)
 
 export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     {
@@ -48,33 +31,31 @@ export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     {
         path: '/profile',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsProfilePage {...props} />,
+        render: asyncComponent(() => import('./profile/UserSettingsProfilePage'), 'UserSettingsProfilePage'),
     },
     {
         path: '/password',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsPasswordPage {...props} />,
+        render: asyncComponent(() => import('./auth/UserSettingsPasswordPage'), 'UserSettingsPasswordPage'),
     },
     {
         path: '/emails',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsEmailsPage {...props} />,
+        render: asyncComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage'),
     },
     {
         path: '/tokens',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsTokensPage {...props} />,
+        render: asyncComponent(() => import('./accessTokens/UserSettingsTokensPage'), 'UserSettingsTokensPage'),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
     {
         path: '/tokens/new',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsCreateAccessTokenPage {...props} />,
+        render: asyncComponent(
+            () => import('./accessTokens/UserSettingsCreateAccessTokenPage'),
+            'UserSettingsCreateAccessTokenPage'
+        ),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
 ]

@@ -3,15 +3,13 @@ import { Redirect } from 'react-router'
 import { asyncComponent } from '../../util/asyncComponent'
 import { UserAreaRoute } from './UserArea'
 
-const UserOverviewPage = asyncComponent(() => import('./UserOverviewPage'), 'UserOverviewPage')
 const UserSettingsArea = asyncComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 
 export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
     {
         path: '',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserOverviewPage {...props} />,
+        render: asyncComponent(() => import('./UserOverviewPage'), 'UserOverviewPage'),
     },
     {
         path: '/settings',
