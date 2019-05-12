@@ -29,15 +29,15 @@ func TestSavedSearches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []*savedSearchResolver{{
-		id:          key,
-		description: "test query",
-		query:       "test type:diff",
-		notify:      true,
-		notifySlack: false,
-		userID:      &key,
-		orgID:       nil,
-	}}
+	want := []*savedSearchResolver{{types.SavedSearch{
+		ID:          key,
+		Description: "test query",
+		Query:       "test type:diff",
+		Notify:      true,
+		NotifySlack: false,
+		UserID:      &key,
+		OrgID:       nil,
+	}}}
 	if !reflect.DeepEqual(savedSearches, want) {
 		t.Errorf("got %v+, want %v+", savedSearches[0], want[0])
 	}
@@ -59,28 +59,28 @@ func TestCreateSavedSearch(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true, ID: key}, nil
 	}
-
+	userID := marshalUserID(key)
 	savedSearches, err := (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
 		NotifySlack bool
-		OrgID       *int32
-		UserID      *int32
-	}{Description: "test query", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OrgID: nil, UserID: &key})
+		OrgID       *graphql.ID
+		UserID      *graphql.ID
+	}{Description: "test query", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OrgID: nil, UserID: &userID})
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := &savedSearchResolver{
-		id:          key,
-		description: "test query",
-		query:       "test type:diff",
-		notify:      true,
-		notifySlack: false,
-		orgID:       nil,
-		userID:      &key,
-	}
+	want := &savedSearchResolver{types.SavedSearch{
+		ID:          key,
+		Description: "test query",
+		Query:       "test type:diff",
+		Notify:      true,
+		NotifySlack: false,
+		OrgID:       nil,
+		UserID:      &key,
+	}}
 
 	if !createSavedSearchCalled {
 		t.Errorf("Database method db.SavedSearches.Create not called")
@@ -105,29 +105,29 @@ func TestUpdateSavedSearch(t *testing.T) {
 		updateSavedSearchCalled = true
 		return &types.SavedSearch{ID: key, Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
 	}
-
+	userID := marshalUserID(key)
 	savedSearches, err := (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
 		NotifyOwner bool
 		NotifySlack bool
-		OrgID       *int32
-		UserID      *int32
-	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OrgID: nil, UserID: &key})
+		OrgID       *graphql.ID
+		UserID      *graphql.ID
+	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OrgID: nil, UserID: &userID})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := &savedSearchResolver{
-		id:          key,
-		description: "updated query description",
-		query:       "test type:diff",
-		notify:      true,
-		notifySlack: false,
-		orgID:       nil,
-		userID:      &key,
-	}
+	want := &savedSearchResolver{types.SavedSearch{
+		ID:          key,
+		Description: "updated query description",
+		Query:       "test type:diff",
+		Notify:      true,
+		NotifySlack: false,
+		OrgID:       nil,
+		UserID:      &key,
+	}}
 
 	if !updateSavedSearchCalled {
 		t.Errorf("Database method db.SavedSearches.Update not called")

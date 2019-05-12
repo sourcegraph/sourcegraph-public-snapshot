@@ -308,25 +308,21 @@ type Mutation {
         query: String!
         notifyOwner: Boolean!
         notifySlack: Boolean!
-        orgID: Int
-        userID: Int
+        orgID: ID
+        userID: ID
     ): SavedSearch!
     # Updates a saved search
     updateSavedSearch(
-        # The database ID of the saved search
         id: ID!
         description: String!
         query: String!
         notifyOwner: Boolean!
         notifySlack: Boolean!
-        orgID: Int
-        userID: Int
+        orgID: ID
+        userID: ID
     ): SavedSearch!
     # Deletes a saved search
-    deleteSavedSearch(
-        # The database ID of the saved search
-        id: ID!
-    ): EmptyResponse
+    deleteSavedSearch(id: ID!): EmptyResponse
 }
 
 # A new external service.
@@ -972,8 +968,6 @@ type SearchAlert {
 type SavedSearch {
     # The unique ID of this saved query.
     id: ID!
-    # The unique database ID of this saved query.
-    databaseID: Int!
     # The description.
     description: String!
     # The query.
@@ -984,9 +978,9 @@ type SavedSearch {
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
     # The user ID of the owner if the owner is a user.
-    userID: Int
+    userID: ID
     # The organization ID of the owner if the owner is an org.
-    orgID: Int
+    orgID: ID
     # The Slack webhook URL associated with this saved search, if any.
     slackWebhookURL: String
 }
@@ -2367,10 +2361,6 @@ type Org implements Node & SettingsSubject {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
-    # The unique numeric ID for the organization.
-    #
-    # FOR INTERNAL USE ONLY
-    databaseID: Int!
 }
 
 # The result of Mutation.inviteUserToOrganization.
