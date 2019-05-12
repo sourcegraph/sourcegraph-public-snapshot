@@ -1,15 +1,20 @@
 import React from 'react'
 import { eventLogger } from '../../tracking/eventLogger'
+import { asyncComponent } from '../../util/asyncComponent'
 import { ExtensionAreaRoute } from './ExtensionArea'
-const RegistryExtensionContributionsPage = React.lazy(async () => ({
-    default: (await import('./RegistryExtensionContributionsPage')).RegistryExtensionContributionsPage,
-}))
-const RegistryExtensionManifestPage = React.lazy(async () => ({
-    default: (await import('./RegistryExtensionManifestPage')).RegistryExtensionManifestPage,
-}))
-const RegistryExtensionOverviewPage = React.lazy(async () => ({
-    default: (await import('./RegistryExtensionOverviewPage')).RegistryExtensionOverviewPage,
-}))
+
+const RegistryExtensionContributionsPage = asyncComponent(
+    () => import('./RegistryExtensionContributionsPage'),
+    'RegistryExtensionContributionsPage'
+)
+const RegistryExtensionManifestPage = asyncComponent(
+    () => import('./RegistryExtensionManifestPage'),
+    'RegistryExtensionManifestPage'
+)
+const RegistryExtensionOverviewPage = asyncComponent(
+    () => import('./RegistryExtensionOverviewPage'),
+    'RegistryExtensionOverviewPage'
+)
 
 export const extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = [
     {

@@ -1,8 +1,8 @@
 import React from 'react'
+import { asyncComponent } from '../../../util/asyncComponent'
 import { WelcomeAreaRoute } from './WelcomeArea'
-const WelcomeMainPage = React.lazy(async () => ({
-    default: (await import('./WelcomeMainPage')).WelcomeMainPage,
-}))
+
+const WelcomeMainPage = asyncComponent(() => import('./WelcomeMainPage'), 'WelcomeMainPage')
 
 export const welcomeAreaRoutes: ReadonlyArray<WelcomeAreaRoute> = [
     {

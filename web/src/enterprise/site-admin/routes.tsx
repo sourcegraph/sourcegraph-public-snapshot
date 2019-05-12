@@ -1,36 +1,44 @@
 import React from 'react'
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
-const SiteAdminProductCustomersPage = React.lazy(async () => ({
-    default: (await import('./dotcom/customers/SiteAdminCustomersPage')).SiteAdminProductCustomersPage,
-}))
-const SiteAdminCreateProductSubscriptionPage = React.lazy(async () => ({
-    default: (await import('./dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage'))
-        .SiteAdminCreateProductSubscriptionPage,
-}))
-const SiteAdminProductLicensesPage = React.lazy(async () => ({
-    default: (await import('./dotcom/productSubscriptions/SiteAdminProductLicensesPage')).SiteAdminProductLicensesPage,
-}))
-const SiteAdminDotcomProductSubscriptionPage = React.lazy(async () => ({
-    default: (await import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionPage'))
-        .SiteAdminProductSubscriptionPage,
-}))
-const SiteAdminProductSubscriptionsPage = React.lazy(async () => ({
-    default: (await import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'))
-        .SiteAdminProductSubscriptionsPage,
-}))
-const SiteAdminProductSubscriptionPage = React.lazy(async () => ({
-    default: (await import('./productSubscription/SiteAdminProductSubscriptionPage')).SiteAdminProductSubscriptionPage,
-}))
-const SiteAdminAuthenticationProvidersPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminAuthenticationProvidersPage')).SiteAdminAuthenticationProvidersPage,
-}))
-const SiteAdminExternalAccountsPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminExternalAccountsPage')).SiteAdminExternalAccountsPage,
-}))
-const SiteAdminRegistryExtensionsPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminRegistryExtensionsPage')).SiteAdminRegistryExtensionsPage,
-}))
+import { asyncComponent } from '../../util/asyncComponent'
+
+const SiteAdminProductCustomersPage = asyncComponent(
+    () => import('./dotcom/customers/SiteAdminCustomersPage'),
+    'SiteAdminProductCustomersPage'
+)
+const SiteAdminCreateProductSubscriptionPage = asyncComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage'),
+    'SiteAdminCreateProductSubscriptionPage'
+)
+const SiteAdminProductLicensesPage = asyncComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminProductLicensesPage'),
+    'SiteAdminProductLicensesPage'
+)
+const SiteAdminDotcomProductSubscriptionPage = asyncComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionPage'),
+    'SiteAdminProductSubscriptionPage'
+)
+const SiteAdminProductSubscriptionsPage = asyncComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'),
+    'SiteAdminProductSubscriptionsPage'
+)
+const SiteAdminProductSubscriptionPage = asyncComponent(
+    () => import('./productSubscription/SiteAdminProductSubscriptionPage'),
+    'SiteAdminProductSubscriptionPage'
+)
+const SiteAdminAuthenticationProvidersPage = asyncComponent(
+    () => import('./SiteAdminAuthenticationProvidersPage'),
+    'SiteAdminAuthenticationProvidersPage'
+)
+const SiteAdminExternalAccountsPage = asyncComponent(
+    () => import('./SiteAdminExternalAccountsPage'),
+    'SiteAdminExternalAccountsPage'
+)
+const SiteAdminRegistryExtensionsPage = asyncComponent(
+    () => import('./SiteAdminRegistryExtensionsPage'),
+    'SiteAdminRegistryExtensionsPage'
+)
 
 export const enterpriseSiteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     ...siteAdminAreaRoutes,

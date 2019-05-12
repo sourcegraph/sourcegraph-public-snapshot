@@ -1,15 +1,10 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-
+import { asyncComponent } from '../../util/asyncComponent'
 import { UserAreaRoute } from './UserArea'
 
-const UserOverviewPage = React.lazy(async () => ({
-    default: (await import('./UserOverviewPage')).UserOverviewPage,
-}))
-
-const UserSettingsArea = React.lazy(async () => ({
-    default: (await import('../settings/UserSettingsArea')).UserSettingsArea,
-}))
+const UserOverviewPage = asyncComponent(() => import('./UserOverviewPage'), 'UserOverviewPage')
+const UserSettingsArea = asyncComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 
 export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
     {

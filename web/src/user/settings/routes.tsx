@@ -1,24 +1,26 @@
 import React from 'react'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { asyncComponent } from '../../util/asyncComponent'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
-const SettingsArea = React.lazy(async () => ({
-    default: (await import('../../settings/SettingsArea')).SettingsArea,
-}))
-const UserSettingsCreateAccessTokenPage = React.lazy(async () => ({
-    default: (await import('./accessTokens/UserSettingsCreateAccessTokenPage')).UserSettingsCreateAccessTokenPage,
-}))
-const UserSettingsEmailsPage = React.lazy(async () => ({
-    default: (await import('./emails/UserSettingsEmailsPage')).UserSettingsEmailsPage,
-}))
-const UserSettingsPasswordPage = React.lazy(async () => ({
-    default: (await import('./auth/UserSettingsPasswordPage')).UserSettingsPasswordPage,
-}))
-const UserSettingsProfilePage = React.lazy(async () => ({
-    default: (await import('./profile/UserSettingsProfilePage')).UserSettingsProfilePage,
-}))
-const UserSettingsTokensPage = React.lazy(async () => ({
-    default: (await import('./accessTokens/UserSettingsTokensPage')).UserSettingsTokensPage,
-}))
+
+const SettingsArea = asyncComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
+const UserSettingsCreateAccessTokenPage = asyncComponent(
+    () => import('./accessTokens/UserSettingsCreateAccessTokenPage'),
+    'UserSettingsCreateAccessTokenPage'
+)
+const UserSettingsEmailsPage = asyncComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage')
+const UserSettingsPasswordPage = asyncComponent(
+    () => import('./auth/UserSettingsPasswordPage'),
+    'UserSettingsPasswordPage'
+)
+const UserSettingsProfilePage = asyncComponent(
+    () => import('./profile/UserSettingsProfilePage'),
+    'UserSettingsProfilePage'
+)
+const UserSettingsTokensPage = asyncComponent(
+    () => import('./accessTokens/UserSettingsTokensPage'),
+    'UserSettingsTokensPage'
+)
 
 export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     {

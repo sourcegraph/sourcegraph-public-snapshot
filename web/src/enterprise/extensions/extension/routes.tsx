@@ -1,12 +1,16 @@
 import React from 'react'
 import { ExtensionAreaRoute } from '../../../extensions/extension/ExtensionArea'
 import { extensionAreaRoutes } from '../../../extensions/extension/routes'
-const RegistryExtensionManagePage = React.lazy(async () => ({
-    default: (await import('./RegistryExtensionManagePage')).RegistryExtensionManagePage,
-}))
-const RegistryExtensionNewReleasePage = React.lazy(async () => ({
-    default: (await import('./RegistryExtensionNewReleasePage')).RegistryExtensionNewReleasePage,
-}))
+import { asyncComponent } from '../../../util/asyncComponent'
+
+const RegistryExtensionManagePage = asyncComponent(
+    () => import('./RegistryExtensionManagePage'),
+    'RegistryExtensionManagePage'
+)
+const RegistryExtensionNewReleasePage = asyncComponent(
+    () => import('./RegistryExtensionNewReleasePage'),
+    'RegistryExtensionNewReleasePage'
+)
 
 export const enterpriseExtensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = [
     ...extensionAreaRoutes,

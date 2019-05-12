@@ -1,50 +1,45 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 import { eventLogger } from '../tracking/eventLogger'
+import { asyncComponent } from '../util/asyncComponent'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
-const SiteAdminAddExternalServicesPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminAddExternalServicesPage')).SiteAdminAddExternalServicesPage,
-}))
-const SiteAdminAllUsersPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminAllUsersPage')).SiteAdminAllUsersPage,
-}))
-const SiteAdminConfigurationPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminConfigurationPage')).SiteAdminConfigurationPage,
-}))
-const SiteAdminCreateUserPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminCreateUserPage')).SiteAdminCreateUserPage,
-}))
-const SiteAdminExternalServicePage = React.lazy(async () => ({
-    default: (await import('./SiteAdminExternalServicePage')).SiteAdminExternalServicePage,
-}))
-const SiteAdminExternalServicesPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminExternalServicesPage')).SiteAdminExternalServicesPage,
-}))
-const SiteAdminOrgsPage = React.lazy(async () => ({ default: (await import('./SiteAdminOrgsPage')).SiteAdminOrgsPage }))
-const SiteAdminOverviewPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminOverviewPage')).SiteAdminOverviewPage,
-}))
-const SiteAdminPingsPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminPingsPage')).SiteAdminPingsPage,
-}))
-const SiteAdminRepositoriesPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminRepositoriesPage')).SiteAdminRepositoriesPage,
-}))
-const SiteAdminSettingsPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminSettingsPage')).SiteAdminSettingsPage,
-}))
-const SiteAdminSurveyResponsesPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminSurveyResponsesPage')).SiteAdminSurveyResponsesPage,
-}))
-const SiteAdminTokensPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminTokensPage')).SiteAdminTokensPage,
-}))
-const SiteAdminUpdatesPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminUpdatesPage')).SiteAdminUpdatesPage,
-}))
-const SiteAdminUsageStatisticsPage = React.lazy(async () => ({
-    default: (await import('./SiteAdminUsageStatisticsPage')).SiteAdminUsageStatisticsPage,
-}))
+
+const SiteAdminAddExternalServicesPage = asyncComponent(
+    () => import('./SiteAdminAddExternalServicesPage'),
+    'SiteAdminAddExternalServicesPage'
+)
+const SiteAdminAllUsersPage = asyncComponent(() => import('./SiteAdminAllUsersPage'), 'SiteAdminAllUsersPage')
+const SiteAdminConfigurationPage = asyncComponent(
+    () => import('./SiteAdminConfigurationPage'),
+    'SiteAdminConfigurationPage'
+)
+const SiteAdminCreateUserPage = asyncComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage')
+const SiteAdminExternalServicePage = asyncComponent(
+    () => import('./SiteAdminExternalServicePage'),
+    'SiteAdminExternalServicePage'
+)
+const SiteAdminExternalServicesPage = asyncComponent(
+    () => import('./SiteAdminExternalServicesPage'),
+    'SiteAdminExternalServicesPage'
+)
+const SiteAdminOrgsPage = asyncComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage')
+const SiteAdminOverviewPage = asyncComponent(() => import('./SiteAdminOverviewPage'), 'SiteAdminOverviewPage')
+const SiteAdminPingsPage = asyncComponent(() => import('./SiteAdminPingsPage'), 'SiteAdminPingsPage')
+const SiteAdminRepositoriesPage = asyncComponent(
+    () => import('./SiteAdminRepositoriesPage'),
+    'SiteAdminRepositoriesPage'
+)
+const SiteAdminSettingsPage = asyncComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
+const SiteAdminSurveyResponsesPage = asyncComponent(
+    () => import('./SiteAdminSurveyResponsesPage'),
+    'SiteAdminSurveyResponsesPage'
+)
+const SiteAdminTokensPage = asyncComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage')
+const SiteAdminUpdatesPage = asyncComponent(() => import('./SiteAdminUpdatesPage'), 'SiteAdminUpdatesPage')
+const SiteAdminUsageStatisticsPage = asyncComponent(
+    () => import('./SiteAdminUsageStatisticsPage'),
+    'SiteAdminUsageStatisticsPage'
+)
 
 export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     {

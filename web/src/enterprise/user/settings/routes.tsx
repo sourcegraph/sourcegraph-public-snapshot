@@ -1,27 +1,18 @@
 import React from 'react'
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
+import { asyncComponent } from '../../../util/asyncComponent'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
 import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
-const UserSettingsExternalAccountsPage = React.lazy(async () => ({
-    default: (await import('./UserSettingsExternalAccountsPage')).UserSettingsExternalAccountsPage,
-}))
-const UserSubscriptionsEditProductSubscriptionPage = React.lazy(async () => ({
-    default: (await import('../productSubscriptions/UserSubscriptionsEditProductSubscriptionPage'))
-        .UserSubscriptionsEditProductSubscriptionPage,
-}))
-const UserSubscriptionsNewProductSubscriptionPage = React.lazy(async () => ({
-    default: (await import('../productSubscriptions/UserSubscriptionsNewProductSubscriptionPage'))
-        .UserSubscriptionsNewProductSubscriptionPage,
-}))
-const UserSubscriptionsProductSubscriptionPage = React.lazy(async () => ({
-    default: (await import('../productSubscriptions/UserSubscriptionsProductSubscriptionPage'))
-        .UserSubscriptionsProductSubscriptionPage,
-}))
-const UserSubscriptionsProductSubscriptionsPage = React.lazy(async () => ({
-    default: (await import('../productSubscriptions/UserSubscriptionsProductSubscriptionsPage'))
-        .UserSubscriptionsProductSubscriptionsPage,
-}))
+
+const UserSettingsExternalAccountsPage = asyncComponent(
+    () => import('./UserSettingsExternalAccountsPage'),
+    'UserSettingsExternalAccountsPage'
+)
+const UserSubscriptionsEditProductSubscriptionPage = asyncComponent(() => import("../productSubscriptions/UserSubscriptionsEditProductSubscriptionPage"), "UserSubscriptionsEditProductSubscriptionPage")
+const UserSubscriptionsNewProductSubscriptionPage = asyncComponent(() => import("../productSubscriptions/UserSubscriptionsNewProductSubscriptionPage"), "UserSubscriptionsNewProductSubscriptionPage")
+const UserSubscriptionsProductSubscriptionPage = asyncComponent(() => import("../productSubscriptions/UserSubscriptionsProductSubscriptionPage"), "UserSubscriptionsProductSubscriptionPage")
+const UserSubscriptionsProductSubscriptionsPage = asyncComponent(() => import("../productSubscriptions/UserSubscriptionsProductSubscriptionsPage"), "UserSubscriptionsProductSubscriptionsPage")
 
 export const enterpriseUserSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     ...userSettingsAreaRoutes,

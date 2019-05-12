@@ -2,49 +2,32 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
-const SearchPage = React.lazy(async () => ({
-    default: (await import('./search/input/SearchPage')).SearchPage,
-}))
-const SearchResults = React.lazy(async () => ({
-    default: (await import('./search/results/SearchResults')).SearchResults,
-}))
-const SavedQueriesPage = React.lazy(async () => ({
-    default: (await import('./search/saved-queries/SavedQueries')).SavedQueriesPage,
-}))
-const SiteAdminArea = React.lazy(async () => ({
-    default: (await import('./site-admin/SiteAdminArea')).SiteAdminArea,
-}))
-const UserArea = React.lazy(async () => ({
-    default: (await import('./user/area/UserArea')).UserArea,
-}))
-const APIConsole = React.lazy(async () => ({ default: (await import('./api/APIConsole')).APIConsole }))
-const ResetPasswordPage = React.lazy(async () => ({
-    default: (await import('./auth/ResetPasswordPage')).ResetPasswordPage,
-}))
-const SignInPage = React.lazy(async () => ({ default: (await import('./auth/SignInPage')).SignInPage }))
-const SignUpPage = React.lazy(async () => ({ default: (await import('./auth/SignUpPage')).SignUpPage }))
-const DiscussionsPage = React.lazy(async () => ({
-    default: (await import('./discussions/DiscussionsPage')).DiscussionsPage,
-}))
-const ExploreArea = React.lazy(async () => ({ default: (await import('./explore/ExploreArea')).ExploreArea }))
-const ExtensionsArea = React.lazy(async () => ({
-    default: (await import('./extensions/ExtensionsArea')).ExtensionsArea,
-}))
-const SurveyPage = React.lazy(async () => ({ default: (await import('./marketing/SurveyPage')).SurveyPage }))
-const OpenPage = React.lazy(async () => ({ default: (await import('./open/OpenPage')).OpenPage }))
-const OrgsArea = React.lazy(async () => ({ default: (await import('./org/OrgsArea')).OrgsArea }))
-const RepoContainer = React.lazy(async () => ({ default: (await import('./repo/RepoContainer')).RepoContainer }))
-const ScopePage = React.lazy(async () => ({ default: (await import('./search/input/ScopePage')).ScopePage }))
-const SiteInitPage = React.lazy(async () => ({ default: (await import('./site-admin/SiteInitPage')).SiteInitPage }))
-const RedirectToUserPage = React.lazy(async () => ({
-    default: (await import('./user/settings/RedirectToUserPage')).RedirectToUserPage,
-}))
-const RedirectToUserSettings = React.lazy(async () => ({
-    default: (await import('./user/settings/RedirectToUserSettings')).RedirectToUserSettings,
-}))
-const SnippetsPage = React.lazy(async () => ({
-    default: (await import('./snippets/SnippetsPage')).SnippetsPage,
-}))
+import { asyncComponent } from './util/asyncComponent'
+
+const SearchPage = asyncComponent(() => import('./search/input/SearchPage'), 'SearchPage')
+const SearchResults = asyncComponent(() => import('./search/results/SearchResults'), 'SearchResults')
+const SavedQueriesPage = asyncComponent(() => import('./search/saved-queries/SavedQueries'), 'SavedQueriesPage')
+const SiteAdminArea = asyncComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
+const UserArea = asyncComponent(() => import('./user/area/UserArea'), 'UserArea')
+const APIConsole = asyncComponent(() => import('./api/APIConsole'), 'APIConsole')
+const ResetPasswordPage = asyncComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage')
+const SignInPage = asyncComponent(() => import('./auth/SignInPage'), 'SignInPage')
+const SignUpPage = asyncComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const DiscussionsPage = asyncComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage')
+const ExploreArea = asyncComponent(() => import('./explore/ExploreArea'), 'ExploreArea')
+const ExtensionsArea = asyncComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
+const SurveyPage = asyncComponent(() => import('./marketing/SurveyPage'), 'SurveyPage')
+const OpenPage = asyncComponent(() => import('./open/OpenPage'), 'OpenPage')
+const OrgsArea = asyncComponent(() => import('./org/OrgsArea'), 'OrgsArea')
+const RepoContainer = asyncComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
+const ScopePage = asyncComponent(() => import('./search/input/ScopePage'), 'ScopePage')
+const SiteInitPage = asyncComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage')
+const RedirectToUserPage = asyncComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage')
+const RedirectToUserSettings = asyncComponent(
+    () => import('./user/settings/RedirectToUserSettings'),
+    'RedirectToUserSettings'
+)
+const SnippetsPage = asyncComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage')
 
 export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
 
