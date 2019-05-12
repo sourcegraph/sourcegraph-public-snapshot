@@ -14,7 +14,7 @@ export const OrgSavedSearchesCreateForm: React.FunctionComponent<Props> = (props
         authenticatedUser={null}
         submitLabel="Create"
         title="Add saved search"
-        defaultValues={{ orgID: props.org.databaseID }}
+        defaultValues={{ orgID: props.org.id }}
         // tslint:disable-next-line:jsx-no-lambda
         onSubmit={(fields: SavedQueryFields): Observable<void> =>
             createSavedSearch(

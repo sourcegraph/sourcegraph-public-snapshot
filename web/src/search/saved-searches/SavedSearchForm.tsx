@@ -12,7 +12,7 @@ export interface SavedQueryFields {
     notify: boolean
     notifySlack: boolean
     userID: number | null
-    orgID: number | null
+    orgID: GQL.ID | null
     slackWebhookURL: string | null
 }
 

@@ -36,7 +36,6 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
                     displayName
                     url
                     settingsURL
-                    databaseID
                     viewerPendingInvitation {
                         id
                         sender {
