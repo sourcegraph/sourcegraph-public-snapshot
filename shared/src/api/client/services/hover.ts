@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { HoverMerged } from '../../client/types/hover'
+import { fromHoverMerged, HoverMerged } from '../../client/types/hover'
 import { TextDocumentPositionParams } from '../../protocol'
 import { DocumentFeatureProviderRegistry } from './registry'
 
@@ -54,7 +54,7 @@ export function getHover(
                     )
                 )
             ).pipe(
-                map(HoverMerged.from),
+                map(fromHoverMerged),
                 defaultIfEmpty(null as HoverMerged | null),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )

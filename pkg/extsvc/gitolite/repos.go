@@ -2,6 +2,7 @@ package gitolite
 
 import (
 	"context"
+	"net/url"
 	"os/exec"
 	"strings"
 
@@ -52,10 +53,19 @@ func decodeRepos(host, gitoliteInfo string) []*Repo {
 		}
 		name := fields[len(fields)-1]
 		if len(fields) >= 2 && fields[0] == "R" {
-			repos = append(repos, &Repo{
-				Name: name,
-				URL:  host + ":" + name,
-			})
+			repo := &Repo{Name: name}
+
+			// We support both URL and SCP formats
+			// url: ssh://git@github.com:22/tsenart/vegeta
+			// scp: git@github.com:tsenart/vegeta
+			if u, _ := url.Parse(host); u == nil || u.Scheme == "" {
+				repo.URL = host + ":" + name
+			} else if u.Scheme == "ssh" {
+				u.Path = name
+				repo.URL = u.String()
+			}
+
+			repos = append(repos, repo)
 		}
 	}
 

@@ -9,7 +9,7 @@ import {
 import * as H from 'history'
 import { uniqBy } from 'lodash'
 import * as React from 'react'
-import { render } from 'react-dom'
+import { render as reactDOMRender } from 'react-dom'
 import { animationFrameScheduler, EMPTY, from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import {
     catchError,
@@ -36,7 +36,7 @@ import { getHoverActions, registerHoverContributions } from '../../../../shared/
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
@@ -53,6 +53,7 @@ import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
+import { EventLogger } from '../../shared/tracking/eventLogger'
 import { observeSourcegraphURL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
@@ -220,7 +221,8 @@ export interface FileInfo {
 }
 
 interface CodeIntelligenceProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'> {
+    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'>,
+        TelemetryProps {
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
@@ -250,7 +252,11 @@ export function initCodeIntelligence({
     codeHost,
     platformContext,
     extensionsController,
-}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController'>): {
+    render,
+    telemetryService,
+}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
+    render: typeof reactDOMRender
+}): {
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
@@ -316,7 +322,7 @@ export function initCodeIntelligence({
                 <HoverOverlay
                     {...hoverOverlayProps}
                     {...codeHost.hoverOverlayClassProps}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryService={telemetryService}
                     hoverRef={nextOverlayElement}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
@@ -353,7 +359,13 @@ export function handleCodeHost({
     platformContext,
     showGlobalDebug,
     sourcegraphURL,
-}: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]>; sourcegraphURL: string }): Subscription {
+    telemetryService,
+    render,
+}: CodeIntelligenceProps & {
+    mutations: Observable<MutationRecordLike[]>
+    sourcegraphURL: string
+    render: typeof reactDOMRender
+}): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
@@ -373,7 +385,13 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
-    const { hoverifier, subscription } = initCodeIntelligence({ codeHost, extensionsController, platformContext })
+    const { hoverifier, subscription } = initCodeIntelligence({
+        codeHost,
+        extensionsController,
+        platformContext,
+        telemetryService,
+        render,
+    })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
 
@@ -391,6 +409,8 @@ export function handleCodeHost({
                         extensionsController,
                         history,
                         platformContext,
+                        telemetryService,
+                        render,
                         ...codeHost.commandPaletteClassProps,
                     })
                 )
@@ -402,7 +422,7 @@ export function handleCodeHost({
     // so we don't need to subscribe to mutations.
     if (showGlobalDebug) {
         const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL })(mount)
+        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
 
     // Render view on Sourcegraph button
@@ -601,7 +621,7 @@ export function handleCodeHost({
                             {...fileInfo}
                             {...codeHost.codeViewToolbarClassProps}
                             sourcegraphURL={sourcegraphURL}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                            telemetryService={telemetryService}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
@@ -667,6 +687,7 @@ export async function injectCodeIntelligenceToCodeHost(
         .pipe(take(1))
         .toPromise()
     const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
+    const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
     subscriptions.add(extensionsController)
     subscriptions.add(
         handleCodeHost({
@@ -676,6 +697,8 @@ export async function injectCodeIntelligenceToCodeHost(
             platformContext,
             showGlobalDebug,
             sourcegraphURL,
+            telemetryService,
+            render: reactDOMRender,
         })
     )
     return subscriptions
