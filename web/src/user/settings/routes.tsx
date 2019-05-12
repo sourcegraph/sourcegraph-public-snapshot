@@ -1,24 +1,9 @@
 import React from 'react'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { lazyComponent } from '../../util/lazyComponent'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
-const SettingsArea = React.lazy(async () => ({
-    default: (await import('../../settings/SettingsArea')).SettingsArea,
-}))
-const UserSettingsCreateAccessTokenPage = React.lazy(async () => ({
-    default: (await import('./accessTokens/UserSettingsCreateAccessTokenPage')).UserSettingsCreateAccessTokenPage,
-}))
-const UserSettingsEmailsPage = React.lazy(async () => ({
-    default: (await import('./emails/UserSettingsEmailsPage')).UserSettingsEmailsPage,
-}))
-const UserSettingsPasswordPage = React.lazy(async () => ({
-    default: (await import('./auth/UserSettingsPasswordPage')).UserSettingsPasswordPage,
-}))
-const UserSettingsProfilePage = React.lazy(async () => ({
-    default: (await import('./profile/UserSettingsProfilePage')).UserSettingsProfilePage,
-}))
-const UserSettingsTokensPage = React.lazy(async () => ({
-    default: (await import('./accessTokens/UserSettingsTokensPage')).UserSettingsTokensPage,
-}))
+
+const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
 export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     {
@@ -46,33 +31,31 @@ export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
     {
         path: '/profile',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsProfilePage {...props} />,
+        render: lazyComponent(() => import('./profile/UserSettingsProfilePage'), 'UserSettingsProfilePage'),
     },
     {
         path: '/password',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsPasswordPage {...props} />,
+        render: lazyComponent(() => import('./auth/UserSettingsPasswordPage'), 'UserSettingsPasswordPage'),
     },
     {
         path: '/emails',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsEmailsPage {...props} />,
+        render: lazyComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage'),
     },
     {
         path: '/tokens',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsTokensPage {...props} />,
+        render: lazyComponent(() => import('./accessTokens/UserSettingsTokensPage'), 'UserSettingsTokensPage'),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
     {
         path: '/tokens/new',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSettingsCreateAccessTokenPage {...props} />,
+        render: lazyComponent(
+            () => import('./accessTokens/UserSettingsCreateAccessTokenPage'),
+            'UserSettingsCreateAccessTokenPage'
+        ),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
 ]
