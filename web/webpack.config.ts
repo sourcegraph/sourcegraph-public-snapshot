@@ -90,7 +90,6 @@ const config: webpack.Configuration = {
                 NODE_ENV: JSON.stringify(mode),
             },
         }),
-        new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
         new MiniCssExtractPlugin({ filename: 'styles/[name].bundle.css' }) as any, // @types package is incorrect
         new OptimizeCssAssetsPlugin(),
         // Don't build the files referenced by dynamic imports for all the basic languages monaco supports.
