@@ -51,7 +51,39 @@ const createMockPlatformContext = (
     }: {
         request: string
     }): Observable<SuccessGraphQLResult<R>> => {
+        if (request.trim().startsWith('query SiteProductVersion')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            return of({
+                data: {
+                    site: {
+                        productVersion: 'dev',
+                        buildVersion: 'dev',
+                        hasCodeIntelligence: true,
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
+        if (request.trim().startsWith('query CurrentUser')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            return of({
+                data: {
+                    currentUser: {
+                        id: 'u1',
+                        displayName: 'Alice',
+                        username: 'alice',
+                        avatarURL: null,
+                        url: 'https://example.com/alice',
+                        settingsURL: 'https://example.com/alice/settings',
+                        emails: [{ email: 'alice@example.com' }],
+                        siteAdmin: false,
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
         if (request.trim().startsWith('query ResolveRev')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
             return of({
                 data: {
                     repository: {
@@ -67,6 +99,7 @@ const createMockPlatformContext = (
             } as SuccessGraphQLResult<R>)
         }
         if (request.trim().startsWith('query BlobContent')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
             return of({
                 data: {
                     repository: {
