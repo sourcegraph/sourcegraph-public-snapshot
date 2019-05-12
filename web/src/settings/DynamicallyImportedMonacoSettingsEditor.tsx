@@ -151,12 +151,9 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         }
     }
 
-    private monacoRef = (monacoValue: typeof _monaco | null) => {
+    private monacoRef = async (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
-        // so we know its #_result property is set by now.
-        const monacoSettingsEditor = MonacoSettingsEditor._result
-        if (this.monaco && monacoSettingsEditor) {
+        if (this.monaco && MonacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateEditor(editor => {
@@ -166,14 +163,18 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
             )
             this.subscriptions.add(
                 disposableToFn(
-                    this.monaco.editor.onDidCreateModel(model => {
+                    this.monaco.editor.onDidCreateModel(async model => {
+                        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
+                        // so this import call will not incur another load.
+                        const { MonacoSettingsEditor } = await import('../settings/MonacoSettingsEditor')
+
                         if (
                             this.configEditor &&
-                            monacoSettingsEditor.isStandaloneCodeEditor(this.configEditor) &&
+                            MonacoSettingsEditor.isStandaloneCodeEditor(this.configEditor) &&
                             this.props.actions
                         ) {
                             for (const { id, label, run } of this.props.actions) {
-                                monacoSettingsEditor.addEditorAction(this.configEditor, model, label, id, run)
+                                MonacoSettingsEditor.addEditorAction(this.configEditor, model, label, id, run)
                             }
                         }
                     })

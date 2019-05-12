@@ -1,15 +1,12 @@
 import React from 'react'
 import { eventLogger } from '../../tracking/eventLogger'
+import { lazyComponent } from '../../util/lazyComponent'
 import { ExtensionAreaRoute } from './ExtensionArea'
-const RegistryExtensionContributionsPage = React.lazy(async () => ({
-    default: (await import('./RegistryExtensionContributionsPage')).RegistryExtensionContributionsPage,
-}))
-const RegistryExtensionManifestPage = React.lazy(async () => ({
-    default: (await import('./RegistryExtensionManifestPage')).RegistryExtensionManifestPage,
-}))
-const RegistryExtensionOverviewPage = React.lazy(async () => ({
-    default: (await import('./RegistryExtensionOverviewPage')).RegistryExtensionOverviewPage,
-}))
+
+const RegistryExtensionOverviewPage = lazyComponent(
+    () => import('./RegistryExtensionOverviewPage'),
+    'RegistryExtensionOverviewPage'
+)
 
 export const extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = [
     {
@@ -21,13 +18,14 @@ export const extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = [
     {
         path: `/-/manifest`,
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <RegistryExtensionManifestPage {...props} />,
+        render: lazyComponent(() => import('./RegistryExtensionManifestPage'), 'RegistryExtensionManifestPage'),
     },
     {
         path: `/-/contributions`,
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <RegistryExtensionContributionsPage {...props} />,
+        render: lazyComponent(
+            () => import('./RegistryExtensionContributionsPage'),
+            'RegistryExtensionContributionsPage'
+        ),
     },
 ]
