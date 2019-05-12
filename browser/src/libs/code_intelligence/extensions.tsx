@@ -43,11 +43,13 @@ interface InjectProps
     extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL'>,
         ExtensionsControllerProps {
     history: H.History
+    render: typeof render
 }
 
 export const renderCommandPalette = ({
     extensionsController,
     history,
+    render,
     ...props
 }: TelemetryProps & InjectProps & Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName'>) => (
     mount: HTMLElement
@@ -70,6 +72,7 @@ export const renderGlobalDebug = ({
     extensionsController,
     platformContext,
     history,
+    render,
     sourcegraphURL,
 }: InjectProps & { sourcegraphURL: string; showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
     render(

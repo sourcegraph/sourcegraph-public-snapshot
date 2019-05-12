@@ -1,10 +1,3 @@
-const RENDER = jest.fn()
-jest.mock('react-dom', () => ({
-    createPortal: jest.fn(el => el),
-    render: RENDER,
-    unmountComponentAtNode: jest.fn(),
-}))
-
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
@@ -22,6 +15,8 @@ import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
+
+const RENDER = jest.fn()
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
@@ -176,6 +171,7 @@ describe('code_intelligence', () => {
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -202,6 +198,7 @@ describe('code_intelligence', () => {
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -223,6 +220,7 @@ describe('code_intelligence', () => {
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const globalDebugMount = document.body.querySelector('.global-debug')
@@ -265,6 +263,7 @@ describe('code_intelligence', () => {
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const editors = await from(services.editor.editors)
@@ -328,6 +327,7 @@ describe('code_intelligence', () => {
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const activeEditor = await from(extensionAPI.app.activeWindowChanges)
@@ -415,6 +415,7 @@ describe('code_intelligence', () => {
                     platformContext: createMockPlatformContext(),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             let editors = await from(services.editor.editors)
