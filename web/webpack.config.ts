@@ -19,30 +19,8 @@ const rootDir = path.resolve(__dirname, '..')
 const nodeModulesPath = path.resolve(__dirname, '..', 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
-const babelLoader: webpack.RuleSetUseItem = {
-    loader: 'babel-loader',
-    options: {
-        cacheDirectory: true,
-        configFile: path.join(__dirname, 'babel.config.js'),
-    },
-}
-
-const typescriptLoader: webpack.RuleSetUseItem = {
-    loader: 'ts-loader',
-    options: {
-        compilerOptions: {
-            target: 'es6',
-            module: 'esnext',
-            noEmit: false,
-        },
-        experimentalWatchApi: true,
-        happyPackMode: true, // Typechecking is done by a separate tsc process, disable here for performance
-    },
-}
-
 const isEnterpriseBuild = !!process.env.ENTERPRISE
 const enterpriseDir = path.resolve(__dirname, 'src', 'enterprise')
-const sourceRoots = [path.resolve(__dirname, 'src'), path.resolve(rootDir, 'shared')]
 
 const config: webpack.Configuration = {
     context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
@@ -119,18 +97,16 @@ const config: webpack.Configuration = {
     module: {
         rules: [
             {
-                test: /\.tsx?$/,
-                include: sourceRoots,
-                use: [babelLoader, typescriptLoader],
-            },
-            {
-                test: /\.m?js$/,
-                use: [babelLoader],
-            },
-            {
-                test: /\.mjs$/,
-                include: nodeModulesPath,
-                type: 'javascript/auto',
+                test: /\.[jt]sx?$/,
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            cacheDirectory: true,
+                            configFile: path.join(__dirname, 'babel.config.js'),
+                        },
+                    },
+                ],
             },
             {
                 test: /\.(sass|scss)$/,
