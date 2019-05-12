@@ -277,8 +277,8 @@ export function createSavedSearch(
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    userId: number | null,
-    orgId: number | null
+    userId: GQL.ID | null,
+    orgId: GQL.ID | null
 ): Observable<void> {
     return mutateGraphQL(
         gql`
@@ -287,8 +287,8 @@ export function createSavedSearch(
                 $query: String!
                 $notifyOwner: Boolean!
                 $notifySlack: Boolean!
-                $userID: Int
-                $orgID: Int
+                $userID: ID
+                $orgID: ID
             ) {
                 createSavedSearch(
                     description: $description
@@ -323,8 +323,8 @@ export function updateSavedSearch(
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    userId: number | null,
-    orgId: number | null
+    userId: GQL.ID | null,
+    orgId: GQL.ID | null
 ): Observable<void> {
     return mutateGraphQL(
         gql`
@@ -334,8 +334,8 @@ export function updateSavedSearch(
                 $query: String!
                 $notifyOwner: Boolean!
                 $notifySlack: Boolean!
-                $userID: Int
-                $orgID: Int
+                $userID: ID
+                $orgID: ID
             ) {
                 updateSavedSearch(
                     id: $id

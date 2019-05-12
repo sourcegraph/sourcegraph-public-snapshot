@@ -1,23 +1,23 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { from, fromEvent, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map } from 'rxjs/operators'
+import { fromEvent, Observable, Subject, Subscription } from 'rxjs'
+import { catchError, filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 import { Link } from '../../../../shared/src/components/Link'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { isSettingsValid, SettingsCascadeProps, SettingsSubject } from '../../../../shared/src/settings/settings'
+import { SettingsCascadeProps, SettingsSubject } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 
 export interface SavedQueryFields {
-    id: string
+    id: GQL.ID
     description: string
     query: string
     subject: GQL.ID
     notify: boolean
     notifySlack: boolean
-    userID: number | null
-    orgID: number | null
+    userID: GQL.ID | null
+    orgID: GQL.ID | null
     slackWebhookURL: string | null
     orgName: string
 }
@@ -67,7 +67,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     (defaultValues && defaultValues.userID) ||
                     (defaultValues && defaultValues.orgID
                         ? null
-                        : this.props.authenticatedUser && this.props.authenticatedUser.databaseID) ||
+                        : this.props.authenticatedUser && this.props.authenticatedUser.id) ||
                     null,
                 orgID: (defaultValues && defaultValues.orgID) || null,
                 slackWebhookURL: (defaultValues && defaultValues.slackWebhookURL) || null,
@@ -153,10 +153,10 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             <label className="saved-query-form__save-location-options">
                                 <input
                                     className="saved-query-form__save-location-input"
-                                    onChange={this.userOwnerChangeHandler(this.props.authenticatedUser.databaseID)}
+                                    onChange={this.userOwnerChangeHandler(this.props.authenticatedUser.id)}
                                     type="radio"
                                     value={this.props.authenticatedUser.username}
-                                    checked={this.props.authenticatedUser.databaseID === userID}
+                                    checked={this.props.authenticatedUser.id === userID}
                                 />
                                 {this.props.authenticatedUser.username}
                             </label>
@@ -174,7 +174,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                                         onChange={this.orgOwnerChangeHandler(org)}
                                         type="radio"
                                         value={org.name}
-                                        checked={org.databaseID === orgID}
+                                        checked={org.id === orgID}
                                     />
                                     {org.name}
                                 </label>
@@ -351,7 +351,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    orgID: org.databaseID,
+                    orgID: org.id,
                     userID: null,
                     orgName: org.displayName || org.name,
                 },
@@ -359,7 +359,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
         }
     }
 
-    private userOwnerChangeHandler(id: number): React.FormEventHandler<HTMLInputElement> {
+    private userOwnerChangeHandler(id: GQL.ID): React.FormEventHandler<HTMLInputElement> {
         return event => {
             this.setState(state => ({
                 values: {

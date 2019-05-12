@@ -59,7 +59,7 @@ func diffSavedQueryConfigs(oldList, newList map[api.SavedQueryIDSpec]api.ConfigS
 	// Because the api.SavedqueryIDSpec contains pointers, we should use its
 	// unique string key.
 	//
-	// TODO(slimsag/farhan): long term: plz coding overlords let's make these
+	// TODO(slimsag/farhan): long term: let's make these
 	// api.SavedQuery Spec types more sane / remove them (in reality, this will
 	// be easy to do once we move query runner to frontend later.)
 	oldByKey := make(map[string]api.SavedQuerySpecAndConfig, len(oldList))
@@ -187,8 +187,9 @@ func serveTestNotification(w http.ResponseWriter, r *http.Request) {
 			writeError(w, fmt.Errorf("error sending email notifications to %s: %s", recipient.spec, err))
 			return
 		}
+		testNotificationAlert := fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(args.SavedSearch.Config.Query, utmSourceSlack), args.SavedSearch.Config.Description)
 		if err := slackNotify(context.Background(), recipient,
-			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(args.SavedSearch.Config.Query, utmSourceSlack), args.SavedSearch.Config.Description), args.SavedSearch.Config.SlackWebhookURL); err != nil {
+			testNotificationAlert, args.SavedSearch.Config.SlackWebhookURL); err != nil {
 			writeError(w, fmt.Errorf("error sending slack notifications to %s: %s", recipient.spec, err))
 			return
 		}

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -13,12 +14,7 @@ import (
 )
 
 type savedSearchResolver struct {
-	id                  int32
-	description         string
-	query               string
-	notify, notifySlack bool
-	userID, orgID       *int32
-	slackWebhookURL     *string
+	s types.SavedSearch
 }
 
 func marshalSavedSearchID(savedSearchID int32) graphql.ID {
@@ -30,41 +26,69 @@ func unmarshalSavedSearchID(id graphql.ID) (savedSearchID int32, err error) {
 	return
 }
 
-func (r savedSearchResolver) ID() graphql.ID {
-	return marshalSavedSearchID(r.id)
+func savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, error) {
+	intId, err := unmarshalSavedSearchID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	ss, err := db.SavedSearches.GetByID(ctx, intId)
+	if err != nil {
+		return nil, err
+	}
+	key, err := strconv.Atoi(ss.Config.Key)
+	if err != nil {
+		return nil, err
+	}
+	savedSearch := &savedSearchResolver{
+		types.SavedSearch{
+			ID:              int32(key),
+			Description:     ss.Config.Description,
+			Query:           ss.Config.Query,
+			Notify:          ss.Config.Notify,
+			NotifySlack:     ss.Config.NotifySlack,
+			UserID:          ss.Config.UserID,
+			OrgID:           ss.Config.OrgID,
+			SlackWebhookURL: ss.Config.SlackWebhookURL,
+		},
+	}
+	return savedSearch, nil
 }
 
-func (r savedSearchResolver) DatabaseID() int32 {
-	return r.id
+func (r savedSearchResolver) ID() graphql.ID {
+	return marshalSavedSearchID(r.s.ID)
 }
 
 func (r savedSearchResolver) Notify() bool {
-	return r.notify
+	return r.s.Notify
 }
 
 func (r savedSearchResolver) NotifySlack() bool {
-	return r.notifySlack
+	return r.s.NotifySlack
 }
 
-func (r savedSearchResolver) Description() string { return r.description }
+func (r savedSearchResolver) Description() string { return r.s.Description }
 
-func (r savedSearchResolver) Query() string { return r.query }
+func (r savedSearchResolver) Query() string { return r.s.Query }
 
-func (r savedSearchResolver) UserID() *int32           { return r.userID }
-func (r savedSearchResolver) OrgID() *int32            { return r.orgID }
-func (r savedSearchResolver) SlackWebhookURL() *string { return r.slackWebhookURL }
+func (r savedSearchResolver) UserID() *graphql.ID {
+	if r.s.UserID == nil {
+		return nil
+	}
+	userID := marshalUserID(*r.s.UserID)
+	return &userID
+}
+func (r savedSearchResolver) OrgID() *graphql.ID {
+	if r.s.OrgID == nil {
+		return nil
+	}
+	orgID := marshalOrgID(*r.s.OrgID)
+	return &orgID
+}
+func (r savedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
 
 func toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
-	return &savedSearchResolver{
-		id:              entry.ID,
-		description:     entry.Description,
-		query:           entry.Query,
-		notify:          entry.Notify,
-		notifySlack:     entry.NotifySlack,
-		userID:          entry.UserID,
-		orgID:           entry.OrgID,
-		slackWebhookURL: entry.SlackWebhookURL,
-	}
+	return &savedSearchResolver{entry}
 }
 
 func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResolver, error) {
@@ -121,34 +145,48 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	Query       string
 	NotifyOwner bool
 	NotifySlack bool
-	OrgID       *int32
-	UserID      *int32
+	OrgID       *graphql.ID
+	UserID      *graphql.ID
 }) (*savedSearchResolver, error) {
+	var userID *int32
+	var orgID *int32
 	// 🚨 SECURITY: Make sure the current user has permission to create a saved search for the specified user or org.
 	if args.UserID != nil {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, *args.UserID); err != nil {
+		u, err := unmarshalSavedSearchID(*args.UserID)
+		if err != nil {
+			return nil, err
+		}
+		userID = &u
+		if err := backend.CheckSiteAdminOrSameUser(ctx, u); err != nil {
 			return nil, err
 		}
 	} else if args.OrgID != nil {
-		if err := backend.CheckOrgAccess(ctx, *args.OrgID); err != nil {
+		o, err := unmarshalSavedSearchID(*args.OrgID)
+		if err != nil {
+			return nil, err
+		}
+		orgID = &o
+		if err := backend.CheckOrgAccess(ctx, o); err != nil {
 			return nil, err
 		}
 	}
 
-	configSavedQuery, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, UserID: args.UserID, OrgID: args.OrgID})
+	configSavedQuery, err := db.SavedSearches.Create(ctx, &types.SavedSearch{Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, UserID: userID, OrgID: orgID})
 	if err != nil {
 		return nil, err
 	}
 
 	sq := &savedSearchResolver{
-		id:              configSavedQuery.ID,
-		description:     configSavedQuery.Description,
-		query:           configSavedQuery.Query,
-		notify:          configSavedQuery.Notify,
-		notifySlack:     configSavedQuery.NotifySlack,
-		userID:          configSavedQuery.UserID,
-		orgID:           configSavedQuery.OrgID,
-		slackWebhookURL: configSavedQuery.SlackWebhookURL,
+		types.SavedSearch{
+			ID:              configSavedQuery.ID,
+			Description:     configSavedQuery.Description,
+			Query:           configSavedQuery.Query,
+			Notify:          configSavedQuery.Notify,
+			NotifySlack:     configSavedQuery.NotifySlack,
+			UserID:          configSavedQuery.UserID,
+			OrgID:           configSavedQuery.OrgID,
+			SlackWebhookURL: configSavedQuery.SlackWebhookURL,
+		},
 	}
 	return sq, nil
 }
@@ -159,18 +197,32 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	Query       string
 	NotifyOwner bool
 	NotifySlack bool
-	OrgID       *int32
-	UserID      *int32
+	OrgID       *graphql.ID
+	UserID      *graphql.ID
 }) (*savedSearchResolver, error) {
+	var userID *int32
+	var orgID *int32
 	// 🚨 SECURITY: Make sure the current user has permission to update a saved search for the specified user or org.
 	if args.UserID != nil {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, *args.UserID); err != nil {
+		u, err := unmarshalSavedSearchID(*args.UserID)
+		if err != nil {
+			return nil, err
+		}
+		userID = &u
+		if err := backend.CheckSiteAdminOrSameUser(ctx, u); err != nil {
 			return nil, err
 		}
 	} else if args.OrgID != nil {
-		if err := backend.CheckOrgAccess(ctx, *args.OrgID); err != nil {
+		o, err := unmarshalSavedSearchID(*args.OrgID)
+		if err != nil {
 			return nil, err
 		}
+		orgID = &o
+		if err := backend.CheckOrgAccess(ctx, o); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("failed to update saved search: no Org ID or User ID associated with saved search")
 	}
 
 	id, err := unmarshalSavedSearchID(args.ID)
@@ -178,19 +230,21 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	configSavedQuery, err := db.SavedSearches.Update(ctx, &types.SavedSearch{ID: id, Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, UserID: args.UserID, OrgID: args.OrgID})
+	configSavedQuery, err := db.SavedSearches.Update(ctx, &types.SavedSearch{ID: id, Description: args.Description, Query: args.Query, Notify: args.NotifyOwner, NotifySlack: args.NotifySlack, UserID: userID, OrgID: orgID})
 	if err != nil {
 		return nil, err
 	}
 	sq := &savedSearchResolver{
-		id:              configSavedQuery.ID,
-		description:     configSavedQuery.Description,
-		query:           configSavedQuery.Query,
-		notify:          configSavedQuery.Notify,
-		notifySlack:     configSavedQuery.NotifySlack,
-		userID:          configSavedQuery.UserID,
-		orgID:           configSavedQuery.OrgID,
-		slackWebhookURL: configSavedQuery.SlackWebhookURL,
+		types.SavedSearch{
+			ID:              configSavedQuery.ID,
+			Description:     configSavedQuery.Description,
+			Query:           configSavedQuery.Query,
+			Notify:          configSavedQuery.Notify,
+			NotifySlack:     configSavedQuery.NotifySlack,
+			UserID:          configSavedQuery.UserID,
+			OrgID:           configSavedQuery.OrgID,
+			SlackWebhookURL: configSavedQuery.SlackWebhookURL,
+		},
 	}
 	return sq, nil
 }
@@ -215,6 +269,8 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 		if err := backend.CheckOrgAccess(ctx, *ss.Config.OrgID); err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, errors.New("failed to delete saved search: no Org ID or User ID associated with saved search")
 	}
 	err = db.SavedSearches.Delete(ctx, id)
 	if err != nil {
