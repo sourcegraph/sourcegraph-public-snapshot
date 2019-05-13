@@ -28,9 +28,6 @@ type Server struct {
 	Kinds []string
 	repos.Store
 	*repos.Syncer
-	InternalAPI interface {
-		ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error
-	}
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
