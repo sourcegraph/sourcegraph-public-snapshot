@@ -1498,10 +1498,10 @@
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
   version "2.0.0"
 
-"@sourcegraph/prettierrc@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-2.2.0.tgz#af4a6fcd465b0a39a07ffbd8f2d3414d01e603e8"
-  integrity sha512-kRdHxdAppxYnN7qAQjNTyuG05pjYHFtEUquZauXVXBeaGB4sye3uSkb8wgi34jeaUHG/gWp2f5hQgCCBMizjjA==
+"@sourcegraph/prettierrc@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-3.0.0.tgz#716b64b287565f98f539f76bea206912ab4d03b3"
+  integrity sha512-ziLujsC3IESHGYdtiJ7yVjte9i7mr6jKWTYtCVqgOWeY1Er0/xsQ/sdZIyK61tD282wvd7VjS4pk5RoGEN7biw==
 
 "@sourcegraph/react-loading-spinner@0.0.7":
   version "0.0.7"
