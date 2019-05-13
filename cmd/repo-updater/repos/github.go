@@ -11,20 +11,55 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoName {
-	return reposource.GitHubRepoName(conn.config.RepositoryPathPattern, conn.originalHostname, repo.NameWithOwner)
+// A GithubSource yields repositories from a single Github connection configured
+// in Sourcegraph via the external services configuration.
+type GithubSource struct {
+	svc          *ExternalService
+	config       *schema.GitHubConnection
+	exclude      map[string]bool
+	githubDotCom bool
+	baseURL      *url.URL
+	client       *github.Client
+	// searchClient is for using the GitHub search API, which has an independent
+	// rate limit much lower than non-search API requests.
+	searchClient *github.Client
+
+	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
+	// for an originalHostname of github.com).
+	originalHostname string
 }
 
-func newGitHubConnection(config *schema.GitHubConnection, cf *httpcli.Factory) (*githubConnection, error) {
-	baseURL, err := url.Parse(config.Url)
+// NewGithubSource returns a new GithubSource from the given external service.
+func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newGithubSource(svc, &c, cf)
+}
+
+// NewGithubDotComSource returns a GithubSource for github.com, meant to be added
+// to the list of sources in Sourcer when one isn't already configured in order to
+// support navigating to URL paths like /github.com/foo/bar to auto-add that repository.
+func NewGithubDotComSource(cf *httpcli.Factory) (*GithubSource, error) {
+	svc := ExternalService{Kind: "GITHUB"}
+	return newGithubSource(&svc, &schema.GitHubConnection{
+		RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
+		Url:                         "https://github.com",
+		InitialRepositoryEnablement: true,
+	}, cf)
+}
+
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +73,8 @@ func newGitHubConnection(config *schema.GitHubConnection, cf *httpcli.Factory) (
 	}
 
 	var opts []httpcli.Opt
-	if config.Certificate != "" {
-		pool, err := newCertPool(config.Certificate)
+	if c.Certificate != "" {
+		pool, err := newCertPool(c.Certificate)
 		if err != nil {
 			return nil, err
 		}
@@ -51,8 +86,8 @@ func newGitHubConnection(config *schema.GitHubConnection, cf *httpcli.Factory) (
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(config.Exclude))
-	for _, r := range config.Exclude {
+	exclude := make(map[string]bool, len(c.Exclude))
+	for _, r := range c.Exclude {
 		if r.Name != "" {
 			exclude[strings.ToLower(r.Name)] = true
 		}
@@ -62,29 +97,80 @@ func newGitHubConnection(config *schema.GitHubConnection, cf *httpcli.Factory) (
 		}
 	}
 
-	return &githubConnection{
-		config:           config,
+	return &GithubSource{
+		svc:              svc,
+		config:           c,
 		exclude:          exclude,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		client:           github.NewClient(apiURL, config.Token, cli),
-		searchClient:     github.NewClient(apiURL, config.Token, cli),
+		client:           github.NewClient(apiURL, c.Token, cli),
+		searchClient:     github.NewClient(apiURL, c.Token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }
 
-type githubConnection struct {
+// ListRepos returns all Github repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+	rs, err := s.listAllRepositories(ctx)
+	for _, r := range rs {
+		repos = append(repos, s.makeRepo(r))
+	}
+	return repos, err
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s GithubSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
+// GetRepo returns the Github repository with the given name and owner
+// ("org/repo-name")
+func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {
+	r, err := s.getRepository(ctx, nameWithOwner)
+	if err != nil {
+		return nil, err
+	}
+	return s.makeRepo(r), nil
+}
+
+func (s GithubSource) makeRepo(r *github.Repository) *Repo {
+	urn := s.svc.URN()
+	return &Repo{
+		Name: string(reposource.GitHubRepoName(
+			s.config.RepositoryPathPattern,
+			s.originalHostname,
+			r.NameWithOwner,
+		)),
+		URI: string(reposource.GitHubRepoName(
+			"",
+			s.originalHostname,
+			r.NameWithOwner,
+		)),
+		ExternalRepo: *github.ExternalRepoSpec(r, *s.baseURL),
+		Description:  r.Description,
+		Fork:         r.IsFork,
+		Enabled:      true,
+		Archived:     r.IsArchived,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: s.authenticatedRemoteURL(r),
+			},
+		},
+		Metadata: r,
+	}
 }
 
 // authenticatedRemoteURL returns the repository's Git remote URL with the configured
 // GitHub personal access token inserted in the URL userinfo.
-func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) string {
-	if c.config.GitURLType == "ssh" {
-		url := fmt.Sprintf("git@%s:%s.git", c.originalHostname, repo.NameWithOwner)
+func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
+	if s.config.GitURLType == "ssh" {
+		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
 		return url
 	}
 
-	if c.config.Token == "" {
+	if s.config.Token == "" {
 		return repo.URL
 	}
 	u, err := url.Parse(repo.URL)
@@ -92,22 +178,22 @@ func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) strin
 		log15.Warn("Error adding authentication to GitHub repository Git remote URL.", "url", repo.URL, "error", err)
 		return repo.URL
 	}
-	u.User = url.User(c.config.Token)
+	u.User = url.User(s.config.Token)
 	return u.String()
 }
 
-func (c *githubConnection) excludes(r *github.Repository) bool {
-	return c.exclude[strings.ToLower(r.NameWithOwner)] || c.exclude[r.ID]
+func (s *GithubSource) excludes(r *github.Repository) bool {
+	return s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID]
 }
 
-func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.Repository, error) {
+func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repository, error) {
 	set := make(map[int64]*github.Repository)
 	errs := new(multierror.Error)
 
-	for _, repositoryQuery := range c.config.RepositoryQuery {
+	for _, repositoryQuery := range s.config.RepositoryQuery {
 		switch repositoryQuery {
 		case "public":
-			if c.githubDotCom {
+			if s.githubDotCom {
 				errs = multierror.Append(errs, errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`))
 				continue
 			}
@@ -118,7 +204,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					break
 				}
 
-				repos, err := c.client.ListPublicRepositories(ctx, sinceRepoID)
+				repos, err := s.client.ListPublicRepositories(ctx, sinceRepoID)
 				if err != nil {
 					errs = multierror.Append(errs, errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID))
 					break
@@ -145,12 +231,12 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 				var repos []*github.Repository
 				var rateLimitCost int
 				var err error
-				repos, hasNextPage, rateLimitCost, err = c.client.ListUserRepositories(ctx, page)
+				repos, hasNextPage, rateLimitCost, err = s.client.ListUserRepositories(ctx, page)
 				if err != nil {
 					errs = multierror.Append(errs, errors.Wrapf(err, "failed to list affiliated GitHub repositories page %d", page))
 					break
 				}
-				rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := c.client.RateLimit.Get()
+				rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := s.client.RateLimit.Get()
 				log15.Debug(
 					"github sync: ListUserRepositories",
 					"repos", len(repos),
@@ -161,7 +247,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 				)
 
 				for _, r := range repos {
-					if c.githubDotCom && r.IsFork && r.ViewerPermission == "READ" {
+					if s.githubDotCom && r.IsFork && r.ViewerPermission == "READ" {
 						log15.Debug("not syncing readonly fork", "repo", r.NameWithOwner)
 						continue
 					}
@@ -169,7 +255,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 				}
 
 				if hasNextPage {
-					time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
+					time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
 				}
 			}
 
@@ -186,7 +272,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					break
 				}
 
-				reposPage, err := c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
+				reposPage, err := s.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
 				if err != nil {
 					errs = multierror.Append(errs, errors.Wrapf(err, "failed to list GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery))
 					break
@@ -204,7 +290,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 				hasNextPage = reposPage.HasNextPage
 				repos := reposPage.Repos
 
-				rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := c.searchClient.RateLimit.Get()
+				rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := s.searchClient.RateLimit.Get()
 				log15.Debug(
 					"github sync: ListRepositoriesForSearch",
 					"searchString", repositoryQuery,
@@ -227,16 +313,16 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 					//
 					// So we only let the heuristic kick in if we have
 					// less than 5 requests left.
-					remaining, _, retryAfter, ok := c.searchClient.RateLimit.Get()
+					remaining, _, retryAfter, ok := s.searchClient.RateLimit.Get()
 					if retryAfter > 0 || (ok && remaining < 5) {
-						time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(1))
+						time.Sleep(s.searchClient.RateLimit.RecommendedWaitForBackgroundOp(1))
 					}
 				}
 			}
 		}
 	}
 
-	for _, nameWithOwner := range c.config.Repos {
+	for _, nameWithOwner := range s.config.Repos {
 		if err := ctx.Err(); err != nil {
 			errs = multierror.Append(errs, err)
 			break
@@ -247,7 +333,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 			errs = multierror.Append(errs, errors.New("Invalid GitHub repository: nameWithOwner="+nameWithOwner))
 			break
 		}
-		repo, err := c.client.GetRepository(ctx, owner, name)
+		repo, err := s.client.GetRepository(ctx, owner, name)
 		if err != nil {
 			// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 			// 404 errors on external service config validation.
@@ -260,12 +346,12 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 		}
 		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
 		set[repo.DatabaseID] = repo
-		time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 
 	repos := make([]*github.Repository, 0, len(set))
 	for _, repo := range set {
-		if !c.excludes(repo) {
+		if !s.excludes(repo) {
 			repos = append(repos, repo)
 		}
 	}
@@ -273,13 +359,13 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 	return repos, errs.ErrorOrNil()
 }
 
-func (c *githubConnection) getRepository(ctx context.Context, nameWithOwner string) (*github.Repository, error) {
+func (s *GithubSource) getRepository(ctx context.Context, nameWithOwner string) (*github.Repository, error) {
 	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Invalid GitHub repository: nameWithOwner="+nameWithOwner)
 	}
 
-	repo, err := c.client.GetRepository(ctx, owner, name)
+	repo, err := s.client.GetRepository(ctx, owner, name)
 	if err != nil {
 		return nil, err
 	}
@@ -299,3 +385,7 @@ func exampleRepositoryQuerySplit(q string) string {
 	_ = enc.Encode(qs)
 	return strings.TrimSpace(b.String())
 }
+
+// ErrGitHubAPITemporarilyUnavailable is returned by GetGitHubRepository when the GitHub API is
+// unavailable.
+var ErrGitHubAPITemporarilyUnavailable = errors.New("the GitHub API is temporarily unavailable")

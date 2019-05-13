@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
@@ -189,102 +188,6 @@ func group(srcs []Source) map[string]Sources {
 	}
 
 	return groups
-}
-
-// A GithubSource yields repositories from a single Github connection configured
-// in Sourcegraph via the external services configuration.
-type GithubSource struct {
-	svc          *ExternalService
-	config       *schema.GitHubConnection
-	exclude      map[string]bool
-	githubDotCom bool
-	baseURL      *url.URL
-	client       *github.Client
-	// searchClient is for using the GitHub search API, which has an independent
-	// rate limit much lower than non-search API requests.
-	searchClient *github.Client
-
-	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
-	// for an originalHostname of github.com).
-	originalHostname string
-}
-
-// NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
-	}
-	return newGithubSource(svc, &c, cf)
-}
-
-// NewGithubDotComSource returns a GithubSource for github.com, meant to be added
-// to the list of sources in Sourcer when one isn't already configured in order to
-// support navigating to URL paths like /github.com/foo/bar to auto-add that repository.
-func NewGithubDotComSource(cf *httpcli.Factory) (*GithubSource, error) {
-	svc := ExternalService{Kind: "GITHUB"}
-	return newGithubSource(&svc, &schema.GitHubConnection{
-		RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
-		Url:                         "https://github.com",
-		InitialRepositoryEnablement: true,
-	}, cf)
-}
-
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
-	conn, err := newGitHubConnection(c, cf)
-	if err != nil {
-		return nil, err
-	}
-	return &GithubSource{svc: svc, conn: conn}, nil
-}
-
-// ListRepos returns all Github repositories accessible to all connections configured
-// in Sourcegraph via the external services configuration.
-func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	rs, err := s.conn.listAllRepositories(ctx)
-	for _, r := range rs {
-		repos = append(repos, githubRepoToRepo(s.svc, r, s.conn))
-	}
-	return repos, err
-}
-
-// ExternalServices returns a singleton slice containing the external service.
-func (s GithubSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
-}
-
-// GetRepo returns the Github repository with the given name and owner
-// ("org/repo-name")
-func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {
-	r, err := s.conn.getRepository(ctx, nameWithOwner)
-	if err != nil {
-		return nil, err
-	}
-	return githubRepoToRepo(s.svc, r, s.conn), nil
-}
-
-func githubRepoToRepo(
-	svc *ExternalService,
-	ghrepo *github.Repository,
-	conn *githubConnection,
-) *Repo {
-	urn := svc.URN()
-	return &Repo{
-		Name:         string(githubRepositoryToRepoPath(conn, ghrepo)),
-		URI:          string(reposource.GitHubRepoName("", conn.originalHostname, ghrepo.NameWithOwner)),
-		ExternalRepo: *github.ExternalRepoSpec(ghrepo, *conn.baseURL),
-		Description:  ghrepo.Description,
-		Fork:         ghrepo.IsFork,
-		Enabled:      true,
-		Archived:     ghrepo.IsArchived,
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: conn.authenticatedRemoteURL(ghrepo),
-			},
-		},
-		Metadata: ghrepo,
-	}
 }
 
 // A GitLabSource yields repositories from a single GitLab connection configured
