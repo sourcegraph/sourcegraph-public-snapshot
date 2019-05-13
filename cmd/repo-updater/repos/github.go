@@ -580,6 +580,24 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 	return repos, errs.ErrorOrNil()
 }
 
+func (c *githubConnection) getRepository(ctx context.Context, nameWithOwner string) (*github.Repository, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Invalid GitHub repository: nameWithOwner="+nameWithOwner)
+	}
+
+	repo, err := c.client.GetRepository(ctx, owner, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
+}
+
 func exampleRepositoryQuerySplit(q string) string {
 	var qs []string
 	for _, suffix := range []string{"created:>=2019", "created:2018", "created:2016..2017", "created:<2016"} {
