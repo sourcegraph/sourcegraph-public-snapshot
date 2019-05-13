@@ -61,7 +61,7 @@ func RunScheduler(ctx context.Context) {
 			go Scheduler.runScheduleLoop(ctx2)
 		}
 
-		log15.Info(
+		log15.Debug(
 			"started configured scheduler",
 			"version", "new",
 			"auto-git-updates", want.autoGitUpdatesEnabled,

@@ -211,7 +211,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			},
 			testCase{
 				name:   "disabled: was not deleted and was not modified, got excluded",
-				stored: repos.Repos{&repo},
+				stored: repos.Repos{&repo}.With(repos.Opt.RepoMetadata(nil)),
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
 				),
@@ -223,7 +223,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			},
 			testCase{
 				name:   "disabled: was not deleted, got modified, then excluded",
-				stored: repos.Repos{&repo},
+				stored: repos.Repos{&repo}.With(repos.Opt.RepoMetadata(nil)),
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
 					repo.With(func(r *repos.Repo) {
 						r.Description = "some updated description"
@@ -286,7 +286,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			},
 			testCase{
 				name:   "disabled: repo is excluded in all of its sources",
-				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
+				stored: repos.Repos{&repo}.With(repos.Opt.RepoMetadata(nil)),
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
 					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil, repo.Clone()),
