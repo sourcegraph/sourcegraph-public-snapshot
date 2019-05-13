@@ -85,12 +85,19 @@ func main() {
 	}
 
 	var src repos.Sourcer
+	var githubDotComSrc *repos.GithubSource
 	{
 		m := repos.NewSourceMetrics()
 		m.ListRepos.MustRegister(prometheus.DefaultRegisterer)
 
 		cf := repos.NewHTTPClientFactory()
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
+
+		var err error
+		githubDotComSrc, err = repos.NewGithubDotComSource(cf)
+		if err != nil {
+			log.Fatalf("failed to Github.com source: %v", err)
+		}
 	}
 
 	migrations := []repos.Migration{
@@ -126,8 +133,6 @@ func main() {
 	for _, kind := range kinds {
 		newSyncerEnabled[kind] = true
 	}
-
-	frontendAPI := repos.NewInternalAPI(10 * time.Second)
 
 	for _, kind := range []string{
 		"AWSCODECOMMIT",
@@ -216,10 +221,10 @@ func main() {
 
 	// Start up handler that frontend relies on
 	server := repoupdater.Server{
-		Kinds:       kinds,
-		Store:       store,
-		Syncer:      syncer,
-		InternalAPI: frontendAPI,
+		Kinds:              kinds,
+		Store:              store,
+		Syncer:             syncer,
+		GithubDotComSource: githubDotComSrc,
 	}
 
 	var handler http.Handler

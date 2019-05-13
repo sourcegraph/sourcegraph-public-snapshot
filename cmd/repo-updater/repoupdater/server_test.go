@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
@@ -656,10 +657,13 @@ func TestRepoLookup(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name string
-		args protocol.RepoLookupArgs
-		want *protocol.RepoLookupResult
-		err  string
+		name                  string
+		args                  protocol.RepoLookupArgs
+		reposInStore          []*repos.Repo
+		want                  *protocol.RepoLookupResult
+		sourcegraphDotComMode bool
+		githubDotComSource    *internalGithubDotComSourceFake
+		err                   string
 	}{
 		{
 			name: "not found",
@@ -674,6 +678,7 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
+			reposInStore: []*repos.Repo{githubRepository},
 			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
@@ -696,6 +701,7 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
 			},
+			reposInStore: []*repos.Repo{awsCodeCommitRepository},
 			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
@@ -713,19 +719,82 @@ func TestRepoLookup(t *testing.T) {
 				},
 			}},
 		},
+		{
+			name: "found - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			sourcegraphDotComMode: true,
+			githubDotComSource: &internalGithubDotComSourceFake{
+				Repo: githubRepository,
+			},
+			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: &api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			}},
+		},
+		{
+			name: "not found - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			sourcegraphDotComMode: true,
+			githubDotComSource: &internalGithubDotComSourceFake{
+				Repo: nil,
+			},
+			want: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:  "repository not found",
+		},
+		{
+			name: "not found - AWS CodeCommit on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
+			},
+			sourcegraphDotComMode: true,
+			githubDotComSource: &internalGithubDotComSourceFake{
+				Repo: githubRepository,
+			},
+			want: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:  "repository not found",
+		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 
-		ctx := context.Background()
-
-		store := new(repos.FakeStore)
-		must(store.UpsertRepos(ctx, githubRepository))
-		must(store.UpsertRepos(ctx, awsCodeCommitRepository))
-
 		t.Run(tc.name, func(t *testing.T) {
-			srv := httptest.NewServer((&Server{Syncer: &repos.Syncer{}, Store: store}).Handler())
+			ctx := context.Background()
+
+			if tc.sourcegraphDotComMode {
+				orig := envvar.SourcegraphDotComMode()
+				envvar.MockSourcegraphDotComMode(true)
+				defer envvar.MockSourcegraphDotComMode(orig)
+			}
+
+			store := new(repos.FakeStore)
+			for _, r := range tc.reposInStore {
+				must(store.UpsertRepos(ctx, r))
+			}
+
+			s := &Server{Syncer: &repos.Syncer{}, Store: store}
+
+			if tc.githubDotComSource != nil {
+				s.GithubDotComSource = tc.githubDotComSource
+			}
+
+			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 
 			cli := repoupdater.Client{URL: srv.URL}
@@ -748,6 +817,18 @@ func TestRepoLookup(t *testing.T) {
 			}
 		})
 	}
+}
+
+type internalGithubDotComSourceFake struct {
+	Repo *repos.Repo
+}
+
+func (s *internalGithubDotComSourceFake) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
+	if s.Repo == nil {
+		return nil, github.ErrNotFound
+	}
+
+	return s.Repo, nil
 }
 
 func formatJSON(s string) string {

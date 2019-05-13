@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
@@ -28,6 +29,9 @@ type Server struct {
 	Kinds []string
 	repos.Store
 	*repos.Syncer
+	GithubDotComSource interface {
+		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
+	}
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -326,6 +330,26 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
+	result = &protocol.RepoLookupResult{}
+
+	if s.shouldGetGithubDotComRepo(args) {
+		// This is ugly jeez
+		nameWithOwner := strings.Split(string(args.Repo), "github.com/")[1]
+		repo, err := s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
+		if err != nil {
+			if github.IsNotFound(err) {
+				result.ErrorNotFound = true
+				return result, nil
+			}
+			return nil, err
+		}
+
+		err = s.Store.UpsertRepos(ctx, repo)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
 		Names: []string{string(args.Repo)},
 	})
@@ -333,7 +357,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return nil, err
 	}
 
-	result = &protocol.RepoLookupResult{}
 	if len(repos) != 1 {
 		result.ErrorNotFound = true
 		return result, nil
@@ -346,6 +369,26 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	result.Repo = repo
 	return result, nil
+}
+
+func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
+	if !envvar.SourcegraphDotComMode() {
+		return false
+	}
+
+	if s.GithubDotComSource == nil {
+		return false
+	}
+
+	repoName := strings.ToLower(string(args.Repo))
+	if !strings.HasPrefix(repoName, "github.com/") {
+		return false
+	}
+
+	nameWithOwner := strings.Split(repoName, "github.com/")[1]
+
+	_, _, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+	return err == nil
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
