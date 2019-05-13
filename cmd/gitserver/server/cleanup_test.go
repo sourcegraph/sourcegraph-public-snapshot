@@ -14,7 +14,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -567,10 +566,8 @@ func Test_removeAllAtomically(t *testing.T) {
 		eg.Go(func() error { return removeAllAtomically(d) })
 
 		// Check.
-		var tries int32
 		eg.Go(func() error {
 			for {
-				atomic.AddInt32(&tries, 1)
 				fis, err := ioutil.ReadDir(d)
 				if err != nil {
 					return nil
@@ -583,7 +580,6 @@ func Test_removeAllAtomically(t *testing.T) {
 		if err := eg.Wait(); err != nil {
 			t.Fatal(err)
 		}
-		log.Printf("made %d tries", atomic.LoadInt32(&tries))
 	})
 }
 
