@@ -965,7 +965,7 @@ type SearchAlert {
 }
 
 # A saved search query, defined in settings.
-type SavedSearch {
+type SavedSearch implements Node {
     # The unique ID of this saved query.
     id: ID!
     # The description.
