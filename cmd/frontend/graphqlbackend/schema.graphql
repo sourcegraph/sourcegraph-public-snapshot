@@ -51,7 +51,7 @@ type Mutation {
     deleteExternalService(externalService: ID!): EmptyResponse!
     # DEPRECATED: All repositories are accessible or deleted. To prevent a
     # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration.
+    # service exclude configuration. This mutation will be removed in 3.6.
     #
     # Enables or disables a repository. A disabled repository is only accessible
     # to site admins and never appears in search results.
@@ -87,14 +87,18 @@ type Mutation {
         # The mirror repository to update.
         repository: ID!
     ): EmptyResponse!
-    # Schedules all repositories to be updated from their original source repositories. Updating
-    # occurs automatically, so this should not normally be needed.
+    # DEPRECATED: All repositories are scheduled for updates periodically. This
+    # mutation will be removed in 3.6.
+    #
+    # Schedules all repositories to be updated from their original source
+    # repositories. Updating occurs automatically, so this should not normally
+    # be needed.
     #
     # Only site admins may perform this mutation.
-    updateAllMirrorRepositories: EmptyResponse!
+    updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
     # DEPRECATED: All repositories are accessible or deleted. To prevent a
     # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration. It will be deleted.
+    # service exclude configuration. It will be deleted. This mutation will be removed in 3.6.
     #
     # Deletes a repository and all data associated with it, irreversibly.
     #
@@ -681,9 +685,13 @@ type Query {
         # Return repositories whose names are in the list.
         names: [String!]
         # Include enabled repositories.
-        enabled: Boolean = true @deprecated(reason: "No-op. All repositories are enabled.")
+        #
+        # DEPRECATED: All repositories are enabled. Will be removed in 3.6.
+        enabled: Boolean = true
         # Include disabled repositories.
-        disabled: Boolean = false @deprecated(reason: "No-op. All repositories are enabled.")
+        #
+        # DEPRECATED: No repositories are disabled. Will be removed in 3.6.
+        disabled: Boolean = false
         # Include cloned repositories.
         cloned: Boolean = true
         # Include repositories that are currently being cloned.
@@ -1156,7 +1164,7 @@ type Repository implements Node & GenericSearchResultInterface {
     description: String!
     # The primary programming language in the repository.
     language: String!
-    # DEPRECATED: All repositories are enabled.
+    # DEPRECATED: All repositories are enabled. This field will be removed in 3.6.
     #
     # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
     #
