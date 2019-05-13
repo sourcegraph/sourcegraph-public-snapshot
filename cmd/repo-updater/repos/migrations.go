@@ -66,12 +66,14 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 		}
 
 		all := srcs.ExternalServices()
-		svcs := make(map[int64]*Repos, len(all))
+		svcs := make(ExternalServices, 0, len(all))
+		exclude := make(map[int64]*Repos, len(all))
 
 		for _, e := range all {
 			if e.ID != 0 {
 				var excluded Repos
-				svcs[e.ID] = &excluded
+				exclude[e.ID] = &excluded
+				svcs = append(svcs, e)
 			}
 		}
 
@@ -97,13 +99,13 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 					es := make(map[int64]*Repos, len(r.Sources))
 					for _, si := range r.Sources {
 						id := si.ExternalServiceID()
-						if e := svcs[id]; e != nil {
+						if e := exclude[id]; e != nil {
 							es[id] = e
 						}
 					}
 
 					if len(es) == 0 {
-						es = svcs
+						es = exclude
 					}
 
 					for _, e := range es {
@@ -114,22 +116,22 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 		}
 
 		now := clock()
-		for _, e := range all {
+		for _, e := range svcs {
 			if err = removeInitalRepositoryEnablement(e, now); err != nil {
 				return errors.Wrapf(err, "%s remove-initial-repository-enablement", prefix)
 			}
 
-			if exclude := svcs[e.ID]; exclude != nil && len(*exclude) > 0 {
-				if err = e.Exclude(*exclude...); err != nil {
+			if rs := exclude[e.ID]; rs != nil && len(*rs) > 0 {
+				if err = e.Exclude(*rs...); err != nil {
 					return errors.Wrapf(err, "%s exclude", prefix)
 				}
 				e.UpdatedAt = now
 
-				log15.Info(prefix+" exclude", "service", e.DisplayName, "repos", len(*exclude))
+				log15.Info(prefix+" exclude", "service", e.DisplayName, "repos", len(*rs))
 			}
 		}
 
-		if err = s.UpsertExternalServices(ctx, all...); err != nil {
+		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
 			return errors.Wrapf(err, "%s upsert-external-services", prefix)
 		}
 
