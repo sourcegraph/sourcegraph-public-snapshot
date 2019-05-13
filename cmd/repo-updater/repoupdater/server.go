@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -39,7 +38,6 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
-	mux.HandleFunc("/uncached-github-dot-com-repo-lookup", s.handleUncachedGithubDotComRepoLookup)
 	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
@@ -242,32 +240,6 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleUncachedGithubDotComRepoLookup(w http.ResponseWriter, r *http.Request) {
-	var args protocol.RepoLookupArgs
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	t := time.Now()
-	result, err := s.uncachedGithubDotComRepoLookup(r.Context(), args)
-	if err != nil {
-		if err == context.Canceled {
-			http.Error(w, "request canceled", http.StatusGatewayTimeout)
-			return
-		}
-		log15.Error("uncachedGithubDotComRepoLookup failed", "args", &args, "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	log15.Debug("TRACE uncachedGithubDotComRepoLookup", "args", &args, "result", result, "duration", time.Since(t))
-
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -379,50 +351,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	return result, nil
 }
 
-func (s *Server) uncachedGithubDotComRepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
-	tr, ctx := trace.New(ctx, "uncachedGithubDotComRepoLookup", args.String())
-	defer func() {
-		log15.Debug("uncachedGithubDotComRepoLookup", "result", result, "error", err)
-		if result != nil {
-			tr.LazyPrintf("result: %s", result)
-		}
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if args.Repo == "" && args.ExternalRepo == nil {
-		return nil, errors.New("at least one of Repo and ExternalRepo must be set (both are empty)")
-	}
-
-	if mockRepoLookup != nil {
-		return mockRepoLookup(args)
-	}
-
-	var (
-		repo          *protocol.RepoInfo
-		authoritative bool
-	)
-
-	result = &protocol.RepoLookupResult{}
-	repo, authoritative, err = repos.GetGitHubRepository(ctx, args)
-	if !authoritative || github.IsNotFound(err) {
-		result.ErrorNotFound = true
-		err = nil
-	} else if isUnauthorized(err) {
-		result.ErrorUnauthorized = true
-		err = nil
-	} else if isTemporarilyUnavailable(err) {
-		result.ErrorTemporarilyUnavailable = true
-		err = nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	result.Repo = repo
-	return result, nil
-}
-
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
@@ -494,16 +422,4 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 
 func pathAppend(base, p string) string {
 	return strings.TrimRight(base, "/") + p
-}
-
-func isUnauthorized(err error) bool {
-	if errcode.IsUnauthorized(err) {
-		return true
-	}
-	code := github.HTTPErrorCode(err)
-	return code == http.StatusUnauthorized || code == http.StatusForbidden
-}
-
-func isTemporarilyUnavailable(err error) bool {
-	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
 }
