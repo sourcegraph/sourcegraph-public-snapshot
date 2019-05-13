@@ -22,11 +22,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Kinds of external services in use are now included in server pings (https://docs.sourcegraph.com/admin/pings).
+- Kinds of external services in use are now included in [server pings](https://docs.sourcegraph.com/admin/pings).
 
 ### Removed
 
-- Fields related to Repository enablement have been deprecated. Mutations are now NOOPs, and for repositories returned the value is always true for Enabled. The enabled field and mutation will be removed in 3.6.
+- Fields related to Repository enablement have been deprecated. Mutations are now NOOPs, and for repositories returned the value is always true for Enabled. The enabled field and mutations will be removed in 3.6. Mutations: `setRepositoryEnabled`, `setAllRepositoriesEnabled`, `updateAllMirrorRepositories`, `deleteRepository`. Query parameters: `repositories.enabled`, `repositories.disabled`. Field: `Repository.enabled`.
 
 ### Fixed
 
