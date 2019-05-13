@@ -456,7 +456,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	type record struct {
 		ID                  uint32          `json:"id"`
 		Name                string          `json:"name"`
-		URI                 string          `json:"uri"`
+		URI                 *string         `json:"uri,omitempty"`
 		Description         string          `json:"description"`
 		Language            string          `json:"language"`
 		CreatedAt           time.Time       `json:"created_at"`
@@ -487,7 +487,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		records = append(records, record{
 			ID:                  r.ID,
 			Name:                r.Name,
-			URI:                 r.URI,
+			URI:                 nullStringColumn(r.URI),
 			Description:         r.Description,
 			Language:            r.Language,
 			CreatedAt:           r.CreatedAt.UTC(),
@@ -623,7 +623,7 @@ inserted AS (
   )
   SELECT
     name,
-    uri,
+    NULLIF(BTRIM(uri), ''),
     description,
     language,
     created_at,
@@ -739,7 +739,7 @@ func scanRepo(r *Repo, s scanner) error {
 	err := s.Scan(
 		&r.ID,
 		&r.Name,
-		&r.URI,
+		&nullString{&r.URI},
 		&r.Description,
 		&r.Language,
 		&r.CreatedAt,
