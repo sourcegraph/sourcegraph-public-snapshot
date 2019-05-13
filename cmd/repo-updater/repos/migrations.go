@@ -33,14 +33,11 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 //
 // This migration must be rolled-out together with the UI changes that remove the admin's
 // ability to explicitly enabled / disable individual repos.
-func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, kinds ...string) Migration {
+func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time) Migration {
 	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.repos-enabled-state-deprecation:"
 
-		es, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
-			Kinds: kinds,
-		})
-
+		es, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 		if err != nil {
 			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
@@ -50,10 +47,7 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			return errors.Wrapf(err, "%s list-sources", prefix)
 		}
 
-		stored, err := s.ListRepos(ctx, StoreListReposArgs{
-			Kinds: kinds,
-		})
-
+		stored, err := s.ListRepos(ctx, StoreListReposArgs{})
 		if err != nil {
 			return errors.Wrapf(err, "%s store.list-repos", prefix)
 		}

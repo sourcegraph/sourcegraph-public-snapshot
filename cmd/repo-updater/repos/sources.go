@@ -194,8 +194,19 @@ func group(srcs []Source) map[string]Sources {
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	svc  *ExternalService
-	conn *githubConnection
+	svc          *ExternalService
+	config       *schema.GitHubConnection
+	exclude      map[string]bool
+	githubDotCom bool
+	baseURL      *url.URL
+	client       *github.Client
+	// searchClient is for using the GitHub search API, which has an independent
+	// rate limit much lower than non-search API requests.
+	searchClient *github.Client
+
+	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
+	// for an originalHostname of github.com).
+	originalHostname string
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.

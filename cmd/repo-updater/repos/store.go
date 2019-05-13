@@ -183,10 +183,6 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 
 	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
-
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listExternalServicesQueryFmtstr,
