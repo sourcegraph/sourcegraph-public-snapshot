@@ -274,7 +274,7 @@ func githubRepoToRepo(
 	urn := svc.URN()
 	return &Repo{
 		Name:         string(githubRepositoryToRepoPath(conn, ghrepo)),
-		URI:          fmt.Sprintf("%s/%s", conn.originalHostname, ghrepo.NameWithOwner),
+		URI:          string(reposource.GitHubRepoName("", conn.originalHostname, ghrepo.NameWithOwner)),
 		ExternalRepo: *github.ExternalRepoSpec(ghrepo, *conn.baseURL),
 		Description:  ghrepo.Description,
 		Fork:         ghrepo.IsFork,
