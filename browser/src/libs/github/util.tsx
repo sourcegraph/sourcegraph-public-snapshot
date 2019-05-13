@@ -1,5 +1,5 @@
+import { RepoSpec } from '../../../../shared/src/util/url'
 import { DiffResolvedRevSpec } from '../../shared/repo'
-import { RepoSpec, RevSpec, FileSpec } from '../../../../shared/src/util/url'
 
 /**
  * getFileContainers returns the elements on the page which should be marked
@@ -42,7 +42,7 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
  */
 export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec | null {
     const { pageType } = parseURL()
-    if (!isDeltaPageType(pageType)) {
+    if (!isDiffPageType(pageType)) {
         return null
     }
 
@@ -211,7 +211,7 @@ type GitHubURL =
     | ({ pageType: 'tree' | 'commit' | 'pull' | 'compare' | 'other' } & RepoSpec)
     | ({ pageType: 'blob'; revAndFilePath: string } & RepoSpec)
 
-export function isDeltaPageType(pageType: GitHubURL['pageType']): boolean {
+export function isDiffPageType(pageType: GitHubURL['pageType']): boolean {
     switch (pageType) {
         case 'commit':
         case 'pull':
