@@ -2,7 +2,7 @@ import { of, Subject } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Omit } from 'utility-types'
-import { MutationRecordLike } from '../../shared/util/dom'
+import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
 import { FileInfo } from './code_intelligence'
 import { CodeView, toCodeViewResolver, trackCodeViews } from './code_views'
 
@@ -48,7 +48,9 @@ describe('code_views', () => {
             const detected = await of([{ addedNodes: [document.body], removedNodes: [] }])
                 .pipe(
                     trackCodeViews({
-                        codeViewResolvers: [{ selector, resolveView }],
+                        codeViewResolvers: [
+                            container => [...querySelectorAllOrSelf<HTMLElement>(container, selector)].map(resolveView),
+                        ],
                     }),
                     toArray()
                 )

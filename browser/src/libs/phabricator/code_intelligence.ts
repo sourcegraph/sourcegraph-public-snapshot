@@ -11,6 +11,7 @@ import { ViewResolver } from '../code_intelligence/views'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '../phabricator'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
+import { querySelectorAllOrSelf } from '../../shared/util/dom'
 
 /**
  * Gets the actual text content we care about and returns the number of characters we have stripped
@@ -124,38 +125,38 @@ export const diffCodeView = {
     isDiff: true,
 }
 
-const differentialChangesetCodeViewResolver: ViewResolver<CodeView> = {
-    selector: '.differential-changeset',
-    resolveView: (element: HTMLElement): CodeView => {
+const differentialChangesetCodeViewResolver: ViewResolver<CodeView> = container =>
+    [...querySelectorAllOrSelf<HTMLElement>(container, '.differential-changeset')].map(element => {
         if (window.location.pathname.match(/^\/r/)) {
             return { element, ...commitCodeView }
         }
         return { element, ...diffCodeView }
-    },
-}
+    })
 
 // TODO this code view does not include the toolbar,
 // which makes it not possible to test getToolbarMount()
 // Fix after https://github.com/sourcegraph/sourcegraph/issues/3271
-const diffusionSourceCodeViewResolver = toCodeViewResolver('.diffusion-source', {
-    dom: diffusionDOMFns,
-    resolveFileInfo: resolveDiffusionFileInfo,
-    getToolbarMount: () => {
-        const actions = document.querySelector<HTMLElement>('.phui-two-column-content .phui-header-action-links')
-        if (!actions) {
-            throw new Error('unable to find file actions')
-        }
+const diffusionSourceCodeViewResolver: ViewResolver<CodeView> = container =>
+    [...querySelectorAllOrSelf<HTMLElement>(container, '.diffusion-source')].map(element => ({
+        element,
+        dom: diffusionDOMFns,
+        resolveFileInfo: resolveDiffusionFileInfo,
+        getToolbarMount: () => {
+            const actions = document.querySelector<HTMLElement>('.phui-two-column-content .phui-header-action-links')
+            if (!actions) {
+                throw new Error('unable to find file actions')
+            }
 
-        const mount = document.createElement('div')
-        mount.style.display = 'inline-block'
-        mount.classList.add('sourcegraph-app-annotator')
+            const mount = document.createElement('div')
+            mount.style.display = 'inline-block'
+            mount.classList.add('sourcegraph-app-annotator')
 
-        actions.insertAdjacentElement('afterbegin', mount)
+            actions.insertAdjacentElement('afterbegin', mount)
 
-        return mount
-    },
-    toolbarButtonProps,
-})
+            return mount
+        },
+        toolbarButtonProps,
+    }))
 
 export const checkIsPhabricator = () => !!document.querySelector('.phabricator-wordmark')
 

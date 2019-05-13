@@ -60,12 +60,12 @@ import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
 import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
-import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
+import { CodeView, fetchFileContents, trackCodeViews, FileInfoWithContents } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
 import { handleTextFields, TextField } from './text_fields'
-import { ViewResolver } from './views'
+import { ViewResolver, ViewEvent } from './views'
 
 registerHighlightContributions()
 
@@ -429,21 +429,23 @@ export function handleCodeHost({
     /** A stream of added or removed code views */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
-        mergeMap(codeViewEvent => {
-            if (codeViewEvent.type === 'added') {
-                return codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
-                    mergeMap(fileInfo =>
-                        fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
-                            map(fileInfoWithContents => ({
-                                fileInfo: fileInfoWithContents,
-                                ...codeViewEvent,
-                            }))
+        mergeMap(
+            codeViewEvent => {
+                if (codeViewEvent.type === 'added') {
+                    return codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
+                        mergeMap(fileInfo =>
+                            fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
+                                map(fileInfoWithContents => ({
+                                    fileInfo: fileInfoWithContents,
+                                    ...codeViewEvent,
+                                }))
+                            )
                         )
                     )
-                )
+                }
+                return [codeViewEvent]
             }
-            return [codeViewEvent]
-        }),
+        ),
         catchError(err => {
             if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
                 return EMPTY

@@ -1,4 +1,5 @@
 import { Omit } from 'utility-types'
+import { querySelectorAllOrSelf } from '../../shared/util/dom'
 import { CodeHost } from '../code_intelligence'
 import { CodeView } from '../code_intelligence/code_views'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
@@ -69,24 +70,20 @@ const commitCodeView: Omit<CodeView, 'element'> = {
     toolbarButtonProps,
 }
 
-const resolveView = (element: HTMLElement): CodeView => {
-    const { pageKind } = getPageInfo()
+const codeViewResolver: ViewResolver<CodeView> = container =>
+    [...querySelectorAllOrSelf<HTMLElement>(container, '.file-holder')].map(element => {
+        const { pageKind } = getPageInfo()
 
-    if (pageKind === GitLabPageKind.File) {
-        return { element, ...singleFileCodeView }
-    }
+        if (pageKind === GitLabPageKind.File) {
+            return { element, ...singleFileCodeView }
+        }
 
-    if (pageKind === GitLabPageKind.MergeRequest) {
-        return { element, ...mergeRequestCodeView }
-    }
+        if (pageKind === GitLabPageKind.MergeRequest) {
+            return { element, ...mergeRequestCodeView }
+        }
 
-    return { element, ...commitCodeView }
-}
-
-const codeViewResolver: ViewResolver<CodeView> = {
-    selector: '.file-holder',
-    resolveView,
-}
+        return { element, ...commitCodeView }
+    })
 
 export const gitlabCodeHost: CodeHost = {
     name: 'gitlab',

@@ -12,7 +12,7 @@ import {
     ViewStateSpec,
 } from '../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { querySelectorOrSelf } from '../../shared/util/dom'
+import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
 import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
@@ -25,6 +25,7 @@ import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './
 import { commentTextFieldResolver } from './text_fields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
+import { isDefined } from '../../../../shared/src/util/types'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -117,14 +118,14 @@ const getSnippetPositionAdjuster = (
         })
     )
 
-const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
+const searchResultCodeViewResolver: ViewResolver<CodeView> = toCodeViewResolver('.code-list-item', {
     dom: searchCodeSnippetDOMFunctions,
     getPositionAdjuster: getSnippetPositionAdjuster,
     resolveFileInfo: resolveSnippetFileInfo,
     toolbarButtonProps,
 })
 
-const snippetCodeView: Omit<CodeView, 'element'> = {
+const snippetCodeView: CodeView = {
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveSnippetFileInfo,
     getPositionAdjuster: getSnippetPositionAdjuster,
@@ -156,67 +157,66 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
  * Matches the modern single-file code view, or snippets embedded in comments.
  *
  */
-export const fileLineContainerResolver: ViewResolver<CodeView> = {
-    selector: '.js-file-line-container',
-    resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
-        const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
-        if (embeddedBlobWrapper) {
-            // This is a snippet embedded in a comment.
-            // Resolve to `.blob-wrapper-embedded`'s parent element,
-            // the smallest element that contains both the code and
-            // the HTML anchor allowing to resolve the file info.
-            const element = embeddedBlobWrapper.parentElement!
-            return {
-                element,
-                ...snippetCodeView,
+export const fileLineContainerResolver: ViewResolver<CodeView> = container =>
+    [...querySelectorAllOrSelf<HTMLElement>(container, '.js-file-line-container')]
+        .map(fileLineContainer => {
+            const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
+            if (embeddedBlobWrapper) {
+                // This is a snippet embedded in a comment.
+                // Resolve to `.blob-wrapper-embedded`'s parent element,
+                // the smallest element that contains both the code and
+                // the HTML anchor allowing to resolve the file info.
+                const element = embeddedBlobWrapper.parentElement!
+                return {
+                    element,
+                    ...snippetCodeView,
+                }
             }
-        }
-        const { filePath } = parseURL()
-        if (!filePath) {
-            // this is not a single-file code view
-            return null
-        }
-        const repositoryContent = fileLineContainer.closest('.repository-content')
-        if (!repositoryContent) {
-            throw new Error('Could not find repository content element')
-        }
-        return {
-            element: repositoryContent as HTMLElement,
-            ...singleFileCodeView,
-            getToolbarMount: createFileLineContainerToolbarMount,
-        }
-    },
-}
+            const { filePath } = parseURL()
+            if (!filePath) {
+                // this is not a single-file code view
+                return null
+            }
+            const repositoryContent = fileLineContainer.closest('.repository-content')
+            if (!repositoryContent) {
+                throw new Error('Could not find repository content element')
+            }
+            return {
+                element: repositoryContent as HTMLElement,
+                ...singleFileCodeView,
+                getToolbarMount: createFileLineContainerToolbarMount,
+            }
+        })
+        .filter(isDefined)
 
-const genericCodeViewResolver: ViewResolver<CodeView> = {
-    selector: '.file',
-    resolveView: (elem: HTMLElement): CodeView | null => {
-        if (elem.querySelector('article.markdown-body')) {
-            // This code view is rendered markdown, we shouldn't add code intelligence
-            return null
-        }
+const genericCodeViewResolver: ViewResolver<CodeView> = container =>
+    [...querySelectorAllOrSelf<HTMLElement>(container, '.file')]
+        .map(elem => {
+            if (elem.querySelector('article.markdown-body')) {
+                // This code view is rendered markdown, we shouldn't add code intelligence
+                return null
+            }
+            // This is a suggested change on a GitHub PR
+            if (elem.closest('.js-suggested-changes-blob')) {
+                return null
+            }
 
-        // This is a suggested change on a GitHub PR
-        if (elem.closest('.js-suggested-changes-blob')) {
-            return null
-        }
+            const files = document.getElementsByClassName('file')
+            const { filePath } = parseURL()
+            const isSingleCodeFile =
+                files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
-        const files = document.getElementsByClassName('file')
-        const { filePath } = parseURL()
-        const isSingleCodeFile =
-            files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
+            if (isSingleCodeFile) {
+                return { element: elem, ...singleFileCodeView }
+            }
 
-        if (isSingleCodeFile) {
-            return { element: elem, ...singleFileCodeView }
-        }
+            if (elem.closest('.discussion-item-body')) {
+                return { element: elem, ...diffConversationCodeView }
+            }
 
-        if (elem.closest('.discussion-item-body')) {
-            return { element: elem, ...diffConversationCodeView }
-        }
-
-        return { element: elem, ...diffCodeView }
-    },
-}
+            return { element: elem, ...diffCodeView }
+        })
+        .filter(isDefined)
 
 /**
  * Returns true if the current page is GitHub Enterprise.

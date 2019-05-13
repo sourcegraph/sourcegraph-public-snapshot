@@ -12,7 +12,7 @@ import { Services } from '../../../../shared/src/api/client/services'
 import { CodeEditor } from '../../../../shared/src/api/client/services/editorService'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
-import { MutationRecordLike } from '../../shared/util/dom'
+import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
 import { handleTextFields } from './text_fields'
 
 jest.mock('uuid', () => ({
@@ -62,7 +62,12 @@ describe('text_fields', () => {
                     { extensionsController: createMockController(services) },
                     {
                         textFieldResolvers: [
-                            { selector: 'textarea', resolveView: () => ({ element: textFieldElement }) },
+                            container =>
+                                [...querySelectorAllOrSelf<HTMLTextAreaElement>(container, 'textarea')].map(
+                                    element => ({
+                                        element,
+                                    })
+                                ),
                         ],
                     }
                 )

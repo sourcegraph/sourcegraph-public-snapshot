@@ -2,8 +2,9 @@ import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegrap
 import { of } from 'rxjs'
 import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
+import { isDefined } from '../../../../shared/src/util/types'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
-import { querySelectorOrSelf } from '../../shared/util/dom'
+import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../shared/util/dom'
 import { CodeHost, MountGetter } from '../code_intelligence'
 import { CodeView } from '../code_intelligence/code_views'
 import { ViewResolver } from '../code_intelligence/views'
@@ -127,30 +128,30 @@ const commitDiffCodeView: Omit<CodeView, 'element'> = {
     resolveFileInfo: resolveCommitViewFileInfo,
 }
 
-const codeViewResolver: ViewResolver<CodeView> = {
-    selector: '.file-content',
-    resolveView: element => {
-        const contentView = element.querySelector('.content-view')
-        if (!contentView) {
+const codeViewResolver: ViewResolver<CodeView> = container =>
+    [...querySelectorAllOrSelf<HTMLElement>(container, '.file-content')]
+        .map(element => {
+            const contentView = element.querySelector('.content-view')
+            if (!contentView) {
+                return null
+            }
+            if (isCompareView()) {
+                return { element, ...compareDiffCodeView }
+            }
+            if (isCommitsView()) {
+                return { element, ...commitDiffCodeView }
+            }
+            if (isSingleFileView(element)) {
+                const isDiff = contentView.classList.contains('diff-view')
+                return isDiff ? { element, ...singleFileDiffCodeView } : { element, ...singleFileSourceCodeView }
+            }
+            if (isPullRequestView()) {
+                return { element, ...pullRequestDiffCodeView }
+            }
+            console.error('Unknown code view', element)
             return null
-        }
-        if (isCompareView()) {
-            return { element, ...compareDiffCodeView }
-        }
-        if (isCommitsView()) {
-            return { element, ...commitDiffCodeView }
-        }
-        if (isSingleFileView(element)) {
-            const isDiff = contentView.classList.contains('diff-view')
-            return isDiff ? { element, ...singleFileDiffCodeView } : { element, ...singleFileSourceCodeView }
-        }
-        if (isPullRequestView()) {
-            return { element, ...pullRequestDiffCodeView }
-        }
-        console.error('Unknown code view', element)
-        return null
-    },
-}
+        })
+        .filter(isDefined)
 
 const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
     const headerElement = querySelectorOrSelf(container, '.aui-header-primary .aui-nav')

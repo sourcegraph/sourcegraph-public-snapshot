@@ -2,12 +2,12 @@ import { DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, isErrorLike } from '../../shared/backend/errors'
 import { ButtonProps } from '../../shared/components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
+import { querySelectorAllOrSelf } from '../../shared/util/dom'
 import { CodeHost, FileInfo } from './code_intelligence'
 import { ensureRevisionsAreCloned } from './util/file_info'
 import { trackViews, ViewResolver } from './views'
@@ -17,14 +17,10 @@ import { trackViews, ViewResolver } from './views'
  * Exposes operations for manipulating it, and CSS classes to be applied to injected UI elements.
  */
 export interface CodeView {
-    /**
-     * The code view element on the page.
-     */
-    element: HTMLElement
     /** The DOMFunctions for the code view. */
     dom: DOMFunctions
     /**
-     * Finds or creates a DOM element where we should inject the
+     * Finds or creates a DOM element where we should inject the3
      * `CodeViewToolbar`. This function is responsible for ensuring duplicate
      * mounts aren't created.
      */
@@ -58,10 +54,8 @@ export interface CodeView {
 /**
  * Builds a CodeViewResolver from a static CodeView and a selector.
  */
-export const toCodeViewResolver = (selector: string, spec: Omit<CodeView, 'element'>): ViewResolver<CodeView> => ({
-    selector,
-    resolveView: element => ({ ...spec, element }),
-})
+export const toCodeViewResolver = (selector: string, spec: CodeView): ViewResolver<CodeView> => container =>
+    [...querySelectorAllOrSelf<HTMLElement>(container, selector)].map(element => ({ ...spec, element }))
 
 /**
  * Find all the code views on a page using both the code view specs and the code view spec

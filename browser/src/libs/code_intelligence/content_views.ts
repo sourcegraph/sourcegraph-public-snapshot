@@ -10,10 +10,7 @@ import { trackViews } from './views'
 /**
  * Defines a content view that is present on a page and exposes operations for manipulating it.
  */
-export interface ContentView {
-    /** The content view HTML element. */
-    element: HTMLElement
-}
+export interface ContentView {}
 
 /**
  * Handles added and removed content views according to the {@link CodeHost} configuration.
