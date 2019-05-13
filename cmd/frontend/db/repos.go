@@ -101,7 +101,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 }
 
 const getRepoByQueryFmtstr = `
-SELECT id, name, description, language, enabled, created_at,
+SELECT id, name, description, language, created_at,
   updated_at, external_id, external_service_type, external_service_id
 FROM repo
 WHERE deleted_at IS NULL AND enabled = true AND %s`
@@ -124,7 +124,6 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 			&repo.Name,
 			&repo.Description,
 			&repo.Language,
-			&repo.Enabled,
 			&repo.CreatedAt,
 			&repo.UpdatedAt,
 			&spec.id, &spec.serviceType, &spec.serviceID,
@@ -656,7 +655,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		}
 		insert = true // missing
 	} else {
-		enabled = r.Enabled
+		enabled = true
 		language = r.Language
 		// Ignore Enabled for deciding to update
 		insert = ((op.Description != r.Description) ||

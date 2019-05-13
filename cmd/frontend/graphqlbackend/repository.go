@@ -90,12 +90,6 @@ func (r *repositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, err
 }
 
 func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) {
-	// Asking gitserver may trigger a clone of the repo, so ensure it is
-	// enabled.
-	if !r.repo.Enabled {
-		return false, nil
-	}
-
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
@@ -105,12 +99,6 @@ type repositoryCommitArgs struct {
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*gitCommitResolver, error) {
-	// Asking gitserver may trigger a clone of the repo, so ensure it is
-	// enabled.
-	if !r.repo.Enabled {
-		return nil, nil
-	}
-
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
 		if git.IsRevisionNotFound(err) {
@@ -134,12 +122,6 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitA
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
-	// Asking gitserver may trigger a clone of the repo, so ensure it is
-	// enabled.
-	if !r.repo.Enabled {
-		return nil, nil
-	}
-
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
 	if err != nil {
 		return nil, err
@@ -168,7 +150,7 @@ func (r *repositoryResolver) Language() string {
 	return r.repo.Language
 }
 
-func (r *repositoryResolver) Enabled() bool { return r.repo.Enabled }
+func (r *repositoryResolver) Enabled() bool { return true }
 
 func (r *repositoryResolver) CreatedAt() string {
 	return r.repo.CreatedAt.Format(time.RFC3339)

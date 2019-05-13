@@ -38,7 +38,6 @@ func TestCountGoImporters(t *testing.T) {
 		return &types.Repo{
 			Name:         repoName,
 			ExternalRepo: &api.ExternalRepoSpec{ServiceType: github.ServiceType},
-			Enabled:      true,
 		}, nil
 	}
 	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
