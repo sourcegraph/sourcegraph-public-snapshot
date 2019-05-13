@@ -2,8 +2,6 @@ package repos
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -311,18 +309,6 @@ func (c *awsCodeCommitConnection) authenticatedRemoteURL(repo *awscodecommit.Rep
 
 	u.User = url.UserPassword(username, password)
 	return u.String()
-}
-
-func makeHMAC(key []byte, data []byte) []byte {
-	hash := hmac.New(sha256.New, key)
-	_, _ = hash.Write(data)
-	return hash.Sum(nil)
-}
-
-func makeSHA256(data []byte) []byte {
-	hash := sha256.New()
-	_, _ = hash.Write(data)
-	return hash.Sum(nil)
 }
 
 func (c *awsCodeCommitConnection) listAllRepositories(ctx context.Context) ([]*awscodecommit.Repository, error) {

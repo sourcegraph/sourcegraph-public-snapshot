@@ -2,9 +2,7 @@ package repos
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -12,8 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 
-	"github.com/gregjones/httpcache"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
@@ -50,14 +46,6 @@ func NewHTTPClientFactory() *httpcli.Factory {
 }
 
 // cachedRoundTripper wraps another http.RoundTripper with caching.
-func cachedRoundTripper(rt http.RoundTripper) http.RoundTripper {
-	return &httpcache.Transport{
-		Transport:           &nethttp.Transport{RoundTripper: rt},
-		Cache:               httputil.Cache,
-		MarkCachedResponses: true, // so we avoid using cached rate limit info
-	}
-}
-
 // newCertPool returns an x509.CertPool with the given certificates added to it.
 func newCertPool(certs ...string) (*x509.CertPool, error) {
 	pool := x509.NewCertPool()
@@ -67,23 +55,6 @@ func newCertPool(certs ...string) (*x509.CertPool, error) {
 		}
 	}
 	return pool, nil
-}
-
-// cachedTransportWithCertTrusted returns an http.Transport that trusts the
-// provided PEM cert, or http.DefaultTransport if it is empty. The transport
-// is also using our redis backed cache.
-func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
-	transport := http.DefaultTransport
-	if cert != "" {
-		pool, err := newCertPool(cert)
-		if err != nil {
-			return nil, err
-		}
-		transport = &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: pool},
-		}
-	}
-	return cachedRoundTripper(transport), nil
 }
 
 // A repoCreateOrUpdateRequest is a RepoCreateOrUpdateRequest, from the API,
