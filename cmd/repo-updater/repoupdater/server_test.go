@@ -670,18 +670,22 @@ func TestRepoLookup(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name              string
-		lookupArgRepoName string
-		want              *protocol.RepoLookupResult
+		name string
+		args protocol.RepoLookupArgs
+		want *protocol.RepoLookupResult
 	}{
 		{
-			name:              "not found",
-			lookupArgRepoName: "github.com/a/b",
-			want:              &protocol.RepoLookupResult{ErrorNotFound: true},
+			name: "not found",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/a/b"),
+			},
+			want: &protocol.RepoLookupResult{ErrorNotFound: true},
 		},
 		{
-			name:              "found - GitHub",
-			lookupArgRepoName: "github.com/foo/bar",
+			name: "found - GitHub",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
 			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
@@ -700,8 +704,10 @@ func TestRepoLookup(t *testing.T) {
 			}},
 		},
 		{
-			name:              "found - AWS CodeCommit",
-			lookupArgRepoName: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+			name: "found - AWS CodeCommit",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
+			},
 			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
@@ -724,8 +730,7 @@ func TestRepoLookup(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			args := protocol.RepoLookupArgs{Repo: api.RepoName(tc.lookupArgRepoName)}
-			result, err := s.repoLookup(ctx, args)
+			result, err := s.repoLookup(ctx, tc.args)
 			if err != nil {
 				t.Fatal(err)
 			}
