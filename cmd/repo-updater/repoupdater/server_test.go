@@ -657,22 +657,11 @@ func TestRepoLookup(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
-
-	store := new(repos.FakeStore)
-	must(store.UpsertRepos(ctx, githubRepository))
-	must(store.UpsertRepos(ctx, awsCodeCommitRepository))
-
-	s := Server{
-		Syncer:      &repos.Syncer{},
-		Store:       store,
-		InternalAPI: &internalAPIFake{},
-	}
-
 	testCases := []struct {
 		name string
 		args protocol.RepoLookupArgs
 		want *protocol.RepoLookupResult
+		err  string
 	}{
 		{
 			name: "not found",
@@ -680,6 +669,7 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("github.com/a/b"),
 			},
 			want: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:  "repository not found",
 		},
 		{
 			name: "found - GitHub",
@@ -729,12 +719,33 @@ func TestRepoLookup(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
+
+		ctx := context.Background()
+
+		store := new(repos.FakeStore)
+		must(store.UpsertRepos(ctx, githubRepository))
+		must(store.UpsertRepos(ctx, awsCodeCommitRepository))
+
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := s.repoLookup(ctx, tc.args)
-			if err != nil {
-				t.Fatal(err)
+			srv := httptest.NewServer((&Server{Syncer: &repos.Syncer{}, Store: store}).Handler())
+			defer srv.Close()
+
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
 			}
-			if diff := pretty.Compare(result, tc.want); diff != "" {
+
+			res, err := cli.RepoLookup(ctx, tc.args)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.want; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
+			}
+
+			if diff := pretty.Compare(res, tc.want); diff != "" {
 				t.Fatalf("RepoLookup:\n%s", diff)
 			}
 		})
