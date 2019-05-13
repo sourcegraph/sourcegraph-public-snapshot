@@ -228,10 +228,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             ...this.state.repoHeaderContributionsLifecycleProps,
         }
 
-        const isSettingsPage =
-            location.pathname === `${repoMatchURL}/-/settings` ||
-            location.pathname.startsWith(`${repoMatchURL}/-/settings/`)
-
         return (
             <div className="repo-container w-100 d-flex flex-column">
                 <RepoHeader
@@ -268,113 +264,104 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     {...this.state.repoHeaderContributionsLifecycleProps}
                 />
                 <ErrorBoundary location={this.props.location}>
-                    {this.state.repoOrError.enabled || isSettingsPage ? (
-                        <Switch>
-                            {[
-                                '',
-                                `@${this.state.rawRev}`, // must exactly match how the rev was encoded in the URL
-                                '/-/blob',
-                                '/-/tree',
-                                '/-/commits',
-                            ].map(routePath => (
-                                <Route
-                                    path={`${repoMatchURL}${routePath}`}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={routePath === ''}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    render={routeComponentProps => (
-                                        <RepoRevContainer
-                                            {...routeComponentProps}
-                                            {...transferProps}
-                                            routes={this.props.repoRevContainerRoutes}
-                                            rev={this.state.rev || ''}
-                                            resolvedRevOrError={this.state.resolvedRevOrError}
-                                            onResolvedRevOrError={this.onResolvedRevOrError}
-                                            // must exactly match how the rev was encoded in the URL
-                                            routePrefix={`${repoMatchURL}${
-                                                this.state.rawRev ? `@${this.state.rawRev}` : ''
-                                            }`}
-                                        />
-                                    )}
-                                />
-                            ))}
+                    <Switch>
+                        {[
+                            '',
+                            `@${this.state.rawRev}`, // must exactly match how the rev was encoded in the URL
+                            '/-/blob',
+                            '/-/tree',
+                            '/-/commits',
+                        ].map(routePath => (
                             <Route
-                                path={`${repoMatchURL}/-/commit/:revspec+`}
+                                path={`${repoMatchURL}${routePath}`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={routePath === ''}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <RepositoryGitDataContainer repoName={this.state.repoName}>
-                                        <RepositoryCommitPage
-                                            {...routeComponentProps}
-                                            {...transferProps}
-                                            onDidUpdateExternalLinks={this.onDidUpdateExternalLinks}
-                                        />
-                                    </RepositoryGitDataContainer>
-                                )}
-                            />
-                            <Route
-                                path={`${repoMatchURL}/-/branches`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <RepositoryGitDataContainer repoName={this.state.repoName}>
-                                        <RepositoryBranchesArea {...routeComponentProps} {...transferProps} />
-                                    </RepositoryGitDataContainer>
-                                )}
-                            />
-                            <Route
-                                path={`${repoMatchURL}/-/tags`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <RepositoryGitDataContainer repoName={this.state.repoName}>
-                                        <RepositoryReleasesArea {...routeComponentProps} {...transferProps} />
-                                    </RepositoryGitDataContainer>
-                                )}
-                            />
-                            <Route
-                                path={`${repoMatchURL}/-/compare/:spec*`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <RepositoryGitDataContainer repoName={this.state.repoName}>
-                                        <RepositoryCompareArea {...routeComponentProps} {...transferProps} />
-                                    </RepositoryGitDataContainer>
-                                )}
-                            />
-                            <Route
-                                path={`${repoMatchURL}/-/stats`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <RepositoryGitDataContainer repoName={this.state.repoName}>
-                                        <RepositoryStatsArea {...routeComponentProps} {...transferProps} />
-                                    </RepositoryGitDataContainer>
-                                )}
-                            />
-                            <Route
-                                path={`${repoMatchURL}/-/settings`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <RepoSettingsArea
+                                    <RepoRevContainer
                                         {...routeComponentProps}
                                         {...transferProps}
-                                        onDidUpdateRepository={this.onDidUpdateRepository}
+                                        routes={this.props.repoRevContainerRoutes}
+                                        rev={this.state.rev || ''}
+                                        resolvedRevOrError={this.state.resolvedRevOrError}
+                                        onResolvedRevOrError={this.onResolvedRevOrError}
+                                        // must exactly match how the rev was encoded in the URL
+                                        routePrefix={`${repoMatchURL}${
+                                            this.state.rawRev ? `@${this.state.rawRev}` : ''
+                                        }`}
                                     />
                                 )}
                             />
-                            <Route key="hardcoded-key" component={RepoPageNotFound} />
-                        </Switch>
-                    ) : (
-                        <RepositoryErrorPage
-                            repo={this.state.repoOrError.name}
-                            repoID={this.state.repoOrError.id}
-                            error="disabled"
-                            viewerCanAdminister={viewerCanAdminister}
-                            onDidUpdateRepository={this.onDidUpdateRepository}
+                        ))}
+                        <Route
+                            path={`${repoMatchURL}/-/commit/:revspec+`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                    <RepositoryCommitPage
+                                        {...routeComponentProps}
+                                        {...transferProps}
+                                        onDidUpdateExternalLinks={this.onDidUpdateExternalLinks}
+                                    />
+                                </RepositoryGitDataContainer>
+                            )}
                         />
-                    )}
+                        <Route
+                            path={`${repoMatchURL}/-/branches`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                    <RepositoryBranchesArea {...routeComponentProps} {...transferProps} />
+                                </RepositoryGitDataContainer>
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}/-/tags`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                    <RepositoryReleasesArea {...routeComponentProps} {...transferProps} />
+                                </RepositoryGitDataContainer>
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}/-/compare/:spec*`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                    <RepositoryCompareArea {...routeComponentProps} {...transferProps} />
+                                </RepositoryGitDataContainer>
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}/-/stats`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryGitDataContainer repoName={this.state.repoName}>
+                                    <RepositoryStatsArea {...routeComponentProps} {...transferProps} />
+                                </RepositoryGitDataContainer>
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}/-/settings`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoSettingsArea
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    onDidUpdateRepository={this.onDidUpdateRepository}
+                                />
+                            )}
+                        />
+                        <Route key="hardcoded-key" component={RepoPageNotFound} />
+                    </Switch>
+                    }
                 </ErrorBoundary>
             </div>
         )
