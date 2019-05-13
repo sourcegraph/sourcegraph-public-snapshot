@@ -26,6 +26,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- Fields related to Repository enablement have been deprecated. Mutation are now NOOPs, and for repositories returned the value is always true for Enabled. The enabled field and mutation will be removed in 3.6.
+
 ### Fixed
 
 - Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).

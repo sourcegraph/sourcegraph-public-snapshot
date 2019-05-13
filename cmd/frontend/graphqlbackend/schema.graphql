@@ -49,15 +49,25 @@ type Mutation {
     updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
     # Delete an external service. Only site admins may perform this mutation.
     deleteExternalService(externalService: ID!): EmptyResponse!
-    # Enables or disables a repository. A disabled repository is only
-    # accessible to site admins and never appears in search results.
+    # DEPRECATED: All repositories are accessible or deleted. To prevent a
+    # repository from being accessed on Sourcegraph add it to the external
+    # service exclude configuration.
+    #
+    # Enables or disables a repository. A disabled repository is only accessible
+    # to site admins and never appears in search results.
     #
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
+        @deprecated(reason: "update external service exclude setting.")
+    # DEPRECATED: All repositories are accessible or deleted. To prevent a
+    # repository from being accessed on Sourcegraph add it to the external
+    # service exclude configuration.
+    #
     # Enables or disables all site repositories.
     #
     # Only site admins may perform this mutation.
     setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
+        @deprecated(reason: "update external service exclude setting.")
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
     #
@@ -82,6 +92,10 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateAllMirrorRepositories: EmptyResponse!
+    # DEPRECATED: All repositories are accessible or deleted. To prevent a
+    # repository from being accessed on Sourcegraph add it to the external
+    # service exclude configuration. It will be deleted.
+    #
     # Deletes a repository and all data associated with it, irreversibly.
     #
     # If the repository was added because it was present in the site configuration (directly,
@@ -90,7 +104,7 @@ type Mutation {
     # use setRepositoryEnabled to disable the repository instead of deleteRepository.
     #
     # Only site admins may perform this mutation.
-    deleteRepository(repository: ID!): EmptyResponse
+    deleteRepository(repository: ID!): EmptyResponse @deprecated(reason: "update external service exclude setting.")
     # Creates a new user account.
     #
     # Only site admins may perform this mutation.
@@ -667,9 +681,9 @@ type Query {
         # Return repositories whose names are in the list.
         names: [String!]
         # Include enabled repositories.
-        enabled: Boolean = true
+        enabled: Boolean = true @deprecated(reason: "No-op. All repositories are enabled.")
         # Include disabled repositories.
-        disabled: Boolean = false
+        disabled: Boolean = false @deprecated(reason: "No-op. All repositories are enabled.")
         # Include cloned repositories.
         cloned: Boolean = true
         # Include repositories that are currently being cloned.
@@ -1142,11 +1156,13 @@ type Repository implements Node & GenericSearchResultInterface {
     description: String!
     # The primary programming language in the repository.
     language: String!
+    # DEPRECATED: All repositories are enabled.
+    #
     # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
     #
     # NOTE: Disabling a repository does not provide any additional security. This field is merely a
     # guideline to UI implementations.
-    enabled: Boolean!
+    enabled: Boolean! @deprecated(reason: "Always true. All repositories are enabled.")
     # The date when this repository was created on Sourcegraph.
     createdAt: String!
     # The date when this repository's metadata was last updated on Sourcegraph.
