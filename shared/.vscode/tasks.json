@@ -5,7 +5,7 @@
       "type": "npm",
       "script": "watch:typecheck",
       "problemMatcher": ["$tsc-watch"],
-      "isBackground": true
-    }
-  ]
+      "isBackground": true,
+    },
+  ],
 }
