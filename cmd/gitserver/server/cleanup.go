@@ -603,3 +603,7 @@ func removeFileOlderThan(path string, maxAge time.Duration) error {
 	}
 	return nil
 }
+
+func removeAllAtomically(path string) error {
+	return os.RemoveAll(path)
+}

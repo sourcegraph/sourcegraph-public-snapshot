@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -510,5 +513,91 @@ func Test_findMountPoint(t *testing.T) {
 				t.Errorf("findMountPoint() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_removeAllAtomically(t *testing.T) {
+	t.Run("nonexistent path => no error", func(t *testing.T) {
+		if err := removeAllAtomically(""); err != nil {
+			t.Error("got '", err, "', want no error on nonexistent path for consistency with os.RemoveAll")
+		}
+	})
+	t.Run("removing a dir makes it go away", func(t *testing.T) {
+		// Set up.
+		d, err := ioutil.TempDir("", "Test_removeAtomically")
+		if err != nil {
+			t.Fatalf("making temp dir: %v", err)
+		}
+		if err := ioutil.WriteFile(filepath.Join(d, "a"), []byte("a"), 0666); err != nil {
+			t.Fatalf("writing file: %v", err)
+		}
+
+		// Run.
+		if err := removeAllAtomically(d); err != nil {
+			t.Fatalf("atomically removing %s: %v", d, err)
+		}
+
+		// Check.
+		if _, err := os.Stat(d); err == nil {
+			t.Errorf("%s should have been removed but os.Stat says it exists", d)
+		}
+	})
+	t.Run("removing a big dir happens atomically", func(t *testing.T) {
+		// Set up.
+		d, err := ioutil.TempDir("", "Test_removeAtomically")
+		if err != nil {
+			t.Fatalf("making temp dir: %v", err)
+		}
+		n := 1000
+		for i := 0; i < n; i++ {
+			if err := ioutil.WriteFile(filepath.Join(d, fmt.Sprintf("%d", i)), make([]byte, 1024), 0666); err != nil {
+				t.Fatalf("writing file: %v", err)
+			}
+		}
+		fis, err := ioutil.ReadDir(d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(fis) != n {
+			t.Fatalf("got %d items in temp dir, want %d", len(fis), n)
+		}
+
+		// Run.
+		var eg errgroup.Group
+		eg.Go(func() error { return removeAllAtomically(d) })
+
+		// Check.
+		var tries int32
+		eg.Go(func() error {
+			for {
+				atomic.AddInt32(&tries, 1)
+				fis, err := ioutil.ReadDir(d)
+				if err != nil {
+					return nil
+				}
+				if !(len(fis) == n || len(fis) == 0) {
+					return fmt.Errorf("dir contains %d items, want either the original count of %d or for it to be gone", len(fis), n)
+				}
+			}
+		})
+		if err := eg.Wait(); err != nil {
+			t.Fatal(err)
+		}
+		log.Printf("made %d tries", atomic.LoadInt32(&tries))
+	})
+}
+
+func TestReadDir(t *testing.T) {
+	d, err := ioutil.TempDir("", "TestReadDir")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(d, "/tmp/foo"); err != nil {
+		t.Fatal(err)
+	}
+	fis, err := ioutil.ReadDir(d)
+	log.Print("fis", fis, "err", err)
+	if err == nil {
+		t.Fatal("should have errored")
 	}
 }
