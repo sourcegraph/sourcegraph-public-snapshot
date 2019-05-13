@@ -605,5 +605,16 @@ func removeFileOlderThan(path string, maxAge time.Duration) error {
 }
 
 func removeAllAtomically(path string) error {
-	return os.RemoveAll(path)
+	if _, err := os.Stat(path); err != nil {
+		return nil
+	}
+	d, err := ioutil.TempDir("", "removeAtomically")
+	if err != nil {
+		return errors.Wrap(err, "creating temp dir")
+	}
+	path2 := filepath.Join(d, filepath.Base(path))
+	if err := os.Rename(path, path2); err != nil {
+		return errors.Wrapf(err, "renaming %s to %s", path, path2)
+	}
+	return nil
 }
