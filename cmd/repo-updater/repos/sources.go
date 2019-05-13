@@ -337,7 +337,7 @@ func gitlabProjectToRepo(
 	urn := svc.URN()
 	return &Repo{
 		Name:         string(gitlabProjectToRepoPath(conn, proj)),
-		URI:          fmt.Sprintf("%s/%s", conn.baseURL.Hostname(), proj.PathWithNamespace),
+		URI:          string(reposource.GitLabRepoName("", conn.baseURL.Hostname(), proj.PathWithNamespace)),
 		ExternalRepo: *gitlab.ExternalRepoSpec(proj, *conn.baseURL),
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
@@ -435,7 +435,7 @@ func bitbucketServerRepoURI(config *schema.BitbucketServerConnection, repo *bitb
 		project = repo.Project.Key
 	}
 
-	return fmt.Sprintf("%s/%s/%s", host.Hostname(), project, repo.Slug)
+	return string(reposource.BitbucketServerRepoName("", host.Hostname(), project, repo.Slug))
 }
 
 // A GitoliteSource yields repositories from a single Gitolite connection configured
@@ -527,9 +527,10 @@ func gitoliteRepoToRepo(
 	conn *schema.GitoliteConnection,
 ) *Repo {
 	urn := svc.URN()
+	name := string(reposource.GitoliteRepoName(conn.Prefix, repo.Name))
 	return &Repo{
-		Name:         string(reposource.GitoliteRepoName(conn.Prefix, repo.Name)),
-		URI:          conn.Prefix + repo.Name,
+		Name:         name,
+		URI:          name,
 		ExternalRepo: *gitolite.ExternalRepoSpec(repo, gitolite.ServiceID(conn.Host)),
 		Enabled:      true,
 		Sources: map[string]*SourceInfo{
@@ -766,7 +767,7 @@ func awsCodeCommitRepoToRepo(
 
 	awsRepo := &Repo{
 		Name:         string(awsCodeCommitRepositoryToRepoPath(conn, repo)),
-		URI:          repo.Name,
+		URI:          string(reposource.AWSRepoName("", repo.Name)),
 		ExternalRepo: *awscodecommit.ExternalRepoSpec(repo, serviceID),
 		Description:  repo.Description,
 		Enabled:      true,
