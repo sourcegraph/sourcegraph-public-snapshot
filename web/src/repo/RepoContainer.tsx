@@ -28,8 +28,8 @@ import { RepositoryReleasesArea } from './releases/RepositoryReleasesArea'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainer, RepoRevContainerRoute } from './RepoRevContainer'
-import { RepositoryErrorPage } from './RepositoryErrorPage'
 import { RepositoryGitDataContainer } from './RepositoryGitDataContainer'
+import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { RepoSettingsArea } from './settings/RepoSettingsArea'
 import { RepositoryStatsArea } from './stats/RepositoryStatsArea'
 
@@ -201,7 +201,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             switch (this.state.repoOrError.code) {
                 case EREPONOTFOUND:
                     return (
-                        <RepositoryErrorPage
+                        <RepositoryNotFoundPage
                             repo={repoName}
                             repoID={null}
                             error={this.state.repoOrError}
