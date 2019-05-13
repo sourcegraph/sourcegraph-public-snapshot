@@ -104,7 +104,7 @@ const getRepoByQueryFmtstr = `
 SELECT id, name, description, language, enabled, created_at,
   updated_at, external_id, external_service_type, external_service_id
 FROM repo
-WHERE deleted_at IS NULL AND %s`
+WHERE deleted_at IS NULL AND enabled = true AND %s`
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	q := sqlf.Sprintf(getRepoByQueryFmtstr, querySuffix)
