@@ -307,7 +307,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		}
 		gitDirParent := filepath.Dir(d)
 		log15.Info("cleanup: removing repo dir that hasn't been used in a while", "repodir", d, "howlong", time.Since(dirModTimes[d]))
-		if err := os.RemoveAll(gitDirParent); err != nil {
+		if err := removeAllAtomically(gitDirParent); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
 		spaceFreed += delta
