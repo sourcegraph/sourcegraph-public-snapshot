@@ -116,7 +116,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 	defer s.sem.Release(1)
 
 	if s.counter++; s.counter%10 != 0 { // Only run every ten times.
-		log15.Info("phabricator metadata sync only runs every 10th gitolite sync. skipping", "counter", s.counter)
+		log15.Debug("phabricator metadata sync only runs every 10th gitolite sync. skipping", "counter", s.counter)
 		return nil
 	}
 
@@ -136,7 +136,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 	}
 
 	if len(ids) == 0 {
-		log15.Info("phabricator metadata: nothing to sync")
+		log15.Debug("phabricator metadata: nothing to sync")
 		return nil
 	}
 
