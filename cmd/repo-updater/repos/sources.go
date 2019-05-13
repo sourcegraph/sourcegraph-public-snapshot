@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -188,69 +187,6 @@ func group(srcs []Source) map[string]Sources {
 	}
 
 	return groups
-}
-
-// A GitLabSource yields repositories from a single GitLab connection configured
-// in Sourcegraph via the external services configuration.
-type GitLabSource struct {
-	svc  *ExternalService
-	conn *gitlabConnection
-}
-
-// NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
-	var c schema.GitLabConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
-	}
-	return newGitLabSource(svc, &c, cf)
-}
-
-func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
-	conn, err := newGitLabConnection(c, cf)
-	if err != nil {
-		return nil, err
-	}
-	return &GitLabSource{svc: svc, conn: conn}, nil
-}
-
-// ListRepos returns all GitLab repositories accessible to all connections configured
-// in Sourcegraph via the external services configuration.
-func (s GitLabSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	projs, err := s.conn.listAllProjects(ctx)
-	for _, proj := range projs {
-		repos = append(repos, gitlabProjectToRepo(s.svc, proj, s.conn))
-	}
-	return repos, err
-}
-
-// ExternalServices returns a singleton slice containing the external service.
-func (s GitLabSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
-}
-
-func gitlabProjectToRepo(
-	svc *ExternalService,
-	proj *gitlab.Project,
-	conn *gitlabConnection,
-) *Repo {
-	urn := svc.URN()
-	return &Repo{
-		Name:         string(gitlabProjectToRepoPath(conn, proj)),
-		URI:          string(reposource.GitLabRepoName("", conn.baseURL.Hostname(), proj.PathWithNamespace)),
-		ExternalRepo: *gitlab.ExternalRepoSpec(proj, *conn.baseURL),
-		Description:  proj.Description,
-		Fork:         proj.ForkedFromProject != nil,
-		Enabled:      true,
-		Archived:     proj.Archived,
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: conn.authenticatedRemoteURL(proj),
-			},
-		},
-		Metadata: proj,
-	}
 }
 
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
