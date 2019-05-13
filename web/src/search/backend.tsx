@@ -272,6 +272,31 @@ export function fetchSavedQueries(): Observable<GQL.ISavedSearch[]> {
     )
 }
 
+export function fetchSavedSearch(id: GQL.ID): Observable<GQL.ISavedSearch> {
+    return queryGraphQL(
+        gql`
+            query SavedSearch($id: ID!) {
+                node(id: $id) {
+                    ... on SavedSearch {
+                        id
+                        description
+                        query
+                        notify
+                        notifySlack
+                        slackWebhookURL
+                        orgID
+                        userID
+                    }
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.node as GQL.ISavedSearch)
+    )
+}
+
 export function createSavedSearch(
     description: string,
     query: string,

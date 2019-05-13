@@ -1,9 +1,9 @@
 import MessageTextOutlineIcon from 'mdi-react/MessageTextOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
-import { filter, map, startWith, switchMap } from 'rxjs/operators'
+import { map, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { fetchSavedQueries } from '../../search/backend'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -44,19 +44,21 @@ export class OrgSavedSearchesListPage extends React.Component<Props, State> {
                         <div>Manage notifications and alerts for specific search queries</div>
                     </div>
                     <div>
-                        <NavLink to={`${this.props.match.path}/add`} exact={true} className="btn btn-primary">
+                        <Link to={`${this.props.match.path}/add`} className="btn btn-primary">
                             Add saved search
-                        </NavLink>
+                        </Link>
                     </div>
                 </div>
                 {this.state.savedSearches.length > 0 &&
                     this.state.savedSearches
-                        .filter(search => search.orgID === this.props.org.databaseID)
+                        .filter(search => search.orgID === this.props.org.id)
                         .map(search => (
-                            <div className="org-saved-searches-list-page__row">
-                                <MessageTextOutlineIcon className="org-saved-searches-list-page__row--icon icon-inline" />
-                                <div>{search.description}</div>
-                            </div>
+                            <Link to={`${this.props.match.path}/${search.id}`}>
+                                <div className="org-saved-searches-list-page__row">
+                                    <MessageTextOutlineIcon className="org-saved-searches-list-page__row--icon icon-inline" />
+                                    <div>{search.description}</div>
+                                </div>
+                            </Link>
                         ))}
             </div>
         )

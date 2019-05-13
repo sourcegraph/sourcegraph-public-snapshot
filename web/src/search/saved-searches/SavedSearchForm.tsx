@@ -7,22 +7,21 @@ import { Form } from '../../components/Form'
 import { OrgAreaPageProps } from '../../org/area/OrgArea'
 
 export interface SavedQueryFields {
+    id: GQL.ID
     description: string
     query: string
     notify: boolean
     notifySlack: boolean
-    userID: number | null
+    userID: GQL.ID | null
     orgID: GQL.ID | null
     slackWebhookURL: string | null
 }
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
     submitLabel: string
     onSubmit: (fields: SavedQueryFields) => Observable<void>
-    onDidCommit: () => void
 }
 
 interface State {
@@ -38,13 +37,14 @@ export class SavedSearchForm extends React.Component<Props, State> {
         super(props)
         this.state = {
             values: {
+                id: (props.defaultValues && props.defaultValues.id) || '',
                 description: (props.defaultValues && props.defaultValues.description) || '',
                 query: (props.defaultValues && props.defaultValues.query) || '',
                 notify: (props.defaultValues && props.defaultValues.notify) || false,
                 notifySlack: (props.defaultValues && props.defaultValues.notifySlack) || false,
                 userID: (props.defaultValues && props.defaultValues.userID) || null,
                 orgID: (props.defaultValues && props.defaultValues.orgID) || null,
-                slackWebhookURL: null,
+                slackWebhookURL: (props.defaultValues && props.defaultValues.slackWebhookURL) || null,
             },
             isSubmitting: false,
         }
@@ -78,16 +78,20 @@ export class SavedSearchForm extends React.Component<Props, State> {
                 .pipe(
                     catchError(error => {
                         console.error(error)
-                        this.setState({ error })
+                        this.setState({ error, isSubmitting: false })
 
                         return []
                     })
                 )
-                .subscribe(() => this.props.onDidCommit())
+                .subscribe()
         )
     }
 
     public render(): JSX.Element | null {
+        const {
+            values: { query, description, notify, notifySlack, slackWebhookURL },
+        } = this.state
+
         return (
             <div className="saved-search-form">
                 <div className="saved-search-form__header">
@@ -96,40 +100,59 @@ export class SavedSearchForm extends React.Component<Props, State> {
                 </div>
                 <Form onSubmit={this.handleSubmit}>
                     <div className="saved-search-form__input">
-                        <label>Description</label>
+                        <label className="saved-search-form__label">Description:</label>
                         <input
                             type="text"
                             name="description"
                             className="form-control"
                             placeholder="Description"
                             required={true}
+                            value={description}
                             onChange={this.createInputChangeHandler('description')}
                         />
                     </div>
                     <div className="saved-search-form__input">
-                        <label>Query</label>
+                        <label className="saved-search-form__label">Query:</label>
                         <input
                             type="text"
                             name="query"
                             className="form-control"
                             placeholder="Query"
                             required={true}
+                            value={query}
                             onChange={this.createInputChangeHandler('query')}
                         />
                     </div>
                     <div className="saved-search-form__input">
-                        <span>
+                        <label className="saved-search-form__label">Email notifications:</label>
+                        <div>
                             <input
                                 type="checkbox"
                                 name="Notify owner"
                                 className="saved-search-form__checkbox"
-                                required={true}
+                                defaultChecked={notify}
                                 onChange={this.createInputChangeHandler('notify')}
                             />{' '}
-                            Send email notifications to all members of this organization
-                        </span>
+                            <span>Send email notifications to all members of this organization</span>
+                        </div>
                     </div>
-                    <button type="submit" className="btn btn-primary">
+                    {notifySlack && slackWebhookURL && (
+                        <div className="saved-search-form__input">
+                            <label className="saved-search-form__label">Slack notifications:</label>
+                            <input
+                                type="text"
+                                name="Slack webhook URL"
+                                className="form-control"
+                                value={slackWebhookURL}
+                                disabled={true}
+                                onChange={this.createInputChangeHandler('slackWebhookURL')}
+                            />
+                            <label className="small">
+                                Slack webhooks are deprecated and will be removed in a future Sourcegraph version.
+                            </label>
+                        </div>
+                    )}
+                    <button type="submit" className="btn btn-primary saved-search-form__submit-button">
                         {this.props.submitLabel}
                     </button>
                     {this.state.error && !this.state.isSubmitting && (

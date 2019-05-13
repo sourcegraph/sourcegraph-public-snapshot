@@ -136,6 +136,11 @@ func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
 	return NodeToRegistryExtension(r.node)
 }
 
+func (r *nodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
+	n, ok := r.node.(*savedSearchResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.node.(*siteResolver)
 	return n, ok
