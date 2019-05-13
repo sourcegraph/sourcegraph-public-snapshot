@@ -576,42 +576,66 @@ func TestSources_ListRepos(t *testing.T) {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
-					have := rs.Names()
+					haveNames := rs.Names()
+					var haveURIs []string
+					for _, r := range rs {
+						haveURIs = append(haveURIs, r.URI)
+					}
 
-					var want []string
+					var wantNames, wantURIs []string
 					switch s.Kind {
 					case "GITHUB":
-						want = []string{
+						wantNames = []string{
 							"github.com/a/b/c/tsenart/vegeta",
 						}
+						wantURIs = []string{
+							"github.com/tsenart/vegeta",
+						}
 					case "GITLAB":
-						want = []string{
+						wantNames = []string{
 							"gitlab.com/a/b/c/gnachman/iterm2",
 						}
+						wantURIs = []string{
+							"gitlab.com/gnachman/iterm2",
+						}
 					case "BITBUCKETSERVER":
-						want = []string{
+						wantNames = []string{
 							"127.0.0.1/a/b/c/ORG/baz",
 						}
+						wantURIs = []string{
+							"127.0.0.1/ORG/baz",
+						}
 					case "AWSCODECOMMIT":
-						want = []string{
+						wantNames = []string{
 							"a/b/c/empty-repo",
 							"a/b/c/stripe-go",
 							"a/b/c/test2",
 							"a/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
 							"a/b/c/test",
 						}
+						wantURIs = []string{
+							"empty-repo",
+							"stripe-go",
+							"test2",
+							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"test",
+						}
 					case "GITOLITE":
-						want = []string{
+						wantNames = []string{
 							"gitolite.mycorp.com/bar",
 							"gitolite.mycorp.com/baz",
 							"gitolite.mycorp.com/foo",
 							"gitolite.mycorp.com/gitolite-admin",
 							"gitolite.mycorp.com/testing",
 						}
+						wantURIs = wantNames
 					}
 
-					if !reflect.DeepEqual(have, want) {
-						t.Error(cmp.Diff(have, want))
+					if !reflect.DeepEqual(haveNames, wantNames) {
+						t.Error(cmp.Diff(haveNames, wantNames))
+					}
+					if !reflect.DeepEqual(haveURIs, wantURIs) {
+						t.Error(cmp.Diff(haveURIs, wantURIs))
 					}
 				}
 			},

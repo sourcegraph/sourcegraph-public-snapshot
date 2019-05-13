@@ -1,10 +1,3 @@
-const RENDER = jest.fn()
-jest.mock('react-dom', () => ({
-    createPortal: jest.fn(el => el),
-    render: RENDER,
-    unmountComponentAtNode: jest.fn(),
-}))
-
 import { uniqueId } from 'lodash'
 import { from, NEVER, Subject, Subscription } from 'rxjs'
 import { first, skip, take } from 'rxjs/operators'
@@ -35,7 +28,6 @@ describe('text_fields', () => {
         let subscriptions = new Subscription()
 
         afterEach(() => {
-            RENDER.mockClear()
             subscriptions.unsubscribe()
             subscriptions = new Subscription()
         })

@@ -98,6 +98,7 @@ func main() {
 		repos.GitLabSetDefaultProjectQueryMigration(clock),
 		repos.BitbucketServerUsernameMigration(clock), // Needs to run before EnabledStateDeprecationMigration
 		repos.BitbucketServerSetDefaultRepositoryQueryMigration(clock),
+		repos.AWSCodeCommitSetBogusGitCredentialsMigration(clock),
 	}
 
 	var kinds []string
@@ -171,7 +172,7 @@ func main() {
 		diffs := make(chan repos.Diff)
 		syncer = repos.NewSyncer(store, src, diffs, clock)
 
-		log15.Info("starting new syncer", "external service kinds", kinds)
+		log15.Debug("starting new syncer", "external service kinds", kinds)
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval(), kinds...)) }()
 
 		gps := repos.NewGitolitePhabricatorMetadataSyncer(store)

@@ -274,6 +274,7 @@ func githubRepoToRepo(
 	urn := svc.URN()
 	return &Repo{
 		Name:         string(githubRepositoryToRepoPath(conn, ghrepo)),
+		URI:          string(reposource.GitHubRepoName("", conn.originalHostname, ghrepo.NameWithOwner)),
 		ExternalRepo: *github.ExternalRepoSpec(ghrepo, *conn.baseURL),
 		Description:  ghrepo.Description,
 		Fork:         ghrepo.IsFork,
@@ -336,6 +337,7 @@ func gitlabProjectToRepo(
 	urn := svc.URN()
 	return &Repo{
 		Name:         string(gitlabProjectToRepoPath(conn, proj)),
+		URI:          string(reposource.GitLabRepoName("", conn.baseURL.Hostname(), proj.PathWithNamespace)),
 		ExternalRepo: *gitlab.ExternalRepoSpec(proj, *conn.baseURL),
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
@@ -399,6 +401,7 @@ func bitbucketserverRepoToRepo(
 	urn := svc.URN()
 	return &Repo{
 		Name:         string(info.Name),
+		URI:          bitbucketServerRepoURI(conn.config, repo),
 		ExternalRepo: *info.ExternalRepo,
 		Description:  info.Description,
 		Fork:         info.Fork,
@@ -412,6 +415,27 @@ func bitbucketserverRepoToRepo(
 		},
 		Metadata: repo,
 	}
+}
+
+func bitbucketServerRepoURI(config *schema.BitbucketServerConnection, repo *bitbucketserver.Repo) string {
+	// This code follows the same path we generate for Name, except it uses
+	// the default repository pattern.
+	//
+	// TODO(keegancsmith) Cleanup bitbucket code such that we don't need to
+	// constantly parse and normalize the host.
+	host, err := url.Parse(config.Url)
+	if err != nil {
+		// This should never happen
+		panic(fmt.Sprintf("malformed bitbucket config, invalid URL: url=%q error=%s", config.Url, err))
+	}
+	host = NormalizeBaseURL(host)
+
+	project := "UNKNOWN"
+	if repo.Project != nil {
+		project = repo.Project.Key
+	}
+
+	return string(reposource.BitbucketServerRepoName("", host.Hostname(), project, repo.Slug))
 }
 
 // A GitoliteSource yields repositories from a single Gitolite connection configured
@@ -503,8 +527,10 @@ func gitoliteRepoToRepo(
 	conn *schema.GitoliteConnection,
 ) *Repo {
 	urn := svc.URN()
+	name := string(reposource.GitoliteRepoName(conn.Prefix, repo.Name))
 	return &Repo{
-		Name:         string(reposource.GitoliteRepoName(conn.Prefix, repo.Name)),
+		Name:         name,
+		URI:          name,
 		ExternalRepo: *gitolite.ExternalRepoSpec(repo, gitolite.ServiceID(conn.Host)),
 		Enabled:      true,
 		Sources: map[string]*SourceInfo{
@@ -643,6 +669,7 @@ func phabricatorRepoToRepo(
 
 	return &Repo{
 		Name: name,
+		URI:  name,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          repo.PHID,
 			ServiceType: "phabricator",
@@ -740,6 +767,7 @@ func awsCodeCommitRepoToRepo(
 
 	awsRepo := &Repo{
 		Name:         string(awsCodeCommitRepositoryToRepoPath(conn, repo)),
+		URI:          string(reposource.AWSRepoName("", repo.Name)),
 		ExternalRepo: *awscodecommit.ExternalRepoSpec(repo, serviceID),
 		Description:  repo.Description,
 		Enabled:      true,
@@ -844,6 +872,7 @@ func otherRepoFromCloneURL(urn string, u *url.URL) *Repo {
 
 	return &Repo{
 		Name: repoName,
+		URI:  repoName,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
 			ServiceType: "other",

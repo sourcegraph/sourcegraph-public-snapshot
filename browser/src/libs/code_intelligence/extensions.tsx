@@ -19,7 +19,7 @@ import {
     ExtensionsControllerProps,
 } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
@@ -43,13 +43,15 @@ interface InjectProps
     extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL'>,
         ExtensionsControllerProps {
     history: H.History
+    render: typeof render
 }
 
 export const renderCommandPalette = ({
     extensionsController,
     history,
+    render,
     ...props
-}: InjectProps & Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName'>) => (
+}: TelemetryProps & InjectProps & Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName'>) => (
     mount: HTMLElement
 ): void => {
     render(
@@ -59,7 +61,6 @@ export const renderCommandPalette = ({
                 menu={ContributableMenu.CommandPalette}
                 extensionsController={extensionsController}
                 location={history.location}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
             <Notifications extensionsController={extensionsController} />
         </ShortcutProvider>,
@@ -71,6 +72,7 @@ export const renderGlobalDebug = ({
     extensionsController,
     platformContext,
     history,
+    render,
     sourcegraphURL,
 }: InjectProps & { sourcegraphURL: string; showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
     render(

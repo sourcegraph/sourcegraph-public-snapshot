@@ -2,6 +2,7 @@
 /// <reference path="../shared/src/types/terser-webpack-plugin/index.d.ts" />
 
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 // @ts-ignore
@@ -90,31 +91,30 @@ const config: webpack.Configuration = {
                 NODE_ENV: JSON.stringify(mode),
             },
         }),
-        new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
         new MiniCssExtractPlugin({ filename: 'styles/[name].bundle.css' }) as any, // @types package is incorrect
         new OptimizeCssAssetsPlugin(),
-        // Don't build the files referenced by dynamic imports for all the basic languages monaco supports.
-        // They won't ever be loaded at runtime because we only edit JSON
-        new webpack.IgnorePlugin(/^\.\/[^.]+.js$/, /\/node_modules\/monaco-editor\/esm\/vs\/basic-languages\/\w+$/),
-        // Same for "advanced" languages
-        new webpack.IgnorePlugin(/^\.\/.+$/, /\/node_modules\/monaco-editor\/esm\/vs\/language\/(?!json)/),
+        new MonacoWebpackPlugin({
+            languages: ['json'],
+            features: [
+                'bracketMatching',
+                'clipboard',
+                'coreCommands',
+                'cursorUndo',
+                'find',
+                'format',
+                'hover',
+                'inPlaceReplace',
+                'iPadShowKeyboard',
+                'links',
+                'suggest',
+            ],
+        }),
         new webpack.IgnorePlugin(/\.flow$/, /.*/),
     ],
     resolve: {
         extensions: ['.mjs', '.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
-        alias: {
-            ...rxPaths(),
-
-            // HACK: This is required because the codeintellify package has a hardcoded import that assumes that
-            // ../node_modules/@sourcegraph/react-loading-spinner is a valid path. This is not a correct assumption
-            // in general, and it also breaks in this build because CSS imports URLs are not resolved (we would
-            // need to use resolve-url-loader). There are many possible fixes that are more complex, but this hack
-            // works fine for now.
-            '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css': require.resolve(
-                '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css'
-            ),
-        },
+        alias: { ...rxPaths() },
     },
     module: {
         rules: [

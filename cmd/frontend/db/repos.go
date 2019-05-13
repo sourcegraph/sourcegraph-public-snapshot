@@ -61,23 +61,39 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	return repos[0], nil
 }
 
-// GetByName returns the repository with the given name from the database, or an
-// error. If the repo doesn't exist in the DB, then errcode.IsNotFound will
-// return true on the error returned. It does not attempt to look up or update
-// the repository on any external service (such as its code host).
-func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+// GetByName returns the repository with the given nameOrUri from the
+// database, or an error. If we have a match on name and uri, we prefer the
+// match on name.
+//
+// Name is the name for this repository (e.g., "github.com/user/repo"). It is
+// the same as URI, unless the user configures a non-default
+// repositoryPathPattern.
+func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.Repo, error) {
 	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, name)
+		return Mocks.Repos.GetByName(ctx, nameOrURI)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", name))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", nameOrURI))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(repos) == 1 {
+		return repos[0], nil
+	}
+
+	// We don't fetch in the same SQL query since uri is not unique and could
+	// conflict with a name. We prefer returning the matching name if it
+	// exists.
+	repos, err = s.getBySQL(ctx, sqlf.Sprintf("uri=%s LIMIT 1", nameOrURI))
 	if err != nil {
 		return nil, err
 	}
 
 	if len(repos) == 0 {
-		return nil, &repoNotFoundErr{Name: name}
+		return nil, &repoNotFoundErr{Name: nameOrURI}
 	}
+
 	return repos[0], nil
 }
 

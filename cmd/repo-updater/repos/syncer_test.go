@@ -477,7 +477,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil && len(tc.stored) > 0 {
-					if err := st.UpsertRepos(ctx, tc.stored...); err != nil {
+					if err := st.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
 					}
 				}
@@ -485,25 +485,32 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
 				diff, err := syncer.Sync(ctx)
 
-				var want repos.Repos
-				want.Concat(diff.Added, diff.Modified, diff.Unmodified)
-				sort.Sort(want)
-
-				diff.Repos().Apply(repos.Opt.RepoID(0))
-
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
 				}
+
 				if err != nil {
 					return
 				}
 
-				if diff := cmp.Diff(diff, tc.diff); diff != "" {
-					// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
-					t.Fatalf("unexpected diff:\n%s", diff)
+				for _, d := range []struct {
+					name       string
+					have, want repos.Repos
+				}{
+					{"added", diff.Added, tc.diff.Added},
+					{"deleted", diff.Deleted, tc.diff.Deleted},
+					{"modified", diff.Modified, tc.diff.Modified},
+					{"unmodified", diff.Unmodified, tc.diff.Unmodified},
+				} {
+					t.Logf("diff.%s", d.name)
+					repos.Assert.ReposEqual(d.want...)(t, d.have)
 				}
 
 				if st != nil {
+					var want repos.Repos
+					want.Concat(diff.Added, diff.Modified, diff.Unmodified)
+					sort.Sort(want)
+
 					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
 					repos.Assert.ReposEqual(want...)(t, have)
 				}
@@ -547,11 +554,18 @@ func TestDiff(t *testing.T) {
 			diff:  repos.Diff{Deleted: repos.Repos{{ExternalRepo: eid("1")}}},
 		},
 		{
-			name:   "modified",
-			store:  repos.Repos{{ExternalRepo: eid("1"), Description: "foo"}},
-			source: repos.Repos{{ExternalRepo: eid("1"), Description: "bar"}},
+			name: "modified",
+			store: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "foo"},
+				{ExternalRepo: eid("2")},
+			},
+			source: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "bar"},
+				{ExternalRepo: eid("2"), URI: "2"},
+			},
 			diff: repos.Diff{Modified: repos.Repos{
 				{ExternalRepo: eid("1"), Description: "bar"},
+				{ExternalRepo: eid("2"), URI: "2"},
 			}},
 		},
 		{
