@@ -43,7 +43,7 @@ interface State {
  * A page informing the user that an error occurred while trying to display the repository. It
  * attempts to present the user with actions to solve the problem.
  */
-export class RepositoryErrorPage extends React.PureComponent<Props, State> {
+export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
     public state: State = {
         showAdd: false,
     }
@@ -96,11 +96,11 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                 icon={MapSearchIcon}
                 title="Repository not found"
                 subtitle={
-                    <div className="repository-error-page">
+                    <div className="repository-not-found-page">
                         {this.state.showAdd && (
-                            <div className="repository-error-page__section mt-3">
-                                <div className="repository-error-page__section-inner">
-                                    <div className="repository-error-page__section-description">
+                            <div className="repository-not-found-page__section mt-3">
+                                <div className="repository-not-found-page__section-inner">
+                                    <div className="repository-not-found-page__section-description">
                                         {this.state.canAddOrError === undefined && (
                                             <>Checking whether this repository can be added...</>
                                         )}
