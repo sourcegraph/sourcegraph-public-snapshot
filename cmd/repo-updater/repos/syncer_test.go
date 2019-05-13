@@ -554,11 +554,18 @@ func TestDiff(t *testing.T) {
 			diff:  repos.Diff{Deleted: repos.Repos{{ExternalRepo: eid("1")}}},
 		},
 		{
-			name:   "modified",
-			store:  repos.Repos{{ExternalRepo: eid("1"), Description: "foo"}},
-			source: repos.Repos{{ExternalRepo: eid("1"), Description: "bar"}},
+			name: "modified",
+			store: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "foo"},
+				{ExternalRepo: eid("2")},
+			},
+			source: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "bar"},
+				{ExternalRepo: eid("2"), URI: "2"},
+			},
 			diff: repos.Diff{Modified: repos.Repos{
 				{ExternalRepo: eid("1"), Description: "bar"},
+				{ExternalRepo: eid("2"), URI: "2"},
 			}},
 		},
 		{
