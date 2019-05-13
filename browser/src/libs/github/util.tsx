@@ -95,14 +95,15 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
             }
         }
     } else if (isCommit) {
-        const shaContainer = document.querySelectorAll('.sha-block')
-        if (shaContainer && shaContainer.length === 2) {
-            const baseShaEl = shaContainer[0].querySelector('a')
+        // Refined GitHub adds a `.patch-diff-links` element
+        const shaContainers = document.querySelectorAll('.sha-block:not(.patch-diff-links)')
+        if (shaContainers && shaContainers.length === 2) {
+            const baseShaEl = shaContainers[0].querySelector('a')
             if (baseShaEl) {
                 // e.g "https://github.com/gorilla/mux/commit/0b13a922203ebdbfd236c818efcd5ed46097d690"
                 baseCommitID = baseShaEl.href.split('/').slice(-1)[0]
             }
-            const headShaEl = shaContainer[1].querySelector('span.sha') as HTMLElement
+            const headShaEl = shaContainers[1].querySelector('span.sha') as HTMLElement
             if (headShaEl) {
                 headCommitID = headShaEl.innerHTML
             }
