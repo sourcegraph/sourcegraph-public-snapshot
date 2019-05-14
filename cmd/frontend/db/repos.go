@@ -117,7 +117,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 }
 
 const getRepoByQueryFmtstr = `
-SELECT id, name, description, language, created_at,
+SELECT id, name, COALESCE(uri, ''), description, language, created_at,
   updated_at, external_id, external_service_type, external_service_id
 FROM repo
 WHERE deleted_at IS NULL AND enabled = true AND %s`
@@ -138,6 +138,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 		if err := rows.Scan(
 			&repo.ID,
 			&repo.Name,
+			&repo.URI,
 			&repo.Description,
 			&repo.Language,
 			&repo.CreatedAt,
