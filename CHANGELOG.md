@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Kinds of external services in use are now included in [server pings](https://docs.sourcegraph.com/admin/pings).
+- Bitbucket Server: An actual Bitbucket icon is now used for the jump-to-bitbucket action on repository pages instead of the previously generic icon.
 
 ### Removed
 
