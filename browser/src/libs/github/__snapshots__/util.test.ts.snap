@@ -8,6 +8,14 @@ Object {
 }
 `;
 
+exports[`util parseURL() branch name with forward slashes 1`] = `
+Object {
+  "pageType": "blob",
+  "repoName": "ghe.sgdev.org/beyang/mux",
+  "revAndFilePath": "jr/branch/mux.go",
+}
+`;
+
 exports[`util parseURL() commit page 1`] = `
 Object {
   "pageType": "commit",
