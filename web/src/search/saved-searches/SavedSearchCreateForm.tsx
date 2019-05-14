@@ -10,6 +10,7 @@ interface Props extends RouteComponentProps {
     /** The URL path to return to after successfully creating a saved search.  */
     returnPath: string
     authenticatedUser: GQL.IUser | null
+    emailNotificationLabel: string
     orgID?: GQL.ID
     userID?: GQL.ID
 }
@@ -42,12 +43,23 @@ export class SavedSearchCreateForm extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
+        const q = new URLSearchParams(this.props.location.search)
+        let defaultValue: Partial<SavedQueryFields> = {}
+        const query = q.get('query')
+        if (query) {
+            defaultValue = { query }
+        }
+
         return (
             <SavedSearchForm
                 {...this.props}
                 submitLabel="Add saved search"
                 title="Add saved search"
-                defaultValues={this.props.orgID ? { orgID: this.props.orgID } : { userID: this.props.userID }}
+                defaultValues={
+                    this.props.orgID
+                        ? { orgID: this.props.orgID, ...defaultValue }
+                        : { userID: this.props.userID, ...defaultValue }
+                }
                 // tslint:disable-next-line:jsx-no-lambda
                 onSubmit={(fields: SavedQueryFields): Observable<void> => of(this.submits.next(fields))}
             />

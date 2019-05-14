@@ -26,6 +26,7 @@ import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
+import { SavedSearchModal } from '../saved-searches/SavedSearchModal'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
@@ -309,12 +310,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         <ModalContainer
                             onClose={this.props.onSavedQueryModalClose}
                             component={
-                                <SavedQueryCreateForm
+                                <SavedSearchModal
+                                    {...this.props}
+                                    query={parsedQuery}
                                     authenticatedUser={this.props.authenticatedUser}
-                                    values={{ query: parsedQuery || '' }}
                                     onDidCancel={this.props.onSavedQueryModalClose}
-                                    onDidCreate={this.props.onDidCreateSavedQuery}
-                                    settingsCascade={this.props.settingsCascade}
                                 />
                             }
                         />

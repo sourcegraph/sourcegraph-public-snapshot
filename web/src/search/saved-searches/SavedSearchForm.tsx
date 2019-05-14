@@ -1,10 +1,10 @@
+import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
-
 export interface SavedQueryFields {
     id: GQL.ID
     description: string
@@ -17,10 +17,13 @@ export interface SavedQueryFields {
 }
 
 interface Props extends RouteComponentProps<{}> {
+    location: H.Location
+    history: H.History
     authenticatedUser: GQL.IUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
     submitLabel: string
+    emailNotificationLabel: string
     onSubmit: (fields: SavedQueryFields) => Observable<void>
 }
 
@@ -35,6 +38,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
+
         this.state = {
             values: {
                 id: (props.defaultValues && props.defaultValues.id) || '',
@@ -133,7 +137,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                                 defaultChecked={notify}
                                 onChange={this.createInputChangeHandler('notify')}
                             />{' '}
-                            <span>Send email notifications to all members of this organization</span>
+                            <span>{this.props.emailNotificationLabel}</span>
                         </div>
                     </div>
                     {notifySlack && slackWebhookURL && (
