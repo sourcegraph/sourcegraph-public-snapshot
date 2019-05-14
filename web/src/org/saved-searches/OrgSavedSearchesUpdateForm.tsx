@@ -2,7 +2,6 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SavedSearchUpdateForm } from '../../search/saved-searches/SavedSearchUpdateForm'
-import { OrgAreaPageProps } from '../area/OrgArea'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     authenticatedUser: GQL.IUser | null
