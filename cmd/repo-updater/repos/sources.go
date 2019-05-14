@@ -3,9 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -14,10 +12,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -185,111 +180,6 @@ func group(srcs []Source) map[string]Sources {
 	}
 
 	return groups
-}
-
-// A GitoliteSource yields repositories from a single Gitolite connection configured
-// in Sourcegraph via the external services configuration.
-type GitoliteSource struct {
-	svc  *ExternalService
-	conn *schema.GitoliteConnection
-	// We ask gitserver to talk to gitolite because it holds the ssh keys
-	// required for authentication.
-	cli       *gitserver.Client
-	blacklist *regexp.Regexp
-	exclude   map[string]bool
-}
-
-// NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
-	var c schema.GitoliteConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
-	}
-
-	hc, err := cf.Doer(func(c *http.Client) error {
-		if tr, ok := c.Transport.(*http.Transport); ok {
-			tr.MaxIdleConnsPerHost = 500
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	var blacklist *regexp.Regexp
-	if c.Blacklist != "" {
-		if blacklist, err = regexp.Compile(c.Blacklist); err != nil {
-			return nil, err
-		}
-	}
-
-	exclude := make(map[string]bool, len(c.Exclude))
-	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[r.Name] = true
-		}
-	}
-
-	return &GitoliteSource{
-		svc:       svc,
-		conn:      &c,
-		cli:       gitserver.NewClient(hc),
-		blacklist: blacklist,
-		exclude:   exclude,
-	}, nil
-}
-
-// ListRepos returns all Gitolite repositories accessible to all connections configured
-// in Sourcegraph via the external services configuration.
-func (s *GitoliteSource) ListRepos(ctx context.Context) ([]*Repo, error) {
-	all, err := s.cli.ListGitolite(ctx, s.conn.Host)
-	if err != nil {
-		return nil, err
-	}
-
-	repos := make([]*Repo, 0, len(all))
-	for _, r := range all {
-		repo := gitoliteRepoToRepo(s.svc, r, s.conn)
-		if !s.excludes(r, repo) {
-			repos = append(repos, repo)
-		}
-	}
-
-	return repos, nil
-}
-
-// ExternalServices returns a singleton slice containing the external service.
-func (s GitoliteSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
-}
-
-func (s GitoliteSource) excludes(gr *gitolite.Repo, r *Repo) bool {
-	return s.exclude[gr.Name] ||
-		strings.ContainsAny(r.Name, "\\^$|()[]*?{},") ||
-		(s.blacklist != nil && s.blacklist.MatchString(r.Name))
-}
-
-func gitoliteRepoToRepo(
-	svc *ExternalService,
-	repo *gitolite.Repo,
-	conn *schema.GitoliteConnection,
-) *Repo {
-	urn := svc.URN()
-	name := string(reposource.GitoliteRepoName(conn.Prefix, repo.Name))
-	return &Repo{
-		Name:         name,
-		URI:          name,
-		ExternalRepo: *gitolite.ExternalRepoSpec(repo, gitolite.ServiceID(conn.Host)),
-		Enabled:      true,
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: repo.URL,
-			},
-		},
-		Metadata: repo,
-	}
 }
 
 // A PhabricatorSource yields repositories from a single Phabricator connection configured
