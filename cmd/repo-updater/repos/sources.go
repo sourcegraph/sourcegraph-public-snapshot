@@ -61,15 +61,6 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 			srcs = append(srcs, src)
 		}
 
-		if !includesGitHubDotComSource(srcs) {
-			// add a GitHub.com source by default, to support navigating to URL
-			// paths like /github.com/foo/bar to auto-add that repository. This
-			// source returns nothing for ListRepos. However, in the future we
-			// intend to use it in repoLookup.
-			src, err := NewGithubDotComSource(cf)
-			srcs, errs = append(srcs, src), multierror.Append(errs, err)
-		}
-
 		return srcs, errs.ErrorOrNil()
 	}
 }
@@ -94,21 +85,6 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
-}
-
-func includesGitHubDotComSource(srcs []Source) bool {
-	for _, svc := range Sources(srcs).ExternalServices() {
-		if !strings.EqualFold(svc.Kind, "GITHUB") {
-			continue
-		} else if cfg, err := svc.Configuration(); err != nil {
-			continue
-		} else if u, err := url.Parse(cfg.(*schema.GitHubConnection).Url); err != nil {
-			continue
-		} else if strings.HasSuffix(u.Hostname(), "github.com") {
-			return true
-		}
-	}
-	return false
 }
 
 // sourceTimeout is the default timeout to use on Source.ListRepos

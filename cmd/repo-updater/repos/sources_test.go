@@ -68,8 +68,6 @@ func TestNewSourcer(t *testing.T) {
 		UpdatedAt:   now,
 	}
 
-	githubDotCom := ExternalService{Kind: "GITHUB"}
-
 	gitlab := ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github - Test",
@@ -103,12 +101,6 @@ func TestNewSourcer(t *testing.T) {
 			name: "deleted external services are excluded",
 			svcs: ExternalServices{&github, &gitlab},
 			srcs: sources(&github),
-			err:  "<nil>",
-		},
-		{
-			name: "github.com is added when not existent",
-			svcs: ExternalServices{},
-			srcs: sources(&githubDotCom),
 			err:  "<nil>",
 		},
 	} {
