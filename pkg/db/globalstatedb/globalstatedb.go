@@ -37,7 +37,7 @@ func Get(ctx context.Context) (*State, error) {
 }
 
 func SiteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT initialized FROM global_state ORDER BY site_id LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, `SELECT initialized FROM global_state LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
@@ -66,7 +66,7 @@ func EnsureInitialized(ctx context.Context, dbh interface {
 
 	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
 	// would see this initialized value as false and then set it to true below.
-	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM global_state ORDER BY site_id FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM global_state FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		return false, err
 	}
 
@@ -79,7 +79,7 @@ func EnsureInitialized(ctx context.Context, dbh interface {
 
 func getConfiguration(ctx context.Context) (*State, error) {
 	configuration := &State{}
-	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM global_state ORDER BY site_id LIMIT 1").Scan(
+	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM global_state LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.Initialized,
 	)
@@ -111,8 +111,8 @@ func tryInsertNew(ctx context.Context, dbh interface {
 	) values(
 		$1,
 		EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL),
-		(SELECT COALESCE((SELECT mgmt_password_plaintext FROM global_state ORDER BY site_id LIMIT 1), '')),
-		(SELECT COALESCE((SELECT mgmt_password_bcrypt FROM global_state ORDER BY site_id LIMIT 1), ''))
+		(SELECT COALESCE((SELECT mgmt_password_plaintext FROM global_state LIMIT 1), '')),
+		(SELECT COALESCE((SELECT mgmt_password_bcrypt FROM global_state LIMIT 1), ''))
 	);`, siteID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
@@ -277,7 +277,7 @@ func getManagementConsoleState(ctx context.Context) (*ManagementConsoleState, er
 
 func doGetManagementConsoleState(ctx context.Context, tx *sql.Tx) (*ManagementConsoleState, error) {
 	mgmt := &ManagementConsoleState{}
-	err := dbconn.Global.QueryRowContext(ctx, "SELECT mgmt_password_plaintext, mgmt_password_bcrypt FROM global_state ORDER BY site_id LIMIT 1").Scan(
+	err := dbconn.Global.QueryRowContext(ctx, "SELECT mgmt_password_plaintext, mgmt_password_bcrypt FROM global_state LIMIT 1").Scan(
 		&mgmt.PasswordPlaintext,
 		&mgmt.PasswordBcrypt,
 	)
