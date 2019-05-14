@@ -107,9 +107,18 @@ func main() {
 		}
 	}
 
-	diffs := make(chan repos.Diff)
-	syncer := repos.NewSyncer(store, src, diffs, clock)
-	server := repoupdater.Server{Store: store, Syncer: syncer}
+	server := repoupdater.Server{Store: store}
+
+	var handler http.Handler
+	{
+		m := repoupdater.NewHandlerMetrics()
+		m.ServeHTTP.MustRegister(prometheus.DefaultRegisterer)
+		handler = repoupdater.ObservedHandler(
+			log15.Root(),
+			m,
+			opentracing.GlobalTracer(),
+		)(server.Handler())
+	}
 
 	if envvar.SourcegraphDotComMode() {
 		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
@@ -140,58 +149,52 @@ func main() {
 			log.Fatalf("failed to create Github.com source: %v", err)
 		}
 		server.GithubDotComSource = githubDotComSrc
-	}
 
-	var handler http.Handler
-	{
-		m := repoupdater.NewHandlerMetrics()
-		m.ServeHTTP.MustRegister(prometheus.DefaultRegisterer)
-		handler = repoupdater.ObservedHandler(
-			log15.Root(),
-			m,
-			opentracing.GlobalTracer(),
-		)(server.Handler())
-	}
+	} else {
+		diffs := make(chan repos.Diff)
+		syncer := repos.NewSyncer(store, src, diffs, clock)
+		server.Syncer = syncer
 
-	go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
+		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
 
-	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
+		gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
 
-	// Start new repo syncer updates scheduler relay thread.
-	go func() {
-		for diff := range diffs {
-			if len(diff.Added) > 0 {
-				log15.Debug("syncer.sync", "diff.added", diff.Added.Names())
-			}
-
-			if len(diff.Modified) > 0 {
-				log15.Debug("syncer.sync", "diff.modified", diff.Modified.Names())
-			}
-
-			if len(diff.Deleted) > 0 {
-				log15.Debug("syncer.sync", "diff.deleted", diff.Deleted.Names())
-			}
-
-			rs := diff.Repos()
-			if !conf.Get().DisableAutoGitUpdates {
-				repos.Scheduler.Update(rs...)
-			}
-
-			go func() {
-				if err := gps.Sync(ctx, rs); err != nil {
-					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
+		// Start new repo syncer updates scheduler relay thread.
+		go func() {
+			for diff := range diffs {
+				if len(diff.Added) > 0 {
+					log15.Debug("syncer.sync", "diff.added", diff.Added.Names())
 				}
-			}()
-		}
-	}()
 
-	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
+				if len(diff.Modified) > 0 {
+					log15.Debug("syncer.sync", "diff.modified", diff.Modified.Names())
+				}
+
+				if len(diff.Deleted) > 0 {
+					log15.Debug("syncer.sync", "diff.deleted", diff.Deleted.Names())
+				}
+
+				rs := diff.Repos()
+				if !conf.Get().DisableAutoGitUpdates {
+					repos.Scheduler.Update(rs...)
+				}
+
+				go func() {
+					if err := gps.Sync(ctx, rs); err != nil {
+						log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
+					}
+				}()
+			}
+		}()
+
+		go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
+
+		// git-server repos purging thread
+		go repos.RunRepositoryPurgeWorker(ctx)
+	}
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx)
-
-	// git-server repos purging thread
-	go repos.RunRepositoryPurgeWorker(ctx)
 
 	host := ""
 	if env.InsecureDev {

@@ -270,13 +270,20 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if s.Syncer == nil {
+		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+			ExternalService: req.ExternalService,
+			Error:           errors.New("Syncer is not enabled"),
+		})
+		return
+	}
+
 	_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
 	switch {
 	case err == nil:
 		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
-		_ = json.NewEncoder(w).Encode(&protocol.ExternalServiceSyncResult{
+		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
 			ExternalService: req.ExternalService,
-			Error:           err,
 		})
 	default:
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
