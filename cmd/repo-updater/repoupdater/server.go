@@ -330,12 +330,13 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
+	var repo *repos.Repo
 	result = &protocol.RepoLookupResult{}
 
 	if s.shouldGetGithubDotComRepo(args) {
 		// This is ugly jeez
 		nameWithOwner := strings.Split(string(args.Repo), "github.com/")[1]
-		repo, err := s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
+		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
 			if github.IsNotFound(err) {
 				result.ErrorNotFound = true
@@ -348,26 +349,27 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+			Names: []string{string(args.Repo)},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(repos) != 1 {
+			result.ErrorNotFound = true
+			return result, nil
+		}
+		repo = repos[0]
 	}
 
-	repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-		Names: []string{string(args.Repo)},
-	})
+	repoInfo, err := newRepoInfo(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(repos) != 1 {
-		result.ErrorNotFound = true
-		return result, nil
-	}
-
-	repo, err := newRepoInfo(repos[0])
-	if err != nil {
-		return nil, err
-	}
-
-	result.Repo = repo
+	result.Repo = repoInfo
 	return result, nil
 }
 
