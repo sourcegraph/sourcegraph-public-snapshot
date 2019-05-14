@@ -629,12 +629,6 @@ func TestRepoLookup(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
-
-	store := new(repos.FakeStore)
-	must(store.UpsertRepos(ctx, githubRepository))
-	must(store.UpsertRepos(ctx, awsCodeCommitRepository))
-
 	testCases := []struct {
 		name               string
 		args               protocol.RepoLookupArgs

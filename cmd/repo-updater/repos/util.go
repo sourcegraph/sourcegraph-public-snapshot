@@ -45,7 +45,6 @@ func NewHTTPClientFactory() *httpcli.Factory {
 	)
 }
 
-// cachedRoundTripper wraps another http.RoundTripper with caching.
 // newCertPool returns an x509.CertPool with the given certificates added to it.
 func newCertPool(certs ...string) (*x509.CertPool, error) {
 	pool := x509.NewCertPool()
