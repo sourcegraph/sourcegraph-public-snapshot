@@ -808,7 +808,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						ServiceID:   "https://github.com/",
 					},
 					Sources: map[string]*SourceInfo{
-						"extsvc:github:0": &SourceInfo{
+						"extsvc:github:0": {
 							ID:       "extsvc:github:0",
 							CloneURL: "https://github.com/sourcegraph/sourcegraph",
 						},
