@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
