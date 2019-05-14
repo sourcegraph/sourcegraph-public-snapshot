@@ -334,8 +334,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	result = &protocol.RepoLookupResult{}
 
 	if s.shouldGetGithubDotComRepo(args) {
-		// This is ugly jeez
-		nameWithOwner := strings.Split(string(args.Repo), "github.com/")[1]
+		nameWithOwner := strings.TrimPrefix(string(args.Repo), "github.com/")
 		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
 			if github.IsNotFound(err) {
@@ -387,10 +386,7 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 		return false
 	}
 
-	nameWithOwner := strings.Split(repoName, "github.com/")[1]
-
-	_, _, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
-	return err == nil
+	return true
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
