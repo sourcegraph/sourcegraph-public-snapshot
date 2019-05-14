@@ -41,7 +41,7 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		TargetRepo: &types.DiscussionThreadTargetRepo{
+		Target: &types.DiscussionThreadTargetRepo{
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
@@ -65,10 +65,10 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 		t.Logf("got thread AuthorUserID:  %v", gotThread.AuthorUserID)
 		t.Fatalf("want thread AuthorUserID: %v", thread.AuthorUserID)
 	}
-	thread.TargetRepo.ThreadID = gotThread.TargetRepo.ThreadID
-	if !reflect.DeepEqual(gotThread.TargetRepo, thread.TargetRepo) {
-		t.Logf("got thread TargetRepo:  %v", spew.Sdump(gotThread.TargetRepo))
-		t.Fatalf("want thread TargetRepo: %v", spew.Sdump(thread.TargetRepo))
+	thread.Target.ThreadID = gotThread.Target.ThreadID
+	if !reflect.DeepEqual(gotThread.Target, thread.Target) {
+		t.Logf("got thread Target:  %v", spew.Sdump(gotThread.Target))
+		t.Fatalf("want thread Target: %v", spew.Sdump(thread.Target))
 	}
 }
 
@@ -101,7 +101,7 @@ func TestDiscussionThreads_Update(t *testing.T) {
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		TargetRepo: &types.DiscussionThreadTargetRepo{
+		Target: &types.DiscussionThreadTargetRepo{
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
@@ -158,7 +158,7 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		TargetRepo: &types.DiscussionThreadTargetRepo{
+		Target: &types.DiscussionThreadTargetRepo{
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
@@ -222,7 +222,7 @@ func TestDiscussionThreads_List(t *testing.T) {
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		TargetRepo: &types.DiscussionThreadTargetRepo{
+		Target: &types.DiscussionThreadTargetRepo{
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
@@ -286,7 +286,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		TargetRepo: &types.DiscussionThreadTargetRepo{
+		Target: &types.DiscussionThreadTargetRepo{
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),

@@ -73,7 +73,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
         return createThread({
             title,
             contents,
-            targetRepo: {
+            target: {
                 repositoryID: this.props.repoID,
                 path: this.props.filePath,
                 branch: this.props.rev,

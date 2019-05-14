@@ -466,7 +466,7 @@ input DiscussionThreadCreateInput {
 
     # The target repo of this discussion thread. This is nullable so that in
     # the future more target types may be added.
-    targetRepo: DiscussionThreadTargetRepoInput
+    target: DiscussionThreadTargetRepoInput
 }
 
 # Describes an update mutation to an existing thread.
