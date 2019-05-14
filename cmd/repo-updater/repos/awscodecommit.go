@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/defaults"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	"github.com/aws/aws-sdk-go-v2/service/sts"
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -32,9 +29,6 @@ type AWSCodeCommitSource struct {
 	awsPartition endpoints.Partition // "aws", "aws-cn", "aws-us-gov"
 	awsRegion    endpoints.Region
 	client       *awscodecommit.Client
-
-	mu           sync.Mutex
-	awsAccountID string
 
 	exclude map[string]bool
 }
@@ -142,39 +136,6 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*Repo, erro
 		},
 		Metadata: r,
 	}, nil
-}
-
-func (s *AWSCodeCommitSource) getServiceID() (string, error) {
-	awsAccountID, err := s.tryPopulateAWSAccountID()
-	if err != nil {
-		return "", err
-	}
-	if awsAccountID == "" {
-		return "", nil
-	}
-	return awscodecommit.ServiceID(s.awsPartition, s.awsRegion, s.awsAccountID), nil
-}
-
-func (s *AWSCodeCommitSource) tryPopulateAWSAccountID() (string, error) {
-	s.mu.Lock()
-	awsAccountID := s.awsAccountID
-	s.mu.Unlock()
-	if awsAccountID != "" {
-		return awsAccountID, nil
-	}
-
-	result, err := sts.New(s.awsConfig).GetCallerIdentityRequest(&sts.GetCallerIdentityInput{}).Send()
-	if err != nil {
-		return "", err
-	}
-	if result.Account == nil {
-		return "", errors.New("AWS STS GetCallerIdentity unexpectedly returned empty AWS account ID")
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.awsAccountID = *result.Account
-	return s.awsAccountID, nil
 }
 
 // authenticatedRemoteURL returns the repository's Git remote URL with the

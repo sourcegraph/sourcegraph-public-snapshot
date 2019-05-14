@@ -193,18 +193,6 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo) *Repo {
 	}
 }
 
-// bitbucketServerRepoInfoSuffix matches out {projectKey}/{repoSlug} at the
-// end of a string.
-var bitbucketServerRepoInfoSuffix = regexp.MustCompile(`([^/]+)/([^/]+)/?$`)
-
-// rateLimitReservationSize is the minimum number of requests (tokens in the bucket)
-// that must be available for us to perform work without waiting first.
-//
-// We choose this number because each reservation lets us list 100
-// repositories, so having at least 250 lets us list 20,000 repositories and
-// still have 50 API requests left-over to serve users.
-const rateLimitReservationSize = 250
-
 func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 	name := r.Slug
 	if r.Project != nil {
