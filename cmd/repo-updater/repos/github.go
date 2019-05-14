@@ -581,10 +581,6 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) ([]*github.R
 }
 
 func (c *githubConnection) getRepository(ctx context.Context, nameWithOwner string) (*github.Repository, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
 	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Invalid GitHub repository: nameWithOwner="+nameWithOwner)
