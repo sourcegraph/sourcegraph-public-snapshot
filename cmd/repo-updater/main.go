@@ -96,7 +96,7 @@ func main() {
 		var err error
 		githubDotComSrc, err = repos.NewGithubDotComSource(cf)
 		if err != nil {
-			log.Fatalf("failed to Github.com source: %v", err)
+			log.Fatalf("failed to create Github.com source: %v", err)
 		}
 	}
 
