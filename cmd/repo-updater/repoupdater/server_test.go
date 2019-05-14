@@ -663,6 +663,7 @@ func TestRepoLookup(t *testing.T) {
 		want                  *protocol.RepoLookupResult
 		sourcegraphDotComMode bool
 		githubDotComSource    *internalGithubDotComSourceFake
+		storeAssertion        func(context.Context, *testing.T, *repos.FakeStore)
 		err                   string
 	}{
 		{
@@ -724,6 +725,7 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
+			reposInStore:          []*repos.Repo{},
 			sourcegraphDotComMode: true,
 			githubDotComSource: &internalGithubDotComSourceFake{
 				Repo: githubRepository,
@@ -744,6 +746,20 @@ func TestRepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
+			storeAssertion: func(ctx context.Context, t *testing.T, s *repos.FakeStore) {
+				t.Helper()
+
+				rs, err := s.ListRepos(ctx, repos.StoreListReposArgs{Kinds: []string{"github"}})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(rs) != 1 {
+					t.Fatalf("repo not upserted. repos in store=%d", len(rs))
+				}
+				if have, want := rs[0].Name, "github.com/foo/bar"; have != want {
+					t.Fatalf("wrong repo upserted. have=%s, want=%s", have, want)
+				}
+			},
 		},
 		{
 			name: "not found - GitHub.com on Sourcegraph.com",
@@ -756,6 +772,17 @@ func TestRepoLookup(t *testing.T) {
 			},
 			want: &protocol.RepoLookupResult{ErrorNotFound: true},
 			err:  "repository not found",
+			storeAssertion: func(ctx context.Context, t *testing.T, s *repos.FakeStore) {
+				t.Helper()
+
+				rs, err := s.ListRepos(ctx, repos.StoreListReposArgs{Kinds: []string{"github"}})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(rs) != 0 {
+					t.Fatalf("repos upserted. repos in store=%d", len(rs))
+				}
+			},
 		},
 		{
 			name: "not found - AWS CodeCommit on Sourcegraph.com",
