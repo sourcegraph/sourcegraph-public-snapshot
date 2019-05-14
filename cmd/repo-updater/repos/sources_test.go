@@ -20,6 +20,7 @@ import (
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
@@ -67,8 +68,6 @@ func TestNewSourcer(t *testing.T) {
 		UpdatedAt:   now,
 	}
 
-	githubDotCom := ExternalService{Kind: "GITHUB"}
-
 	gitlab := ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github - Test",
@@ -102,12 +101,6 @@ func TestNewSourcer(t *testing.T) {
 			name: "deleted external services are excluded",
 			svcs: ExternalServices{&github, &gitlab},
 			srcs: sources(&github),
-			err:  "<nil>",
-		},
-		{
-			name: "github.com is added when not existent",
-			svcs: ExternalServices{},
-			srcs: sources(&githubDotCom),
 			err:  "<nil>",
 		},
 	} {
@@ -576,42 +569,66 @@ func TestSources_ListRepos(t *testing.T) {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
-					have := rs.Names()
+					haveNames := rs.Names()
+					var haveURIs []string
+					for _, r := range rs {
+						haveURIs = append(haveURIs, r.URI)
+					}
 
-					var want []string
+					var wantNames, wantURIs []string
 					switch s.Kind {
 					case "GITHUB":
-						want = []string{
+						wantNames = []string{
 							"github.com/a/b/c/tsenart/vegeta",
 						}
+						wantURIs = []string{
+							"github.com/tsenart/vegeta",
+						}
 					case "GITLAB":
-						want = []string{
+						wantNames = []string{
 							"gitlab.com/a/b/c/gnachman/iterm2",
 						}
+						wantURIs = []string{
+							"gitlab.com/gnachman/iterm2",
+						}
 					case "BITBUCKETSERVER":
-						want = []string{
+						wantNames = []string{
 							"127.0.0.1/a/b/c/ORG/baz",
 						}
+						wantURIs = []string{
+							"127.0.0.1/ORG/baz",
+						}
 					case "AWSCODECOMMIT":
-						want = []string{
+						wantNames = []string{
 							"a/b/c/empty-repo",
 							"a/b/c/stripe-go",
 							"a/b/c/test2",
 							"a/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
 							"a/b/c/test",
 						}
+						wantURIs = []string{
+							"empty-repo",
+							"stripe-go",
+							"test2",
+							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"test",
+						}
 					case "GITOLITE":
-						want = []string{
+						wantNames = []string{
 							"gitolite.mycorp.com/bar",
 							"gitolite.mycorp.com/baz",
 							"gitolite.mycorp.com/foo",
 							"gitolite.mycorp.com/gitolite-admin",
 							"gitolite.mycorp.com/testing",
 						}
+						wantURIs = wantNames
 					}
 
-					if !reflect.DeepEqual(have, want) {
-						t.Error(cmp.Diff(have, want))
+					if !reflect.DeepEqual(haveNames, wantNames) {
+						t.Error(cmp.Diff(haveNames, wantNames))
+					}
+					if !reflect.DeepEqual(haveURIs, wantURIs) {
+						t.Error(cmp.Diff(haveURIs, wantURIs))
 					}
 				}
 			},
@@ -754,6 +771,89 @@ func TestSources_ListRepos(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestGithubSource_GetRepo(t *testing.T) {
+	testCases := []struct {
+		name          string
+		nameWithOwner string
+		assert        func(*testing.T, *Repo)
+		err           string
+	}{
+		{
+			name:          "invalid name",
+			nameWithOwner: "thisIsNotANameWithOwner",
+			err:           `Invalid GitHub repository: nameWithOwner=thisIsNotANameWithOwner: invalid GitHub repository "owner/name" string: "thisIsNotANameWithOwner"`,
+		},
+		{
+			name:          "not found",
+			nameWithOwner: "foobarfoobarfoobar/please-let-this-not-exist",
+			err:           `request to http://github-proxy/repos/foobarfoobarfoobar/please-let-this-not-exist returned status 404: Not Found`,
+		},
+		{
+			name:          "found",
+			nameWithOwner: "sourcegraph/sourcegraph",
+			assert: func(t *testing.T, have *Repo) {
+				t.Helper()
+
+				want := &Repo{
+					Name:        "github.com/sourcegraph/sourcegraph",
+					Description: "Code search and navigation tool (self-hosted)",
+					Enabled:     true,
+					URI:         "github.com/sourcegraph/sourcegraph",
+					ExternalRepo: api.ExternalRepoSpec{
+						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						ServiceType: "github",
+						ServiceID:   "https://github.com/",
+					},
+					Sources: map[string]*SourceInfo{
+						"extsvc:github:0": {
+							ID:       "extsvc:github:0",
+							CloneURL: "https://github.com/sourcegraph/sourcegraph",
+						},
+					},
+					Metadata: &github.Repository{
+						ID:            "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						DatabaseID:    41288708,
+						NameWithOwner: "sourcegraph/sourcegraph",
+						Description:   "Code search and navigation tool (self-hosted)",
+						URL:           "https://github.com/sourcegraph/sourcegraph",
+					},
+				}
+
+				if !reflect.DeepEqual(have, want) {
+					t.Errorf("response: %s", cmp.Diff(have, want))
+				}
+			},
+			err: "<nil>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GITHUB-DOT-COM/" + tc.name
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			githubSrc, err := NewGithubDotComSource(cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repo, err := githubSrc.GetRepo(context.Background(), tc.nameWithOwner)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repo)
+			}
+		})
 	}
 }
 

@@ -220,5 +220,6 @@ var (
 func init() {
 	prometheus.MustRegister(parsing)
 	prometheus.MustRegister(parseQueueSize)
+	prometheus.MustRegister(parseQueueTimeouts)
 	prometheus.MustRegister(parseFailed)
 }

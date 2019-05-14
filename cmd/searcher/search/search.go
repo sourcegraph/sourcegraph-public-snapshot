@@ -262,6 +262,8 @@ var (
 
 func init() {
 	prometheus.MustRegister(running)
+	prometheus.MustRegister(archiveSize)
+	prometheus.MustRegister(archiveFiles)
 	prometheus.MustRegister(requestTotal)
 }
 

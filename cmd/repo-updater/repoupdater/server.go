@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -29,8 +28,8 @@ type Server struct {
 	Kinds []string
 	repos.Store
 	*repos.Syncer
-	InternalAPI interface {
-		ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error
+	GithubDotComSource interface {
+		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
 	}
 }
 
@@ -330,87 +329,63 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	type getfn struct {
-		kind string
-		fn   func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
-	}
-
-	var fns []getfn
-
-	if s.Syncer != nil {
-		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-				Names: []string{string(args.Repo)},
-			})
-
-			if err != nil || len(repos) != 1 {
-				return nil, false, err
-			}
-
-			info, err := newRepoInfo(repos[0])
-			if err != nil {
-				return nil, false, err
-			}
-
-			return info, true, nil
-		}})
-	} else {
-		fns = append(fns,
-			getfn{"GITHUB", repos.GetGitHubRepository},
-			getfn{"GITLAB", repos.GetGitLabRepository},
-			getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
-			getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
-			getfn{"GITOLITE", repos.GetGitoliteRepository},
-		)
-	}
-
-	var (
-		repo          *protocol.RepoInfo
-		authoritative bool
-	)
-
-	// Find the authoritative source of the repository being looked up.
-	for _, get := range fns {
-		if repo, authoritative, err = get.fn(ctx, args); authoritative {
-			log15.Debug("repoupdater.lookup-repo", "source", get.kind)
-			tr.LazyPrintf("authorative: %s", get.kind)
-			break
-		}
-	}
-
+	var repo *repos.Repo
 	result = &protocol.RepoLookupResult{}
-	if authoritative {
-		if isNotFound(err) {
+
+	if s.shouldGetGithubDotComRepo(args) {
+		nameWithOwner := strings.TrimPrefix(string(args.Repo), "github.com/")
+		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
+		if err != nil {
+			if github.IsNotFound(err) {
+				result.ErrorNotFound = true
+				return result, nil
+			}
+			if isUnauthorized(err) {
+				result.ErrorUnauthorized = true
+				return result, nil
+			}
+			if isTemporarilyUnavailable(err) {
+				result.ErrorTemporarilyUnavailable = true
+				return result, nil
+			}
+			return nil, err
+		}
+
+		err = s.Store.UpsertRepos(ctx, repo)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+			Names: []string{string(args.Repo)},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(repos) != 1 {
 			result.ErrorNotFound = true
-			err = nil
-		} else if isUnauthorized(err) {
-			result.ErrorUnauthorized = true
-			err = nil
-		} else if isTemporarilyUnavailable(err) {
-			result.ErrorTemporarilyUnavailable = true
-			err = nil
+			return result, nil
 		}
-		if err != nil {
-			return nil, err
-		}
-		if repo != nil {
-			go func() {
-				err := s.InternalAPI.ReposUpdateMetadata(context.Background(), repo.Name, repo.Description, repo.Fork, repo.Archived)
-				if err != nil {
-					log15.Warn("Error updating repo metadata", "repo", repo.Name, "err", err)
-				}
-			}()
-		}
-		if err != nil {
-			return nil, err
-		}
-		result.Repo = repo
-		return result, nil
+		repo = repos[0]
 	}
 
-	// No configured code hosts are authoritative for this repository.
-	result.ErrorNotFound = true
+	repoInfo, err := newRepoInfo(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Repo = repoInfo
 	return result, nil
+}
+
+func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
+	if s.GithubDotComSource == nil {
+		return false
+	}
+
+	repoName := strings.ToLower(string(args.Repo))
+	return strings.HasPrefix(repoName, "github.com/")
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
@@ -482,27 +457,15 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 	return &info, nil
 }
 
-func isNotFound(err error) bool {
-	// TODO(sqs): reduce duplication
-	return github.IsNotFound(err) || gitlab.IsNotFound(err) || awscodecommit.IsNotFound(err) || errcode.IsNotFound(err)
+func pathAppend(base, p string) string {
+	return strings.TrimRight(base, "/") + p
 }
 
 func isUnauthorized(err error) bool {
-	// TODO(sqs): reduce duplication
-	if awscodecommit.IsUnauthorized(err) || errcode.IsUnauthorized(err) {
-		return true
-	}
 	code := github.HTTPErrorCode(err)
-	if code == 0 {
-		code = gitlab.HTTPErrorCode(err)
-	}
 	return code == http.StatusUnauthorized || code == http.StatusForbidden
 }
 
 func isTemporarilyUnavailable(err error) bool {
 	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
-}
-
-func pathAppend(base, p string) string {
-	return strings.TrimRight(base, "/") + p
 }

@@ -157,27 +157,6 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
     )
 }
 
-/**
- * Checks if there are any repositories that require enable/disable state.
- *
- * @return Observable that emits a boolean allowEnableDisable
- */
-export function fetchAllowEnableDisable(): Observable<boolean> {
-    return queryGraphQL(
-        gql`
-            query AllowEnableDisable {
-                internal {
-                    allowEnableDisable
-                }
-            }
-        `,
-        {}
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.internal.allowEnableDisable)
-    )
-}
-
 export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
     // Poll if there are repositories that are being cloned.
     //
@@ -211,23 +190,6 @@ export function setRepositoryEnabled(repository: GQL.ID, enabled: boolean): Obse
     )
 }
 
-export function setAllRepositoriesEnabled(enabled: boolean): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation SetAllRepositoriesEnabled($enabled: Boolean!) {
-                setAllRepositoriesEnabled(enabled: $enabled) {
-                    alwaysNil
-                }
-            }
-        `,
-        { enabled }
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
-    )
-}
-
 export function updateMirrorRepository(args: { repository: GQL.ID }): Observable<void> {
     return mutateGraphQL(
         gql`
@@ -238,22 +200,6 @@ export function updateMirrorRepository(args: { repository: GQL.ID }): Observable
             }
         `,
         args
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
-    )
-}
-
-export function updateAllMirrorRepositories(): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation UpdateAllMirrorRepositories() {
-                updateAllMirrorRepositories() {
-                    alwaysNil
-                }
-            }
-        `
     ).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),

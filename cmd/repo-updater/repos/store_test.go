@@ -348,6 +348,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 		github := repos.Repo{
 			Name:        "github.com/foo/bar",
+			URI:         "github.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
 			Enabled:     true,
@@ -368,6 +369,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 		gitlab := repos.Repo{
 			Name:        "gitlab.com/foo/bar",
+			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
 			Enabled:     true,
@@ -388,6 +390,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 		bitbucketServer := repos.Repo{
 			Name:        "bitbucketserver.mycorp.com/foo/bar",
+			URI:         "bitbucketserver.mycorp.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
 			Enabled:     true,
@@ -408,6 +411,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 		awsCodeCommit := repos.Repo{
 			Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+			URI:         "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 			Description: "The description",
 			Language:    "barlang",
 			Enabled:     true,
@@ -428,6 +432,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 		otherRepo := repos.Repo{
 			Name: "git-host.com/org/foo",
+			URI:  "git-host.com/org/foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "git-host.com/org/foo",
 				ServiceID:   "https://git-host.com/",
@@ -443,6 +448,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 		gitoliteRepo := repos.Repo{
 			Name:      "gitolite.mycorp.com/bar",
+			URI:       "gitolite.mycorp.com/bar",
 			Enabled:   true,
 			CreatedAt: now,
 			ExternalRepo: api.ExternalRepoSpec{
@@ -501,6 +507,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			now := clock.Now()
 			for _, r := range want {
 				r.Name += suffix
+				r.URI += suffix
 				r.Description += suffix
 				r.Language += suffix
 				r.UpdatedAt = now
@@ -791,7 +798,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 	github := repos.Repo{
-		Name:        "github.com/foo/bar",
+		Name:        "foo/bar",
+		URI:         "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
 		Enabled:     true,

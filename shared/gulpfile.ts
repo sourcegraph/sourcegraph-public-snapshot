@@ -41,7 +41,7 @@ export async function graphQLTypes(): Promise<void> {
                 interfaceBuilder: (name: string, body: string) =>
                     'export ' + DEFAULT_OPTIONS.interfaceBuilder(name, body),
                 enumTypeBuilder: (name: string, values: string) =>
-                    'export ' + DEFAULT_OPTIONS.enumTypeBuilder(name, values),
+                    'export ' + DEFAULT_OPTIONS.enumTypeBuilder(name, values).replace(/^const enum/, 'enum'),
                 typeBuilder: (name: string, body: string) => 'export ' + DEFAULT_OPTIONS.typeBuilder(name, body),
                 wrapList: (type: string) => `${type}[]`,
                 postProcessor: (code: string) => format(code, { ...formatOptions, parser: 'typescript' }),

@@ -65,6 +65,7 @@ func TestRepos_Get(t *testing.T) {
 
 	want := mustCreate(ctx, t, &types.Repo{
 		Name: "r",
+		URI:  "u",
 		ExternalRepo: &api.ExternalRepoSpec{
 			ID:          "a",
 			ServiceType: "b",

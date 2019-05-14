@@ -279,7 +279,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(result.repo.URI(), "", 1)
+			addRepoFilter(result.repo.Name(), "", 1)
 		}
 		// Add `case:yes` filter to offer easier access to search results matching with case sensitive set to yes
 		// We use count == 0 and limitHit == false since we can't determine that information without

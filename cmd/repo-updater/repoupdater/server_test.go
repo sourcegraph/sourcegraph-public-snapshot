@@ -30,9 +30,7 @@ import (
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{
-		InternalAPI: &internalAPIFake{},
-	}
+	s := &Server{}
 
 	h := ObservedHandler(
 		log15.Root(),
@@ -129,123 +127,6 @@ func TestServer_handleRepoLookup(t *testing.T) {
 			t.Errorf("got %+v, want %+v", got, want)
 		}
 	})
-}
-
-func TestRepoLookup(t *testing.T) {
-	s := Server{
-		Store:       new(repos.FakeStore),
-		InternalAPI: &internalAPIFake{},
-	}
-
-	t.Run("no args", func(t *testing.T) {
-		if _, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
-			t.Error()
-		}
-	})
-
-	t.Run("github", func(t *testing.T) {
-		t.Run("not authoritative", func(t *testing.T) {
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, false, errors.New("x")
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "example.com/a/b"})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
-				t.Errorf("got result %+v, want nil", result)
-			}
-		})
-
-		t.Run("not found", func(t *testing.T) {
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, true, github.ErrNotFound
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
-				t.Errorf("got result %+v, want nil", result)
-			}
-		})
-
-		t.Run("unexpected error", func(t *testing.T) {
-			wantErr := errors.New("x")
-
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, true, wantErr
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
-			if err != wantErr {
-				t.Fatal(err)
-			}
-			if result != nil {
-				t.Errorf("got result %+v, want nil", result)
-			}
-		})
-	})
-}
-
-func TestRepoLookup_found(t *testing.T) {
-	fa := &internalAPIFake{
-		metadataUpdate: make(chan *api.ReposUpdateMetadataRequest, 1),
-	}
-	s := Server{
-		Store:       new(repos.FakeStore),
-		InternalAPI: fa,
-	}
-
-	want := &protocol.RepoLookupResult{
-		Repo: &protocol.RepoInfo{
-			ExternalRepo: &api.ExternalRepoSpec{
-				ID:          "a",
-				ServiceType: github.ServiceType,
-				ServiceID:   "https://github.com/",
-			},
-			Name:        "github.com/c/d",
-			Description: "b",
-			Fork:        true,
-		},
-	}
-
-	orig := repos.GetGitHubRepositoryMock
-	repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-		return want.Repo, true, nil
-	}
-	defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-	result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(result, want) {
-		t.Errorf("got %+v, want %+v", result, want)
-	}
-
-	select {
-	case got := <-fa.metadataUpdate:
-		want2 := &api.ReposUpdateMetadataRequest{
-			RepoName:    want.Repo.Name,
-			Description: want.Repo.Description,
-			Fork:        want.Repo.Fork,
-			Archived:    want.Repo.Archived,
-		}
-		if !reflect.DeepEqual(got, want2) {
-			t.Errorf("got %+v, want %+v", got, want2)
-		}
-	case <-time.After(5 * time.Second):
-		t.Error("ReposUpdateMetadata was not called")
-	}
 }
 
 func TestServer_SetRepoEnabled(t *testing.T) {
@@ -428,7 +309,8 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 				t.Fatalf("failed to prepare store: %v", err)
 			}
 
-			srv := httptest.NewServer((&Server{Kinds: tc.kinds, Store: store}).Handler())
+			s := &Server{Kinds: tc.kinds, Store: store}
+			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
 
@@ -577,7 +459,8 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			srv := httptest.NewServer((&Server{Store: tc.store}).Handler())
+			s := &Server{Store: tc.store}
+			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
 
@@ -669,7 +552,8 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		err:    "repository with ID 42 does not exist",
 	}}
 
-	srv := httptest.NewServer((&Server{Store: store}).Handler())
+	s := &Server{Store: store}
+	srv := httptest.NewServer(s.Handler())
 	defer srv.Close()
 	cli := repoupdater.Client{URL: srv.URL}
 	for _, tc := range testCases {
@@ -713,12 +597,10 @@ func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 	return svcs
 }
 
-func TestRepoLookup_syncer(t *testing.T) {
+func TestRepoLookup(t *testing.T) {
 	now := time.Now().UTC()
-	ctx := context.Background()
 
-	store := new(repos.FakeStore)
-	_ = store.UpsertRepos(ctx, &repos.Repo{
+	githubRepository := &repos.Repo{
 		Name:        "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
@@ -744,9 +626,9 @@ func TestRepoLookup_syncer(t *testing.T) {
 			Description:   "The description",
 			NameWithOwner: "foo/bar",
 		},
-	})
+	}
 
-	_ = store.UpsertRepos(ctx, &repos.Repo{
+	awsCodeCommitRepository := &repos.Repo{
 		Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 		Description: "The stripe-go lib",
 		Language:    "barlang",
@@ -774,34 +656,32 @@ func TestRepoLookup_syncer(t *testing.T) {
 			HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
 			LastModified: &now,
 		},
-	})
-
-	s := Server{
-		Syncer:      &repos.Syncer{},
-		Store:       store,
-		InternalAPI: &internalAPIFake{},
 	}
 
-	t.Run("not found", func(t *testing.T) {
-		have, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: "github.com/a/b"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := &protocol.RepoLookupResult{ErrorNotFound: true}
-		if !reflect.DeepEqual(have, want) {
-			t.Error(cmp.Diff(have, want))
-		}
-	})
-
 	testCases := []struct {
-		name         string
-		repoName     string
-		wantRepoInfo *protocol.RepoInfo
+		name               string
+		args               protocol.RepoLookupArgs
+		stored             repos.Repos
+		result             *protocol.RepoLookupResult
+		githubDotComSource *fakeGithubDotComSource
+		assert             repos.ReposAssertion
+		err                string
 	}{
 		{
-			name:     "found - GitHub",
-			repoName: "github.com/foo/bar",
-			wantRepoInfo: &protocol.RepoInfo{
+			name: "not found",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/a/b"),
+			},
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
+		},
+		{
+			name: "found - GitHub",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			stored: []*repos.Repo{githubRepository},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
@@ -816,12 +696,15 @@ func TestRepoLookup_syncer(t *testing.T) {
 					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
-			},
+			}},
 		},
 		{
-			name:     "found - AWS CodeCommit",
-			repoName: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
-			wantRepoInfo: &protocol.RepoInfo{
+			name: "found - AWS CodeCommit",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
+			},
+			stored: []*repos.Repo{awsCodeCommitRepository},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: awscodecommit.ServiceType,
@@ -836,39 +719,138 @@ func TestRepoLookup_syncer(t *testing.T) {
 					Blob:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/browse/{rev}/--/{path}",
 					Commit: "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/commit/{commit}",
 				},
+			}},
+		},
+		{
+			name: "found - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
 			},
+			stored: []*repos.Repo{},
+			githubDotComSource: &fakeGithubDotComSource{
+				repo: githubRepository,
+			},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: &api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			}},
+			assert: repos.Assert.ReposEqual(githubRepository),
+		},
+		{
+			name: "not found - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				err: github.ErrNotFound,
+			},
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
+			assert: repos.Assert.ReposEqual(),
+		},
+		{
+			name: "unauthorized - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				err: &github.APIError{Code: http.StatusUnauthorized},
+			},
+			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
+			err:    "not authorized",
+			assert: repos.Assert.ReposEqual(),
+		},
+		{
+			name: "temporarily unavailable - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				err: repos.ErrGitHubAPITemporarilyUnavailable,
+			},
+			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
+			err:    "repository temporarily unavailable",
+			assert: repos.Assert.ReposEqual(),
+		},
+		{
+			name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				repo: githubRepository,
+			},
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
+
 		t.Run(tc.name, func(t *testing.T) {
-			want := &protocol.RepoLookupResult{Repo: tc.wantRepoInfo}
-			result, err := s.repoLookup(ctx, protocol.RepoLookupArgs{Repo: api.RepoName(tc.repoName)})
-			if err != nil {
-				t.Fatal(err)
+			ctx := context.Background()
+
+			store := new(repos.FakeStore)
+			must(store.UpsertRepos(ctx, tc.stored.Clone()...))
+
+			s := &Server{Syncer: &repos.Syncer{}, Store: store}
+			if tc.githubDotComSource != nil {
+				s.GithubDotComSource = tc.githubDotComSource
 			}
-			if diff := pretty.Compare(result, want); diff != "" {
-				t.Fatalf("ListRepos:\n%s", diff)
+
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.RepoLookup(ctx, tc.args)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.result; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
+			}
+
+			if diff := pretty.Compare(res, tc.result); diff != "" {
+				t.Fatalf("RepoLookup:\n%s", diff)
+			}
+
+			if tc.assert != nil {
+				rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				tc.assert(t, rs)
 			}
 		})
 	}
 }
 
-type internalAPIFake struct {
-	metadataUpdate chan *api.ReposUpdateMetadataRequest
+type fakeGithubDotComSource struct {
+	repo *repos.Repo
+	err  error
 }
 
-func (a *internalAPIFake) ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error {
-	if a.metadataUpdate != nil {
-		a.metadataUpdate <- &api.ReposUpdateMetadataRequest{
-			RepoName:    repo,
-			Description: description,
-			Fork:        fork,
-			Archived:    archived,
-		}
-	}
-	return nil
+func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
+	return s.repo, s.err
 }
 
 func formatJSON(s string) string {

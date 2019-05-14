@@ -1,4 +1,4 @@
 {
   "extends": "../../tsconfig.json",
-  "files": ["src/sourcegraph.d.ts"]
+  "files": ["src/sourcegraph.d.ts"],
 }
