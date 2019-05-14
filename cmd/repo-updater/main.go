@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const port = "3182"
@@ -221,7 +222,30 @@ func main() {
 	}
 
 	if envvar.SourcegraphDotComMode() {
-		githubDotComSrc, err := repos.NewGithubDotComSource(cf)
+		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+			Kinds: []string{"github"},
+		})
+		if err != nil {
+			log.Fatalf("failed to list external services: %v", err)
+		}
+
+		var githubDotComSvc *repos.ExternalService
+		for _, e := range es {
+			cfg, err := e.Configuration()
+			if err != nil {
+				log.Fatalf("unable to get external service configuration: %v", err)
+			}
+			if cfg.(*schema.GitHubConnection).Token != "" {
+				githubDotComSvc = e
+				break
+			}
+		}
+
+		if githubDotComSvc == nil {
+			log.Fatal("no external service for Github.com found")
+		}
+
+		githubDotComSrc, err := repos.NewGithubSource(githubDotComSvc, cf)
 		if err != nil {
 			log.Fatalf("failed to create Github.com source: %v", err)
 		}
