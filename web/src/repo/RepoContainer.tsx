@@ -200,14 +200,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             // Display error page
             switch (this.state.repoOrError.code) {
                 case EREPONOTFOUND:
-                    return (
-                        <RepositoryNotFoundPage
-                            repo={repoName}
-                            repoID={null}
-                            error={this.state.repoOrError}
-                            viewerCanAdminister={viewerCanAdminister}
-                        />
-                    )
+                    return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
                 default:
                     return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={this.state.repoOrError.message} />
             }

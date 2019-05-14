@@ -2,7 +2,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { checkMirrorRepositoryConnection } from '../site-admin/backend'
@@ -12,19 +11,8 @@ interface Props {
     /** The name of the repository. */
     repo: string
 
-    /** The GraphQL ID of the repository, or null if it doesn't exist. */
-    repoID: GQL.ID | null
-
-    /** The error that occurred while (unsuccessfully) retrieving the repository, or 'disabled' if
-     *  the repository is disabled.
-     */
-    error: ErrorLike
-
     /** Whether the viewer is a site admin. */
     viewerCanAdminister: boolean
-
-    /** Called when the repository is successfully enabled. */
-    onDidUpdateRepository?: (update: Partial<GQL.IRepository>) => void
 }
 
 interface State {
@@ -61,7 +49,7 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                     distinctUntilChanged(
                         (a, b) => a.repo === b.repo && a.viewerCanAdminister === b.viewerCanAdminister
                     ),
-                    switchMap(({ repo, error, viewerCanAdminister }) => {
+                    switchMap(({ repo, viewerCanAdminister }) => {
                         type PartialStateUpdate = Pick<State, 'showAdd' | 'canAddOrError'>
                         if (!viewerCanAdminister) {
                             return of({ showAdd: false, canAddOrError: undefined })
