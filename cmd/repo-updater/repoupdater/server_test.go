@@ -659,11 +659,11 @@ func TestRepoLookup(t *testing.T) {
 	testCases := []struct {
 		name                  string
 		args                  protocol.RepoLookupArgs
-		reposInStore          []*repos.Repo
-		want                  *protocol.RepoLookupResult
+		stored                repos.Repos
+		result                *protocol.RepoLookupResult
 		sourcegraphDotComMode bool
-		githubDotComSource    *internalGithubDotComSourceFake
-		storeAssertion        func(context.Context, *testing.T, *repos.FakeStore)
+		githubDotComSource    *fakeGithubDotComSource
+		assert                repos.ReposAssertion
 		err                   string
 	}{
 		{
@@ -671,16 +671,16 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/a/b"),
 			},
-			want: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:  "repository not found",
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
 		},
 		{
 			name: "found - GitHub",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
-			reposInStore: []*repos.Repo{githubRepository},
-			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+			stored: []*repos.Repo{githubRepository},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
@@ -702,8 +702,8 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
 			},
-			reposInStore: []*repos.Repo{awsCodeCommitRepository},
-			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+			stored: []*repos.Repo{awsCodeCommitRepository},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: awscodecommit.ServiceType,
@@ -725,12 +725,12 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
-			reposInStore:          []*repos.Repo{},
+			stored:                []*repos.Repo{},
 			sourcegraphDotComMode: true,
-			githubDotComSource: &internalGithubDotComSourceFake{
+			githubDotComSource: &fakeGithubDotComSource{
 				Repo: githubRepository,
 			},
-			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
@@ -746,20 +746,7 @@ func TestRepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
-			storeAssertion: func(ctx context.Context, t *testing.T, s *repos.FakeStore) {
-				t.Helper()
-
-				rs, err := s.ListRepos(ctx, repos.StoreListReposArgs{Kinds: []string{"github"}})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if len(rs) != 1 {
-					t.Fatalf("repo not upserted. repos in store=%d", len(rs))
-				}
-				if have, want := rs[0].Name, "github.com/foo/bar"; have != want {
-					t.Fatalf("wrong repo upserted. have=%s, want=%s", have, want)
-				}
-			},
+			assert: repos.Assert.ReposEqual(githubRepository),
 		},
 		{
 			name: "not found - GitHub.com on Sourcegraph.com",
@@ -767,22 +754,12 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
 			sourcegraphDotComMode: true,
-			githubDotComSource: &internalGithubDotComSourceFake{
+			githubDotComSource: &fakeGithubDotComSource{
 				Repo: nil,
 			},
-			want: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:  "repository not found",
-			storeAssertion: func(ctx context.Context, t *testing.T, s *repos.FakeStore) {
-				t.Helper()
-
-				rs, err := s.ListRepos(ctx, repos.StoreListReposArgs{Kinds: []string{"github"}})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if len(rs) != 0 {
-					t.Fatalf("repos upserted. repos in store=%d", len(rs))
-				}
-			},
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
+			assert: repos.Assert.ReposEqual(),
 		},
 		{
 			name: "not found - AWS CodeCommit on Sourcegraph.com",
@@ -790,11 +767,11 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
 			},
 			sourcegraphDotComMode: true,
-			githubDotComSource: &internalGithubDotComSourceFake{
+			githubDotComSource: &fakeGithubDotComSource{
 				Repo: githubRepository,
 			},
-			want: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:  "repository not found",
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
 		},
 	}
 
@@ -811,9 +788,7 @@ func TestRepoLookup(t *testing.T) {
 			}
 
 			store := new(repos.FakeStore)
-			for _, r := range tc.reposInStore {
-				must(store.UpsertRepos(ctx, r))
-			}
+			must(store.UpsertRepos(ctx, tc.stored.Clone()...))
 
 			s := &Server{Syncer: &repos.Syncer{}, Store: store}
 
@@ -835,22 +810,30 @@ func TestRepoLookup(t *testing.T) {
 				t.Errorf("have err: %q, want: %q", have, want)
 			}
 
-			if have, want := res, tc.want; !reflect.DeepEqual(have, want) {
+			if have, want := res, tc.result; !reflect.DeepEqual(have, want) {
 				t.Errorf("response: %s", cmp.Diff(have, want))
 			}
 
-			if diff := pretty.Compare(res, tc.want); diff != "" {
+			if diff := pretty.Compare(res, tc.result); diff != "" {
 				t.Fatalf("RepoLookup:\n%s", diff)
+			}
+
+			if tc.assert != nil {
+				rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				tc.assert(t, rs)
 			}
 		})
 	}
 }
 
-type internalGithubDotComSourceFake struct {
+type fakeGithubDotComSource struct {
 	Repo *repos.Repo
 }
 
-func (s *internalGithubDotComSourceFake) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
+func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
 	if s.Repo == nil {
 		return nil, github.ErrNotFound
 	}
