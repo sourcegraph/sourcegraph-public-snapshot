@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestAWSCodeCommitExclude(t *testing.T) {
+func TestAWSCodeCommitSource_Exclude(t *testing.T) {
 	config := &schema.AWSCodeCommitConnection{
 		AccessKeyID:     "secret-access-key-id",
 		SecretAccessKey: "secret-secret-access-key",
@@ -21,7 +21,8 @@ func TestAWSCodeCommitExclude(t *testing.T) {
 	}
 
 	fact := httpcli.NewFactory(httpcli.NewMiddleware())
-	conn, err := newAWSCodeCommitConnection(config, fact)
+	svc := ExternalService{Kind: "AWSCODECOMMIT"}
+	conn, err := newAWSCodeCommitSource(&svc, config, fact)
 	if err != nil {
 		t.Fatal(err)
 	}
