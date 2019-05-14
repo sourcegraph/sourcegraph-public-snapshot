@@ -808,10 +808,6 @@ type Query {
     ): [QueryCount!]!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
-    # Queries which are for internal use only.
-    #
-    # FOR INTERNAL USE ONLY.
-    internal: InternalQuery!
     # Queries that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -825,16 +821,6 @@ type QueryCount {
 
     # The number of times the search query was made.
     count: Int!
-}
-
-# Queries which are for internal use only.
-type InternalQuery {
-    # Indicates that there are repositories which are managed via enable/disable state.
-    # This field will disappear in 3.4. See https://github.com/sourcegraph/sourcegraph/issues/2025
-    #
-    # Only site admins can query this field.
-    # FOR INTERNAL USE ONLY.
-    allowEnableDisable: Boolean!
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
