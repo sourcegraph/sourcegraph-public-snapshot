@@ -46,18 +46,6 @@ func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, 
 	return newGithubSource(svc, &c, cf)
 }
 
-// NewGithubDotComSource returns a GithubSource for github.com, meant to be added
-// to the list of sources in Sourcer when one isn't already configured in order to
-// support navigating to URL paths like /github.com/foo/bar to auto-add that repository.
-func NewGithubDotComSource(cf *httpcli.Factory) (*GithubSource, error) {
-	svc := ExternalService{Kind: "GITHUB"}
-	return newGithubSource(&svc, &schema.GitHubConnection{
-		RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
-		Url:                         "https://github.com",
-		InitialRepositoryEnablement: true,
-	}, cf)
-}
-
 func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {

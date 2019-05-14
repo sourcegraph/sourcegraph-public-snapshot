@@ -840,7 +840,14 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			githubSrc, err := NewGithubDotComSource(cf)
+			svc := &ExternalService{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url: "https://github.com",
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
