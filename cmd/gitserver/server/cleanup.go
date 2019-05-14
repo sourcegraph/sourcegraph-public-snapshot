@@ -316,8 +316,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		if err != nil {
 			return errors.Wrapf(err, "computing size of directory %s", d)
 		}
-		gitDirParent := filepath.Dir(d)
-		if err := s.removeRepoDirectory(gitDirParent); err != nil {
+		if err := s.removeRepoDirectory(d); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
 		spaceFreed += delta
