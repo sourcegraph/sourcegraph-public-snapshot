@@ -81,10 +81,11 @@ interface State {
 }
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser | null
+    orgID?: GQL.ID
+    userID?: GQL.ID
 }
 
-export class UserSavedSearchesListPage extends React.Component<Props, State> {
+export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
     private refreshRequests = new Subject<void>()
 
@@ -108,7 +109,6 @@ export class UserSavedSearchesListPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { authenticatedUser } = this.props
         return (
             <div className="org-saved-searches-list-page">
                 <div className="org-saved-searches-list-page__title">
@@ -123,10 +123,13 @@ export class UserSavedSearchesListPage extends React.Component<Props, State> {
                     </div>
                 </div>
                 <div className="list-group list-group-flush">
-                    {!!authenticatedUser &&
-                        this.state.savedSearches.length > 0 &&
+                    {this.state.savedSearches.length > 0 &&
                         this.state.savedSearches
-                            .filter(search => search.userID === authenticatedUser.id)
+                            .filter(search =>
+                                this.props.orgID
+                                    ? search.orgID === this.props.orgID
+                                    : search.userID === this.props.userID
+                            )
                             .map(search => (
                                 <SavedSearchNode {...this.props} savedSearch={search} onDelete={this.onDelete} />
                             ))}

@@ -2,7 +2,7 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { UserSavedSearchesCreateForm } from '../saved-searches/UserSavedSearchesCreateForm'
-import { UserSavedSearchesListPage } from '../saved-searches/UserSavedSearchesListPage'
+import { UserSavedSearchListPage } from '../saved-searches/UserSavedSearchListPage'
 import { UserSavedSearchesUpdateForm } from '../saved-searches/UserSavedSearchesUpdateForm'
 import { UserAreaRoute } from './UserArea'
 
@@ -37,7 +37,7 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
         path: '/searches',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSavedSearchesListPage {...props} />,
+        render: props => <UserSavedSearchListPage {...props} />,
     },
     {
         path: '/searches/add',

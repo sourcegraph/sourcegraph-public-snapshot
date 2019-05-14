@@ -3,7 +3,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { ThemeProps } from '../../theme'
-import { OrgSavedSearchesListPage } from '../saved-searches/OrgSavedSearchesListPage'
+import { OrgSavedSearchListPage } from '../saved-searches/OrgSavedSearchListPage'
 import { OrgAreaPageProps } from './OrgArea'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
@@ -41,7 +41,7 @@ export class OrgSavedSearchesPage extends React.Component<Props, State> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <OrgSavedSearchesListPage {...routeComponentProps} {...transferProps} />
+                                <OrgSavedSearchListPage {...routeComponentProps} {...transferProps} />
                             )}
                         />
                     </Switch>

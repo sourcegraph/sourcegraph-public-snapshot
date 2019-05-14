@@ -46,7 +46,7 @@ export const OrgHeader: React.FunctionComponent<Props> = (props: Props) => (
                                 className="btn area-header__nav-link"
                                 activeClassName="area-header__nav-link--active"
                             >
-                                <FeatureSearchOutlineIcon className="icon-inline" /> Searches
+                                <FeatureSearchOutlineIcon className="icon-inline" /> Saved searches
                             </NavLink>
                             {props.org.viewerCanAdminister && (
                                 <NavLink
