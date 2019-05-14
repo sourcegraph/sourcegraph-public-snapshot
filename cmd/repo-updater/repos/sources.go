@@ -242,7 +242,7 @@ func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
-// ListRepos returns the Github repository with the given name with owner
+// GetRepo returns the Github repository with the given name and owner
 // ("org/repo-name")
 func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {
 	r, err := s.conn.getRepository(ctx, nameWithOwner)
