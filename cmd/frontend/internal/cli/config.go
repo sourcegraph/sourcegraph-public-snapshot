@@ -46,33 +46,45 @@ func handleConfigOverrides() {
 	if conf.IsDev(conf.DeployType()) {
 		raw := conf.Raw()
 
-		devOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
-		if devOverrideCriticalConfig != "" {
-			critical, err := ioutil.ReadFile(devOverrideCriticalConfig)
+		overrideCriticalConfig := os.Getenv("OVERRIDE_CRITICAL_CONFIG")
+		legacyOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
+		if overrideCriticalConfig == "" && legacyOverrideCriticalConfig != "" {
+			overrideCriticalConfig = legacyOverrideCriticalConfig
+		}
+		if overrideCriticalConfig != "" {
+			critical, err := ioutil.ReadFile(overrideCriticalConfig)
 			if err != nil {
 				log.Fatal(err)
 			}
 			raw.Critical = string(critical)
 		}
 
-		devOverrideSiteConfig := os.Getenv("DEV_OVERRIDE_SITE_CONFIG")
-		if devOverrideSiteConfig != "" {
-			site, err := ioutil.ReadFile(devOverrideSiteConfig)
+		overrideSiteConfig := os.Getenv("OVERRIDE_SITE_CONFIG")
+		legacyOverrideSiteConfig := os.Getenv("DEV_OVERRIDE_SITE_CONFIG")
+		if overrideSiteConfig == "" && legacyOverrideSiteConfig != "" {
+			overrideSiteConfig = legacyOverrideSiteConfig
+		}
+		if overrideSiteConfig != "" {
+			site, err := ioutil.ReadFile(overrideSiteConfig)
 			if err != nil {
 				log.Fatal(err)
 			}
 			raw.Site = string(site)
 		}
 
-		if devOverrideCriticalConfig != "" || devOverrideSiteConfig != "" {
+		if overrideCriticalConfig != "" || overrideSiteConfig != "" {
 			err := (&configurationSource{}).Write(context.Background(), raw)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		devOverrideExtSvcConfig := os.Getenv("DEV_OVERRIDE_EXTSVC_CONFIG")
-		if devOverrideExtSvcConfig != "" {
+		overrideExtSvcConfig := os.Getenv("OVERRIDE_EXTSVC_CONFIG")
+		legacyOverrideExtSvcConfig := os.Getenv("DEV_OVERRIDE_EXTSVC_CONFIG")
+		if overrideExtSvcConfig == "" && legacyOverrideExtSvcConfig != "" {
+			overrideExtSvcConfig = legacyOverrideExtSvcConfig
+		}
+		if overrideExtSvcConfig != "" {
 			existing, err := db.ExternalServices.List(context.Background(), db.ExternalServicesListOptions{})
 			if err != nil {
 				log.Fatal(err)
@@ -81,7 +93,7 @@ func handleConfigOverrides() {
 				return
 			}
 
-			extsvc, err := ioutil.ReadFile(devOverrideExtSvcConfig)
+			extsvc, err := ioutil.ReadFile(overrideExtSvcConfig)
 			if err != nil {
 				log.Fatal(err)
 			}
