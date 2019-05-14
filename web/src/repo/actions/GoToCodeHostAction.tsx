@@ -1,5 +1,6 @@
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { upperFirst } from 'lodash'
+import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
@@ -144,7 +145,7 @@ function serviceTypeDisplayNameAndIcon(
         case 'gitlab':
             return { displayName: 'GitLab' }
         case 'bitbucketserver':
-            return { displayName: 'Bitbucket Server' }
+            return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
         case 'phabricator':
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
         case 'awscodecommit':
