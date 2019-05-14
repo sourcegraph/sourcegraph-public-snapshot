@@ -46,9 +46,9 @@ func printConfigValidation() {
 // As this method writes to the configuration DB, it should be invoked before
 // the configuration server is started but after PostgreSQL is connected.
 func handleConfigOverrides() {
-	overrideCriticalConfig := os.Getenv("OVERRIDE_CRITICAL_CONFIG")
-	overrideSiteConfig := os.Getenv("OVERRIDE_SITE_CONFIG")
-	overrideExtSvcConfig := os.Getenv("OVERRIDE_EXTSVC_CONFIG")
+	overrideCriticalConfig := os.Getenv("CRITICAL_CONFIG_FILE")
+	overrideSiteConfig := os.Getenv("SITE_CONFIG_FILE")
+	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
 	overrideAny := overrideCriticalConfig || overrideSiteConfig || overrideExtSvcConfig
 	if overrideAny || conf.IsDev(conf.DeployType()) {
 		raw, err := (&configurationSource{}).Read(context.Background())
