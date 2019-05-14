@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const port = "3182"
@@ -84,12 +86,12 @@ func main() {
 		)
 	}
 
+	cf := repos.NewHTTPClientFactory()
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
 		m.ListRepos.MustRegister(prometheus.DefaultRegisterer)
 
-		cf := repos.NewHTTPClientFactory()
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
 	}
 
@@ -126,8 +128,6 @@ func main() {
 	for _, kind := range kinds {
 		newSyncerEnabled[kind] = true
 	}
-
-	frontendAPI := repos.NewInternalAPI(10 * time.Second)
 
 	for _, kind := range []string{
 		"AWSCODECOMMIT",
@@ -216,10 +216,40 @@ func main() {
 
 	// Start up handler that frontend relies on
 	server := repoupdater.Server{
-		Kinds:       kinds,
-		Store:       store,
-		Syncer:      syncer,
-		InternalAPI: frontendAPI,
+		Kinds:  kinds,
+		Store:  store,
+		Syncer: syncer,
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+			Kinds: []string{"github"},
+		})
+		if err != nil {
+			log.Fatalf("failed to list external services: %v", err)
+		}
+
+		var githubDotComSvc *repos.ExternalService
+		for _, e := range es {
+			cfg, err := e.Configuration()
+			if err != nil {
+				log.Fatalf("unable to get external service configuration: %v", err)
+			}
+			if cfg.(*schema.GitHubConnection).Token != "" {
+				githubDotComSvc = e
+				break
+			}
+		}
+
+		if githubDotComSvc == nil {
+			log.Fatal("no external service for Github.com found")
+		}
+
+		githubDotComSrc, err := repos.NewGithubSource(githubDotComSvc, cf)
+		if err != nil {
+			log.Fatalf("failed to create Github.com source: %v", err)
+		}
+		server.GithubDotComSource = githubDotComSrc
 	}
 
 	var handler http.Handler
